@@ -832,6 +832,14 @@ let callable_call_special_cases
 
 
 module SignatureSelection = struct
+  (** Return a mapping from each parameter to the arguments that may be assigned to it. Also include
+      any error reasons when there are too many or too few arguments.
+
+      Parameters such as `*args: int` and `**kwargs: str` may have any number of arguments assigned
+      to them.
+
+      Other parameters such as named parameters (`x: int`), positional-only, or keyword-only
+      parameters will have zero or one argument mapped to them. *)
   let get_parameter_argument_mapping ~all_parameters ~parameters ~self_argument arguments =
     let open Type.Callable in
     let all_arguments = arguments in
@@ -1028,6 +1036,8 @@ module SignatureSelection = struct
     |> consume ~arguments ~parameters
 
 
+  (** Check all arguments against the respective parameter types. Return a signature match
+      containing constraints from the above compatibility checks and any mismatch errors. *)
   let check_arguments_against_parameters
       ~order
       ~resolve_mutable_literals
@@ -1607,6 +1617,7 @@ module SignatureSelection = struct
     |> check_if_solution_exists
 
 
+  (** Check arguments against the given callable signature and returning possible signature matches. *)
   let rec check_arguments_against_signature
       ~order
       ~resolve_mutable_literals
@@ -1640,6 +1651,13 @@ module SignatureSelection = struct
     | Undefined -> [base_signature_match]
     | ParameterVariadicTypeVariable { head; variable }
       when Type.Variable.Variadic.Parameters.is_free variable -> (
+        (* Handle callables where an early parameter binds a ParamSpec and later parameters expect
+           the corresponding arguments.
+
+           For example, when a function like `def foo(f: Callable[P, R], *args: P.args, **kwargs:
+           P.kwargs) -> None` is called as `foo(add, 1, 2)`, first solve for the free variable `P`
+           using the callable argument `add` and then use the solution to get concrete types for
+           `P.args` and `P.kwargs`. *)
         let front, back =
           let is_labeled = function
             | { Argument.WithPosition.kind = Named _; _ } -> true
@@ -1696,6 +1714,9 @@ module SignatureSelection = struct
         | [] -> [head_signature]
         | nonempty -> nonempty)
     | ParameterVariadicTypeVariable { head; variable } -> (
+        (* The ParamSpec variable `P` is in scope, so the only valid arguments are `*args` and
+           `**kwargs` that have "type" `P.args` and `P.kwargs` respectively. If the ParamSpec has a
+           `head` prefix of parameters, check for any prefix arguments. *)
         let combines_into_variable ~positional_component ~keyword_component =
           Type.Variable.Variadic.Parameters.Components.combine
             { positional_component; keyword_component }
@@ -1723,34 +1744,8 @@ module SignatureSelection = struct
             ])
 
 
-  let calculate_rank ({ reasons = { arity; annotation; _ }; _ } as signature_match) =
-    let open SignatureSelectionTypes in
-    let arity_rank = List.length arity in
-    let positions, annotation_rank =
-      let count_unique (positions, count) = function
-        | Mismatches mismatches ->
-            let count_unique_mismatches (positions, count) mismatch =
-              match mismatch with
-              | Mismatch { Node.value = { position; _ }; _ } when not (Set.mem positions position)
-                ->
-                  Set.add positions position, count + 1
-              | Mismatch _ -> positions, count
-              | _ -> positions, count + 1
-            in
-            List.fold ~init:(positions, count) mismatches ~f:count_unique_mismatches
-        | _ -> positions, count + 1
-      in
-      List.fold ~init:(Int.Set.empty, 0) ~f:count_unique annotation
-    in
-    let position_rank =
-      Int.Set.min_elt positions >>| Int.neg |> Option.value ~default:Int.min_value
-    in
-    {
-      signature_match with
-      ranks = { arity = arity_rank; annotation = annotation_rank; position = position_rank };
-    }
-
-
+  (** Given a signature match for a callable, solve for any type variables and instantiate the
+      return annotation. *)
   let instantiate_return_annotation
       ?(skip_marking_escapees = false)
       ~order
@@ -1855,6 +1850,40 @@ module SignatureSelection = struct
     NotFound { closest_return_annotation = default_return_annotation; reason = None }
 
 
+  let calculate_rank ({ reasons = { arity; annotation; _ }; _ } as signature_match) =
+    let open SignatureSelectionTypes in
+    let arity_rank = List.length arity in
+    let positions, annotation_rank =
+      let count_unique (positions, count) = function
+        | Mismatches mismatches ->
+            let count_unique_mismatches (positions, count) mismatch =
+              match mismatch with
+              | Mismatch { Node.value = { position; _ }; _ } when not (Set.mem positions position)
+                ->
+                  Set.add positions position, count + 1
+              | Mismatch _ -> positions, count
+              | _ -> positions, count + 1
+            in
+            List.fold ~init:(positions, count) mismatches ~f:count_unique_mismatches
+        | _ -> positions, count + 1
+      in
+      List.fold ~init:(Int.Set.empty, 0) ~f:count_unique annotation
+    in
+    let position_rank =
+      Int.Set.min_elt positions >>| Int.neg |> Option.value ~default:Int.min_value
+    in
+    {
+      signature_match with
+      ranks = { arity = arity_rank; annotation = annotation_rank; position = position_rank };
+    }
+
+
+  (** Find the signature that is "closest" to what the user intended. Essentially, sort signatures
+      on the number of arity mismatches, number of annotation mismatches, and the earliest mismatch
+      position.
+
+      TODO(T109092235): Clean up the rank calculation to more clearly reflect that we want to do
+      `maximum_by (arity, annotation, position)`. *)
   let find_closest_signature signature_matches =
     let get_arity_rank { ranks = { arity; _ }; _ } = arity in
     let get_annotation_rank { ranks = { annotation; _ }; _ } = annotation in
