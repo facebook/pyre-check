@@ -1098,7 +1098,11 @@ module SignatureSelection = struct
           Some (annotation, parameter_variable, return_variable, lambda_parameter, lambda_body)
       | _ -> None
     in
-    let update ~key ~data ({ reasons = { arity; _ } as reasons; _ } as signature_match) =
+    let check_arguments_and_update_signature_match
+        ~parameter
+        ~arguments
+        ({ reasons = { arity; _ } as reasons; _ } as signature_match)
+      =
       let check_argument_and_set_constraints_and_reasons
           ~position
           ~argument_location
@@ -1311,7 +1315,7 @@ module SignatureSelection = struct
         let open Result in
         extract_ordered_types arguments >>= concatenate >>= solve |> make_signature_match
       in
-      match key, data with
+      match parameter, arguments with
       | Parameter.Variable (Concatenation concatenation), arguments ->
           bind_arguments_to_variadic
             ~expected:(Type.OrderedTypes.Concatenation concatenation)
@@ -1408,7 +1412,7 @@ module SignatureSelection = struct
                     |> update_signature_match_for_iterable ~create_error ~resolved
                 | SingleStar -> (
                     let signature_match_for_single_element =
-                      match key, index_into_starred_tuple, resolved with
+                      match parameter, index_into_starred_tuple, resolved with
                       | ( (PositionalOnly _ | Named _),
                           Some index_into_starred_tuple,
                           Type.Tuple ordered_type ) ->
@@ -1457,7 +1461,7 @@ module SignatureSelection = struct
                     | Some weakening_error -> add_annotation_error signature_match weakening_error
                     | None -> argument_annotation |> check_argument |> check ~arguments:tail))
           in
-          match is_generic_lambda key arguments with
+          match is_generic_lambda parameter arguments with
           | Some _ -> signature_match (* Handle this later in `special_case_lambda_parameter` *)
           | None -> check ~arguments:(List.rev arguments) signature_match)
     in
@@ -1521,8 +1525,12 @@ module SignatureSelection = struct
     in
     let special_case_lambda_parameter ({ parameter_argument_mapping; _ } as signature_match) =
       (* Special case: `Callable[[ParamVar], ReturnVar]` with `lambda parameter: body` *)
-      let update ~key ~data ({ constraints_set; _ } as signature_match) =
-        match is_generic_lambda key data with
+      let check_lambda_argument_and_update_signature_match
+          ~parameter
+          ~arguments
+          ({ constraints_set; _ } as signature_match)
+        =
+        match is_generic_lambda parameter arguments with
         | None -> signature_match
         | Some (annotation, parameter_variable, _, lambda_parameter, lambda_body) -> (
             (* Infer the parameter type using existing constraints. *)
@@ -1574,7 +1582,11 @@ module SignatureSelection = struct
                 in
                 { signature_match with constraints_set = updated_constraints })
       in
-      Map.fold ~init:signature_match ~f:update parameter_argument_mapping
+      Map.fold
+        ~init:signature_match
+        ~f:(fun ~key ~data ->
+          check_lambda_argument_and_update_signature_match ~parameter:key ~arguments:data)
+        parameter_argument_mapping
     in
     let signature_match =
       {
@@ -1585,7 +1597,11 @@ module SignatureSelection = struct
         reasons;
       }
     in
-    Map.fold ~init:signature_match ~f:update parameter_argument_mapping
+    Map.fold
+      ~init:signature_match
+      ~f:(fun ~key ~data ->
+        check_arguments_and_update_signature_match ~parameter:key ~arguments:data)
+      parameter_argument_mapping
     |> special_case_dictionary_constructor
     |> special_case_lambda_parameter
     |> check_if_solution_exists
