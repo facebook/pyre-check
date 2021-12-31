@@ -3339,6 +3339,8 @@ module OrderedTypes = struct
 
   let union_upper_bound = function
     | Concrete concretes -> union concretes
+    | Concatenation { prefix; middle = UnboundedElements unbounded; suffix } ->
+        union (unbounded :: (prefix @ suffix))
     | Concatenation _ -> object_primitive
 
 

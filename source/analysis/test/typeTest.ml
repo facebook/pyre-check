@@ -5813,7 +5813,11 @@ let test_zip_on_two_parameter_lists _ =
 
 let test_union_upper_bound _ =
   let assert_union_upper_bound map expected =
-    assert_equal ~cmp:Type.equal (Type.OrderedTypes.union_upper_bound map) expected
+    assert_equal
+      ~printer:Type.show
+      ~cmp:Type.equal
+      (Type.OrderedTypes.union_upper_bound map)
+      expected
   in
   assert_union_upper_bound
     (Concrete [Type.integer; Type.string; Type.bool])
@@ -5831,6 +5835,16 @@ let test_union_upper_bound _ =
           ~suffix:[Type.string]
           variadic))
     Type.object_primitive;
+  assert_union_upper_bound
+    (Type.OrderedTypes.create_unbounded_concatenation Type.integer)
+    Type.integer;
+  assert_union_upper_bound
+    (Concatenation
+       (Type.OrderedTypes.Concatenation.create_from_unbounded_element
+          ~prefix:[Type.integer]
+          ~suffix:[Type.bool]
+          Type.string))
+    (Type.union [Type.integer; Type.string; Type.bool]);
   ()
 
 

@@ -559,19 +559,19 @@ let test_check_arguments_against_parameters context =
     in
     let print_reasons format reasons = Format.fprintf format "%s" ([%show: reasons] reasons) in
     assert_equal
-      ~pp_diff:(diff ~print:print_reasons)
-      ~printer:(Format.asprintf "%a" print_reasons)
-      ~cmp:(fun left right -> location_insensitive_compare_reasons left right = 0)
-      expected_reasons
-      actual_reasons;
-    assert_equal
       ~pp_diff:
         (diff ~print:(fun format x ->
              Format.fprintf format "%s" ([%show: TypeConstraints.t list] x)))
       ~printer:[%show: TypeConstraints.t list]
       ~cmp:[%compare.equal: TypeConstraints.t list]
       expected_constraints_set
-      actual_constraints_set
+      actual_constraints_set;
+    assert_equal
+      ~pp_diff:(diff ~print:print_reasons)
+      ~printer:(Format.asprintf "%a" print_reasons)
+      ~cmp:(fun left right -> location_insensitive_compare_reasons left right = 0)
+      expected_reasons
+      actual_reasons
   in
   assert_arguments_against_parameters
     ~callable:(parse_callable_record "typing.Callable[[Variable(int)], None]")
@@ -705,7 +705,7 @@ let test_check_arguments_against_parameters context =
               [
                 SignatureSelectionTypes.Mismatch
                   ({
-                     SignatureSelectionTypes.actual = Type.object_primitive;
+                     SignatureSelectionTypes.actual = Type.union [Type.integer; Type.string];
                      expected = Type.integer;
                      name = None;
                      position = 1;
