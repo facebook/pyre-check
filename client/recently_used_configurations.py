@@ -96,7 +96,6 @@ def prompt_user_for_local_root(local_roots: List[str]) -> Optional[str]:
         + "(`Enter` for the default; any other key to quit): "
     )
     message = "\n".join(
-        # pyre-fixme[6]: Expected `Iterable[typing_extensions.Literal[str]]` for 1st ...
         (
             "Would you like to run the command with a local root?",
             "",
