@@ -220,6 +220,7 @@ let create_overrides ~environment ~source =
   if GlobalResolution.source_is_unit_test resolution ~source then
     Reference.Map.empty
   else
+    let timer = Timer.start () in
     let class_method_overrides { Node.value = { Class.body; name = class_name; _ }; _ } =
       let get_method_overrides child_method =
         let method_name = Define.unqualified_name child_method in
@@ -247,7 +248,18 @@ let create_overrides ~environment ~source =
         | { Node.value = Statement.Define define; _ } -> Some define
         | _ -> None
       in
-      body |> List.filter_map ~f:extract_define |> List.filter_map ~f:get_method_overrides
+      let overrides =
+        body |> List.filter_map ~f:extract_define |> List.filter_map ~f:get_method_overrides
+      in
+      Statistics.performance
+        ~randomly_log_every:1000
+        ~always_log_time_threshold:1.0 (* Seconds *)
+        ~name:"Overrides built"
+        ~section:`DependencyGraph
+        ~normals:["class", Reference.show class_name]
+        ~timer
+        ();
+      overrides
     in
     let record_overrides map (ancestor_method, overriding_type) =
       let update_types = function

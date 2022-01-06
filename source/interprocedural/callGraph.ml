@@ -1360,6 +1360,7 @@ let call_graph_of_define
     ~environment
     ~define:({ Define.signature = { Define.Signature.name; parent; _ }; _ } as define)
   =
+  let timer = Timer.start () in
   let callees_at_location = Location.Table.create () in
   let module DefineFixpoint = DefineCallGraphFixpoint (struct
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment
@@ -1388,17 +1389,28 @@ let call_graph_of_define
   in
 
   DefineFixpoint.forward ~cfg:(Cfg.create define) ~initial:() |> ignore;
-  Location.Table.to_alist callees_at_location
-  |> List.map ~f:(fun (location, unprocessed_callees) ->
-         match String.Map.Tree.to_alist unprocessed_callees with
-         | [] -> failwith "unreachable"
-         | [(_, callees)] ->
-             location, LocationCallees.Singleton (ExpressionCallees.deduplicate callees)
-         | _ ->
-             ( location,
-               LocationCallees.Compound
-                 (Core.String.Map.Tree.map ~f:ExpressionCallees.deduplicate unprocessed_callees) ))
-  |> Location.Map.of_alist_exn
+  let call_graph =
+    Location.Table.to_alist callees_at_location
+    |> List.map ~f:(fun (location, unprocessed_callees) ->
+           match String.Map.Tree.to_alist unprocessed_callees with
+           | [] -> failwith "unreachable"
+           | [(_, callees)] ->
+               location, LocationCallees.Singleton (ExpressionCallees.deduplicate callees)
+           | _ ->
+               ( location,
+                 LocationCallees.Compound
+                   (Core.String.Map.Tree.map ~f:ExpressionCallees.deduplicate unprocessed_callees) ))
+    |> Location.Map.of_alist_exn
+  in
+  Statistics.performance
+    ~randomly_log_every:1000
+    ~always_log_time_threshold:1.0 (* Seconds *)
+    ~name:"Call graph built"
+    ~section:`DependencyGraph
+    ~normals:["callable", Reference.show name]
+    ~timer
+    ();
+  call_graph
 
 
 module SharedMemory = struct
