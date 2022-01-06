@@ -5475,6 +5475,13 @@ let test_populate_unbound_names _ =
        Tree = Union[int, Tuple["Tree", "Tree"]]
     |}
     ~expected:[];
+
+  assert_unbound_names
+    {|
+      def foo() -> str:
+        return __path__
+    |}
+    ~expected:[!&"foo", []];
   ()
 
 

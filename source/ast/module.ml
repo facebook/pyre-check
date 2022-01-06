@@ -41,6 +41,7 @@ module ExportMap = struct
         | "__file__"
         | "__name__"
         | "__package__"
+        | "__path__"
         | "__dict__" ->
             Some (Export.Name Export.Name.GlobalVariable)
         | _ -> None)

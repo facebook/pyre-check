@@ -216,6 +216,9 @@ let global ({ dependency; _ } as resolution) reference =
   | "__package__" ->
       let annotation = Annotation.create_immutable Type.string in
       Some { AttributeResolution.Global.annotation; undecorated_signature = None; problem = None }
+  | "__path__" ->
+      let annotation = Type.list Type.string |> Annotation.create_immutable in
+      Some { AttributeResolution.Global.annotation; undecorated_signature = None; problem = None }
   | "__dict__" ->
       let annotation =
         Type.dictionary ~key:Type.string ~value:Type.Any |> Annotation.create_immutable

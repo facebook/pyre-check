@@ -645,6 +645,7 @@ module Builtins = struct
     | "__loader__"
     | "__name__"
     | "__package__"
+    | "__path__"
     | "__spec__"
     | "ArithmeticError"
     | "AssertionError"

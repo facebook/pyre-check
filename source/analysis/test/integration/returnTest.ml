@@ -438,6 +438,8 @@ let test_check_return_control_flow context =
         return ...
       def doc() -> str:
         return __doc__
+      def path() -> typing.Iterable[str]:
+        return __path__
     |}
     [];
   assert_type_errors
