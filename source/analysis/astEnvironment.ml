@@ -144,13 +144,23 @@ let parse_source
               List.exists ignore_codes ~f:(Int.equal 404)
         in
         let location =
-          let start = { Location.line; column } in
+          (* CPython set line/column number to -1 in some exceptional cases. *)
+          let replace_invalid_position number = if number <= 0 then 1 else number in
+          let start =
+            {
+              Location.line = replace_invalid_position line;
+              column = replace_invalid_position column;
+            }
+          in
           let stop =
             (* Work around CPython bug where the end location sometimes precedes start location. *)
             if [%compare: int * int] (line, column) (end_line, end_column) > 0 then
               start
             else
-              { Location.line = end_line; column = end_column }
+              {
+                Location.line = replace_invalid_position end_line;
+                column = replace_invalid_position end_column;
+              }
           in
           { Location.start; stop }
         in
