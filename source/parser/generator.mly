@@ -13,6 +13,12 @@
   open Pyre
   open ParserExpression
 
+  (* This weird-looking empty module definition is to work around a nasty issue when *)
+  (* using menhir infer mode with dune: https://github.com/ocaml/dune/issues/2450 *)
+  [@@@warning "-60"]
+  module PyreParser = struct end
+  [@@@warning "+60"]
+
   let with_decorators decorators decoratee =
     let decorators =
       List.map decorators ~f:convert
@@ -455,7 +461,7 @@ small_statement:
           target.Node.location with Location.stop =
             value.Node.location.Location.stop;
         };
-        value = Assign {
+        value = Statement.Assign {
           Assign.target = convert target;
           annotation = None;
           value = convert value;
@@ -469,7 +475,7 @@ small_statement:
           target.Node.location with Location.stop =
             annotation.Node.location.Location.stop;
         };
-        value = Assign {
+        value = Statement.Assign {
           Assign.target = convert target;
           annotation = Some annotation >>| convert;
           value = create_ellipsis_after annotation |> convert;
@@ -499,7 +505,7 @@ small_statement:
           target.Node.location with Location.stop =
             value.Node.location.Location.stop;
         };
-        value = Assign {
+        value = Statement.Assign {
           Assign.target = convert target;
           annotation = Some annotation >>| convert;
           value = convert value;
@@ -515,7 +521,7 @@ small_statement:
           target.Node.location with Location.stop =
             value.Node.location.Location.stop;
         };
-        value = Assign {
+        value = Statement.Assign {
           Assign.target = convert target;
           annotation = Some annotation >>| convert;
           value = convert value;
@@ -539,7 +545,7 @@ small_statement:
           target.Node.location with Location.stop =
             ellipsis.Node.location.Location.stop;
         };
-        value = Assign {
+        value = Statement.Assign {
           Assign.target = convert target;
           annotation = Some annotation >>| convert;
           value = convert ellipsis;
@@ -550,14 +556,14 @@ small_statement:
   | start = ASSERT; test = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
-        value = Assert { Assert.test = convert test; message = None; origin = Assert.Origin.Assertion }
+        value = Statement.Assert { Assert.test = convert test; message = None; origin = Assert.Origin.Assertion }
       }]
     }
   | start = ASSERT; test = test;
     COMMA; message = test {
       [{
         Node.location = location_create_with_stop ~start ~stop:(Node.stop test);
-        value = Assert {
+        value = Statement.Assert {
           Assert.test = convert test;
           message = Some message >>| convert;
           origin = Assert.Origin.Assertion
@@ -567,20 +573,20 @@ small_statement:
 
   | position = BREAK {
       let start, stop = position in
-      [{ Node.location = Location.create ~start ~stop; value = Break }]
+      [{ Node.location = Location.create ~start ~stop; value = Statement.Break }]
     }
 
   | position = CONTINUE {
       let start, stop = position in
-      [{ Node.location = Location.create ~start ~stop; value = Continue }]
+      [{ Node.location = Location.create ~start ~stop; value = Statement.Continue }]
     }
 
   | test = test_list {
-      [{ Node.location = test.Node.location; value = Expression (convert test) }]
+      [{ Node.location = test.Node.location; value = Statement.Expression (convert test) }]
     }
 
   | value = value {
-      [{ Node.location = value.Node.location; value = Expression (convert value) }]
+      [{ Node.location = value.Node.location; value = Statement.Expression (convert value) }]
     }
 
   | start = GLOBAL; globals = parser_generator_separated_nonempty_list(COMMA, identifier) {
@@ -588,20 +594,20 @@ small_statement:
       let stop = (fst last).Location.stop in
       [{
         Node.location = location_create_with_stop ~start ~stop;
-        value = Global (List.map globals ~f:snd);
+        value = Statement.Global (List.map globals ~f:snd);
       }]
     }
 
   | start = IMPORT; imports = imports; {
       [{
         Node.location = location_create_with_stop ~start ~stop:((fst imports).Location.stop);
-        value = Import { Import.from = None; imports = snd imports };
+        value = Statement.Import { Import.from = None; imports = snd imports };
       }]
     }
   | start = FROM; from = from; IMPORT; imports = imports {
       [{
         Node.location = location_create_with_stop ~start ~stop:((fst imports).Location.stop);
-        value = Import {
+        value = Statement.Import {
           Import.from;
           imports = snd imports;
         };
@@ -612,13 +618,13 @@ small_statement:
       let stop = (fst (List.last_exn nonlocals)).Location.stop in
       [{
         Node.location = location_create_with_stop ~start ~stop;
-        value = Nonlocal (List.map nonlocals ~f:snd);
+        value = Statement.Nonlocal (List.map nonlocals ~f:snd);
       }]
     }
 
   | position = PASS {
       let start, stop = position in
-      [{ Node.location = Location.create ~start ~stop; value = Pass }]
+      [{ Node.location = Location.create ~start ~stop; value = Statement.Pass }]
     }
 
   | position = RAISE; test = test_list?; raise_from = raise_from? {
@@ -633,7 +639,7 @@ small_statement:
       in
       [{
         Node.location;
-        value = Raise { Raise.expression = test >>| convert; from = raise_from >>| convert };
+        value = Statement.Raise { Raise.expression = test >>| convert; from = raise_from >>| convert };
       }]
     }
 
@@ -646,7 +652,7 @@ small_statement:
       in
       [{
         Node.location;
-        value = Return { Return.expression = test >>| convert; is_implicit = false };
+        value = Statement.Return { Return.expression = test >>| convert; is_implicit = false };
       }]
     }
 
@@ -655,7 +661,7 @@ small_statement:
       let stop = Node.stop (List.last_exn expressions) in
       [{
         Node.location = location_create_with_stop ~start:delete ~stop;
-        value = Delete (List.map expressions ~f:convert);
+        value = Statement.Delete (List.map expressions ~f:convert);
       }]
     }
   ;
@@ -702,7 +708,7 @@ compound_statement:
         List.map ~f:transform_toplevel_statements body in
       {
         Node.location;
-        value = Class {
+        value = Statement.Class {
           Class.name = name;
           base_arguments = List.map ~f:convert_argument bases;
           body;
@@ -789,7 +795,7 @@ compound_statement:
       let _, name = name in
       {
         Node.location;
-        value = Define {
+        value = Statement.Define {
           signature = {
             name = name;
             parameters = List.map ~f:convert_parameter parameters;
@@ -815,7 +821,7 @@ compound_statement:
       end in
       {
         Node.location = location_create_with_stop ~start ~stop;
-        value = For {
+        value = Statement.For {
           For.target = convert target;
           iterator = convert iterator;
           body = snd body;
@@ -849,7 +855,7 @@ compound_statement:
       in
       {
         Node.location = location_create_with_stop ~start ~stop;
-        value = Try {
+        value = Statement.Try {
           Try.body = snd body;
           handlers = List.map ~f:snd handlers;
           orelse = snd orelse;
@@ -867,7 +873,7 @@ compound_statement:
       in
       {
         Node.location = location_create_with_stop ~start ~stop:(fst body).Location.stop;
-        value = With {
+        value = Statement.With {
           With.items = List.map ~f:convert_item items;
           body = snd body;
           async = false;
@@ -883,7 +889,7 @@ compound_statement:
         | location, _ -> location.Location.stop in
       {
         Node.location = location_create_with_stop ~start ~stop;
-        value = While { While.test = convert test; body = snd body; orelse = snd orelse };
+        value = Statement.While { While.test = convert test; body = snd body; orelse = snd orelse };
       }
     }
   ;
@@ -965,7 +971,7 @@ conditional:
           | _, [] -> (fst body).Location.stop
           | location, _ -> location.Location.stop;
       },
-      If { If.test = convert test; body = snd body; orelse = snd orelse }
+      Statement.If { If.test = convert test; body = snd body; orelse = snd orelse }
     }
   | test = test_list; COLON;
     body = block;
@@ -1303,7 +1309,7 @@ atom:
   | identifier = identifier {
       {
         Node.location = fst identifier;
-        value = Name (Name.Identifier (snd identifier));
+        value = Expression.Name (Name.Identifier (snd identifier));
       }
     }
 
@@ -1322,7 +1328,7 @@ atom:
       let (start, stop), _, _ = List.hd_exn bytes in
       {
         Node.location = Location.create ~start ~stop;
-        value = Constant (AstExpression.Constant.String (
+        value = Expression.Constant (AstExpression.Constant.String (
           AstExpression.StringLiteral.create
             ~bytes:true
             (String.concat (List.map bytes ~f:(fun (_, _, value) -> value)))
@@ -1429,15 +1435,15 @@ atom:
     let location = location_create_with_stop ~start ~stop:(Node.stop test) in
     match test with
     | {
-        Node.value = Starred (Starred.Once test);
+        Node.value = Expression.Starred (Starred.Once test);
         _;
       } -> {
         Node.location;
-        value = Starred (Starred.Twice test);
+        value = Expression.Starred (Starred.Twice test);
       }
     | _ -> {
         Node.location;
-        value = Starred (Starred.Once test);
+        value = Expression.Starred (Starred.Once test);
       }
     }
 
@@ -1457,7 +1463,7 @@ atom:
       let start, stop = position in
       {
         Node.location = Location.create ~start ~stop;
-        value = Constant AstExpression.Constant.True
+        value = Expression.Constant AstExpression.Constant.True
       }
     }
 
@@ -1468,13 +1474,13 @@ atom:
       in
       match operator, value with
       | AstExpression.UnaryOperator.Negative,
-        Constant (AstExpression.Constant.Integer literal) -> {
+        Expression.Constant (AstExpression.Constant.Integer literal) -> {
         Node.location;
-        value = Constant (AstExpression.Constant.Integer (-1 * literal));
+        value = Expression.Constant (AstExpression.Constant.Integer (-1 * literal));
       }
       | _, _ -> {
         Node.location;
-        value = UnaryOperator {
+        value = Expression.UnaryOperator {
           UnaryOperator.operator = operator;
           operand;
         };
@@ -1488,14 +1494,14 @@ expression:
   | start = LEFTPARENS; stop = RIGHTPARENS {
       {
         Node.location = Location.create ~start ~stop;
-        value = Tuple [];
+        value = Expression.Tuple [];
       }
     }
 
   | start = LEFTPARENS; test = test_list; stop = RIGHTPARENS {
       {
         Node.location = Location.create ~start ~stop;
-        value = Parenthesis test;
+        value = Expression.Parenthesis test;
       }
     }
 
@@ -1505,7 +1511,7 @@ expression:
       in
       {
         Node.location;
-        value = Name (
+        value = Expression.Name (
           Name.Attribute { base = expression; attribute = snd identifier; special = false }
         )
       }
@@ -1516,7 +1522,7 @@ expression:
   | start = AWAIT; expression = expression {
       {
         Node.location = location_create_with_stop ~start ~stop:(Node.stop expression);
-        value = Await expression;
+        value = Expression.Await expression;
       }
     }
 
@@ -1532,14 +1538,14 @@ expression_list:
           if has_trailing_comma then
             {
               Node.location = head.Node.location;
-              value = Tuple [head];
+              value = Expression.Tuple [head];
             }
           else head
       | (head :: _) as items, _ ->
           let last = List.last_exn items in
           {
             Node.location = { head.Node.location with Location.stop = Node.stop last };
-            value = Tuple items;
+            value = Expression.Tuple items;
           }
       | _ -> raise (ParserError "invalid atom")
     }
@@ -1589,7 +1595,7 @@ not_test:
       let location = location_create_with_stop ~start ~stop:(Node.stop not_test) in
       {
         Node.location;
-        value = UnaryOperator {
+        value = Expression.UnaryOperator {
           UnaryOperator.operator = AstExpression.UnaryOperator.Not;
           operand = not_test;
         }
@@ -1603,7 +1609,7 @@ and_test:
       let location = { (Node.location left) with Location.stop = Node.stop right } in
       {
         Node.location;
-        value = BooleanOperator {
+        value = Expression.BooleanOperator {
           BooleanOperator.left;
           operator = AstExpression.BooleanOperator.And;
           right;
@@ -1618,7 +1624,7 @@ or_test:
       let location = { (Node.location left) with Location.stop = Node.stop right } in
       {
         Node.location;
-        value = BooleanOperator {
+        value = Expression.BooleanOperator {
           BooleanOperator.left;
           operator = AstExpression.BooleanOperator.Or;
           right;
@@ -1783,7 +1789,7 @@ argument:
       let location =
         let identifier_location = fst identifier in
         let value_location = Node.location value in
-        { identifier_location with stop = value_location.stop }
+        { identifier_location with Location.stop = value_location.stop }
       in
       {
         Call.Argument.name = Some { Node.location; value = snd identifier };
@@ -1807,7 +1813,7 @@ subscript_key:
 set_or_dictionary_entry:
   | test = test {
       match test with
-      | { Node.value = Starred (Starred.Twice keywords); _ } ->
+      | { Node.value = Expression.Starred (Starred.Twice keywords); _ } ->
           Keywords keywords
       | _ ->
           Item test
@@ -1833,7 +1839,7 @@ set_or_dictionary:
   | start = LEFTCURLY; stop = RIGHTCURLY {
       {
         Node.location = Location.create ~start ~stop;
-        value = Dictionary { Dictionary.entries = []; keywords = [] };
+        value = Expression.Dictionary { Dictionary.entries = []; keywords = [] };
       }
     }
   | start = LEFTCURLY; items = set_or_dictionary_maker; COMMA?; stop = RIGHTCURLY {
