@@ -203,6 +203,21 @@ module Visit = struct
           ({ Define.signature = { name; parameters; decorators; return_annotation; _ }; _ } as
           define) ->
           let visit_parameter { Node.value = { Parameter.annotation; value; name }; location } =
+            (* Location in the AST includes both the parameter name and the annotation. For our
+               purpose, we just need the location of the name. *)
+            let location =
+              let { Location.start = { Location.line = start_line; column = start_column }; _ } =
+                location
+              in
+              {
+                Location.start = { Location.line = start_line; column = start_column };
+                stop =
+                  {
+                    Location.line = start_line;
+                    column = start_column + String.length (Identifier.sanitized name);
+                  };
+              }
+            in
             Expression.Name (Name.Identifier name) |> Node.create ~location |> postcondition_visit;
             Option.iter ~f:postcondition_visit value;
             annotation >>| store_annotation |> ignore
