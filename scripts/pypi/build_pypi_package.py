@@ -285,6 +285,7 @@ def build_pypi_package(
     dependencies = [
         line.strip()
         for line in (pyre_directory / "requirements.txt").read_text().split("\n")
+        if len(line) > 0
     ]
     with tempfile.TemporaryDirectory() as build_root:
         build_path = Path(build_root)

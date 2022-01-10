@@ -149,7 +149,7 @@ def main() -> None:
         package_name="{PACKAGE_NAME}",
         package_version="{PACKAGE_VERSION}",
         module_name="{MODULE_NAME}",
-        runtime_dependencies=json.loads("""{RUNTIME_DEPENDENCIES}"""),
+        runtime_dependencies=json.loads(r"""{RUNTIME_DEPENDENCIES}"""),
         long_description=long_description,
     )
 
