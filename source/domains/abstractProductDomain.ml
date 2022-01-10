@@ -29,11 +29,8 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
   type product = element array
 
-  module IntMap = Map.Make (struct
-    type t = int
-
-    let compare = compare
-  end)
+  module IntMap = Map.Make (Int)
+  module IntSet = Set.Make (Int)
 
   type abstract_slot = Slot : 'a Config.slot -> abstract_slot [@@unbox]
 
@@ -56,8 +53,17 @@ module Make (Config : PRODUCT_CONFIG) = struct
   (* The route map indicates for each part under a product element which slot the element is in *)
   let route_map : int IntMap.t =
     let map = ref IntMap.empty in
+    let duplicates = ref IntSet.empty in
     let gather (route : int) (type a) (part : a part) =
-      map := IntMap.add (part_id part) route !map
+      let part_id = part_id part in
+      (* Ignore parts that are present in multiple slots. *)
+      if not (IntSet.mem part_id !duplicates) then
+        if not (IntMap.mem part_id !map) then
+          map := IntMap.add part_id route !map
+        else begin
+          map := IntMap.remove part_id !map;
+          duplicates := IntSet.add part_id !duplicates
+        end
     in
     Array.iteri
       (fun route (Slot slot) ->
