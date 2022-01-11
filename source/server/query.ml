@@ -25,6 +25,7 @@ module Request = struct
     | Help of string
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
+    | ModuleOfPath of PyrePath.t
     | PathOfModule of Reference.t
     | SaveServerState of PyrePath.t
     | Superclasses of Reference.t list
@@ -115,6 +116,7 @@ module Response = struct
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | FoundAttributes of attribute list
       | FoundDefines of define list
+      | FoundModule of Reference.t
       | FoundPath of string
       | FunctionDefinition of Statement.Define.t
       | Help of string
@@ -201,6 +203,7 @@ module Response = struct
               ]
           in
           `List (List.map defines ~f:define_to_yojson)
+      | FoundModule reference -> `Assoc ["module", `String (Reference.show reference)]
       | FoundPath path -> `Assoc ["path", `String path]
       | FunctionDefinition define ->
           `Assoc
@@ -262,6 +265,8 @@ let help () =
         Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
     | IsCompatibleWith _ -> None
     | LessOrEqual _ -> Some "less_or_equal(T1, T2): Returns whether T1 is a subtype of T2."
+    | ModuleOfPath _ ->
+        Some "module_of_path(path): Returns the module of a file pointed to by path."
     | PathOfModule _ -> Some "path_of_module(module): Gives an absolute path for `module`."
     | SaveServerState _ ->
         Some "save_server_state('path'): Saves Pyre's serialized state into `path`."
@@ -297,6 +302,7 @@ let help () =
       DumpCallGraph;
       IsCompatibleWith (empty, empty);
       LessOrEqual (empty, empty);
+      ModuleOfPath path;
       PathOfModule (Reference.create "");
       SaveServerState path;
       Superclasses [Reference.empty];
@@ -401,6 +407,7 @@ let rec parse_request_exn query =
       | "help", _ -> Request.Help (help ())
       | "is_compatible_with", [left; right] -> Request.IsCompatibleWith (access left, access right)
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
+      | "module_of_path", [path] -> Request.ModuleOfPath (PyrePath.create_absolute (string path))
       | "path_of_module", [module_access] -> Request.PathOfModule (reference module_access)
       | "save_server_state", [path] ->
           Request.SaveServerState (PyrePath.create_absolute (string path))
@@ -687,6 +694,8 @@ let rec process_request ~environment ~build_system ~configuration request =
         in
         GlobalResolution.is_compatible_with global_resolution ~left ~right
         |> fun result -> Single (Base.Compatibility { actual = left; expected = right; result })
+    | ModuleOfPath path ->
+        Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path))
     | LessOrEqual (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in

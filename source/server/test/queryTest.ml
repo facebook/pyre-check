@@ -115,6 +115,7 @@ let test_parse_query context =
   assert_fails_to_parse "inline_decorators(a.b.c, a.b.d)";
   assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=a.b.decorator1)";
   assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=[a.b.decorator1, 1 + 1])";
+  assert_parses "module_of_path('/a.py')" (ModuleOfPath (PyrePath.create_absolute "/a.py"));
   ()
 
 

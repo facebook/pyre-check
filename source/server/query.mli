@@ -18,6 +18,7 @@ module Request : sig
     | Help of string
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
+    | ModuleOfPath of PyrePath.t
     | PathOfModule of Reference.t
     | SaveServerState of PyrePath.t
     | Superclasses of Reference.t list
@@ -107,6 +108,7 @@ module Response : sig
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | FoundAttributes of attribute list
       | FoundDefines of define list
+      | FoundModule of Ast.Reference.t
       | FoundPath of string
       | FunctionDefinition of Statement.Define.t
       | Help of string
