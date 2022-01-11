@@ -2879,8 +2879,6 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
           with
           | Some "sqlalchemy.ext.declarative.declarative_base", Some class_name_reference ->
               declarative_base_class_declaration ~base_module:"sqlalchemy" class_name_reference
-          | Some "sqlalchemy_1_4.ext.declarative.declarative_base", Some class_name_reference ->
-              declarative_base_class_declaration ~base_module:"sqlalchemy_1_4" class_name_reference
           | _ -> value)
       | _ -> value
     in

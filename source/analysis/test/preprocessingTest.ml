@@ -3467,14 +3467,6 @@ let test_sqlalchemy_declarative_base _ =
       class Base(metaclass=sqlalchemy.ext.declarative.DeclarativeMeta):
         pass
     |};
-  assert_expand
-    {|
-      Base = sqlalchemy_1_4.ext.declarative.declarative_base()
-    |}
-    {|
-      class Base(metaclass=sqlalchemy_1_4.ext.declarative.DeclarativeMeta):
-        pass
-    |};
   ()
 
 
