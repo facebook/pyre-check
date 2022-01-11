@@ -2431,14 +2431,6 @@ class base class_metadata_environment dependency =
         ~name:"__table__"
         ~annotation:(Type.Primitive "sqlalchemy.sql.schema.Table")
         table;
-      add_special_attribute
-        ~name:"metadata"
-        ~annotation:(Type.Primitive "sqlalchemy_1_4.sql.schema.MetaData")
-        table;
-      add_special_attribute
-        ~name:"__table__"
-        ~annotation:(Type.Primitive "sqlalchemy_1_4.sql.schema.Table")
-        table;
       table
 
     method typed_dictionary_special_methods_table
@@ -2691,13 +2683,10 @@ class base class_metadata_environment dependency =
       with
       | Some definition, Some { is_typed_dictionary; is_test = in_test; _ } ->
           let is_declarative_sqlalchemy_class () =
-            match self#metaclass ~assumptions class_name with
-            | Some
-                (Type.Primitive
-                  ( "sqlalchemy.ext.declarative.api.DeclarativeMeta"
-                  | "sqlalchemy_1_4.ext.declarative.api.DeclarativeMeta" )) ->
-                true
-            | _ -> false
+            Option.equal
+              Type.equal
+              (self#metaclass ~assumptions class_name)
+              (Some (Type.Primitive "sqlalchemy.ext.declarative.api.DeclarativeMeta"))
           in
           let table =
             if is_typed_dictionary then

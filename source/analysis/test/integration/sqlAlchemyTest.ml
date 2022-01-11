@@ -58,35 +58,4 @@ let test_declarative_base context =
   ()
 
 
-let test_sqlalchemy_1_4 context =
-  let assert_sql_alchemy_errors = assert_type_errors ~context in
-  assert_sql_alchemy_errors
-    {|
-      from sqlalchemy_1_4.ext.declarative import declarative_base
-      from sqlalchemy_1_4 import Column, Integer
-      from typing import Optional
-      Base = declarative_base()
-
-      class User(Base):
-        __tablename__ = 'users'
-        id: Column[int] = Column(Integer(), primary_key=True)
-        age: Column[Optional[int]] = Column(Integer(), primary_key=False)
-        income: Column[Optional[int]] = Column(Integer())
-
-      user1: User = User()
-      user2: User = User(id=1)
-      user3: User = User(age=2)
-
-      user4: User = User(1, 2, 3)
-    |}
-    [
-      "Too many arguments [19]: Call `User.__init__` expects 0 positional arguments, 3 were \
-       provided.";
-    ];
-  ()
-
-
-let () =
-  "sqlAlchemy"
-  >::: ["declarative_base" >:: test_declarative_base; "sqlalchemy_1_4" >:: test_sqlalchemy_1_4]
-  |> Test.run
+let () = "sqlAlchemy" >::: ["declarative_base" >:: test_declarative_base] |> Test.run
