@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 from itertools import islice
@@ -40,15 +41,15 @@ class Position(NamedTuple):
     line: int
     column: int
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.line == other.line and other.column == self.column
 
-    def __gt__(self, other):
+    def __gt__(self, other) -> bool:
         return self.line > other.line or (
             other.line == self.line and other.column <= self.column
         )
 
-    def __lt__(self, other):
+    def __lt__(self, other: Position) -> bool:
         return self.line < other.line or (
             other.line == self.line and other.column >= self.column
         )

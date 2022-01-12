@@ -119,9 +119,6 @@ class PysaServer:
     async def copy_model(self, document_path: str, position: lsp.Position) -> None:
         rel_path = relpath(document_path, self.pyre_arguments.global_root)
         try:
-            # pyre_connection = api_connection.PyreConnection(
-            #     Path(self.pyre_arguments.global_root)
-            # )
             types = query.types(self.pyre_connection, [rel_path])
             for t in types[0].types:
                 start = query.Position(
@@ -306,7 +303,7 @@ class PysaServer:
                     elif request.id is not None:
                         raise lsp.RequestCancelledError("Request not supported yet")
                 except Exception as e:
-                    self.log_and_show_message_to_client(str(e), lsp.MessageType.ERROR)
+                    await self.log_and_show_message_to_client(str(e), lsp.MessageType.ERROR)
                     raise e
 
 
