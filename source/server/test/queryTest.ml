@@ -115,11 +115,11 @@ let test_parse_query context =
   assert_fails_to_parse "inline_decorators(a.b.c, a.b.d)";
   assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=a.b.decorator1)";
   assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=[a.b.decorator1, 1 + 1])";
-  assert_parses "module_of_path('/a.py')" (ModuleOfPath (PyrePath.create_absolute "/a.py"));
+  assert_parses "modules_of_path('/a.py')" (ModulesOfPath (PyrePath.create_absolute "/a.py"));
   ()
 
 
-let assert_queries_with_local_root ~context ~sources queries_and_responses =
+let assert_queries_with_local_root ?custom_source_root ~context ~sources queries_and_responses =
   let test_handle_query client =
     let handle_one_query (query, build_expected_response) =
       let open Lwt.Infix in
@@ -137,13 +137,14 @@ let assert_queries_with_local_root ~context ~sources queries_and_responses =
     in
     Lwt_list.iter_s handle_one_query queries_and_responses
   in
-  ScratchProject.setup ~context ~include_helper_builtins:false sources
+  ScratchProject.setup ?custom_source_root ~context ~include_helper_builtins:false sources
   |> ScratchProject.test_server_with ~f:test_handle_query
 
 
 let test_handle_query_basic context =
   let open Query.Response in
   let assert_type_query_response_with_local_root
+      ?custom_source_root
       ?(handle = "test.py")
       ~source
       ~query
@@ -155,12 +156,14 @@ let test_handle_query_basic context =
       |> Yojson.Safe.to_string
     in
     assert_queries_with_local_root
+      ?custom_source_root
       ~context
       ~sources:[handle, source]
       [query, build_expected_response]
   in
-  let assert_type_query_response ?handle ~source ~query response =
-    assert_type_query_response_with_local_root ?handle ~source ~query (fun _ -> response)
+  let assert_type_query_response ?custom_source_root ?handle ~source ~query response =
+    assert_type_query_response_with_local_root ?custom_source_root ?handle ~source ~query (fun _ ->
+        response)
   in
   let assert_compatibility_response ~source ~query ~actual ~expected result =
     assert_type_query_response
@@ -893,6 +896,19 @@ let test_handle_query_basic context =
   >>= fun () ->
   let temporary_directory = OUnit2.bracket_tmpdir context in
   assert_type_query_response
+    ~custom_source_root:(PyrePath.create_absolute ~follow_symbolic_links:true temporary_directory)
+    ~handle:"my_test_file.py"
+    ~source:""
+    ~query:(Format.sprintf "modules_of_path('%s/my_test_file.py')" temporary_directory)
+    (Single (Base.FoundModules [Reference.create "my_test_file"]))
+  >>= fun () ->
+  assert_type_query_response
+    ~source:""
+    ~query:"modules_of_path('/non_existent_file.py')"
+    (Single (Base.FoundModules []))
+  >>= fun () ->
+  let temporary_directory = OUnit2.bracket_tmpdir context in
+  assert_type_query_response
     ~source:""
     ~query:(Format.sprintf "save_server_state('%s/state')" temporary_directory)
     (Single (Base.Success "Saved state."))
@@ -901,7 +917,7 @@ let test_handle_query_basic context =
   Lwt.return_unit
 
 
-let test_handle_types_query_with_build_system context =
+let test_handle_query_with_build_system context =
   let custom_source_root =
     bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
   in
@@ -916,13 +932,21 @@ let test_handle_types_query_with_build_system context =
     let cleanup () = Lwt.return_unit in
     BuildSystem.Initializer.create_for_testing ~initialize ~load ~cleanup ()
   in
-  let test_types_query client =
+  let test_query client =
     let open Lwt.Infix in
     Client.send_request client (Request.Query "types('original.py')")
     >>= fun actual_response ->
     let expected_response =
       Response.Query
         Query.Response.(Single (Base.TypesByPath [{ Base.path = "original.py"; types = [] }]))
+      |> Response.to_yojson
+      |> Yojson.Safe.to_string
+    in
+    assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected_response actual_response;
+    Client.send_request client (Request.Query "modules_of_path('original.py')")
+    >>= fun actual_response ->
+    let expected_response =
+      Response.Query Query.Response.(Single (Base.FoundModules [Reference.create "redirected"]))
       |> Response.to_yojson
       |> Yojson.Safe.to_string
     in
@@ -935,7 +959,7 @@ let test_handle_types_query_with_build_system context =
     ~build_system_initializer
     ~custom_source_root
     ["original.py", "x: int = 42"; "redirected.py", ""]
-  |> ScratchProject.test_server_with ~f:test_types_query
+  |> ScratchProject.test_server_with ~f:test_query
 
 
 let test_handle_query_pysa context =
@@ -1314,8 +1338,8 @@ let () =
   >::: [
          "parse_query" >:: test_parse_query;
          "handle_query_basic" >:: OUnitLwt.lwt_wrapper test_handle_query_basic;
-         "handle_types_query_with_build_system"
-         >:: OUnitLwt.lwt_wrapper test_handle_types_query_with_build_system;
+         "handle_query_with_build_system"
+         >:: OUnitLwt.lwt_wrapper test_handle_query_with_build_system;
          "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
          "inline_decorators" >:: OUnitLwt.lwt_wrapper test_inline_decorators;
        ]
