@@ -9,11 +9,14 @@ This is an implementation of Pysa's language server. It is a refactored
 version of persistent.py.
 """
 
-from pathlib import Path
 import asyncio
 import logging
 from os.path import relpath
+from pathlib import Path
+from typing import List, Optional, Sequence, Dict
 
+from ....api import query, connection as api_connection
+from ....api.connection import PyreQueryError
 from ... import (
     json_rpc,
     command_arguments,
@@ -35,9 +38,6 @@ from .persistent import (
     InitializationSuccess,
     InitializationFailure,
 )
-from ....api import query, connection as api_connection
-from ....api.connection import PyreQueryError
-from typing import List, Sequence, Dict
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -116,7 +116,9 @@ class PysaServer:
                 f"Error querying Pyre: {e}", lsp.MessageType.WARNING
             )
 
-    async def copy_model(self, document_path: str, position: lsp.Position) -> None:
+    async def copy_model(
+        self, document_path: str, position: lsp.Position
+    ) -> Optional[str]:
         rel_path = relpath(document_path, self.pyre_arguments.global_root)
         try:
             types = query.types(self.pyre_connection, [rel_path])
@@ -303,7 +305,9 @@ class PysaServer:
                     elif request.id is not None:
                         raise lsp.RequestCancelledError("Request not supported yet")
                 except Exception as e:
-                    await self.log_and_show_message_to_client(str(e), lsp.MessageType.ERROR)
+                    await self.log_and_show_message_to_client(
+                        str(e), lsp.MessageType.ERROR
+                    )
                     raise e
 
 

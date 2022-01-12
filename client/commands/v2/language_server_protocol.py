@@ -8,7 +8,7 @@ import dataclasses
 import enum
 import urllib
 from pathlib import Path
-from typing import List, Iterable, Optional, Type, TypeVar
+from typing import Iterable, List, Optional, Type, TypeVar
 
 import dataclasses_json
 

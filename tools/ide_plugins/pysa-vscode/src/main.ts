@@ -80,11 +80,11 @@ export function deactivate() {
 
 async function copyModel(path: string) {
   try {
-    var active = vscode.window.activeTextEditor.selection.active;
+    var active = vscode.window.activeTextEditor?.selection.active;
     languageClient
       .sendRequest("pysa/copyModel", {
         path: path,
-        position: { line: active.line, character: active.character },
+        position: { line: active?.line, character: active?.character },
       })
       .then((response: string) => {
         vscode.env.clipboard.writeText(response);

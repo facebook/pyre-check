@@ -70,11 +70,16 @@ class QueryAPITest(unittest.TestCase):
             defines_implementation.return_value = []
             query.defines(pyre_connection, ["a", "b", "c", "d"], batch_size=2)
             defines_implementation.assert_has_calls(
-                [call(pyre_connection, ["a", "b"]), call(pyre_connection, ["c", "d"])]
+                [
+                    call(pyre_connection, ["a", "b"]),
+                    call(pyre_connection, ["c", "d"]),
+                ]
             )
             defines_implementation.reset_calls()
             query.defines(
-                pyre_connection, ["a", "b", "c", "d", "e", "f", "g"], batch_size=2
+                pyre_connection,
+                ["a", "b", "c", "d", "e", "f", "g"],
+                batch_size=2,
             )
             defines_implementation.assert_has_calls(
                 [
@@ -229,7 +234,8 @@ class QueryAPITest(unittest.TestCase):
                 "a.C": [
                     query.Attributes(name="a", annotation="int"),
                     query.Attributes(
-                        name="foo", annotation="typing.Callable(a.C.foo)[[], str]"
+                        name="foo",
+                        annotation="typing.Callable(a.C.foo)[[], str]",
                     ),
                 ]
             },
@@ -273,7 +279,8 @@ class QueryAPITest(unittest.TestCase):
                 "TestClassA": [
                     query.Attributes(name="a", annotation="int"),
                     query.Attributes(
-                        name="foo", annotation="typing.Callable(a.C.foo)[[], str]"
+                        name="foo",
+                        annotation="typing.Callable(a.C.foo)[[], str]",
                     ),
                 ],
                 "TestClassB": [
@@ -321,7 +328,8 @@ class QueryAPITest(unittest.TestCase):
                 "TestClassA": [
                     query.Attributes(name="a", annotation="int"),
                     query.Attributes(
-                        name="foo", annotation="typing.Callable(a.C.foo)[[], str]"
+                        name="foo",
+                        annotation="typing.Callable(a.C.foo)[[], str]",
                     ),
                 ],
                 "TestClassB": [

@@ -7,9 +7,18 @@ import re
 from dataclasses import dataclass
 from functools import lru_cache
 from itertools import islice
-from typing import Any, Dict, Generator, Iterable, List, NamedTuple, Optional, TypeVar
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    TypeVar,
+)
 
-from .connection import LOG, PyreConnection, PyreQueryError, PyreQueryResult
+from .connection import PyreConnection, PyreQueryResult
 
 
 T = TypeVar("T")
@@ -49,7 +58,7 @@ class Position(NamedTuple):
             other.line == self.line and other.column <= self.column
         )
 
-    def __lt__(self, other: Position) -> bool:
+    def __lt__(self, other) -> bool:
         return self.line < other.line or (
             other.line == self.line and other.column >= self.column
         )
@@ -66,8 +75,8 @@ class Type(NamedTuple):
     annotation: str
 
     def extract_function_model(self) -> str:
-        functions = re.findall("(?<=typing.Callable\().*?(?=\))", self.annotation)
-        params = re.findall("(?<=Named\().*?(?=,)", self.annotation)
+        functions = re.findall(r"(?<=typing.Callable\().*?(?=\))", self.annotation)
+        params = re.findall(r"(?<=Named\().*?(?=,)", self.annotation)
         # if selected position is not a function
         if not functions:
             raise NotImplementedError("Selected position is not of type Callable")
@@ -216,7 +225,9 @@ def get_cached_class_hierarchy(
     return class_hierarchy
 
 
-def _annotations_per_file(data: PyreQueryResult) -> Dict[str, List[Annotation]]:
+def _annotations_per_file(
+    data: PyreQueryResult,
+) -> Dict[str, List[Annotation]]:
     def make_position(mapping: Dict[str, int]) -> Position:
         return Position(column=mapping["column"], line=mapping["line"])
 
@@ -289,7 +300,8 @@ def get_attributes(
             {
                 class_name: [
                     Attributes(
-                        name=attribute["name"], annotation=attribute["annotation"]
+                        name=attribute["name"],
+                        annotation=attribute["annotation"],
                     )
                     for attribute in response["response"]["attributes"]
                 ]
