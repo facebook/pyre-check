@@ -894,14 +894,6 @@ let test_handle_query_basic context =
     ~query:"type(test.foo(test.bar))"
     (Single (Base.Type Type.string))
   >>= fun () ->
-  let temporary_directory = OUnit2.bracket_tmpdir context in
-  assert_type_query_response
-    ~custom_source_root:(PyrePath.create_absolute ~follow_symbolic_links:true temporary_directory)
-    ~handle:"my_test_file.py"
-    ~source:""
-    ~query:(Format.sprintf "modules_of_path('%s/my_test_file.py')" temporary_directory)
-    (Single (Base.FoundModules [Reference.create "my_test_file"]))
-  >>= fun () ->
   assert_type_query_response
     ~source:""
     ~query:"modules_of_path('/non_existent_file.py')"
