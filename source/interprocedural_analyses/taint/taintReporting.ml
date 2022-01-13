@@ -84,6 +84,7 @@ let save_results_to_directory
     ~filename_lookup
     ~skipped_overrides
     ~callables
+    ~errors
   =
   let emit_json_array_elements out_buffer =
     let seen_element = ref false in
@@ -110,6 +111,15 @@ let save_results_to_directory
     Json.to_outbuf out_buffer header_with_version;
     Bi_outbuf.add_string out_buffer "\n";
     Target.Set.iter (emit_externalization ~filename_lookup array_emitter) callables;
+    Bi_outbuf.flush_output_writer out_buffer;
+    close_out out_channel
+  in
+  let save_errors () =
+    let filename = "errors.json" in
+    let output_path = PyrePath.append result_directory ~element:filename in
+    let out_channel = open_out (PyrePath.absolute output_path) in
+    let out_buffer = Bi_outbuf.create_channel_writer out_channel in
+    Json.to_outbuf out_buffer (`List errors);
     Bi_outbuf.flush_output_writer out_buffer;
     close_out out_channel
   in
@@ -148,6 +158,7 @@ let save_results_to_directory
   in
   save_models ();
   save_metadata ();
+  save_errors ();
   Log.info "Analysis results were written to `%s`." (PyrePath.absolute result_directory);
   Statistics.performance
     ~name:"Wrote analysis results"
@@ -191,6 +202,12 @@ let report
   | None -> ());
   (* Dump results to output directory if one was provided, and return a list of json (empty whenever
      we dumped to a directory) to summarize *)
+  let error_to_json error =
+    error
+    |> Interprocedural.Error.instantiate ~show_error_traces ~lookup:filename_lookup
+    |> Interprocedural.Error.Instantiated.to_yojson
+  in
+  let errors = List.map errors ~f:error_to_json in
   match result_json_path with
   | Some result_directory ->
       save_results_to_directory
@@ -198,12 +215,7 @@ let report
         ~local_root
         ~filename_lookup
         ~skipped_overrides
-        ~callables;
+        ~callables
+        ~errors;
       []
-  | _ ->
-      let error_to_json error =
-        error
-        |> Interprocedural.Error.instantiate ~show_error_traces ~lookup:filename_lookup
-        |> Interprocedural.Error.Instantiated.to_yojson
-      in
-      List.map errors ~f:error_to_json
+  | _ -> errors
