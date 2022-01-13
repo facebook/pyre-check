@@ -51,7 +51,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
 
   (* The route map indicates for each part under a product element which slot the element is in *)
-  let route_map : int IntMap.t =
+  let (route_map, duplicate_parts) : int IntMap.t * IntSet.t =
     let map = ref IntMap.empty in
     let duplicates = ref IntSet.empty in
     let gather (route : int) (type a) (part : a part) =
@@ -74,12 +74,18 @@ module Make (Config : PRODUCT_CONFIG) = struct
                 method report : 'a. 'a part -> unit = gather route
              end)))
       slots;
-    !map
+    !map, !duplicates
 
 
   let get_route (type a) (part : a part) =
-    try IntMap.find (part_id part) route_map with
-    | Not_found -> Format.sprintf "No route to part %s" (part_name part) |> failwith
+    let part_id = part_id part in
+    try IntMap.find part_id route_map with
+    | Not_found ->
+        if IntSet.mem part_id duplicate_parts then
+          Format.sprintf "Part %s is present in multiple slots of a product" (part_name part)
+          |> failwith
+        else
+          Format.sprintf "No route to part %s" (part_name part) |> failwith
 
 
   let bottom =
