@@ -894,6 +894,20 @@ let test_handle_query_basic context =
     ~query:"type(test.foo(test.bar))"
     (Single (Base.Type Type.string))
   >>= fun () ->
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let handle = "my_test_file.py" in
+  assert_type_query_response
+    ~custom_source_root
+    ~handle
+    ~source:""
+    ~query:
+      (Format.sprintf
+         "modules_of_path('%s')"
+         (PyrePath.append custom_source_root ~element:handle |> PyrePath.absolute))
+    (Single (Base.FoundModules [Reference.create "my_test_file"]))
+  >>= fun () ->
   assert_type_query_response
     ~source:""
     ~query:"modules_of_path('/non_existent_file.py')"
