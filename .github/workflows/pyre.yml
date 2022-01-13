@@ -42,4 +42,4 @@ jobs:
 
       - name: Fail Command On Errors
         run: |
-          if [ "$(cat sarif.json | grep 'PYRE-ERROR')" != "" ]; then exit 1; fi
+          if [ "$(cat sarif.json | grep 'PYRE-ERROR')" != "" ]; then cat sarif.json && exit 1; fi
