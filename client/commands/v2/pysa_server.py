@@ -11,7 +11,7 @@ version of persistent.py.
 
 import asyncio
 import logging
-from os.path import relpath
+from os.path import relpath, exists
 from pathlib import Path
 from typing import List, Optional, Sequence, Dict
 
@@ -139,9 +139,7 @@ class PysaServer:
                     function_model = t.extract_function_model()
                     return function_model
         except PyreQueryError as e:
-            await self.log_and_show_message_to_client(
-                f"Error querying Pyre: {e}", lsp.MessageType.WARNING
-            )
+            await self.log_and_show_message_to_client(e, lsp.MessageType.ERROR)
 
     async def show_message_to_client(
         self, message: str, level: lsp.MessageType = lsp.MessageType.INFO
@@ -225,7 +223,7 @@ class PysaServer:
         self, parameters: lsp.DidCopyModelParameters
     ) -> str:
         document_path = parameters.path
-        if document_path is None:
+        if not exists(document_path):
             raise json_rpc.InvalidRequestError(
                 f"Document path is not a file: {parameters.path}"
             )
@@ -308,7 +306,6 @@ class PysaServer:
                     await self.log_and_show_message_to_client(
                         str(e), lsp.MessageType.ERROR
                     )
-                    raise e
 
 
 async def run_persistent(

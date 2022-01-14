@@ -55,12 +55,12 @@ class Position(NamedTuple):
 
     def __gt__(self, other) -> bool:
         return self.line > other.line or (
-            other.line == self.line and other.column <= self.column
+            self.line == other.line and self.column > other.column
         )
 
     def __lt__(self, other) -> bool:
         return self.line < other.line or (
-            other.line == self.line and other.column >= self.column
+            self.line == other.line and self.column < other.column
         )
 
 

@@ -92,9 +92,6 @@ async function copyModel(path: string) {
         console.log(response);
       });
   } catch (error) {
-    vscode.window.showErrorMessage(
-      `Generating model failed. Error: ${JSON.stringify(error)}`
-    );
     console.error(error);
   }
 }
