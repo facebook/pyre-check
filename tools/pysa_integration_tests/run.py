@@ -7,7 +7,7 @@ import argparse
 import logging
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 # pyre-ignore[21]
 from utils import run_pysa_integration_test
@@ -21,6 +21,7 @@ def main(
     skip_model_verification: bool,
     run_from_source: bool,
     passthrough_args: List[str],
+    save_results_to: Optional[Path],
 ) -> None:
     """
     Entry point function which checks if full_result.json is there, calls
@@ -46,6 +47,7 @@ def main(
         skip_model_verification=skip_model_verification,
         filter_issues=filter_issues,
         run_from_source=run_from_source,
+        save_results_to=save_results_to,
     )
 
 
@@ -57,6 +59,12 @@ if __name__ == "__main__":
     parser.add_argument("--skip-model-verification", action="store_true")
     parser.add_argument("--run-from-source", action="store_true")
     parser.add_argument("--passthrough-args", nargs="+")
+    parser.add_argument(
+        "-s",
+        "--save-results-to",
+        type=Path,
+        help=("Directory to write analysis results to. Default: output is not saved"),
+    )
 
     parsed: argparse.Namespace = parser.parse_args()
 
@@ -69,6 +77,7 @@ if __name__ == "__main__":
     passthrough_args: List[str] = parsed.passthrough_args
     if passthrough_args is None:
         passthrough_args = []
+    save_results_to: Optional[Path] = parsed.save_results_to
 
     main(
         run_directory,
@@ -76,4 +85,5 @@ if __name__ == "__main__":
         skip_model_verification,
         run_from_source,
         passthrough_args,
+        save_results_to,
     )

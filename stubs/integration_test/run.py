@@ -4,6 +4,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import argparse
 import json
 import logging
 import os
@@ -25,12 +26,21 @@ def normalized_json_dump(input: str) -> str:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run pysa stubs integration test")
+    parser.add_argument(
+        "-s",
+        "--save-results-to",
+        type=str,
+        help=("Directory to write analysis results to. Default: output is not saved"),
+    )
+    arguments = parser.parse_args()
+
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
     )
 
     # Switch to directory of this script.
-    os.chdir(os.path.dirname(__file__))
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
     LOG.info("Running in `%s`", os.getcwd())
 
     # Extract typeshed
@@ -44,15 +54,21 @@ if __name__ == "__main__":
 
         LOG.info("Running `pyre analyze`")
         try:
-            output = subprocess.check_output(
-                [
-                    "pyre",
-                    "--typeshed",
-                    f"{directory}/typeshed-master",
-                    "--noninteractive",
-                    "analyze",
-                ]
-            ).decode()
+            command = [
+                "pyre",
+                "--typeshed",
+                f"{directory}/typeshed-master",
+                "--noninteractive",
+                "analyze",
+            ]
+            if arguments.save_results_to is not None:
+                command.extend(["--save-results-to", arguments.save_results_to])
+            output = subprocess.check_output(command).decode()
+
+            if arguments.save_results_to is not None:
+                with open(f"{arguments.save_results_to}/errors.json") as file:
+                    output = file.read()
+
         except subprocess.CalledProcessError as exception:
             LOG.error(f"`pyre analyze` failed:\n{exception.output.decode()}")
             sys.exit(1)
