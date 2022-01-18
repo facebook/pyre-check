@@ -1289,6 +1289,45 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [AccessPath.dictionary_keys]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
+      | {
+       callee =
+         {
+           Node.value =
+             Name
+               (Name.Attribute
+                 {
+                   base = { Node.value = Name (Name.Identifier identifier); _ } as base;
+                   attribute = "pop";
+                   _;
+                 });
+           _;
+         };
+       arguments =
+         [
+           {
+             Call.Argument.value =
+               { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
+             _;
+           };
+         ];
+      }
+        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+        ->
+          let taint =
+            ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint
+          in
+          let new_taint =
+            ForwardState.Tree.assign
+              ~weak:false
+              ~tree:taint
+              [Abstract.TreeDomain.Label.Index value]
+              ~subtree:ForwardState.Tree.bottom
+          in
+          let new_state =
+            store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] new_taint state
+          in
+          let key_taint = ForwardState.Tree.read [Abstract.TreeDomain.Label.Index value] taint in
+          key_taint, new_state
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
         when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
         ->
