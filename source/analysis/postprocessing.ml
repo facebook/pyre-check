@@ -145,6 +145,7 @@ let run_on_source
 
 
 let run ~scheduler ~configuration ~environment sources =
+  let timer = Timer.start () in
   let number_of_sources = List.length sources in
   Log.log ~section:`Progress "Postprocessing %d sources..." number_of_sources;
   let map _ modules =
@@ -227,4 +228,5 @@ let run ~scheduler ~configuration ~environment sources =
       ~inputs:sources
       ()
   in
+  Statistics.performance ~name:"check_Postprocessing" ~phase_name:"Postprocessing" ~timer ();
   errors
