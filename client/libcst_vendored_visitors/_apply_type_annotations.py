@@ -402,14 +402,12 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
             self.annotations.attribute_annotations.update(visitor.attribute_annotations)
             self.annotations.class_definitions.update(visitor.class_definitions)
 
-        tree_with_imports = AddImportsVisitor(
-            context=self.context,
-            imports=(
-                [("__future__", "annotations", None)]
-                if self.use_future_annotations
-                else ()
-            ),
-        ).transform_module(tree)
+        if self.use_future_annotations:
+            AddImportsVisitor.add_needed_import(
+                self.context, "__future__", "annotations"
+            )
+
+        tree_with_imports = AddImportsVisitor(self.context).transform_module(tree)
         tree_with_changes = tree_with_imports.visit(self)
 
         # don't modify the imports if we didn't actually add any type information
