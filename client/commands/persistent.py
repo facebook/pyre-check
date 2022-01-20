@@ -388,14 +388,25 @@ TypeInfo = str
 LocationTypeLookup = location_lookup.LocationLookup[TypeInfo]
 
 
+@dataclasses.dataclass(frozen=True)
+class TypeCoverageQuery:
+    id: Union[int, str, None]
+    path: Path
+
+
+@dataclasses.dataclass(frozen=True)
+class TypesQuery:
+    path: Path
+
+
 @dataclasses.dataclass
 class PyreQueryState:
     # Shared mutable state.
     path_to_location_type_lookup: Dict[Path, LocationTypeLookup] = dataclasses.field(
         default_factory=dict
     )
-    # Queue of paths that the background query manager will look up types for.
-    paths_to_be_queried: "asyncio.Queue[Path]" = dataclasses.field(
+    # Queue of queries.
+    queries: "asyncio.Queue[Union[TypeCoverageQuery, TypesQuery]]" = dataclasses.field(
         default_factory=asyncio.Queue
     )
 
@@ -515,8 +526,6 @@ async def _receive_query_types_response(
 class ServerState:
     # Immutable States
     client_capabilities: lsp.ClientCapabilities = lsp.ClientCapabilities()
-    strict_default: bool = False
-    excludes: Sequence[str] = dataclasses.field(default_factory=list)
 
     # Mutable States
     consecutive_start_failure: int = 0
@@ -575,7 +584,7 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         self.state.opened_documents.add(document_path)
-        self.state.query_state.paths_to_be_queried.put_nowait(document_path)
+        self.state.query_state.queries.put_nowait(TypesQuery(document_path))
         LOG.info(f"File opened: {document_path}")
 
         # Attempt to trigger a background Pyre server start on each file open
@@ -609,7 +618,7 @@ class PyreServer:
         if document_path not in self.state.opened_documents:
             return
 
-        self.state.query_state.paths_to_be_queried.put_nowait(document_path)
+        self.state.query_state.queries.put_nowait(TypesQuery(document_path))
 
         # Attempt to trigger a background Pyre server start on each file save
         if not self.pyre_manager.is_task_running():
@@ -634,7 +643,7 @@ class PyreServer:
         if document_path not in self.state.opened_documents:
             response = lsp.HoverResponse.empty()
         else:
-            self.state.query_state.paths_to_be_queried.put_nowait(document_path)
+            self.state.query_state.queries.put_nowait(TypesQuery(document_path))
             response = self.state.query_state.hover_response_for_position(
                 Path(document_path), parameters.position
             )
@@ -659,19 +668,8 @@ class PyreServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        result = path_to_coverage_result(
-            document_path,
-            strict_default=self.state.strict_default,
-            excludes=self.state.excludes,
-        )
-        await lsp.write_json_rpc(
-            self.output_channel,
-            json_rpc.SuccessResponse(
-                id=request_id,
-                # pyre-ignore[16]: Pyre does not understand
-                # `dataclasses_json`.
-                result=result.to_dict(),
-            ),
+        await self.state.query_state.queries.put(
+            TypeCoverageQuery(id=request_id, path=document_path)
         )
 
     async def _run(self) -> int:
@@ -1007,9 +1005,11 @@ class PyreQueryHandler(connection.BackgroundTask):
         self,
         state: PyreQueryState,
         server_start_options_reader: PyreServerStartOptionsReader,
+        client_output_channel: connection.TextWriter,
     ) -> None:
         self.state = state
         self.server_start_options_reader = server_start_options_reader
+        self.client_output_channel = client_output_channel
 
     async def _query_types(
         self,
@@ -1036,6 +1036,12 @@ class PyreQueryHandler(connection.BackgroundTask):
         paths: List[Path],
         server_start_options: "PyreServerStartOptions",
     ) -> None:
+        if (
+            server_start_options.ide_features is None
+            or not server_start_options.ide_features.is_hover_enabled()
+        ):
+            return
+
         server_identifier = server_start_options.server_identifier
         start_arguments = server_start_options.start_arguments
         local_root = start_arguments.base_arguments.relative_local_root
@@ -1064,10 +1070,31 @@ class PyreQueryHandler(connection.BackgroundTask):
         for path, location_type_lookup in new_path_to_location_type_dict.items():
             self.state.path_to_location_type_lookup[path] = location_type_lookup
 
+    async def _handle_type_coverage_query(
+        self, query: TypeCoverageQuery, server_start_options: "PyreServerStartOptions"
+    ) -> None:
+        result = path_to_coverage_result(
+            query.path,
+            strict_default=server_start_options.strict_default,
+            excludes=server_start_options.excludes,
+        )
+        await lsp.write_json_rpc(
+            self.client_output_channel,
+            json_rpc.SuccessResponse(
+                id=query.id,
+                # pyre-ignore[16]: Pyre does not understand
+                # `dataclasses_json`.
+                result=result.to_dict(),
+            ),
+        )
+
     async def _run(self, server_start_options: "PyreServerStartOptions") -> None:
         while True:
-            path = await self.state.paths_to_be_queried.get()
-            await self._update_types_for_paths([path], server_start_options)
+            query = await self.state.queries.get()
+            if isinstance(query, TypesQuery):
+                await self._update_types_for_paths([query.path], server_start_options)
+            elif isinstance(query, TypeCoverageQuery):
+                await self._handle_type_coverage_query(query, server_start_options)
 
     def read_server_start_options(self) -> "PyreServerStartOptions":
         try:
@@ -1081,12 +1108,6 @@ class PyreQueryHandler(connection.BackgroundTask):
         # Re-read server start options on every run, to make sure the server
         # start options are always up-to-date.
         server_start_options = self.read_server_start_options()
-
-        if (
-            server_start_options.ide_features is None
-            or not server_start_options.ide_features.is_hover_enabled()
-        ):
-            return
 
         try:
             LOG.info(
@@ -1315,8 +1336,6 @@ class PyreServerHandler(connection.BackgroundTask):
             project_root=Path(start_arguments.base_arguments.global_root),
             relative_local_root=Path(local_root) if local_root else None,
         )
-        self.server_state.strict_default = server_start_options.strict_default
-        self.server_state.excludes = server_start_options.excludes
         try:
             async with connection.connect_in_text_mode(socket_path) as (
                 input_channel,
@@ -1461,6 +1480,7 @@ async def run_persistent(
             pyre_query_handler = PyreQueryHandler(
                 state=initial_server_state.query_state,
                 server_start_options_reader=server_start_options_reader,
+                client_output_channel=stdout,
             )
             server = PyreServer(
                 input_channel=stdin,

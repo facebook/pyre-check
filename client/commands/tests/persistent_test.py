@@ -41,6 +41,8 @@ from ..persistent import (
     ServerState,
     parse_subscription_response,
     TypeErrorSubscription,
+    TypeCoverageQuery,
+    TypesQuery,
     StatusUpdateSubscription,
     SubscriptionResponse,
     type_error_to_diagnostic,
@@ -92,20 +94,21 @@ class WaitForeverBackgroundTask(BackgroundTask):
         await asyncio.Event().wait()
 
 
-class PersistentTest(testslide.TestCase):
-    def fake_option_reader(self) -> PyreServerStartOptionsReader:
-        return _create_server_start_options_reader(
-            binary="/not/relevant",
-            server_identifier="not_relevant",
-            start_arguments=start.Arguments(
-                base_arguments=backend_arguments.BaseArguments(
-                    source_paths=backend_arguments.SimpleSourcePath(),
-                    log_path="/log/path",
-                    global_root="/global/root",
-                )
-            ),
-        )
+def _fake_option_reader() -> PyreServerStartOptionsReader:
+    return _create_server_start_options_reader(
+        binary="/not/relevant",
+        server_identifier="not_relevant",
+        start_arguments=start.Arguments(
+            base_arguments=backend_arguments.BaseArguments(
+                source_paths=backend_arguments.SimpleSourcePath(),
+                log_path="/log/path",
+                global_root="/global/root",
+            )
+        ),
+    )
 
+
+class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_try_initialize_success(self) -> None:
         input_channel = await _create_input_channel_with_requests(
@@ -135,7 +138,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, self.fake_option_reader()
+            input_channel, output_channel, _fake_option_reader()
         )
         self.assertIsInstance(result, InitializationSuccess)
 
@@ -146,7 +149,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, self.fake_option_reader()
+            input_channel, output_channel, _fake_option_reader()
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -157,7 +160,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, self.fake_option_reader()
+            input_channel, output_channel, _fake_option_reader()
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -190,7 +193,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, self.fake_option_reader()
+            input_channel, output_channel, _fake_option_reader()
         )
         self.assertIsInstance(result, InitializationFailure)
 
@@ -201,7 +204,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, self.fake_option_reader()
+            input_channel, output_channel, _fake_option_reader()
         )
         self.assertIsInstance(result, InitializationExit)
 
@@ -233,7 +236,7 @@ class PersistentTest(testslide.TestCase):
         )
         output_channel = create_memory_text_writer()
         result = await try_initialize(
-            input_channel, output_channel, self.fake_option_reader()
+            input_channel, output_channel, _fake_option_reader()
         )
         self.assertIsInstance(result, InitializationExit)
 
@@ -341,12 +344,12 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIn(test_path0, server_state.opened_documents)
         self.assertEqual(
-            server.state.query_state.paths_to_be_queried.qsize(),
+            server.state.query_state.queries.qsize(),
             1,
         )
         self.assertEqual(
-            server.state.query_state.paths_to_be_queried.get_nowait(),
-            test_path0,
+            server.state.query_state.queries.get_nowait(),
+            TypesQuery(test_path0),
         )
 
         await server.process_open_request(
@@ -361,12 +364,12 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIn(test_path1, server_state.opened_documents)
         self.assertEqual(
-            server.state.query_state.paths_to_be_queried.qsize(),
+            server.state.query_state.queries.qsize(),
             1,
         )
         self.assertEqual(
-            server.state.query_state.paths_to_be_queried.get_nowait(),
-            test_path1,
+            server.state.query_state.queries.get_nowait(),
+            TypesQuery(test_path1),
         )
 
         await server.process_close_request(
@@ -378,7 +381,7 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertNotIn(test_path0, server_state.opened_documents)
         self.assertEqual(
-            server.state.query_state.paths_to_be_queried.qsize(),
+            server.state.query_state.queries.qsize(),
             0,
         )
 
@@ -595,9 +598,9 @@ class PersistentTest(testslide.TestCase):
             )
         )
         await asyncio.sleep(0)
-        self.assertEqual(server.state.query_state.paths_to_be_queried.qsize(), 1)
+        self.assertEqual(server.state.query_state.queries.qsize(), 1)
         self.assertEqual(
-            server.state.query_state.paths_to_be_queried.get_nowait(), test_path
+            server.state.query_state.queries.get_nowait(), TypesQuery(test_path)
         )
 
     @setup.async_test
@@ -689,9 +692,9 @@ class PersistentTest(testslide.TestCase):
 
         assert_hover_response("```str```")
         self.assertTrue(fake_task_manager.is_task_running())
-        self.assertEqual(server.state.query_state.paths_to_be_queried.qsize(), 1)
+        self.assertEqual(server.state.query_state.queries.qsize(), 1)
         self.assertEqual(
-            server.state.query_state.paths_to_be_queried.get_nowait(), test_path
+            server.state.query_state.queries.get_nowait(), TypesQuery(test_path)
         )
 
         await server.process_hover_request(
@@ -707,7 +710,7 @@ class PersistentTest(testslide.TestCase):
 
         self.assertTrue(fake_task_manager.is_task_running())
         assert_hover_response("")
-        self.assertEqual(server.state.query_state.paths_to_be_queried.qsize(), 0)
+        self.assertEqual(server.state.query_state.queries.qsize(), 0)
 
     def test_type_diagnostics(self) -> None:
         self.assertEqual(
@@ -935,91 +938,31 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_type_coverage_request(self) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
-            tmpfile.write(b"def foo(x):\n  pass\n")
-            tmpfile.flush()
-            test_path = Path(tmpfile.name)
-            bytes_writer = MemoryBytesWriter()
-            fake_pyre_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-            fake_pyre_query_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-            server = PyreServer(
-                input_channel=create_memory_text_reader(""),
-                output_channel=TextWriter(bytes_writer),
-                state=ServerState(),
-                pyre_manager=fake_pyre_manager,
-                pyre_query_manager=fake_pyre_query_manager,
-            )
+        test_path = Path("/foo")
+        bytes_writer = MemoryBytesWriter()
+        fake_pyre_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_pyre_query_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        server = PyreServer(
+            input_channel=create_memory_text_reader(""),
+            output_channel=TextWriter(bytes_writer),
+            state=ServerState(),
+            pyre_manager=fake_pyre_manager,
+            pyre_query_manager=fake_pyre_query_manager,
+        )
 
-            await server.process_type_coverage_request(
-                lsp.TypeCoverageTextDocumentParameters(
-                    text_document=lsp.TextDocumentIdentifier(
-                        uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                    )
-                ),
-                request_id=1,
-            )
-            # A diagnostic update is sent via the output channel
-            self.assertEqual(len(bytes_writer.items()), 1)
-            self.assertIn(b"Consider adding type annotations", bytes_writer.items()[0])
-            self.assertNotIn(b"100.0", bytes_writer.items()[0])
+        await server.process_type_coverage_request(
+            lsp.TypeCoverageTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                )
+            ),
+            request_id=1,
+        )
 
-    @setup.async_test
-    async def test_type_coverage_request_strict(self) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
-            tmpfile.write(b"def foo(x):\n  pass\n")
-            tmpfile.flush()
-            test_path = Path(tmpfile.name)
-            bytes_writer = MemoryBytesWriter()
-            fake_pyre_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-            fake_pyre_query_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-            server = PyreServer(
-                input_channel=create_memory_text_reader(""),
-                output_channel=TextWriter(bytes_writer),
-                state=ServerState(strict_default=True),
-                pyre_manager=fake_pyre_manager,
-                pyre_query_manager=fake_pyre_query_manager,
-            )
-
-            await server.process_type_coverage_request(
-                lsp.TypeCoverageTextDocumentParameters(
-                    text_document=lsp.TextDocumentIdentifier(
-                        uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                    )
-                ),
-                request_id=1,
-            )
-            # A diagnostic update is sent via the output channel, with 100% coverage.
-            self.assertEqual(len(bytes_writer.items()), 1)
-            self.assertIn(b"100.0", bytes_writer.items()[0])
-
-    @setup.async_test
-    async def test_type_coverage_request_exclude(self) -> None:
-        with tempfile.NamedTemporaryFile(prefix="exclude_me", suffix=".py") as tmpfile:
-            tmpfile.write(b"def foo(x):\n  pass\n")
-            tmpfile.flush()
-            test_path = Path(tmpfile.name)
-            bytes_writer = MemoryBytesWriter()
-            fake_pyre_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-            fake_pyre_query_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-            server = PyreServer(
-                input_channel=create_memory_text_reader(""),
-                output_channel=TextWriter(bytes_writer),
-                state=ServerState(excludes=[".*exclude_me.*"]),
-                pyre_manager=fake_pyre_manager,
-                pyre_query_manager=fake_pyre_query_manager,
-            )
-
-            await server.process_type_coverage_request(
-                lsp.TypeCoverageTextDocumentParameters(
-                    text_document=lsp.TextDocumentIdentifier(
-                        uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                    )
-                ),
-                request_id=1,
-            )
-            # A diagnostic update is sent via the output channel, with 100% coverage.
-            self.assertEqual(len(bytes_writer.items()), 1)
-            self.assertIn(b"file is not type checked", bytes_writer.items()[0])
+        self.assertEqual(
+            server.state.query_state.queries.get_nowait(),
+            TypeCoverageQuery(1, test_path),
+        )
 
 
 class PyreQueryStateTest(testslide.TestCase):
@@ -1101,6 +1044,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             ]
         }
         """
+        bytes_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             state=PyreQueryState(path_to_location_type_lookup={}),
             server_start_options_reader=_create_server_start_options_reader(
@@ -1115,6 +1059,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
+            client_output_channel=TextWriter(bytes_writer),
         )
         memory_bytes_writer = MemoryBytesWriter()
         flat_json = "".join(json_output.splitlines())
@@ -1145,6 +1090,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
 
     @setup.async_test
     async def test_query_types__bad_json(self) -> None:
+        bytes_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
             state=PyreQueryState(),
             server_start_options_reader=_create_server_start_options_reader(
@@ -1159,6 +1105,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
             ),
+            client_output_channel=TextWriter(bytes_writer),
         )
 
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
@@ -1171,50 +1118,34 @@ class PyreQueryHandlerTest(testslide.TestCase):
         self.assertEqual(result, None)
 
     @setup.async_test
-    async def test_does_not_run_when_hover_is_disabled(self) -> None:
-        pyre_query_handler = PyreQueryHandler(
-            state=PyreQueryState(),
-            server_start_options_reader=_create_server_start_options_reader(
-                binary="/bin/pyre",
-                server_identifier="foo",
-                start_arguments=start.Arguments(
-                    base_arguments=backend_arguments.BaseArguments(
-                        source_paths=backend_arguments.SimpleSourcePath(),
-                        log_path="/log/path",
-                        global_root="/global/root",
-                    )
-                ),
-                ide_features=configuration_module.IdeFeatures(hover_enabled=False),
-            ),
-        )
+    async def test_type_coverage_query(self) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
+            tmpfile.write(b"def foo(x):\n  pass\n")
+            tmpfile.flush()
+            test_path = Path(tmpfile.name)
+            bytes_writer = MemoryBytesWriter()
+            server_start_options_reader = _fake_option_reader()
+            pyre_query_manager = PyreQueryHandler(
+                state=PyreQueryState(),
+                server_start_options_reader=server_start_options_reader,
+                client_output_channel=TextWriter(bytes_writer),
+            )
+            await pyre_query_manager._handle_type_coverage_query(
+                TypeCoverageQuery(id=1, path=test_path), server_start_options_reader()
+            )
+            # A diagnostic update is sent via the output channel
+            self.assertEqual(len(bytes_writer.items()), 1)
+            self.assertIn(b"Consider adding type annotations", bytes_writer.items()[0])
+            self.assertNotIn(b"100.0", bytes_writer.items()[0])
 
-        # Should complete right away.
-        await pyre_query_handler.run()
-        await asyncio.sleep(0)
-
-        pyre_query_handler = PyreQueryHandler(
-            state=PyreQueryState(),
-            server_start_options_reader=_create_server_start_options_reader(
-                binary="/bin/pyre",
-                server_identifier="foo",
-                start_arguments=start.Arguments(
-                    base_arguments=backend_arguments.BaseArguments(
-                        source_paths=backend_arguments.SimpleSourcePath(),
-                        log_path="/log/path",
-                        global_root="/global/root",
-                    )
-                ),
-                ide_features=None,
-            ),
-        )
-
-        # Should complete right away.
-        await pyre_query_handler.run()
-        await asyncio.sleep(0)
-
-        pyre_query_handler = PyreQueryHandler(
-            state=PyreQueryState(),
-            server_start_options_reader=_create_server_start_options_reader(
+    @setup.async_test
+    async def test_type_coverage_request_strict(self) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
+            tmpfile.write(b"def foo(x):\n  pass\n")
+            tmpfile.flush()
+            test_path = Path(tmpfile.name)
+            bytes_writer = MemoryBytesWriter()
+            server_start_options_reader = _create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
                 start_arguments=start.Arguments(
@@ -1225,11 +1156,16 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     )
                 ),
                 ide_features=configuration_module.IdeFeatures(hover_enabled=True),
-            ),
-        )
-        pyre_query_manager = BackgroundTaskManager(pyre_query_handler)
-        await pyre_query_manager.ensure_task_running()
-        await asyncio.sleep(0)
-
-        self.assertTrue(pyre_query_manager.is_task_running())
-        await pyre_query_manager.ensure_task_stop()
+                strict_defualt=True,
+            )
+            pyre_query_manager = PyreQueryHandler(
+                state=PyreQueryState(),
+                server_start_options_reader=server_start_options_reader,
+                client_output_channel=TextWriter(bytes_writer),
+            )
+            await pyre_query_manager._handle_type_coverage_query(
+                TypeCoverageQuery(id=1, path=test_path), server_start_options_reader()
+            )
+            # A diagnostic update is sent via the output channel, with 100% coverage.
+            self.assertEqual(len(bytes_writer.items()), 1)
+            self.assertIn(b"100.0", bytes_writer.items()[0])
