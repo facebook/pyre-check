@@ -1,0 +1,157 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "binary_operators.test1",
+    "callable_line": 14,
+    "code": 5002,
+    "line": 16,
+    "start": 10,
+    "end": 24,
+    "filename": "binary_operators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "binary_operators.py",
+              "line": 16,
+              "start": 10,
+              "end": 24
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "binary_operators.py",
+                "line": 16,
+                "start": 10,
+                "end": 24
+              },
+              "resolves_to": [ "binary_operators.Add.__add__" ],
+              "port": "formal(other)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "binary_operators.test2",
+    "callable_line": 19,
+    "code": 5002,
+    "line": 21,
+    "start": 11,
+    "end": 25,
+    "filename": "binary_operators.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "binary_operators.py",
+              "line": 21,
+              "start": 11,
+              "end": 25
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "binary_operators.py",
+                "line": 21,
+                "start": 11,
+                "end": 25
+              },
+              "resolves_to": [ "binary_operators.Add.__add__" ],
+              "port": "formal(other)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "binary_operators.Add.__add__",
+    "sinks": [
+      {
+        "port": "formal(other)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "binary_operators.py",
+              "line": 11,
+              "start": 19,
+              "end": 24
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
