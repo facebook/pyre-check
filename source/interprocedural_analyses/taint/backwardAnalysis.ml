@@ -178,8 +178,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Some { AccessPath.root; path } -> BackwardState.read ~transform_non_leaves ~root ~path taint
 
 
-  let store_weak_taint ~root ~path taint { taint = state_taint } =
-    { taint = BackwardState.assign ~weak:true ~root ~path taint state_taint }
+  let store_taint ?(weak = false) ~root ~path taint { taint = state_taint } =
+    { taint = BackwardState.assign ~weak ~root ~path taint state_taint }
 
 
   let analyze_definition ~define:_ state = state
@@ -1284,6 +1284,40 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
         in
         analyze_expression ~resolution ~taint ~state ~expression:base
+    | {
+     callee =
+       {
+         Node.value =
+           Name
+             (Name.Attribute
+               {
+                 base = { Node.value = Name (Name.Identifier identifier); _ } as base;
+                 attribute = "pop";
+                 _;
+               });
+         _;
+       };
+     arguments =
+       [
+         {
+           Call.Argument.value =
+             { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
+           _;
+         };
+       ];
+    }
+      when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping ->
+        let access_path =
+          Some { AccessPath.root = AccessPath.Root.Variable identifier; path = [] }
+        in
+        let old_taint = get_taint access_path state in
+        let new_taint =
+          BackwardState.Tree.assign
+            ~tree:old_taint
+            [Abstract.TreeDomain.Label.Index value]
+            ~subtree:taint
+        in
+        store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] new_taint state
     | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
       when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping ->
         (* When we're faced with an assign of the form `k, v = d.items().__iter__().__next__()`, the
@@ -1354,7 +1388,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | _ -> (
             (* Use implicit self *)
             match first_parameter () with
-            | Some root -> store_weak_taint ~root ~path:[] taint state
+            | Some root -> store_taint ~weak:true ~root ~path:[] taint state
             | None -> state))
     | _ ->
         let taint =
@@ -1475,7 +1509,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |> List.foldi ~f:(analyze_reverse_list_element ~total ~resolution taint) ~init:state
     | ListComprehension comprehension -> analyze_comprehension ~resolution taint comprehension state
     | Name (Name.Identifier identifier) ->
-        store_weak_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
+        store_taint ~weak:true ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
     | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
         analyze_expression ~resolution ~taint ~state ~expression:base
     | Name (Name.Attribute { base; attribute; special }) ->
