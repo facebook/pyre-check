@@ -29,8 +29,8 @@
             "root": {
               "filename": "typed_dict.py",
               "line": 21,
-              "start": 10,
-              "end": 24
+              "start": 15,
+              "end": 29
             }
           }
         ]
@@ -94,8 +94,8 @@
             "root": {
               "filename": "typed_dict.py",
               "line": 26,
-              "start": 10,
-              "end": 24
+              "start": 15,
+              "end": 29
             }
           }
         ]
@@ -159,8 +159,8 @@
             "root": {
               "filename": "typed_dict.py",
               "line": 32,
-              "start": 10,
-              "end": 24
+              "start": 15,
+              "end": 29
             }
           }
         ]

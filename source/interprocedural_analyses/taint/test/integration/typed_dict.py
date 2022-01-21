@@ -18,16 +18,16 @@ class Bar(TypedDict):
 
 
 def test1():
-    bar = _test_source()
+    bar: Bar = _test_source()
     _test_sink(bar["other"])
 
 
 def test2():
-    bar = _test_source()
+    bar: Bar = _test_source()
     # TODO(T81192268): this should not trigger an issue.
     _test_sink(bar["foo"]["a"])
 
 
 def test3():
-    bar = _test_source()
+    bar: Bar = _test_source()
     _test_sink(bar["foo"]["b"])
