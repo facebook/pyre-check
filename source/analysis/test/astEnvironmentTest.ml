@@ -260,15 +260,7 @@ let test_parse_sources context =
       let right_handles = List.sort ~compare:String.compare right_handles in
       List.equal String.equal left_handles right_handles)
     source_handles
-    ["stub.pyi"; "a.py"];
-  match
-    Analysis.AstEnvironment.ReadOnly.get_processed_source
-      (AstEnvironment.read_only ast_environment)
-      (Reference.create "c")
-  with
-  | Some { metadata = { Source.Metadata.raw_hash; _ }; _ } ->
-      assert_equal raw_hash ([%hash: string list] (String.split ~on:'\n' content))
-  | None -> assert_unreached ()
+    ["stub.pyi"; "a.py"]
 
 
 let test_ast_change _ =

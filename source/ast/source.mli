@@ -27,7 +27,6 @@ module Metadata : sig
     unused_local_modes: local_mode Node.t list;
     ignore_codes: int list;
     ignore_lines: Ignore.t list;
-    raw_hash: int;
   }
   [@@deriving compare, show, hash, sexp]
 
@@ -38,7 +37,6 @@ module Metadata : sig
     ?unused_local_modes:local_mode Node.t list ->
     ?ignore_codes:int list ->
     ?ignore_lines:Ignore.t list ->
-    ?raw_hash:int ->
     unit ->
     t
 

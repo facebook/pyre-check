@@ -28,7 +28,6 @@ module Metadata = struct
     unused_local_modes: local_mode Node.t list;
     ignore_codes: int list;
     ignore_lines: Ignore.t list;
-    raw_hash: int; [@compare.ignore]
   }
   [@@deriving compare, show, hash, sexp]
 
@@ -43,10 +42,9 @@ module Metadata = struct
       ?(unused_local_modes = [])
       ?(ignore_codes = [])
       ?(ignore_lines = [])
-      ?(raw_hash = -1)
       ()
     =
-    { local_mode = Some local_mode; unused_local_modes; ignore_codes; ignore_lines; raw_hash }
+    { local_mode = Some local_mode; unused_local_modes; ignore_codes; ignore_lines }
 
 
   let default_with_suppress_regex =
@@ -187,7 +185,6 @@ module Metadata = struct
       unused_local_modes = List.rev unused_local_modes;
       ignore_codes;
       ignore_lines = ignore_lines |> Int.Map.data |> List.concat;
-      raw_hash = [%hash: string list] lines;
     }
 end
 
