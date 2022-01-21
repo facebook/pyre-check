@@ -1433,6 +1433,7 @@ class PyreServerHandler(connection.BackgroundTask):
         server_start_options = read_server_start_options(
             self.server_start_options_reader, self.remote_logging
         )
+        start_time: float = time.time()
         try:
             LOG.info(f"Starting Pyre server from configuration: {server_start_options}")
             await self._run(server_start_options)
@@ -1440,6 +1441,7 @@ class PyreServerHandler(connection.BackgroundTask):
             _log_lsp_event(
                 remote_logging=self.remote_logging,
                 event=LSPEvent.DISCONNECTED,
+                integers={"duration": int((time.time() - start_time) * 1000)},
                 normals={
                     **self._auxiliary_logging_info(server_start_options),
                     "exception": traceback.format_exc(),
