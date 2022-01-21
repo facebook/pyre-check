@@ -5,9 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val compute_locally_changed_paths
+val save_current_paths
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
   module_tracker:Analysis.ModuleTracker.t ->
-  ast_environment:Analysis.AstEnvironment.ReadOnly.t ->
+  unit
+
+(* Return the list of paths to files that have changed between now and the previous call to
+   `save_current_paths`. *)
+val compute_locally_changed_paths
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  old_module_tracker:Analysis.ModuleTracker.t ->
+  new_module_tracker:Analysis.ModuleTracker.t ->
   PyrePath.t list

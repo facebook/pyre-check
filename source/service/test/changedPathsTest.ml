@@ -19,14 +19,17 @@ type locally_changed_file = {
 
 let test_compute_locally_changed_files context =
   let assert_changed_files ~files ~expected =
-    let { ScratchProject.configuration; module_tracker; _ }, ast_environment =
+    let scheduler = Test.mock_scheduler () in
+    let configuration, old_module_tracker =
       let sources =
         List.filter_map files ~f:(fun { relative; old_content; _ } ->
             old_content >>| fun content -> relative, content)
       in
-      let project = ScratchProject.setup ~context sources in
-      let ast_environment, _ = ScratchProject.parse_sources project in
-      project, ast_environment
+      let { ScratchProject.configuration; module_tracker; _ } =
+        ScratchProject.setup ~context sources
+      in
+      let () = Service.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker in
+      configuration, module_tracker
     in
     let { Configuration.Analysis.local_root; _ } = configuration in
     let write_new_file { relative; new_content; _ } =
@@ -37,12 +40,13 @@ let test_compute_locally_changed_files context =
       | None -> Sys.remove (PyrePath.absolute path)
     in
     List.iter files ~f:write_new_file;
+    let new_module_tracker = Analysis.ModuleTracker.create configuration in
     let actual =
       Service.ChangedPaths.compute_locally_changed_paths
-        ~scheduler:(Test.mock_scheduler ())
+        ~scheduler
         ~configuration
-        ~module_tracker
-        ~ast_environment:(Analysis.AstEnvironment.read_only ast_environment)
+        ~old_module_tracker
+        ~new_module_tracker
       |> List.filter_map ~f:(fun path -> PyrePath.get_relative_to_root ~root:local_root ~path)
     in
     assert_equal
@@ -97,7 +101,12 @@ let test_compute_locally_changed_files context =
         { relative = "a.pyi"; old_content = Some "a = 2"; new_content = Some "a = 2" };
         { relative = "b.py"; old_content = Some "a = 1"; new_content = Some "new" };
       ]
-    ~expected:["b.py"]
+    ~expected:["b.py"];
+  (* Test with a parsing error. *)
+  assert_changed_files
+    ~files:[{ relative = "a.py"; old_content = Some "+"; new_content = Some "+" }]
+    ~expected:[];
+  ()
 
 
 let () =

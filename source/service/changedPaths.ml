@@ -8,7 +8,53 @@
 open Core
 open Ast
 open Analysis
-open Pyre
+
+module HashResult = struct
+  type t =
+    | Hash of int
+    | ReadError
+  [@@deriving equal]
+
+  let from_file file =
+    match File.hash file with
+    | Some hash -> Hash hash
+    | None -> ReadError
+end
+
+(* Store the hash for each module in the shared memory. *)
+module SharedMemoryHashes =
+  Memory.NoCache.Make
+    (SharedMemoryKeys.ReferenceKey)
+    (struct
+      type t = HashResult.t
+
+      let prefix = Prefix.make ()
+
+      let description = "ChangedPathsHash"
+
+      let unmarshall value = Marshal.from_string value 0
+    end)
+
+let save_current_paths ~scheduler ~configuration ~module_tracker =
+  let save_paths _ source_paths =
+    let save_path ({ SourcePath.qualifier; _ } as source_path) =
+      let hash =
+        SourcePath.full_path ~configuration source_path |> File.create |> HashResult.from_file
+      in
+      SharedMemoryHashes.remove_batch (SharedMemoryHashes.KeySet.singleton qualifier);
+      SharedMemoryHashes.add qualifier hash
+    in
+    List.iter ~f:save_path source_paths
+  in
+  Scheduler.map_reduce
+    scheduler
+    ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+    ~initial:()
+    ~map:save_paths
+    ~reduce:(fun () () -> ())
+    ~inputs:(ModuleTracker.source_paths module_tracker)
+    ()
+
 
 (* Used for removed path detection *)
 module IndexedRelativePath = struct
@@ -20,27 +66,14 @@ module IndexedRelativePath = struct
   include Hashable.Make (T)
 end
 
-(* If we're analyzing generated code, Watchman will be blind to any changes to said code. In order
-   to be safe, compute hashes for all files that a fresh Pyre run would analyze. *)
-let compute_locally_changed_paths
-    ~scheduler
-    ~configuration
-    ~module_tracker:old_module_tracker
-    ~ast_environment
-  =
+let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker ~new_module_tracker =
   let timer = Timer.start () in
-  let new_module_tracker = ModuleTracker.create configuration in
   let changed_paths changed new_source_paths =
     let changed_path ({ SourcePath.qualifier; _ } as source_path) =
-      let old_hash =
-        AstEnvironment.ReadOnly.get_raw_source ast_environment qualifier
-        >>= function
-        | Result.Ok { Source.metadata = { Source.Metadata.raw_hash; _ }; _ } -> Some raw_hash
-        | Result.Error _ -> None
-      in
+      let old_hash = SharedMemoryHashes.get qualifier in
       let path = SourcePath.full_path ~configuration source_path in
-      let current_hash = File.hash (File.create path) in
-      if Option.equal Int.equal old_hash current_hash then
+      let current_hash = HashResult.from_file (File.create path) in
+      if Option.equal HashResult.equal old_hash (Some current_hash) then
         None
       else
         Some path

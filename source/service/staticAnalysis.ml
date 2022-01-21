@@ -44,10 +44,14 @@ module InitialCallablesSharedMemory = Memory.Serializer (struct
 end)
 
 module Cache : sig
-  val load_environment : configuration:Configuration.Analysis.t -> TypeEnvironment.t option
+  val load_environment
+    :  scheduler:Scheduler.t ->
+    configuration:Configuration.Analysis.t ->
+    TypeEnvironment.t option
 
   val save_environment
-    :  configuration:Configuration.Analysis.t ->
+    :  scheduler:Scheduler.t ->
+    configuration:Configuration.Analysis.t ->
     environment:TypeEnvironment.t ->
     unit
 
@@ -148,7 +152,7 @@ end = struct
     | _ -> ()
 
 
-  let load_environment ~configuration =
+  let load_environment ~scheduler ~configuration =
     let path = get_shared_memory_save_path ~configuration in
     try
       init_shared_memory ~configuration;
@@ -157,14 +161,13 @@ end = struct
       let environment =
         Analysis.AnnotatedGlobalEnvironment.create ast_environment |> TypeEnvironment.create
       in
-      let scheduler = Scheduler.create ~configuration () in
       let changed_paths =
         Log.info "Determining if source files have changed since cache was created.";
         ChangedPaths.compute_locally_changed_paths
           ~scheduler
           ~configuration
-          ~module_tracker
-          ~ast_environment:(AstEnvironment.read_only ast_environment)
+          ~old_module_tracker:module_tracker
+          ~new_module_tracker:(Analysis.ModuleTracker.create configuration)
         |> List.filter ~f:(fun path -> not (is_pysa_model path || is_taint_config path))
       in
       match changed_paths with
@@ -189,12 +192,15 @@ end = struct
     | _ -> None
 
 
-  let save_environment ~configuration ~environment =
+  let save_environment ~scheduler ~configuration ~environment =
     let path = get_shared_memory_save_path ~configuration in
     try
       Memory.SharedMemory.collect `aggressive;
-      TypeEnvironment.module_tracker environment |> Analysis.ModuleTracker.SharedMemory.store;
-      TypeEnvironment.ast_environment environment |> AstEnvironment.store;
+      let module_tracker = TypeEnvironment.module_tracker environment in
+      let ast_environment = TypeEnvironment.ast_environment environment in
+      ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;
+      Analysis.ModuleTracker.SharedMemory.store module_tracker;
+      AstEnvironment.store ast_environment;
       Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
       Log.info "Saved type environment to cache shared memory."
     with
@@ -290,7 +296,9 @@ end
 
 (* Perform a full type check and build a type environment. *)
 let type_check ~scheduler ~configuration ~use_cache =
-  let cached_environment = if use_cache then Cache.load_environment ~configuration else None in
+  let cached_environment =
+    if use_cache then Cache.load_environment ~scheduler ~configuration else None
+  in
   match cached_environment with
   | Some loaded_environment ->
       Log.warning "Using cached type environment.";
@@ -309,7 +317,7 @@ let type_check ~scheduler ~configuration ~use_cache =
         ~call_graph_builder:(module Analysis.Callgraph.NullBuilder)
       |> fun { environment; _ } ->
       if use_cache then
-        Cache.save_environment ~configuration ~environment;
+        Cache.save_environment ~scheduler ~configuration ~environment;
       environment
 
 
