@@ -16,7 +16,7 @@ graphene-sqlalchemy==2.3.0
 graphql-core==2.3.2
 graphql-relay==2.0.1
 graphql-server-core==1.2.0
-ipython==7.19.0
+ipython==7.31.1
 ipython-genutils==0.2.0
 itsdangerous==1.1.0
 jedi==0.17.2
