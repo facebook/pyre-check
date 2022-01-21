@@ -11,6 +11,7 @@ import logging
 import os
 import subprocess
 import tempfile
+import time
 import traceback
 from pathlib import Path
 from typing import (
@@ -66,6 +67,7 @@ class LSPEvent(enum.Enum):
     NOT_CONFIGURED = "not configured"
     DISCONNECTED = "disconnected"
     SUSPENDED = "suspended"
+    STOPPED = "stopped"
 
 
 def _log_lsp_event(
@@ -1525,9 +1527,24 @@ def run(
     def read_server_start_options() -> PyreServerStartOptions:
         return PyreServerStartOptions.read_from(command_argument, base_directory)
 
-    return asyncio.get_event_loop().run_until_complete(
-        run_persistent(
-            read_server_start_options,
-            remote_logging,
+    start_time: float = time.time()
+    error_message: Optional[str] = None
+    try:
+        return asyncio.get_event_loop().run_until_complete(
+            run_persistent(
+                read_server_start_options,
+                remote_logging,
+            )
         )
-    )
+    except Exception as error:
+        error_message = str(error)
+        return 1
+    finally:
+        _log_lsp_event(
+            remote_logging,
+            LSPEvent.STOPPED,
+            integers={"duration": int((time.time() - start_time) * 1000)},
+            normals={
+                **({"exception": error_message} if error_message is not None else {})
+            },
+        )
