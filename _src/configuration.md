@@ -42,13 +42,13 @@ specifies that the code Pyre checks is in the directory of the configuration and
 
 You specify additional information to configure Pyre. The following fields are supported:
 
-- `source_directories`: List of paths to type check.
+- `source_directories`: List of path to type check. Path can be a glob, for example, `"./foo*"`.
 
  Note: Pyre assumes that all imports are relative to the given source directory. For example, if your source directory is `root/directory`, then an import statement `import module` will be looking to import `root.directory.module`. If you wish to set a different import root for your source directory, you can provide an object `{"import_root": "root", "source": "directory"}` instead of `"root/directory"`. In this case, `import module` will be looking to import `root.module`.
 
 - `search_path`: List of paths to Python modules to include in the typing
 environment. `search_path` takes precendence over `source_directories` and the order within the search path indicates precedence. Individual items in the list can take one of the following forms:
-  + A plain string, representing the path to the directory from which Pyre will search for modules.
+  + A plain string, representing a path to the directories from which Pyre will search for modules. The paths can be globs, for example, `"./foo*"`.
   + An object `{"import_root": "root", "source": "directory"}`, which can be used to control import root of the search path. See explaination for `source_directories`.
   + An object `{"site-package": "package_name"}`. It is equivalent to `{"import_root": "site_root", "source": "package_name"}`, where `site_root` is the return value of [`site.getsitepackages()`](https://docs.python.org/3/library/site.html#site.getsitepackages). This can be useful when you want to add installed `pip` packages as a dependency to your project.
   + An object `{"site-package": "package_name", "is_toplevel_module": true}`, to specify the name as a singular toplevel module found in the site-root rather than as a package.
