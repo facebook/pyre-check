@@ -1100,6 +1100,401 @@ end = struct
     Format.fprintf formatter "%a" PrettyPrinter.pp_parameter_list expression_parameter_list
 end
 
+module Folder = struct
+  type 'a t = {
+    fold_await: folder:'a t -> state:'a -> location:Location.t -> Expression.t -> 'a;
+    fold_boolean_operator:
+      folder:'a t -> state:'a -> location:Location.t -> BooleanOperator.t -> 'a;
+    fold_call: folder:'a t -> state:'a -> location:Location.t -> Call.t -> 'a;
+    fold_comparison_operator:
+      folder:'a t -> state:'a -> location:Location.t -> ComparisonOperator.t -> 'a;
+    fold_constant: folder:'a t -> state:'a -> location:Location.t -> Constant.t -> 'a;
+    fold_dictionary: folder:'a t -> state:'a -> location:Location.t -> Dictionary.t -> 'a;
+    fold_dictionary_comprehension:
+      folder:'a t -> state:'a -> location:Location.t -> Dictionary.Entry.t Comprehension.t -> 'a;
+    fold_generator:
+      folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    fold_format_string: folder:'a t -> state:'a -> location:Location.t -> Substring.t list -> 'a;
+    fold_lambda: folder:'a t -> state:'a -> location:Location.t -> Lambda.t -> 'a;
+    fold_list: folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a;
+    fold_list_comprehension:
+      folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    fold_name: folder:'a t -> state:'a -> location:Location.t -> Name.t -> 'a;
+    fold_set: folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a;
+    fold_set_comprehension:
+      folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    fold_starred: folder:'a t -> state:'a -> location:Location.t -> Starred.t -> 'a;
+    fold_ternary: folder:'a t -> state:'a -> location:Location.t -> Ternary.t -> 'a;
+    fold_tuple: folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a;
+    fold_unary_operator: folder:'a t -> state:'a -> location:Location.t -> UnaryOperator.t -> 'a;
+    fold_walrus_operator: folder:'a t -> state:'a -> location:Location.t -> WalrusOperator.t -> 'a;
+    fold_yield: folder:'a t -> state:'a -> location:Location.t -> Expression.t option -> 'a;
+    fold_yield_from: folder:'a t -> state:'a -> location:Location.t -> Expression.t -> 'a;
+  }
+
+  let fold
+      ~folder:
+        ({
+           fold_await;
+           fold_boolean_operator;
+           fold_call;
+           fold_comparison_operator;
+           fold_constant;
+           fold_dictionary;
+           fold_dictionary_comprehension;
+           fold_generator;
+           fold_format_string;
+           fold_lambda;
+           fold_list;
+           fold_list_comprehension;
+           fold_name;
+           fold_set;
+           fold_set_comprehension;
+           fold_starred;
+           fold_ternary;
+           fold_tuple;
+           fold_unary_operator;
+           fold_walrus_operator;
+           fold_yield;
+           fold_yield_from;
+         } as folder)
+      ~state
+      { Node.value; location }
+    =
+    match value with
+    | Expression.Await expression -> fold_await ~folder ~state ~location expression
+    | Expression.BooleanOperator boolean_operator ->
+        fold_boolean_operator ~folder ~state ~location boolean_operator
+    | Expression.Call call -> fold_call ~folder ~state ~location call
+    | Expression.FormatString substrings -> fold_format_string ~folder ~state ~location substrings
+    | Expression.ComparisonOperator comparison_operator ->
+        fold_comparison_operator ~folder ~state ~location comparison_operator
+    | Expression.Constant constant -> fold_constant ~folder ~state ~location constant
+    | Expression.Dictionary dictionary -> fold_dictionary ~folder ~state ~location dictionary
+    | Expression.DictionaryComprehension dictionary_comprehension ->
+        fold_dictionary_comprehension ~folder ~state ~location dictionary_comprehension
+    | Expression.Generator generator -> fold_generator ~folder ~state ~location generator
+    | Expression.Lambda lambda -> fold_lambda ~folder ~state ~location lambda
+    | Expression.List expression_list -> fold_list ~folder ~state ~location expression_list
+    | Expression.ListComprehension list_comprehension ->
+        fold_list_comprehension ~folder ~state ~location list_comprehension
+    | Expression.Name name -> fold_name ~folder ~state ~location name
+    | Expression.Set set -> fold_set ~folder ~state ~location set
+    | Expression.SetComprehension set_comprehension ->
+        fold_set_comprehension ~folder ~state ~location set_comprehension
+    | Expression.Starred starred -> fold_starred ~folder ~state ~location starred
+    | Expression.Ternary ternary -> fold_ternary ~folder ~state ~location ternary
+    | Expression.Tuple tuple -> fold_tuple ~folder ~state ~location tuple
+    | Expression.UnaryOperator unary_operator ->
+        fold_unary_operator ~folder ~state ~location unary_operator
+    | Expression.WalrusOperator walrus_operator ->
+        fold_walrus_operator ~folder ~state ~location walrus_operator
+    | Expression.Yield yield -> fold_yield ~folder ~state ~location yield
+    | Expression.YieldFrom yield_from -> fold_yield_from ~folder ~state ~location yield_from
+
+
+  let create_list_folder f ~folder ~state items =
+    List.fold items ~init:state ~f:(fun state item -> f ~folder ~state item)
+
+
+  let fold_list ~folder ~state items = (create_list_folder fold) ~folder ~state items
+
+  let fold_option ~folder ~state =
+    Option.fold ~init:state ~f:(fun state item -> fold ~folder ~state item)
+
+
+  let default_fold_dictionary_entry ~folder ~state { Dictionary.Entry.key; value } =
+    let state = fold ~folder ~state key in
+    fold ~folder ~state value
+
+
+  let default_fold_dictionary_entries ~folder ~state entries =
+    (create_list_folder default_fold_dictionary_entry) ~folder ~state entries
+
+
+  let default_fold_argument ~folder ~state { Call.Argument.name = _; value } =
+    fold ~folder ~state value
+
+
+  let default_fold_arguments ~folder ~state arguments =
+    (create_list_folder default_fold_argument) ~folder ~state arguments
+
+
+  let default_fold_location ~state _ = state
+
+  let default_fold_parameter_with_location
+      ~folder
+      ~state
+      ~fold_location
+      { Node.value = { Parameter.name = _; value; annotation }; location }
+    =
+    let state = fold_location ~state location in
+    let state = fold_option ~folder ~state value in
+    fold_option ~folder ~state annotation
+
+
+  let default_fold_parameters_with_location ~folder ~state ~fold_location parameters =
+    (create_list_folder (default_fold_parameter_with_location ~fold_location))
+      ~folder
+      ~state
+      parameters
+
+
+  let default_fold_parameters ~folder ~state parameters =
+    default_fold_parameters_with_location
+      ~folder
+      ~state
+      ~fold_location:default_fold_location
+      parameters
+
+
+  let default_fold_comprehension_generator
+      ~folder
+      ~state
+      { Comprehension.Generator.target; iterator; conditions; async = _ }
+    =
+    let state = fold ~folder ~state target in
+    let state = fold ~folder ~state iterator in
+    fold_list ~folder ~state conditions
+
+
+  let default_fold_comprehension_generators ~folder ~state generators =
+    (create_list_folder default_fold_comprehension_generator) ~folder ~state generators
+
+
+  let default_fold_comprehension ~fold_element ~folder ~state { Comprehension.element; generators } =
+    let state = fold_element ~folder ~state element in
+    default_fold_comprehension_generators ~folder ~state generators
+
+
+  let default_fold_substring_with_location ~folder ~state ~fold_location = function
+    | Substring.Literal { Node.value = _; location } -> fold_location ~state location
+    | Substring.Format expression -> fold ~folder ~state expression
+
+
+  let default_fold_substrings_with_location ~folder ~state ~fold_location substrings =
+    (create_list_folder (default_fold_substring_with_location ~fold_location))
+      ~folder
+      ~state
+      substrings
+
+
+  let default_fold_substrings ~folder ~state substrings =
+    default_fold_substrings_with_location
+      ~folder
+      ~state
+      ~fold_location:default_fold_location
+      substrings
+
+
+  let default_fold_await ~folder ~state awaited = fold ~folder ~state awaited
+
+  let default_fold_boolean_operator ~folder ~state { BooleanOperator.left; operator = _; right } =
+    let state = fold ~folder ~state left in
+    fold ~folder ~state right
+
+
+  let default_fold_call ~folder ~state { Call.callee; arguments } =
+    let state = fold ~folder ~state callee in
+    default_fold_arguments ~folder ~state arguments
+
+
+  let default_fold_comparison_operator
+      ~folder
+      ~state
+      { ComparisonOperator.left; operator = _; right }
+    =
+    let state = fold ~folder ~state left in
+    fold ~folder ~state right
+
+
+  let default_fold_constant ~folder:_ ~state _ = state
+
+  let default_fold_dictionary ~folder ~state { Dictionary.entries; keywords } =
+    let state = default_fold_dictionary_entries ~folder ~state entries in
+    fold_list ~folder ~state keywords
+
+
+  let default_fold_dictionary_comprehension ~folder ~state comprehension =
+    default_fold_comprehension
+      ~fold_element:default_fold_dictionary_entry
+      ~folder
+      ~state
+      comprehension
+
+
+  let default_fold_format_string ~folder ~state substrings =
+    default_fold_substrings ~folder ~state substrings
+
+
+  let default_fold_generator ~folder ~state comprehension =
+    default_fold_comprehension ~fold_element:fold ~folder ~state comprehension
+
+
+  let default_fold_lambda ~folder ~state { Lambda.parameters; body } =
+    let state = default_fold_parameters ~folder ~state parameters in
+    fold ~folder ~state body
+
+
+  let default_fold_list ~folder ~state expression_list = fold_list ~folder ~state expression_list
+
+  let default_fold_name ~folder ~state = function
+    | Name.Identifier _ -> state
+    | Name.Attribute { base; attribute = _; special = _ } -> fold ~folder ~state base
+
+
+  let default_fold_starred ~folder ~state = function
+    | Starred.Once expression
+    | Starred.Twice expression ->
+        fold ~folder ~state expression
+
+
+  let default_fold_ternary ~folder ~state { Ternary.target; test; alternative } =
+    let state = fold ~folder ~state target in
+    let state = fold ~folder ~state test in
+    fold ~folder ~state alternative
+
+
+  let default_fold_unary_operator ~folder ~state { UnaryOperator.operator = _; operand } =
+    fold ~folder ~state operand
+
+
+  let default_fold_walrus_operator ~folder ~state { WalrusOperator.target; value } =
+    let state = fold ~folder ~state target in
+    fold ~folder ~state value
+
+
+  let default_fold_yield ~folder ~state yield = fold_option ~folder ~state yield
+
+  let default_fold_yield_from ~folder ~state yield_from = fold ~folder ~state yield_from
+
+  let fold_ignoring_location f ~folder ~state ~location:_ value = f ~folder ~state value
+
+  let create
+      ?(fold_await = fold_ignoring_location default_fold_await)
+      ?(fold_boolean_operator = fold_ignoring_location default_fold_boolean_operator)
+      ?(fold_call = fold_ignoring_location default_fold_call)
+      ?(fold_comparison_operator = fold_ignoring_location default_fold_comparison_operator)
+      ?(fold_constant = fold_ignoring_location default_fold_constant)
+      ?(fold_dictionary = fold_ignoring_location default_fold_dictionary)
+      ?(fold_dictionary_comprehension =
+        fold_ignoring_location default_fold_dictionary_comprehension)
+      ?(fold_generator = fold_ignoring_location default_fold_generator)
+      ?(fold_format_string = fold_ignoring_location default_fold_format_string)
+      ?(fold_lambda = fold_ignoring_location default_fold_lambda)
+      ?(fold_list = fold_ignoring_location default_fold_list)
+      ?(fold_list_comprehension = fold_ignoring_location default_fold_generator)
+      ?(fold_name = fold_ignoring_location default_fold_name)
+      ?(fold_set = fold_ignoring_location default_fold_list)
+      ?(fold_set_comprehension = fold_ignoring_location default_fold_generator)
+      ?(fold_starred = fold_ignoring_location default_fold_starred)
+      ?(fold_ternary = fold_ignoring_location default_fold_ternary)
+      ?(fold_tuple = fold_ignoring_location default_fold_list)
+      ?(fold_unary_operator = fold_ignoring_location default_fold_unary_operator)
+      ?(fold_walrus_operator = fold_ignoring_location default_fold_walrus_operator)
+      ?(fold_yield = fold_ignoring_location default_fold_yield)
+      ?(fold_yield_from = fold_ignoring_location default_fold_yield_from)
+      ()
+    =
+    {
+      fold_await;
+      fold_boolean_operator;
+      fold_call;
+      fold_comparison_operator;
+      fold_constant;
+      fold_dictionary;
+      fold_dictionary_comprehension;
+      fold_generator;
+      fold_format_string;
+      fold_lambda;
+      fold_list;
+      fold_list_comprehension;
+      fold_name;
+      fold_set;
+      fold_set_comprehension;
+      fold_starred;
+      fold_ternary;
+      fold_tuple;
+      fold_unary_operator;
+      fold_walrus_operator;
+      fold_yield;
+      fold_yield_from;
+    }
+
+
+  let create_with_uniform_location_fold
+      ?(fold_await = default_fold_await)
+      ?(fold_boolean_operator = default_fold_boolean_operator)
+      ?(fold_call = default_fold_call)
+      ?(fold_comparison_operator = default_fold_comparison_operator)
+      ?(fold_constant = default_fold_constant)
+      ?(fold_dictionary = default_fold_dictionary)
+      ?(fold_dictionary_comprehension = default_fold_dictionary_comprehension)
+      ?(fold_generator = default_fold_generator)
+      ?fold_format_string
+      ?fold_lambda
+      ?(fold_list = default_fold_list)
+      ?(fold_list_comprehension = default_fold_generator)
+      ?(fold_name = default_fold_name)
+      ?(fold_set = default_fold_list)
+      ?(fold_set_comprehension = default_fold_generator)
+      ?(fold_starred = default_fold_starred)
+      ?(fold_ternary = default_fold_ternary)
+      ?(fold_tuple = default_fold_list)
+      ?(fold_unary_operator = default_fold_unary_operator)
+      ?(fold_walrus_operator = default_fold_walrus_operator)
+      ?(fold_yield = default_fold_yield)
+      ?(fold_yield_from = default_fold_yield_from)
+      ?(fold_location = default_fold_location)
+      ()
+    =
+    let fold_lambda =
+      match fold_lambda with
+      | Some fold_lambda -> fold_lambda
+      | None ->
+          fun ~folder ~state { Lambda.parameters; body } ->
+            let state =
+              default_fold_parameters_with_location ~folder ~state ~fold_location parameters
+            in
+            fold ~folder ~state body
+    in
+    let fold_format_string =
+      match fold_format_string with
+      | Some fold_format_string -> fold_format_string
+      | None ->
+          fun ~folder ~state substrings ->
+            default_fold_substrings_with_location ~folder ~state ~fold_location substrings
+    in
+    let fold_with_location f ~folder ~state ~location item =
+      let state = fold_location ~state location in
+      f ~folder ~state item
+    in
+    {
+      fold_await = fold_with_location fold_await;
+      fold_boolean_operator = fold_with_location fold_boolean_operator;
+      fold_call = fold_with_location fold_call;
+      fold_comparison_operator = fold_with_location fold_comparison_operator;
+      fold_constant = fold_with_location fold_constant;
+      fold_dictionary = fold_with_location fold_dictionary;
+      fold_dictionary_comprehension = fold_with_location fold_dictionary_comprehension;
+      fold_generator = fold_with_location fold_generator;
+      fold_format_string = fold_with_location fold_format_string;
+      fold_lambda = fold_with_location fold_lambda;
+      fold_list = fold_with_location fold_list;
+      fold_list_comprehension = fold_with_location fold_list_comprehension;
+      fold_name = fold_with_location fold_name;
+      fold_set = fold_with_location fold_set;
+      fold_set_comprehension = fold_with_location fold_set_comprehension;
+      fold_starred = fold_with_location fold_starred;
+      fold_ternary = fold_with_location fold_ternary;
+      fold_tuple = fold_with_location fold_tuple;
+      fold_unary_operator = fold_with_location fold_unary_operator;
+      fold_walrus_operator = fold_with_location fold_walrus_operator;
+      fold_yield = fold_with_location fold_yield;
+      fold_yield_from = fold_with_location fold_yield_from;
+    }
+end
+
 include Expression
 
 let negate ({ Node.location; value } as node) =

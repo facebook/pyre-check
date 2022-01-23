@@ -307,6 +307,76 @@ and Expression : sig
   val location_insensitive_compare : t -> t -> int
 end
 
+module Folder : sig
+  type 'a t
+
+  val fold : folder:'a t -> state:'a -> Expression.t -> 'a
+
+  val fold_list : folder:'a t -> state:'a -> Expression.t list -> 'a
+
+  val fold_option : folder:'a t -> state:'a -> Expression.t option -> 'a
+
+  val create
+    :  ?fold_await:(folder:'a t -> state:'a -> location:Location.t -> Expression.t -> 'a) ->
+    ?fold_boolean_operator:
+      (folder:'a t -> state:'a -> location:Location.t -> BooleanOperator.t -> 'a) ->
+    ?fold_call:(folder:'a t -> state:'a -> location:Location.t -> Call.t -> 'a) ->
+    ?fold_comparison_operator:
+      (folder:'a t -> state:'a -> location:Location.t -> ComparisonOperator.t -> 'a) ->
+    ?fold_constant:(folder:'a t -> state:'a -> location:Location.t -> Constant.t -> 'a) ->
+    ?fold_dictionary:(folder:'a t -> state:'a -> location:Location.t -> Dictionary.t -> 'a) ->
+    ?fold_dictionary_comprehension:
+      (folder:'a t -> state:'a -> location:Location.t -> Dictionary.Entry.t Comprehension.t -> 'a) ->
+    ?fold_generator:
+      (folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a) ->
+    ?fold_format_string:(folder:'a t -> state:'a -> location:Location.t -> Substring.t list -> 'a) ->
+    ?fold_lambda:(folder:'a t -> state:'a -> location:Location.t -> Lambda.t -> 'a) ->
+    ?fold_list:(folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a) ->
+    ?fold_list_comprehension:
+      (folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a) ->
+    ?fold_name:(folder:'a t -> state:'a -> location:Location.t -> Name.t -> 'a) ->
+    ?fold_set:(folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a) ->
+    ?fold_set_comprehension:
+      (folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a) ->
+    ?fold_starred:(folder:'a t -> state:'a -> location:Location.t -> Starred.t -> 'a) ->
+    ?fold_ternary:(folder:'a t -> state:'a -> location:Location.t -> Ternary.t -> 'a) ->
+    ?fold_tuple:(folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a) ->
+    ?fold_unary_operator:(folder:'a t -> state:'a -> location:Location.t -> UnaryOperator.t -> 'a) ->
+    ?fold_walrus_operator:(folder:'a t -> state:'a -> location:Location.t -> WalrusOperator.t -> 'a) ->
+    ?fold_yield:(folder:'a t -> state:'a -> location:Location.t -> Expression.t option -> 'a) ->
+    ?fold_yield_from:(folder:'a t -> state:'a -> location:Location.t -> Expression.t -> 'a) ->
+    unit ->
+    'a t
+
+  val create_with_uniform_location_fold
+    :  ?fold_await:(folder:'a t -> state:'a -> Expression.t -> 'a) ->
+    ?fold_boolean_operator:(folder:'a t -> state:'a -> BooleanOperator.t -> 'a) ->
+    ?fold_call:(folder:'a t -> state:'a -> Call.t -> 'a) ->
+    ?fold_comparison_operator:(folder:'a t -> state:'a -> ComparisonOperator.t -> 'a) ->
+    ?fold_constant:(folder:'a t -> state:'a -> Constant.t -> 'a) ->
+    ?fold_dictionary:(folder:'a t -> state:'a -> Dictionary.t -> 'a) ->
+    ?fold_dictionary_comprehension:
+      (folder:'a t -> state:'a -> Dictionary.Entry.t Comprehension.t -> 'a) ->
+    ?fold_generator:(folder:'a t -> state:'a -> Expression.t Comprehension.t -> 'a) ->
+    ?fold_format_string:(folder:'a t -> state:'a -> Substring.t list -> 'a) ->
+    ?fold_lambda:(folder:'a t -> state:'a -> Lambda.t -> 'a) ->
+    ?fold_list:(folder:'a t -> state:'a -> Expression.t list -> 'a) ->
+    ?fold_list_comprehension:(folder:'a t -> state:'a -> Expression.t Comprehension.t -> 'a) ->
+    ?fold_name:(folder:'a t -> state:'a -> Name.t -> 'a) ->
+    ?fold_set:(folder:'a t -> state:'a -> Expression.t list -> 'a) ->
+    ?fold_set_comprehension:(folder:'a t -> state:'a -> Expression.t Comprehension.t -> 'a) ->
+    ?fold_starred:(folder:'a t -> state:'a -> Starred.t -> 'a) ->
+    ?fold_ternary:(folder:'a t -> state:'a -> Ternary.t -> 'a) ->
+    ?fold_tuple:(folder:'a t -> state:'a -> Expression.t list -> 'a) ->
+    ?fold_unary_operator:(folder:'a t -> state:'a -> UnaryOperator.t -> 'a) ->
+    ?fold_walrus_operator:(folder:'a t -> state:'a -> WalrusOperator.t -> 'a) ->
+    ?fold_yield:(folder:'a t -> state:'a -> Expression.t option -> 'a) ->
+    ?fold_yield_from:(folder:'a t -> state:'a -> Expression.t -> 'a) ->
+    ?fold_location:(state:'a -> Location.t -> 'a) ->
+    unit ->
+    'a t
+end
+
 type t = Expression.t [@@deriving compare, sexp, show, hash, to_yojson]
 
 type expression = Expression.expression [@@deriving compare, sexp, show, hash, to_yojson]

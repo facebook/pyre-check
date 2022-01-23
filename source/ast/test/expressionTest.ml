@@ -614,6 +614,155 @@ let test_arguments_location _ =
   assert_arguments_location "long_call()" 9 11
 
 
+let test_folder context =
+  (* Define a folder that computes the sum of all integer constants in the expression *)
+  let folder =
+    let fold_constant ~folder:_ ~state = function
+      | Constant.Integer i -> state + i
+      | _ -> state
+    in
+    Folder.create_with_uniform_location_fold ~fold_constant ()
+  in
+  let assert_count ~expected expression =
+    let actual = Folder.fold ~folder ~state:0 expression in
+    assert_equal
+      ~ctxt:context
+      ~cmp:Int.equal
+      ~printer:Int.to_string
+      ~msg:"Unexpected integer sum"
+      expected
+      actual
+  in
+  let integer i = +Expression.Constant (Constant.Integer i) in
+  assert_count (+Expression.Await (integer 1)) ~expected:1;
+  assert_count
+    (+Expression.BooleanOperator
+        { BooleanOperator.left = integer 1; operator = BooleanOperator.And; right = integer 2 })
+    ~expected:3;
+  assert_count
+    (+Expression.Call
+        {
+          Call.callee = integer 1;
+          arguments =
+            [
+              { Call.Argument.name = None; value = integer 2 };
+              { Call.Argument.name = None; value = integer 3 };
+            ];
+        })
+    ~expected:6;
+  assert_count
+    (+Expression.ComparisonOperator
+        {
+          ComparisonOperator.left = integer 1;
+          operator = ComparisonOperator.Equals;
+          right = integer 2;
+        })
+    ~expected:3;
+  assert_count (+Expression.Constant Constant.NoneLiteral) ~expected:0;
+  assert_count
+    (+Expression.Dictionary
+        {
+          Dictionary.entries = [{ Dictionary.Entry.key = integer 1; value = integer 2 }];
+          keywords = [integer 3];
+        })
+    ~expected:6;
+  assert_count
+    (+Expression.DictionaryComprehension
+        {
+          Comprehension.element = { Dictionary.Entry.key = !"x"; value = integer 1 };
+          generators =
+            [
+              {
+                Comprehension.Generator.target = integer 2;
+                iterator = integer 3;
+                conditions = [integer 4; integer 5];
+                async = true;
+              };
+            ];
+        })
+    ~expected:15;
+  assert_count
+    (+Expression.Generator
+        {
+          Comprehension.element = integer 1;
+          generators =
+            [
+              {
+                Comprehension.Generator.target = integer 2;
+                iterator = integer 3;
+                conditions = [integer 4; integer 5];
+                async = true;
+              };
+            ];
+        })
+    ~expected:15;
+  assert_count
+    (+Expression.FormatString [Substring.Literal (+"abc"); Substring.Format (integer 1)])
+    ~expected:1;
+  assert_count
+    (+Expression.Lambda
+        {
+          Lambda.parameters =
+            [Parameter.create ~location:Location.any ~value:(integer 1) ~name:"x" ()];
+          body = integer 2;
+        })
+    ~expected:3;
+  assert_count (+Expression.List [integer 1; integer 2]) ~expected:3;
+  assert_count
+    (+Expression.ListComprehension
+        {
+          Comprehension.element = integer 1;
+          generators =
+            [
+              {
+                Comprehension.Generator.target = integer 2;
+                iterator = integer 3;
+                conditions = [integer 4; integer 5];
+                async = true;
+              };
+            ];
+        })
+    ~expected:15;
+  assert_count !"x" ~expected:0;
+  assert_count
+    (+Expression.Name
+        (Name.Attribute { Name.Attribute.base = integer 1; attribute = "x"; special = false }))
+    ~expected:1;
+  assert_count (+Expression.Set [integer 1; integer 2]) ~expected:3;
+  assert_count
+    (+Expression.SetComprehension
+        {
+          Comprehension.element = integer 1;
+          generators =
+            [
+              {
+                Comprehension.Generator.target = integer 2;
+                iterator = integer 3;
+                conditions = [integer 4; integer 5];
+                async = true;
+              };
+            ];
+        })
+    ~expected:15;
+  assert_count
+    (+Expression.Starred (Starred.Once (+Expression.List [integer 1; integer 2])))
+    ~expected:3;
+  assert_count
+    (+Expression.Ternary { Ternary.target = integer 1; test = integer 2; alternative = integer 3 })
+    ~expected:6;
+  assert_count (+Expression.Tuple [integer 1; integer 2]) ~expected:3;
+  assert_count
+    (+Expression.UnaryOperator
+        { UnaryOperator.operator = UnaryOperator.Negative; operand = integer 1 })
+    ~expected:1;
+  assert_count
+    (+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 1 })
+    ~expected:1;
+  assert_count (+Expression.Yield (Some (integer 1))) ~expected:1;
+  assert_count (+Expression.YieldFrom (integer 1)) ~expected:1;
+  ()
+
+
 let () =
   "expression"
   >::: [
@@ -628,5 +777,6 @@ let () =
          "name_to_identifiers" >:: test_name_to_identifiers;
          "name_equals" >:: test_name_equals;
          "arguments_location" >:: test_arguments_location;
+         "folder" >:: test_folder;
        ]
   |> Test.run
