@@ -96,9 +96,56 @@ let comparison_operator =
 
 
 let comprehension ~target ~iter ~ifs ~is_async =
+  let open Ast.Expression in
+  (* PEP-572 disallows assignment expressions in comprehension iterables. `pyre-ast` does not check
+     for that. *)
+  let check_assignment_expression expression =
+    let mapper =
+      let open Ast.Location in
+      let map_walrus_operator
+          ~mapper:_
+          ~location:{ start = { line; column }; stop = { line = end_line; column = end_column } }
+          _
+        =
+        raise
+          (InternalError
+             {
+               Error.line;
+               column;
+               end_line;
+               end_column;
+               message =
+                 "assignment expression cannot be used in a comprehension iterable expression";
+             })
+      in
+      (* The following 4 items are introduced for optimization purpose: avoid recursing into
+         comprehension sub-expressions as they are already checked for assignment expressions upon
+         construction. *)
+      let map_dictionary_comprehension ~mapper:_ ~location comprehension =
+        Ast.Node.create ~location (Expression.DictionaryComprehension comprehension)
+      in
+      let map_generator ~mapper:_ ~location comprehension =
+        Ast.Node.create ~location (Expression.Generator comprehension)
+      in
+      let map_list_comprehension ~mapper:_ ~location comprehension =
+        Ast.Node.create ~location (Expression.ListComprehension comprehension)
+      in
+      let map_set_comprehension ~mapper:_ ~location comprehension =
+        Ast.Node.create ~location (Expression.SetComprehension comprehension)
+      in
+      Mapper.create_default
+        ~map_walrus_operator
+        ~map_dictionary_comprehension
+        ~map_generator
+        ~map_list_comprehension
+        ~map_set_comprehension
+        ()
+    in
+    Mapper.map ~mapper expression
+  in
   {
-    Ast.Expression.Comprehension.Generator.target;
-    iterator = iter;
+    Comprehension.Generator.target;
+    iterator = check_assignment_expression iter;
     conditions = ifs;
     async = is_async;
   }
@@ -1028,5 +1075,6 @@ let parse_module_exn ?enable_type_comment ~context text =
   | Result.Error error -> raise (Exception error)
 
 
-let parse_expression ~context =
-  PyreAst.Parser.TaglessFinal.parse_expression ~context ~spec:specification
+let parse_expression ~context text =
+  try PyreAst.Parser.TaglessFinal.parse_expression ~context ~spec:specification text with
+  | InternalError error -> Result.Error error

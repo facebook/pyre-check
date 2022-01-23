@@ -723,6 +723,10 @@ let test_comprehensions _ =
     assert_not_parsed "[*a for a in b]";
     assert_not_parsed "{*a for a in b}";
     assert_not_parsed "{**a for a in b}";
+    assert_not_parsed "[i+1 for i in (j := stuff)]";
+    assert_not_parsed "[i+1 for i in range(2) for j in (k := stuff)]";
+    assert_not_parsed "[i+1 for i in [j for j in (k := stuff)]]";
+    assert_not_parsed "[i+1 for i in (lambda: (j := stuff))()]";
     ()
   in
   PyreNewParser.with_context do_test
