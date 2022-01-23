@@ -601,12 +601,7 @@ let process_function_type_comment
       match parse_function_signature type_comment with
       | Result.Error _ -> Result.Error "Syntax error in function signature type comment"
       | Result.Ok { FunctionSignature.parameter_annotations; return_annotation } -> (
-          let
-          (* NOTE(grievejia): Locations in both `parameter_annotations` and `return_annotation` are
-             all off since they are counted from the start of `type_comment`, not from the start of
-             the entire file. *)
-          open
-            Ast.Expression in
+          let open Ast.Expression in
           let module Node = Ast.Node in
           let parameter_annotations =
             let parameter_count = List.length parameters in
@@ -634,6 +629,13 @@ let process_function_type_comment
               in
               Result.Error message
           | List.Or_unequal_lengths.Ok pairs ->
+              let location_patcher =
+                (* NOTE(grievejia): Locations in both `parameter_annotations` and
+                   `return_annotation` are all off since they are counted from the start of
+                   `type_comment`, not from the start of the entire file. Therefore, we need to
+                   replace them with something more sensible. *)
+                Mapper.create_transformer ~map_location:(fun _ -> comment_location) ()
+              in
               let override_annotation old_annotation new_annotation =
                 (* NOTE(grievejia): Currently we let inline annotations take precedence over comment
                    annotations. *)
@@ -643,7 +645,7 @@ let process_function_type_comment
                     match new_annotation with
                     | None -> None
                     | Some new_annotation ->
-                        Some { new_annotation with Node.location = comment_location })
+                        Some (Mapper.map ~mapper:location_patcher new_annotation))
               in
               let override_parameter ({ Node.value = parameter; location }, new_annotation) =
                 let { Parameter.annotation; _ } = parameter in

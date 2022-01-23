@@ -3576,15 +3576,15 @@ let test_type_comments _ =
                                {
                                  callee =
                                    node
-                                     ~start:(1, 9)
-                                     ~stop:(1, 13)
+                                     ~start:(1, 0)
+                                     ~stop:(2, 2)
                                      (Expression.Name
                                         (Name.Attribute
                                            {
                                              base =
                                                node
-                                                 ~start:(1, 9)
-                                                 ~stop:(1, 13)
+                                                 ~start:(1, 0)
+                                                 ~stop:(2, 2)
                                                  (Expression.Name (Name.Identifier "List"));
                                              attribute = "__getitem__";
                                              special = true;
@@ -3595,8 +3595,8 @@ let test_type_comments _ =
                                        Call.Argument.name = None;
                                        value =
                                          node
-                                           ~start:(1, 14)
-                                           ~stop:(1, 18)
+                                           ~start:(1, 0)
+                                           ~stop:(2, 2)
                                            (Expression.Name (Name.Identifier "derp"));
                                      };
                                    ];

@@ -5439,14 +5439,13 @@ let test_populate_unbound_names _ =
     |}
     ~expected:[!&"foo", ["derp", location (4, 2) (4, 6)]];
 
-  (* TODO(T109357540): Invalid locations for Python2 unbound names *)
   assert_unbound_names
     {|
       #!/usr/bin/env python2
       def foo(): # type: (...) -> List[derp]
         pass
     |}
-    ~expected:[toplevel_name, ["List", location (1, 9) (1, 13); "derp", location (1, 14) (1, 18)]];
+    ~expected:[toplevel_name, ["List", location (3, 0) (4, 2); "derp", location (3, 0) (4, 2)]];
 
   (* TODO(T80454071): This should raise an error about `nonexistent_inside_quotes`. *)
   assert_unbound_names
