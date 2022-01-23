@@ -307,6 +307,115 @@ and Expression : sig
   val location_insensitive_compare : t -> t -> int
 end
 
+module Mapper : sig
+  type 'a t
+
+  val map : mapper:'a t -> Expression.t -> 'a
+
+  val map_list : mapper:'a t -> Expression.t list -> 'a list
+
+  val map_option : mapper:'a t -> Expression.t option -> 'a option
+
+  val create
+    :  map_await:(mapper:'a t -> location:Location.t -> Expression.t -> 'a) ->
+    map_boolean_operator:(mapper:'a t -> location:Location.t -> BooleanOperator.t -> 'a) ->
+    map_call:(mapper:'a t -> location:Location.t -> Call.t -> 'a) ->
+    map_comparison_operator:(mapper:'a t -> location:Location.t -> ComparisonOperator.t -> 'a) ->
+    map_constant:(mapper:'a t -> location:Location.t -> Constant.t -> 'a) ->
+    map_dictionary:(mapper:'a t -> location:Location.t -> Dictionary.t -> 'a) ->
+    map_dictionary_comprehension:
+      (mapper:'a t -> location:Location.t -> Dictionary.Entry.t Comprehension.t -> 'a) ->
+    map_generator:(mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a) ->
+    map_format_string:(mapper:'a t -> location:Location.t -> Substring.t list -> 'a) ->
+    map_lambda:(mapper:'a t -> location:Location.t -> Lambda.t -> 'a) ->
+    map_list:(mapper:'a t -> location:Location.t -> Expression.t list -> 'a) ->
+    map_list_comprehension:
+      (mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a) ->
+    map_name:(mapper:'a t -> location:Location.t -> Name.t -> 'a) ->
+    map_set:(mapper:'a t -> location:Location.t -> Expression.t list -> 'a) ->
+    map_set_comprehension:(mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a) ->
+    map_starred:(mapper:'a t -> location:Location.t -> Starred.t -> 'a) ->
+    map_ternary:(mapper:'a t -> location:Location.t -> Ternary.t -> 'a) ->
+    map_tuple:(mapper:'a t -> location:Location.t -> Expression.t list -> 'a) ->
+    map_unary_operator:(mapper:'a t -> location:Location.t -> UnaryOperator.t -> 'a) ->
+    map_walrus_operator:(mapper:'a t -> location:Location.t -> WalrusOperator.t -> 'a) ->
+    map_yield:(mapper:'a t -> location:Location.t -> Expression.t option -> 'a) ->
+    map_yield_from:(mapper:'a t -> location:Location.t -> Expression.t -> 'a) ->
+    unit ->
+    'a t
+
+  val create_default
+    :  ?map_await:(mapper:Expression.t t -> location:Location.t -> Expression.t -> Expression.t) ->
+    ?map_boolean_operator:
+      (mapper:Expression.t t -> location:Location.t -> BooleanOperator.t -> Expression.t) ->
+    ?map_call:(mapper:Expression.t t -> location:Location.t -> Call.t -> Expression.t) ->
+    ?map_comparison_operator:
+      (mapper:Expression.t t -> location:Location.t -> ComparisonOperator.t -> Expression.t) ->
+    ?map_constant:(mapper:Expression.t t -> location:Location.t -> Constant.t -> Expression.t) ->
+    ?map_dictionary:(mapper:Expression.t t -> location:Location.t -> Dictionary.t -> Expression.t) ->
+    ?map_dictionary_comprehension:
+      (mapper:Expression.t t ->
+      location:Location.t ->
+      Dictionary.Entry.t Comprehension.t ->
+      Expression.t) ->
+    ?map_generator:
+      (mapper:Expression.t t -> location:Location.t -> Expression.t Comprehension.t -> Expression.t) ->
+    ?map_format_string:
+      (mapper:Expression.t t -> location:Location.t -> Substring.t list -> Expression.t) ->
+    ?map_lambda:(mapper:Expression.t t -> location:Location.t -> Lambda.t -> Expression.t) ->
+    ?map_list:(mapper:Expression.t t -> location:Location.t -> Expression.t list -> Expression.t) ->
+    ?map_list_comprehension:
+      (mapper:Expression.t t -> location:Location.t -> Expression.t Comprehension.t -> Expression.t) ->
+    ?map_name:(mapper:Expression.t t -> location:Location.t -> Name.t -> Expression.t) ->
+    ?map_set:(mapper:Expression.t t -> location:Location.t -> Expression.t list -> Expression.t) ->
+    ?map_set_comprehension:
+      (mapper:Expression.t t -> location:Location.t -> Expression.t Comprehension.t -> Expression.t) ->
+    ?map_starred:(mapper:Expression.t t -> location:Location.t -> Starred.t -> Expression.t) ->
+    ?map_ternary:(mapper:Expression.t t -> location:Location.t -> Ternary.t -> Expression.t) ->
+    ?map_tuple:(mapper:Expression.t t -> location:Location.t -> Expression.t list -> Expression.t) ->
+    ?map_unary_operator:
+      (mapper:Expression.t t -> location:Location.t -> UnaryOperator.t -> Expression.t) ->
+    ?map_walrus_operator:
+      (mapper:Expression.t t -> location:Location.t -> WalrusOperator.t -> Expression.t) ->
+    ?map_yield:(mapper:Expression.t t -> location:Location.t -> Expression.t option -> Expression.t) ->
+    ?map_yield_from:(mapper:Expression.t t -> location:Location.t -> Expression.t -> Expression.t) ->
+    unit ->
+    Expression.t t
+
+  val create_transformer
+    :  ?map_await:(mapper:Expression.t t -> Expression.t -> Expression.t) ->
+    ?map_boolean_operator:(mapper:Expression.t t -> BooleanOperator.t -> BooleanOperator.t) ->
+    ?map_call:(mapper:Expression.t t -> Call.t -> Call.t) ->
+    ?map_comparison_operator:(mapper:Expression.t t -> ComparisonOperator.t -> ComparisonOperator.t) ->
+    ?map_constant:(mapper:Expression.t t -> Constant.t -> Constant.t) ->
+    ?map_dictionary:(mapper:Expression.t t -> Dictionary.t -> Dictionary.t) ->
+    ?map_dictionary_comprehension:
+      (mapper:Expression.t t ->
+      Dictionary.Entry.t Comprehension.t ->
+      Dictionary.Entry.t Comprehension.t) ->
+    ?map_generator:
+      (mapper:Expression.t t -> Expression.t Comprehension.t -> Expression.t Comprehension.t) ->
+    ?map_format_string:(mapper:Expression.t t -> Substring.t list -> Substring.t list) ->
+    ?map_lambda:(mapper:Expression.t t -> Lambda.t -> Lambda.t) ->
+    ?map_list:(mapper:Expression.t t -> Expression.t list -> Expression.t list) ->
+    ?map_list_comprehension:
+      (mapper:Expression.t t -> Expression.t Comprehension.t -> Expression.t Comprehension.t) ->
+    ?map_name:(mapper:Expression.t t -> Name.t -> Name.t) ->
+    ?map_set:(mapper:Expression.t t -> Expression.t list -> Expression.t list) ->
+    ?map_set_comprehension:
+      (mapper:Expression.t t -> Expression.t Comprehension.t -> Expression.t Comprehension.t) ->
+    ?map_starred:(mapper:Expression.t t -> Starred.t -> Starred.t) ->
+    ?map_ternary:(mapper:Expression.t t -> Ternary.t -> Ternary.t) ->
+    ?map_tuple:(mapper:Expression.t t -> Expression.t list -> Expression.t list) ->
+    ?map_unary_operator:(mapper:Expression.t t -> UnaryOperator.t -> UnaryOperator.t) ->
+    ?map_walrus_operator:(mapper:Expression.t t -> WalrusOperator.t -> WalrusOperator.t) ->
+    ?map_yield:(mapper:Expression.t t -> Expression.t option -> Expression.t option) ->
+    ?map_yield_from:(mapper:Expression.t t -> Expression.t -> Expression.t) ->
+    ?map_location:(Location.t -> Location.t) ->
+    unit ->
+    Expression.t t
+end
+
 module Folder : sig
   type 'a t
 

@@ -614,7 +614,7 @@ let test_arguments_location _ =
   assert_arguments_location "long_call()" 9 11
 
 
-let test_folder context =
+let test_default_folder context =
   (* Define a folder that computes the sum of all integer constants in the expression *)
   let folder =
     let fold_constant ~folder:_ ~state = function
@@ -763,6 +763,252 @@ let test_folder context =
   ()
 
 
+let test_default_mapper context =
+  (* Define a mapper that increase all integer constants by 1 *)
+  let mapper =
+    let map_constant ~mapper:_ = function
+      | Constant.Integer i -> Constant.Integer (i + 1)
+      | _ as constant -> constant
+    in
+    Mapper.create_transformer ~map_constant ()
+  in
+  let assert_transformed ~expected expression =
+    let actual = Mapper.map ~mapper expression in
+    assert_equal
+      ~ctxt:context
+      ~cmp:(fun left right -> Int.equal 0 (Expression.location_insensitive_compare left right))
+      ~printer:(fun expression -> Sexp.to_string_hum ([%sexp_of: Expression.t] expression))
+      ~msg:"Unexpected transformed expression"
+      expected
+      actual
+  in
+  let integer i = +Expression.Constant (Constant.Integer i) in
+  assert_transformed (+Expression.Await (integer 1)) ~expected:(+Expression.Await (integer 2));
+  assert_transformed
+    (+Expression.BooleanOperator
+        { BooleanOperator.left = integer 1; operator = BooleanOperator.And; right = integer 2 })
+    ~expected:
+      (+Expression.BooleanOperator
+          { BooleanOperator.left = integer 2; operator = BooleanOperator.And; right = integer 3 });
+  assert_transformed
+    (+Expression.Call
+        {
+          Call.callee = integer 1;
+          arguments =
+            [
+              { Call.Argument.name = None; value = integer 2 };
+              { Call.Argument.name = None; value = integer 3 };
+            ];
+        })
+    ~expected:
+      (+Expression.Call
+          {
+            Call.callee = integer 2;
+            arguments =
+              [
+                { Call.Argument.name = None; value = integer 3 };
+                { Call.Argument.name = None; value = integer 4 };
+              ];
+          });
+  assert_transformed
+    (+Expression.ComparisonOperator
+        {
+          ComparisonOperator.left = integer 1;
+          operator = ComparisonOperator.Equals;
+          right = integer 2;
+        })
+    ~expected:
+      (+Expression.ComparisonOperator
+          {
+            ComparisonOperator.left = integer 2;
+            operator = ComparisonOperator.Equals;
+            right = integer 3;
+          });
+  assert_transformed
+    (+Expression.Constant Constant.NoneLiteral)
+    ~expected:(+Expression.Constant Constant.NoneLiteral);
+  assert_transformed
+    (+Expression.Dictionary
+        {
+          Dictionary.entries = [{ Dictionary.Entry.key = integer 1; value = integer 2 }];
+          keywords = [integer 3];
+        })
+    ~expected:
+      (+Expression.Dictionary
+          {
+            Dictionary.entries = [{ Dictionary.Entry.key = integer 2; value = integer 3 }];
+            keywords = [integer 4];
+          });
+  assert_transformed
+    (+Expression.DictionaryComprehension
+        {
+          Comprehension.element = { Dictionary.Entry.key = !"x"; value = integer 1 };
+          generators =
+            [
+              {
+                Comprehension.Generator.target = integer 2;
+                iterator = integer 3;
+                conditions = [integer 4; integer 5];
+                async = true;
+              };
+            ];
+        })
+    ~expected:
+      (+Expression.DictionaryComprehension
+          {
+            Comprehension.element = { Dictionary.Entry.key = !"x"; value = integer 2 };
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = integer 3;
+                  iterator = integer 4;
+                  conditions = [integer 5; integer 6];
+                  async = true;
+                };
+              ];
+          });
+  assert_transformed
+    (+Expression.Generator
+        {
+          Comprehension.element = integer 1;
+          generators =
+            [
+              {
+                Comprehension.Generator.target = integer 2;
+                iterator = integer 3;
+                conditions = [integer 4; integer 5];
+                async = true;
+              };
+            ];
+        })
+    ~expected:
+      (+Expression.Generator
+          {
+            Comprehension.element = integer 2;
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = integer 3;
+                  iterator = integer 4;
+                  conditions = [integer 5; integer 6];
+                  async = true;
+                };
+              ];
+          });
+  assert_transformed
+    (+Expression.FormatString [Substring.Literal (+"abc"); Substring.Format (integer 1)])
+    ~expected:(+Expression.FormatString [Substring.Literal (+"abc"); Substring.Format (integer 2)]);
+  assert_transformed
+    (+Expression.Lambda
+        {
+          Lambda.parameters =
+            [Parameter.create ~location:Location.any ~value:(integer 1) ~name:"x" ()];
+          body = integer 2;
+        })
+    ~expected:
+      (+Expression.Lambda
+          {
+            Lambda.parameters =
+              [Parameter.create ~location:Location.any ~value:(integer 2) ~name:"x" ()];
+            body = integer 3;
+          });
+  assert_transformed
+    (+Expression.List [integer 1; integer 2])
+    ~expected:(+Expression.List [integer 2; integer 3]);
+  assert_transformed
+    (+Expression.ListComprehension
+        {
+          Comprehension.element = integer 1;
+          generators =
+            [
+              {
+                Comprehension.Generator.target = integer 2;
+                iterator = integer 3;
+                conditions = [integer 4; integer 5];
+                async = true;
+              };
+            ];
+        })
+    ~expected:
+      (+Expression.ListComprehension
+          {
+            Comprehension.element = integer 2;
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = integer 3;
+                  iterator = integer 4;
+                  conditions = [integer 5; integer 6];
+                  async = true;
+                };
+              ];
+          });
+  assert_transformed !"x" ~expected:!"x";
+  assert_transformed
+    (+Expression.Name
+        (Name.Attribute { Name.Attribute.base = integer 1; attribute = "x"; special = false }))
+    ~expected:
+      (+Expression.Name
+          (Name.Attribute { Name.Attribute.base = integer 2; attribute = "x"; special = false }));
+  assert_transformed
+    (+Expression.Set [integer 1; integer 2])
+    ~expected:(+Expression.Set [integer 2; integer 3]);
+  assert_transformed
+    (+Expression.SetComprehension
+        {
+          Comprehension.element = integer 1;
+          generators =
+            [
+              {
+                Comprehension.Generator.target = integer 2;
+                iterator = integer 3;
+                conditions = [integer 4; integer 5];
+                async = true;
+              };
+            ];
+        })
+    ~expected:
+      (+Expression.SetComprehension
+          {
+            Comprehension.element = integer 2;
+            generators =
+              [
+                {
+                  Comprehension.Generator.target = integer 3;
+                  iterator = integer 4;
+                  conditions = [integer 5; integer 6];
+                  async = true;
+                };
+              ];
+          });
+  assert_transformed
+    (+Expression.Starred (Starred.Once (+Expression.List [integer 1; integer 2])))
+    ~expected:(+Expression.Starred (Starred.Once (+Expression.List [integer 2; integer 3])));
+  assert_transformed
+    (+Expression.Ternary { Ternary.target = integer 1; test = integer 2; alternative = integer 3 })
+    ~expected:
+      (+Expression.Ternary { Ternary.target = integer 2; test = integer 3; alternative = integer 4 });
+  assert_transformed
+    (+Expression.Tuple [integer 1; integer 2])
+    ~expected:(+Expression.Tuple [integer 2; integer 3]);
+  assert_transformed
+    (+Expression.UnaryOperator
+        { UnaryOperator.operator = UnaryOperator.Negative; operand = integer 1 })
+    ~expected:
+      (+Expression.UnaryOperator
+          { UnaryOperator.operator = UnaryOperator.Negative; operand = integer 2 });
+  assert_transformed
+    (+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 1 })
+    ~expected:(+Expression.WalrusOperator { WalrusOperator.target = !"x"; value = integer 2 });
+  assert_transformed
+    (+Expression.Yield (Some (integer 1)))
+    ~expected:(+Expression.Yield (Some (integer 2)));
+  assert_transformed
+    (+Expression.YieldFrom (integer 1))
+    ~expected:(+Expression.YieldFrom (integer 2));
+  ()
+
+
 let () =
   "expression"
   >::: [
@@ -777,6 +1023,7 @@ let () =
          "name_to_identifiers" >:: test_name_to_identifiers;
          "name_equals" >:: test_name_equals;
          "arguments_location" >:: test_arguments_location;
-         "folder" >:: test_folder;
+         "default_folder" >:: test_default_folder;
+         "default_mapper" >:: test_default_mapper;
        ]
   |> Test.run

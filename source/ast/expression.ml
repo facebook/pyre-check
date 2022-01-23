@@ -1100,6 +1100,635 @@ end = struct
     Format.fprintf formatter "%a" PrettyPrinter.pp_parameter_list expression_parameter_list
 end
 
+module Mapper = struct
+  type 'a t = {
+    map_await: mapper:'a t -> location:Location.t -> Expression.t -> 'a;
+    map_boolean_operator: mapper:'a t -> location:Location.t -> BooleanOperator.t -> 'a;
+    map_call: mapper:'a t -> location:Location.t -> Call.t -> 'a;
+    map_comparison_operator: mapper:'a t -> location:Location.t -> ComparisonOperator.t -> 'a;
+    map_constant: mapper:'a t -> location:Location.t -> Constant.t -> 'a;
+    map_dictionary: mapper:'a t -> location:Location.t -> Dictionary.t -> 'a;
+    map_dictionary_comprehension:
+      mapper:'a t -> location:Location.t -> Dictionary.Entry.t Comprehension.t -> 'a;
+    map_generator: mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    map_format_string: mapper:'a t -> location:Location.t -> Substring.t list -> 'a;
+    map_lambda: mapper:'a t -> location:Location.t -> Lambda.t -> 'a;
+    map_list: mapper:'a t -> location:Location.t -> Expression.t list -> 'a;
+    map_list_comprehension:
+      mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    map_name: mapper:'a t -> location:Location.t -> Name.t -> 'a;
+    map_set: mapper:'a t -> location:Location.t -> Expression.t list -> 'a;
+    map_set_comprehension: mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    map_starred: mapper:'a t -> location:Location.t -> Starred.t -> 'a;
+    map_ternary: mapper:'a t -> location:Location.t -> Ternary.t -> 'a;
+    map_tuple: mapper:'a t -> location:Location.t -> Expression.t list -> 'a;
+    map_unary_operator: mapper:'a t -> location:Location.t -> UnaryOperator.t -> 'a;
+    map_walrus_operator: mapper:'a t -> location:Location.t -> WalrusOperator.t -> 'a;
+    map_yield: mapper:'a t -> location:Location.t -> Expression.t option -> 'a;
+    map_yield_from: mapper:'a t -> location:Location.t -> Expression.t -> 'a;
+  }
+
+  let map
+      ~mapper:
+        ({
+           map_await;
+           map_boolean_operator;
+           map_call;
+           map_comparison_operator;
+           map_constant;
+           map_dictionary;
+           map_dictionary_comprehension;
+           map_generator;
+           map_format_string;
+           map_lambda;
+           map_list;
+           map_list_comprehension;
+           map_name;
+           map_set;
+           map_set_comprehension;
+           map_starred;
+           map_ternary;
+           map_tuple;
+           map_unary_operator;
+           map_walrus_operator;
+           map_yield;
+           map_yield_from;
+         } as mapper)
+      { Node.value; location }
+    =
+    match value with
+    | Expression.Await expression -> map_await ~mapper ~location expression
+    | Expression.BooleanOperator boolean_operator ->
+        map_boolean_operator ~mapper ~location boolean_operator
+    | Expression.Call call -> map_call ~mapper ~location call
+    | Expression.FormatString substrings -> map_format_string ~mapper ~location substrings
+    | Expression.ComparisonOperator comparison_operator ->
+        map_comparison_operator ~mapper ~location comparison_operator
+    | Expression.Constant constant -> map_constant ~mapper ~location constant
+    | Expression.Dictionary dictionary -> map_dictionary ~mapper ~location dictionary
+    | Expression.DictionaryComprehension dictionary_comprehension ->
+        map_dictionary_comprehension ~mapper ~location dictionary_comprehension
+    | Expression.Generator generator -> map_generator ~mapper ~location generator
+    | Expression.Lambda lambda -> map_lambda ~mapper ~location lambda
+    | Expression.List expression_list -> map_list ~mapper ~location expression_list
+    | Expression.ListComprehension list_comprehension ->
+        map_list_comprehension ~mapper ~location list_comprehension
+    | Expression.Name name -> map_name ~mapper ~location name
+    | Expression.Set set -> map_set ~mapper ~location set
+    | Expression.SetComprehension set_comprehension ->
+        map_set_comprehension ~mapper ~location set_comprehension
+    | Expression.Starred starred -> map_starred ~mapper ~location starred
+    | Expression.Ternary ternary -> map_ternary ~mapper ~location ternary
+    | Expression.Tuple tuple -> map_tuple ~mapper ~location tuple
+    | Expression.UnaryOperator unary_operator -> map_unary_operator ~mapper ~location unary_operator
+    | Expression.WalrusOperator walrus_operator ->
+        map_walrus_operator ~mapper ~location walrus_operator
+    | Expression.Yield yield -> map_yield ~mapper ~location yield
+    | Expression.YieldFrom yield_from -> map_yield_from ~mapper ~location yield_from
+
+
+  let create_list_mapper f ~mapper items = List.map items ~f:(f ~mapper)
+
+  let map_list ~mapper items = (create_list_mapper map) ~mapper items
+
+  let map_option ~mapper = Option.map ~f:(map ~mapper)
+
+  let default_map_dictionary_entry ~mapper { Dictionary.Entry.key; value } =
+    { Dictionary.Entry.key = map ~mapper key; value = map ~mapper value }
+
+
+  let default_map_dictionary_entries ~mapper entries =
+    (create_list_mapper default_map_dictionary_entry) ~mapper entries
+
+
+  let default_map_argument ~mapper { Call.Argument.name; value } =
+    { Call.Argument.name; value = map ~mapper value }
+
+
+  let default_map_arguments ~mapper arguments =
+    (create_list_mapper default_map_argument) ~mapper arguments
+
+
+  let default_map_parameter_with_location
+      ~mapper
+      ~map_location
+      { Node.value = { Parameter.name; value; annotation }; location }
+    =
+    {
+      Node.value =
+        {
+          Parameter.name;
+          value = map_option ~mapper value;
+          annotation = map_option ~mapper annotation;
+        };
+      location = map_location location;
+    }
+
+
+  let default_map_parameters_with_location ~mapper ~map_location parameters =
+    (create_list_mapper (default_map_parameter_with_location ~map_location)) ~mapper parameters
+
+
+  let default_map_parameters ~mapper parameters =
+    default_map_parameters_with_location ~mapper ~map_location:Fn.id parameters
+
+
+  let default_map_comprehension_generator
+      ~mapper
+      { Comprehension.Generator.target; iterator; conditions; async }
+    =
+    {
+      Comprehension.Generator.target = map ~mapper target;
+      iterator = map ~mapper iterator;
+      conditions = map_list ~mapper conditions;
+      async;
+    }
+
+
+  let default_map_comprehension_generators ~mapper generators =
+    (create_list_mapper default_map_comprehension_generator) ~mapper generators
+
+
+  let default_map_comprehension ~map_element ~mapper { Comprehension.element; generators } =
+    {
+      Comprehension.element = map_element ~mapper element;
+      generators = default_map_comprehension_generators ~mapper generators;
+    }
+
+
+  let default_map_substring_with_location ~mapper ~map_location = function
+    | Substring.Literal { Node.value; location } ->
+        Substring.Literal { Node.value; location = map_location location }
+    | Substring.Format expression -> Substring.Format (map ~mapper expression)
+
+
+  let default_map_substrings_with_location ~mapper ~map_location substrings =
+    (create_list_mapper (default_map_substring_with_location ~map_location)) ~mapper substrings
+
+
+  let default_map_substrings ~mapper substrings =
+    default_map_substrings_with_location ~mapper ~map_location:Fn.id substrings
+
+
+  let default_map_await ~mapper awaited = map ~mapper awaited
+
+  let default_map_await_node ~mapper ~location awaited =
+    Node.create ~location (Expression.Await (default_map_await ~mapper awaited))
+
+
+  let default_map_boolean_operator ~mapper { BooleanOperator.left; operator; right } =
+    { BooleanOperator.left = map ~mapper left; operator; right = map ~mapper right }
+
+
+  let default_map_boolean_operator_node ~mapper ~location boolean_operator =
+    Node.create
+      ~location
+      (Expression.BooleanOperator (default_map_boolean_operator ~mapper boolean_operator))
+
+
+  let default_map_call ~mapper { Call.callee; arguments } =
+    { Call.callee = map ~mapper callee; arguments = default_map_arguments ~mapper arguments }
+
+
+  let default_map_call_node ~mapper ~location call =
+    Node.create ~location (Expression.Call (default_map_call ~mapper call))
+
+
+  let default_map_comparison_operator ~mapper { ComparisonOperator.left; operator; right } =
+    { ComparisonOperator.left = map ~mapper left; operator; right = map ~mapper right }
+
+
+  let default_map_comparison_operator_node ~mapper ~location comparison_operator =
+    Node.create
+      ~location
+      (Expression.ComparisonOperator (default_map_comparison_operator ~mapper comparison_operator))
+
+
+  let default_map_constant ~mapper:_ constant = constant
+
+  let default_map_constant_node ~mapper ~location constant =
+    Node.create ~location (Expression.Constant (default_map_constant ~mapper constant))
+
+
+  let default_map_dictionary ~mapper { Dictionary.entries; keywords } =
+    {
+      Dictionary.entries = default_map_dictionary_entries ~mapper entries;
+      keywords = map_list ~mapper keywords;
+    }
+
+
+  let default_map_dictionary_node ~mapper ~location dictionary =
+    Node.create ~location (Expression.Dictionary (default_map_dictionary ~mapper dictionary))
+
+
+  let default_map_dictionary_comprehension ~mapper comprehension =
+    default_map_comprehension ~map_element:default_map_dictionary_entry ~mapper comprehension
+
+
+  let default_map_dictionary_comprehension_node ~mapper ~location comprehension =
+    Node.create
+      ~location
+      (Expression.DictionaryComprehension
+         (default_map_dictionary_comprehension ~mapper comprehension))
+
+
+  let default_map_format_string ~mapper substrings = default_map_substrings ~mapper substrings
+
+  let default_map_format_string_node ~mapper ~location format_string =
+    Node.create
+      ~location
+      (Expression.FormatString (default_map_format_string ~mapper format_string))
+
+
+  let default_map_generator ~mapper comprehension =
+    default_map_comprehension ~map_element:map ~mapper comprehension
+
+
+  let default_map_generator_node ~mapper ~location generator =
+    Node.create ~location (Expression.Generator (default_map_generator ~mapper generator))
+
+
+  let default_map_lambda ~mapper { Lambda.parameters; body } =
+    { Lambda.parameters = default_map_parameters ~mapper parameters; body = map ~mapper body }
+
+
+  let default_map_lambda_node ~mapper ~location lambda =
+    Node.create ~location (Expression.Lambda (default_map_lambda ~mapper lambda))
+
+
+  let default_map_list ~mapper expression_list = map_list ~mapper expression_list
+
+  let default_map_list_node ~mapper ~location expression_list =
+    Node.create ~location (Expression.List (default_map_list ~mapper expression_list))
+
+
+  let default_map_list_comprehension ~mapper comprehension =
+    default_map_comprehension ~map_element:map ~mapper comprehension
+
+
+  let default_map_list_comprehension_node ~mapper ~location comprehension =
+    Node.create
+      ~location
+      (Expression.ListComprehension (default_map_list_comprehension ~mapper comprehension))
+
+
+  let default_map_name ~mapper = function
+    | Name.Identifier _ as identifier -> identifier
+    | Name.Attribute { base; attribute; special } ->
+        Name.Attribute { base = map ~mapper base; attribute; special }
+
+
+  let default_map_name_node ~mapper ~location name =
+    Node.create ~location (Expression.Name (default_map_name ~mapper name))
+
+
+  let default_map_set ~mapper expression_list = map_list ~mapper expression_list
+
+  let default_map_set_node ~mapper ~location expression_list =
+    Node.create ~location (Expression.Set (default_map_set ~mapper expression_list))
+
+
+  let default_map_set_comprehension ~mapper comprehension =
+    default_map_comprehension ~map_element:map ~mapper comprehension
+
+
+  let default_map_set_comprehension_node ~mapper ~location comprehension =
+    Node.create
+      ~location
+      (Expression.SetComprehension (default_map_set_comprehension ~mapper comprehension))
+
+
+  let default_map_starred ~mapper = function
+    | Starred.Once expression -> Starred.Once (map ~mapper expression)
+    | Starred.Twice expression -> Starred.Twice (map ~mapper expression)
+
+
+  let default_map_starred_node ~mapper ~location starred =
+    Node.create ~location (Expression.Starred (default_map_starred ~mapper starred))
+
+
+  let default_map_ternary ~mapper { Ternary.target; test; alternative } =
+    {
+      Ternary.target = map ~mapper target;
+      test = map ~mapper test;
+      alternative = map ~mapper alternative;
+    }
+
+
+  let default_map_ternary_node ~mapper ~location ternary =
+    Node.create ~location (Expression.Ternary (default_map_ternary ~mapper ternary))
+
+
+  let default_map_tuple ~mapper expression_list = map_list ~mapper expression_list
+
+  let default_map_tuple_node ~mapper ~location expression_list =
+    Node.create ~location (Expression.Tuple (default_map_tuple ~mapper expression_list))
+
+
+  let default_map_unary_operator ~mapper { UnaryOperator.operator; operand } =
+    { UnaryOperator.operator; operand = map ~mapper operand }
+
+
+  let default_map_unary_operator_node ~mapper ~location unary_operator =
+    Node.create
+      ~location
+      (Expression.UnaryOperator (default_map_unary_operator ~mapper unary_operator))
+
+
+  let default_map_walrus_operator ~mapper { WalrusOperator.target; value } =
+    { WalrusOperator.target = map ~mapper target; value = map ~mapper value }
+
+
+  let default_map_walrus_operator_node ~mapper ~location walrus_operator =
+    Node.create
+      ~location
+      (Expression.WalrusOperator (default_map_walrus_operator ~mapper walrus_operator))
+
+
+  let default_map_yield ~mapper yield = map_option ~mapper yield
+
+  let default_map_yield_node ~mapper ~location yield =
+    Node.create ~location (Expression.Yield (default_map_yield ~mapper yield))
+
+
+  let default_map_yield_from ~mapper yield_from = map ~mapper yield_from
+
+  let default_map_yield_from_node ~mapper ~location yield_from =
+    Node.create ~location (Expression.YieldFrom (default_map_yield_from ~mapper yield_from))
+
+
+  let create
+      ~map_await
+      ~map_boolean_operator
+      ~map_call
+      ~map_comparison_operator
+      ~map_constant
+      ~map_dictionary
+      ~map_dictionary_comprehension
+      ~map_generator
+      ~map_format_string
+      ~map_lambda
+      ~map_list
+      ~map_list_comprehension
+      ~map_name
+      ~map_set
+      ~map_set_comprehension
+      ~map_starred
+      ~map_ternary
+      ~map_tuple
+      ~map_unary_operator
+      ~map_walrus_operator
+      ~map_yield
+      ~map_yield_from
+      ()
+    =
+    {
+      map_await;
+      map_boolean_operator;
+      map_call;
+      map_comparison_operator;
+      map_constant;
+      map_dictionary;
+      map_dictionary_comprehension;
+      map_generator;
+      map_format_string;
+      map_lambda;
+      map_list;
+      map_list_comprehension;
+      map_name;
+      map_set;
+      map_set_comprehension;
+      map_starred;
+      map_ternary;
+      map_tuple;
+      map_unary_operator;
+      map_walrus_operator;
+      map_yield;
+      map_yield_from;
+    }
+
+
+  let create_default
+      ?(map_await = default_map_await_node)
+      ?(map_boolean_operator = default_map_boolean_operator_node)
+      ?(map_call = default_map_call_node)
+      ?(map_comparison_operator = default_map_comparison_operator_node)
+      ?(map_constant = default_map_constant_node)
+      ?(map_dictionary = default_map_dictionary_node)
+      ?(map_dictionary_comprehension = default_map_dictionary_comprehension_node)
+      ?(map_generator = default_map_generator_node)
+      ?(map_format_string = default_map_format_string_node)
+      ?(map_lambda = default_map_lambda_node)
+      ?(map_list = default_map_list_node)
+      ?(map_list_comprehension = default_map_list_comprehension_node)
+      ?(map_name = default_map_name_node)
+      ?(map_set = default_map_set_node)
+      ?(map_set_comprehension = default_map_set_comprehension_node)
+      ?(map_starred = default_map_starred_node)
+      ?(map_ternary = default_map_ternary_node)
+      ?(map_tuple = default_map_tuple_node)
+      ?(map_unary_operator = default_map_unary_operator_node)
+      ?(map_walrus_operator = default_map_walrus_operator_node)
+      ?(map_yield = default_map_yield_node)
+      ?(map_yield_from = default_map_yield_from_node)
+      ()
+    =
+    {
+      map_await;
+      map_boolean_operator;
+      map_call;
+      map_comparison_operator;
+      map_constant;
+      map_dictionary;
+      map_dictionary_comprehension;
+      map_generator;
+      map_format_string;
+      map_lambda;
+      map_list;
+      map_list_comprehension;
+      map_name;
+      map_set;
+      map_set_comprehension;
+      map_starred;
+      map_ternary;
+      map_tuple;
+      map_unary_operator;
+      map_walrus_operator;
+      map_yield;
+      map_yield_from;
+    }
+
+
+  let create_transformer
+      ?(map_await = default_map_await)
+      ?(map_boolean_operator = default_map_boolean_operator)
+      ?(map_call = default_map_call)
+      ?(map_comparison_operator = default_map_comparison_operator)
+      ?(map_constant = default_map_constant)
+      ?(map_dictionary = default_map_dictionary)
+      ?(map_dictionary_comprehension = default_map_dictionary_comprehension)
+      ?(map_generator = default_map_generator)
+      ?map_format_string
+      ?map_lambda
+      ?(map_list = default_map_list)
+      ?(map_list_comprehension = default_map_list_comprehension)
+      ?(map_name = default_map_name)
+      ?(map_set = default_map_set)
+      ?(map_set_comprehension = default_map_set_comprehension)
+      ?(map_starred = default_map_starred)
+      ?(map_ternary = default_map_ternary)
+      ?(map_tuple = default_map_tuple)
+      ?(map_unary_operator = default_map_unary_operator)
+      ?(map_walrus_operator = default_map_walrus_operator)
+      ?(map_yield = default_map_yield)
+      ?(map_yield_from = default_map_yield_from)
+      ?(map_location = Fn.id)
+      ()
+    =
+    let map_await ~mapper ~location awaited =
+      Node.create ~location:(map_location location) (Expression.Await (map_await ~mapper awaited))
+    in
+    let map_boolean_operator ~mapper ~location boolean_operator =
+      Node.create
+        ~location:(map_location location)
+        (Expression.BooleanOperator (map_boolean_operator ~mapper boolean_operator))
+    in
+    let map_call ~mapper ~location call =
+      Node.create ~location:(map_location location) (Expression.Call (map_call ~mapper call))
+    in
+    let map_comparison_operator ~mapper ~location comparison_operator =
+      Node.create
+        ~location:(map_location location)
+        (Expression.ComparisonOperator (map_comparison_operator ~mapper comparison_operator))
+    in
+    let map_constant ~mapper ~location constant =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Constant (map_constant ~mapper constant))
+    in
+    let map_dictionary ~mapper ~location dictionary =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Dictionary (map_dictionary ~mapper dictionary))
+    in
+    let map_dictionary_comprehension ~mapper ~location comprehension =
+      Node.create
+        ~location:(map_location location)
+        (Expression.DictionaryComprehension (map_dictionary_comprehension ~mapper comprehension))
+    in
+    let map_format_string ~mapper ~location format_string =
+      let map_format_string =
+        match map_format_string with
+        | Some map_format_string -> map_format_string
+        | None ->
+            fun ~mapper substrings ->
+              default_map_substrings_with_location ~mapper ~map_location substrings
+      in
+      Node.create
+        ~location:(map_location location)
+        (Expression.FormatString (map_format_string ~mapper format_string))
+    in
+    let map_generator ~mapper ~location generator =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Generator (map_generator ~mapper generator))
+    in
+    let map_lambda ~mapper ~location lambda =
+      let map_lambda =
+        match map_lambda with
+        | Some map_lambda -> map_lambda
+        | None ->
+            fun ~mapper { Lambda.parameters; body } ->
+              {
+                Lambda.parameters =
+                  default_map_parameters_with_location ~mapper ~map_location parameters;
+                body = map ~mapper body;
+              }
+      in
+      Node.create ~location:(map_location location) (Expression.Lambda (map_lambda ~mapper lambda))
+    in
+    let map_list ~mapper ~location expression_list =
+      Node.create
+        ~location:(map_location location)
+        (Expression.List (map_list ~mapper expression_list))
+    in
+    let map_list_comprehension ~mapper ~location comprehension =
+      Node.create
+        ~location:(map_location location)
+        (Expression.ListComprehension (map_list_comprehension ~mapper comprehension))
+    in
+    let map_name ~mapper ~location name =
+      Node.create ~location:(map_location location) (Expression.Name (map_name ~mapper name))
+    in
+    let map_set ~mapper ~location expression_list =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Set (map_set ~mapper expression_list))
+    in
+    let map_set_comprehension ~mapper ~location comprehension =
+      Node.create
+        ~location:(map_location location)
+        (Expression.SetComprehension (map_set_comprehension ~mapper comprehension))
+    in
+    let map_starred ~mapper ~location starred =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Starred (map_starred ~mapper starred))
+    in
+    let map_ternary ~mapper ~location ternary =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Ternary (map_ternary ~mapper ternary))
+    in
+    let map_tuple ~mapper ~location expression_list =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Tuple (map_tuple ~mapper expression_list))
+    in
+    let map_unary_operator ~mapper ~location unary_operator =
+      Node.create
+        ~location:(map_location location)
+        (Expression.UnaryOperator (map_unary_operator ~mapper unary_operator))
+    in
+    let map_walrus_operator ~mapper ~location walrus_operator =
+      Node.create
+        ~location:(map_location location)
+        (Expression.WalrusOperator (map_walrus_operator ~mapper walrus_operator))
+    in
+    let map_yield ~mapper ~location yield =
+      Node.create ~location:(map_location location) (Expression.Yield (map_yield ~mapper yield))
+    in
+    let map_yield_from ~mapper ~location yield_from =
+      Node.create
+        ~location:(map_location location)
+        (Expression.YieldFrom (map_yield_from ~mapper yield_from))
+    in
+    create_default
+      ~map_await
+      ~map_boolean_operator
+      ~map_call
+      ~map_comparison_operator
+      ~map_constant
+      ~map_dictionary
+      ~map_dictionary_comprehension
+      ~map_generator
+      ~map_format_string
+      ~map_lambda
+      ~map_list
+      ~map_list_comprehension
+      ~map_name
+      ~map_set
+      ~map_set_comprehension
+      ~map_starred
+      ~map_ternary
+      ~map_tuple
+      ~map_unary_operator
+      ~map_walrus_operator
+      ~map_yield
+      ~map_yield_from
+      ()
+end
+
 module Folder = struct
   type 'a t = {
     fold_await: folder:'a t -> state:'a -> location:Location.t -> Expression.t -> 'a;
