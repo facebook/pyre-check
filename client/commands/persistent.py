@@ -1122,6 +1122,64 @@ class PyreQueryHandler(connection.BackgroundTask):
             raise
 
 
+def _client_has_status_bar_support(
+    client_capabilities: lsp.ClientCapabilities,
+) -> bool:
+    window_capabilities = client_capabilities.window
+    if window_capabilities is not None:
+        return window_capabilities.status is not None
+    else:
+        return False
+
+
+async def _write_status(
+    output_channel: connection.TextWriter,
+    message: str,
+    short_message: Optional[str] = None,
+    level: lsp.MessageType = lsp.MessageType.INFO,
+) -> None:
+    await lsp.write_json_rpc(
+        output_channel,
+        json_rpc.Request(
+            id=0,  # the value doesn't matter but the existence does
+            method="window/showStatus",
+            parameters=json_rpc.ByNameParameters(
+                {
+                    "type": int(level),
+                    "message": message,
+                    **(
+                        {} if short_message is None else {"shortMessage": short_message}
+                    ),
+                }
+            ),
+        ),
+    )
+
+
+async def _write_notification(
+    output_channel: connection.TextWriter,
+    message: str,
+    short_message: Optional[str] = None,
+    level: lsp.MessageType = lsp.MessageType.INFO,
+) -> None:
+    await lsp.write_json_rpc(
+        output_channel,
+        json_rpc.Request(
+            method="window/showMessage",
+            parameters=json_rpc.ByNameParameters(
+                {
+                    "type": int(level),
+                    "message": (
+                        message
+                        if short_message is None
+                        else f"{short_message}: {message}"
+                    ),
+                }
+            ),
+        ),
+    )
+
+
 class PyreServerHandler(connection.BackgroundTask):
     server_start_options_reader: PyreServerStartOptionsReader
     remote_logging: Optional[backend_arguments.RemoteLogging]
@@ -1146,46 +1204,13 @@ class PyreServerHandler(connection.BackgroundTask):
         short_message: Optional[str] = None,
         level: lsp.MessageType = lsp.MessageType.INFO,
     ) -> None:
-        def clientSupportsStatusBar(
-            client_capabilities: lsp.ClientCapabilities,
-        ) -> bool:
-            window_capabilities = client_capabilities.window
-            if window_capabilities is not None:
-                return window_capabilities.status is not None
-            else:
-                return False
-
-        if clientSupportsStatusBar(self.server_state.client_capabilities):
-            await lsp.write_json_rpc(
-                self.client_output_channel,
-                json_rpc.Request(
-                    id=0,  # the value doesn't matter but the existence does
-                    method="window/showStatus",
-                    parameters=json_rpc.ByNameParameters(
-                        {
-                            "type": int(level),
-                            "message": message,
-                            **(
-                                {}
-                                if short_message is None
-                                else {"shortMessage": short_message}
-                            ),
-                        }
-                    ),
-                ),
+        if _client_has_status_bar_support(self.server_state.client_capabilities):
+            await _write_status(
+                self.client_output_channel, message, short_message, level
             )
         else:
-            status_message = (
-                message if short_message is None else f"{short_message}: {message}"
-            )
-            await lsp.write_json_rpc(
-                self.client_output_channel,
-                json_rpc.Request(
-                    method="window/showMessage",
-                    parameters=json_rpc.ByNameParameters(
-                        {"type": int(level), "message": status_message}
-                    ),
-                ),
+            await _write_notification(
+                self.client_output_channel, message, short_message, level
             )
 
     async def log_and_show_status_message_to_client(
