@@ -202,7 +202,10 @@ let run_taint_analysis
         (* Collect decorators to skip before type-checking because decorator inlining happens in an
            early phase of type-checking and needs to know which decorators to skip. *)
         Service.StaticAnalysis.parse_and_save_decorators_to_skip ~inline_decorators configuration;
-        let environment = Service.StaticAnalysis.type_check ~scheduler ~configuration ~use_cache in
+        let cache =
+          Service.StaticAnalysis.Cache.load ~scheduler ~configuration ~enabled:use_cache
+        in
+        let environment = Service.StaticAnalysis.type_check ~scheduler ~configuration ~cache in
 
         let qualifiers =
           Analysis.TypeEnvironment.module_tracker environment
@@ -213,9 +216,9 @@ let run_taint_analysis
           Service.StaticAnalysis.fetch_initial_callables
             ~scheduler
             ~configuration
+            ~cache
             ~environment:(Analysis.TypeEnvironment.read_only environment)
             ~qualifiers
-            ~use_cache
         in
 
         let initialized_models =
@@ -256,6 +259,7 @@ let run_taint_analysis
           ~scheduler
           ~analysis:analysis_kind
           ~static_analysis_configuration
+          ~cache
           ~filename_lookup
           ~environment
           ~qualifiers

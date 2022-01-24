@@ -10,10 +10,16 @@ open Ast
 open Statement
 open Interprocedural
 
+module Cache : sig
+  type t
+
+  val load : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> enabled:bool -> t
+end
+
 val type_check
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  use_cache:bool ->
+  cache:Cache.t ->
   TypeEnvironment.t
 
 val parse_and_save_decorators_to_skip : inline_decorators:bool -> Configuration.Analysis.t -> unit
@@ -50,15 +56,16 @@ type initial_callables = {
 val fetch_initial_callables
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
+  cache:Cache.t ->
   environment:TypeEnvironment.ReadOnly.t ->
   qualifiers:Reference.t list ->
-  use_cache:bool ->
   initial_callables
 
 val analyze
   :  scheduler:Scheduler.t ->
   analysis:AnalysisKind.abstract ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  cache:Cache.t ->
   filename_lookup:(Reference.t -> string option) ->
   environment:TypeEnvironment.ReadOnly.t ->
   qualifiers:Reference.t list ->
