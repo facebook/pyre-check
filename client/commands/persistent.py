@@ -1203,12 +1203,13 @@ class PyreServerHandler(connection.BackgroundTask):
         message: str,
         short_message: Optional[str] = None,
         level: lsp.MessageType = lsp.MessageType.INFO,
+        fallback_to_notification: bool = False,
     ) -> None:
         if _client_has_status_bar_support(self.server_state.client_capabilities):
             await _write_status(
                 self.client_output_channel, message, short_message, level
             )
-        else:
+        elif fallback_to_notification:
             await _write_notification(
                 self.client_output_channel, message, short_message, level
             )
@@ -1218,6 +1219,7 @@ class PyreServerHandler(connection.BackgroundTask):
         message: str,
         short_message: Optional[str] = None,
         level: lsp.MessageType = lsp.MessageType.INFO,
+        fallback_to_notification: bool = False,
     ) -> None:
         log_message = (
             message if short_message is None else f"[{short_message}] {message}"
@@ -1230,7 +1232,9 @@ class PyreServerHandler(connection.BackgroundTask):
             LOG.info(log_message)
         else:
             LOG.debug(log_message)
-        await self.show_status_message_to_client(message, short_message, level)
+        await self.show_status_message_to_client(
+            message, short_message, level, fallback_to_notification
+        )
 
     def update_type_errors(self, type_errors: Sequence[error.Error]) -> None:
         LOG.info(
@@ -1333,6 +1337,7 @@ class PyreServerHandler(connection.BackgroundTask):
                 "a .py file",
                 short_message="Pyre Stopped",
                 level=lsp.MessageType.ERROR,
+                fallback_to_notification=True,
             )
             await self.clear_type_errors_for_client()
             self.server_state.diagnostics = {}
@@ -1373,6 +1378,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     f"`{server_identifier}`.",
                     short_message="Pyre Ready",
                     level=lsp.MessageType.INFO,
+                    fallback_to_notification=True,
                 )
                 self.server_state.consecutive_start_failure = 0
                 _log_lsp_event(
@@ -1390,6 +1396,7 @@ class PyreServerHandler(connection.BackgroundTask):
                 "the background.",
                 short_message="Starting Pyre...",
                 level=lsp.MessageType.WARNING,
+                fallback_to_notification=True,
             )
 
             start_status = await _start_pyre_server(
@@ -1400,6 +1407,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     f"Pyre server at `{server_identifier}` has been initialized.",
                     short_message="Pyre Ready",
                     level=lsp.MessageType.INFO,
+                    fallback_to_notification=True,
                 )
 
                 async with connection.connect_in_text_mode(socket_path) as (
@@ -1435,6 +1443,7 @@ class PyreServerHandler(connection.BackgroundTask):
                         f"{start_status.message}",
                         short_message="Pyre Stopped",
                         level=lsp.MessageType.INFO,
+                        fallback_to_notification=True,
                     )
                 else:
                     await self.show_status_message_to_client(
@@ -1442,6 +1451,7 @@ class PyreServerHandler(connection.BackgroundTask):
                         "failing repeatedly. Disabling The Pyre plugin for now.",
                         short_message="Pyre Disabled",
                         level=lsp.MessageType.ERROR,
+                        fallback_to_notification=True,
                     )
                     _log_lsp_event(
                         remote_logging=self.remote_logging,

@@ -462,10 +462,10 @@ class PersistentTest(testslide.TestCase):
         )
 
         client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
-        self.assertTrue(len(client_messages) >= 4)
+        self.assertTrue(len(client_messages) >= 2)
         # Clear out diagnostics for rebuilding status
         self.assertIn('"diagnostics": []', client_messages[0])
-        self.assertIn('"diagnostics": []', client_messages[2])
+        self.assertIn('"diagnostics": []', client_messages[1])
 
     @setup.async_test
     async def test_open_triggers_pyre_restart(self) -> None:
