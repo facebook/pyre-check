@@ -111,18 +111,9 @@ let empty =
   }
 
 
-(* There's only a single taint configuration *)
-let key = "root"
-
 module ConfigurationSharedMemory =
   SharedMemory.WithCache.Make
-    (struct
-      include String
-
-      type out = string
-
-      let from_string = ident
-    end)
+    (SharedMemory.SingletonKey)
     (struct
       type nonrec t = t
 
@@ -540,6 +531,7 @@ let validate { sources; sinks; features; _ } =
 
 
 let register configuration =
+  let key = SharedMemory.SingletonKey.key in
   let () =
     if ConfigurationSharedMemory.mem key then
       ConfigurationSharedMemory.remove_batch (ConfigurationSharedMemory.KeySet.singleton key)
@@ -706,7 +698,7 @@ let apply_missing_flows configuration = function
 
 
 let get () =
-  match ConfigurationSharedMemory.get key with
+  match ConfigurationSharedMemory.get SharedMemory.SingletonKey.key with
   | None -> default
   | Some configuration -> configuration
 
