@@ -1380,6 +1380,8 @@ class PyreServerHandler(connection.BackgroundTask):
             project_root=Path(start_arguments.base_arguments.global_root),
             relative_local_root=Path(local_root) if local_root else None,
         )
+
+        start_time: float = time.time()
         try:
             async with connection.connect_in_text_mode(socket_path) as (
                 input_channel,
@@ -1396,6 +1398,7 @@ class PyreServerHandler(connection.BackgroundTask):
                 _log_lsp_event(
                     remote_logging=self.remote_logging,
                     event=LSPEvent.CONNECTED,
+                    integers={"duration": int((time.time() - start_time) * 1000)},
                     normals={
                         "connected_to": "already_running_server",
                         **self._auxiliary_logging_info(server_start_options),
@@ -1430,6 +1433,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     _log_lsp_event(
                         remote_logging=self.remote_logging,
                         event=LSPEvent.CONNECTED,
+                        integers={"duration": int((time.time() - start_time) * 1000)},
                         normals={
                             "connected_to": "newly_started_server",
                             **self._auxiliary_logging_info(server_start_options),
@@ -1445,6 +1449,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     _log_lsp_event(
                         remote_logging=self.remote_logging,
                         event=LSPEvent.NOT_CONNECTED,
+                        integers={"duration": int((time.time() - start_time) * 1000)},
                         normals={
                             **self._auxiliary_logging_info(server_start_options),
                             "exception": str(start_status.detail),
