@@ -68,6 +68,7 @@ class LSPEvent(enum.Enum):
     DISCONNECTED = "disconnected"
     SUSPENDED = "suspended"
     STOPPED = "stopped"
+    COVERED = "covered"
 
 
 def _log_lsp_event(
@@ -535,6 +536,7 @@ class ServerState:
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
     )
+    last_diagnostic_update_timestamp: Optional[float] = None
     query_state: PyreQueryState = dataclasses.field(default_factory=PyreQueryState)
 
 
@@ -1251,10 +1253,20 @@ class PyreServerHandler(connection.BackgroundTask):
     async def clear_type_errors_for_client(self) -> None:
         for path in self.server_state.diagnostics:
             await _publish_diagnostics(self.client_output_channel, path, [])
+        last_update_time = self.server_state.last_diagnostic_update_timestamp
+        if last_update_time is not None:
+            _log_lsp_event(
+                self.remote_logging,
+                LSPEvent.COVERED,
+                integers={"duration": int((time.time() - last_update_time) * 1000)},
+            )
+            # Reset the timestamp to avoid duplicate counting
+            self.server_state.last_diagnostic_update_timestamp = None
 
     async def show_type_errors_to_client(self) -> None:
         for path, diagnostics in self.server_state.diagnostics.items():
             await _publish_diagnostics(self.client_output_channel, path, diagnostics)
+        self.server_state.last_diagnostic_update_timestamp = time.time()
 
     async def handle_type_error_subscription(
         self, type_error_subscription: TypeErrorSubscription
