@@ -148,8 +148,12 @@ let run ~scheduler ~configuration ~environment sources =
   let timer = Timer.start () in
   let number_of_sources = List.length sources in
   Log.log ~section:`Progress "Postprocessing %d sources..." number_of_sources;
+  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let unannotated_global_environment =
+    GlobalResolution.unannotated_global_environment global_resolution
+  in
   let map _ modules =
-    let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
     let run_on_module module_name =
       match AstEnvironment.ReadOnly.get_raw_source ast_environment module_name with
       | None -> []
@@ -194,11 +198,7 @@ let run ~scheduler ~configuration ~environment sources =
             }) ->
           []
       | Some (Result.Ok source) ->
-          let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
           let errors_by_define =
-            let unannotated_global_environment =
-              GlobalResolution.unannotated_global_environment global_resolution
-            in
             UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
               unannotated_global_environment
               module_name
