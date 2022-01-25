@@ -223,51 +223,59 @@ module Subscriber = struct
     initial_clock: string;
   }
 
+  let send_request ~connection request =
+    let open Lwt.Infix in
+    Raw.Connection.send connection request >>= fun () -> Raw.Connection.receive connection ()
+
+
+  let create_subscribe_request ~root ~filter () =
+    `List
+      [
+        `String "subscribe";
+        `String (PyrePath.absolute root);
+        `String "pyre_file_change_subscription";
+        `Assoc
+          [
+            "empty_on_fresh_instance", `Bool true;
+            "expression", Filter.watchman_expression_of filter;
+            "fields", `List [`String "name"];
+          ];
+      ]
+
+
+  let handle_subscribe_response = function
+    | Raw.Response.Error message -> raise (SubscriptionError message)
+    | Raw.Response.EndOfStream ->
+        raise (SubscriptionError "Cannot get the initial response from `watchman subscribe`")
+    | Raw.Response.Ok initial_response -> (
+        match Yojson.Safe.Util.member "error" initial_response with
+        | `Null -> (
+            match Yojson.Safe.Util.member "clock" initial_response with
+            | `String initial_clock -> Lwt.return initial_clock
+            | _ as error ->
+                let message =
+                  Format.sprintf
+                    "Cannot determinte the initial clock from response %s"
+                    (Yojson.Safe.to_string error)
+                in
+                raise (SubscriptionError message))
+        | _ as error ->
+            let message =
+              Format.sprintf
+                "Subscription rejected by watchman. Response: %s"
+                (Yojson.Safe.to_string error)
+            in
+            raise (SubscriptionError message))
+
+
   let subscribe ({ Setting.raw; root; filter } as setting) =
     let open Lwt.Infix in
     Raw.open_connection raw
     >>= fun connection ->
     let do_subscribe () =
-      let request =
-        `List
-          [
-            `String "subscribe";
-            `String (PyrePath.absolute root);
-            `String "pyre_file_change_subscription";
-            `Assoc
-              [
-                "empty_on_fresh_instance", `Bool true;
-                "expression", Filter.watchman_expression_of filter;
-                "fields", `List [`String "name"];
-              ];
-          ]
-      in
-      Raw.Connection.send connection request
-      >>= fun () ->
-      Raw.Connection.receive connection ()
-      >>= function
-      | Raw.Response.Error message -> raise (SubscriptionError message)
-      | Raw.Response.EndOfStream ->
-          raise (SubscriptionError "Cannot get the initial response from `watchman subscribe`")
-      | Raw.Response.Ok initial_response -> (
-          match Yojson.Safe.Util.member "error" initial_response with
-          | `Null -> (
-              match Yojson.Safe.Util.member "clock" initial_response with
-              | `String initial_clock -> Lwt.return { setting; connection; initial_clock }
-              | _ as error ->
-                  let message =
-                    Format.sprintf
-                      "Cannot determinte the initial clock from response %s"
-                      (Yojson.Safe.to_string error)
-                  in
-                  raise (SubscriptionError message))
-          | _ as error ->
-              let message =
-                Format.sprintf
-                  "Subscription rejected by watchman. Response: %s"
-                  (Yojson.Safe.to_string error)
-              in
-              raise (SubscriptionError message))
+      send_request ~connection (create_subscribe_request ~root ~filter ())
+      >>= handle_subscribe_response
+      >>= fun initial_clock -> Lwt.return { setting; connection; initial_clock }
     in
     Lwt.catch do_subscribe (fun exn ->
         (* Make sure the connection is properly shut down when an exception is raised. *)
