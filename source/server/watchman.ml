@@ -243,6 +243,10 @@ module Subscriber = struct
       ]
 
 
+  let create_watch_project_rquest ~root () =
+    `List [`String "watch-project"; `String (PyrePath.absolute root)]
+
+
   let handle_subscribe_response = function
     | Raw.Response.Error message -> raise (SubscriptionError message)
     | Raw.Response.EndOfStream ->
@@ -268,11 +272,31 @@ module Subscriber = struct
             raise (SubscriptionError message))
 
 
+  let handle_watch_project_response = function
+    | Raw.Response.Error message -> raise (SubscriptionError message)
+    | Raw.Response.EndOfStream ->
+        raise (SubscriptionError "Cannot get the initial response from `watchman watch-project`")
+    | Raw.Response.Ok initial_response -> (
+        match Yojson.Safe.Util.member "error" initial_response with
+        | `Null -> Lwt.return_unit
+        | _ as error ->
+            let message =
+              Format.sprintf
+                "Watch-project request rejected by watchman. Response: %s"
+                (Yojson.Safe.to_string error)
+            in
+            raise (SubscriptionError message))
+
+
   let subscribe ({ Setting.raw; root; filter } as setting) =
     let open Lwt.Infix in
     Raw.open_connection raw
     >>= fun connection ->
     let do_subscribe () =
+      Log.info "Request watchman subscription at %a" PyrePath.pp root;
+      send_request ~connection (create_watch_project_rquest ~root ())
+      >>= handle_watch_project_response
+      >>= fun () ->
       send_request ~connection (create_subscribe_request ~root ~filter ())
       >>= handle_subscribe_response
       >>= fun initial_clock -> Lwt.return { setting; connection; initial_clock }

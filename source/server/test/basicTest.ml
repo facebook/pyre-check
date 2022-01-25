@@ -276,15 +276,28 @@ let test_watchman_integration ~watchman_mailbox client =
 
 
 let test_watchman_integration context =
-  let watchman_initial_response =
-    `Assoc ["version", `String watchman_version; "clock", `String watchman_initial_clock]
-  in
   (* We use a mailbox variable in this test to get a more precise control of when a given watchman
      response can reach the Pyre serer. *)
-  let watchman_mailbox = Lwt_mvar.create watchman_initial_response in
+  let watchman_mailbox = Lwt_mvar.create_empty () in
   let mock_watchman =
+    let initialize_stage = ref 0 in
     let send _ = Lwt.return_unit in
-    let receive () = Lwt_mvar.take watchman_mailbox >>= Lwt.return_some in
+    let receive () =
+      match !initialize_stage with
+      | 0 ->
+          let watchman_watch_response =
+            `Assoc ["version", `String watchman_version; "watcher", `String "fake_watcher"]
+          in
+          initialize_stage := 1;
+          Lwt.return_some watchman_watch_response
+      | 1 ->
+          let watchman_subscribe_response =
+            `Assoc ["version", `String watchman_version; "clock", `String watchman_initial_clock]
+          in
+          initialize_stage := 2;
+          Lwt.return_some watchman_subscribe_response
+      | _ -> Lwt_mvar.take watchman_mailbox >>= Lwt.return_some
+    in
     Watchman.Raw.create_for_testing ~send ~receive ()
   in
   ScratchProject.setup
