@@ -73,7 +73,19 @@ def indirect_flow_from_source_to_global_dictionary():
 
 
 def update_parameter(arg):
-    arg.update({"a": _test_source})
+    arg.update({"a": _test_source()})
+
+
+def dict_update_arg():
+    x = {"a": _test_source(), "b": "safe"}
+    x.update({"a": "safe"})
+    return x["a"]
+
+
+def dict_update_whole_dict():
+    x = {"a": _test_source(), "b": "safe"}
+    x.update({"a": "safe"})
+    return x
 
 
 def flow_through_keywords():
