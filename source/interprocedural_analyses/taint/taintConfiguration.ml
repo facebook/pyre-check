@@ -124,11 +124,111 @@ module ConfigurationSharedMemory =
       let unmarshall value = Marshal.from_string value 0
     end)
 
-exception
-  MalformedConfiguration of {
-    path: string;
-    parse_error: string;
+module Error = struct
+  type kind =
+    | FileNotFound
+    | FileRead
+    | InvalidJson of string
+    | NoConfigurationFound
+    | UnexpectedJsonType of {
+        json: Json.t;
+        message: string;
+        section: string option;
+      }
+    | MissingKey of {
+        key: string;
+        section: string;
+      }
+    | UnknownKey of {
+        key: string;
+        section: string;
+      }
+    | UnsupportedSource of string
+    | UnsupportedSink of string
+    | UnexpectedCombinedSourceRule of Json.t
+    | PartialSinkDuplicate of string
+    | InvalidLabelMultiSink of {
+        label: string;
+        sink: string;
+        labels: string list;
+      }
+    | InvalidMultiSink of string
+    | RuleCodeDuplicate of int
+    | OptionDuplicate of string
+    | SourceDuplicate of string
+    | SinkDuplicate of string
+    | FeatureDuplicate of string
+  [@@deriving equal]
+
+  type t = {
+    kind: kind;
+    path: PyrePath.t option;
   }
+  [@@deriving equal]
+
+  let create ~path ~kind = { kind; path = Some path }
+
+  let pp_kind formatter = function
+    | FileNotFound -> Format.fprintf formatter "File not found"
+    | FileRead -> Format.fprintf formatter "Could not read file"
+    | InvalidJson error -> Format.fprintf formatter "%s" error
+    | NoConfigurationFound ->
+        Format.fprintf formatter "No `.config` was found in the taint directories"
+    | UnexpectedJsonType { json; message; section } ->
+        let json =
+          match json with
+          | `Null -> ""
+          | _ -> Format.sprintf ": `%s`" (Json.to_string json)
+        in
+        let section =
+          match section with
+          | Some section -> Format.sprintf " for section `%s`" section
+          | None -> ""
+        in
+        Format.fprintf formatter "%s%s%s" message json section
+    | MissingKey { key; section } ->
+        Format.fprintf formatter "Required key `%s` is missing in section `%s`" key section
+    | UnknownKey { key; section } ->
+        Format.fprintf formatter "Unknown key `%s` encountered in section `%s`" key section
+    | UnsupportedSource source -> Format.fprintf formatter "Unsupported taint source `%s`" source
+    | UnsupportedSink sink -> Format.fprintf formatter "Unsupported taint sink `%s`" sink
+    | UnexpectedCombinedSourceRule json ->
+        Format.fprintf
+          formatter
+          "Combined source rules must be of the form {\"a\": [\"SourceA\"], \"b\": [\"SourceB\"]}, \
+           got `%s`"
+          (Json.to_string json)
+    | PartialSinkDuplicate partial_sink ->
+        Format.fprintf
+          formatter
+          "Partial sinks must be unique - an entry for `%s` already exists"
+          partial_sink
+    | InvalidLabelMultiSink { label; sink; labels } ->
+        Format.fprintf
+          formatter
+          "`%s` is an invalid label For multi sink `%s` (choices: `%s`)"
+          label
+          sink
+          (String.concat labels ~sep:", ")
+    | InvalidMultiSink sink -> Format.fprintf formatter "`%s` is not a multi sink" sink
+    | RuleCodeDuplicate code ->
+        Format.fprintf formatter "Multiple rules share the same code `%d`" code
+    | OptionDuplicate name ->
+        Format.fprintf formatter "Multiple values were passed in for option `%s`" name
+    | SourceDuplicate name -> Format.fprintf formatter "Duplicate entry for source: `%s`" name
+    | SinkDuplicate name -> Format.fprintf formatter "Duplicate entry for sink: `%s`" name
+    | FeatureDuplicate name -> Format.fprintf formatter "Duplicate entry for feature: `%s`" name
+
+
+  let show_kind = Format.asprintf "%a" pp_kind
+
+  let pp formatter = function
+    | { path = None; kind } -> pp_kind formatter kind
+    | { path = Some path; kind } -> Format.fprintf formatter "%a: %a" PyrePath.pp path pp_kind kind
+
+
+  let show = Format.asprintf "%a" pp
+end
 
 let matching_kinds_from_rules rules =
   let add_rule (matching_sources, matching_sinks) { Rule.sources; sinks; _ } =
@@ -196,260 +296,330 @@ module PartialSinkConverter = struct
 end
 
 let parse source_jsons =
-  let json_bool_member key value ~default =
-    Yojson.Safe.Util.member key value |> Yojson.Safe.Util.to_bool_option |> Option.value ~default
+  let open Result in
+  let json_exception_to_error ~path ?section f =
+    try f () with
+    | Json.Util.Type_error (message, json)
+    | Json.Util.Undefined (message, json) ->
+        Error [Error.create ~path ~kind:(Error.UnexpectedJsonType { json; message; section })]
+  in
+  let json_bool_member ~path key value ~default =
+    json_exception_to_error ~path ~section:key (fun () ->
+        Json.Util.member key value
+        |> Yojson.Safe.Util.to_bool_option
+        |> Option.value ~default
+        |> Result.return)
+  in
+  let json_string_member ~path key value =
+    json_exception_to_error ~path ~section:key (fun () ->
+        Json.Util.member key value |> Json.Util.to_string |> Result.return)
+  in
+  let json_integer_member ~path key value =
+    json_exception_to_error ~path ~section:key (fun () ->
+        Json.Util.member key value |> Json.Util.to_int |> Result.return)
   in
   let member name json =
     try Json.Util.member name json with
     | Not_found -> `Null
   in
-  let array_member name json =
+  let array_member ~path ?section name json =
     match member name json with
-    | `Null -> []
-    | json -> Json.Util.to_list json
+    | `Null -> Ok []
+    | json ->
+        json_exception_to_error ~path ?section (fun () -> Json.Util.to_list json |> Result.return)
   in
-  let kind json =
+  let json_string_list ~path ?section json =
+    json_exception_to_error ~path ?section (fun () ->
+        Json.Util.to_list json |> List.map ~f:Json.Util.to_string |> Result.return)
+  in
+  let parse_kind ~path ?section json =
     match member "kind" json with
-    | `Null -> AnnotationParser.Named
-    | `String "parametric" -> AnnotationParser.Parametric
-    | unexpected -> failwith (Format.sprintf "Unexpected kind %s" (Json.Util.to_string unexpected))
+    | `Null -> Ok AnnotationParser.Named
+    | `String "parametric" -> Ok AnnotationParser.Parametric
+    | json ->
+        Error
+          [
+            Error.create
+              ~path
+              ~kind:(Error.UnexpectedJsonType { json; message = "Unexpected kind"; section });
+          ]
   in
-  let check_keys ~required_keys ~valid_keys ~current_keys ~section =
+  let check_keys ~path ~section ~required_keys ~valid_keys ~current_keys =
     let valid_keys_hash_set = String.Hash_set.of_list valid_keys in
     let current_keys_hash_set = String.Hash_set.of_list current_keys in
     let check_required_key_present key =
       if not (Hash_set.mem current_keys_hash_set key) then
-        failwith (Format.sprintf "Required key `%s` is not found in section `%s`" key section)
+        Error (Error.create ~path ~kind:(Error.MissingKey { key; section }))
+      else
+        Ok ()
     in
     let check_key_is_valid key =
       if not (Hash_set.mem valid_keys_hash_set key) then
-        Log.error "Unknown key `%s` encountered in section `%s`" key section
+        Error (Error.create ~path ~kind:(Error.UnknownKey { key; section }))
+      else
+        Ok ()
     in
-    List.iter current_keys ~f:check_key_is_valid;
-    List.iter required_keys ~f:check_required_key_present
+    List.map current_keys ~f:check_key_is_valid
+    |> List.rev_append (List.map required_keys ~f:check_required_key_present)
+    |> Result.combine_errors_unit
   in
-  let parse_lineage_analysis json = json_bool_member "lineage_analysis" json ~default:false in
-  let parse_string_list json = Json.Util.to_list json |> List.map ~f:Json.Util.to_string in
-  let parse_source_or_sink section json =
+  let parse_source_or_sink_annotation ~path ~section json =
     check_keys
+      ~path
+      ~section
       ~required_keys:["name"]
       ~current_keys:(Json.Util.keys json)
-      ~valid_keys:["name"; "comment"]
-      ~section;
-    let name = Json.Util.member "name" json |> Json.Util.to_string in
-    { AnnotationParser.name; kind = kind json }
+      ~valid_keys:["name"; "kind"; "comment"]
+    >>= fun () ->
+    json_string_member ~path "name" json
+    >>= fun name -> parse_kind ~path json >>| fun kind -> { AnnotationParser.name; kind }
   in
-  let parse_sources json =
-    array_member "sources" json |> List.map ~f:(parse_source_or_sink "sources")
+  let parse_source_annotations (path, json) =
+    array_member ~path "sources" json
+    >>= fun json ->
+    List.map ~f:(parse_source_or_sink_annotation ~path ~section:"sources") json
+    |> Result.combine_errors
+    |> Result.map_error ~f:List.concat
   in
-  let parse_sinks json = array_member "sinks" json |> List.map ~f:(parse_source_or_sink "sinks") in
-  let parse_features json =
-    let parse_feature json = Json.Util.member "name" json |> Json.Util.to_string in
-    array_member "features" json |> List.map ~f:parse_feature
+  let parse_sink_annotations (path, json) =
+    array_member ~path "sinks" json
+    >>= fun json ->
+    List.map ~f:(parse_source_or_sink_annotation ~path ~section:"sinks") json
+    |> Result.combine_errors
+    |> Result.map_error ~f:List.concat
+  in
+  let parse_features (path, json) =
+    array_member ~path "features" json
+    >>= fun json ->
+    List.map ~f:(json_string_member ~path "name") json
+    |> Result.combine_errors
+    |> Result.map_error ~f:List.concat
   in
   let seen_rules = Int.Hash_set.create () in
-  let validate_code_uniqueness code =
+  let validate_code_uniqueness ~path code =
     if Hash_set.mem seen_rules code then
-      failwith (Format.sprintf "Multiple rules share the same code `%d`." code);
-    Hash_set.add seen_rules code
+      Error [Error.create ~path ~kind:(Error.RuleCodeDuplicate code)]
+    else (
+      Hash_set.add seen_rules code;
+      Ok ())
   in
-  let parse_rules ~allowed_sources ~allowed_sinks json =
+  let parse_source_reference ~path ~allowed_sources source =
+    AnnotationParser.parse_source ~allowed:allowed_sources source
+    |> Result.map_error ~f:(fun _ -> Error.create ~path ~kind:(Error.UnsupportedSource source))
+  in
+  let parse_sink_reference ~path ~allowed_sinks sink =
+    AnnotationParser.parse_sink ~allowed:allowed_sinks sink
+    |> Result.map_error ~f:(fun _ -> Error.create ~path ~kind:(Error.UnsupportedSink sink))
+  in
+  let parse_rules ~allowed_sources ~allowed_sinks (path, json) =
     let parse_rule json =
       let required_keys = ["name"; "code"; "sources"; "sinks"; "message_format"] in
       let valid_keys = "oncall" :: "comment" :: required_keys in
-      check_keys ~required_keys ~valid_keys ~current_keys:(Json.Util.keys json) ~section:"rules";
-      let sources =
-        Json.Util.member "sources" json
-        |> parse_string_list
-        |> List.map ~f:(AnnotationParser.parse_source ~allowed:allowed_sources)
-        |> Core.Result.all
-        |> Core.Result.ok_or_failwith
-      in
-      let sinks =
-        Json.Util.member "sinks" json
-        |> parse_string_list
-        |> List.map ~f:(AnnotationParser.parse_sink ~allowed:allowed_sinks)
-        |> Core.Result.all
-        |> Core.Result.ok_or_failwith
-      in
-      let name = Json.Util.member "name" json |> Json.Util.to_string in
-      let message_format = Json.Util.member "message_format" json |> Json.Util.to_string in
-      let code = Json.Util.member "code" json |> Json.Util.to_int in
-      validate_code_uniqueness code;
-      { Rule.sources; sinks; name; code; message_format }
+      check_keys
+        ~path
+        ~section:"rules"
+        ~required_keys
+        ~valid_keys
+        ~current_keys:(Json.Util.keys json)
+      >>= fun () ->
+      Json.Util.member "sources" json
+      |> json_string_list ~path ~section:"rules"
+      >>= fun sources ->
+      List.map ~f:(parse_source_reference ~path ~allowed_sources) sources
+      |> Result.combine_errors
+      >>= fun sources ->
+      Json.Util.member "sinks" json
+      |> json_string_list ~path ~section:"rules"
+      >>= fun sinks ->
+      List.map ~f:(parse_sink_reference ~path ~allowed_sinks) sinks
+      |> Result.combine_errors
+      >>= fun sinks ->
+      json_string_member ~path "name" json
+      >>= fun name ->
+      json_string_member ~path "message_format" json
+      >>= fun message_format ->
+      json_integer_member ~path "code" json
+      >>= fun code ->
+      validate_code_uniqueness ~path code
+      >>| fun () -> { Rule.sources; sinks; name; code; message_format }
     in
-    array_member "rules" json |> List.map ~f:parse_rule
+    array_member ~path "rules" json
+    >>= fun rules ->
+    List.map ~f:parse_rule rules |> Result.combine_errors |> Result.map_error ~f:List.concat
   in
-  let parse_combined_source_rules ~allowed_sources json =
-    let parse_combined_source_rule (rules, partial_sink_converter, partial_sink_labels) json =
-      let name = Json.Util.member "name" json |> Json.Util.to_string in
-      let message_format = Json.Util.member "message_format" json |> Json.Util.to_string in
-      let code = Json.Util.member "code" json |> Json.Util.to_int in
-      validate_code_uniqueness code;
+  let parse_combined_source_rules ~allowed_sources (path, json) =
+    let parse_combined_source_rule sofar json =
+      sofar
+      >>= fun (rules, partial_sink_converter, partial_sink_labels) ->
+      json_string_member ~path "name" json
+      >>= fun name ->
+      json_string_member ~path "message_format" json
+      >>= fun message_format ->
+      json_integer_member ~path "code" json
+      >>= fun code ->
+      validate_code_uniqueness ~path code
+      >>= fun () ->
       let sources = Json.Util.member "sources" json in
       let keys = Json.Util.keys sources in
       match keys with
       | [first; second] ->
           let parse_sources sources =
-            match sources with
-            | `String source -> [AnnotationParser.parse_source ~allowed:allowed_sources source]
-            | `List sources ->
-                List.map sources ~f:Json.Util.to_string
-                |> List.map ~f:(AnnotationParser.parse_source ~allowed:allowed_sources)
-            | _ -> failwith "Expected a string or list of strings for combined rule sources."
+            (match sources with
+            | `String source -> Ok [source]
+            | `List _ -> json_string_list ~path sources
+            | _ -> Error [Error.create ~path ~kind:(Error.UnexpectedCombinedSourceRule json)])
+            >>= fun sources ->
+            List.map ~f:(parse_source_reference ~path ~allowed_sources) sources
+            |> Result.combine_errors
           in
-          let first_sources =
-            Json.Util.member first sources
-            |> parse_sources
-            |> Core.Result.all
-            |> Core.Result.ok_or_failwith
-          in
-          let second_sources =
-            Json.Util.member second sources
-            |> parse_sources
-            |> Core.Result.all
-            |> Core.Result.ok_or_failwith
-          in
-
-          let sinks, partial_sink_labels =
-            let partial_sink = Json.Util.member "partial_sink" json |> Json.Util.to_string in
-            if String.Map.Tree.mem partial_sink_labels partial_sink then
-              failwith
-                (Format.sprintf
-                   "Partial sinks must be unique - an entry for `%s` already exists."
-                   partial_sink)
-            else
-              ( [partial_sink],
-                String.Map.Tree.set partial_sink_labels ~key:partial_sink ~data:[first; second] )
-          in
-          let create_partial_sink label sink =
-            begin
+          Json.Util.member first sources
+          |> parse_sources
+          >>= fun first_sources ->
+          Json.Util.member second sources
+          |> parse_sources
+          >>= fun second_sources ->
+          json_string_member ~path "partial_sink" json
+          >>= fun partial_sink ->
+          if String.Map.Tree.mem partial_sink_labels partial_sink then
+            Error [Error.create ~path ~kind:(Error.PartialSinkDuplicate partial_sink)]
+          else
+            let partial_sink_labels =
+              String.Map.Tree.set partial_sink_labels ~key:partial_sink ~data:[first; second]
+            in
+            let create_partial_sink label sink =
               match String.Map.Tree.find partial_sink_labels sink with
               | Some labels when not (List.mem ~equal:String.equal labels label) ->
-                  failwith
-                    (Format.sprintf
-                       "Error when parsing configuration: `%s` is an invalid label For multi sink \
-                        `%s` (choices: `%s`)"
-                       label
-                       sink
-                       (String.concat labels ~sep:", "))
-              | None ->
-                  failwith
-                    (Format.sprintf
-                       "Error when parsing configuration: `%s` is not a multi sink."
-                       sink)
-              | _ -> ()
-            end;
-            { Sinks.kind = sink; label }
-          in
-          let first_sinks = List.map sinks ~f:(create_partial_sink first) in
-          let second_sinks = List.map sinks ~f:(create_partial_sink second) in
-          ( {
-              Rule.sources = first_sources;
-              sinks = List.map first_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
-              name;
-              code;
-              message_format;
-            }
-            ::
-            {
-              Rule.sources = second_sources;
-              sinks = List.map second_sinks ~f:(fun sink -> Sinks.TriggeredPartialSink sink);
-              name;
-              code;
-              message_format;
-            }
-            :: rules,
-            PartialSinkConverter.add
-              partial_sink_converter
-              ~first_sources
-              ~first_sinks
-              ~second_sources
-              ~second_sinks,
-            partial_sink_labels )
-      | _ -> failwith "Combined source rules must be of the form {\"a\": SourceA, \"b\": SourceB}"
+                  Error
+                    [Error.create ~path ~kind:(Error.InvalidLabelMultiSink { label; sink; labels })]
+              | None -> Error [Error.create ~path ~kind:(Error.InvalidMultiSink sink)]
+              | _ -> Ok { Sinks.kind = sink; label }
+            in
+            create_partial_sink first partial_sink
+            >>= fun first_sink ->
+            create_partial_sink second partial_sink
+            >>| fun second_sink ->
+            ( {
+                Rule.sources = first_sources;
+                sinks = [Sinks.TriggeredPartialSink first_sink];
+                name;
+                code;
+                message_format;
+              }
+              ::
+              {
+                Rule.sources = second_sources;
+                sinks = [Sinks.TriggeredPartialSink second_sink];
+                name;
+                code;
+                message_format;
+              }
+              :: rules,
+              PartialSinkConverter.add
+                partial_sink_converter
+                ~first_sources
+                ~first_sinks:[first_sink]
+                ~second_sources
+                ~second_sinks:[second_sink],
+              partial_sink_labels )
+      | _ -> Error [Error.create ~path ~kind:(Error.UnexpectedCombinedSourceRule json)]
     in
-    array_member "combined_source_rules" json
-    |> List.fold
-         ~init:([], String.Map.Tree.empty, String.Map.Tree.empty)
-         ~f:parse_combined_source_rule
+    array_member ~path "combined_source_rules" json
+    >>= List.fold
+          ~init:(Ok ([], String.Map.Tree.empty, String.Map.Tree.empty))
+          ~f:parse_combined_source_rule
   in
-  let parse_implicit_sinks ~allowed_sinks json =
+  let parse_implicit_sinks ~allowed_sinks (path, json) =
     match member "implicit_sinks" json with
-    | `Null -> empty_implicit_sinks
+    | `Null -> Ok empty_implicit_sinks
     | implicit_sinks ->
         check_keys
+          ~path
+          ~section:"implicit_sinks"
           ~required_keys:[]
           ~valid_keys:["conditional_test"; "literal_strings"]
           ~current_keys:(Json.Util.keys implicit_sinks)
-          ~section:"implicit_sinks";
-        let conditional_test =
-          match member "conditional_test" implicit_sinks with
-          | `Null -> []
-          | conditional_test ->
-              Json.Util.to_list conditional_test
-              |> List.map ~f:(fun json ->
-                     Json.Util.to_string json
-                     |> AnnotationParser.parse_sink ~allowed:allowed_sinks
-                     |> Core.Result.ok_or_failwith)
-        in
-        let literal_string_sinks =
-          match member "literal_strings" implicit_sinks with
-          | `Null -> []
-          | literal_strings ->
-              Json.Util.to_list literal_strings
-              |> List.map ~f:(fun json ->
-                     let sink_kind =
-                       Json.Util.member "kind" json
-                       |> Json.Util.to_string
-                       |> AnnotationParser.parse_sink ~allowed:allowed_sinks
-                       |> Core.Result.ok_or_failwith
-                     in
-                     let pattern =
-                       Json.Util.member "regexp" json |> Json.Util.to_string |> Re2.create_exn
-                     in
-                     { sink_kind; pattern })
-        in
-        { conditional_test; literal_string_sinks }
+        >>= fun () ->
+        (match member "conditional_test" implicit_sinks with
+        | `Null -> Ok []
+        | conditional_test ->
+            json_string_list ~path conditional_test
+            >>= fun sinks ->
+            List.map ~f:(parse_sink_reference ~path ~allowed_sinks) sinks |> Result.combine_errors)
+        >>= fun conditional_test ->
+        array_member ~path "literal_strings" implicit_sinks
+        >>= fun literal_strings ->
+        List.map
+          ~f:(fun json ->
+            json_string_member ~path "kind" json
+            >>= fun sink ->
+            parse_sink_reference ~path ~allowed_sinks sink
+            |> Result.map_error ~f:(fun error -> [error])
+            >>= fun sink_kind ->
+            json_string_member ~path "regexp" json
+            >>| fun pattern -> { sink_kind; pattern = Re2.create_exn pattern })
+          literal_strings
+        |> Result.combine_errors
+        |> Result.map_error ~f:List.concat
+        >>| fun literal_string_sinks -> { conditional_test; literal_string_sinks }
   in
-  let parse_implicit_sources ~allowed_sources json =
+  let parse_implicit_sources ~allowed_sources (path, json) =
     match member "implicit_sources" json with
-    | `Null -> { literal_strings = [] }
+    | `Null -> Ok { literal_strings = [] }
     | implicit_sources ->
         check_keys
+          ~path
+          ~section:"implicit_sources"
           ~required_keys:[]
           ~valid_keys:["conditional_test"; "literal_strings"]
           ~current_keys:(Json.Util.keys implicit_sources)
-          ~section:"implicit_sources";
-        let literal_strings =
-          array_member "literal_strings" implicit_sources
-          |> List.map ~f:(fun json ->
-                 let source_kind =
-                   Json.Util.member "kind" json
-                   |> Json.Util.to_string
-                   |> AnnotationParser.parse_source ~allowed:allowed_sources
-                   |> Core.Result.ok_or_failwith
-                 in
-                 let pattern =
-                   Json.Util.member "regexp" json |> Json.Util.to_string |> Re2.create_exn
-                 in
-                 { source_kind; pattern })
-        in
-        { literal_strings }
+        >>= fun () ->
+        array_member ~path "literal_strings" implicit_sources
+        >>= fun literal_strings ->
+        List.map
+          ~f:(fun json ->
+            json_string_member ~path "kind" json
+            >>= fun source ->
+            parse_source_reference ~path ~allowed_sources source
+            |> Result.map_error ~f:(fun error -> [error])
+            >>= fun source_kind ->
+            json_string_member ~path "regexp" json
+            >>| fun pattern -> { source_kind; pattern = Re2.create_exn pattern })
+          literal_strings
+        |> Result.combine_errors
+        |> Result.map_error ~f:List.concat
+        >>| fun literal_strings -> { literal_strings }
   in
-  let sources = List.concat_map source_jsons ~f:parse_sources in
-  let sinks = List.concat_map source_jsons ~f:parse_sinks in
-  let features = List.concat_map source_jsons ~f:parse_features in
-  let rules =
-    List.concat_map source_jsons ~f:(parse_rules ~allowed_sources:sources ~allowed_sinks:sinks)
+  List.map source_jsons ~f:parse_source_annotations
+  |> Result.combine_errors
+  |> Result.map_error ~f:List.concat
+  >>| List.concat
+  >>= fun sources ->
+  List.map source_jsons ~f:parse_sink_annotations
+  |> Result.combine_errors
+  |> Result.map_error ~f:List.concat
+  >>| List.concat
+  >>= fun sinks ->
+  List.map source_jsons ~f:parse_features
+  |> Result.combine_errors
+  |> Result.map_error ~f:List.concat
+  >>| List.concat
+  >>= fun features ->
+  List.map source_jsons ~f:(parse_rules ~allowed_sources:sources ~allowed_sinks:sinks)
+  |> Result.combine_errors
+  |> Result.map_error ~f:List.concat
+  >>| List.concat
+  >>= fun rules ->
+  List.map source_jsons ~f:(parse_combined_source_rules ~allowed_sources:sources)
+  |> Result.combine_errors
+  |> Result.map_error ~f:List.concat
+  >>| List.unzip3
+  >>= fun (generated_combined_rules, partial_sink_converters, partial_sink_labels) ->
+  let generated_combined_rules = List.concat generated_combined_rules in
+  let partial_sink_converter =
+    List.fold partial_sink_converters ~init:String.Map.Tree.empty ~f:PartialSinkConverter.merge
   in
-  let generated_combined_rules, partial_sink_converter, partial_sink_labels =
-    List.map source_jsons ~f:(parse_combined_source_rules ~allowed_sources:sources)
-    |> List.unzip3
-    |> fun (generated_combined_rules, partial_sink_converters, partial_sink_labels) ->
-    ( List.concat generated_combined_rules,
-      List.fold partial_sink_converters ~init:String.Map.Tree.empty ~f:PartialSinkConverter.merge,
-      List.fold partial_sink_labels ~init:String.Map.Tree.empty ~f:PartialSinkConverter.merge )
+  let partial_sink_labels =
+    List.fold partial_sink_labels ~init:String.Map.Tree.empty ~f:PartialSinkConverter.merge
   in
 
   let merge_implicit_sinks left right =
@@ -458,36 +628,57 @@ let parse source_jsons =
       literal_string_sinks = left.literal_string_sinks @ right.literal_string_sinks;
     }
   in
-  let implicit_sinks =
-    List.map source_jsons ~f:(parse_implicit_sinks ~allowed_sinks:sinks)
-    |> List.fold ~init:empty_implicit_sinks ~f:merge_implicit_sinks
-  in
+  List.map source_jsons ~f:(parse_implicit_sinks ~allowed_sinks:sinks)
+  |> Result.combine_errors
+  |> Result.map_error ~f:List.concat
+  >>| List.fold ~init:empty_implicit_sinks ~f:merge_implicit_sinks
+  >>= fun implicit_sinks ->
   let parse_integer_option name =
-    let parse_single_json json =
+    let parse_single_json (path, json) =
       match member "options" json with
-      | `Null -> None
+      | `Null -> Ok None
       | options -> (
           match member name options with
-          | `Null -> None
-          | value -> Some (Json.Util.to_int value))
+          | `Null -> Ok None
+          | `Int value -> Ok (Some value)
+          | json ->
+              Error
+                (Error.create
+                   ~path
+                   ~kind:
+                     (Error.UnexpectedJsonType
+                        { json; message = "Expected integer, got"; section = Some "options" })))
     in
-    List.filter_map source_jsons ~f:parse_single_json
-    |> function
-    | [] -> None
-    | [value] -> Some value
-    | _ -> failwith (Format.asprintf "Multiple values were passed in for `%s`." name)
+    List.map source_jsons ~f:parse_single_json
+    |> Result.combine_errors
+    >>| List.filter_map ~f:Fn.id
+    >>= function
+    | [] -> Ok None
+    | [value] -> Ok (Some value)
+    | _ -> Error [{ Error.path = None; kind = Error.OptionDuplicate name }]
   in
-  let maximum_overrides_to_analyze = parse_integer_option "maximum_overrides_to_analyze" in
-  let maximum_trace_length = parse_integer_option "maximum_trace_length" in
-  let maximum_tito_depth = parse_integer_option "maximum_tito_depth" in
+  parse_integer_option "maximum_overrides_to_analyze"
+  >>= fun maximum_overrides_to_analyze ->
+  parse_integer_option "maximum_trace_length"
+  >>= fun maximum_trace_length ->
+  parse_integer_option "maximum_tito_depth"
+  >>= fun maximum_tito_depth ->
   let merge_implicit_sources left right =
     { literal_strings = left.literal_strings @ right.literal_strings }
   in
-  let implicit_sources =
-    List.map source_jsons ~f:(parse_implicit_sources ~allowed_sources:sources)
-    |> List.fold ~init:empty_implicit_sources ~f:merge_implicit_sources
+  List.map source_jsons ~f:(parse_implicit_sources ~allowed_sources:sources)
+  |> Result.combine_errors
+  |> Result.map_error ~f:List.concat
+  >>| List.fold ~init:empty_implicit_sources ~f:merge_implicit_sources
+  >>= fun implicit_sources ->
+  let parse_lineage_analysis (path, json) =
+    json_bool_member ~path "lineage_analysis" json ~default:false
   in
-  let lineage_analysis = List.exists ~f:parse_lineage_analysis source_jsons in
+  List.map ~f:parse_lineage_analysis source_jsons
+  |> Result.combine_errors
+  |> Result.map_error ~f:List.concat
+  >>| List.exists ~f:Fn.id
+  >>| fun lineage_analysis ->
   let rules = List.rev_append rules generated_combined_rules in
   let matching_sources, matching_sinks = matching_kinds_from_rules rules in
   {
@@ -514,20 +705,52 @@ let parse source_jsons =
   }
 
 
-let validate { sources; sinks; features; _ } =
-  let ensure_list_unique ~kind ~get_name elements =
+let validate ({ sources; sinks; features; _ } as configuration) =
+  let ensure_list_unique ~get_name ~get_error elements =
     let seen = String.Hash_set.create () in
     let ensure_unique element =
       let element = get_name element in
       if Hash_set.mem seen element then
-        failwith (Format.sprintf "Duplicate entry for %s: `%s`" kind element);
-      Hash_set.add seen element
+        Error [{ Error.path = None; kind = get_error element }]
+      else (
+        Hash_set.add seen element;
+        Ok ())
     in
-    List.iter elements ~f:ensure_unique
+    List.map elements ~f:ensure_unique
+    |> Result.combine_errors_unit
+    |> Result.map_error ~f:List.concat
   in
-  ensure_list_unique ~kind:"source" ~get_name:(fun { AnnotationParser.name; _ } -> name) sources;
-  ensure_list_unique ~kind:"sink" ~get_name:(fun { AnnotationParser.name; _ } -> name) sinks;
-  ensure_list_unique ~kind:"feature" ~get_name:ident features
+  Result.combine_errors_unit
+    [
+      ensure_list_unique
+        ~get_name:(fun { AnnotationParser.name; _ } -> name)
+        ~get_error:(fun name -> Error.SourceDuplicate name)
+        sources;
+      ensure_list_unique
+        ~get_name:(fun { AnnotationParser.name; _ } -> name)
+        ~get_error:(fun name -> Error.SinkDuplicate name)
+        sinks;
+      ensure_list_unique
+        ~get_name:Fn.id
+        ~get_error:(fun name -> Error.FeatureDuplicate name)
+        features;
+    ]
+  |> Result.map_error ~f:List.concat
+  |> Result.map ~f:(fun () -> configuration)
+
+
+let abort_on_error = function
+  | Ok configuration -> configuration
+  | Error errors ->
+      let print_error error = Log.error "%a" Error.pp error in
+      List.iter ~f:print_error errors;
+      exit (ExitStatus.exit_code ExitStatus.TaintConfigurationError)
+
+
+let exception_on_error = function
+  | Ok configuration -> configuration
+  | Error (error :: _) -> Error.show error |> failwith
+  | Error _ -> failwith "unreachable"
 
 
 let register configuration =
@@ -711,64 +934,64 @@ let create
     ~maximum_tito_depth
     ~taint_model_paths
   =
+  let open Result in
   let file_paths =
     PyrePath.get_matching_files_recursively ~suffix:".config" ~paths:taint_model_paths
   in
-  let parse_configuration config_file =
-    if not (PyrePath.file_exists config_file) then
-      raise
-        (MalformedConfiguration
-           { path = PyrePath.absolute config_file; parse_error = "File not found" })
+  let parse_configuration path =
+    if not (PyrePath.file_exists path) then
+      Error (Error.create ~path ~kind:Error.FileNotFound)
     else
-      try
-        config_file
+      let content =
+        path
         |> File.create
         |> File.content
-        |> Option.value ~default:""
-        |> Json.from_string
-        |> Option.some
-      with
-      | Yojson.Json_error parse_error
-      | Failure parse_error ->
-          raise (MalformedConfiguration { path = PyrePath.absolute config_file; parse_error })
+        |> Result.of_option ~error:(Error.create ~path ~kind:FileRead)
+      in
+      try content >>| Json.from_string >>| fun json -> path, json with
+      | Yojson.Json_error parse_error ->
+          Error (Error.create ~path ~kind:(Error.InvalidJson parse_error))
   in
-  let configurations = file_paths |> List.filter_map ~f:parse_configuration in
-  if List.is_empty configurations then
-    raise (Invalid_argument "No `.config` was found in the taint directories.");
-  let configuration = parse configurations in
-  validate configuration;
-  let configuration =
-    match find_missing_flows with
-    | Some Obscure -> obscure_flows_configuration configuration
-    | Some Type -> missing_type_flows_configuration configuration
-    | None -> configuration
-  in
-  let configuration = { configuration with dump_model_query_results_path } in
-  let configuration =
-    match maximum_trace_length with
-    | None -> configuration
-    | Some _ ->
-        let analysis_model_constraints =
-          { configuration.analysis_model_constraints with maximum_trace_length }
-        in
-        { configuration with analysis_model_constraints }
-  in
-  let configuration =
-    match maximum_tito_depth with
-    | None -> configuration
-    | Some _ ->
-        let analysis_model_constraints =
-          { configuration.analysis_model_constraints with maximum_tito_depth }
-        in
-        { configuration with analysis_model_constraints }
-  in
-  match rule_filter with
-  | None -> configuration
-  | Some rule_filter ->
-      let codes_to_keep = Int.Set.of_list rule_filter in
-      let { rules; _ } = configuration in
-      let rules = List.filter rules ~f:(fun { code; _ } -> Set.mem codes_to_keep code) in
-      { configuration with rules }
+  let configurations = file_paths |> List.map ~f:parse_configuration |> Result.combine_errors in
+  match configurations with
+  | Error errors -> Error errors
+  | Ok [] -> Error [{ Error.path = None; kind = NoConfigurationFound }]
+  | Ok configurations -> (
+      parse configurations
+      >>= validate
+      >>| fun configuration ->
+      let configuration =
+        match find_missing_flows with
+        | Some Obscure -> obscure_flows_configuration configuration
+        | Some Type -> missing_type_flows_configuration configuration
+        | None -> configuration
+      in
+      let configuration = { configuration with dump_model_query_results_path } in
+      let configuration =
+        match maximum_trace_length with
+        | None -> configuration
+        | Some _ ->
+            let analysis_model_constraints =
+              { configuration.analysis_model_constraints with maximum_trace_length }
+            in
+            { configuration with analysis_model_constraints }
+      in
+      let configuration =
+        match maximum_tito_depth with
+        | None -> configuration
+        | Some _ ->
+            let analysis_model_constraints =
+              { configuration.analysis_model_constraints with maximum_tito_depth }
+            in
+            { configuration with analysis_model_constraints }
+      in
+      match rule_filter with
+      | None -> configuration
+      | Some rule_filter ->
+          let codes_to_keep = Int.Set.of_list rule_filter in
+          let { rules; _ } = configuration in
+          let rules = List.filter rules ~f:(fun { code; _ } -> Set.mem codes_to_keep code) in
+          { configuration with rules })
 
 
 let conditional_test_sinks () =

@@ -73,13 +73,52 @@ val empty : t
 
 val get : unit -> t
 
-exception
-  MalformedConfiguration of {
-    path: string;
-    parse_error: string;
-  }
+module Error : sig
+  type kind =
+    | FileNotFound
+    | FileRead
+    | InvalidJson of string
+    | NoConfigurationFound
+    | UnexpectedJsonType of {
+        json: Yojson.Safe.t;
+        message: string;
+        section: string option;
+      }
+    | MissingKey of {
+        key: string;
+        section: string;
+      }
+    | UnknownKey of {
+        key: string;
+        section: string;
+      }
+    | UnsupportedSource of string
+    | UnsupportedSink of string
+    | UnexpectedCombinedSourceRule of Yojson.Safe.t
+    | PartialSinkDuplicate of string
+    | InvalidLabelMultiSink of {
+        label: string;
+        sink: string;
+        labels: string list;
+      }
+    | InvalidMultiSink of string
+    | RuleCodeDuplicate of int
+    | OptionDuplicate of string
+    | SourceDuplicate of string
+    | SinkDuplicate of string
+    | FeatureDuplicate of string
+  [@@deriving equal, show]
 
-val parse : Yojson.Safe.t list -> t
+  type t = {
+    kind: kind;
+    path: PyrePath.t option;
+  }
+  [@@deriving equal, show]
+
+  val create : path:PyrePath.t -> kind:kind -> t
+end
+
+val parse : (PyrePath.t * Yojson.Safe.t) list -> (t, Error.t list) Result.t
 
 val register : t -> unit
 
@@ -92,9 +131,13 @@ val create
   maximum_trace_length:int option ->
   maximum_tito_depth:int option ->
   taint_model_paths:PyrePath.t list ->
-  t
+  (t, Error.t list) Result.t
 
-val validate : t -> unit
+val validate : t -> (t, Error.t list) Result.t
+
+val abort_on_error : (t, Error.t list) Result.t -> t
+
+val exception_on_error : (t, Error.t list) Result.t -> t
 
 val apply_missing_flows : t -> missing_flows_kind -> t
 

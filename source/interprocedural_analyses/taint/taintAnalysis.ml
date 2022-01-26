@@ -31,6 +31,7 @@ include Taint.Result.Register (struct
         ~maximum_trace_length:None
         ~maximum_tito_depth:None
         ~taint_model_paths
+      |> TaintConfiguration.abort_on_error
     in
     Statistics.performance
       ~name:"Verified model syntax and configuration"
@@ -210,6 +211,7 @@ include Taint.Result.Register (struct
             ~maximum_trace_length
             ~maximum_tito_depth
             ~taint_model_paths
+          |> TaintConfiguration.abort_on_error
         in
         TaintConfiguration.register taint_configuration;
         let models, errors, skip_overrides, queries =

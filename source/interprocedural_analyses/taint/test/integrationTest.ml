@@ -80,7 +80,8 @@ let test_integration path context =
         File.create path
         |> File.content
         |> Option.map ~f:(fun content ->
-               Taint.TaintConfiguration.parse [Yojson.Safe.from_string content])
+               Taint.TaintConfiguration.parse [path, Yojson.Safe.from_string content]
+               |> Taint.TaintConfiguration.exception_on_error)
         |> Option.value ~default:Taint.TaintConfiguration.default
       with
       | Unix.Unix_error _ -> Taint.TaintConfiguration.default
