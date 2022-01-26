@@ -217,10 +217,10 @@ let run ~scheduler ~configuration ~environment sources =
     Scheduler.map_reduce
       scheduler
       ~policy:
-        (Scheduler.Policy.fixed_chunk_size
-           ~minimum_chunk_size:10
-           ~minimum_chunks_per_worker:2
-           ~preferred_chunk_size:250
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:100
+           ~preferred_chunks_per_worker:5
            ())
       ~initial:(0, [])
       ~map
