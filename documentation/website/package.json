@@ -24,5 +24,8 @@
     "react-codemirror2": "^7.2.1",
     "react-dom": "^16.10.2",
     "socket.io-client": "^4.3.2"
+  },
+  "resolutions": {
+    "shelljs": "^0.8.5"
   }
 }
