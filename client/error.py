@@ -222,6 +222,84 @@ class LegacyError:
 
 
 @dataclasses.dataclass(frozen=True)
+class TaintConfigurationError:
+    path: Optional[Path]
+    description: str
+    code: int
+
+    @staticmethod
+    def from_json(error_json: Dict[str, Any]) -> "TaintConfigurationError":
+        try:
+            return TaintConfigurationError(
+                path=Path(error_json["path"])
+                if error_json["path"] is not None
+                else None,
+                description=error_json["description"],
+                code=error_json["code"],
+            )
+        except KeyError as key_error:
+            message = f"Missing field from error json: {key_error}"
+            raise ErrorParsingFailure(message) from key_error
+        except TypeError as type_error:
+            message = f"Field type mismatch: {type_error}"
+            raise ErrorParsingFailure(message) from type_error
+
+    @staticmethod
+    def from_string(error_string: str) -> "TaintConfigurationError":
+        try:
+            return TaintConfigurationError.from_json(json.loads(error_string))
+        except json.JSONDecodeError as decode_error:
+            message = f"Cannot parse JSON: {decode_error}"
+            raise ErrorParsingFailure(message) from decode_error
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "path": str(self.path) if self.path is not None else None,
+            "description": self.description,
+            "code": self.code,
+        }
+
+    def to_text(self) -> str:
+        path = click.style(str(self.path or "?"), fg="red")
+        return f"{path} {self.description}"
+
+    def to_sarif(self) -> Dict[str, Any]:
+        return {
+            "ruleId": "PYRE-TAINT-CONFIGURATION-ERROR-" + str(self.code)
+            if self.code is not None
+            else "PYRE-TAINT-CONFIGURATION-ERROR-MDL",
+            "level": "error",
+            "message": {"text": self.description},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": str(self.path) if self.path is not None else None,
+                        },
+                        "region": {
+                            "startLine": 0,
+                            "startColumn": 0,
+                            "endLine": 0,
+                            "endColumn": 1,
+                        },
+                    },
+                },
+            ],
+        }
+
+    def get_sarif_rule(self) -> Dict[str, Any]:
+        return {
+            "id": "PYRE-TAINT-CONFIGURATION-ERROR-" + str(self.code)
+            if self.code is not None
+            else "PYRE-TAINT-CONFIGURATION-ERROR-MDL",
+            "name": "TaintConfigurationError",
+            "shortDescription": {"text": "Taint configuration error"},
+            "helpUri": "https://www.pyre-check.org",
+            "help": {"text": "Taint Configuration error"},
+        }
+
+
+@dataclasses.dataclass(frozen=True)
 class ModelVerificationError:
     line: int
     column: int
@@ -279,9 +357,9 @@ class ModelVerificationError:
 
     def to_sarif(self) -> Dict[str, Any]:
         return {
-            "ruleId": "PYRE-ERROR-" + str(self.code)
+            "ruleId": "PYRE-MODEL-VERIFICATION-ERROR-" + str(self.code)
             if self.code is not None
-            else "PYRE-ERROR-MDL",
+            else "PYRE-MODEL-VERIFICATION-ERROR-MDL",
             "level": "error",
             "message": {"text": self.description},
             "locations": [
@@ -303,9 +381,9 @@ class ModelVerificationError:
 
     def get_sarif_rule(self) -> Dict[str, Any]:
         return {
-            "id": "PYRE-ERROR-" + str(self.code)
+            "id": "PYRE-MODEL-VERIFICATION-ERROR-" + str(self.code)
             if self.code is not None
-            else "PYRE-ERROR-MDL",
+            else "PYRE-MODEL-VERIFICATION-ERROR-MDL",
             "name": "ModelVerificationError",
             "shortDescription": {"text": "Model verification error"},
             "helpUri": "https://www.pyre-check.org",
@@ -315,7 +393,10 @@ class ModelVerificationError:
 
 def errors_to_sarif(
     errors: Union[
-        Sequence[Error], Sequence[LegacyError], Sequence[ModelVerificationError]
+        Sequence[Error],
+        Sequence[LegacyError],
+        Sequence[TaintConfigurationError],
+        Sequence[ModelVerificationError],
     ]
 ) -> Dict[str, Any]:
 
@@ -342,7 +423,10 @@ def errors_to_sarif(
 
 def print_errors(
     errors: Union[
-        Sequence[Error], Sequence[LegacyError], Sequence[ModelVerificationError]
+        Sequence[Error],
+        Sequence[LegacyError],
+        Sequence[TaintConfigurationError],
+        Sequence[ModelVerificationError],
     ],
     output: str,
     error_kind: str = "type",

@@ -11,7 +11,13 @@ from typing import Any, Dict
 from unittest.mock import patch
 
 from .. import __name__ as client
-from ..error import Error, ErrorParsingFailure, LegacyError, ModelVerificationError
+from ..error import (
+    Error,
+    ErrorParsingFailure,
+    LegacyError,
+    TaintConfigurationError,
+    ModelVerificationError,
+)
 
 
 class ErrorTest(unittest.TestCase):
@@ -145,6 +151,46 @@ class ErrorTest(unittest.TestCase):
             "Fake error.\nAnd this is why this is an error.",
         )
 
+    def test_taint_configuration_error_parsing(self) -> None:
+        def assert_parsed(
+            json: Dict[str, Any], expected: TaintConfigurationError
+        ) -> None:
+            self.assertEqual(TaintConfigurationError.from_json(json), expected)
+
+        def assert_not_parsed(json: Dict[str, Any]) -> None:
+            with self.assertRaises(ErrorParsingFailure):
+                TaintConfigurationError.from_json(json)
+
+        assert_not_parsed({})
+        assert_not_parsed({"derp": 42})
+        assert_not_parsed({"line": "abc", "column": []})
+        assert_not_parsed({"line": 1, "column": 1})
+
+        assert_parsed(
+            {
+                "path": "test.py",
+                "description": "Some description",
+                "code": 1001,
+            },
+            expected=TaintConfigurationError(
+                path=Path("test.py"),
+                description="Some description",
+                code=1001,
+            ),
+        )
+        assert_parsed(
+            {
+                "path": None,
+                "description": "Some description",
+                "code": 1001,
+            },
+            expected=TaintConfigurationError(
+                path=None,
+                description="Some description",
+                code=1001,
+            ),
+        )
+
     def test_model_verification_error_parsing(self) -> None:
         def assert_parsed(
             json: Dict[str, Any], expected: ModelVerificationError
@@ -153,7 +199,7 @@ class ErrorTest(unittest.TestCase):
 
         def assert_not_parsed(json: Dict[str, Any]) -> None:
             with self.assertRaises(ErrorParsingFailure):
-                Error.from_json(json)
+                ModelVerificationError.from_json(json)
 
         assert_not_parsed({})
         assert_not_parsed({"derp": 42})

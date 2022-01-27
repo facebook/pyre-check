@@ -14,7 +14,7 @@ from typing import Optional, Sequence, Dict, Any, Iterator, List
 from .. import (
     command_arguments,
     configuration as configuration_module,
-    error,
+    error as error_module,
     log,
 )
 from . import backend_arguments, commands, remote_logging, start, validate_models
@@ -185,7 +185,17 @@ def create_analyze_arguments_and_cleanup(
         arguments.base_arguments.source_paths.cleanup()
 
 
-def parse_model_validation_errors(response: str) -> List[error.ModelVerificationError]:
+def parse_taint_configuration_errors(
+    response: str,
+) -> List[error_module.TaintConfigurationError]:
+    response_json = json.loads(response)
+    errors = response_json.get("errors", [])
+    return [error_module.TaintConfigurationError.from_json(error) for error in errors]
+
+
+def parse_model_validation_errors(
+    response: str,
+) -> List[error_module.ModelVerificationError]:
     response_json = json.loads(response)
     return validate_models.parse_validation_errors(response_json)
 
@@ -206,9 +216,10 @@ def _run_analyze_command(
             # Interpretation of the return code needs to be kept in sync with
             # `command/newAnalyzeCommand.ml`.
             if return_code == 0:
+                # TODO(T110634273): Remove this
                 model_validation_errors = parse_model_validation_errors(result.stdout)
                 if len(model_validation_errors) > 0:
-                    error.print_errors(
+                    error_module.print_errors(
                         model_validation_errors,
                         output=output,
                         error_kind="model verification",
@@ -224,6 +235,20 @@ def _run_analyze_command(
             elif return_code == 3:
                 LOG.error("Pyre encountered an error when building the buck targets.")
                 return commands.ExitCode.BUCK_USER_ERROR
+            elif return_code == 10:
+                error_module.print_errors(
+                    parse_taint_configuration_errors(result.stdout),
+                    output=output,
+                    error_kind="taint configuration",
+                )
+                return commands.ExitCode.TAINT_CONFIGURATION_ERROR
+            elif return_code == 11:
+                error_module.print_errors(
+                    parse_model_validation_errors(result.stdout),
+                    output=output,
+                    error_kind="model verification",
+                )
+                return commands.ExitCode.MODEL_VERIFICATION_ERROR
             else:
                 LOG.error(
                     f"Check command exited with non-zero return code: {return_code}."
