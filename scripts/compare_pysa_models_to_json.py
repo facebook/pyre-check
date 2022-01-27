@@ -75,6 +75,8 @@ def parse_kinds(taints: List[Dict[str, Any]]) -> Set[str]:
     for taint in taints:
         for kind in taint.get("kinds", []):
             kinds.add(kind["kind"])
+        for kind in taint.get("leaves", []):
+            kinds.add(kind["kind"])
 
     return kinds
 
