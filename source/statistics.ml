@@ -79,31 +79,6 @@ let format_as_json ~integers ~normals () =
 
 
 let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
-  let server_configuration_metadata =
-    match Configuration.Server.get_global () with
-    | Some { Configuration.Server.socket = { path = socket_path; _ }; saved_state_action; _ } ->
-        let saved_state_metadata =
-          match saved_state_action with
-          | Some
-              (Configuration.Server.Load
-                (Configuration.Server.LoadFromFiles
-                  { Configuration.Server.shared_memory_path; changed_files_path })) ->
-              let changed =
-                match changed_files_path with
-                | Some changed -> ["changed_files_path", PyrePath.absolute changed]
-                | None -> []
-              in
-              ("shared_memory_path", PyrePath.absolute shared_memory_path) :: changed
-          | Some
-              (Configuration.Server.Load (Configuration.Server.LoadFromProject { project_name; _ }))
-            ->
-              ["saved_state_project", project_name]
-          | Some (Configuration.Server.Save project) -> ["save_state_to", project]
-          | None -> []
-        in
-        ("socket_path", PyrePath.absolute socket_path) :: saved_state_metadata
-    | None -> []
-  in
   let normals =
     if metadata then
       [
@@ -114,7 +89,6 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
         "identifier", GlobalState.global_state.log_identifier;
         "project_root", GlobalState.global_state.project_root;
       ]
-      @ server_configuration_metadata
       @ normals
     else
       normals
