@@ -82,32 +82,36 @@ let find_files ({ Configuration.Analysis.source_paths; search_paths; excludes; _
     | Result.Ok () -> false
     | _ -> true
   in
-  let directory_filter path =
-    (* Don't bother with hidden directories as they are non-importable in Python by default *)
-    (not (String.is_prefix (Filename.basename path) ~prefix:"."))
-    (* Do not scan excluding directories to speed up the traversal *)
-    && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
-    && not (mark_visited visited_directories path)
-  in
-  let file_filter path =
-    let extension =
-      Filename.split_extension path
-      |> snd
-      >>| (fun extension -> "." ^ extension)
-      |> Option.value ~default:""
-    in
-    (* Don't bother with hidden files as they are non-importable in Python by default *)
-    (not (String.is_prefix (Filename.basename path) ~prefix:"."))
-    (* Only consider files with valid suffix *)
-    && List.exists ~f:(String.equal extension) valid_suffixes
-    && not (mark_visited visited_files path)
-  in
   let search_roots =
     List.append
       (List.map ~f:SearchPath.to_path source_paths)
       (List.map ~f:SearchPath.to_path search_paths)
   in
-  List.map search_roots ~f:(fun root -> PyrePath.list ~file_filter ~directory_filter ~root ())
+  List.map search_roots ~f:(fun root ->
+      let root_path = PyrePath.absolute root in
+      let directory_filter path =
+        (* Don't bother with hidden directories (except in the case where the root itself is hidden)
+           as they are non-importable in Python by default *)
+        ((not (String.is_prefix (Filename.basename path) ~prefix:"."))
+        || String.equal path root_path)
+        (* Do not scan excluding directories to speed up the traversal *)
+        && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
+        && not (mark_visited visited_directories path)
+      in
+      let file_filter path =
+        let extension =
+          Filename.split_extension path
+          |> snd
+          >>| (fun extension -> "." ^ extension)
+          |> Option.value ~default:""
+        in
+        (* Don't bother with hidden files as they are non-importable in Python by default *)
+        (not (String.is_prefix (Filename.basename path) ~prefix:"."))
+        (* Only consider files with valid suffix *)
+        && List.exists ~f:(String.equal extension) valid_suffixes
+        && not (mark_visited visited_files path)
+      in
+      PyrePath.list ~file_filter ~directory_filter ~root ())
   |> List.concat
 
 

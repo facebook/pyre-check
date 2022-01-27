@@ -1105,6 +1105,34 @@ let test_creation context =
       0
       (ModuleTracker.explicit_module_count module_tracker)
   in
+  let test_hidden_files2 () =
+    let local_root =
+      let root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
+      PyrePath.create_relative ~root ~relative:".a"
+    in
+    List.iter ~f:(touch local_root) ["b.py"; ".c.py"; ".d/e.py"];
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~source_paths:[SearchPath.Root local_root]
+        ~filter_directories:[local_root]
+        ()
+    in
+    let create_exn = create_source_path_exn ~configuration in
+    let assert_source_path = assert_source_path ~configuration in
+    let module_tracker = ModuleTracker.create configuration in
+    assert_equal
+      ~cmp:Int.equal
+      ~printer:Int.to_string
+      1
+      (ModuleTracker.explicit_module_count module_tracker);
+    assert_source_path
+      (create_exn local_root "b.py")
+      ~search_root:local_root
+      ~relative:"b.py"
+      ~is_stub:false
+      ~is_external:false
+  in
   test_basic ();
   test_submodules ();
   test_search_path_subdirectory ();
@@ -1117,7 +1145,8 @@ let test_creation context =
   test_overlapping ();
   test_overlapping2 ();
   test_root_independence ();
-  test_hidden_files ()
+  test_hidden_files ();
+  test_hidden_files2 ()
 
 
 module IncrementalTest = struct
