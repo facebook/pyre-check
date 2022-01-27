@@ -248,10 +248,17 @@ class QueryAPITest(unittest.TestCase):
                 {
                     "response": {
                         "attributes": [
-                            {"annotation": "int", "name": "a"},
+                            {
+                                "annotation": "int",
+                                "name": "a",
+                                "kind": "regular",
+                                "final": False,
+                            },
                             {
                                 "annotation": "typing.Callable(a.C.foo)[[], str]",
                                 "name": "foo",
+                                "kind": "property",
+                                "final": False,
                             },
                         ]
                     }
@@ -262,9 +269,14 @@ class QueryAPITest(unittest.TestCase):
             query.get_attributes(pyre_connection, ["a.C"]),
             {
                 "a.C": [
-                    query.Attributes(name="a", annotation="int"),
                     query.Attributes(
-                        name="foo", annotation="typing.Callable(a.C.foo)[[], str]"
+                        name="a", annotation="int", kind="regular", final=False
+                    ),
+                    query.Attributes(
+                        name="foo",
+                        annotation="typing.Callable(a.C.foo)[[], str]",
+                        kind="property",
+                        final=False,
                     ),
                 ]
             },
@@ -277,10 +289,17 @@ class QueryAPITest(unittest.TestCase):
                 {
                     "response": {
                         "attributes": [
-                            {"annotation": "int", "name": "a"},
+                            {
+                                "annotation": "int",
+                                "name": "a",
+                                "kind": "regular",
+                                "final": False,
+                            },
                             {
                                 "annotation": "typing.Callable(a.C.foo)[[], str]",
                                 "name": "foo",
+                                "kind": "property",
+                                "final": False,
                             },
                         ]
                     }
@@ -288,8 +307,18 @@ class QueryAPITest(unittest.TestCase):
                 {
                     "response": {
                         "attributes": [
-                            {"annotation": "str", "name": "b"},
-                            {"annotation": None, "name": "c"},
+                            {
+                                "annotation": "str",
+                                "name": "b",
+                                "kind": "regular",
+                                "final": False,
+                            },
+                            {
+                                "annotation": None,
+                                "name": "c",
+                                "kind": "property",
+                                "final": False,
+                            },
                         ]
                     }
                 },
@@ -306,14 +335,23 @@ class QueryAPITest(unittest.TestCase):
             ),
             {
                 "TestClassA": [
-                    query.Attributes(name="a", annotation="int"),
                     query.Attributes(
-                        name="foo", annotation="typing.Callable(a.C.foo)[[], str]"
+                        name="a", annotation="int", kind="regular", final=False
+                    ),
+                    query.Attributes(
+                        name="foo",
+                        annotation="typing.Callable(a.C.foo)[[], str]",
+                        kind="property",
+                        final=False,
                     ),
                 ],
                 "TestClassB": [
-                    query.Attributes(name="b", annotation="str"),
-                    query.Attributes(name="c", annotation=None),
+                    query.Attributes(
+                        name="b", annotation="str", kind="regular", final=False
+                    ),
+                    query.Attributes(
+                        name="c", annotation=None, kind="property", final=False
+                    ),
                 ],
             },
         )
@@ -325,10 +363,17 @@ class QueryAPITest(unittest.TestCase):
                 {
                     "response": {
                         "attributes": [
-                            {"annotation": "int", "name": "a"},
+                            {
+                                "annotation": "int",
+                                "name": "a",
+                                "kind": "regular",
+                                "final": False,
+                            },
                             {
                                 "annotation": "typing.Callable(a.C.foo)[[], str]",
                                 "name": "foo",
+                                "kind": "property",
+                                "final": False,
                             },
                         ]
                     }
@@ -336,8 +381,18 @@ class QueryAPITest(unittest.TestCase):
                 {
                     "response": {
                         "attributes": [
-                            {"annotation": "str", "name": "b"},
-                            {"annotation": None, "name": "c"},
+                            {
+                                "annotation": "str",
+                                "name": "b",
+                                "kind": "regular",
+                                "final": False,
+                            },
+                            {
+                                "annotation": None,
+                                "name": "c",
+                                "kind": "property",
+                                "final": False,
+                            },
                         ]
                     }
                 },
@@ -354,14 +409,23 @@ class QueryAPITest(unittest.TestCase):
             ),
             {
                 "TestClassA": [
-                    query.Attributes(name="a", annotation="int"),
                     query.Attributes(
-                        name="foo", annotation="typing.Callable(a.C.foo)[[], str]"
+                        name="a", annotation="int", kind="regular", final=False
+                    ),
+                    query.Attributes(
+                        name="foo",
+                        annotation="typing.Callable(a.C.foo)[[], str]",
+                        kind="property",
+                        final=False,
                     ),
                 ],
                 "TestClassB": [
-                    query.Attributes(name="b", annotation="str"),
-                    query.Attributes(name="c", annotation=None),
+                    query.Attributes(
+                        name="b", annotation="str", kind="regular", final=False
+                    ),
+                    query.Attributes(
+                        name="c", annotation=None, kind="property", final=False
+                    ),
                 ],
             },
         )

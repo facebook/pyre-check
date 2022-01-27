@@ -17,6 +17,8 @@ T = TypeVar("T")
 class Attributes(NamedTuple):
     name: str
     annotation: Optional[str]
+    kind: str
+    final: bool
 
 
 class DefineParameter(NamedTuple):
@@ -239,7 +241,12 @@ def _get_attributes(
     query = f"attributes({class_name})"
     response = pyre_connection.query_server(query)["response"]
     return [
-        Attributes(name=attribute["name"], annotation=attribute["annotation"])
+        Attributes(
+            name=attribute["name"],
+            annotation=attribute["annotation"],
+            kind=attribute["kind"],
+            final=attribute["final"],
+        )
         for attribute in response["attributes"]
     ]
 
@@ -257,7 +264,10 @@ def get_attributes(
             {
                 class_name: [
                     Attributes(
-                        name=attribute["name"], annotation=attribute["annotation"]
+                        name=attribute["name"],
+                        annotation=attribute["annotation"],
+                        kind=attribute["kind"],
+                        final=attribute["final"],
                     )
                     for attribute in response["response"]["attributes"]
                 ]
