@@ -23,6 +23,8 @@ module SourcePaths : sig
     | Simple of SearchPath.t list
     | Buck of Buck.t
   [@@deriving sexp, compare, hash, yojson]
+
+  val to_search_paths : t -> SearchPath.t list
 end
 
 module RemoteLogging : sig

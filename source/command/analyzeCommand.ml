@@ -119,11 +119,6 @@ module AnalyzeConfiguration = struct
         repository_root = _;
       }
     =
-    let source_paths =
-      match source_paths with
-      | Configuration.SourcePaths.Simple source_paths -> source_paths
-      | Buck { Configuration.Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
-    in
     let configuration =
       Configuration.Analysis.create
         ~parallel
@@ -149,7 +144,7 @@ module AnalyzeConfiguration = struct
         ~shared_memory_dependency_table_power:dependency_table_power
         ~shared_memory_hash_table_power:hash_table_power
         ~enable_type_comments
-        ~source_paths
+        ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
         ()
     in
     {

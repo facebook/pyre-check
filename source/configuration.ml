@@ -113,6 +113,11 @@ module SourcePaths = struct
             "paths", [%to_yojson: string list] (List.map search_paths ~f:SearchPath.show);
           ]
     | Buck buck -> Buck.to_yojson buck |> Yojson.Safe.Util.combine (`Assoc ["kind", `String "buck"])
+
+
+  let to_search_paths = function
+    | Simple source_paths -> source_paths
+    | Buck { artifact_root; _ } -> [SearchPath.Root artifact_root]
 end
 
 module RemoteLogging = struct
