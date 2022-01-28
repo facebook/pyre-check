@@ -19,7 +19,7 @@ val initialize_models
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   callables:Target.callable_t list ->
   stubs:Target.callable_t list ->
-  AnalysisResult.model_t AnalysisResult.InitializedModels.t
+  AnalysisResult.model_t AnalysisResult.initialize_result
 
 module Testing : sig
   val record_initial_models

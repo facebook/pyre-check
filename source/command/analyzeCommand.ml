@@ -217,7 +217,7 @@ let run_taint_analysis
         in
 
         let environment = Analysis.TypeEnvironment.read_only environment in
-        let { Interprocedural.AnalysisResult.InitializedModels.initial_models; skip_overrides } =
+        let { Interprocedural.AnalysisResult.initial_models; skip_overrides } =
           let { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } =
             initial_callables
           in

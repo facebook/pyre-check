@@ -39,7 +39,7 @@ include SimpleAnalysis.Register (struct
       ~callables:_
       ~stubs:_
     =
-    AnalysisResult.InitializedModels.empty
+    AnalysisResult.empty_initialize_result
 
 
   let analyze ~environment:_ ~callable:_ ~qualifier:_ ~define:_ ~existing:_ = "some result", 5

@@ -52,7 +52,7 @@ include Taint.Result.Register (struct
   }
 
   type parse_sources_result = {
-    initialize_result: Model.t Interprocedural.AnalysisResult.InitializedModels.t;
+    initialize_result: Model.t Interprocedural.AnalysisResult.initialize_result;
     query_data: model_query_data option;
   }
 
@@ -63,8 +63,7 @@ include Taint.Result.Register (struct
       ~environment
       ~callables
       ~stubs
-      ~initialize_result:
-        { Interprocedural.AnalysisResult.InitializedModels.initial_models = models; skip_overrides }
+      ~initialize_result:{ Interprocedural.AnalysisResult.initial_models = models; skip_overrides }
       { queries; taint_configuration }
     =
     let resolution =
@@ -118,7 +117,7 @@ include Taint.Result.Register (struct
         | Some Type -> models |> remove_sinks
         | None -> models
       in
-      { Interprocedural.AnalysisResult.InitializedModels.initial_models = models; skip_overrides }
+      { Interprocedural.AnalysisResult.initial_models = models; skip_overrides }
     with
     | exception_ -> log_and_reraise_taint_model_exception exception_
 
@@ -236,10 +235,7 @@ include Taint.Result.Register (struct
         in
         {
           initialize_result =
-            {
-              Interprocedural.AnalysisResult.InitializedModels.initial_models = models;
-              skip_overrides;
-            };
+            { Interprocedural.AnalysisResult.initial_models = models; skip_overrides };
           query_data = Some { queries; taint_configuration };
         }
       with
@@ -251,7 +247,7 @@ include Taint.Result.Register (struct
         {
           initialize_result =
             {
-              Interprocedural.AnalysisResult.InitializedModels.initial_models;
+              Interprocedural.AnalysisResult.initial_models;
               skip_overrides = Ast.Reference.Set.empty;
             };
           query_data = None;
@@ -274,30 +270,27 @@ include Taint.Result.Register (struct
         ~stubs
     in
     Statistics.performance ~name:"Parsed taint models" ~phase_name:"Parsing taint models" ~timer ();
-    let initialize_result =
-      match query_data with
-      | Some query_data ->
-          Log.info "Generating models from model queries...";
-          let timer = Timer.start () in
-          let models =
-            generate_models_from_queries
-              ~scheduler
-              ~static_analysis_configuration
-              ~environment
-              ~callables
-              ~stubs
-              ~initialize_result
-              query_data
-          in
-          Statistics.performance
-            ~name:"Generated models from model queries"
-            ~phase_name:"Generating models from model queries"
-            ~timer
-            ();
-          models
-      | _ -> initialize_result
-    in
-    Interprocedural.AnalysisResult.InitializedModels.create initialize_result
+    match query_data with
+    | Some query_data ->
+        Log.info "Generating models from model queries...";
+        let timer = Timer.start () in
+        let models =
+          generate_models_from_queries
+            ~scheduler
+            ~static_analysis_configuration
+            ~environment
+            ~callables
+            ~stubs
+            ~initialize_result
+            query_data
+        in
+        Statistics.performance
+          ~name:"Generated models from model queries"
+          ~phase_name:"Generating models from model queries"
+          ~timer
+          ();
+        models
+    | _ -> initialize_result
 
 
   let analyze ~environment ~callable ~qualifier ~define ~sanitizers ~modes existing_model =

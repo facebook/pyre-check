@@ -24,16 +24,13 @@ let initialize_models kind ~scheduler ~static_analysis_configuration ~environmen
     AnalysisResult.get_abstract_analysis kind
   in
   let module Analysis = (val analysis) in
-  let specialize_models
-      { AnalysisResult.InitializedModels.initial_models = analysis_initial_models; skip_overrides }
-    =
+  let specialize_models { AnalysisResult.initial_models = analysis_initial_models; skip_overrides } =
     let to_model_t model =
       let pkg = AnalysisResult.Pkg { kind = ModelPart storable_kind; value = model } in
       { AnalysisResult.models = Kind.Map.add kind pkg Kind.Map.empty; is_obscure = false }
     in
     {
-      AnalysisResult.InitializedModels.initial_models =
-        analysis_initial_models |> Target.Map.map ~f:to_model_t;
+      AnalysisResult.initial_models = analysis_initial_models |> Target.Map.map ~f:to_model_t;
       skip_overrides;
     }
   in

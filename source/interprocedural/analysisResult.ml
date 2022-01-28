@@ -72,18 +72,14 @@ type 'part pkg =
     }
       -> 'part pkg
 
-module InitializedModels = struct
-  type 'call_model t = {
-    initial_models: 'call_model Target.Map.t;
-    skip_overrides: Ast.Reference.Set.t;
-  }
+type 'call_model initialize_result = {
+  initial_models: 'call_model Target.Map.t;
+  skip_overrides: Ast.Reference.Set.t;
+}
 
-  let create initialized_models = initialized_models
+let empty_initialize_result =
+  { initial_models = Target.Map.empty; skip_overrides = Ast.Reference.Set.empty }
 
-  let empty = { initial_models = Target.Map.empty; skip_overrides = Ast.Reference.Set.empty }
-
-  let get_models initialized_models = initialized_models
-end
 
 module type ANALYZER = sig
   type result
@@ -110,7 +106,7 @@ module type ANALYZER = sig
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     callables:Target.callable_t list ->
     stubs:Target.callable_t list ->
-    call_model InitializedModels.t
+    call_model initialize_result
 
   val report
     :  scheduler:Scheduler.t ->
