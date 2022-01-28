@@ -216,7 +216,8 @@ let run_taint_analysis
             ~qualifiers
         in
 
-        let initialized_models =
+        let environment = Analysis.TypeEnvironment.read_only environment in
+        let { Interprocedural.AnalysisResult.InitializedModels.initial_models; skip_overrides } =
           let { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } =
             initial_callables
           in
@@ -224,19 +225,11 @@ let run_taint_analysis
             analysis_kind
             ~static_analysis_configuration
             ~scheduler
-            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~environment
             ~callables:(List.map callables_with_dependency_information ~f:fst)
             ~stubs
         in
-
-        let environment = Analysis.TypeEnvironment.read_only environment in
         let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
-
-        let { Interprocedural.AnalysisResult.InitializedModels.initial_models; skip_overrides } =
-          Interprocedural.AnalysisResult.InitializedModels.get_models_including_generated_models
-            initialized_models
-            ~updated_environment:(Some environment)
-        in
         let filename_lookup path_reference =
           match
             Server.RequestHandler.instantiate_path

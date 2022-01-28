@@ -82,29 +82,16 @@ type model_t = {
 type result_t = result_pkg Kind.Map.t [@@deriving show]
 
 module InitializedModels : sig
-  type 'call_model t
-
-  type 'call_model initialize_result = {
+  type 'call_model t = {
     initial_models: 'call_model Target.Map.t;
     skip_overrides: Ast.Reference.Set.t;
   }
 
-  val create
-    :  (updated_environment:Analysis.TypeEnvironment.ReadOnly.t option ->
-       'call_model initialize_result) ->
-    'call_model t
+  val create : 'call_model t -> 'call_model t
 
   val empty : 'call_model t
 
-  (* Return all initially-created models. *)
-  val get_models : 'call_model t -> 'call_model initialize_result
-
-  (* Return initially-created models along with any models generated from functions, say, by using
-     model queries. *)
-  val get_models_including_generated_models
-    :  updated_environment:Analysis.TypeEnvironment.ReadOnly.t option ->
-    'call_model t ->
-    'call_model initialize_result
+  val get_models : 'call_model t -> 'call_model t
 end
 
 module type ANALYZER = sig

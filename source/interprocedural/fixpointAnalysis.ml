@@ -24,16 +24,6 @@ let initialize_models kind ~scheduler ~static_analysis_configuration ~environmen
     AnalysisResult.get_abstract_analysis kind
   in
   let module Analysis = (val analysis) in
-  (* We call initialize_models outside the returned lambda so that initial models are computed
-     eagerly. *)
-  let initialized_models =
-    Analysis.initialize_models
-      ~static_analysis_configuration
-      ~scheduler
-      ~environment
-      ~callables
-      ~stubs
-  in
   let specialize_models
       { AnalysisResult.InitializedModels.initial_models = analysis_initial_models; skip_overrides }
     =
@@ -47,15 +37,13 @@ let initialize_models kind ~scheduler ~static_analysis_configuration ~environmen
       skip_overrides;
     }
   in
-  let get_specialized_models ~updated_environment =
-    (* We call get_models_including_generated_models within the lambda so that callable-specific
-       models are generated only on demand. *)
-    AnalysisResult.InitializedModels.get_models_including_generated_models
-      ~updated_environment
-      initialized_models
-    |> specialize_models
-  in
-  AnalysisResult.InitializedModels.create get_specialized_models
+  Analysis.initialize_models
+    ~static_analysis_configuration
+    ~scheduler
+    ~environment
+    ~callables
+    ~stubs
+  |> specialize_models
 
 
 module Testing = struct

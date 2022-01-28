@@ -73,26 +73,16 @@ type 'part pkg =
       -> 'part pkg
 
 module InitializedModels = struct
-  type 'call_model initialize_result = {
+  type 'call_model t = {
     initial_models: 'call_model Target.Map.t;
     skip_overrides: Ast.Reference.Set.t;
   }
 
-  type 'call_model t =
-    updated_environment:Analysis.TypeEnvironment.ReadOnly.t option -> 'call_model initialize_result
+  let create initialized_models = initialized_models
 
-  let create f = f
+  let empty = { initial_models = Target.Map.empty; skip_overrides = Ast.Reference.Set.empty }
 
-  let empty =
-    create (fun ~updated_environment:_ ->
-        { initial_models = Target.Map.empty; skip_overrides = Ast.Reference.Set.empty })
-
-
-  let get_models f = f ~updated_environment:None
-
-  (* Generate models from the initial models and an updated environment.
-   * For the taint analysis, this runs model queries. *)
-  let get_models_including_generated_models ~updated_environment f = f ~updated_environment
+  let get_models initialized_models = initialized_models
 end
 
 module type ANALYZER = sig

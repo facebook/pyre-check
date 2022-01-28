@@ -52,7 +52,7 @@ include Taint.Result.Register (struct
   }
 
   type parse_sources_result = {
-    initialize_result: Model.t Interprocedural.AnalysisResult.InitializedModels.initialize_result;
+    initialize_result: Model.t Interprocedural.AnalysisResult.InitializedModels.t;
     query_data: model_query_data option;
   }
 
@@ -274,17 +274,16 @@ include Taint.Result.Register (struct
         ~stubs
     in
     Statistics.performance ~name:"Parsed taint models" ~phase_name:"Parsing taint models" ~timer ();
-
-    let get_taint_models ~updated_environment =
-      match updated_environment, query_data with
-      | Some updated_environment, Some query_data ->
+    let initialize_result =
+      match query_data with
+      | Some query_data ->
           Log.info "Generating models from model queries...";
           let timer = Timer.start () in
           let models =
             generate_models_from_queries
               ~scheduler
               ~static_analysis_configuration
-              ~environment:updated_environment
+              ~environment
               ~callables
               ~stubs
               ~initialize_result
@@ -298,7 +297,7 @@ include Taint.Result.Register (struct
           models
       | _ -> initialize_result
     in
-    Interprocedural.AnalysisResult.InitializedModels.create get_taint_models
+    Interprocedural.AnalysisResult.InitializedModels.create initialize_result
 
 
   let analyze ~environment ~callable ~qualifier ~define ~sanitizers ~modes existing_model =
