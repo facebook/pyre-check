@@ -220,6 +220,10 @@ module Frame = struct
     transform Features.BreadcrumbSet.Element Add ~f:breadcrumb
 
 
+  let add_propagated_breadcrumbs breadcrumbs =
+    transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
+
+
   let product_pp = pp (* shadow *)
 
   let pp formatter = Format.fprintf formatter "Frame(%a)" product_pp
@@ -286,8 +290,10 @@ module type TAINT_DOMAIN = sig
 
   (* Add trace info at call-site *)
   val apply_call
-    :  Location.WithModule.t ->
+    :  resolution:Analysis.Resolution.t ->
+    location:Location.WithModule.t ->
     callees:Interprocedural.Target.t list ->
+    arguments:Ast.Expression.Call.Argument.t list ->
     port:AccessPath.Root.t ->
     path:Abstract.TreeDomain.Label.path ->
     element:t ->
@@ -730,13 +736,21 @@ end = struct
       transform KindTaintDomain.Key Map ~f:(Kind.apply_sanitize_sink_transforms transforms) taint
 
 
-  let apply_call location ~callees ~port ~path ~element:taint =
+  let apply_call ~resolution ~location ~callees ~arguments ~port ~path ~element:taint =
     let apply (call_info, local_taint) =
       let local_taint =
         local_taint
         |> LocalTaintDomain.transform KindTaintDomain.Key Filter ~f:(fun kind ->
                not (Kind.ignore_kind_at_call kind))
         |> LocalTaintDomain.transform KindTaintDomain.Key Map ~f:Kind.apply_call
+      in
+      let via_features_breadcrumbs =
+        LocalTaintDomain.fold
+          Features.ViaFeatureSet.Element
+          ~f:Features.ViaFeatureSet.add
+          ~init:Features.ViaFeatureSet.bottom
+          local_taint
+        |> Features.expand_via_features ~resolution ~callees ~arguments
       in
       let local_breadcrumbs = LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint in
       let local_first_indices =
@@ -748,7 +762,7 @@ end = struct
         |> LocalTaintDomain.update
              LocalTaintDomain.Slots.TitoPosition
              Features.TitoPositionSet.bottom
-        |> LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb Features.BreadcrumbSet.empty
+        |> LocalTaintDomain.update LocalTaintDomain.Slots.Breadcrumb via_features_breadcrumbs
         |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstIndex Features.FirstIndexSet.bottom
         |> LocalTaintDomain.update LocalTaintDomain.Slots.FirstField Features.FirstFieldSet.bottom
       in
@@ -840,9 +854,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       (Taint)
       ()
 
-  let apply_call location ~callees ~port taint_tree =
+  let apply_call ~resolution ~location ~callees ~arguments ~port taint_tree =
     let transform_path (path, tip) =
-      path, Taint.apply_call location ~callees ~port ~path ~element:tip
+      path, Taint.apply_call ~resolution ~location ~callees ~arguments ~port ~path ~element:tip
     in
     transform Path Map ~f:transform_path taint_tree
 

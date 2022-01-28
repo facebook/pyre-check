@@ -17,11 +17,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-value": "my-data" } ],
                 "leaves": [ { "name": "conditional.some_source" } ],
                 "kind": "MySource"
               }
             ],
+            "local_features": [ { "always-via-value": "my-data" } ],
             "root": {
               "filename": "conditional.py",
               "line": 23,
@@ -67,11 +67,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-value": "other" } ],
                 "leaves": [ { "name": "conditional.some_source" } ],
                 "kind": "MySource"
               }
             ],
+            "local_features": [ { "always-via-value": "other" } ],
             "root": {
               "filename": "conditional.py",
               "line": 29,

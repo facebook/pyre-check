@@ -10,21 +10,36 @@ open Ast
 open Taint
 open Domains
 open Core
+open Test
+open Analysis
 
-let test_partition_call_map _ =
+let test_partition_call_map context =
+  let global_resolution =
+    ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
+  in
+  let resolution =
+    TypeCheck.resolution
+      global_resolution
+      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+      (module TypeCheck.DummyContext)
+  in
   let taint = ForwardTaint.singleton (Sources.NamedSource "UserControlled") Frame.initial in
   let call_taint1 =
     ForwardTaint.apply_call
-      Location.WithModule.any
+      ~resolution
+      ~location:Location.WithModule.any
       ~callees:[]
+      ~arguments:[]
       ~port:AccessPath.Root.LocalResult
       ~path:[Abstract.TreeDomain.Label.create_name_index "a"]
       ~element:taint
   in
   let call_taint2 =
     ForwardTaint.apply_call
-      Location.WithModule.any
+      ~resolution
+      ~location:Location.WithModule.any
       ~callees:[]
+      ~arguments:[]
       ~port:AccessPath.Root.LocalResult
       ~path:[]
       ~element:taint

@@ -7,12 +7,14 @@
 
 open Core
 open Ast
+open Analysis
 open Expression
 open Pyre
 open Domains
 
 type t = {
   models: Model.WithTarget.t list;
+  resolution: Resolution.t;
   location: Location.WithModule.t;
 }
 
@@ -42,26 +44,31 @@ let from_expression ~resolution ~call_graph ~qualifier ~expression =
   in
   let models = get_global_targets ~call_graph ~expression |> List.map ~f:fetch_model in
   let location = Node.location expression |> Location.with_module ~qualifier in
-  { models; location }
+  { models; resolution; location }
 
 
 let global_root =
   AccessPath.Root.PositionalParameter { position = 0; name = "$global"; positional_only = false }
 
 
-let get_source { models; location } =
+let get_source { models; resolution; location } =
   let to_source
       existing
       { Model.WithTarget.target; model = { Model.forward = { Model.Forward.source_taint }; _ }; _ }
     =
     ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
-    |> ForwardState.Tree.apply_call location ~callees:[target] ~port:AccessPath.Root.LocalResult
+    |> ForwardState.Tree.apply_call
+         ~resolution
+         ~location
+         ~callees:[target]
+         ~arguments:[]
+         ~port:AccessPath.Root.LocalResult
     |> ForwardState.Tree.join existing
   in
   List.fold ~init:ForwardState.Tree.bottom ~f:to_source models
 
 
-let get_sink { models; location } =
+let get_sink { models; resolution; location } =
   let to_sink
       existing
       {
@@ -71,7 +78,12 @@ let get_sink { models; location } =
       }
     =
     BackwardState.read ~root:global_root ~path:[] sink_taint
-    |> BackwardState.Tree.apply_call location ~callees:[target] ~port:AccessPath.Root.LocalResult
+    |> BackwardState.Tree.apply_call
+         ~resolution
+         ~location
+         ~callees:[target]
+         ~arguments:[]
+         ~port:AccessPath.Root.LocalResult
     |> BackwardState.Tree.join existing
   in
   List.fold ~init:BackwardState.Tree.bottom ~f:to_sink models

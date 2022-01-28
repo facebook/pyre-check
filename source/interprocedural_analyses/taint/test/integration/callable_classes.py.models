@@ -155,13 +155,13 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-value": "b" } ],
                 "leaves": [
                   { "name": "callable_classes.CallableProtocol.__call__" }
                 ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via-value": "b" } ],
             "root": {
               "filename": "callable_classes.py",
               "line": 36,
@@ -185,11 +185,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-value": "a" } ],
                 "leaves": [ { "name": "callable_classes.P.__call__" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via-value": "a" } ],
             "root": {
               "filename": "callable_classes.py",
               "line": 22,

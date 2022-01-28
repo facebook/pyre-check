@@ -184,13 +184,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     Location.WithModule.Table.fold candidates ~f:accumulate ~init:[]
 
 
-  let return_sink ~return_location =
+  let return_sink ~resolution ~return_location =
     let taint =
       BackwardState.read
         ~root:AccessPath.Root.LocalResult
         ~path:[]
         FunctionContext.existing_model.Model.backward.sink_taint
-      |> BackwardState.Tree.apply_call return_location ~callees:[] ~port:AccessPath.Root.LocalResult
+      |> BackwardState.Tree.apply_call
+           ~resolution
+           ~location:return_location
+           ~callees:[]
+           ~arguments:[]
+           ~port:AccessPath.Root.LocalResult
     in
     let breadcrumbs_to_attach, via_features_to_attach =
       BackwardState.extract_features_to_attach
@@ -392,10 +397,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let sink_tree =
         CallModel.sink_tree_of_argument
+          ~resolution
           ~transform_non_leaves:(fun _ tree -> tree)
           ~model:taint_model
           ~location
           ~call_target
+          ~arguments
           ~sink_matches
       in
       (* Compute triggered partial sinks, if any. *)
@@ -434,8 +441,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let result_taint =
       ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
       |> ForwardState.Tree.apply_call
-           (Location.with_module ~qualifier:FunctionContext.qualifier call_location)
+           ~resolution
+           ~location:(Location.with_module ~qualifier:FunctionContext.qualifier call_location)
            ~callees:[call_target]
+           ~arguments
            ~port:AccessPath.Root.LocalResult
     in
     let tito = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
@@ -1905,7 +1914,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Return { expression = Some expression; _ } ->
         let taint, state = analyze_expression ~resolution ~state ~expression in
         let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
-        check_flow ~location ~source_tree:taint ~sink_tree:(return_sink ~return_location:location);
+        check_flow
+          ~location
+          ~source_tree:taint
+          ~sink_tree:(return_sink ~resolution ~return_location:location);
         store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
     | Return { expression = None; _ }
     | Try _
@@ -1917,6 +1929,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let create ~existing_model parameters =
     (* Use primed sources to populate initial state of parameters *)
     let forward_primed_taint = existing_model.Model.forward.source_taint in
+    let resolution =
+      TypeCheck.resolution
+        global_resolution
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module TypeCheck.DummyContext)
+    in
     let prime_parameter
         state
         (parameter_root, name, { Node.location; value = { Parameter.value; _ } })
@@ -1925,22 +1943,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
         ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
         |> ForwardState.Tree.apply_call
-             location
+             ~resolution
+             ~location
              ~callees:[Interprocedural.Target.create FunctionContext.definition]
+             ~arguments:[]
              ~port:parameter_root
       in
       let default_value_taint, state =
         match value with
         | None -> ForwardState.Tree.bottom, state
-        | Some expression ->
-            let resolution =
-              TypeCheck.resolution
-                global_resolution
-                (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-                (module TypeCheck.DummyContext)
-            in
-
-            analyze_expression ~resolution ~state ~expression
+        | Some expression -> analyze_expression ~resolution ~state ~expression
       in
       let root = AccessPath.Root.Variable name in
       let taint =

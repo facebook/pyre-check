@@ -372,10 +372,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let sink_taint =
         CallModel.sink_tree_of_argument
+          ~resolution
           ~transform_non_leaves
           ~model:taint_model
           ~location
           ~call_target
+          ~arguments
           ~sink_matches
       in
       let taint_in_taint_out =

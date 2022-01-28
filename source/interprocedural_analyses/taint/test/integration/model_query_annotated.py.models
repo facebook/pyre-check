@@ -17,16 +17,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  {
-                    "always-via-type":
-                      "typing.Annotated[typing.Optional[float]]"
-                  }
-                ],
                 "leaves": [
                   { "name": "Obj{model_query_annotated.Test1_C.a}" }
                 ],
                 "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
               }
             ],
             "root": {
@@ -83,16 +82,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  {
-                    "always-via-type":
-                      "typing.Annotated[typing.Optional[float]]"
-                  }
-                ],
                 "leaves": [
                   { "name": "Obj{model_query_annotated.Test1_C.b}" }
                 ],
                 "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
               }
             ],
             "root": {
@@ -149,16 +147,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  {
-                    "always-via-type":
-                      "typing.Annotated[typing.Optional[float]]"
-                  }
-                ],
                 "leaves": [
                   { "name": "Obj{model_query_annotated.Test1_C.x}" }
                 ],
                 "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
               }
             ],
             "root": {
@@ -215,16 +212,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  {
-                    "always-via-type":
-                      "typing.Annotated[typing.Optional[float]]"
-                  }
-                ],
                 "leaves": [
                   { "name": "Obj{model_query_annotated.Test1_C.y}" }
                 ],
                 "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
               }
             ],
             "root": {
@@ -281,16 +277,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  {
-                    "always-via-type":
-                      "typing.Annotated[typing.Optional[float]]"
-                  }
-                ],
                 "leaves": [
                   { "name": "Obj{model_query_annotated.Test2_C.a}" }
                 ],
                 "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
               }
             ],
             "root": {
@@ -347,16 +342,15 @@
           {
             "kinds": [
               {
-                "features": [
-                  {
-                    "always-via-type":
-                      "typing.Annotated[typing.Optional[float]]"
-                  }
-                ],
                 "leaves": [
                   { "name": "Obj{model_query_annotated.Test2_C.x}" }
                 ],
                 "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
               }
             ],
             "root": {

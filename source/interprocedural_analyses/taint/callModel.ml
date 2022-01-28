@@ -16,73 +16,31 @@ let at_callsite ~resolution ~call_target ~arguments =
   match Interprocedural.FixpointState.get_model call_target with
   | None -> Model.obscure_model
   | Some model ->
-      let expand_via_value_of
-          {
-            Model.forward = { source_taint };
-            backward = { sink_taint; taint_in_taint_out };
-            sanitizers;
-            modes;
-          }
+      let expand_model_via_features
+          { Model.forward; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
         =
-        let expand frame =
-          let transform via_feature frame =
-            let match_all_arguments_to_parameter parameter =
-              AccessPath.match_actuals_to_formals arguments [parameter]
-              |> List.filter_map ~f:(fun (argument, matches) ->
-                     if not (List.is_empty matches) then
-                       Some argument
-                     else
-                       None)
-            in
-            let match_argument_to_parameter parameter =
-              match match_all_arguments_to_parameter parameter with
-              | [] -> None
-              | argument :: _ -> Some argument.value
-            in
-            match via_feature with
-            | Features.ViaFeature.ViaValueOf { parameter; tag } ->
-                let arguments = match_all_arguments_to_parameter parameter in
-                Frame.add_propagated_breadcrumb
-                  (Features.ViaFeature.via_value_of_breadcrumb ?tag ~arguments)
-                  frame
-            | Features.ViaFeature.ViaTypeOf { parameter; tag } ->
-                let breadcrumb =
-                  match call_target with
-                  | `Object object_target ->
-                      Features.ViaFeature.via_type_of_breadcrumb_for_object
-                        ?tag
-                        ~resolution
-                        ~object_target
-                  | _ ->
-                      Features.ViaFeature.via_type_of_breadcrumb
-                        ?tag
-                        ~resolution
-                        ~argument:(match_argument_to_parameter parameter)
-                in
-                Frame.add_propagated_breadcrumb breadcrumb frame
+        let expand_frame_via_features frame =
+          let breadcrumbs =
+            Frame.get Frame.Slots.ViaFeature frame
+            |> Features.expand_via_features ~resolution ~callees:[call_target] ~arguments
           in
-          Frame.fold Features.ViaFeatureSet.Element ~f:transform ~init:frame frame
+          Frame.add_propagated_breadcrumbs breadcrumbs frame
         in
-        let source_taint = ForwardState.transform Frame.Self Map ~f:expand source_taint in
-        let sink_taint = BackwardState.transform Frame.Self Map ~f:expand sink_taint in
+        (* Note that we only need to do this for taint-in-taint-out, since
+         * via-features expansion is done in `apply_call` for sources and sinks. *)
         let taint_in_taint_out =
-          BackwardState.transform Frame.Self Map ~f:expand taint_in_taint_out
+          BackwardState.transform Frame.Self Map ~f:expand_frame_via_features taint_in_taint_out
         in
-        {
-          Model.forward = { source_taint };
-          backward = { sink_taint; taint_in_taint_out };
-          sanitizers;
-          modes;
-        }
+        { Model.forward; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
       in
       let taint_model =
         Interprocedural.AnalysisResult.get_model TaintResult.kind model
         |> Option.value ~default:Model.empty_model
-        |> expand_via_value_of
+        |> expand_model_via_features
       in
       let taint_model =
         if model.is_obscure then
-          { taint_model with modes = Model.ModeSet.add Obscure taint_model.modes }
+          { taint_model with Model.modes = Model.ModeSet.add Obscure taint_model.modes }
         else
           taint_model
       in
@@ -187,15 +145,22 @@ let return_paths ~kind ~tito_taint =
 
 
 let sink_tree_of_argument
+    ~resolution
     ~transform_non_leaves
     ~model:{ Model.backward; _ }
     ~location
     ~call_target
+    ~arguments
     ~sink_matches
   =
   let combine_sink_taint taint_tree { AccessPath.root; actual_path; formal_path } =
     BackwardState.read ~transform_non_leaves ~root ~path:[] backward.sink_taint
-    |> BackwardState.Tree.apply_call location ~callees:[call_target] ~port:root
+    |> BackwardState.Tree.apply_call
+         ~resolution
+         ~location
+         ~callees:[call_target]
+         ~arguments
+         ~port:root
     |> BackwardState.Tree.read ~transform_non_leaves formal_path
     |> BackwardState.Tree.prepend actual_path
     |> BackwardState.Tree.join taint_tree

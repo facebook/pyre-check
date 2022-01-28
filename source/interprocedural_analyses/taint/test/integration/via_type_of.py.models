@@ -629,11 +629,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-type": "unknown" } ],
                 "leaves": [ { "name": "Obj{via_type_of.Test4_C.x}" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via-type": "unknown" } ],
             "root": {
               "filename": "via_type_of.py",
               "line": 126,
@@ -688,11 +688,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-type": "typing.Any" } ],
                 "leaves": [ { "name": "Obj{via_type_of.Test4_C.y}" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via-type": "typing.Any" } ],
             "root": {
               "filename": "via_type_of.py",
               "line": 131,
@@ -747,11 +747,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-type": "object" } ],
                 "leaves": [ { "name": "Obj{via_type_of.Test4_C.z}" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via-type": "object" } ],
             "root": {
               "filename": "via_type_of.py",
               "line": 136,
@@ -1121,13 +1121,13 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-type": "typing.Any" } ],
                 "leaves": [
                   { "name": "via_type_of.return_via_parameter_type" }
                 ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via-type": "typing.Any" } ],
             "root": {
               "filename": "via_type_of.py",
               "line": 156,
@@ -1243,12 +1243,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via-type": "typing.Dict[str, typing.List[int]]" }
-                ],
                 "leaves": [ { "name": "Obj{via_type_of.Test3_C.x}" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via-type": "typing.Dict[str, typing.List[int]]" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1332,12 +1332,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via-type": "via_type_of.Test3_Foo" }
-                ],
                 "leaves": [ { "name": "Obj{via_type_of.Test3_C.y}" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via-type": "via_type_of.Test3_Foo" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1421,14 +1421,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  {
-                    "always-via-type":
-                      "typing.Annotated[typing.List[typing.List[str]]]"
-                  }
-                ],
                 "leaves": [ { "name": "Obj{via_type_of.Test3_C.z}" } ],
                 "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type":
+                  "typing.Annotated[typing.List[typing.List[str]]]"
               }
             ],
             "root": {
@@ -1555,12 +1555,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via-type": "typing.Dict[str, typing.List[int]]" }
-                ],
                 "leaves": [ { "name": "Obj{via_type_of.Test3_C.x}" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via-type": "typing.Dict[str, typing.List[int]]" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1572,12 +1572,12 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via-type": "via_type_of.Test3_Foo" }
-                ],
                 "leaves": [ { "name": "Obj{via_type_of.Test3_C.y}" } ],
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via-type": "via_type_of.Test3_Foo" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1589,14 +1589,14 @@
           {
             "kinds": [
               {
-                "features": [
-                  {
-                    "always-via-type":
-                      "typing.Annotated[typing.List[typing.List[str]]]"
-                  }
-                ],
                 "leaves": [ { "name": "Obj{via_type_of.Test3_C.z}" } ],
                 "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type":
+                  "typing.Annotated[typing.List[typing.List[str]]]"
               }
             ],
             "root": {
@@ -1672,13 +1672,13 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-type": "typing.List[str]" } ],
                 "leaves": [
                   { "name": "via_type_of.return_via_parameter_type" }
                 ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via-type": "typing.List[str]" } ],
             "root": {
               "filename": "via_type_of.py",
               "line": 152,
@@ -1702,13 +1702,13 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-type": "int" } ],
                 "leaves": [
                   { "name": "via_type_of.return_via_parameter_type" }
                 ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via-type": "int" } ],
             "root": {
               "filename": "via_type_of.py",
               "line": 148,
@@ -1732,11 +1732,11 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-TheY-type": "int" } ],
                 "leaves": [ { "name": "via_type_of.sink_via_type_of" } ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via-TheY-type": "int" } ],
             "root": {
               "filename": "via_type_of.py",
               "line": 177,
@@ -1760,13 +1760,13 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via-type": "str" } ],
                 "leaves": [
                   { "name": "via_type_of.return_via_parameter_type" }
                 ],
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via-type": "str" } ],
             "root": {
               "filename": "via_type_of.py",
               "line": 144,

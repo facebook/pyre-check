@@ -48,10 +48,12 @@ val taint_in_taint_out_mapping
 val return_paths : kind:Sinks.t -> tito_taint:BackwardTaint.t -> Abstract.TreeDomain.Label.path list
 
 val sink_tree_of_argument
-  :  transform_non_leaves:(Features.ReturnAccessPath.t -> BackwardTaint.t -> BackwardTaint.t) ->
+  :  resolution:Resolution.t ->
+  transform_non_leaves:(Features.ReturnAccessPath.t -> BackwardTaint.t -> BackwardTaint.t) ->
   model:Model.t ->
   location:Location.WithModule.t ->
   call_target:Target.t ->
+  arguments:Expression.Call.Argument.t list ->
   sink_matches:AccessPath.argument_match list ->
   BackwardState.Tree.t
 

@@ -478,3 +478,42 @@ let type_breadcrumbs ~resolution annotation =
   |> add_if is_boolean type_bool
   |> add_if is_integer type_integer
   |> add_if is_enumeration type_enumeration
+
+
+let expand_via_features ~resolution ~callees ~arguments via_features =
+  let expand_via_feature via_feature breadcrumbs =
+    let match_all_arguments_to_parameter parameter =
+      AccessPath.match_actuals_to_formals arguments [parameter]
+      |> List.filter_map ~f:(fun (argument, matches) ->
+             if not (List.is_empty matches) then
+               Some argument
+             else
+               None)
+    in
+    let match_argument_to_parameter parameter =
+      match match_all_arguments_to_parameter parameter with
+      | [] -> None
+      | argument :: _ -> Some argument.value
+    in
+    match via_feature with
+    | ViaFeature.ViaValueOf { parameter; tag } ->
+        let arguments = match_all_arguments_to_parameter parameter in
+        BreadcrumbSet.add (ViaFeature.via_value_of_breadcrumb ?tag ~arguments) breadcrumbs
+    | ViaFeature.ViaTypeOf { parameter; tag } ->
+        let breadcrumb =
+          match callees with
+          | [`Object object_target] ->
+              ViaFeature.via_type_of_breadcrumb_for_object ?tag ~resolution ~object_target
+          | _ ->
+              ViaFeature.via_type_of_breadcrumb
+                ?tag
+                ~resolution
+                ~argument:(match_argument_to_parameter parameter)
+        in
+        BreadcrumbSet.add breadcrumb breadcrumbs
+  in
+  ViaFeatureSet.fold
+    ViaFeatureSet.Element
+    ~f:expand_via_feature
+    ~init:BreadcrumbSet.empty
+    via_features
