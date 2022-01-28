@@ -61,7 +61,132 @@ let test_extensions _ =
   ()
 
 
+let test_change_indicator context =
+  let open Configuration.ChangeIndicator in
+  let assert_parsed ~expected text =
+    match Yojson.Safe.from_string text |> of_yojson with
+    | Result.Ok actual ->
+        assert_equal
+          ~ctxt:context
+          ~cmp:[%compare.equal: t]
+          ~printer:(fun wheel -> Sexp.to_string_hum ([%sexp_of: t] wheel))
+          expected
+          actual
+    | Result.Error message -> assert_failure message
+  in
+  let assert_not_parsed text =
+    match Yojson.Safe.from_string text |> of_yojson with
+    | Result.Error _ -> ()
+    | Result.Ok actual ->
+        let message =
+          Format.asprintf "Unexpected parsing success: %a" Sexp.pp_hum (sexp_of_t actual)
+        in
+        assert_failure message
+  in
+
+  assert_not_parsed "{}";
+  assert_not_parsed "42";
+  assert_not_parsed {| { "root": 42 } |};
+  assert_not_parsed {| { "root": "/foo", "relative": [] } |};
+
+  assert_parsed
+    {| { "root": "/foo", "relative": "derp.txt" }|}
+    ~expected:{ root = PyrePath.create_absolute "/foo"; relative = "derp.txt" };
+  ()
+
+
+let test_unwatched_files context =
+  let open Configuration.UnwatchedFiles in
+  let assert_parsed ~expected text =
+    match Yojson.Safe.from_string text |> of_yojson with
+    | Result.Ok actual ->
+        assert_equal
+          ~ctxt:context
+          ~cmp:[%compare.equal: t]
+          ~printer:(fun wheel -> Sexp.to_string_hum ([%sexp_of: t] wheel))
+          expected
+          actual
+    | Result.Error message -> assert_failure message
+  in
+  let assert_not_parsed text =
+    match Yojson.Safe.from_string text |> of_yojson with
+    | Result.Error _ -> ()
+    | Result.Ok actual ->
+        let message =
+          Format.asprintf "Unexpected parsing success: %a" Sexp.pp_hum (sexp_of_t actual)
+        in
+        assert_failure message
+  in
+
+  assert_not_parsed "{}";
+  assert_not_parsed "42";
+  assert_not_parsed {| { "root": 42 } |};
+  assert_not_parsed {| { "root": "/foo", "checksum_path": [] } |};
+
+  assert_parsed
+    {| { "root": "/foo", "checksum_path": "derp.txt" }|}
+    ~expected:{ root = PyrePath.create_absolute "/foo"; checksum_path = "derp.txt" };
+  ()
+
+
+let test_unwatched_dependency context =
+  let open Configuration.UnwatchedDependency in
+  let assert_parsed ~expected text =
+    match Yojson.Safe.from_string text |> of_yojson with
+    | Result.Ok actual ->
+        assert_equal
+          ~ctxt:context
+          ~cmp:[%compare.equal: t]
+          ~printer:(fun wheel -> Sexp.to_string_hum ([%sexp_of: t] wheel))
+          expected
+          actual
+    | Result.Error message -> assert_failure message
+  in
+  let assert_not_parsed text =
+    match Yojson.Safe.from_string text |> of_yojson with
+    | Result.Error _ -> ()
+    | Result.Ok actual ->
+        let message =
+          Format.asprintf "Unexpected parsing success: %a" Sexp.pp_hum (sexp_of_t actual)
+        in
+        assert_failure message
+  in
+
+  assert_not_parsed "{}";
+  assert_not_parsed "42";
+  assert_not_parsed {| { "change_indicator": 42 } |};
+  assert_not_parsed {| { "files": [] } |};
+  assert_not_parsed
+    {| { "change_indicator": [], "files": { "root": "/foo", "checksum_path": "bar" } } |};
+  assert_not_parsed {| { "change_indicator": { "root": "/foo", "relative": "bar" }, "files": [] } |};
+
+  assert_parsed
+    {|
+       {
+         "change_indicator": { "root": "/foo", "relative": "bar" },
+         "files": { "root": "/baz", "checksum_path": "derp.txt" }
+       }
+    |}
+    ~expected:
+      {
+        change_indicator =
+          { Configuration.ChangeIndicator.root = PyrePath.create_absolute "/foo"; relative = "bar" };
+        files =
+          {
+            Configuration.UnwatchedFiles.root = PyrePath.create_absolute "/baz";
+            checksum_path = "derp.txt";
+          };
+      };
+  ()
+
+
 let () =
   "configuration"
-  >::: ["search_path" >:: test_search_path; "extensions" >:: test_extensions]
+  >::: [
+         "search_path" >:: test_search_path;
+         "extensions" >:: test_extensions;
+         "change_indicator" >:: test_change_indicator;
+         "unwatched_files" >:: test_unwatched_files;
+         "unwatched_dependency" >:: test_unwatched_dependency;
+       ]
   |> Test.run

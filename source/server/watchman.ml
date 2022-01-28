@@ -172,7 +172,9 @@ module Filter = struct
       | Configuration.SourcePaths.Buck _ ->
           let set = Set.add set "TARGETS" in
           Set.add set "BUCK"
-      | Configuration.SourcePaths.Simple _ -> set)
+      | Configuration.SourcePaths.Simple _
+      | Configuration.SourcePaths.WithUnwatchedDependency _ ->
+          set)
       |> Set.to_list
     in
     let extension_of = function

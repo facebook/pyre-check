@@ -68,9 +68,72 @@ module Buck = struct
     `Assoc result
 end
 
+module ChangeIndicator = struct
+  type t = {
+    root: PyrePath.t;
+    relative: string;
+  }
+  [@@deriving sexp, compare, hash]
+
+  let of_yojson json =
+    let open JsonParsing in
+    try
+      let root = path_member "root" json in
+      let relative = string_member "relative" json in
+      Result.Ok { root; relative }
+    with
+    | Yojson.Safe.Util.Type_error (message, _)
+    | Yojson.Safe.Util.Undefined (message, _) ->
+        Result.Error message
+    | other_exception -> Result.Error (Exn.to_string other_exception)
+
+
+  let to_yojson { root; relative } =
+    `Assoc ["root", `String (PyrePath.absolute root); "relative", `String relative]
+
+
+  let to_path { root; relative } = PyrePath.create_relative ~root ~relative
+end
+
+module UnwatchedFiles = struct
+  type t = {
+    root: PyrePath.t;
+    checksum_path: string;
+  }
+  [@@deriving sexp, compare, hash]
+
+  let of_yojson json =
+    let open JsonParsing in
+    try
+      let root = path_member "root" json in
+      let checksum_path = string_member "checksum_path" json in
+      Result.Ok { root; checksum_path }
+    with
+    | Yojson.Safe.Util.Type_error (message, _)
+    | Yojson.Safe.Util.Undefined (message, _) ->
+        Result.Error message
+    | other_exception -> Result.Error (Exn.to_string other_exception)
+
+
+  let to_yojson { root; checksum_path } =
+    `Assoc ["root", `String (PyrePath.absolute root); "checksum_path", `String checksum_path]
+end
+
+module UnwatchedDependency = struct
+  type t = {
+    change_indicator: ChangeIndicator.t;
+    files: UnwatchedFiles.t;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+end
+
 module SourcePaths = struct
   type t =
     | Simple of SearchPath.t list
+    | WithUnwatchedDependency of {
+        sources: SearchPath.t list;
+        unwatched_dependency: UnwatchedDependency.t;
+      }
     | Buck of Buck.t
   [@@deriving sexp, compare, hash]
 
@@ -82,25 +145,37 @@ module SourcePaths = struct
     in
     let parse_search_path_jsons search_path_jsons =
       try
-        Result.Ok
-          (Simple (List.map search_path_jsons ~f:(fun json -> to_string json |> SearchPath.create)))
+        Result.Ok (List.map search_path_jsons ~f:(fun json -> to_string json |> SearchPath.create))
       with
       | Type_error _ -> parsing_failed ()
     in
+    let open Result in
     match json with
     | `List search_path_jsons ->
         (* Recognize this as a shortcut for simple source paths. *)
         parse_search_path_jsons search_path_jsons
+        >>= fun search_paths -> Result.Ok (Simple search_paths)
     | `Assoc _ -> (
         match member "kind" json with
         | `String "simple" -> (
             match member "paths" json with
-            | `List search_path_jsons -> parse_search_path_jsons search_path_jsons
+            | `List search_path_jsons ->
+                parse_search_path_jsons search_path_jsons
+                >>= fun search_paths -> Result.Ok (Simple search_paths)
             | _ -> parsing_failed ())
         | `String "buck" -> (
             match Buck.of_yojson json with
             | Result.Ok buck -> Result.Ok (Buck buck)
             | Result.Error error -> Result.Error error)
+        | `String "with_unwatched_dependency" -> (
+            match member "paths" json, member "unwatched_dependency" json with
+            | `List search_path_jsons, (`Assoc _ as unwatched_dependency_json) ->
+                parse_search_path_jsons search_path_jsons
+                >>= fun sources ->
+                UnwatchedDependency.of_yojson unwatched_dependency_json
+                >>= fun unwatched_dependency ->
+                Result.Ok (WithUnwatchedDependency { sources; unwatched_dependency })
+            | _, _ -> parsing_failed ())
         | _ -> parsing_failed ())
     | _ -> parsing_failed ()
 
@@ -112,11 +187,20 @@ module SourcePaths = struct
             "kind", `String "simple";
             "paths", [%to_yojson: string list] (List.map search_paths ~f:SearchPath.show);
           ]
+    | WithUnwatchedDependency { sources; unwatched_dependency } ->
+        `Assoc
+          [
+            "kind", `String "with_unwatched_dependency";
+            "paths", [%to_yojson: string list] (List.map sources ~f:SearchPath.show);
+            "unwatched_dependency", UnwatchedDependency.to_yojson unwatched_dependency;
+          ]
     | Buck buck -> Buck.to_yojson buck |> Yojson.Safe.Util.combine (`Assoc ["kind", `String "buck"])
 
 
   let to_search_paths = function
-    | Simple source_paths -> source_paths
+    | Simple sources
+    | WithUnwatchedDependency { sources; _ } ->
+        sources
     | Buck { artifact_root; _ } -> [SearchPath.Root artifact_root]
 end
 

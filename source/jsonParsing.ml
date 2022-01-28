@@ -17,6 +17,8 @@ let to_bool_with_default = with_default ~extract:to_bool ~extract_optional:to_bo
 
 let to_int_with_default = with_default ~extract:to_int ~extract_optional:to_int_option
 
+let to_string_with_default = with_default ~extract:to_string ~extract_optional:to_string_option
+
 let to_path json = to_string json |> PyrePath.create_absolute
 
 (* The absent of explicit `~default` parameter means that the corresponding JSON field is
@@ -24,6 +26,8 @@ let to_path json = to_string json |> PyrePath.create_absolute
 let bool_member ?default name json = member name json |> to_bool_with_default ?default
 
 let int_member ?default name json = member name json |> to_int_with_default ?default
+
+let string_member ?default name json = member name json |> to_string_with_default ?default
 
 let optional_member ~f name json =
   member name json

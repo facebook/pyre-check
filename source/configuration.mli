@@ -18,9 +18,39 @@ module Buck : sig
   [@@deriving sexp, compare, hash, yojson]
 end
 
+module ChangeIndicator : sig
+  type t = {
+    root: PyrePath.t;
+    relative: string;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+
+  val to_path : t -> PyrePath.t
+end
+
+module UnwatchedFiles : sig
+  type t = {
+    root: PyrePath.t;
+    checksum_path: string;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+end
+
+module UnwatchedDependency : sig
+  type t = {
+    change_indicator: ChangeIndicator.t;
+    files: UnwatchedFiles.t;
+  }
+  [@@deriving sexp, compare, hash, yojson]
+end
+
 module SourcePaths : sig
   type t =
     | Simple of SearchPath.t list
+    | WithUnwatchedDependency of {
+        sources: SearchPath.t list;
+        unwatched_dependency: UnwatchedDependency.t;
+      }
     | Buck of Buck.t
   [@@deriving sexp, compare, hash, yojson]
 

@@ -122,6 +122,50 @@ let test_json_parsing context =
               artifact_root = PyrePath.create_absolute "/build/root";
             };
       };
+  (* Test instagram source path *)
+  assert_parsed
+    {|
+      {
+        "log_path": "/log",
+        "source_paths": {
+            "kind": "with_unwatched_dependency",
+            "paths": ["/source"],
+            "unwatched_dependency": {
+                "change_indicator": {
+                    "root": "/",
+                    "relative": "derp.yaml"
+                },
+                "files": {
+                    "root": "/wheel",
+                    "checksum_path": "checksum.txt"
+                }
+            }
+        },
+        "global_root": "/project"
+      }
+    |}
+    ~expected:
+      {
+        dummy_base_configuration with
+        source_paths =
+          Configuration.SourcePaths.WithUnwatchedDependency
+            {
+              sources = [SearchPath.create "/source"];
+              unwatched_dependency =
+                {
+                  Configuration.UnwatchedDependency.change_indicator =
+                    {
+                      Configuration.ChangeIndicator.root = PyrePath.create_absolute "/";
+                      relative = "derp.yaml";
+                    };
+                  files =
+                    {
+                      Configuration.UnwatchedFiles.root = PyrePath.create_absolute "/wheel";
+                      checksum_path = "checksum.txt";
+                    };
+                };
+            };
+      };
 
   assert_parsed
     {|

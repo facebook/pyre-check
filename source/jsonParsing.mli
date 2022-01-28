@@ -21,6 +21,13 @@ val to_int_with_default : ?default:int -> Yojson.Safe.t -> int
     - If [json] is [null] and [default] is specified, return [default].
     - Otherwise, raise {!Yojson.Safe.Util.Type_error}. *)
 
+val to_string_with_default : ?default:string -> Yojson.Safe.t -> string
+(** [to_string_with_default ?default json] tries to convert [json] into a string value.
+
+    - If [json] is indeed an string, return the corresponding string.
+    - If [json] is [null] and [default] is specified, return [default].
+    - Otherwise, raise {!Yojson.Safe.Util.Type_error}. *)
+
 val to_path : Yojson.Safe.t -> PyrePath.t
 (** [to_path json] tries to convert [json] into a {!PyrePath.t} if [json] is a string value.
     Otherwise, raise {!Yojson.Safe.Util.Type_error}. *)
@@ -39,6 +46,14 @@ val int_member : ?default:int -> string -> Yojson.Safe.t -> int
 
     - If [json] is indeed a dictionary and [name] is presented, convert the corresponding value to
       int and return it.
+    - If [json] is indeed a directory but [name] is not presented, then return [default] if that's
+      specified.
+    - In all other cases, raise {!Yojson.Safe.Util.Type_error}. *)
+
+val string_member : ?default:string -> string -> Yojson.Safe.t -> string
+(** [string_member ?default name json] tries to look up key [name] in [json] as a dictionary.
+
+    - If [json] is indeed a dictionary and [name] is presented as string, return it.
     - If [json] is indeed a directory but [name] is not presented, then return [default] if that's
       specified.
     - In all other cases, raise {!Yojson.Safe.Util.Type_error}. *)
