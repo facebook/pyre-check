@@ -29,3 +29,5 @@ val get_sanitize : t -> Domains.Sanitize.t
 val get_modes : t -> Model.ModeSet.t
 
 val is_sanitized : t -> bool
+
+val global_root : AccessPath.Root.t

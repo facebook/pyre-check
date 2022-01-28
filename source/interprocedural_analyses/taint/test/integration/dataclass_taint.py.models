@@ -199,6 +199,66 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "dataclass_taint.test_class_attr_model_tainted_directly",
+    "callable_line": 89,
+    "code": 5002,
+    "line": 93,
+    "start": 51,
+    "end": 65,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 93,
+              "start": 51,
+              "end": 65
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 93,
+              "start": 51,
+              "end": 65
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable":
@@ -216,6 +276,12 @@
   "data": {
     "callable":
       "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
+    "sinks": [
+      {
+        "port": "formal(bad)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
     "tito": [
       {
         "port": "formal(benign)",
@@ -471,6 +537,10 @@
             }
           }
         ]
+      },
+      {
+        "port": "formal(bad_sink)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "tito": [
@@ -611,6 +681,10 @@
             }
           }
         ]
+      },
+      {
+        "port": "formal(bad_sink)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       },
       {
         "port": "formal(bad)",
@@ -934,6 +1008,10 @@
             }
           }
         ]
+      },
+      {
+        "port": "formal(bad_sink)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "tito": [

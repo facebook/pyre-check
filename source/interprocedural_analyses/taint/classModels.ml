@@ -12,11 +12,11 @@ open Analysis
 open Interprocedural
 open Domains
 
-let infer ~environment =
+let infer ~environment ~user_models =
   Log.info "Computing inferred models...";
   let timer = Timer.start () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let fold_taint position existing_state attribute =
+  let add_parameter_tito position existing_state attribute =
     let leaf =
       BackwardTaint.singleton Sinks.LocalReturn Frame.initial
       |> BackwardState.Tree.create_leaf
@@ -30,6 +30,23 @@ let infer ~environment =
       ~path:[]
       leaf
       existing_state
+  in
+  let add_sink_from_attribute_model class_name position existing_state attribute =
+    let qualified_attribute =
+      Target.create_object (Reference.create ~prefix:class_name attribute)
+    in
+    match Target.Map.find user_models qualified_attribute with
+    | Some { Model.backward = { sink_taint; _ }; _ } ->
+        let taint = BackwardState.read ~root:GlobalModel.global_root ~path:[] sink_taint in
+        BackwardState.assign
+          ~weak:true
+          ~root:
+            (AccessPath.Root.PositionalParameter
+               { position; name = attribute; positional_only = false })
+          ~path:[]
+          taint
+          existing_state
+    | None -> existing_state
   in
   let attributes class_name =
     GlobalResolution.attributes
@@ -51,8 +68,12 @@ let infer ~environment =
           backward =
             {
               Model.Backward.taint_in_taint_out =
-                List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
-              sink_taint = BackwardState.empty;
+                List.foldi ~f:add_parameter_tito ~init:BackwardState.empty attributes;
+              sink_taint =
+                List.foldi
+                  attributes
+                  ~init:BackwardState.empty
+                  ~f:(add_sink_from_attribute_model (Reference.create class_name));
             };
           sanitizers = Model.Sanitizers.empty;
           modes = Model.ModeSet.empty;
@@ -83,7 +104,7 @@ let infer ~environment =
                     backward =
                       {
                         Model.Backward.taint_in_taint_out =
-                          List.foldi ~f:fold_taint ~init:BackwardState.empty attributes;
+                          List.foldi ~f:add_parameter_tito ~init:BackwardState.empty attributes;
                         sink_taint = BackwardState.empty;
                       };
                     sanitizers = Model.Sanitizers.empty;

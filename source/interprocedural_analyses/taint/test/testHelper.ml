@@ -547,10 +547,9 @@ let initialize
   let stubs = List.map ~f:fst stubs in
   let callable_targets = (callables :> Target.t list) in
   let stub_targets = (stubs :> Target.t list) in
-  let initial_models, skip_overrides =
-    let inferred_models = ClassModels.infer ~environment in
+  let user_models, skip_overrides =
     match models with
-    | None -> inferred_models, Ast.Reference.Set.empty
+    | None -> Target.Map.empty, Ast.Reference.Set.empty
     | Some source ->
         let { ModelParser.models; errors; skip_overrides; queries = rules } =
           ModelParser.parse
@@ -559,7 +558,7 @@ let initialize
             ~configuration:taint_configuration
             ~callables:(Some (Target.HashSet.of_list callable_targets))
             ~stubs:(Target.HashSet.of_list stub_targets)
-            inferred_models
+            Target.Map.empty
         in
         assert_bool
           (Format.sprintf
@@ -605,6 +604,14 @@ let initialize
           | None -> models
         in
         models, skip_overrides
+  in
+  let inferred_models = ClassModels.infer ~environment ~user_models in
+  let initial_models =
+    Target.Map.merge inferred_models user_models ~f:(fun ~key:_ -> function
+      | `Both (left, right) -> Some (Model.join left right)
+      | `Left model
+      | `Right model ->
+          Some model)
   in
   (* Overrides must be done first, as they influence the call targets. *)
   let overrides =

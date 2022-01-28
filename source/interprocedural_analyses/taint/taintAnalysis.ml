@@ -145,7 +145,7 @@ include Taint.Result.Register (struct
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module Analysis.TypeCheck.DummyContext)
     in
-    let create_models ~taint_configuration ~initial_models sources =
+    let create_models ~taint_configuration sources =
       let map state sources =
         List.fold
           sources
@@ -191,13 +191,13 @@ include Taint.Result.Register (struct
       Scheduler.map_reduce
         scheduler
         ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-        ~initial:(initial_models, [], Ast.Reference.Set.empty, [])
+        ~initial:(Target.Map.empty, [], Ast.Reference.Set.empty, [])
         ~map
         ~reduce
         ~inputs:sources
         ()
     in
-    let add_models_and_queries_from_sources initial_models =
+    let add_models_and_queries_from_sources () =
       try
         let find_missing_flows =
           find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
@@ -215,7 +215,7 @@ include Taint.Result.Register (struct
         TaintConfiguration.register taint_configuration;
         let models, errors, skip_overrides, queries =
           ModelParser.get_model_sources ~paths:taint_model_paths
-          |> create_models ~taint_configuration ~initial_models
+          |> create_models ~taint_configuration
         in
         ModelVerificationError.register errors;
         let () =
@@ -241,7 +241,10 @@ include Taint.Result.Register (struct
       with
       | exception_ -> log_and_reraise_taint_model_exception exception_
     in
-    let initial_models = ClassModels.infer ~environment in
+    let ({ initialize_result = { initial_models = user_models; _ }; _ } as result) =
+      add_models_and_queries_from_sources ()
+    in
+    let initial_models = ClassModels.infer ~environment ~user_models in
     match taint_model_paths with
     | [] ->
         {
@@ -252,7 +255,18 @@ include Taint.Result.Register (struct
             };
           query_data = None;
         }
-    | _ -> add_models_and_queries_from_sources initial_models
+    | _ ->
+        let merged_models =
+          Target.Map.merge user_models initial_models ~f:(fun ~key:_ -> function
+            | `Both (left, right) -> Some (Model.join left right)
+            | `Left model
+            | `Right model ->
+                Some model)
+        in
+        {
+          result with
+          initialize_result = { result.initialize_result with initial_models = merged_models };
+        }
 
 
   let initialize_models ~scheduler ~static_analysis_configuration ~environment ~callables ~stubs =
