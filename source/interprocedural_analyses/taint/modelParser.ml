@@ -2944,7 +2944,7 @@ let get_model_sources ~paths =
   model_files |> List.map ~f:File.create |> List.filter_map ~f:path_and_content
 
 
-let parse ~resolution ?path ?rule_filter ~source ~configuration ~callables ~stubs models =
+let parse ~resolution ?path ?rule_filter ~source ~configuration ~callables ~stubs () =
   let new_models_and_queries, errors =
     create ~resolution ~path ~rule_filter ~configuration ~callables ~stubs source
     |> List.partition_result
@@ -2961,12 +2961,7 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration ~callables ~stub
   {
     models =
       List.map new_models ~f:(fun (model, _) -> model.target, model.model)
-      |> Target.Map.of_alist_reduce ~f:Model.join
-      |> Target.Map.merge models ~f:(fun ~key:_ -> function
-           | `Both (a, b) -> Some (Model.join a b)
-           | `Left model
-           | `Right model ->
-               Some model);
+      |> Target.Map.of_alist_reduce ~f:Model.join;
     skip_overrides =
       List.filter_map new_models ~f:(fun (_, skipped_override) -> skipped_override)
       |> Reference.Set.of_list;

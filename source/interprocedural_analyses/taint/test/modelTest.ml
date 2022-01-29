@@ -76,7 +76,7 @@ let set_up_environment ?source ?rules ~context ~model_source () =
       ~configuration
       ~callables:None
       ~stubs:(Target.HashSet.create ())
-      Target.Map.empty
+      ()
   in
   assert_bool
     (Format.sprintf
@@ -151,7 +151,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       ~source:(Test.trim_extra_indentation model_source)
       ~callables:None
       ~stubs:(Target.HashSet.create ())
-      Target.Map.empty
+      ()
     |> fun { ModelParser.errors; _ } ->
     List.hd errors >>| ModelVerificationError.display |> Option.value ~default:"no failure"
   in

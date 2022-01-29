@@ -190,7 +190,7 @@ val parse
   configuration:TaintConfiguration.t ->
   callables:Interprocedural.Target.HashSet.t option ->
   stubs:Interprocedural.Target.HashSet.t ->
-  Model.t Interprocedural.Target.Map.t ->
+  unit ->
   parse_result
 
 exception InvalidModel of string

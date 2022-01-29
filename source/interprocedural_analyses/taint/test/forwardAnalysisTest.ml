@@ -44,7 +44,7 @@ let assert_taint ?models ?models_source ~context source expect =
             ~configuration:TaintConfiguration.default
             ~callables:None
             ~stubs:(Target.HashSet.create ())
-            Target.Map.empty
+            ()
         in
         assert_bool "Error while parsing models." (List.is_empty errors);
         Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)

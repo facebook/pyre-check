@@ -147,10 +147,7 @@ include Taint.Result.Register (struct
     in
     let create_models ~taint_configuration sources =
       let map state sources =
-        List.fold
-          sources
-          ~init:state
-          ~f:(fun (models, errors, skip_overrides, queries) (path, source) ->
+        List.fold sources ~init:state ~f:(fun (_, errors, skip_overrides, queries) (path, source) ->
             let {
               ModelParser.models;
               errors = new_errors;
@@ -166,7 +163,7 @@ include Taint.Result.Register (struct
                 ~callables
                 ~stubs
                 ?rule_filter
-                models
+                ()
             in
             ( models,
               List.rev_append new_errors errors,

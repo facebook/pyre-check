@@ -795,7 +795,7 @@ let rec process_request ~environment ~build_system ~configuration request =
                 ~configuration
                 ~callables:None
                 ~stubs:(Interprocedural.Target.HashSet.create ())
-                Interprocedural.Target.Map.empty
+                ()
               |> fun { Taint.ModelParser.errors; _ } -> errors
             in
             List.concat_map sources ~f:model_errors

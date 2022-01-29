@@ -448,7 +448,7 @@ let run_with_taint_models tests ~name =
         ~configuration:TaintConfiguration.default
         ~callables:None
         ~stubs:(Interprocedural.Target.HashSet.create ())
-        Target.Map.empty
+        ()
     in
     assert_bool
       (Format.sprintf
@@ -558,7 +558,7 @@ let initialize
             ~configuration:taint_configuration
             ~callables:(Some (Target.HashSet.of_list callable_targets))
             ~stubs:(Target.HashSet.of_list stub_targets)
-            Target.Map.empty
+            ()
         in
         assert_bool
           (Format.sprintf
