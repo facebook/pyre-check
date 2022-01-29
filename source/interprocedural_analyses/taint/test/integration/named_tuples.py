@@ -66,3 +66,12 @@ def issue_with_aliased_indicies():
     a = tainted_tuple()
     # TODO(T110440162): This should be found, but isn't
     _test_sink(a[1])
+
+
+class NamedTupleWithTaintedAttribute(NamedTuple):
+    benign: int
+    bad: str
+
+
+def issue_with_named_tuple_with_tainted_attribute():
+    NamedTupleWithTaintedAttribute(bad=_test_source(), benign=1)

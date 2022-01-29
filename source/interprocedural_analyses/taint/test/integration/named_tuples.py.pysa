@@ -1,0 +1,1 @@
+named_tuples.NamedTupleWithTaintedAttribute.bad: TaintSink[Test]
