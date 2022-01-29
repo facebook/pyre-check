@@ -65,6 +65,7 @@ module Filter : sig
    * - File name of the file is included in `base_names`. *)
   type t = {
     base_names: string list;
+    whole_names: string list;
     suffixes: string list;
   }
   [@@deriving sexp, compare, hash]

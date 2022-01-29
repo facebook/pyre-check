@@ -150,6 +150,7 @@ end
 module Filter = struct
   type t = {
     base_names: string list;
+    whole_names: string list;
     suffixes: string list;
   }
   [@@deriving sexp, compare, hash]
@@ -177,6 +178,23 @@ module Filter = struct
           set)
       |> Set.to_list
     in
+    let whole_names =
+      match source_paths with
+      | Configuration.SourcePaths.WithUnwatchedDependency
+          {
+            unwatched_dependency =
+              {
+                Configuration.UnwatchedDependency.change_indicator =
+                  { Configuration.ChangeIndicator.relative; _ };
+                _;
+              };
+            _;
+          } ->
+          (* Change indicator file needs to be watched, since we rely on it to detect changes in
+             unwatched dependencies. *)
+          [relative]
+      | _ -> []
+    in
     let extension_of = function
       | CriticalFile.BaseName _
       | CriticalFile.FullPath _ ->
@@ -194,19 +212,24 @@ module Filter = struct
       |> List.fold ~init:set ~f:String.Set.add
       |> fun set -> Set.add set "py" |> fun set -> Set.add set "pyi" |> Set.to_list
     in
-    { base_names; suffixes }
+    { base_names; whole_names; suffixes }
 
 
-  let watchman_expression_of { base_names; suffixes; _ } =
+  let watchman_expression_of { base_names; whole_names; suffixes } =
     let base_names =
-      List.map base_names ~f:(fun base_name -> `List [`String "match"; `String base_name])
+      List.map base_names ~f:(fun base_name ->
+          `List [`String "match"; `String base_name; `String "basename"])
+    in
+    let whole_names =
+      List.map whole_names ~f:(fun base_name ->
+          `List [`String "match"; `String base_name; `String "wholename"])
     in
     let suffixes = List.map suffixes ~f:(fun suffix -> `List [`String "suffix"; `String suffix]) in
     `List
       [
         `String "allof";
         `List [`String "type"; `String "f"];
-        `List (`String "anyof" :: List.append suffixes base_names);
+        `List (`String "anyof" :: List.concat [suffixes; base_names; whole_names]);
       ]
 end
 

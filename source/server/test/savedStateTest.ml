@@ -107,7 +107,7 @@ let test_query context =
   let target = PyrePath.create_absolute "/fake/target" in
   let critical_files = [CriticalFile.BaseName ".pyre_configuration"] in
   let watchman_filter =
-    { Watchman.Filter.base_names = [".pyre_configuration"]; suffixes = [".py"] }
+    { Watchman.Filter.base_names = [".pyre_configuration"]; whole_names = []; suffixes = [".py"] }
   in
   let assert_request ~expected ~project_name ~project_metadata () =
     let request_mailbox = Lwt_mvar.create_empty () in
