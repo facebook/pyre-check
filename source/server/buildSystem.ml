@@ -370,7 +370,13 @@ module Initializer = struct
     {
       initialize =
         (fun () -> TrackUnwatchedDependencyBuildSystem.initialize_from_options unwatched_dependency);
-      load = (fun () -> Lwt.return (create_for_testing ()));
+      load =
+        (fun () ->
+          (* NOTE(grievejia): The only state used in this build system is the checksum map. Given
+             that checksum map loading seems to be a fairly cheap thing to do, I think it makes
+             sense to avoid putting it into saved state, and simply re-build the map on each saved
+             state loading. *)
+          TrackUnwatchedDependencyBuildSystem.initialize_from_options unwatched_dependency);
       cleanup = (fun () -> Lwt.return_unit);
     }
 
