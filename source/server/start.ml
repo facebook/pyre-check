@@ -659,6 +659,12 @@ let start_server_and_wait ?event_channel ~configuration start_options =
                 "Cannot build the project because Pyre encounters a fatal error while constructing \
                  a link tree: %s"
                 message )
+        | ChecksumMap.LoadError message ->
+            ( ServerEvent.ErrorKind.Pyre,
+              Format.sprintf
+                "Cannot build the project because Pyre encounters a fatal error while loading \
+                 external wheel: %s"
+                message )
         | Watchman.ConnectionError message ->
             ServerEvent.ErrorKind.Watchman, Format.sprintf "Watchman connection error: %s" message
         | Watchman.SubscriptionError message ->

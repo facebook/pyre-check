@@ -203,6 +203,9 @@ let on_exception = function
          tree: %s"
         message;
       Lwt.return ExitStatus.BuckUserError
+  | Server.ChecksumMap.LoadError message ->
+      Log.error "Cannot load external wheel properly. %s" message;
+      Lwt.return ExitStatus.PyreError
   | _ as exn ->
       Log.error "Pyre encountered an internal exception: %s" (Exn.to_string exn);
       Lwt.return ExitStatus.PyreError

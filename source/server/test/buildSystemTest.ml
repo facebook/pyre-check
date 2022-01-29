@@ -409,16 +409,18 @@ let test_buck_update context =
   Lwt.return_unit
 
 
+let assert_paths_no_order ~context ~expected actual =
+  let compare = [%compare: PyrePath.t] in
+  assert_equal
+    ~ctxt:context
+    ~cmp:[%compare.equal: PyrePath.t list]
+    ~printer:(fun paths -> List.map paths ~f:PyrePath.show |> String.concat ~sep:" ")
+    (List.sort ~compare expected)
+    (List.sort ~compare actual)
+
+
 let test_buck_update_without_rebuild context =
-  let assert_paths_no_order ~expected actual =
-    let compare = [%compare: PyrePath.t] in
-    assert_equal
-      ~ctxt:context
-      ~cmp:[%compare.equal: PyrePath.t list]
-      ~printer:(fun paths -> List.map paths ~f:PyrePath.show |> String.concat ~sep:" ")
-      (List.sort ~compare expected)
-      (List.sort ~compare actual)
-  in
+  let assert_paths_no_order = assert_paths_no_order ~context in
   let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
   let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
 
@@ -474,6 +476,72 @@ let test_buck_update_without_rebuild context =
   Lwt.return_unit
 
 
+let test_unwatched_dependency_update context =
+  let assert_paths_no_order = assert_paths_no_order ~context in
+  let bucket_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let bucket = "BUCKET" in
+  let bucket_path = PyrePath.create_relative ~root:bucket_root ~relative:bucket in
+  let wheel_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let checksum_path = "CHECKSUM" in
+  let checksum_full_path = PyrePath.create_relative ~root:wheel_root ~relative:checksum_path in
+  let content =
+    {|
+      {
+        "a.py": "checksum0",
+        "b/c.py": "checksum1",
+        "d/e/f.pyi": "checksum2"
+      }
+    |}
+  in
+  File.create checksum_full_path ~content |> File.write;
+  let open Lwt.Infix in
+  let instagram_initializer =
+    BuildSystem.Initializer.track_unwatched_dependency
+      {
+        Configuration.UnwatchedDependency.change_indicator =
+          { Configuration.ChangeIndicator.root = bucket_root; relative = bucket };
+        files = { Configuration.UnwatchedFiles.root = wheel_root; checksum_path };
+      }
+  in
+  BuildSystem.Initializer.run instagram_initializer
+  >>= fun build_system ->
+  let test_path = PyrePath.create_absolute "/some/source/file.py" in
+  (* Normal update does not yield additional changed paths. *)
+  BuildSystem.update build_system [test_path]
+  >>= fun updated ->
+  assert_paths_no_order updated ~expected:[];
+
+  (* Touching the change indicator but not the checksum file does not yield additional changed
+     paths. *)
+  BuildSystem.update build_system [bucket_path]
+  >>= fun updated ->
+  assert_paths_no_order updated ~expected:[];
+
+  (* Checksum file update will lead to additional changed paths. *)
+  let content =
+    {|
+      {
+        "a.py": "checksum3",
+        "d/e/f.pyi": "checksum2",
+        "g.py": "checksum4"
+      }
+    |}
+  in
+  File.create checksum_full_path ~content |> File.write;
+  BuildSystem.update build_system [test_path; bucket_path]
+  >>= fun updated ->
+  assert_paths_no_order
+    updated
+    ~expected:
+      [
+        PyrePath.create_relative ~root:wheel_root ~relative:"a.py";
+        PyrePath.create_relative ~root:wheel_root ~relative:"b/c.py";
+        PyrePath.create_relative ~root:wheel_root ~relative:"g.py";
+      ];
+
+  Lwt.return_unit
+
+
 let () =
   "build_system_test"
   >::: [
@@ -484,5 +552,6 @@ let () =
          "buck_renormalize" >:: OUnitLwt.lwt_wrapper test_buck_renormalize;
          "buck_update" >:: OUnitLwt.lwt_wrapper test_buck_update;
          "buck_update_without_rebuild" >:: OUnitLwt.lwt_wrapper test_buck_update_without_rebuild;
+         "unwatched_dependency_update" >:: OUnitLwt.lwt_wrapper test_unwatched_dependency_update;
        ]
   |> Test.run

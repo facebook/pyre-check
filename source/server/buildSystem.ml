@@ -288,6 +288,50 @@ module BuckBuildSystem = struct
     | Result.Ok () -> ()
 end
 
+module TrackUnwatchedDependencyBuildSystem = struct
+  module State = struct
+    type t = {
+      change_indicator_path: PyrePath.t;
+      unwatched_files: Configuration.UnwatchedFiles.t;
+      mutable checksum_map: ChecksumMap.t;
+    }
+  end
+
+  let unwatched_files_may_change ~change_indicator_path paths =
+    List.exists paths ~f:(PyrePath.equal change_indicator_path)
+
+
+  let initialize_from_state (state : State.t) =
+    let update paths =
+      let paths =
+        if unwatched_files_may_change ~change_indicator_path:state.change_indicator_path paths then (
+          Log.info "Detecting potential changes in unwatched files...";
+          let new_checksum_map = ChecksumMap.load_exn state.unwatched_files in
+          let differences = ChecksumMap.difference ~original:state.checksum_map new_checksum_map in
+          state.checksum_map <- new_checksum_map;
+          List.map differences ~f:(fun { ChecksumMap.Difference.path; _ } ->
+              (* TODO (T90174546): Utilizes the info provided by `ChecksumMap.Difference.kind`. *)
+              PyrePath.create_relative ~root:state.unwatched_files.root ~relative:path))
+        else
+          []
+      in
+      Lwt.return paths
+    in
+    let lookup_source path = Some path in
+    let lookup_artifact path = [path] in
+    let store () = () in
+    { update; lookup_source; lookup_artifact; store }
+
+
+  let initialize_from_options
+      { Configuration.UnwatchedDependency.change_indicator; files = unwatched_files }
+    =
+    let change_indicator_path = Configuration.ChangeIndicator.to_path change_indicator in
+    let checksum_map = ChecksumMap.load_exn unwatched_files in
+    Lwt.return
+      (initialize_from_state { State.change_indicator_path; unwatched_files; checksum_map })
+end
+
 module Initializer = struct
   type build_system = t
 
@@ -322,13 +366,23 @@ module Initializer = struct
     }
 
 
+  let track_unwatched_dependency unwatched_dependency =
+    {
+      initialize =
+        (fun () -> TrackUnwatchedDependencyBuildSystem.initialize_from_options unwatched_dependency);
+      load = (fun () -> Lwt.return (create_for_testing ()));
+      cleanup = (fun () -> Lwt.return_unit);
+    }
+
+
   let create_for_testing ~initialize ~load ~cleanup () = { initialize; load; cleanup }
 end
 
 let get_initializer source_paths =
   match source_paths with
   | Configuration.SourcePaths.Simple _ -> Initializer.null
-  | Configuration.SourcePaths.WithUnwatchedDependency _ -> failwith "not implemented yet"
+  | Configuration.SourcePaths.WithUnwatchedDependency { unwatched_dependency; _ } ->
+      Initializer.track_unwatched_dependency unwatched_dependency
   | Configuration.SourcePaths.Buck buck_options ->
       let raw = Buck.Raw.create ~additional_log_size:10 () in
       Initializer.buck ~raw buck_options

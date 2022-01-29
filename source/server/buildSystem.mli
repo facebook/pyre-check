@@ -98,6 +98,12 @@ module Initializer : sig
       - {!Buck.Builder.LinkTreeConstructionError} could happen when build artifact creation cannot
         function properly due to unexpected issues on the filesystem. *)
 
+  val track_unwatched_dependency : Configuration.UnwatchedDependency.t -> t
+  (** [track_unwatched_dependency] initializes a build system that keeps track of file changes in
+      unwatched dependencies.
+
+      See D33809915 for a detailed description on what the problem is and how the solution works. *)
+
   (* This function allows the client to fully tweak the behavior of an initializer. Expose for
      testing purpose only. *)
   val create_for_testing
