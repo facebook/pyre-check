@@ -8,7 +8,17 @@
 open Core
 
 (* Analyze command uses the same exit code scheme as check command. *)
-module ExitStatus = CheckCommand.ExitStatus
+module ExitStatus = struct
+  type t =
+    | CheckStatus of CheckCommand.ExitStatus.t
+    | PysaStatus of Taint.ExitStatus.t
+
+  let exit_code = function
+    (* 1-9 are reserved for CheckCommand.ExitStatus *)
+    | CheckStatus status -> CheckCommand.ExitStatus.exit_code status
+    (* 10-19 are reserved for Taint.ExitStatus *)
+    | PysaStatus status -> Taint.ExitStatus.exit_code status
+end
 
 module AnalyzeConfiguration = struct
   type t = {
@@ -279,7 +289,7 @@ let run_analyze analyze_configuration =
         ~inline_decorators
         ~repository_root
         ();
-      Lwt.return ExitStatus.Ok)
+      Lwt.return (ExitStatus.CheckStatus CheckCommand.ExitStatus.Ok))
 
 
 let run_analyze configuration_file =
@@ -289,7 +299,7 @@ let run_analyze configuration_file =
     with
     | Result.Error message ->
         Log.error "%s" message;
-        ExitStatus.PyreError
+        ExitStatus.CheckStatus CheckCommand.ExitStatus.PyreError
     | Result.Ok
         ({
            AnalyzeConfiguration.base =
@@ -314,7 +324,9 @@ let run_analyze configuration_file =
           ~memory_profiling_output
           ();
         Lwt_main.run
-          (Lwt.catch (fun () -> run_analyze analyze_configuration) CheckCommand.on_exception)
+          (Lwt.catch
+             (fun () -> run_analyze analyze_configuration)
+             (fun exn -> Lwt.return (ExitStatus.CheckStatus (CheckCommand.on_exception exn))))
   in
   Statistics.flush ();
   exit (ExitStatus.exit_code exit_status)

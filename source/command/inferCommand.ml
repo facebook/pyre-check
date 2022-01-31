@@ -171,7 +171,10 @@ let run_infer configuration_file =
           ~memory_profiling_output
           ();
 
-        Lwt_main.run (Lwt.catch (fun () -> run_infer infer_configuration) CheckCommand.on_exception)
+        Lwt_main.run
+          (Lwt.catch
+             (fun () -> run_infer infer_configuration)
+             (fun exn -> Lwt.return (CheckCommand.on_exception exn)))
   in
   Statistics.flush ();
   exit (ExitStatus.exit_code exit_status)

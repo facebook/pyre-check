@@ -6,10 +6,10 @@
  *)
 
 type t =
-  | Ok
   | TaintConfigurationError
+  | ModelVerificationError
 
 let exit_code = function
-  | Ok -> 0
-  (* 1-10 are reserved for pyre check, see CheckCommand.ExitStatus *)
+  (* 10-19 are reserved for pysa, see AnalyzeCommand.ExitStatus *)
   | TaintConfigurationError -> 10
+  | ModelVerificationError -> 11

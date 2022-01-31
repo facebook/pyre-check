@@ -3068,12 +3068,11 @@ let create_attribute_model_from_annotations
         annotation)
 
 
-exception InvalidModel of string
-
 let verify_model_syntax ~path ~source =
-  try String.split ~on:'\n' source |> Parser.parse |> ignore with
-  | exn ->
-      Log.error "Unable to parse model at `%s`: %s" (PyrePath.show path) (Exn.to_string exn);
-      raise
-        (InvalidModel
-           (Format.sprintf "Invalid model at `%s`: %s" (PyrePath.show path) (Exn.to_string exn)))
+  match String.split ~on:'\n' source |> Parser.parse with
+  | Ok _ -> ()
+  | Error { Parser.Error.location; _ } ->
+      let error = model_verification_error ~path:(Some path) ~location ParseError in
+      Yojson.Safe.pretty_to_string (`Assoc ["errors", `List [ModelVerificationError.to_json error]])
+      |> Log.print "%s";
+      exit (ExitStatus.exit_code ExitStatus.ModelVerificationError)

@@ -220,6 +220,27 @@ module Error = struct
     | FeatureDuplicate name -> Format.fprintf formatter "Duplicate entry for feature: `%s`" name
 
 
+  let code = function
+    | FileNotFound -> 1
+    | FileRead -> 2
+    | InvalidJson _ -> 3
+    | NoConfigurationFound -> 4
+    | UnexpectedJsonType _ -> 5
+    | MissingKey _ -> 6
+    | UnknownKey _ -> 7
+    | UnsupportedSource _ -> 8
+    | UnsupportedSink _ -> 9
+    | UnexpectedCombinedSourceRule _ -> 10
+    | PartialSinkDuplicate _ -> 11
+    | InvalidLabelMultiSink _ -> 12
+    | InvalidMultiSink _ -> 13
+    | RuleCodeDuplicate _ -> 14
+    | OptionDuplicate _ -> 15
+    | SourceDuplicate _ -> 16
+    | SinkDuplicate _ -> 16
+    | FeatureDuplicate _ -> 18
+
+
   let show_kind = Format.asprintf "%a" pp_kind
 
   let pp formatter = function
@@ -228,6 +249,14 @@ module Error = struct
 
 
   let show = Format.asprintf "%a" pp
+
+  let to_json { path; kind } =
+    let path =
+      match path with
+      | None -> `Null
+      | Some path -> `String (PyrePath.absolute path)
+    in
+    `Assoc ["description", `String (show_kind kind); "path", path; "code", `Int (code kind)]
 end
 
 let matching_kinds_from_rules rules =
@@ -742,8 +771,8 @@ let validate ({ sources; sinks; features; _ } as configuration) =
 let abort_on_error = function
   | Ok configuration -> configuration
   | Error errors ->
-      let print_error error = Log.error "%a" Error.pp error in
-      List.iter ~f:print_error errors;
+      Yojson.Safe.pretty_to_string (`Assoc ["errors", `List (List.map errors ~f:Error.to_json)])
+      |> Log.print "%s";
       exit (ExitStatus.exit_code ExitStatus.TaintConfigurationError)
 
 

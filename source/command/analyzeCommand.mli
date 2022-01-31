@@ -7,6 +7,14 @@
 
 open Core
 
+module ExitStatus : sig
+  type t =
+    | CheckStatus of CheckCommand.ExitStatus.t
+    | PysaStatus of Taint.ExitStatus.t
+
+  val exit_code : t -> int
+end
+
 module AnalyzeConfiguration : sig
   type t = {
     base: CommandStartup.BaseConfiguration.t;

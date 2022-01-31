@@ -193,22 +193,22 @@ let on_exception = function
         | Some exit_code when exit_code < 10 -> ExitStatus.BuckUserError
         | _ -> ExitStatus.BuckInternalError
       in
-      Lwt.return exit_status
+      exit_status
   | Buck.Builder.JsonError message ->
       Log.error "Cannot build the project because Buck returns malformed JSON: %s" message;
-      Lwt.return ExitStatus.BuckUserError
+      ExitStatus.BuckUserError
   | Buck.Builder.LinkTreeConstructionError message ->
       Log.error
         "Cannot build the project because Pyre encounters a fatal error while constructing a link \
          tree: %s"
         message;
-      Lwt.return ExitStatus.BuckUserError
+      ExitStatus.BuckUserError
   | Server.ChecksumMap.LoadError message ->
       Log.error "Cannot load external wheel properly. %s" message;
-      Lwt.return ExitStatus.PyreError
+      ExitStatus.PyreError
   | _ as exn ->
       Log.error "Pyre encountered an internal exception: %s" (Exn.to_string exn);
-      Lwt.return ExitStatus.PyreError
+      ExitStatus.PyreError
 
 
 let run_check configuration_file =
@@ -242,7 +242,10 @@ let run_check configuration_file =
           ~memory_profiling_output
           ();
 
-        Lwt_main.run (Lwt.catch (fun () -> run_check check_configuration) on_exception)
+        Lwt_main.run
+          (Lwt.catch
+             (fun () -> run_check check_configuration)
+             (fun exn -> Lwt.return (on_exception exn)))
   in
   Statistics.flush ();
   exit (ExitStatus.exit_code exit_status)

@@ -34,4 +34,4 @@ end
 
 val command : Command.t
 
-val on_exception : exn -> ExitStatus.t Lwt.t
+val on_exception : exn -> ExitStatus.t

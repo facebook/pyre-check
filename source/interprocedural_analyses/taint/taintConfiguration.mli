@@ -116,6 +116,8 @@ module Error : sig
   [@@deriving equal, show]
 
   val create : path:PyrePath.t -> kind:kind -> t
+
+  val to_json : t -> Yojson.Safe.t
 end
 
 val parse : (PyrePath.t * Yojson.Safe.t) list -> (t, Error.t list) Result.t

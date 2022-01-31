@@ -227,7 +227,7 @@ include Taint.Result.Register (struct
               Yojson.Safe.pretty_to_string
                 (`Assoc ["errors", `List (List.map errors ~f:ModelVerificationError.to_json)])
               |> Log.print "%s";
-              exit 0
+              exit (Taint.ExitStatus.exit_code Taint.ExitStatus.ModelVerificationError)
             end
         in
         {

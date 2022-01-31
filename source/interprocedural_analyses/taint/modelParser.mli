@@ -193,8 +193,6 @@ val parse
   unit ->
   parse_result
 
-exception InvalidModel of string
-
 val verify_model_syntax : path:PyrePath.t -> source:string -> unit
 
 val compute_sources_and_sinks_to_keep

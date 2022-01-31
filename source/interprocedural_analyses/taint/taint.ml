@@ -28,3 +28,4 @@ module Result = TaintResult
 module Reporting = TaintReporting
 module Sinks = Sinks
 module Sources = Sources
+module ExitStatus = ExitStatus
