@@ -422,7 +422,6 @@ class PartialConfiguration:
     dot_pyre_directory: Optional[Path] = None
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
-    file_hash: Optional[str] = None
     ide_features: Optional[IdeFeatures] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
@@ -485,7 +484,6 @@ class PartialConfiguration:
             dot_pyre_directory=arguments.dot_pyre_directory,
             excludes=arguments.exclude,
             extensions=[],
-            file_hash=None,
             ide_features=ide_features,
             ignore_all_errors=[],
             ignore_infer=[],
@@ -574,11 +572,6 @@ class PartialConfiguration:
 
         try:
             configuration_json = json.loads(contents)
-
-            if configuration_json.pop("saved_state", None) is not None:
-                file_hash = hashlib.sha1(contents.encode("utf-8")).hexdigest()
-            else:
-                file_hash = None
 
             dot_pyre_directory = ensure_option_type(
                 configuration_json, "dot_pyre_directory", str
@@ -678,7 +671,6 @@ class PartialConfiguration:
                     ExtensionElement.from_json(json)
                     for json in ensure_list(configuration_json, "extensions")
                 ],
-                file_hash=file_hash,
                 ide_features=ide_features,
                 ignore_all_errors=ensure_string_list(
                     configuration_json, "ignore_all_errors"
@@ -776,7 +768,6 @@ class PartialConfiguration:
             dot_pyre_directory=self.dot_pyre_directory,
             excludes=self.excludes,
             extensions=self.extensions,
-            file_hash=self.file_hash,
             ide_features=self.ide_features,
             ignore_all_errors=[
                 expand_relative_path(root, path) for path in self.ignore_all_errors
@@ -856,7 +847,6 @@ def merge_partial_configurations(
         ),
         excludes=prepend_base(base.excludes, override.excludes),
         extensions=prepend_base(base.extensions, override.extensions),
-        file_hash=overwrite_base(base.file_hash, override.file_hash),
         ide_features=overwrite_base_ide_features(
             base.ide_features, override.ide_features
         ),
@@ -925,7 +915,6 @@ class Configuration:
     do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
-    file_hash: Optional[str] = None
     ide_features: Optional[IdeFeatures] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
@@ -975,7 +964,6 @@ class Configuration:
             do_not_ignore_errors_in=partial_configuration.do_not_ignore_errors_in,
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
-            file_hash=partial_configuration.file_hash,
             ide_features=partial_configuration.ide_features,
             ignore_all_errors=partial_configuration.ignore_all_errors,
             ignore_infer=partial_configuration.ignore_infer,
@@ -1133,7 +1121,6 @@ class Configuration:
             do_not_ignore_errors_in=self.do_not_ignore_errors_in,
             excludes=self.excludes,
             extensions=self.extensions,
-            file_hash=self.file_hash,
             ide_features=self.ide_features,
             ignore_all_errors=self.ignore_all_errors,
             ignore_infer=self.ignore_infer,

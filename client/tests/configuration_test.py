@@ -427,16 +427,6 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertIsNotNone(targets)
         self.assertListEqual(list(targets), ["//foo", "//bar"])
 
-        self.assertEqual(
-            PartialConfiguration.from_string(json.dumps({"version": "abc"})).file_hash,
-            None,
-        )
-        file_content = json.dumps({"version": "abc", "saved_state": "xyz"})
-        self.assertEqual(
-            PartialConfiguration.from_string(file_content).file_hash,
-            hashlib.sha1(file_content.encode("utf-8")).hexdigest(),
-        )
-
     def test_create_from_string_ide_features(self) -> None:
         def assert_ide_features_equal(input: object, expected: object) -> None:
             self.assertEqual(
@@ -589,7 +579,6 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_overwritten("dot_pyre_directory")
         assert_prepended("excludes")
         assert_prepended("extensions")
-        assert_overwritten("file_hash")
         assert_prepended("ignore_all_errors")
         assert_prepended("ignore_infer")
         assert_overwritten("logger")
@@ -740,7 +729,6 @@ class ConfigurationTest(testslide.TestCase):
                 dot_pyre_directory=None,
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
-                file_hash="abc",
                 ide_features=IdeFeatures(hover_enabled=True),
                 ignore_all_errors=["bar"],
                 ignore_infer=["baz"],
@@ -774,7 +762,6 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))
         self.assertListEqual(list(configuration.excludes), ["exclude"])
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])
-        self.assertEqual(configuration.file_hash, "abc")
         self.assertEqual(configuration.ide_features, IdeFeatures(hover_enabled=True))
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
         self.assertListEqual(list(configuration.ignore_infer), ["baz"])
