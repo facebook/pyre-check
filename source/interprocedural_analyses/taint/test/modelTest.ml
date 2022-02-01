@@ -3244,6 +3244,7 @@ let test_filter_by_rules context =
         {
           Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "TestTest"];
           sinks = [Sinks.NamedSink "TestSink"];
+          transforms = [];
           code = 5021;
           message_format = "";
           name = "test rule";
@@ -3258,6 +3259,7 @@ let test_filter_by_rules context =
         {
           Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "Test"];
           sinks = [Sinks.NamedSink "TestSink"];
+          transforms = [];
           code = 5021;
           message_format = "";
           name = "test rule";
@@ -3272,6 +3274,7 @@ let test_filter_by_rules context =
         {
           Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "TestTest"];
           sinks = [Sinks.NamedSink "TestSink"];
+          transforms = [];
           code = 5021;
           message_format = "";
           name = "test rule";
@@ -3292,6 +3295,7 @@ let test_filter_by_rules context =
         {
           Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "TestTest"];
           sinks = [Sinks.NamedSink "Test"];
+          transforms = [];
           code = 5021;
           message_format = "";
           name = "test rule";
@@ -3306,6 +3310,7 @@ let test_filter_by_rules context =
         {
           Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "TestTest"];
           sinks = [Sinks.TriggeredPartialSink { kind = "Test"; label = "a" }];
+          transforms = [];
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
@@ -3313,6 +3318,7 @@ let test_filter_by_rules context =
         {
           Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "TestTest"];
           sinks = [Sinks.TriggeredPartialSink { kind = "Test"; label = "b" }];
+          transforms = [];
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";

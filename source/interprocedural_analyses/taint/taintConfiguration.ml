@@ -14,6 +14,7 @@ module Rule = struct
   type t = {
     sources: Sources.t list;
     sinks: Sinks.t list;
+    transforms: TaintTransform.t list;
     code: int;
     name: string;
     message_format: string; (* format *)
@@ -78,6 +79,7 @@ let missing_flows_kind_from_string = function
 type t = {
   sources: AnnotationParser.source_or_sink list;
   sinks: AnnotationParser.source_or_sink list;
+  transforms: TaintTransform.t list;
   features: string list;
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;
@@ -96,6 +98,7 @@ let empty =
   {
     sources = [];
     sinks = [];
+    transforms = [];
     features = [];
     rules = [];
     partial_sink_converter = String.Map.Tree.empty;
@@ -470,7 +473,16 @@ let parse source_jsons =
       json_integer_member ~path "code" json
       >>= fun code ->
       validate_code_uniqueness ~path code
-      >>| fun () -> { Rule.sources; sinks; name; code; message_format }
+      >>| fun () ->
+      {
+        Rule.sources;
+        sinks;
+        (* TODO(T90698159): Support config parsing of transforms. *)
+        transforms = [];
+        name;
+        code;
+        message_format;
+      }
     in
     array_member ~path "rules" json
     >>= fun rules ->
@@ -530,6 +542,7 @@ let parse source_jsons =
             ( {
                 Rule.sources = first_sources;
                 sinks = [Sinks.TriggeredPartialSink first_sink];
+                transforms = [];
                 name;
                 code;
                 message_format;
@@ -538,6 +551,7 @@ let parse source_jsons =
               {
                 Rule.sources = second_sources;
                 sinks = [Sinks.TriggeredPartialSink second_sink];
+                transforms = [];
                 name;
                 code;
                 message_format;
@@ -713,6 +727,8 @@ let parse source_jsons =
   {
     sources;
     sinks;
+    (* TODO(T90698159): Support config parsing of transforms. *)
+    transforms = [];
     features;
     rules;
     partial_sink_converter;
@@ -812,11 +828,15 @@ let default =
         "XSS";
       ]
   in
+  let transforms =
+    List.map ~f:(fun name -> TaintTransform.Named name) ["DemoTransform"; "TestTransform"]
+  in
   let rules =
     [
       {
         Rule.sources = [Sources.NamedSource "UserControlled"];
         sinks = [Sinks.NamedSink "RemoteCodeExecution"];
+        transforms = [];
         code = 5001;
         name = "Possible shell injection.";
         message_format =
@@ -825,6 +845,7 @@ let default =
       {
         sources = [Sources.NamedSource "Test"; Sources.NamedSource "UserControlled"];
         sinks = [Sinks.NamedSink "Test"];
+        transforms = [];
         code = 5002;
         name = "Test flow.";
         message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
@@ -832,6 +853,7 @@ let default =
       {
         sources = [Sources.NamedSource "UserControlled"];
         sinks = [Sinks.NamedSink "SQL"];
+        transforms = [];
         code = 5005;
         name = "User controlled data to SQL execution.";
         message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
@@ -840,6 +862,7 @@ let default =
         sources =
           [Sources.NamedSource "Cookies"; Sources.NamedSource "PII"; Sources.NamedSource "Secrets"];
         sinks = [Sinks.NamedSink "Logging"];
+        transforms = [];
         code = 5006;
         name = "Restricted data being logged.";
         message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
@@ -847,6 +870,7 @@ let default =
       {
         sources = [Sources.NamedSource "UserControlled"];
         sinks = [Sinks.NamedSink "XMLParser"];
+        transforms = [];
         code = 5007;
         name = "User data to XML Parser.";
         message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
@@ -854,6 +878,7 @@ let default =
       {
         sources = [Sources.NamedSource "UserControlled"];
         sinks = [Sinks.NamedSink "XSS"];
+        transforms = [];
         code = 5008;
         name = "XSS";
         message_format = "Possible XSS due to [{$sources}] data reaching [{$sinks}] sink(s)";
@@ -861,6 +886,7 @@ let default =
       {
         sources = [Sources.NamedSource "Demo"];
         sinks = [Sinks.NamedSink "Demo"];
+        transforms = [];
         code = 5009;
         name = "Demo flow.";
         message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
@@ -868,6 +894,7 @@ let default =
       {
         sources = [Sources.NamedSource "UserControlled"];
         sinks = [Sinks.NamedSink "GetAttr"];
+        transforms = [];
         code = 5010;
         name = "User data to getattr.";
         message_format = "Attacker may control at least one argument to getattr(,).";
@@ -875,6 +902,7 @@ let default =
       {
         sources = [Sources.NamedSource "Demo"];
         sinks = [Sinks.NamedSink "Demo"];
+        transforms = [];
         code = 6001;
         name = "Duplicate demo flow.";
         message_format =
@@ -886,6 +914,7 @@ let default =
   {
     sources;
     sinks;
+    transforms;
     features =
       [
         "copy";
@@ -917,6 +946,7 @@ let obscure_flows_configuration configuration =
         Rule.sources =
           List.map ~f:(fun { name = source; _ } -> Sources.NamedSource source) configuration.sources;
         sinks = [Sinks.NamedSink "Obscure"];
+        transforms = [];
         code = 9001;
         name = "Obscure flow.";
         message_format = "Data from [{$sources}] source(s) may reach an obscure model";
@@ -934,6 +964,7 @@ let missing_type_flows_configuration configuration =
         Rule.sources =
           List.map ~f:(fun { name = source; _ } -> Sources.NamedSource source) configuration.sources;
         sinks = [Sinks.NamedSink "UnknownCallee"];
+        transforms = [];
         code = 9002;
         name = "Unknown callee flow.";
         message_format = "Data from [{$sources}] source(s) may flow to an unknown callee";

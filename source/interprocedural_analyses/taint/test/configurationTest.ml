@@ -186,6 +186,7 @@ let test_combined_source_rules _ =
       {
         Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "A"];
         sinks = [Sinks.TriggeredPartialSink { kind = "C"; label = "a" }];
+        transforms = [];
         code = 2001;
         message_format = "some form";
         name = "test combined rule";
@@ -193,6 +194,7 @@ let test_combined_source_rules _ =
       {
         Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "B"];
         sinks = [Sinks.TriggeredPartialSink { kind = "C"; label = "b" }];
+        transforms = [];
         code = 2001;
         message_format = "some form";
         name = "test combined rule";
@@ -234,6 +236,7 @@ let test_combined_source_rules _ =
       {
         Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "A"];
         sinks = [Sinks.TriggeredPartialSink { kind = "CombinedSink"; label = "a" }];
+        transforms = [];
         code = 2001;
         message_format = "some form";
         name = "test combined rule";
@@ -241,6 +244,7 @@ let test_combined_source_rules _ =
       {
         Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "B"; Sources.NamedSource "C"];
         sinks = [Sinks.TriggeredPartialSink { kind = "CombinedSink"; label = "b" }];
+        transforms = [];
         code = 2001;
         message_format = "some form";
         name = "test combined rule";

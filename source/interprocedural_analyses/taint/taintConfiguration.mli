@@ -11,6 +11,7 @@ module Rule : sig
   type t = {
     sources: Sources.t list;
     sinks: Sinks.t list;
+    transforms: TaintTransform.t list;
     code: int;
     name: string;
     message_format: string; (* format *)
@@ -55,6 +56,7 @@ val missing_flows_kind_from_string : string -> missing_flows_kind option
 type t = {
   sources: AnnotationParser.source_or_sink list;
   sinks: AnnotationParser.source_or_sink list;
+  transforms: TaintTransform.t list;
   features: string list;
   rules: Rule.t list;
   implicit_sinks: implicit_sinks;

@@ -8,3 +8,6 @@
 open Core
 
 type t = Named of string [@@deriving compare, eq]
+
+let pp formatter = function
+  | Named transform -> Format.fprintf formatter "%s" transform
