@@ -19,8 +19,8 @@ module T = struct
       }
     | Transform of {
         (* Invariant: concatenation of local @ global is non-empty. *)
-        sanitize_local: SanitizeTransform.Set.t;
-        sanitize_global: SanitizeTransform.Set.t;
+        local: TaintTransforms.t;
+        global: TaintTransforms.t;
         (* Invariant: not a transform. *)
         base: t;
       }
@@ -31,12 +31,12 @@ module T = struct
     | NamedSource name -> Format.fprintf formatter "%s" name
     | ParametricSource { source_name; subkind } ->
         Format.fprintf formatter "%s[%s]" source_name subkind
-    | Transform { sanitize_local; sanitize_global; base } ->
+    | Transform { local; global; base } ->
         SanitizeTransform.pp_kind
           ~formatter
           ~pp_base:pp
-          ~local:sanitize_local
-          ~global:sanitize_global
+          ~local:local.sanitize
+          ~global:global.sanitize
           ~base
 
 
@@ -51,13 +51,9 @@ let ignore_kind_at_call = function
 
 
 let apply_call = function
-  | Transform { sanitize_local; sanitize_global; base } ->
+  | Transform { local; global; base } ->
       Transform
-        {
-          sanitize_local = SanitizeTransform.Set.empty;
-          sanitize_global = SanitizeTransform.Set.union sanitize_local sanitize_global;
-          base;
-        }
+        { local = TaintTransforms.empty; global = TaintTransforms.concat local global; base }
   | source -> source
 
 
@@ -127,8 +123,7 @@ let extract_sanitized_sources_from_transforms transforms =
 
 
 let extract_sanitize_transforms = function
-  | Transform { sanitize_local; sanitize_global; _ } ->
-      SanitizeTransform.Set.union sanitize_local sanitize_global
+  | Transform { local; global; _ } -> SanitizeTransform.Set.union local.sanitize global.sanitize
   | _ -> SanitizeTransform.Set.empty
 
 
@@ -139,16 +134,16 @@ let apply_sanitize_transforms transforms source =
   | ParametricSource _ ->
       Transform
         {
-          sanitize_local = transforms;
-          sanitize_global = SanitizeTransform.Set.empty;
+          local = { TaintTransforms.sanitize = transforms; ordered = [] };
+          global = TaintTransforms.empty;
           base = source;
         }
-  | Transform { sanitize_local; sanitize_global; base } ->
-      let transforms = SanitizeTransform.Set.diff transforms sanitize_global in
+  | Transform { local; global; base } ->
+      let transforms = SanitizeTransform.Set.diff transforms global.sanitize in
       Transform
         {
-          sanitize_local = SanitizeTransform.Set.union sanitize_local transforms;
-          sanitize_global;
+          local = { local with sanitize = SanitizeTransform.Set.union local.sanitize transforms };
+          global;
           base;
         }
 

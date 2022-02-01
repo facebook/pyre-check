@@ -317,9 +317,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let taint_to_propagate =
         match kind with
-        | Sinks.Transform { sanitize_local; sanitize_global; _ } ->
+        | Sinks.Transform { local; global; _ } ->
             (* Apply source- and sink- specific tito sanitizers. *)
-            let transforms = SanitizeTransform.Set.union sanitize_local sanitize_global in
+            let transforms = SanitizeTransform.Set.union local.sanitize global.sanitize in
             let sanitized_tito_sources =
               Sources.extract_sanitized_sources_from_transforms transforms
             in

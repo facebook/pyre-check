@@ -31,8 +31,8 @@ module T = struct
     (* Special marker to designate modifying the state the parameter passed in. *)
     | Transform of {
         (* Invariant: concatenation of local @ global is non-empty. *)
-        sanitize_local: SanitizeTransform.Set.t;
-        sanitize_global: SanitizeTransform.Set.t;
+        local: TaintTransforms.t;
+        global: TaintTransforms.t;
         (* Invariant: not a transform. *)
         base: t;
       }
@@ -48,12 +48,12 @@ module T = struct
     | ParametricSink { sink_name; subkind } -> Format.fprintf formatter "%s[%s]" sink_name subkind
     | ParameterUpdate index -> Format.fprintf formatter "ParameterUpdate%d" index
     | AddFeatureToArgument -> Format.fprintf formatter "AddFeatureToArgument"
-    | Transform { sanitize_local; sanitize_global; base } ->
+    | Transform { local; global; base } ->
         SanitizeTransform.pp_kind
           ~formatter
           ~pp_base:pp
-          ~local:sanitize_local
-          ~global:sanitize_global
+          ~local:local.sanitize
+          ~global:global.sanitize
           ~base
 
 
@@ -70,13 +70,9 @@ let ignore_kind_at_call = function
 
 
 let apply_call = function
-  | Transform { sanitize_local; sanitize_global; base } ->
+  | Transform { local; global; base } ->
       Transform
-        {
-          sanitize_local = SanitizeTransform.Set.empty;
-          sanitize_global = SanitizeTransform.Set.union sanitize_local sanitize_global;
-          base;
-        }
+        { local = TaintTransforms.empty; global = TaintTransforms.concat local global; base }
   | sink -> sink
 
 
@@ -127,12 +123,13 @@ let discard_subkind = function
 
 
 let discard_transforms = function
+  (* TODO(T90698159): Assumes only sanitizing transforms present, revisit. *)
   | Transform { base; _ } -> base
   | sink -> sink
 
 
 let discard_sanitize_transforms =
-  (* For now, we only have sanitize taint transforms. *)
+  (* TODO(T90698159): Assumes only sanitizing transforms present, revisit. *)
   discard_transforms
 
 
@@ -146,8 +143,7 @@ let extract_sanitized_sinks_from_transforms transforms =
 
 
 let extract_sanitize_transforms = function
-  | Transform { sanitize_local; sanitize_global; _ } ->
-      SanitizeTransform.Set.union sanitize_local sanitize_global
+  | Transform { local; global; _ } -> SanitizeTransform.Set.union local.sanitize global.sanitize
   | _ -> SanitizeTransform.Set.empty
 
 
@@ -169,13 +165,17 @@ let apply_sanitize_transforms transforms sink =
   | ParametricSink _
   | ParameterUpdate _ ->
       Transform
-        { sanitize_local = transforms; sanitize_global = SanitizeTransform.Set.empty; base = sink }
-  | Transform { sanitize_local; sanitize_global; base } ->
-      let transforms = SanitizeTransform.Set.diff transforms sanitize_global in
+        {
+          local = { TaintTransforms.sanitize = transforms; ordered = [] };
+          global = TaintTransforms.empty;
+          base = sink;
+        }
+  | Transform { local; global; base } ->
+      let transforms = SanitizeTransform.Set.diff transforms global.sanitize in
       Transform
         {
-          sanitize_local = SanitizeTransform.Set.union sanitize_local transforms;
-          sanitize_global;
+          local = { local with sanitize = SanitizeTransform.Set.union local.sanitize transforms };
+          global;
           base;
         }
 

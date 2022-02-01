@@ -14,8 +14,8 @@ type t =
     }
   | Transform of {
       (* Invariant: concatenation of local @ global is non-empty. *)
-      sanitize_local: SanitizeTransform.Set.t;
-      sanitize_global: SanitizeTransform.Set.t;
+      local: TaintTransforms.t;
+      global: TaintTransforms.t;
       (* Invariant: not a transform. *)
       base: t;
     }

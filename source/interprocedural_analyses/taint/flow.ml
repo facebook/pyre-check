@@ -391,16 +391,15 @@ let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
 
 
 let source_can_match_rule = function
-  | Sources.Transform { sanitize_local; sanitize_global; base = NamedSource name }
-  | Sources.Transform
-      { sanitize_local; sanitize_global; base = ParametricSource { source_name = name; _ } } -> (
+  | Sources.Transform { local; global; base = NamedSource name }
+  | Sources.Transform { local; global; base = ParametricSource { source_name = name; _ } } -> (
       let { matching_sinks; _ } = TaintConfiguration.get () in
       match Sources.Map.find_opt (Sources.NamedSource name) matching_sinks with
       | None ->
           (* TODO(T104600511): Filter out sources that are never used in any rule. *)
           false
       | Some sinks ->
-          SanitizeTransform.Set.union sanitize_local sanitize_global
+          SanitizeTransform.Set.union local.sanitize global.sanitize
           |> Sinks.extract_sanitized_sinks_from_transforms
           |> Sinks.Set.diff sinks
           |> Sinks.Set.is_empty
@@ -409,16 +408,15 @@ let source_can_match_rule = function
 
 
 let sink_can_match_rule = function
-  | Sinks.Transform { sanitize_local; sanitize_global; base = NamedSink name }
-  | Sinks.Transform
-      { sanitize_local; sanitize_global; base = ParametricSink { sink_name = name; _ } } -> (
+  | Sinks.Transform { local; global; base = NamedSink name }
+  | Sinks.Transform { local; global; base = ParametricSink { sink_name = name; _ } } -> (
       let { matching_sources; _ } = TaintConfiguration.get () in
       match Sinks.Map.find_opt (NamedSink name) matching_sources with
       | None ->
           (* TODO(T104600511): Filter out sinks that are never used in any rule. *)
           false
       | Some sources ->
-          SanitizeTransform.Set.union sanitize_local sanitize_global
+          SanitizeTransform.Set.union local.sanitize global.sanitize
           |> Sources.extract_sanitized_sources_from_transforms
           |> Sources.Set.diff sources
           |> Sources.Set.is_empty
