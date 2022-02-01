@@ -154,7 +154,7 @@ def add_local_mode(filename: str, mode: LocalMode) -> None:
         LOG.warning("Attempting to edit generated file %s, skipping.", filename)
         return
 
-    lines = text.split("\n")  # type: List[str]
+    lines: "List[str]" = text.split("\n")
 
     # Check if a local mode is already set.
     for line in lines:
