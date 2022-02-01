@@ -243,6 +243,10 @@ class Errors:
                 LOG.warning(f"Skipping generated file at {path_to_suppress}")
             except SkippingUnparseableFileException:
                 LOG.warning(f"Skipping unparseable file at {path_to_suppress}")
+            except LineBreakParsingException:
+                LOG.warning(
+                    f"Skipping file with unparseable line breaks at {path_to_suppress}"
+                )
             except (ast.UnstableAST, SyntaxError) as exception:
                 unsuppressed_paths_and_exceptions.append((path_to_suppress, exception))
 
@@ -336,6 +340,10 @@ class SkippingGeneratedFileException(Exception):
 
 
 class SkippingUnparseableFileException(Exception):
+    pass
+
+
+class LineBreakParsingException(Exception):
     pass
 
 
@@ -481,8 +489,11 @@ def _lines_after_suppressing_errors(
             # Handle error suppressions in line break block
             line_break_block_errors.append(comments)
             new_lines.append(line)
-            if sum(len(errors) for errors in line_break_block_errors) > 0:
-                _add_error_to_line_break_block(new_lines, line_break_block_errors)
+            try:
+                if sum(len(errors) for errors in line_break_block_errors) > 0:
+                    _add_error_to_line_break_block(new_lines, line_break_block_errors)
+            except libcst.ParserSyntaxError as exception:
+                raise LineBreakParsingException(exception)
             line_break_block_errors = []
             continue
 

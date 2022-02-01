@@ -15,6 +15,7 @@ from .. import UserError, errors
 from ..ast import UnstableAST
 from ..errors import (
     Errors,
+    LineBreakParsingException,
     PartialErrorSuppression,
     SkippingGeneratedFileException,
     SkippingUnparseableFileException,
@@ -28,6 +29,10 @@ from ..errors import (
 
 
 unittest.util._MAX_LENGTH = 200
+
+
+def _normalize(input: str) -> str:
+    return textwrap.dedent(input).strip().replace("FIXME", "pyre-fixme")
 
 
 class ErrorsTest(unittest.TestCase):
@@ -237,8 +242,6 @@ class ErrorsTest(unittest.TestCase):
         truncate: bool = False,
         unsafe: bool = False,
     ) -> None:
-        def _normalize(input: str) -> str:
-            return textwrap.dedent(input).strip().replace("FIXME", "pyre-fixme")
 
         self.assertEqual(
             _suppress_errors(
@@ -319,6 +322,22 @@ class ErrorsTest(unittest.TestCase):
         # Skip generated files.
         with self.assertRaises(SkippingGeneratedFileException):
             _suppress_errors("# @" "generated", {})
+
+        # Skip files with unparseable line break blocks.
+        with self.assertRaises(LineBreakParsingException):
+            _suppress_errors(
+                _normalize(
+                    """
+                    def foo() -> None:
+                        line_break = \\
+                            does_not_parse(
+                                param
+                            )
+                        unrelated_line = 0
+                    """
+                ),
+                {3: [{"code": "1", "description": "description"}]},
+            )
 
         # Do not check for generated files with --unsafe.
         try:
