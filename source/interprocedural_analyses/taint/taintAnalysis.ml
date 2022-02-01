@@ -147,7 +147,10 @@ include Taint.Result.Register (struct
     in
     let create_models ~taint_configuration sources =
       let map state sources =
-        List.fold sources ~init:state ~f:(fun (_, errors, skip_overrides, queries) (path, source) ->
+        List.fold
+          sources
+          ~init:state
+          ~f:(fun (accumulated_models, errors, skip_overrides, queries) (path, source) ->
             let {
               ModelParser.models;
               errors = new_errors;
@@ -165,7 +168,14 @@ include Taint.Result.Register (struct
                 ?rule_filter
                 ()
             in
-            ( models,
+            let merged_models =
+              Target.Map.merge accumulated_models models ~f:(fun ~key:_ -> function
+                | `Both (left, right) -> Some (Model.join left right)
+                | `Left model
+                | `Right model ->
+                    Some model)
+            in
+            ( merged_models,
               List.rev_append new_errors errors,
               Set.union skip_overrides new_skip_overrides,
               List.rev_append new_queries queries ))
