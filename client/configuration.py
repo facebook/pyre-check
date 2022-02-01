@@ -413,7 +413,6 @@ class IdeFeatures:
 
 @dataclass(frozen=True)
 class PartialConfiguration:
-    autocomplete: Optional[bool] = None
     binary: Optional[str] = None
     buck_builder_binary: Optional[str] = None
     buck_mode: Optional[str] = None
@@ -475,7 +474,6 @@ class PartialConfiguration:
             else None
         )
         return PartialConfiguration(
-            autocomplete=None,
             binary=arguments.binary,
             buck_builder_binary=arguments.buck_builder_binary,
             buck_mode=arguments.buck_mode,
@@ -649,9 +647,6 @@ class PartialConfiguration:
                     LOG.warning(f"Unrecognized configuration item: {unrecognized_key}")
 
             partial_configuration = PartialConfiguration(
-                autocomplete=ensure_option_type(
-                    configuration_json, "autocomplete", bool
-                ),
                 binary=ensure_option_type(configuration_json, "binary", str),
                 buck_builder_binary=ensure_option_type(
                     configuration_json, "buck_builder_binary", str
@@ -756,7 +751,6 @@ class PartialConfiguration:
         if typeshed is not None:
             typeshed = expand_relative_path(root, typeshed)
         return PartialConfiguration(
-            autocomplete=self.autocomplete,
             binary=binary,
             buck_builder_binary=buck_builder_binary,
             buck_mode=self.buck_mode,
@@ -832,7 +826,6 @@ def merge_partial_configurations(
             )
 
     return PartialConfiguration(
-        autocomplete=overwrite_base(base.autocomplete, override.autocomplete),
         binary=overwrite_base(base.binary, override.binary),
         buck_builder_binary=overwrite_base(
             base.buck_builder_binary, override.buck_builder_binary
@@ -907,7 +900,6 @@ class Configuration:
     project_root: str
     dot_pyre_directory: Path
 
-    autocomplete: bool = False
     binary: Optional[str] = None
     buck_builder_binary: Optional[str] = None
     buck_mode: Optional[str] = None
@@ -953,9 +945,6 @@ class Configuration:
             project_root=str(project_root),
             dot_pyre_directory=_get_optional_value(
                 partial_configuration.dot_pyre_directory, project_root / LOG_DIRECTORY
-            ),
-            autocomplete=_get_optional_value(
-                partial_configuration.autocomplete, default=False
             ),
             binary=partial_configuration.binary,
             buck_builder_binary=partial_configuration.buck_builder_binary,
@@ -1028,7 +1017,6 @@ class Configuration:
         return {
             "global_root": self.project_root,
             "dot_pyre_directory": str(self.dot_pyre_directory),
-            "autocomplete": self.autocomplete,
             **({"binary": binary} if binary is not None else {}),
             **(
                 {"buck_builder_binary": buck_builder_binary}
@@ -1113,7 +1101,6 @@ class Configuration:
         return Configuration(
             project_root=self.project_root,
             dot_pyre_directory=self.dot_pyre_directory,
-            autocomplete=self.autocomplete,
             binary=self.binary,
             buck_builder_binary=self.buck_builder_binary,
             buck_mode=self.buck_mode,

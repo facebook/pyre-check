@@ -140,12 +140,6 @@ class PartialConfigurationTest(unittest.TestCase):
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"autocomplete": True})
-            ).autocomplete,
-            True,
-        )
-        self.assertEqual(
             PartialConfiguration.from_string(json.dumps({"binary": "foo"})).binary,
             "foo",
         )
@@ -455,7 +449,6 @@ class PartialConfigurationTest(unittest.TestCase):
 
         assert_raises("")
         assert_raises("{")
-        assert_raises(json.dumps({"autocomplete": 42}))
         assert_raises(json.dumps({"binary": True}))
         assert_raises(json.dumps({"buck_builder_binary": ["."]}))
         assert_raises(json.dumps({"buck_mode": {}}))
@@ -571,7 +564,6 @@ class PartialConfigurationTest(unittest.TestCase):
                     override=create_configuration(attribute_name, override_value),
                 )
 
-        assert_overwritten("autocomplete")
         assert_overwritten("buck_builder_binary")
         assert_overwritten("buck_mode")
         assert_overwritten("disabled")
@@ -720,7 +712,6 @@ class ConfigurationTest(testslide.TestCase):
             project_root=Path("root"),
             relative_local_root="local",
             partial_configuration=PartialConfiguration(
-                autocomplete=None,
                 binary="binary",
                 buck_builder_binary="buck_builder_binary",
                 buck_mode="opt",
@@ -753,7 +744,6 @@ class ConfigurationTest(testslide.TestCase):
         )
         self.assertEqual(configuration.project_root, "root")
         self.assertEqual(configuration.relative_local_root, "local")
-        self.assertEqual(configuration.autocomplete, False)
         self.assertEqual(configuration.binary, "binary")
         self.assertEqual(configuration.buck_builder_binary, "buck_builder_binary")
         self.assertEqual(configuration.buck_mode, "opt")
