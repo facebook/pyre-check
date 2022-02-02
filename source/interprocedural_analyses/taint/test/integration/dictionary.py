@@ -88,6 +88,37 @@ def dict_update_whole_dict():
     return x
 
 
+def dict_update_taint():
+    x = {"a": "safe", "b": "safe"}
+    x.update({"a": _test_source()})
+    return x
+
+
+def dict_update_multiple():
+    x = {
+        "a": _test_source(),
+        "b": "safe",
+        "c": _test_source(),
+        "d": "safe",
+    }
+    x.update(
+        {
+            "a": "safe",
+            "b": _test_source(),
+            "c": _test_source(),
+            "d": "safe",
+        }
+    )
+    return x
+
+
+def big_dict_update_arg():
+    x = {k: "safe" for k in range(100)}
+    x["a"] = _test_source()
+    x.update({"a": "safe"})
+    return x
+
+
 def flow_through_keywords():
     tainted_map = {"a": _test_source()}
     new_map = {**tainted_map}
