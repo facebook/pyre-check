@@ -431,6 +431,8 @@ and Dictionary : sig
   [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
+
+  val string_literal_keys : Entry.t list -> (string * Expression.t) list option
 end = struct
   module Entry = struct
     type t = {
@@ -455,6 +457,25 @@ end = struct
     match List.compare Entry.location_insensitive_compare left.entries right.entries with
     | x when not (Int.equal x 0) -> x
     | _ -> List.compare Expression.location_insensitive_compare left.keywords right.keywords
+
+
+  let string_literal_keys entries =
+    let rec match_literal_key entries accumulated_result =
+      match entries with
+      | {
+          Dictionary.Entry.key =
+            {
+              Node.value = Expression.Constant (Constant.String { StringLiteral.value = key; _ });
+              _;
+            };
+          value;
+        }
+        :: tail ->
+          match_literal_key tail ((key, value) :: accumulated_result)
+      | [] -> Some (List.rev accumulated_result)
+      | _ -> None
+    in
+    match_literal_key entries []
 end
 
 and Lambda : sig

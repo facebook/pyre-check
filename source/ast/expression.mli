@@ -162,6 +162,8 @@ and Dictionary : sig
   [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
+
+  val string_literal_keys : Entry.t list -> (string * Expression.t) list option
 end
 
 and Lambda : sig

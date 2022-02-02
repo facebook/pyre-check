@@ -100,6 +100,7 @@ def dict_update_multiple():
         "b": "safe",
         "c": _test_source(),
         "d": "safe",
+        "e": _test_source(),
     }
     x.update(
         {

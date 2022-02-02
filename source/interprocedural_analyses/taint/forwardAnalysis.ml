@@ -1306,6 +1306,69 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                (Name.Attribute
                  {
                    base = { Node.value = Name (Name.Identifier identifier); _ } as base;
+                   attribute = "update";
+                   _;
+                 });
+           _;
+         };
+       arguments =
+         [
+           {
+             Call.Argument.value =
+               { Node.value = Expression.Dictionary { Dictionary.entries; keywords = [] }; _ };
+             _;
+           };
+         ];
+      }
+        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+             && Option.is_some (Dictionary.string_literal_keys entries) ->
+          let entries = Option.value_exn (Dictionary.string_literal_keys entries) in
+          let taint =
+            ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint
+          in
+          let override_taint_from_update (taint, state) (key, value) =
+            let value_taint, state = analyze_expression ~resolution ~state ~expression:value in
+            let value_taint =
+              ForwardState.Tree.transform
+                Features.TitoPositionSet.Element
+                Add
+                ~f:value.Node.location
+                value_taint
+            in
+            let new_taint =
+              ForwardState.Tree.assign
+                ~weak:false
+                ~tree:taint
+                [Abstract.TreeDomain.Label.Index key]
+                ~subtree:value_taint
+            in
+            new_taint, state
+          in
+          let taint, state = List.fold entries ~init:(taint, state) ~f:override_taint_from_update in
+          let sink_tree =
+            GlobalModel.from_expression
+              ~resolution
+              ~call_graph:FunctionContext.call_graph_of_define
+              ~qualifier:FunctionContext.qualifier
+              ~expression:base
+            |> GlobalModel.get_sink
+          in
+          check_flow
+            ~location:(Location.with_module ~qualifier:FunctionContext.qualifier base.Node.location)
+            ~source_tree:taint
+            ~sink_tree;
+          let state =
+            store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
+          in
+          taint, state
+      | {
+       callee =
+         {
+           Node.value =
+             Name
+               (Name.Attribute
+                 {
+                   base = { Node.value = Name (Name.Identifier identifier); _ } as base;
                    attribute = "pop";
                    _;
                  });
