@@ -45,6 +45,9 @@ class Configuration:
             "use_buck_source_database"
         )
         self.use_command_v2: Optional[bool] = json_contents.get("use_command_v2")
+        self.ignore_all_errors: Optional[List[str]] = json_contents.get(
+            "ignore_all_errors"
+        )
 
     def get_contents(self) -> Dict[str, Any]:
         """Assumption: The field names in this class match the key names in

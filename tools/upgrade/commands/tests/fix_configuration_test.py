@@ -122,3 +122,40 @@ class FixmeConfigurationTest(unittest.TestCase):
                     )
                     get_errors.assert_called_once()
                     commit_changes.assert_called_once()
+
+            # Skip consolidation on properly ignored nested configurations.
+            remove_paths.reset_mock()
+            get_errors.reset_mock()
+            commit_changes.reset_mock()
+            with open(configuration_path, "w+") as configuration_file:
+                json.dump(
+                    {
+                        "targets": ["//parent:target"],
+                        "ignore_all_errors": ["subdirectory"],
+                    },
+                    configuration_file,
+                )
+                configuration_file.seek(0)
+                subdirectory = os.path.join(root, "subdirectory")
+                nested_configuration_path = os.path.join(
+                    subdirectory, ".pyre_configuration.local"
+                )
+                arguments.path = Path(subdirectory)
+                with open(nested_configuration_path, "w+") as nested_configuration_file:
+                    json.dump(
+                        {"targets": ["//nested:target"]}, nested_configuration_file
+                    )
+                    nested_configuration_file.seek(0)
+                    FixConfiguration.from_arguments(arguments, repository).run()
+                    configuration_file.seek(0)
+                    parent_contents = json.load(configuration_file)
+                    self.assertEqual(
+                        parent_contents,
+                        {
+                            "targets": ["//parent:target"],
+                            "ignore_all_errors": ["subdirectory"],
+                        },
+                    )
+                    remove_paths.assert_not_called()
+                    get_errors.assert_called_once()
+                    commit_changes.assert_called_once()
