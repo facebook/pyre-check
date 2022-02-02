@@ -777,6 +777,21 @@ class ErrorsTest(unittest.TestCase):
             {3: [{"code": "1", "description": "description"}]},
             """
             def foo() -> None:
+                assert test, \\
+                    "message"
+            """,
+            """
+            def foo() -> None:
+                assert (test), (
+                    # FIXME[1]: description
+                    "message")
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {3: [{"code": "1", "description": "description"}]},
+            """
+            def foo() -> None:
                 raise \\
                     Exception()
             """,

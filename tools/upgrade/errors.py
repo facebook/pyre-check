@@ -67,16 +67,31 @@ class LineBreakTransformer(libcst.CSTTransformer):
         self, original_node: libcst.Assert, updated_node: libcst.Assert
     ) -> libcst.Assert:
         test = updated_node.test
+        message = updated_node.msg
+        comma = updated_node.comma
         if not test:
             return updated_node
+        if message and isinstance(comma, libcst.Comma):
+            message = LineBreakTransformer.basic_parenthesize(
+                message, comma.whitespace_after
+            )
+            comma = comma.with_changes(
+                whitespace_after=libcst.SimpleWhitespace(
+                    value=" ",
+                )
+            )
         assert_whitespace = updated_node.whitespace_after_assert
         if isinstance(assert_whitespace, libcst.ParenthesizedWhitespace):
             return updated_node.with_changes(
                 test=LineBreakTransformer.basic_parenthesize(test, assert_whitespace),
+                msg=message,
+                comma=comma,
                 whitespace_after_assert=libcst.SimpleWhitespace(value=" "),
             )
         return updated_node.with_changes(
-            test=LineBreakTransformer.basic_parenthesize(test)
+            test=LineBreakTransformer.basic_parenthesize(test),
+            msg=message,
+            comma=comma,
         )
 
     def leave_Assign(
