@@ -330,9 +330,9 @@ class ErrorsTest(unittest.TestCase):
                     """
                     def foo() -> None:
                         line_break = \\
-                            does_not_parse(
+                            [
                                 param
-                            )
+                            ]
                         unrelated_line = 0
                     """
                 ),
@@ -815,6 +815,48 @@ class ErrorsTest(unittest.TestCase):
                 return (
                     # FIXME[1]: description
                     error)
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {3: [{"code": "1", "description": "description"}]},
+            """
+            def foo() -> None:
+                line_break = \\
+                    trailing_open(
+                        param)
+                unrelated_line = 1
+            """,
+            """
+            def foo() -> None:
+                line_break = (
+                    # FIXME[1]: description
+                    trailing_open(
+                        param))
+                unrelated_line = 1
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {3: [{"code": "1", "description": "description"}]},
+            """
+            def foo() -> None:
+                line_break = \\
+                    trailing_open(
+                        param1,
+                        param2,
+                    )
+                unrelated_line = 1
+            """,
+            """
+            def foo() -> None:
+                line_break = (
+                    # FIXME[1]: description
+                    trailing_open(
+                        param1,
+                        param2,
+                    ))
+                unrelated_line = 1
             """,
         )
 

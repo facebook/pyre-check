@@ -435,6 +435,50 @@ def _map_line_to_start_of_range(line_ranges: List[LineRange]) -> Dict[int, int]:
     return target_line_map
 
 
+def _is_line_break(line: str, is_continuing_existing_block: bool) -> bool:
+    comment_free_line = line.split("#")[0].rstrip()
+    if comment_free_line.endswith("\\"):
+        return True
+    if is_continuing_existing_block and comment_free_line.endswith("("):
+        return True
+    return False
+
+
+class LineBreakBlock:
+    error_comments: List[List[str]]
+    opened_expressions: int
+    is_active: bool
+
+    def __init__(self) -> None:
+        self.error_comments = []
+        self.opened_expressions = 0
+        self.is_active = False
+
+    def ready_to_suppress(self) -> bool:
+        # Line break block has been filled and then ended; errors can be applied.
+        return not self.is_active and len(self.error_comments) > 0
+
+    def process_line(self, line: str, error_comments: List[str]) -> None:
+        comment_free_line = line.split("#")[0].rstrip()
+        if not self.is_active:
+            # Check if line break block is beginning.
+            self.is_active = comment_free_line.endswith("\\")
+            if self.is_active:
+                self.error_comments.append(error_comments)
+            return
+
+        # Check if line break block is ending.
+        self.error_comments.append(error_comments)
+        if comment_free_line.endswith("\\"):
+            return
+        if comment_free_line.endswith("("):
+            self.opened_expressions += 1
+            return
+        if comment_free_line.endswith(")"):
+            self.opened_expressions -= 1
+        self.is_active = self.opened_expressions > 0
+
+
 def _lines_after_suppressing_errors(
     lines: List[str],
     errors: Dict[int, List[Dict[str, str]]],
@@ -444,7 +488,7 @@ def _lines_after_suppressing_errors(
 ) -> List[str]:
     new_lines = []
     removing_pyre_comments = False
-    line_break_block_errors: List[List[str]] = []
+    line_break_block = LineBreakBlock()
     for index, line in enumerate(lines):
         if removing_pyre_comments:
             stripped = line.lstrip()
@@ -485,23 +529,19 @@ def _lines_after_suppressing_errors(
             )
         ]
 
-        if len(line_break_block_errors) > 0 and not line.endswith("\\"):
-            # Handle error suppressions in line break block
-            line_break_block_errors.append(comments)
+        line_break_block.process_line(line, comments)
+        if line_break_block.ready_to_suppress():
             new_lines.append(line)
             try:
+                line_break_block_errors = line_break_block.error_comments
                 if sum(len(errors) for errors in line_break_block_errors) > 0:
                     _add_error_to_line_break_block(new_lines, line_break_block_errors)
             except libcst.ParserSyntaxError as exception:
                 raise LineBreakParsingException(exception)
-            line_break_block_errors = []
+            line_break_block = LineBreakBlock()
             continue
 
-        if line.endswith("\\"):
-            line_break_block_errors.append(comments)
-            comments = []
-
-        if len(comments) > 0:
+        if not line_break_block.is_active and len(comments) > 0:
             LOG.info(
                 "Adding comment%s on line %d: %s",
                 "s" if len(comments) > 1 else "",
