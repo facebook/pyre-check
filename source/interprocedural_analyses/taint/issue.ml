@@ -10,38 +10,42 @@ open Ast
 open TaintConfiguration
 open Domains
 
-type flow = {
-  source_taint: ForwardTaint.t;
-  sink_taint: BackwardTaint.t;
-}
-[@@deriving show]
+module Flow = struct
+  type t = {
+    source_taint: ForwardTaint.t;
+    sink_taint: BackwardTaint.t;
+  }
+  [@@deriving show]
+end
 
-type flows = flow list [@@deriving show]
+module Flows = struct
+  type t = Flow.t list [@@deriving show]
+end
 
-type candidate = {
-  flows: flows;
-  location: Location.WithModule.t;
-}
+module Candidate = struct
+  type t = {
+    flows: Flows.t;
+    location: Location.WithModule.t;
+  }
+end
 
-type features = {
-  breadcrumbs: Features.BreadcrumbSet.t;
-  first_indices: Features.FirstIndexSet.t;
-  first_fields: Features.FirstFieldSet.t;
-}
+module PartitionedFlow = struct
+  type t = {
+    source_partition: (Sources.t, ForwardTaint.t) Map.Poly.t;
+    sink_partition: (Sinks.t, BackwardTaint.t) Map.Poly.t;
+  }
+end
 
-type partitioned_flow = {
-  source_partition: (Sources.t, ForwardTaint.t) Map.Poly.t;
-  sink_partition: (Sinks.t, BackwardTaint.t) Map.Poly.t;
-}
-
-type issue = {
+type t = {
   code: int;
-  flow: flow;
-  issue_location: Location.WithModule.t;
+  flow: Flow.t;
+  location: Location.WithModule.t;
   define: Statement.Define.t Node.t;
 }
 
-type triggered_sinks = String.Hash_set.t
+module TriggeredSinks = struct
+  type t = String.Hash_set.t
+end
 
 (* Compute all flows from paths in ~source tree to corresponding paths in ~sink tree, while avoiding
    duplication as much as possible.
@@ -61,7 +65,7 @@ let generate_source_sink_matches ~location ~source_tree ~sink_tree =
     if ForwardTaint.is_bottom source_taint then
       matches
     else
-      { source_taint; sink_taint } :: matches
+      { Flow.source_taint; sink_taint } :: matches
   in
   let flows =
     if ForwardState.Tree.is_empty source_tree then
@@ -69,15 +73,16 @@ let generate_source_sink_matches ~location ~source_tree ~sink_tree =
     else
       BackwardState.Tree.fold BackwardState.Tree.Path ~init:[] ~f:make_source_sink_matches sink_tree
   in
-  { location; flows }
+  { Candidate.flows; location }
 
 
-type flow_state = {
-  matched: flows;
-  rest: flows;
+type features = {
+  breadcrumbs: Features.BreadcrumbSet.t;
+  first_indices: Features.FirstIndexSet.t;
+  first_fields: Features.FirstFieldSet.t;
 }
 
-let get_issue_features { source_taint; sink_taint } =
+let get_issue_features { Flow.source_taint; sink_taint } =
   let breadcrumbs =
     let source_breadcrumbs = ForwardTaint.joined_breadcrumbs source_taint in
     let sink_breadcrumbs = BackwardTaint.joined_breadcrumbs sink_taint in
@@ -97,11 +102,11 @@ let get_issue_features { source_taint; sink_taint } =
   { breadcrumbs; first_indices; first_fields }
 
 
-let generate_issues ~define { location; flows } =
+let generate_issues ~define { Candidate.flows; location } =
   let partitions =
-    let partition { source_taint; sink_taint } =
+    let partition { Flow.source_taint; sink_taint } =
       {
-        source_partition =
+        PartitionedFlow.source_partition =
           ForwardTaint.partition ForwardTaint.kind By source_taint ~f:(fun kind ->
               kind |> Sources.discard_transforms |> Sources.discard_subkind);
         sink_partition =
@@ -111,7 +116,10 @@ let generate_issues ~define { location; flows } =
     in
     List.map flows ~f:partition
   in
-  let apply_rule_on_flow { Rule.sources; sinks; _ } { source_partition; sink_partition } =
+  let apply_rule_on_flow
+      { Rule.sources; sinks; _ }
+      { PartitionedFlow.source_partition; sink_partition }
+    =
     let add_source_taint source_taint source =
       match Map.Poly.find source_partition (Sources.discard_subkind source) with
       | Some taint -> ForwardTaint.join source_taint taint
@@ -128,7 +136,7 @@ let generate_issues ~define { location; flows } =
     let rec apply_sanitizers
         ?(previous_sanitized_sources = Sources.Set.empty)
         ?(previous_sanitized_sinks = Sinks.Set.empty)
-        { source_taint; sink_taint }
+        { Flow.source_taint; sink_taint }
       =
       (* This needs a fixpoint since refining sinks might sanitize more sources etc.
        * For instance:
@@ -173,7 +181,7 @@ let generate_issues ~define { location; flows } =
         Sources.Set.equal sanitized_sources previous_sanitized_sources
         && Sinks.Set.equal sanitized_sinks previous_sanitized_sinks
       then
-        { source_taint; sink_taint }
+        { Flow.source_taint; sink_taint }
       else
         apply_sanitizers
           ~previous_sanitized_sources:sanitized_sources
@@ -192,7 +200,7 @@ let generate_issues ~define { location; flows } =
   let apply_rule_separate_access_path issues_so_far (rule : Rule.t) =
     let fold_partitions issues candidate =
       match apply_rule_on_flow rule candidate with
-      | Some flow -> { code = rule.code; flow; issue_location = location; define } :: issues
+      | Some flow -> { code = rule.code; flow; location; define } :: issues
       | None -> issues
     in
     List.fold partitions ~init:issues_so_far ~f:fold_partitions
@@ -202,21 +210,21 @@ let generate_issues ~define { location; flows } =
       match apply_rule_on_flow rule candidate with
       | Some flow ->
           {
-            source_taint = ForwardTaint.join flow_so_far.source_taint flow.source_taint;
-            sink_taint = BackwardTaint.join flow_so_far.sink_taint flow.sink_taint;
+            Flow.source_taint = ForwardTaint.join flow_so_far.Flow.source_taint flow.source_taint;
+            sink_taint = BackwardTaint.join flow_so_far.Flow.sink_taint flow.sink_taint;
           }
       | None -> flow_so_far
     in
     let flow =
       List.fold
         partitions
-        ~init:{ source_taint = ForwardTaint.bottom; sink_taint = BackwardTaint.bottom }
+        ~init:{ Flow.source_taint = ForwardTaint.bottom; sink_taint = BackwardTaint.bottom }
         ~f:fold_partitions
     in
     if ForwardTaint.is_bottom flow.source_taint || BackwardTaint.is_bottom flow.sink_taint then
       None
     else
-      let issue = { code = rule.code; flow; issue_location = location; define } in
+      let issue = { code = rule.code; flow; location; define } in
       Some issue
   in
   let configuration = TaintConfiguration.get () in
@@ -257,14 +265,14 @@ let get_name_and_detailed_message { code; flow; _ } =
       name, message
 
 
-let generate_error ({ code; issue_location; define; _ } as issue) =
+let generate_error ({ code; location; define; _ } as issue) =
   let configuration = TaintConfiguration.get () in
   match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) configuration.rules with
   | None -> failwith "issue with code that has no rule"
   | Some _ ->
       let name, detail = get_name_and_detailed_message issue in
       let kind = { Interprocedural.Error.name; messages = [detail]; code } in
-      Interprocedural.Error.create ~location:issue_location ~define ~kind
+      Interprocedural.Error.create ~location ~define ~kind
 
 
 let to_json ~filename_lookup callable issue =
@@ -314,7 +322,7 @@ let to_json ~filename_lookup callable issue =
     stop = { column = stop_column; _ };
   }
     =
-    Location.WithModule.instantiate ~lookup:filename_lookup issue.issue_location
+    Location.WithModule.instantiate ~lookup:filename_lookup issue.location
   in
   let callable_line = Ast.(Location.line issue.define.location) in
   `Assoc

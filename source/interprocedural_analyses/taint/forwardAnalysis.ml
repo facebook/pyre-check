@@ -139,11 +139,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let candidates = Location.WithModule.Table.create ()
 
   let add_flow_candidate candidate =
-    let key = candidate.Issue.location in
+    let key = candidate.Issue.Candidate.location in
     let candidate =
       match Hashtbl.find candidates key with
-      | Some { Issue.flows; location } ->
-          { Issue.flows = List.rev_append candidate.Issue.flows flows; location }
+      | Some { Issue.Candidate.flows; location } ->
+          {
+            Issue.Candidate.flows = List.rev_append candidate.Issue.Candidate.flows flows;
+            location;
+          }
       | None -> candidate
     in
     Location.WithModule.Table.set candidates ~key ~data:candidate

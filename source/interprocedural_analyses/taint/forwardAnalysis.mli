@@ -18,4 +18,4 @@ val run
   define:Define.t Node.t ->
   call_graph_of_define:Interprocedural.CallGraph.DefineCallGraph.t ->
   existing_model:Model.t ->
-  Model.Forward.t * Issue.issue list * triggered_sinks
+  Model.Forward.t * Issue.t list * triggered_sinks
