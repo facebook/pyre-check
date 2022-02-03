@@ -15,6 +15,7 @@ from ..backend_arguments import (
     RemoteLogging,
     SimpleSourcePath,
     BuckSourcePath,
+    WithUnwatchedDependencySourcePath,
     BaseArguments,
     find_watchman_root,
     find_buck_root,
@@ -59,6 +60,30 @@ class ArgumentsTest(testslide.TestCase):
                 ]
             ).serialize(),
             {"kind": "simple", "paths": ["/source0", "/source1"]},
+        )
+        self.assertDictEqual(
+            WithUnwatchedDependencySourcePath(
+                change_indicator_root=Path("/root"),
+                unwatched_dependency=configuration.UnwatchedDependency(
+                    change_indicator="foo",
+                    files=configuration.UnwatchedFiles(
+                        root="/derp",
+                        checksum_path="CHECKSUMS",
+                    ),
+                ),
+                elements=[
+                    configuration.SimpleSearchPathElement("/source0"),
+                    configuration.SimpleSearchPathElement("/source1"),
+                ],
+            ).serialize(),
+            {
+                "kind": "with_unwatched_dependency",
+                "unwatched_dependency": {
+                    "change_indicator": {"root": "/root", "relative": "foo"},
+                    "files": {"root": "/derp", "checksum_path": "CHECKSUMS"},
+                },
+                "paths": ["/source0", "/source1"],
+            },
         )
         self.assertDictEqual(
             BuckSourcePath(
@@ -253,6 +278,65 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root_name="irrelevant",
                 ),
                 SimpleSourcePath([]),
+            )
+
+    def test_get_with_unwatched_dependency_source_path__exists(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "project/local"])
+            setup.ensure_files_exist(
+                root_path, ["src/indicator", "unwatched_root/CHECKSUMS"]
+            )
+            element = configuration.SimpleSearchPathElement(str(root_path / "src"))
+            unwatched_dependency = configuration.UnwatchedDependency(
+                change_indicator="indicator",
+                files=configuration.UnwatchedFiles(
+                    root=str(root_path / "unwatched_root"), checksum_path="CHECKSUMS"
+                ),
+            )
+            self.assertEqual(
+                get_source_path(
+                    configuration.Configuration(
+                        project_root=str(root_path / "project"),
+                        relative_local_root="local",
+                        dot_pyre_directory=(root_path / ".pyre"),
+                        source_directories=[element],
+                        unwatched_dependency=unwatched_dependency,
+                    ).expand_and_filter_nonexistent_paths(),
+                    artifact_root_name="irrelevant",
+                ),
+                WithUnwatchedDependencySourcePath(
+                    elements=[element],
+                    change_indicator_root=(root_path / "project" / "local"),
+                    unwatched_dependency=unwatched_dependency,
+                ),
+            )
+
+    def test_get_with_unwatched_dependency_source_path__nonexists(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "project"])
+            setup.ensure_files_exist(root_path, ["src/indicator"])
+            element = configuration.SimpleSearchPathElement(str(root_path / "src"))
+            unwatched_dependency = configuration.UnwatchedDependency(
+                change_indicator="indicator",
+                files=configuration.UnwatchedFiles(
+                    root=str(root_path / "unwatched_root"), checksum_path="CHECKSUMS"
+                ),
+            )
+            self.assertEqual(
+                get_source_path(
+                    configuration.Configuration(
+                        project_root=str(root_path / "project"),
+                        dot_pyre_directory=(root_path / ".pyre"),
+                        source_directories=[element],
+                        unwatched_dependency=unwatched_dependency,
+                    ).expand_and_filter_nonexistent_paths(),
+                    artifact_root_name="irrelevant",
+                ),
+                SimpleSourcePath(
+                    elements=[element],
+                ),
             )
 
     def test_get_buck_source_path__global(self) -> None:

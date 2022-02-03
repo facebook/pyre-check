@@ -61,6 +61,37 @@ class SimpleSourcePath:
 
 
 @dataclasses.dataclass(frozen=True)
+class WithUnwatchedDependencySourcePath:
+    change_indicator_root: Path
+    unwatched_dependency: configuration_module.UnwatchedDependency
+    elements: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
+        default_factory=list
+    )
+
+    def serialize(self) -> Dict[str, object]:
+        return {
+            "kind": "with_unwatched_dependency",
+            "paths": [element.command_line_argument() for element in self.elements],
+            "unwatched_dependency": {
+                "change_indicator": {
+                    "root": str(self.change_indicator_root),
+                    "relative": self.unwatched_dependency.change_indicator,
+                },
+                "files": {
+                    "root": self.unwatched_dependency.files.root,
+                    "checksum_path": self.unwatched_dependency.files.checksum_path,
+                },
+            },
+        }
+
+    def get_checked_directory_allowlist(self) -> Set[str]:
+        return {element.path() for element in self.elements}
+
+    def cleanup(self) -> None:
+        pass
+
+
+@dataclasses.dataclass(frozen=True)
 class BuckSourcePath:
     source_root: Path
     artifact_root: Path
@@ -92,7 +123,7 @@ class BuckSourcePath:
         shutil.rmtree(str(self.artifact_root), ignore_errors=True)
 
 
-SourcePath = Union[SimpleSourcePath, BuckSourcePath]
+SourcePath = Union[SimpleSourcePath, WithUnwatchedDependencySourcePath, BuckSourcePath]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -191,6 +222,18 @@ def find_buck_root(
     )
 
 
+def _get_global_or_local_root(
+    configuration: configuration_module.Configuration,
+) -> Path:
+    global_root = Path(configuration.project_root)
+    relative_local_root = configuration.relative_local_root
+    return (
+        (global_root / relative_local_root)
+        if relative_local_root is not None
+        else global_root
+    )
+
+
 def get_source_path(
     configuration: configuration_module.Configuration, artifact_root_name: str
 ) -> SourcePath:
@@ -203,17 +246,22 @@ def get_source_path(
         ] = configuration.get_source_directories()
         if len(elements) == 0:
             LOG.warning("Pyre did not find an existent source directory.")
-        return SimpleSourcePath(elements)
+
+        unwatched_dependency = configuration.get_existent_unwatched_dependency()
+        if unwatched_dependency is not None:
+            return WithUnwatchedDependencySourcePath(
+                change_indicator_root=_get_global_or_local_root(configuration),
+                unwatched_dependency=unwatched_dependency,
+                elements=elements,
+            )
+        else:
+            return SimpleSourcePath(elements)
 
     if targets is not None and source_directories is None:
         if len(targets) == 0:
             LOG.warning("Pyre did not find any targets to check.")
 
-        search_base = Path(configuration.project_root)
-        relative_local_root = configuration.relative_local_root
-        if relative_local_root is not None:
-            search_base = search_base / relative_local_root
-
+        search_base = _get_global_or_local_root(configuration)
         source_root = find_buck_root(search_base)
         if source_root is None:
             raise configuration_module.InvalidConfiguration(
