@@ -4,69 +4,6 @@
   "data": {
     "callable": "issue_grouping.issue",
     "callable_line": 28,
-    "code": 1000,
-    "line": 32,
-    "start": 15,
-    "end": 16,
-    "filename": "issue_grouping.py",
-    "message": "source A to sink A",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "issue_grouping.source_a" } ],
-                "kind": "SourceA"
-              }
-            ],
-            "root": {
-              "filename": "issue_grouping.py",
-              "line": 30,
-              "start": 13,
-              "end": 23
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" }
-                ],
-                "leaves": [ { "name": "issue_grouping.sink_a" } ],
-                "length": 1,
-                "kind": "SinkA"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "issue_grouping.py",
-                "line": 32,
-                "start": 15,
-                "end": 16
-              },
-              "resolves_to": [ "issue_grouping.multi_sink" ],
-              "port": "formal(d)[a]"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "has": "first-index" }, { "first-index": "a" } ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "issue_grouping.issue",
-    "callable_line": 28,
     "code": 1003,
     "line": 32,
     "start": 15,
@@ -123,6 +60,69 @@
       }
     ],
     "features": [ { "has": "first-index" }, { "first-index": "b" } ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "issue_grouping.issue",
+    "callable_line": 28,
+    "code": 1000,
+    "line": 32,
+    "start": 15,
+    "end": 16,
+    "filename": "issue_grouping.py",
+    "message": "source A to sink A",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "issue_grouping.source_a" } ],
+                "kind": "SourceA"
+              }
+            ],
+            "root": {
+              "filename": "issue_grouping.py",
+              "line": 30,
+              "start": 13,
+              "end": 23
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "a" }
+                ],
+                "leaves": [ { "name": "issue_grouping.sink_a" } ],
+                "length": 1,
+                "kind": "SinkA"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "issue_grouping.py",
+                "line": 32,
+                "start": 15,
+                "end": 16
+              },
+              "resolves_to": [ "issue_grouping.multi_sink" ],
+              "port": "formal(d)[a]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "a" } ]
   }
 }
 {

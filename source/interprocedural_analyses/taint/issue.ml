@@ -59,6 +59,20 @@ type t = {
   define: Statement.Define.t Node.t;
 }
 
+module Handle = struct
+  type t = {
+    code: int;
+    location: Location.WithModule.t;
+    callable: Interprocedural.Target.t;
+  }
+  [@@deriving sexp, compare]
+
+  let from_issue { code; location; define; _ } =
+    { code; location; callable = Interprocedural.Target.create define }
+end
+
+module HandleMap = Map.Make (Handle)
+
 module TriggeredSinks = struct
   type t = String.Hash_set.t
 end
@@ -235,12 +249,25 @@ let generate_issues ~define { Candidate.flows; location } =
     else
       Some { code = rule.code; flow; location; define }
   in
+  let group_by_handle map issue =
+    (* SAPP invariant: There should be a single issue per issue handle.
+     * The configuration might have multiple rules with the same code due to
+     * multi source-sink rules, hence we need to merge issues here. *)
+    let handle = Handle.from_issue issue in
+    HandleMap.update map handle ~f:(function
+        | None -> issue
+        | Some previous_issue -> { issue with flow = Flow.join issue.flow previous_issue.flow })
+  in
   let configuration = TaintConfiguration.get () in
   if configuration.lineage_analysis then
     (* Create different issues for same access path, e.g, Issue{[a] -> [b]}, Issue {[c] -> [d]}. *)
+    (* Note that this breaks a SAPP invariant because there might be multiple issues with the same
+       handle. This is fine because in that configuration we do not use SAPP. *)
     List.fold configuration.rules ~init:[] ~f:apply_rule_separate_access_path
   else (* Create single issue for same access path, e.g, Issue{[a],[c] -> [b], [d]}. *)
     List.filter_map ~f:apply_rule_merge_access_path configuration.rules
+    |> List.fold ~init:HandleMap.empty ~f:group_by_handle
+    |> HandleMap.data
 
 
 let sinks_regexp = Str.regexp_string "{$sinks}"

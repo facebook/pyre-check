@@ -4,63 +4,6 @@
   "data": {
     "callable": "model_query.alarm_6",
     "callable_line": 152,
-    "code": 1006,
-    "line": 154,
-    "start": 4,
-    "end": 14,
-    "filename": "model_query.py",
-    "message": "[Test] to [SinkA]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "model_query.py",
-              "line": 154,
-              "start": 17,
-              "end": 31
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "Obj{model_query.AttributeTestClass3.instance}" }
-                ],
-                "kind": "SinkA"
-              }
-            ],
-            "root": {
-              "filename": "model_query.py",
-              "line": 154,
-              "start": 4,
-              "end": 14
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query.alarm_6",
-    "callable_line": 152,
     "code": 1008,
     "line": 154,
     "start": 4,
@@ -98,6 +41,63 @@
                   { "name": "Obj{model_query.AttributeTestClass3.instance}" }
                 ],
                 "kind": "SinkC"
+              }
+            ],
+            "root": {
+              "filename": "model_query.py",
+              "line": 154,
+              "start": 4,
+              "end": 14
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query.alarm_6",
+    "callable_line": 152,
+    "code": 1006,
+    "line": 154,
+    "start": 4,
+    "end": 14,
+    "filename": "model_query.py",
+    "message": "[Test] to [SinkA]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query.py",
+              "line": 154,
+              "start": 17,
+              "end": 31
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{model_query.AttributeTestClass3.instance}" }
+                ],
+                "kind": "SinkA"
               }
             ],
             "root": {
@@ -1413,64 +1413,6 @@
   "data": {
     "callable": "model_query.alarm_5",
     "callable_line": 147,
-    "code": 1006,
-    "line": 149,
-    "start": 4,
-    "end": 15,
-    "filename": "model_query.py",
-    "message": "[Test] to [SinkA]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "model_query.alarm_5" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "model_query.py",
-              "line": 147,
-              "start": 36,
-              "end": 42
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "Obj{model_query.AttributeTestClass3.attribute}"
-                  }
-                ],
-                "kind": "SinkA"
-              }
-            ],
-            "root": {
-              "filename": "model_query.py",
-              "line": 149,
-              "start": 4,
-              "end": 15
-            }
-          }
-        ]
-      }
-    ],
-    "features": []
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "model_query.alarm_5",
-    "callable_line": 147,
     "code": 1007,
     "line": 149,
     "start": 4,
@@ -1509,6 +1451,64 @@
                   }
                 ],
                 "kind": "SinkB"
+              }
+            ],
+            "root": {
+              "filename": "model_query.py",
+              "line": 149,
+              "start": 4,
+              "end": 15
+            }
+          }
+        ]
+      }
+    ],
+    "features": []
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query.alarm_5",
+    "callable_line": 147,
+    "code": 1006,
+    "line": 149,
+    "start": 4,
+    "end": 15,
+    "filename": "model_query.py",
+    "message": "[Test] to [SinkA]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "model_query.alarm_5" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query.py",
+              "line": 147,
+              "start": 36,
+              "end": 42
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{model_query.AttributeTestClass3.attribute}"
+                  }
+                ],
+                "kind": "SinkA"
               }
             ],
             "root": {
@@ -1585,12 +1585,12 @@
   "data": {
     "callable": "model_query.alarm_7",
     "callable_line": 157,
-    "code": 1003,
+    "code": 1004,
     "line": 159,
     "start": 4,
     "end": 22,
     "filename": "model_query.py",
-    "message": "[SourceC] to [Test]",
+    "message": "[SourceD] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -1603,7 +1603,7 @@
                     "name": "Obj{model_query.AttributeTestClass4.attribute}"
                   }
                 ],
-                "kind": "SourceC"
+                "kind": "SourceD"
               }
             ],
             "root": {
@@ -1638,12 +1638,12 @@
   "data": {
     "callable": "model_query.alarm_7",
     "callable_line": 157,
-    "code": 1004,
+    "code": 1003,
     "line": 159,
     "start": 4,
     "end": 22,
     "filename": "model_query.py",
-    "message": "[SourceD] to [Test]",
+    "message": "[SourceC] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -1656,7 +1656,7 @@
                     "name": "Obj{model_query.AttributeTestClass4.attribute}"
                   }
                 ],
-                "kind": "SourceD"
+                "kind": "SourceC"
               }
             ],
             "root": {
@@ -1719,12 +1719,12 @@
   "data": {
     "callable": "model_query.alarm_8",
     "callable_line": 162,
-    "code": 1003,
+    "code": 1005,
     "line": 164,
     "start": 15,
     "end": 25,
     "filename": "model_query.py",
-    "message": "[SourceC] to [Test]",
+    "message": "[SourceE] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -1735,7 +1735,7 @@
                 "leaves": [
                   { "name": "Obj{model_query.AttributeTestClass4.instance}" }
                 ],
-                "kind": "SourceC"
+                "kind": "SourceE"
               }
             ],
             "root": {
@@ -1776,12 +1776,12 @@
   "data": {
     "callable": "model_query.alarm_8",
     "callable_line": 162,
-    "code": 1005,
+    "code": 1003,
     "line": 164,
     "start": 15,
     "end": 25,
     "filename": "model_query.py",
-    "message": "[SourceE] to [Test]",
+    "message": "[SourceC] to [Test]",
     "traces": [
       {
         "name": "forward",
@@ -1792,7 +1792,7 @@
                 "leaves": [
                   { "name": "Obj{model_query.AttributeTestClass4.instance}" }
                 ],
-                "kind": "SourceE"
+                "kind": "SourceC"
               }
             ],
             "root": {
