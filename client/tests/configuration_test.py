@@ -78,7 +78,6 @@ class PartialConfigurationTest(unittest.TestCase):
                 local_configuration=None,
                 logger="logger",
                 targets=[],
-                use_command_v2=True,
                 source_directories=[],
                 search_path=["x", "y"],
                 binary="binary",
@@ -107,7 +106,6 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.strict, None)
         self.assertIsNone(configuration.targets)
         self.assertEqual(configuration.typeshed, "typeshed")
-        self.assertEqual(configuration.use_command_v2, True)
         self.assertEqual(
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
@@ -295,12 +293,6 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(
             PartialConfiguration.from_string(
-                json.dumps({"use_command_v2": True})
-            ).use_command_v2,
-            True,
-        )
-        self.assertEqual(
-            PartialConfiguration.from_string(
                 json.dumps({"version": "abc"})
             ).version_hash,
             "abc",
@@ -453,7 +445,6 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"taint_models_path": ["foo", 42]}))
         assert_raises(json.dumps({"targets": "abc"}))
         assert_raises(json.dumps({"typeshed": ["abc"]}))
-        assert_raises(json.dumps({"use_command_v2": 42}))
         assert_raises(json.dumps({"version": 123}))
         assert_raises(json.dumps({"python_version": "abc"}))
         assert_raises(json.dumps({"python_version": 42}))
@@ -566,7 +557,6 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_prepended("taint_models_path")
         assert_raise_when_overridden("targets")
         assert_overwritten("typeshed")
-        assert_overwritten("use_command_v2")
         assert_overwritten("version_hash")
 
     def test_merge__ide_features(self) -> None:
@@ -715,7 +705,6 @@ class ConfigurationTest(testslide.TestCase):
                 taint_models_path=["taint"],
                 targets=None,
                 typeshed="typeshed",
-                use_command_v2=None,
                 version_hash="abc",
             ),
             in_virtual_environment=False,
@@ -749,7 +738,6 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.taint_models_path, ["taint"])
         self.assertEqual(configuration.targets, None)
         self.assertEqual(configuration.typeshed, "typeshed")
-        self.assertEqual(configuration.use_command_v2, True)
         self.assertEqual(configuration.version_hash, "abc")
 
     def test_get_site_roots(self) -> None:

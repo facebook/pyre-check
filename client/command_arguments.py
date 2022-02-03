@@ -74,7 +74,6 @@ class CommandArguments:
     saved_state_project: Optional[str] = None
     dot_pyre_directory: Optional[Path] = None
     features: Optional[str] = None
-    use_command_v2: Optional[bool] = None
     isolation_prefix: Optional[str] = None
     python_version: Optional[str] = None
     shared_memory_heap_size: Optional[int] = None

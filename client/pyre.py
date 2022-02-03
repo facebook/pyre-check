@@ -390,6 +390,7 @@ def pyre(
     changed_files_path: Optional[str],
     saved_state_project: Optional[str],
     features: Optional[str],
+    # TODO(T111203329): This option is dead. Deprecate it
     use_command_v2: Optional[bool],
     isolation_prefix: Optional[str],
     python_version: Optional[str],
@@ -432,7 +433,6 @@ def pyre(
         if dot_pyre_directory is not None
         else None,
         features=features,
-        use_command_v2=use_command_v2,
         isolation_prefix=isolation_prefix,
         python_version=python_version,
         shared_memory_heap_size=shared_memory_heap_size,

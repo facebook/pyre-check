@@ -437,7 +437,6 @@ class PartialConfiguration:
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
-    use_command_v2: Optional[bool] = None
     version_hash: Optional[str] = None
 
     @staticmethod
@@ -506,7 +505,6 @@ class PartialConfiguration:
             taint_models_path=[],
             targets=targets,
             typeshed=arguments.typeshed,
-            use_command_v2=arguments.use_command_v2,
             version_hash=None,
         )
 
@@ -688,9 +686,6 @@ class PartialConfiguration:
                 ),
                 targets=ensure_optional_string_list(configuration_json, "targets"),
                 typeshed=ensure_option_type(configuration_json, "typeshed", str),
-                use_command_v2=ensure_option_type(
-                    configuration_json, "use_command_v2", bool
-                ),
                 version_hash=ensure_option_type(configuration_json, "version", str),
             )
 
@@ -776,7 +771,6 @@ class PartialConfiguration:
             ],
             targets=self.targets,
             typeshed=typeshed,
-            use_command_v2=self.use_command_v2,
             version_hash=self.version_hash,
         )
 
@@ -872,7 +866,6 @@ def merge_partial_configurations(
         ),
         targets=raise_when_overridden(base.targets, override.targets, name="targets"),
         typeshed=overwrite_base(base.typeshed, override.typeshed),
-        use_command_v2=overwrite_base(base.use_command_v2, override.use_command_v2),
         version_hash=overwrite_base(base.version_hash, override.version_hash),
     )
 
@@ -906,7 +899,6 @@ class Configuration:
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
-    use_command_v2: bool = False
     version_hash: Optional[str] = None
 
     @staticmethod
@@ -952,9 +944,6 @@ class Configuration:
             taint_models_path=partial_configuration.taint_models_path,
             targets=partial_configuration.targets,
             typeshed=partial_configuration.typeshed,
-            use_command_v2=_get_optional_value(
-                partial_configuration.use_command_v2, default=True
-            ),
             version_hash=partial_configuration.version_hash,
         )
 
@@ -1038,7 +1027,6 @@ class Configuration:
             "taint_models_path": list(self.taint_models_path),
             **({"targets": list(targets)} if targets is not None else {}),
             **({"typeshed": typeshed} if typeshed is not None else {}),
-            "use_command_v2": self.use_command_v2,
             **({"version_hash": version_hash} if version_hash is not None else {}),
         }
 
@@ -1099,7 +1087,6 @@ class Configuration:
             taint_models_path=self.taint_models_path,
             targets=self.targets,
             typeshed=self.typeshed,
-            use_command_v2=self.use_command_v2,
             version_hash=self.version_hash,
         )
 
