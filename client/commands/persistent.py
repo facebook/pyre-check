@@ -767,14 +767,20 @@ class StartSuccess:
 
 
 @dataclasses.dataclass(frozen=True)
-class StartFailure:
+class BuckStartFailure:
+    message: str
+    detail: str
+
+
+@dataclasses.dataclass(frozen=True)
+class OtherStartFailure:
     message: str
     detail: str
 
 
 async def _start_pyre_server(
     binary_location: str, pyre_arguments: start.Arguments
-) -> Union[StartSuccess, StartFailure]:
+) -> Union[StartSuccess, BuckStartFailure, OtherStartFailure]:
     try:
         with backend_arguments.temporary_argument_file(
             pyre_arguments
@@ -814,18 +820,21 @@ async def _start_pyre_server(
 
         return StartSuccess()
     except server_event.ServerStartException as error:
-        # We know where the exception come from. Let's keep the error details
-        # succinct.
         message = str(error)
         LOG.error(message)
-        return StartFailure(message=message, detail=message)
+        if error.kind == server_event.ErrorKind.BUCK_USER:
+            return BuckStartFailure(message, detail=message)
+        else:
+            # We know where the exception come from. Let's keep the error details
+            # succinct.
+            return OtherStartFailure(message=message, detail=message)
     except Exception as error:
         # These exceptions are unexpected. Let's keep verbose stack traces to
         # help with post-mortem analyses.
         message = str(error)
         detail = traceback.format_exc()
         LOG.error(f"{detail}")
-        return StartFailure(message=message, detail=detail)
+        return OtherStartFailure(message=message, detail=detail)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1440,7 +1449,7 @@ class PyreServerHandler(connection.BackgroundTask):
                         },
                     )
                     await self.subscribe_to_type_error(input_channel, output_channel)
-            elif isinstance(start_status, StartFailure):
+            elif isinstance(start_status, (BuckStartFailure, OtherStartFailure)):
                 self.server_state.consecutive_start_failure += 1
                 if (
                     self.server_state.consecutive_start_failure
