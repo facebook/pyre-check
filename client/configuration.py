@@ -412,6 +412,77 @@ class IdeFeatures:
 
 
 @dataclass(frozen=True)
+class UnwatchedFiles:
+    root: str
+    checksum_path: str
+
+    @staticmethod
+    def from_json(json: Dict[str, object]) -> "UnwatchedFiles":
+        root = json.get("root", None)
+        if root is None:
+            raise InvalidConfiguration("Missing `root` field in UnwatchedFiles")
+        if not isinstance(root, str):
+            raise InvalidConfiguration(
+                "`root` field in UnwatchedFiles must be a string"
+            )
+
+        checksum_path = json.get("checksum_path", None)
+        if checksum_path is None:
+            raise InvalidConfiguration(
+                "Missing `checksum_path` field in UnwatchedFiles"
+            )
+        if not isinstance(checksum_path, str):
+            raise InvalidConfiguration(
+                "`checksum_path` field in UnwatchedFiles must be a string"
+            )
+
+        return UnwatchedFiles(root=root, checksum_path=checksum_path)
+
+    def to_json(self) -> Dict[str, str]:
+        return {
+            "root": self.root,
+            "checksum_path": self.checksum_path,
+        }
+
+
+@dataclass(frozen=True)
+class UnwatchedDependency:
+    change_indicator: str
+    files: UnwatchedFiles
+
+    @staticmethod
+    def from_json(json: Dict[str, object]) -> "UnwatchedDependency":
+        change_indicator = json.get("change_indicator", None)
+        if change_indicator is None:
+            raise InvalidConfiguration(
+                "Missing `change_indicator` field in UnwatchedDependency"
+            )
+        if not isinstance(change_indicator, str):
+            raise InvalidConfiguration(
+                "`change_indicator` field in UnwatchedDependency must be a string"
+            )
+
+        files_json = json.get("files", None)
+        if files_json is None:
+            raise InvalidConfiguration("Missing `files` field in UnwatchedDependency")
+        if not isinstance(files_json, dict):
+            raise InvalidConfiguration(
+                "`files` field in UnwatchedDependency must be a dict"
+            )
+
+        return UnwatchedDependency(
+            change_indicator=change_indicator,
+            files=UnwatchedFiles.from_json(files_json),
+        )
+
+    def to_json(self) -> Dict[str, object]:
+        return {
+            "change_indicator": str(self.change_indicator),
+            "files": self.files.to_json(),
+        }
+
+
+@dataclass(frozen=True)
 class PartialConfiguration:
     binary: Optional[str] = None
     buck_builder_binary: Optional[str] = None
@@ -437,6 +508,7 @@ class PartialConfiguration:
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
+    unwatched_dependency: Optional[UnwatchedDependency] = None
     version_hash: Optional[str] = None
 
     @staticmethod
@@ -505,6 +577,7 @@ class PartialConfiguration:
             taint_models_path=[],
             targets=targets,
             typeshed=arguments.typeshed,
+            unwatched_dependency=None,
             version_hash=None,
         )
 
@@ -640,6 +713,16 @@ class PartialConfiguration:
                 for unrecognized_key in ide_features_json:
                     LOG.warning(f"Unrecognized configuration item: {unrecognized_key}")
 
+            unwatched_dependency_json = ensure_option_type(
+                configuration_json, "unwatched_dependency", dict
+            )
+            if unwatched_dependency_json is None:
+                unwatched_dependency = None
+            else:
+                unwatched_dependency = UnwatchedDependency.from_json(
+                    unwatched_dependency_json
+                )
+
             partial_configuration = PartialConfiguration(
                 binary=ensure_option_type(configuration_json, "binary", str),
                 buck_builder_binary=ensure_option_type(
@@ -686,6 +769,7 @@ class PartialConfiguration:
                 ),
                 targets=ensure_optional_string_list(configuration_json, "targets"),
                 typeshed=ensure_option_type(configuration_json, "typeshed", str),
+                unwatched_dependency=unwatched_dependency,
                 version_hash=ensure_option_type(configuration_json, "version", str),
             )
 
@@ -735,6 +819,16 @@ class PartialConfiguration:
         typeshed = self.typeshed
         if typeshed is not None:
             typeshed = expand_relative_path(root, typeshed)
+        unwatched_dependency = self.unwatched_dependency
+        if unwatched_dependency is not None:
+            files = unwatched_dependency.files
+            unwatched_dependency = UnwatchedDependency(
+                change_indicator=unwatched_dependency.change_indicator,
+                files=UnwatchedFiles(
+                    root=expand_relative_path(root, files.root),
+                    checksum_path=files.checksum_path,
+                ),
+            )
         return PartialConfiguration(
             binary=binary,
             buck_builder_binary=buck_builder_binary,
@@ -771,6 +865,7 @@ class PartialConfiguration:
             ],
             targets=self.targets,
             typeshed=typeshed,
+            unwatched_dependency=unwatched_dependency,
             version_hash=self.version_hash,
         )
 
@@ -866,6 +961,9 @@ def merge_partial_configurations(
         ),
         targets=raise_when_overridden(base.targets, override.targets, name="targets"),
         typeshed=overwrite_base(base.typeshed, override.typeshed),
+        unwatched_dependency=overwrite_base(
+            base.unwatched_dependency, override.unwatched_dependency
+        ),
         version_hash=overwrite_base(base.version_hash, override.version_hash),
     )
 
@@ -899,6 +997,7 @@ class Configuration:
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
+    unwatched_dependency: Optional[UnwatchedDependency] = None
     version_hash: Optional[str] = None
 
     @staticmethod
@@ -944,6 +1043,7 @@ class Configuration:
             taint_models_path=partial_configuration.taint_models_path,
             targets=partial_configuration.targets,
             typeshed=partial_configuration.typeshed,
+            unwatched_dependency=partial_configuration.unwatched_dependency,
             version_hash=partial_configuration.version_hash,
         )
 
@@ -976,6 +1076,7 @@ class Configuration:
         source_directories = self.source_directories
         targets = self.targets
         typeshed = self.typeshed
+        unwatched_dependency = self.unwatched_dependency
         version_hash = self.version_hash
         return {
             "global_root": self.project_root,
@@ -1027,11 +1128,38 @@ class Configuration:
             "taint_models_path": list(self.taint_models_path),
             **({"targets": list(targets)} if targets is not None else {}),
             **({"typeshed": typeshed} if typeshed is not None else {}),
+            **(
+                {"unwatched_dependency": unwatched_dependency.to_json()}
+                if unwatched_dependency is not None
+                else {}
+            ),
             **({"version_hash": version_hash} if version_hash is not None else {}),
         }
 
     def get_source_directories(self) -> List[SearchPathElement]:
         return list(self.source_directories or [])
+
+    def get_existent_unwatched_dependency(
+        self,
+    ) -> Optional[UnwatchedDependency]:
+        unwatched_dependency = self.unwatched_dependency
+        if unwatched_dependency is None:
+            return None
+        unwatched_root = Path(unwatched_dependency.files.root)
+        if not unwatched_root.is_dir():
+            LOG.warning(
+                "Nonexistent directory passed in to `unwatched_dependency`: "
+                f"`{unwatched_root}`"
+            )
+            return None
+        checksum_path = unwatched_root / unwatched_dependency.files.checksum_path
+        if not checksum_path.is_file():
+            LOG.warning(
+                "Nonexistent file passed in to `unwatched_dependency`: "
+                f"`{checksum_path}`"
+            )
+            return None
+        return self.unwatched_dependency
 
     # Expansion and validation of search paths cannot happen at Configuration creation
     # because link trees need to be built first.
@@ -1087,6 +1215,7 @@ class Configuration:
             taint_models_path=self.taint_models_path,
             targets=self.targets,
             typeshed=self.typeshed,
+            unwatched_dependency=self.unwatched_dependency,
             version_hash=self.version_hash,
         )
 

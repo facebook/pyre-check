@@ -13,7 +13,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict
 
 import testslide
 
@@ -34,6 +34,8 @@ from ..configuration import (
     SimpleSearchPathElement,
     SitePackageSearchPathElement,
     SubdirectorySearchPathElement,
+    UnwatchedFiles,
+    UnwatchedDependency,
     check_nested_local_configuration,
     create_configuration,
     create_search_paths,
@@ -43,6 +45,7 @@ from ..configuration import (
 from ..find_directories import BINARY_NAME
 from .setup import (
     ensure_directories_exists,
+    ensure_files_exist,
     switch_environment,
     switch_working_directory,
     write_configuration_file,
@@ -69,6 +72,59 @@ class PythonVersionTest(unittest.TestCase):
         assert_parsed("3", PythonVersion(major=3))
         assert_parsed("3.6", PythonVersion(major=3, minor=6))
         assert_parsed("3.6.7", PythonVersion(major=3, minor=6, micro=7))
+
+
+class UnwatchedDependencyTest(unittest.TestCase):
+    def test_unwatched_files_from_json(self) -> None:
+        def assert_parsed(input: Dict[str, object], expected: UnwatchedFiles) -> None:
+            self.assertEqual(UnwatchedFiles.from_json(input), expected)
+
+        def assert_not_parsed(input: Dict[str, object]) -> None:
+            with self.assertRaises(InvalidConfiguration):
+                UnwatchedFiles.from_json(input)
+
+        assert_not_parsed({})
+        assert_not_parsed({"derp": 42})
+        assert_not_parsed({"root": 42})
+        assert_not_parsed({"root": "foo"})
+        assert_not_parsed({"checksum_path": []})
+        assert_not_parsed({"checksum_path": "bar"})
+        assert_not_parsed({"root": "foo", "checksum_path": True})
+        assert_not_parsed({"root": {}, "checksum_path": "bar"})
+
+        assert_parsed(
+            {"root": "foo", "checksum_path": "bar"},
+            UnwatchedFiles(root="foo", checksum_path="bar"),
+        )
+
+    def test_unwatched_dependency_from_json(self) -> None:
+        def assert_parsed(
+            input: Dict[str, object], expected: UnwatchedDependency
+        ) -> None:
+            self.assertEqual(UnwatchedDependency.from_json(input), expected)
+
+        def assert_not_parsed(input: Dict[str, object]) -> None:
+            with self.assertRaises(InvalidConfiguration):
+                UnwatchedDependency.from_json(input)
+
+        assert_not_parsed({})
+        assert_not_parsed({"derp": 42})
+        assert_not_parsed({"change_indicator": 42})
+        assert_not_parsed({"change_indicator": "foo"})
+        assert_not_parsed({"change_indicator": "foo", "files": 42})
+        assert_not_parsed({"change_indicator": "foo", "files": {}})
+        assert_not_parsed({"change_indicator": "foo", "files": {"root": "foo"}})
+
+        assert_parsed(
+            {
+                "change_indicator": "foo",
+                "files": {"root": "bar", "checksum_path": "baz"},
+            },
+            UnwatchedDependency(
+                change_indicator="foo",
+                files=UnwatchedFiles(root="bar", checksum_path="baz"),
+            ),
+        )
 
 
 class PartialConfigurationTest(unittest.TestCase):
@@ -106,6 +162,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.strict, None)
         self.assertIsNone(configuration.targets)
         self.assertEqual(configuration.typeshed, "typeshed")
+        self.assertEqual(configuration.unwatched_dependency, None)
         self.assertEqual(
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
@@ -397,6 +454,25 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertIsNotNone(targets)
         self.assertListEqual(list(targets), ["//foo", "//bar"])
 
+        unwatched_dependency = PartialConfiguration.from_string(
+            json.dumps(
+                {
+                    "unwatched_dependency": {
+                        "change_indicator": "foo",
+                        "files": {"root": "bar", "checksum_path": "baz"},
+                    }
+                }
+            )
+        ).unwatched_dependency
+        self.assertIsNotNone(unwatched_dependency)
+        self.assertEqual(
+            unwatched_dependency,
+            UnwatchedDependency(
+                change_indicator="foo",
+                files=UnwatchedFiles(root="bar", checksum_path="baz"),
+            ),
+        )
+
     def test_create_from_string_ide_features(self) -> None:
         def assert_ide_features_equal(input: object, expected: object) -> None:
             self.assertEqual(
@@ -450,6 +526,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"python_version": 42}))
         assert_raises(json.dumps({"shared_memory": "abc"}))
         assert_raises(json.dumps({"shared_memory": {"heap_size": "abc"}}))
+        assert_raises(json.dumps({"unwatched_dependency": {"change_indicator": "abc"}}))
 
     def test_merge(self) -> None:
         # Unsafe features like `getattr` has to be used in this test to reduce boilerplates.
@@ -557,6 +634,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_prepended("taint_models_path")
         assert_raise_when_overridden("targets")
         assert_overwritten("typeshed")
+        assert_overwritten("unwatched_dependency")
         assert_overwritten("version_hash")
 
     def test_merge__ide_features(self) -> None:
@@ -675,6 +753,28 @@ class PartialConfigurationTest(unittest.TestCase):
             "bar/foo",
         )
 
+        def assert_expanded_unwatched_root(
+            original: str, root: str, expected: str
+        ) -> None:
+            actual = (
+                PartialConfiguration(
+                    unwatched_dependency=UnwatchedDependency(
+                        change_indicator="indicator",
+                        files=UnwatchedFiles(root=original, checksum_path="checksum"),
+                    )
+                )
+                .expand_relative_paths(root)
+                .unwatched_dependency
+            )
+            self.assertIsNotNone(actual)
+            self.assertEqual(actual.files.root, expected)
+
+        assert_expanded_unwatched_root(
+            original="foo",
+            root="bar",
+            expected="bar/foo",
+        )
+
 
 class ConfigurationTest(testslide.TestCase):
     def test_from_partial_configuration(self) -> None:
@@ -705,6 +805,7 @@ class ConfigurationTest(testslide.TestCase):
                 taint_models_path=["taint"],
                 targets=None,
                 typeshed="typeshed",
+                unwatched_dependency=None,
                 version_hash="abc",
             ),
             in_virtual_environment=False,
@@ -738,6 +839,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.taint_models_path, ["taint"])
         self.assertEqual(configuration.targets, None)
         self.assertEqual(configuration.typeshed, "typeshed")
+        self.assertEqual(configuration.unwatched_dependency, None)
         self.assertEqual(configuration.version_hash, "abc")
 
     def test_get_site_roots(self) -> None:
@@ -899,6 +1001,47 @@ class ConfigurationTest(testslide.TestCase):
                     SimpleSearchPathElement(str(root_path / "typeshed/stdlib")),
                     SimpleSearchPathElement(str(root_path / "typeshed/stubs/foo")),
                 ],
+            )
+
+    def test_existent_unwatched_dependency(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            ensure_files_exist(root_path, ["a/b"])
+            self.assertIsNotNone(
+                Configuration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    unwatched_dependency=UnwatchedDependency(
+                        change_indicator="indicator",
+                        files=UnwatchedFiles(
+                            root=str(root_path / "a"), checksum_path="b"
+                        ),
+                    ),
+                ).get_existent_unwatched_dependency()
+            )
+            self.assertIsNone(
+                Configuration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    unwatched_dependency=UnwatchedDependency(
+                        change_indicator="indicator",
+                        files=UnwatchedFiles(
+                            root=str(root_path / "a"), checksum_path="c"
+                        ),
+                    ),
+                ).get_existent_unwatched_dependency()
+            )
+            self.assertIsNone(
+                Configuration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    unwatched_dependency=UnwatchedDependency(
+                        change_indicator="indicator",
+                        files=UnwatchedFiles(
+                            root=str(root_path / "c"), checksum_path="b"
+                        ),
+                    ),
+                ).get_existent_unwatched_dependency()
             )
 
     def test_existent_ignore_infer(self) -> None:
