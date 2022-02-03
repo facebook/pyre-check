@@ -437,7 +437,6 @@ class PartialConfiguration:
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
-    use_buck_builder: Optional[bool] = None
     use_buck_source_database: Optional[bool] = None
     use_command_v2: Optional[bool] = None
     version_hash: Optional[str] = None
@@ -508,7 +507,6 @@ class PartialConfiguration:
             taint_models_path=[],
             targets=targets,
             typeshed=arguments.typeshed,
-            use_buck_builder=arguments.use_buck_builder,
             use_buck_source_database=arguments.use_buck_source_database,
             use_command_v2=arguments.use_command_v2,
             version_hash=None,
@@ -692,9 +690,6 @@ class PartialConfiguration:
                 ),
                 targets=ensure_optional_string_list(configuration_json, "targets"),
                 typeshed=ensure_option_type(configuration_json, "typeshed", str),
-                use_buck_builder=ensure_option_type(
-                    configuration_json, "use_buck_builder", bool
-                ),
                 use_buck_source_database=ensure_option_type(
                     configuration_json, "use_buck_source_database", bool
                 ),
@@ -786,7 +781,6 @@ class PartialConfiguration:
             ],
             targets=self.targets,
             typeshed=typeshed,
-            use_buck_builder=self.use_buck_builder,
             use_buck_source_database=self.use_buck_source_database,
             use_command_v2=self.use_command_v2,
             version_hash=self.version_hash,
@@ -884,9 +878,6 @@ def merge_partial_configurations(
         ),
         targets=raise_when_overridden(base.targets, override.targets, name="targets"),
         typeshed=overwrite_base(base.typeshed, override.typeshed),
-        use_buck_builder=overwrite_base(
-            base.use_buck_builder, override.use_buck_builder
-        ),
         use_buck_source_database=overwrite_base(
             base.use_buck_source_database, override.use_buck_source_database
         ),
@@ -924,7 +915,6 @@ class Configuration:
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
-    use_buck_builder: bool = False
     use_buck_source_database: bool = False
     use_command_v2: bool = False
     version_hash: Optional[str] = None
@@ -972,9 +962,6 @@ class Configuration:
             taint_models_path=partial_configuration.taint_models_path,
             targets=partial_configuration.targets,
             typeshed=partial_configuration.typeshed,
-            use_buck_builder=_get_optional_value(
-                partial_configuration.use_buck_builder, default=False
-            ),
             use_buck_source_database=_get_optional_value(
                 partial_configuration.use_buck_source_database, default=False
             ),
@@ -1064,7 +1051,6 @@ class Configuration:
             "taint_models_path": list(self.taint_models_path),
             **({"targets": list(targets)} if targets is not None else {}),
             **({"typeshed": typeshed} if typeshed is not None else {}),
-            "use_buck_builder": self.use_buck_builder,
             "use_buck_source_database": self.use_buck_source_database,
             "use_command_v2": self.use_command_v2,
             **({"version_hash": version_hash} if version_hash is not None else {}),
@@ -1127,7 +1113,6 @@ class Configuration:
             taint_models_path=self.taint_models_path,
             targets=self.targets,
             typeshed=self.typeshed,
-            use_buck_builder=self.use_buck_builder,
             use_buck_source_database=self.use_buck_source_database,
             use_command_v2=self.use_command_v2,
             version_hash=self.version_hash,

@@ -266,11 +266,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
         "Can be specified multiple times to include multiple directories."
     ),
 )
-@click.option(
-    "--use-buck-builder/--use-legacy-buck-builder",
-    default=None,
-    help="Use Pyre's own Java builder for Buck projects.",
-)
 @click.option("--buck-mode", type=str, help="Mode to pass to `buck query`")
 @click.option(
     "--use-buck-source-database/--no-use-buck-source-database",
@@ -386,7 +381,6 @@ def pyre(
     dot_pyre_directory: Optional[str],
     logger: Optional[str],
     target: Iterable[str],
-    use_buck_builder: Optional[bool],
     buck_mode: Optional[str],
     use_buck_source_database: Optional[bool],
     source_directory: Iterable[str],
@@ -427,7 +421,6 @@ def pyre(
         log_identifier=log_identifier,
         logger=logger,
         targets=list(target),
-        use_buck_builder=use_buck_builder,
         use_buck_source_database=use_buck_source_database,
         source_directories=list(source_directory),
         do_not_ignore_errors_in=list(do_not_ignore_errors_in),

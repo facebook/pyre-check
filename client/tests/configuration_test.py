@@ -78,7 +78,6 @@ class PartialConfigurationTest(unittest.TestCase):
                 local_configuration=None,
                 logger="logger",
                 targets=[],
-                use_buck_builder=False,
                 use_buck_source_database=True,
                 use_command_v2=True,
                 source_directories=[],
@@ -109,7 +108,6 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.strict, None)
         self.assertIsNone(configuration.targets)
         self.assertEqual(configuration.typeshed, "typeshed")
-        self.assertEqual(configuration.use_buck_builder, False)
         self.assertEqual(configuration.use_buck_source_database, True)
         self.assertEqual(configuration.use_command_v2, True)
         self.assertEqual(
@@ -299,12 +297,6 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(
             PartialConfiguration.from_string(
-                json.dumps({"use_buck_builder": True})
-            ).use_buck_builder,
-            True,
-        )
-        self.assertEqual(
-            PartialConfiguration.from_string(
                 json.dumps({"use_buck_source_database": True})
             ).use_buck_source_database,
             True,
@@ -469,7 +461,6 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"taint_models_path": ["foo", 42]}))
         assert_raises(json.dumps({"targets": "abc"}))
         assert_raises(json.dumps({"typeshed": ["abc"]}))
-        assert_raises(json.dumps({"use_buck_builder": "derp"}))
         assert_raises(json.dumps({"use_buck_source_database": 4.2}))
         assert_raises(json.dumps({"use_command_v2": 42}))
         assert_raises(json.dumps({"version": 123}))
@@ -584,7 +575,6 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_prepended("taint_models_path")
         assert_raise_when_overridden("targets")
         assert_overwritten("typeshed")
-        assert_overwritten("use_buck_builder")
         assert_overwritten("use_buck_source_database")
         assert_overwritten("use_command_v2")
         assert_overwritten("version_hash")
@@ -735,7 +725,6 @@ class ConfigurationTest(testslide.TestCase):
                 taint_models_path=["taint"],
                 targets=None,
                 typeshed="typeshed",
-                use_buck_builder=None,
                 use_buck_source_database=None,
                 use_command_v2=None,
                 version_hash="abc",
@@ -771,7 +760,6 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.taint_models_path, ["taint"])
         self.assertEqual(configuration.targets, None)
         self.assertEqual(configuration.typeshed, "typeshed")
-        self.assertEqual(configuration.use_buck_builder, False)
         self.assertEqual(configuration.use_buck_source_database, False)
         self.assertEqual(configuration.use_command_v2, True)
         self.assertEqual(configuration.version_hash, "abc")

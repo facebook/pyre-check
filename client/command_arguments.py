@@ -59,7 +59,6 @@ class CommandArguments:
     log_identifier: Optional[str] = None
     logger: Optional[str] = None
     targets: List[str] = field(default_factory=list)
-    use_buck_builder: Optional[bool] = None
     use_buck_source_database: Optional[bool] = None
     source_directories: List[str] = field(default_factory=list)
     do_not_ignore_errors_in: List[str] = field(default_factory=list)
