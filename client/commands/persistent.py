@@ -532,6 +532,7 @@ class ServerState:
 
     # Mutable States
     consecutive_start_failure: int = 0
+    is_user_notified_on_buck_failure: bool = False
     opened_documents: Set[Path] = dataclasses.field(default_factory=set)
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
@@ -769,7 +770,6 @@ class StartSuccess:
 @dataclasses.dataclass(frozen=True)
 class BuckStartFailure:
     message: str
-    detail: str
 
 
 @dataclasses.dataclass(frozen=True)
@@ -823,7 +823,7 @@ async def _start_pyre_server(
         message = str(error)
         LOG.error(message)
         if error.kind == server_event.ErrorKind.BUCK_USER:
-            return BuckStartFailure(message, detail=message)
+            return BuckStartFailure(message)
         else:
             # We know where the exception come from. Let's keep the error details
             # succinct.
@@ -1209,6 +1209,13 @@ class PyreServerHandler(connection.BackgroundTask):
         self.client_output_channel = client_output_channel
         self.server_state = server_state
 
+    async def show_notification_message_to_client(
+        self,
+        message: str,
+        level: lsp.MessageType = lsp.MessageType.INFO,
+    ) -> None:
+        await _write_notification(self.client_output_channel, message, level=level)
+
     async def show_status_message_to_client(
         self,
         message: str,
@@ -1404,6 +1411,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     fallback_to_notification=True,
                 )
                 self.server_state.consecutive_start_failure = 0
+                self.server_state.is_user_notified_on_buck_failure = False
                 _log_lsp_event(
                     remote_logging=self.remote_logging,
                     event=LSPEvent.CONNECTED,
@@ -1439,6 +1447,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     output_channel,
                 ):
                     self.server_state.consecutive_start_failure = 0
+                    self.server_state.is_user_notified_on_buck_failure = False
                     _log_lsp_event(
                         remote_logging=self.remote_logging,
                         event=LSPEvent.CONNECTED,
@@ -1449,7 +1458,38 @@ class PyreServerHandler(connection.BackgroundTask):
                         },
                     )
                     await self.subscribe_to_type_error(input_channel, output_channel)
-            elif isinstance(start_status, (BuckStartFailure, OtherStartFailure)):
+            elif isinstance(start_status, BuckStartFailure):
+                # Buck start failures are intentionally not counted towards
+                # `consecutive_start_failure` -- they happen far too often in practice
+                # so we do not want them to trigger suspensions.
+                _log_lsp_event(
+                    remote_logging=self.remote_logging,
+                    event=LSPEvent.NOT_CONNECTED,
+                    integers={"duration": int((time.time() - start_time) * 1000)},
+                    normals={
+                        **self._auxiliary_logging_info(server_start_options),
+                        "exception": str(start_status.message),
+                    },
+                )
+                if not self.server_state.is_user_notified_on_buck_failure:
+                    await self.show_notification_message_to_client(
+                        f"Cannot start a new Pyre server at `{server_identifier}` "
+                        "due to Buck failure. If you added or changed a target, "
+                        "make sure the target file is parsable and the owning "
+                        "targets are buildable by Buck. If you removed a target, "
+                        "makre sure that target is not explicitly referenced from the "
+                        "Pyre configuration file of the containing project.",
+                        level=lsp.MessageType.ERROR,
+                    )
+                    self.server_state.is_user_notified_on_buck_failure = True
+                await self.show_status_message_to_client(
+                    f"Cannot start a new Pyre server at `{server_identifier}`. "
+                    f"{start_status.message}",
+                    short_message="Pyre Stopped",
+                    level=lsp.MessageType.INFO,
+                    fallback_to_notification=False,
+                )
+            elif isinstance(start_status, OtherStartFailure):
                 self.server_state.consecutive_start_failure += 1
                 if (
                     self.server_state.consecutive_start_failure
