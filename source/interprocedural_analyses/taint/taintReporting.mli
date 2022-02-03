@@ -11,7 +11,7 @@ module Json = Yojson.Safe
 val externalize
   :  filename_lookup:(Ast.Reference.t -> string option) ->
   Target.t ->
-  Flow.issue list option ->
+  Issue.issue list option ->
   Model.t ->
   Yojson.Safe.json list
 

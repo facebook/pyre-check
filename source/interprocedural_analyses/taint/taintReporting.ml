@@ -19,21 +19,21 @@ let get_model callable =
   FixpointState.get_model callable >>= AnalysisResult.get_model TaintResult.kind
 
 
-let get_errors result = List.map ~f:Flow.generate_error result
+let get_errors result = List.map ~f:Issue.generate_error result
 
 let issues_to_json ~filename_lookup callable result_opt =
   match result_opt with
   | None -> []
   | Some issues ->
       let issue_to_json issue =
-        let json = Flow.to_json ~filename_lookup callable issue in
+        let json = Issue.to_json ~filename_lookup callable issue in
         `Assoc ["kind", `String "issue"; "data", json]
       in
       List.map ~f:issue_to_json issues
 
 
 let metadata () =
-  let codes = Flow.code_metadata () in
+  let codes = Issue.code_metadata () in
   `Assoc ["codes", codes]
 
 

@@ -329,7 +329,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             |> BackwardState.Tree.sanitize sanitized_tito_sinks
             |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
             |> BackwardState.Tree.apply_sanitize_sink_transforms sanitized_tito_sinks_transforms
-            |> BackwardState.Tree.transform BackwardTaint.kind Filter ~f:Flow.sink_can_match_rule
+            |> BackwardState.Tree.transform BackwardTaint.kind Filter ~f:Issue.sink_can_match_rule
         | _ -> taint_to_propagate
       in
       let compute_tito_depth kind depth =
@@ -406,7 +406,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               |> BackwardState.Tree.sanitize sanitized_tito_sinks
               |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
               |> BackwardState.Tree.apply_sanitize_sink_transforms sanitized_tito_sinks_transforms
-              |> BackwardState.Tree.transform BackwardTaint.kind Filter ~f:Flow.sink_can_match_rule
+              |> BackwardState.Tree.transform BackwardTaint.kind Filter ~f:Issue.sink_can_match_rule
           | None -> taint_in_taint_out
         else
           taint_in_taint_out
@@ -888,7 +888,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   |> BackwardState.Tree.transform
                        BackwardTaint.kind
                        Filter
-                       ~f:Flow.sink_can_match_rule
+                       ~f:Issue.sink_can_match_rule
               | _ -> taint
             in
             taint

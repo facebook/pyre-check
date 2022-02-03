@@ -11,7 +11,7 @@ open Domains
 include Interprocedural.AnalysisResult.Make (struct
   let name = "taint"
 
-  type result = Flow.issue list
+  type result = Issue.issue list
 
   type call_model = Model.t
 

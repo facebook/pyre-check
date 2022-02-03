@@ -12,7 +12,7 @@ open Domains
 open Core
 
 let test_no_errors _ =
-  let open Flow in
+  let open Issue in
   let source_tree_a =
     ForwardTaint.singleton (Sources.NamedSource "Demo") Frame.initial
     |> ForwardState.Tree.create_leaf
@@ -62,7 +62,7 @@ let test_no_errors _ =
 
 
 let test_errors _ =
-  let open Flow in
+  let open Issue in
   let source_tree ~field ~source =
     ForwardTaint.singleton (Sources.NamedSource source) Frame.initial
     |> ForwardState.Tree.create_leaf

@@ -9,7 +9,7 @@
 
 (tests
  (names accessPathTest annotationParserTest configurationTest domainTest
-   integrationTest featuresTest fixpointTest flowTest forwardAnalysisTest
+   integrationTest featuresTest fixpointTest issueTest forwardAnalysisTest
    backwardAnalysisTest modelTest modelVerificationErrorTest missingFlowsTest
    modelVerifierTest)
  (modules :standard \ testHelper)

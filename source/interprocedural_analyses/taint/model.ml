@@ -408,7 +408,7 @@ let apply_sanitizers
         let sink_taint =
           sink_taint
           |> BackwardState.apply_sanitize_transforms sanitized_sources_transforms
-          |> BackwardState.transform BackwardTaint.kind Filter ~f:Flow.sink_can_match_rule
+          |> BackwardState.transform BackwardTaint.kind Filter ~f:Issue.sink_can_match_rule
         in
         let taint_in_taint_out = sanitize_tito ~sources:sanitized_sources taint_in_taint_out in
         sink_taint, taint_in_taint_out
@@ -474,7 +474,7 @@ let apply_sanitizers
           let source_taint =
             source_taint
             |> ForwardState.apply_sanitize_transforms sanitized_sinks_transforms
-            |> ForwardState.transform ForwardTaint.kind Filter ~f:Flow.source_can_match_rule
+            |> ForwardState.transform ForwardTaint.kind Filter ~f:Issue.source_can_match_rule
           in
           let taint_in_taint_out = sanitize_tito ~sinks:sanitized_sinks taint_in_taint_out in
           source_taint, taint_in_taint_out
@@ -501,7 +501,7 @@ let apply_sanitizers
                 |> BackwardState.Tree.transform
                      BackwardTaint.kind
                      Filter
-                     ~f:Flow.sink_can_match_rule
+                     ~f:Issue.sink_can_match_rule
           in
           let sink_taint = BackwardState.update sink_taint parameter ~f:apply_taint_transforms in
           let taint_in_taint_out =

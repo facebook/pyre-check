@@ -7,5 +7,5 @@
 
 include
   Interprocedural.AnalysisResult.ANALYSIS_RESULT_WITH_REGISTRATION
-    with type result := Flow.issue list
+    with type result := Issue.issue list
      and type call_model := Model.t

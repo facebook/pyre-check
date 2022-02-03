@@ -139,11 +139,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let candidates = Location.WithModule.Table.create ()
 
   let add_flow_candidate candidate =
-    let key = candidate.Flow.location in
+    let key = candidate.Issue.location in
     let candidate =
       match Hashtbl.find candidates key with
-      | Some { Flow.flows; location } ->
-          { Flow.flows = List.rev_append candidate.Flow.flows flows; location }
+      | Some { Issue.flows; location } ->
+          { Issue.flows = List.rev_append candidate.Issue.flows flows; location }
       | None -> candidate
     in
     Location.WithModule.Table.set candidates ~key ~data:candidate
@@ -164,13 +164,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           BackwardState.Tree.pp
           sink_tree
     in
-    let flow_candidate = Flow.generate_source_sink_matches ~location ~source_tree ~sink_tree in
+    let flow_candidate = Issue.generate_source_sink_matches ~location ~source_tree ~sink_tree in
     add_flow_candidate flow_candidate
 
 
   let check_triggered_flows ~triggered_sinks ~location ~source_tree ~sink_tree =
     let triggered, candidates =
-      Flow.compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree
+      Issue.compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree
     in
     List.iter triggered ~f:(fun sink -> Hash_set.add triggered_sinks (Sinks.show_partial_sink sink));
     List.iter candidates ~f:add_flow_candidate
@@ -178,7 +178,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let generate_issues () =
     let accumulate ~key:_ ~data:candidate issues =
-      let new_issues = Flow.generate_issues ~define:FunctionContext.definition candidate in
+      let new_issues = Issue.generate_issues ~define:FunctionContext.definition candidate in
       List.rev_append new_issues issues
     in
     Location.WithModule.Table.fold candidates ~f:accumulate ~init:[]
@@ -327,7 +327,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             taint_to_propagate
             |> ForwardState.Tree.sanitize sanitized_tito_sources
             |> ForwardState.Tree.apply_sanitize_transforms sanitized_tito_sinks
-            |> ForwardState.Tree.transform ForwardTaint.kind Filter ~f:Flow.source_can_match_rule
+            |> ForwardState.Tree.transform ForwardTaint.kind Filter ~f:Issue.source_can_match_rule
         | _ -> taint_to_propagate
       in
       let create_tito_return_paths tito return_path =
@@ -382,7 +382,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     |> ForwardState.Tree.transform
                          ForwardTaint.kind
                          Filter
-                         ~f:Flow.source_can_match_rule
+                         ~f:Issue.source_can_match_rule
               in
               TaintInTaintOutEffects.update
                 tito_effects
@@ -1605,7 +1605,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   |> ForwardState.Tree.transform
                        ForwardTaint.kind
                        Filter
-                       ~f:Flow.source_can_match_rule
+                       ~f:Issue.source_can_match_rule
               | _ -> taint
             in
             taint
