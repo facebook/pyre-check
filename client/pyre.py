@@ -268,11 +268,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 )
 @click.option("--buck-mode", type=str, help="Mode to pass to `buck query`")
 @click.option(
-    "--use-buck-source-database/--no-use-buck-source-database",
-    default=None,
-    hidden=True,
-)
-@click.option(
     "--source-directory",
     type=str,
     multiple=True,
@@ -382,7 +377,6 @@ def pyre(
     logger: Optional[str],
     target: Iterable[str],
     buck_mode: Optional[str],
-    use_buck_source_database: Optional[bool],
     source_directory: Iterable[str],
     do_not_ignore_errors_in: Iterable[str],
     no_saved_state: bool,
@@ -421,7 +415,6 @@ def pyre(
         log_identifier=log_identifier,
         logger=logger,
         targets=list(target),
-        use_buck_source_database=use_buck_source_database,
         source_directories=list(source_directory),
         do_not_ignore_errors_in=list(do_not_ignore_errors_in),
         buck_mode=buck_mode,
