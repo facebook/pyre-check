@@ -166,26 +166,26 @@ def run_incremental(
             },
         )
     except server_connection.ConnectionFailure:
-        if incremental_arguments.no_start:
-            raise commands.ClientException("Cannot find a running Pyre server.")
+        pass
 
-        LOG.info("Cannot find a running Pyre server. Starting a new one...")
-        start_status = start.run_start(
-            configuration, incremental_arguments.start_arguments
+    if incremental_arguments.no_start:
+        raise commands.ClientException("Cannot find a running Pyre server.")
+
+    LOG.info("Cannot find a running Pyre server. Starting a new one...")
+    start_status = start.run_start(configuration, incremental_arguments.start_arguments)
+    if start_status != commands.ExitCode.SUCCESS:
+        raise commands.ClientException(
+            f"`pyre start` failed with non-zero exit code: {start_status}"
         )
-        if start_status != commands.ExitCode.SUCCESS:
-            raise commands.ClientException(
-                f"`pyre start` failed with non-zero exit code: {start_status}"
-            )
-        exit_code = _show_progress_log_and_display_type_errors(
-            log_path, socket_path, output, remote_logging
-        )
-        return remote_logging_module.ExitCodeWithAdditionalLogging(
-            exit_code=exit_code,
-            additional_logging={
-                "connected_to": "newly_started_server",
-            },
-        )
+    exit_code = _show_progress_log_and_display_type_errors(
+        log_path, socket_path, output, remote_logging
+    )
+    return remote_logging_module.ExitCodeWithAdditionalLogging(
+        exit_code=exit_code,
+        additional_logging={
+            "connected_to": "newly_started_server",
+        },
+    )
 
 
 def _exit_code_from_error_kind(error_kind: server_event.ErrorKind) -> commands.ExitCode:

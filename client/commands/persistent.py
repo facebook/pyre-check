@@ -1422,111 +1422,112 @@ class PyreServerHandler(connection.BackgroundTask):
                     },
                 )
                 await self.subscribe_to_type_error(input_channel, output_channel)
+                return
         except connection.ConnectionFailure:
+            pass
+
+        await self.log_and_show_status_message_to_client(
+            f"Starting a new Pyre server at `{server_identifier}` in "
+            "the background.",
+            short_message="Starting Pyre...",
+            level=lsp.MessageType.WARNING,
+            fallback_to_notification=True,
+        )
+        start_status = await _start_pyre_server(
+            server_start_options.binary, start_arguments
+        )
+        if isinstance(start_status, StartSuccess):
             await self.log_and_show_status_message_to_client(
-                f"Starting a new Pyre server at `{server_identifier}` in "
-                "the background.",
-                short_message="Starting Pyre...",
-                level=lsp.MessageType.WARNING,
+                f"Pyre server at `{server_identifier}` has been initialized.",
+                short_message="Pyre Ready",
+                level=lsp.MessageType.INFO,
                 fallback_to_notification=True,
             )
 
-            start_status = await _start_pyre_server(
-                server_start_options.binary, start_arguments
-            )
-            if isinstance(start_status, StartSuccess):
-                await self.log_and_show_status_message_to_client(
-                    f"Pyre server at `{server_identifier}` has been initialized.",
-                    short_message="Pyre Ready",
-                    level=lsp.MessageType.INFO,
-                    fallback_to_notification=True,
+            async with connection.connect_in_text_mode(socket_path) as (
+                input_channel,
+                output_channel,
+            ):
+                self.server_state.consecutive_start_failure = 0
+                self.server_state.is_user_notified_on_buck_failure = False
+                _log_lsp_event(
+                    remote_logging=self.remote_logging,
+                    event=LSPEvent.CONNECTED,
+                    integers={"duration": int((time.time() - start_time) * 1000)},
+                    normals={
+                        "connected_to": "newly_started_server",
+                        **self._auxiliary_logging_info(server_start_options),
+                    },
                 )
-
-                async with connection.connect_in_text_mode(socket_path) as (
-                    input_channel,
-                    output_channel,
-                ):
-                    self.server_state.consecutive_start_failure = 0
-                    self.server_state.is_user_notified_on_buck_failure = False
-                    _log_lsp_event(
-                        remote_logging=self.remote_logging,
-                        event=LSPEvent.CONNECTED,
-                        integers={"duration": int((time.time() - start_time) * 1000)},
-                        normals={
-                            "connected_to": "newly_started_server",
-                            **self._auxiliary_logging_info(server_start_options),
-                        },
-                    )
-                    await self.subscribe_to_type_error(input_channel, output_channel)
-            elif isinstance(start_status, BuckStartFailure):
-                # Buck start failures are intentionally not counted towards
-                # `consecutive_start_failure` -- they happen far too often in practice
-                # so we do not want them to trigger suspensions.
+                await self.subscribe_to_type_error(input_channel, output_channel)
+        elif isinstance(start_status, BuckStartFailure):
+            # Buck start failures are intentionally not counted towards
+            # `consecutive_start_failure` -- they happen far too often in practice
+            # so we do not want them to trigger suspensions.
+            _log_lsp_event(
+                remote_logging=self.remote_logging,
+                event=LSPEvent.NOT_CONNECTED,
+                integers={"duration": int((time.time() - start_time) * 1000)},
+                normals={
+                    **self._auxiliary_logging_info(server_start_options),
+                    "exception": str(start_status.message),
+                },
+            )
+            if not self.server_state.is_user_notified_on_buck_failure:
+                await self.show_notification_message_to_client(
+                    f"Cannot start a new Pyre server at `{server_identifier}` "
+                    "due to Buck failure. If you added or changed a target, "
+                    "make sure the target file is parsable and the owning "
+                    "targets are buildable by Buck. If you removed a target, "
+                    "makre sure that target is not explicitly referenced from the "
+                    "Pyre configuration file of the containing project.",
+                    level=lsp.MessageType.ERROR,
+                )
+                self.server_state.is_user_notified_on_buck_failure = True
+            await self.show_status_message_to_client(
+                f"Cannot start a new Pyre server at `{server_identifier}`. "
+                f"{start_status.message}",
+                short_message="Pyre Stopped",
+                level=lsp.MessageType.INFO,
+                fallback_to_notification=False,
+            )
+        elif isinstance(start_status, OtherStartFailure):
+            self.server_state.consecutive_start_failure += 1
+            if (
+                self.server_state.consecutive_start_failure
+                < CONSECUTIVE_START_ATTEMPT_THRESHOLD
+            ):
                 _log_lsp_event(
                     remote_logging=self.remote_logging,
                     event=LSPEvent.NOT_CONNECTED,
                     integers={"duration": int((time.time() - start_time) * 1000)},
                     normals={
                         **self._auxiliary_logging_info(server_start_options),
-                        "exception": str(start_status.message),
+                        "exception": str(start_status.detail),
                     },
                 )
-                if not self.server_state.is_user_notified_on_buck_failure:
-                    await self.show_notification_message_to_client(
-                        f"Cannot start a new Pyre server at `{server_identifier}` "
-                        "due to Buck failure. If you added or changed a target, "
-                        "make sure the target file is parsable and the owning "
-                        "targets are buildable by Buck. If you removed a target, "
-                        "makre sure that target is not explicitly referenced from the "
-                        "Pyre configuration file of the containing project.",
-                        level=lsp.MessageType.ERROR,
-                    )
-                    self.server_state.is_user_notified_on_buck_failure = True
                 await self.show_status_message_to_client(
                     f"Cannot start a new Pyre server at `{server_identifier}`. "
                     f"{start_status.message}",
                     short_message="Pyre Stopped",
                     level=lsp.MessageType.INFO,
-                    fallback_to_notification=False,
+                    fallback_to_notification=True,
                 )
-            elif isinstance(start_status, OtherStartFailure):
-                self.server_state.consecutive_start_failure += 1
-                if (
-                    self.server_state.consecutive_start_failure
-                    < CONSECUTIVE_START_ATTEMPT_THRESHOLD
-                ):
-                    _log_lsp_event(
-                        remote_logging=self.remote_logging,
-                        event=LSPEvent.NOT_CONNECTED,
-                        integers={"duration": int((time.time() - start_time) * 1000)},
-                        normals={
-                            **self._auxiliary_logging_info(server_start_options),
-                            "exception": str(start_status.detail),
-                        },
-                    )
-                    await self.show_status_message_to_client(
-                        f"Cannot start a new Pyre server at `{server_identifier}`. "
-                        f"{start_status.message}",
-                        short_message="Pyre Stopped",
-                        level=lsp.MessageType.INFO,
-                        fallback_to_notification=True,
-                    )
-                else:
-                    await self.show_status_message_to_client(
-                        f"Pyre server restart at `{server_identifier}` has been "
-                        "failing repeatedly. Disabling The Pyre plugin for now.",
-                        short_message="Pyre Disabled",
-                        level=lsp.MessageType.ERROR,
-                        fallback_to_notification=True,
-                    )
-                    _log_lsp_event(
-                        remote_logging=self.remote_logging,
-                        event=LSPEvent.SUSPENDED,
-                        normals=self._auxiliary_logging_info(server_start_options),
-                    )
-
             else:
-                raise RuntimeError("Impossible type for `start_status`")
+                await self.show_status_message_to_client(
+                    f"Pyre server restart at `{server_identifier}` has been "
+                    "failing repeatedly. Disabling The Pyre plugin for now.",
+                    short_message="Pyre Disabled",
+                    level=lsp.MessageType.ERROR,
+                    fallback_to_notification=True,
+                )
+                _log_lsp_event(
+                    remote_logging=self.remote_logging,
+                    event=LSPEvent.SUSPENDED,
+                    normals=self._auxiliary_logging_info(server_start_options),
+                )
+        else:
+            raise RuntimeError("Impossible type for `start_status`")
 
     async def run(self) -> None:
         # Re-read server start options on every run, to make sure the server
