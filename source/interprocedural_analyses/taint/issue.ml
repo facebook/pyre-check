@@ -16,6 +16,19 @@ module Flow = struct
     sink_taint: BackwardTaint.t;
   }
   [@@deriving show]
+
+  let is_bottom { source_taint; sink_taint } =
+    ForwardTaint.is_bottom source_taint || BackwardTaint.is_bottom sink_taint
+
+
+  let join
+      { source_taint = left_source_taint; sink_taint = left_sink_taint }
+      { source_taint = right_source_taint; sink_taint = right_sink_taint }
+    =
+    {
+      source_taint = ForwardTaint.join left_source_taint right_source_taint;
+      sink_taint = BackwardTaint.join left_sink_taint right_sink_taint;
+    }
 end
 
 module Flows = struct
@@ -27,6 +40,9 @@ module Candidate = struct
     flows: Flows.t;
     location: Location.WithModule.t;
   }
+
+  let join { flows = left_flows; location } { flows = right_flows; _ } =
+    { flows = List.rev_append left_flows right_flows; location }
 end
 
 module PartitionedFlow = struct
@@ -189,10 +205,7 @@ let generate_issues ~define { Candidate.flows; location } =
           { source_taint; sink_taint }
     in
     let partition_flow = apply_sanitizers { source_taint; sink_taint } in
-    if
-      ForwardTaint.is_bottom partition_flow.source_taint
-      || BackwardTaint.is_bottom partition_flow.sink_taint
-    then
+    if Flow.is_bottom partition_flow then
       None
     else
       Some partition_flow
@@ -208,11 +221,7 @@ let generate_issues ~define { Candidate.flows; location } =
   let apply_rule_merge_access_path rule =
     let fold_partitions flow_so_far candidate =
       match apply_rule_on_flow rule candidate with
-      | Some flow ->
-          {
-            Flow.source_taint = ForwardTaint.join flow_so_far.Flow.source_taint flow.source_taint;
-            sink_taint = BackwardTaint.join flow_so_far.Flow.sink_taint flow.sink_taint;
-          }
+      | Some flow -> Flow.join flow_so_far flow
       | None -> flow_so_far
     in
     let flow =
@@ -221,11 +230,10 @@ let generate_issues ~define { Candidate.flows; location } =
         ~init:{ Flow.source_taint = ForwardTaint.bottom; sink_taint = BackwardTaint.bottom }
         ~f:fold_partitions
     in
-    if ForwardTaint.is_bottom flow.source_taint || BackwardTaint.is_bottom flow.sink_taint then
+    if Flow.is_bottom flow then
       None
     else
-      let issue = { code = rule.code; flow; location; define } in
-      Some issue
+      Some { code = rule.code; flow; location; define }
   in
   let configuration = TaintConfiguration.get () in
   if configuration.lineage_analysis then

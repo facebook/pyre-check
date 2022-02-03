@@ -16,6 +16,10 @@ module Flow : sig
     sink_taint: BackwardTaint.t;
   }
   [@@deriving show]
+
+  val is_bottom : t -> bool
+
+  val join : t -> t -> t
 end
 
 module Flows : sig
@@ -27,6 +31,8 @@ module Candidate : sig
     flows: Flows.t;
     location: Location.WithModule.t;
   }
+
+  val join : t -> t -> t
 end
 
 type t = {
