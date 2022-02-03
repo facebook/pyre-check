@@ -86,7 +86,7 @@ _A = TypeVar("_A", bound=int)
 _B = TypeVar("_B", bound=int)
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
-_Ts = ListVariadic("_Ts")
+_Ts: object = ListVariadic("_Ts")
 _P = ParameterSpecification("_P")
 
 

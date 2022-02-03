@@ -12,8 +12,7 @@ from pyre_extensions import ListVariadic
 from pyre_extensions.type_variable_operators import Concatenate
 
 
-# pyre-fixme[5]: Global expression must be annotated.
-Ts = ListVariadic("Ts")
+Ts: object = ListVariadic("Ts")
 
 
 LOG: Logger = logging.getLogger(__name__)

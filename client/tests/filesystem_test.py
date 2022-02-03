@@ -162,7 +162,7 @@ class FilesystemTest(unittest.TestCase):
         )
 
     @patch("os.unlink")
-    def test_delete_symbolic_link(self, unlink):
+    def test_delete_symbolic_link(self, unlink) -> None:
         # delete succeeds
         unlink.return_value = None
         _delete_symbolic_link("exists")
@@ -177,7 +177,7 @@ class FilesystemTest(unittest.TestCase):
     @patch("os.unlink")
     @patch("os.symlink")
     @patch("os.makedirs")
-    def test_add_symbolic_link(self, makedirs, symlink, unlink):
+    def test_add_symbolic_link(self, makedirs, symlink, unlink) -> None:
         add_symbolic_link("/a/link", "file.py")
         # standard use-cases
         makedirs.assert_called_once_with("/a")
@@ -216,7 +216,9 @@ class FilesystemTest(unittest.TestCase):
         "realpath",
         side_effect=lambda path: path.replace("ANALYSIS_ROOT", "LOCAL_ROOT"),
     )
-    def test_compute_symbolic_link_mapping(self, realpath, find_paths_with_extensions):
+    def test_compute_symbolic_link_mapping(
+        self, realpath, find_paths_with_extensions
+    ) -> None:
         find_paths_with_extensions.return_value = [
             "ANALYSIS_ROOT/a.py",
             "ANALYSIS_ROOT/b.thrift",
