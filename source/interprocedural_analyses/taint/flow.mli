@@ -37,7 +37,6 @@ type flow_state = {
 type issue = {
   code: int;
   flow: flow;
-  features: features;
   issue_location: Location.WithModule.t;
   (* Only used to create the Pyre errors. *)
   define: Ast.Statement.Define.t Ast.Node.t;

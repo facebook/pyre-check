@@ -37,7 +37,6 @@ type partitioned_flow = {
 type issue = {
   code: int;
   flow: flow;
-  features: features;
   issue_location: Location.WithModule.t;
   define: Statement.Define.t Node.t;
 }
@@ -193,9 +192,7 @@ let generate_issues ~define { location; flows } =
   let apply_rule_separate_access_path issues_so_far (rule : Rule.t) =
     let fold_partitions issues candidate =
       match apply_rule_on_flow rule candidate with
-      | Some flow ->
-          let features = get_issue_features flow in
-          { code = rule.code; flow; features; issue_location = location; define } :: issues
+      | Some flow -> { code = rule.code; flow; issue_location = location; define } :: issues
       | None -> issues
     in
     List.fold partitions ~init:issues_so_far ~f:fold_partitions
@@ -219,8 +216,7 @@ let generate_issues ~define { location; flows } =
     if ForwardTaint.is_bottom flow.source_taint || BackwardTaint.is_bottom flow.sink_taint then
       None
     else
-      let features = get_issue_features flow in
-      let issue = { code = rule.code; flow; features; issue_location = location; define } in
+      let issue = { code = rule.code; flow; issue_location = location; define } in
       Some issue
   in
   let configuration = TaintConfiguration.get () in
@@ -279,7 +275,8 @@ let to_json ~filename_lookup callable issue =
     Domains.ForwardTaint.to_external_json ~filename_lookup issue.flow.source_taint
   in
   let sink_traces = Domains.BackwardTaint.to_external_json ~filename_lookup issue.flow.sink_taint in
-  let features =
+  let features = get_issue_features issue.flow in
+  let json_features =
     let get_feature_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =
       let element = Features.BreadcrumbInterned.unintern element in
       let breadcrumb_json = Features.Breadcrumb.to_json element ~on_all_paths:in_under in
@@ -289,20 +286,20 @@ let to_json ~filename_lookup callable issue =
       Features.BreadcrumbSet.ElementAndUnder
       ~f:get_feature_json
       ~init:[]
-      issue.features.breadcrumbs
+      features.breadcrumbs
   in
-  let features =
+  let json_features =
     List.concat
       [
-        issue.features.first_indices
+        features.first_indices
         |> Features.FirstIndexSet.elements
         |> List.map ~f:Features.FirstIndexInterned.unintern
         |> Features.FirstIndex.to_json;
-        issue.features.first_fields
+        features.first_fields
         |> Features.FirstFieldSet.elements
         |> List.map ~f:Features.FirstFieldInterned.unintern
         |> Features.FirstField.to_json;
-        features;
+        json_features;
       ]
   in
   let traces =
@@ -332,7 +329,7 @@ let to_json ~filename_lookup callable issue =
       "filename", `String path;
       "message", `String message;
       "traces", traces;
-      "features", `List features;
+      "features", `List json_features;
     ]
 
 
