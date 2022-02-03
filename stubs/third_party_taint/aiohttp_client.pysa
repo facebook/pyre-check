@@ -1,3 +1,4 @@
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.get(
     self,
     url: TaintSink[RequestSend_URI],
@@ -7,6 +8,7 @@ def aiohttp.client.ClientSession.get(
     allow_redirects,
     **kwargs: TaintSink[RequestSend_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.options(
     self,
     url: TaintSink[RequestSend_URI],
@@ -16,6 +18,7 @@ def aiohttp.client.ClientSession.options(
     allow_redirects,
     **kwargs: TaintSink[RequestSend_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.head(
     self,
     url: TaintSink[RequestSend_URI],
@@ -25,6 +28,7 @@ def aiohttp.client.ClientSession.head(
     allow_redirects,
     **kwargs: TaintSink[RequestSend_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.post(
     self,
     url: TaintSink[RequestSend_URI],
@@ -33,6 +37,7 @@ def aiohttp.client.ClientSession.post(
     data: TaintSink[RequestSend_DATA],
     **kwargs: TaintSink[RequestSend_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.put(
     self,
     url: TaintSink[RequestSend_URI],
@@ -41,6 +46,7 @@ def aiohttp.client.ClientSession.put(
     data: TaintSink[RequestSend_DATA],
     **kwargs: TaintSink[RequestSend_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.patch(
     self,
     url: TaintSink[RequestSend_URI],
@@ -49,6 +55,7 @@ def aiohttp.client.ClientSession.patch(
     data: TaintSink[RequestSend_DATA],
     **kwargs: TaintSink[RequestSend_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.delete(
     self,
     url: TaintSink[RequestSend_URI],
@@ -57,6 +64,7 @@ def aiohttp.client.ClientSession.delete(
     data: TaintSink[RequestSend_DATA],
     **kwargs: TaintSink[RequestSend_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.ws_connect(
     self,
     url: TaintSink[RequestSend_URI],
@@ -78,6 +86,7 @@ def aiohttp.client.ClientSession.ws_connect(
     compress,
     max_msg_size
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.request(
     self,
     method: TaintSink[RequestSend_METADATA],

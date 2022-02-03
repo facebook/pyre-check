@@ -1,4 +1,9 @@
 # SSRF [requests.api]
+
+# We also sanitize ServerSecrets on requests APIs. A common pattern is the secret is used as part
+# of request headers, parameters, etc. However, the response after sending the authenticated
+# request usually does not contain secrets.
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.request(
         method: TaintSink[RequestSend_METADATA],
         url: TaintSink[RequestSend_URI],
@@ -17,6 +22,7 @@ def requests.api.request(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.get(
         url: TaintSink[RequestSend_URI],
         params: TaintSink[RequestSend_DATA] = ...,
@@ -34,6 +40,7 @@ def requests.api.get(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.options(
         url: TaintSink[RequestSend_URI],
         params: TaintSink[RequestSend_DATA] = ...,
@@ -51,6 +58,7 @@ def requests.api.options(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.head(
         url: TaintSink[RequestSend_URI],
         params: TaintSink[RequestSend_DATA] = ...,
@@ -68,6 +76,7 @@ def requests.api.head(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.post(
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA] = ...,
@@ -85,6 +94,7 @@ def requests.api.post(
         verify: TaintSink[RequestSend_METADATA] = ...,
         cert = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.put(
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA] = ...,
@@ -102,6 +112,7 @@ def requests.api.put(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.patch(
         url: TaintSink[RequestSend_URI],
         data: TaintSink[RequestSend_DATA] = ...,
@@ -119,6 +130,7 @@ def requests.api.patch(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.api.delete(
         url: TaintSink[RequestSend_URI],
         params: TaintSink[RequestSend_DATA] = ...,
@@ -138,6 +150,7 @@ def requests.api.delete(
 ) -> TaintSource[DataFromInternet]: ...
 
 # SSRF [requests.Session]
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.get(
         self,
         url: TaintSink[RequestSend_URI],
@@ -156,6 +169,7 @@ def requests.sessions.Session.get(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.options(
         self,
         url: TaintSink[RequestSend_URI],
@@ -174,6 +188,7 @@ def requests.sessions.Session.options(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.head(
         self,
         url: TaintSink[RequestSend_URI],
@@ -192,6 +207,7 @@ def requests.sessions.Session.head(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.post(
         self,
         url: TaintSink[RequestSend_URI],
@@ -210,6 +226,7 @@ def requests.sessions.Session.post(
         verify: TaintSink[RequestSend_METADATA] = ...,
         cert = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.put(
         self,
         url: TaintSink[RequestSend_URI],
@@ -228,6 +245,7 @@ def requests.sessions.Session.put(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.patch(
         self,
         url: TaintSink[RequestSend_URI],
@@ -246,6 +264,7 @@ def requests.sessions.Session.patch(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.delete(
         self,
         url: TaintSink[RequestSend_URI],
@@ -264,6 +283,7 @@ def requests.sessions.Session.delete(
         cert = ...,
         json: TaintSink[RequestSend_DATA] = ...,
 ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def requests.sessions.Session.request(
         self,
         method: TaintSink[RequestSend_METADATA],
@@ -289,13 +309,19 @@ def requests.models.Request.__init__(auth: TaintSink[Authentication] = ...): ...
 def requests.models.PreparedRequest.prepare(auth: TaintSink[Authentication] = ...): ...
 
 # SSRF [urllib.request]
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def urllib.request.urlopen(url: TaintSink[RequestSend_URI], data: TaintSink[RequestSend_DATA],
                            timeout, *, cafile, capath,
                            cadefault, context) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def urllib.request.urlretrieve(url: TaintSink[RequestSend_URI], filename, reporthook, data: TaintSink[RequestSend_DATA] ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def urllib.request.URLopener.open(self, fullurl: TaintSink[RequestSend_URI], data: TaintSink[RequestSend_DATA] ) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def urllib.request.URLopener.open_unknown(self, fullurl: TaintSink[RequestSend_URI], data: TaintSink[RequestSend_DATA]) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def urllib.request.URLopener.retrieve(self, url: TaintSink[RequestSend_URI], filename, reporthook, data: TaintSink[RequestSend_DATA]) -> TaintSource[DataFromInternet]: ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 @SkipObscure
 def urllib.parse.urlencode(query: TaintInTaintOut[Via[urlencode]], doseq, safe, encoding, errors, quote_via): ...
 @SkipObscure
@@ -322,6 +348,7 @@ def http.client.HTTPSConnection.__init__(self,
                                          context,
                                          check_hostname
                                         ): ...
+
 def http.client.HTTPConnection.request(self,
                                        method: TaintSink[RequestSend_METADATA],
                                        url: TaintSink[RequestSend_URI],
@@ -345,6 +372,7 @@ def http.client.HTTPConnection.putheader(self,
                                          header: TaintSink[RequestSend_METADATA],
                                          *argument: TaintSink[RequestSend_DATA]
                                         ): ...
+@Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def http.client.HTTPConnection.getresponse() -> TaintSource[DataFromInternet]: ...
 
 # socket
