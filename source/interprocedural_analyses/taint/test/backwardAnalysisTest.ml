@@ -68,7 +68,7 @@ let test_plus_taint_in_taint_out context =
     [
       outcome
         ~kind:`Function
-        ~tito_parameters:["tainted_parameter1"]
+        ~tito_parameters:[{ name = "tainted_parameter1"; sinks = [Sinks.LocalReturn] }]
         "qualifier.test_plus_taint_in_taint_out";
     ]
 
@@ -85,7 +85,7 @@ let test_concatenate_taint_in_taint_out context =
     [
       outcome
         ~kind:`Function
-        ~tito_parameters:["tainted_parameter1"]
+        ~tito_parameters:[{ name = "tainted_parameter1"; sinks = [Sinks.LocalReturn] }]
         "qualifier.test_concatenate_taint_in_taint_out";
     ]
 
@@ -101,8 +101,14 @@ let test_call_taint_in_taint_out context =
         return test_base_tito(parameter1, tainted_parameter0)
     |}
     [
-      outcome ~kind:`Function ~tito_parameters:["tainted_parameter1"] "qualifier.test_base_tito";
-      outcome ~kind:`Function ~tito_parameters:["tainted_parameter0"] "qualifier.test_called_tito";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "tainted_parameter1"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.test_base_tito";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "tainted_parameter0"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.test_called_tito";
     ]
 
 
@@ -204,7 +210,10 @@ let test_asyncio_gather context =
           return result
     |}
     [
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.sink_through_gather";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.sink_through_gather";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.benign_through_gather";
     ]
 
@@ -366,8 +375,14 @@ let test_tito_via_receiver context =
         return x.tito('')
     |}
     [
-      outcome ~kind:`Method ~tito_parameters:["self"] "qualifier.TitoClass.tito";
-      outcome ~kind:`Function ~tito_parameters:["parameter"] "qualifier.tito_via_receiver";
+      outcome
+        ~kind:`Method
+        ~tito_parameters:[{ name = "self"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.TitoClass.tito";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito_via_receiver";
     ]
 
 
@@ -385,7 +400,7 @@ let test_sequential_call_path context =
       outcome
         ~kind:`Method
         ~sink_parameters:[{ name = "argument"; sinks = [Sinks.NamedSink "Test"] }]
-        ~tito_parameters:["self"]
+        ~tito_parameters:[{ name = "self"; sinks = [Sinks.LocalReturn] }]
         "qualifier.Foo.sink";
     ];
   assert_taint
@@ -598,12 +613,12 @@ let test_dictionary context =
       outcome
         ~kind:`Function
         ~sink_parameters:[]
-        ~tito_parameters:["arg"]
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
         "qualifier.dictionary_tito";
       outcome
         ~kind:`Function
         ~sink_parameters:[]
-        ~tito_parameters:["arg"]
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
         "qualifier.dictionary_same_index";
       outcome
         ~kind:`Function
@@ -613,12 +628,12 @@ let test_dictionary context =
       outcome
         ~kind:`Function
         ~sink_parameters:[]
-        ~tito_parameters:["arg"]
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
         "qualifier.dictionary_unknown_read_index";
       outcome
         ~kind:`Function
         ~sink_parameters:[]
-        ~tito_parameters:["arg"]
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
         "qualifier.dictionary_unknown_write_index";
     ];
   assert_taint
@@ -726,7 +741,10 @@ let test_comprehensions context =
         ~kind:`Function
         ~sink_parameters:[{ name = "data"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_expression";
-      outcome ~kind:`Function ~tito_parameters:["data"] "qualifier.tito";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "data"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito";
       outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
@@ -735,7 +753,10 @@ let test_comprehensions context =
         ~kind:`Function
         ~sink_parameters:[{ name = "data"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_set_expression";
-      outcome ~kind:`Function ~tito_parameters:["data"] "qualifier.tito_set";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "data"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito_set";
       outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
@@ -744,11 +765,15 @@ let test_comprehensions context =
         ~kind:`Function
         ~sink_parameters:[{ name = "data"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_generator_expression";
-      outcome ~kind:`Function ~tito_parameters:["data"] "qualifier.tito_generator";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "data"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito_generator";
     ]
 
 
 let test_list context =
+  let arg_tito = { name = "arg"; sinks = [Sinks.LocalReturn] } in
   assert_taint
     ~context
     {|
@@ -814,22 +839,26 @@ let test_list context =
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_list";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_same_index";
+      outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.list_same_index";
       outcome ~kind:`Function "qualifier.list_different_index";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_unknown_index";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_pattern_same_index";
+      outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.list_unknown_index";
+      outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.list_pattern_same_index";
       outcome ~kind:`Function "qualifier.list_pattern_different_index";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_pattern_star_index";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_same_index_assignment";
+      outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.list_pattern_star_index";
+      outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.list_same_index_assignment";
       outcome ~kind:`Function "qualifier.list_different_index_assignment";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_index_assignment_return_list";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_nested_assignment_1";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.list_nested_assignment_2";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[arg_tito]
+        "qualifier.list_index_assignment_return_list";
+      outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.list_nested_assignment_1";
+      outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.list_nested_assignment_2";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.list_nested_assignment_non_tito";
     ]
 
 
 let test_tuple context =
+  let arg_tito = { name = "arg"; sinks = [Sinks.LocalReturn] } in
   assert_taint
     ~context
     {|
@@ -861,10 +890,10 @@ let test_tuple context =
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_tuple";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tuple_same_index";
+      outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.tuple_same_index";
       outcome ~kind:`Function "qualifier.tuple_different_index";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tuple_unknown_index";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tuple_pattern_same_index";
+      outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.tuple_unknown_index";
+      outcome ~kind:`Function ~tito_parameters:[arg_tito] "qualifier.tuple_pattern_same_index";
       outcome ~kind:`Function "qualifier.tuple_pattern_different_index";
     ];
   assert_taint
@@ -894,7 +923,10 @@ let test_lambda context =
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_lambda";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.lambda_tito";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.lambda_tito";
     ]
 
 
@@ -918,8 +950,14 @@ let test_set context =
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_set";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.set_index";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.set_unknown_index";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.set_index";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.set_unknown_index";
     ]
 
 
@@ -956,8 +994,14 @@ let test_starred context =
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_starred_starred";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_starred";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_starred_starred";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito_in_starred";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito_in_starred_starred";
     ]
 
 
@@ -1007,9 +1051,22 @@ let test_ternary context =
         ~kind:`Function
         ~sink_parameters:[{ name = "cond"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_cond";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_then";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_in_else";
-      outcome ~kind:`Function ~tito_parameters:["arg1"; "arg2"] "qualifier.tito_in_both";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito_in_then";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito_in_else";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:
+          [
+            { name = "arg1"; sinks = [Sinks.LocalReturn] };
+            { name = "arg2"; sinks = [Sinks.LocalReturn] };
+          ]
+        "qualifier.tito_in_both";
     ]
 
 
@@ -1028,7 +1085,10 @@ let test_unary context =
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_unary";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_unary";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito_via_unary";
     ]
 
 
@@ -1047,7 +1107,10 @@ let test_walrus context =
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_walrus";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_walrus";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito_via_walrus";
     ]
 
 
@@ -1072,12 +1135,18 @@ let test_yield context =
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_yield";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_yield";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito_via_yield";
       outcome
         ~kind:`Function
         ~sink_parameters:[{ name = "arg"; sinks = [Sinks.NamedSink "Test"] }]
         "qualifier.sink_in_yield_from";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.tito_via_yield_from";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.tito_via_yield_from";
     ]
 
 
@@ -1101,11 +1170,20 @@ let test_named_arguments context =
           return with_kw(b = arg0, c = 5, **dict)
     |}
     [
-      outcome ~kind:`Function ~tito_parameters:["**"] "qualifier.with_kw";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "**"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.with_kw";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.no_kw_tito";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.no_kw_tito_with_named_args";
-      outcome ~kind:`Function ~tito_parameters:["arg1"] "qualifier.kw_tito_with_named_args";
-      outcome ~kind:`Function ~tito_parameters:["dict"] "qualifier.kw_tito_with_dict";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg1"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.kw_tito_with_named_args";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "dict"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.kw_tito_with_dict";
     ]
 
 
@@ -1275,43 +1353,103 @@ let test_actual_parameter_matching context =
           )
     |}
     [
-      outcome ~kind:`Function ~tito_parameters:["b"] "qualifier.before_star";
-      outcome ~kind:`Function ~tito_parameters:["*"] "qualifier.at_star";
-      outcome ~kind:`Function ~tito_parameters:["c"] "qualifier.after_star";
-      outcome ~kind:`Function ~tito_parameters:["**"] "qualifier.star_star_q";
-      outcome ~kind:`Function ~tito_parameters:["**"] "qualifier.star_star_all";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.pass_positional_before_star";
       outcome
         ~kind:`Function
-        ~tito_parameters:["approximate"; "arg"]
+        ~tito_parameters:[{ name = "b"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.before_star";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "*"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.at_star";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "c"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.after_star";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "**"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.star_star_q";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "**"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.star_star_all";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.pass_positional_before_star";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:
+          [
+            { name = "approximate"; sinks = [Sinks.LocalReturn] };
+            { name = "arg"; sinks = [Sinks.LocalReturn] };
+          ]
         "qualifier.pass_positional_at_star";
       outcome
         ~kind:`Function
-        ~tito_parameters:["approximate"; "arg"]
+        ~tito_parameters:
+          [
+            { name = "approximate"; sinks = [Sinks.LocalReturn] };
+            { name = "arg"; sinks = [Sinks.LocalReturn] };
+          ]
         "qualifier.pass_positional_at_star_plus_one";
       outcome
         ~kind:`Function
-        ~tito_parameters:["approximate"; "arg"]
+        ~tito_parameters:
+          [
+            { name = "approximate"; sinks = [Sinks.LocalReturn] };
+            { name = "arg"; sinks = [Sinks.LocalReturn] };
+          ]
         "qualifier.pass_positional_at_all_star";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.pass_named_after_star";
-      outcome ~kind:`Function ~tito_parameters:["arg"] "qualifier.pass_named_as_positional";
       outcome
         ~kind:`Function
-        ~tito_parameters:["approximate_one"; "approximate_two"; "arg"]
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.pass_named_after_star";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.LocalReturn] }]
+        "qualifier.pass_named_as_positional";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:
+          [
+            { name = "approximate_one"; sinks = [Sinks.LocalReturn] };
+            { name = "approximate_two"; sinks = [Sinks.LocalReturn] };
+            { name = "arg"; sinks = [Sinks.LocalReturn] };
+          ]
         "qualifier.pass_named_as_star_star_q";
       outcome
         ~kind:`Function
-        ~tito_parameters:["approximate_one"; "approximate_two"; "arg"]
+        ~tito_parameters:
+          [
+            { name = "approximate_one"; sinks = [Sinks.LocalReturn] };
+            { name = "approximate_two"; sinks = [Sinks.LocalReturn] };
+            { name = "arg"; sinks = [Sinks.LocalReturn] };
+          ]
         "qualifier.pass_named_as_star_star_all";
-      outcome ~kind:`Function ~tito_parameters:["arg"; "listarg"] "qualifier.pass_list_before_star";
       outcome
         ~kind:`Function
-        ~tito_parameters:["approximate"; "listarg_one"; "listarg_two"]
+        ~tito_parameters:
+          [
+            { name = "arg"; sinks = [Sinks.LocalReturn] };
+            { name = "listarg"; sinks = [Sinks.LocalReturn] };
+          ]
+        "qualifier.pass_list_before_star";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:
+          [
+            { name = "approximate"; sinks = [Sinks.LocalReturn] };
+            { name = "listarg_one"; sinks = [Sinks.LocalReturn] };
+            { name = "listarg_two"; sinks = [Sinks.LocalReturn] };
+          ]
         "qualifier.pass_list_at_star";
     ]
 
 
 let test_constructor_argument_tito context =
+  let self_tito = { name = "self"; sinks = [Sinks.LocalReturn] } in
+  let tito_tito = { name = "tito"; sinks = [Sinks.LocalReturn] } in
   assert_taint
     ~context
     {|
@@ -1385,22 +1523,28 @@ let test_constructor_argument_tito context =
 
     |}
     [
-      outcome ~kind:`Method ~tito_parameters:["self"; "tito"] "qualifier.Data.__init__";
-      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.tito_via_construction";
+      outcome ~kind:`Method ~tito_parameters:[self_tito; tito_tito] "qualifier.Data.__init__";
+      outcome ~kind:`Function ~tito_parameters:[tito_tito] "qualifier.tito_via_construction";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.no_tito_via_construction";
-      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.precise_tito_via_construction";
-      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.deep_tito_via_assignments";
-      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.apply_deep_tito_some";
+      outcome ~kind:`Function ~tito_parameters:[tito_tito] "qualifier.precise_tito_via_construction";
+      outcome ~kind:`Function ~tito_parameters:[tito_tito] "qualifier.deep_tito_via_assignments";
+      outcome ~kind:`Function ~tito_parameters:[tito_tito] "qualifier.apply_deep_tito_some";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.apply_deep_tito_none";
-      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.deep_tito_via_objects";
-      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.apply_deep_tito_via_objects_some";
+      outcome ~kind:`Function ~tito_parameters:[tito_tito] "qualifier.deep_tito_via_objects";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[tito_tito]
+        "qualifier.apply_deep_tito_via_objects_some";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.apply_deep_tito_via_objects_none";
-      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.deep_tito_wrapper";
-      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.deep_tito_via_multiple";
-      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.test_tito_via_multiple_some";
-      outcome ~kind:`Function ~tito_parameters:["tito"] "qualifier.test_tito_via_multiple_some_more";
+      outcome ~kind:`Function ~tito_parameters:[tito_tito] "qualifier.deep_tito_wrapper";
+      outcome ~kind:`Function ~tito_parameters:[tito_tito] "qualifier.deep_tito_via_multiple";
+      outcome ~kind:`Function ~tito_parameters:[tito_tito] "qualifier.test_tito_via_multiple_some";
+      outcome
+        ~kind:`Function
+        ~tito_parameters:[tito_tito]
+        "qualifier.test_tito_via_multiple_some_more";
       outcome ~kind:`Function ~tito_parameters:[] "qualifier.test_tito_via_multiple_none";
-      outcome ~kind:`Method ~tito_parameters:["self"; "tito"] "qualifier.DerivedData.__init__";
+      outcome ~kind:`Method ~tito_parameters:[self_tito; tito_tito] "qualifier.DerivedData.__init__";
     ]
 
 

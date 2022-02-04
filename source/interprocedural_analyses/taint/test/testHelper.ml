@@ -40,7 +40,7 @@ type expectation = {
   define_name: string;
   source_parameters: parameter_source_taint list;
   sink_parameters: parameter_taint list;
-  tito_parameters: string list;
+  tito_parameters: parameter_taint list;
   returns: Sources.t list;
   errors: error_expectation list;
   obscure: bool option;
@@ -182,28 +182,12 @@ let check_expectation
     Domains.SanitizeRootMap.to_alist sanitizers.roots
     |> List.fold ~init:String.Map.empty ~f:extract_parameter_sanitize
   in
-  let extract_tito_parameter_name (root, taint) positions =
-    let kinds =
-      Domains.BackwardState.Tree.fold Domains.BackwardTaint.kind taint ~f:List.cons ~init:[]
-    in
-    let get_tito_name parameter_name = function
-      | Sinks.Attach -> parameter_name
-      | Sinks.LocalReturn -> parameter_name
-      | Sinks.ParameterUpdate n -> Format.sprintf "%s updates parameter %d" parameter_name n
-      | _ -> failwith "not a tito sink"
-    in
-    match AccessPath.Root.parameter_name root with
-    | Some name ->
-        List.fold kinds ~init:positions ~f:(fun positions kind ->
-            String.Set.add positions (get_tito_name name kind))
-    | _ -> positions
-  in
-  let taint_in_taint_out_names =
+  let parameter_taint_in_taint_out_map =
     Domains.BackwardState.fold
       Domains.BackwardState.KeyValue
       backward.taint_in_taint_out
-      ~f:extract_tito_parameter_name
-      ~init:String.Set.empty
+      ~f:extract_sinks_by_parameter_name
+      ~init:String.Map.empty
   in
   let print_list ~show list =
     list |> List.map ~f:show |> String.concat ~sep:", " |> Format.asprintf "[%s]"
@@ -358,13 +342,15 @@ let check_expectation
     ~f:check_each_source_parameter
     expected_parameter_sources
     parameter_source_taint_map;
-  let expected_tito = tito_parameters |> String.Set.of_list in
+  let expected_tito =
+    List.map ~f:(fun { name; sinks } -> name, sinks) tito_parameters |> String.Map.of_alist_exn
+  in
   assert_equal
-    ~cmp:String.Set.equal
-    ~printer:(fun set -> Sexp.to_string [%message (set : String.Set.t)])
-    ~msg:(Format.sprintf "Define %s Tito positions" define_name)
-    expected_tito
-    taint_in_taint_out_names;
+    (Map.length expected_tito)
+    (Map.length parameter_taint_in_taint_out_map)
+    ~printer:Int.to_string
+    ~msg:(Format.sprintf "Define %s: List of tito parameters differ in length." define_name);
+  String.Map.iter2 ~f:check_each_sink expected_tito parameter_taint_in_taint_out_map;
 
   (* Check sanitizers *)
   assert_equal

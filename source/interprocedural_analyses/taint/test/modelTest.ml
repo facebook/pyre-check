@@ -1713,12 +1713,24 @@ let test_taint_in_taint_out_models context =
   assert_model
     ~context
     ~model_source:"def test.tito(parameter: TaintInTaintOut): ..."
-    ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "test.tito"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          "test.tito";
+      ]
     ();
   assert_model
     ~context
     ~model_source:"def test.tito(parameter: AppliesTo[1, TaintInTaintOut]): ..."
-    ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "test.tito"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          "test.tito";
+      ]
     ()
 
 
@@ -1726,7 +1738,13 @@ let test_taint_in_taint_out_models_alternate context =
   assert_model
     ~context
     ~model_source:"def test.tito(parameter: TaintInTaintOut[LocalReturn]): ..."
-    ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "test.tito"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          "test.tito";
+      ]
     ()
 
 
@@ -1764,7 +1782,13 @@ let test_taint_in_taint_out_update_models context =
   let assert_model = assert_model ~context in
   assert_model
     ~model_source:"def test.update(self, arg1: TaintInTaintOut[Updates[self]]): ..."
-    ~expect:[outcome ~kind:`Function ~tito_parameters:["arg1 updates parameter 0"] "test.update"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:[{ name = "arg1"; sinks = [Sinks.ParameterUpdate 0] }]
+          "test.update";
+      ]
     ();
   assert_model
     ~model_source:"def test.update(self, arg1, arg2: TaintInTaintOut[Updates[self, arg1]]): ..."
@@ -1772,14 +1796,20 @@ let test_taint_in_taint_out_update_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:["arg2 updates parameter 0"; "arg2 updates parameter 1"]
+          ~tito_parameters:
+            [{ name = "arg2"; sinks = [Sinks.ParameterUpdate 0; Sinks.ParameterUpdate 1] }]
           "test.update";
       ]
     ();
   assert_model
     ~model_source:"def test.update(self: TaintInTaintOut[LocalReturn, Updates[arg1]], arg1): ..."
     ~expect:
-      [outcome ~kind:`Function ~tito_parameters:["self"; "self updates parameter 1"] "test.update"]
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:[{ name = "self"; sinks = [Sinks.LocalReturn; Sinks.ParameterUpdate 1] }]
+          "test.update";
+      ]
     ()
 
 
@@ -1792,7 +1822,7 @@ let test_union_models context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "XSS"] }]
-          ~tito_parameters:["parameter"]
+          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
           "test.both";
       ]
     ()
@@ -1830,7 +1860,13 @@ let test_tito_breadcrumbs context =
   assert_model
     ~context
     ~model_source:"def test.tito(parameter: TaintInTaintOut[Via[special]]): ..."
-    ~expect:[outcome ~kind:`Function ~tito_parameters:["parameter"] "test.tito"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          "test.tito";
+      ]
     ()
 
 
@@ -1852,7 +1888,13 @@ let test_attach_features context =
     ();
   assert_model
     ~model_source:"def test.tito(arg: AttachToTito[Via[special]]): ..."
-    ~expect:[outcome ~kind:`Function ~tito_parameters:["arg"] "test.tito"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:[{ name = "arg"; sinks = [Sinks.Attach] }]
+          "test.tito";
+      ]
     ()
 
 
