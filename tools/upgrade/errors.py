@@ -450,15 +450,6 @@ def _map_line_to_start_of_range(line_ranges: List[LineRange]) -> Dict[int, int]:
     return target_line_map
 
 
-def _is_line_break(line: str, is_continuing_existing_block: bool) -> bool:
-    comment_free_line = line.split("#")[0].rstrip()
-    if comment_free_line.endswith("\\"):
-        return True
-    if is_continuing_existing_block and comment_free_line.endswith("("):
-        return True
-    return False
-
-
 class LineBreakBlock:
     error_comments: List[List[str]]
     opened_expressions: int
