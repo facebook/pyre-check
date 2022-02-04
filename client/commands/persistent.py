@@ -11,7 +11,6 @@ import logging
 import os
 import subprocess
 import tempfile
-import time
 import traceback
 from pathlib import Path
 from typing import (
@@ -36,6 +35,7 @@ from .. import (
     command_arguments,
     configuration as configuration_module,
     statistics_logger,
+    timer,
 )
 from ..coverage_collector import coverage_collector_for_module, CoveredAndUncoveredLines
 from . import (
@@ -537,7 +537,7 @@ class ServerState:
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
     )
-    last_diagnostic_update_timestamp: Optional[float] = None
+    last_diagnostic_update_timer: Optional[timer.Timer] = None
     query_state: PyreQueryState = dataclasses.field(default_factory=PyreQueryState)
 
 
@@ -1269,20 +1269,22 @@ class PyreServerHandler(connection.BackgroundTask):
     async def clear_type_errors_for_client(self) -> None:
         for path in self.server_state.diagnostics:
             await _publish_diagnostics(self.client_output_channel, path, [])
-        last_update_time = self.server_state.last_diagnostic_update_timestamp
-        if last_update_time is not None:
+        last_update_timer = self.server_state.last_diagnostic_update_timer
+        if last_update_timer is not None:
             _log_lsp_event(
                 self.remote_logging,
                 LSPEvent.COVERED,
-                integers={"duration": int((time.time() - last_update_time) * 1000)},
+                integers={"duration": int(last_update_timer.stop_in_millisecond())},
             )
             # Reset the timestamp to avoid duplicate counting
-            self.server_state.last_diagnostic_update_timestamp = None
+            last_update_timer.reset()
 
     async def show_type_errors_to_client(self) -> None:
         for path, diagnostics in self.server_state.diagnostics.items():
             await _publish_diagnostics(self.client_output_channel, path, diagnostics)
-        self.server_state.last_diagnostic_update_timestamp = time.time()
+        last_update_timer = self.server_state.last_diagnostic_update_timer
+        if last_update_timer is not None:
+            last_update_timer.reset()
 
     async def handle_type_error_subscription(
         self, type_error_subscription: TypeErrorSubscription
@@ -1397,7 +1399,7 @@ class PyreServerHandler(connection.BackgroundTask):
             relative_local_root=Path(local_root) if local_root else None,
         )
 
-        start_time: float = time.time()
+        connection_timer = timer.Timer()
         try:
             async with connection.connect_in_text_mode(socket_path) as (
                 input_channel,
@@ -1415,7 +1417,7 @@ class PyreServerHandler(connection.BackgroundTask):
                 _log_lsp_event(
                     remote_logging=self.remote_logging,
                     event=LSPEvent.CONNECTED,
-                    integers={"duration": int((time.time() - start_time) * 1000)},
+                    integers={"duration": int(connection_timer.stop_in_millisecond())},
                     normals={
                         "connected_to": "already_running_server",
                         **self._auxiliary_logging_info(server_start_options),
@@ -1453,7 +1455,7 @@ class PyreServerHandler(connection.BackgroundTask):
                 _log_lsp_event(
                     remote_logging=self.remote_logging,
                     event=LSPEvent.CONNECTED,
-                    integers={"duration": int((time.time() - start_time) * 1000)},
+                    integers={"duration": int(connection_timer.stop_in_millisecond())},
                     normals={
                         "connected_to": "newly_started_server",
                         **self._auxiliary_logging_info(server_start_options),
@@ -1467,7 +1469,7 @@ class PyreServerHandler(connection.BackgroundTask):
             _log_lsp_event(
                 remote_logging=self.remote_logging,
                 event=LSPEvent.NOT_CONNECTED,
-                integers={"duration": int((time.time() - start_time) * 1000)},
+                integers={"duration": int(connection_timer.stop_in_millisecond())},
                 normals={
                     **self._auxiliary_logging_info(server_start_options),
                     "exception": str(start_status.message),
@@ -1500,7 +1502,7 @@ class PyreServerHandler(connection.BackgroundTask):
                 _log_lsp_event(
                     remote_logging=self.remote_logging,
                     event=LSPEvent.NOT_CONNECTED,
-                    integers={"duration": int((time.time() - start_time) * 1000)},
+                    integers={"duration": int(connection_timer.stop_in_millisecond())},
                     normals={
                         **self._auxiliary_logging_info(server_start_options),
                         "exception": str(start_status.detail),
@@ -1535,7 +1537,7 @@ class PyreServerHandler(connection.BackgroundTask):
         server_start_options = read_server_start_options(
             self.server_start_options_reader, self.remote_logging
         )
-        start_time: float = time.time()
+        session_timer = timer.Timer()
         try:
             LOG.info(f"Starting Pyre server from configuration: {server_start_options}")
             await self._run(server_start_options)
@@ -1543,7 +1545,7 @@ class PyreServerHandler(connection.BackgroundTask):
             _log_lsp_event(
                 remote_logging=self.remote_logging,
                 event=LSPEvent.DISCONNECTED,
-                integers={"duration": int((time.time() - start_time) * 1000)},
+                integers={"duration": int(session_timer.stop_in_millisecond())},
                 normals={
                     **self._auxiliary_logging_info(server_start_options),
                     "exception": traceback.format_exc(),
@@ -1631,7 +1633,7 @@ def run(
     def read_server_start_options() -> PyreServerStartOptions:
         return PyreServerStartOptions.read_from(command_argument, base_directory)
 
-    start_time: float = time.time()
+    command_timer = timer.Timer()
     error_message: Optional[str] = None
     try:
         return asyncio.get_event_loop().run_until_complete(
@@ -1647,7 +1649,7 @@ def run(
         _log_lsp_event(
             remote_logging,
             LSPEvent.STOPPED,
-            integers={"duration": int((time.time() - start_time) * 1000)},
+            integers={"duration": int(command_timer.stop_in_millisecond())},
             normals={
                 **({"exception": error_message} if error_message is not None else {})
             },
