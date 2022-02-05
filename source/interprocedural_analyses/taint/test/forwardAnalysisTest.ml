@@ -1140,7 +1140,6 @@ let () =
     "tito_side_effects", test_tito_side_effects;
     "tuple", test_tuple;
     "unary", test_unary;
-    "union", test_taint_in_taint_out_application;
     "walrus", test_walrus;
     "yield", test_yield;
   ]
