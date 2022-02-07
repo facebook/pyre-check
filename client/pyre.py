@@ -1261,12 +1261,4 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
 
 
 if __name__ == "__main__":
-    try:
-        os.getcwd()
-    except FileNotFoundError:
-        LOG.error(
-            "Pyre could not determine the current working directory. "
-            "Has it been removed?\nExiting."
-        )
-        sys.exit(commands.ExitCode.FAILURE)
     sys.exit(main(sys.argv[1:]))
