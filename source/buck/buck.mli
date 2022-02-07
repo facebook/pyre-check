@@ -314,6 +314,11 @@ module Raw : sig
       parameter controls how many lines of Buck log to preserve when an {!BuckError} is raised. By
       default, the size is set to 0, which means no additional log will be kept. *)
 
+  val create_v2 : ?additional_log_size:int -> unit -> t
+  (** Create an instance of [Raw.t] based on system-installed Buck2. The [additional_log_size]
+      parameter controls how many lines of Buck2 log to preserve when an {!BuckError} is raised. By
+      default, the size is set to 0, which means no additional log will be kept. *)
+
   val create_for_testing
     :  query:(?isolation_prefix:string -> string list -> string Lwt.t) ->
     build:(?isolation_prefix:string -> string list -> string Lwt.t) ->
