@@ -64,6 +64,11 @@ def update_tainted_dictionary():
     tainted_dictionary.update({"a": _test_source()})
 
 
+def update_tainted_dictionary_sink(x):
+    tainted_dictionary.update({"a": x})
+    _test_sink(tainted_dictionary)
+
+
 def update_dictionary_indirectly(arg):
     tainted_dictionary.update(arg)
 
@@ -86,6 +91,15 @@ def dict_update_whole_dict():
     x = {"a": _test_source(), "b": "safe"}
     x.update({"a": "safe"})
     return x
+
+
+def dict_update_sinks(x, y, z):
+    d = {"a": x, "b": y}
+    d.update({"a": "safe", "c": z})
+    _test_sink(d["a"])
+    _test_sink(d["b"])
+    _test_sink(d["c"])
+    return
 
 
 def dict_update_taint():
@@ -118,6 +132,13 @@ def big_dict_update_arg():
     x["a"] = _test_source()
     x.update({"a": "safe"})
     return x
+
+
+def dict_only_key_of_parameter_sink(x: Dict[str, Any]):
+    d = {}
+    d.update({"a": x["A"]})
+    _test_sink(d)
+    _test_sink(d["a"])
 
 
 def flow_through_keywords():
