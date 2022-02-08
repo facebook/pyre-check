@@ -1294,6 +1294,65 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              (Name.Attribute
                {
                  base = { Node.value = Name (Name.Identifier identifier); _ } as base;
+                 attribute = "update";
+                 _;
+               });
+         _;
+       };
+     arguments =
+       [
+         {
+           Call.Argument.value =
+             { Node.value = Expression.Dictionary { Dictionary.entries; keywords = [] }; _ };
+           _;
+         };
+       ];
+    }
+      when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+           && Option.is_some (Dictionary.string_literal_keys entries) ->
+        let entries = Option.value_exn (Dictionary.string_literal_keys entries) in
+        let access_path =
+          Some { AccessPath.root = AccessPath.Root.Variable identifier; path = [] }
+        in
+        let dict_taint =
+          let global_taint =
+            GlobalModel.from_expression
+              ~resolution
+              ~call_graph:FunctionContext.call_graph_of_define
+              ~qualifier:FunctionContext.qualifier
+              ~expression:base
+            |> GlobalModel.get_sink
+          in
+          BackwardState.Tree.join global_taint (get_taint access_path state)
+        in
+        let override_taint_from_update (taint, state) (key, value) =
+          let path = [Abstract.TreeDomain.Label.Index key] in
+          let value_taint =
+            BackwardState.Tree.read ~transform_non_leaves path dict_taint
+            |> BackwardState.Tree.transform
+                 Features.TitoPositionSet.Element
+                 Add
+                 ~f:value.Node.location
+          in
+          (* update backwards is overwriting the old key taint with bottom *)
+          let taint =
+            BackwardState.Tree.assign ~tree:taint path ~subtree:BackwardState.Tree.bottom
+          in
+          let state = analyze_expression ~resolution ~taint:value_taint ~state ~expression:value in
+          taint, state
+        in
+        let taint, state =
+          List.fold entries ~init:(dict_taint, state) ~f:override_taint_from_update
+        in
+        store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
+    | {
+     callee =
+       {
+         Node.value =
+           Name
+             (Name.Attribute
+               {
+                 base = { Node.value = Name (Name.Identifier identifier); _ } as base;
                  attribute = "pop";
                  _;
                });
