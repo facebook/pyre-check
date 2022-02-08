@@ -489,8 +489,8 @@ let rec parse_annotations
     match kinds with
     | [] -> Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs; via_features; path = [] }]
     | _ ->
-        List.map kinds ~f:(fun (kind, _) ->
-            AnnotationParser.parse_sink ~allowed:configuration.sinks kind
+        List.map kinds ~f:(fun (kind, subkind) ->
+            AnnotationParser.parse_sink ~allowed:configuration.sinks ?subkind kind
             >>| fun sink -> Tito { tito = sink; breadcrumbs; via_features; path = [] })
         |> all
         |> map_error ~f:annotation_error
@@ -993,12 +993,13 @@ let introduce_taint_in_taint_out
     let breadcrumbs = Features.BreadcrumbSet.of_approximation breadcrumbs in
     let via_features = Features.ViaFeatureSet.of_list via_features in
     match taint_sink_kind with
-    | Sinks.LocalReturn ->
+    | Sinks.LocalReturn
+    | Sinks.Transform _ ->
         let return_taint =
           Domains.local_return_frame
           |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
           |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
-          |> BackwardTaint.singleton Sinks.LocalReturn
+          |> BackwardTaint.singleton taint_sink_kind
           |> BackwardState.Tree.create_leaf
         in
         let taint_in_taint_out = assign_backward_taint taint_in_taint_out return_taint in

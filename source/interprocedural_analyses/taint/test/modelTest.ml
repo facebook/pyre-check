@@ -1748,6 +1748,38 @@ let test_taint_in_taint_out_models_alternate context =
     ()
 
 
+let test_taint_in_taint_out_transform context =
+  assert_model
+    ~context
+    ~model_source:"def test.tito(parameter: TaintInTaintOut[Transform[TestTransform]]): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:
+            [
+              {
+                name = "parameter";
+                sinks =
+                  [
+                    Sinks.Transform
+                      {
+                        local =
+                          {
+                            ordered = [TaintTransform.Named "TestTransform"];
+                            sanitize = SanitizeTransform.Set.empty;
+                          };
+                        global = TaintTransforms.empty;
+                        base = Sinks.LocalReturn;
+                      };
+                  ];
+              };
+            ]
+          "test.tito";
+      ]
+    ()
+
+
 let test_skip_analysis context =
   assert_model
     ~context
@@ -4330,6 +4362,7 @@ let () =
          "source_models" >:: test_source_models;
          "taint_in_taint_out_models" >:: test_taint_in_taint_out_models;
          "taint_in_taint_out_models_alternate" >:: test_taint_in_taint_out_models_alternate;
+         "taint_in_taint_out_transform" >:: test_taint_in_taint_out_transform;
          "taint_in_taint_out_update_models" >:: test_taint_in_taint_out_update_models;
          "taint_union_models" >:: test_union_models;
          "tito_breadcrumbs" >:: test_tito_breadcrumbs;
