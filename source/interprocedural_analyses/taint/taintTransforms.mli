@@ -14,3 +14,11 @@ type t = {
 val empty : t
 
 val concat : t -> t -> t
+
+val pp_kind
+  :  formatter:Format.formatter ->
+  pp_base:(Format.formatter -> 'a -> unit) ->
+  local:t ->
+  global:t ->
+  base:'a ->
+  unit

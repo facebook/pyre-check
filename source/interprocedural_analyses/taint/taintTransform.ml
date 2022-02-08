@@ -11,3 +11,6 @@ type t = Named of string [@@deriving compare, eq]
 
 let pp formatter = function
   | Named transform -> Format.fprintf formatter "%s" transform
+
+
+let show = Format.asprintf "%a" pp

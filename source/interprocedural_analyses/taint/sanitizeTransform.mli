@@ -10,6 +10,8 @@ type t =
   | NamedSink of string
 [@@deriving compare, eq]
 
+val show : t -> string
+
 module Set : sig
   include Stdlib.Set.S with type elt = t
 
@@ -21,11 +23,3 @@ module Set : sig
 
   val filter_sinks : t -> t
 end
-
-val pp_kind
-  :  formatter:Format.formatter ->
-  pp_base:(Format.formatter -> 'a -> unit) ->
-  local:Set.t ->
-  global:Set.t ->
-  base:'a ->
-  unit

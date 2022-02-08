@@ -32,12 +32,7 @@ module T = struct
     | ParametricSource { source_name; subkind } ->
         Format.fprintf formatter "%s[%s]" source_name subkind
     | Transform { local; global; base } ->
-        SanitizeTransform.pp_kind
-          ~formatter
-          ~pp_base:pp
-          ~local:local.sanitize
-          ~global:global.sanitize
-          ~base
+        TaintTransforms.pp_kind ~formatter ~pp_base:pp ~local ~global ~base
 
 
   let show = Format.asprintf "%a" pp

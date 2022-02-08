@@ -8,3 +8,5 @@
 type t = Named of string [@@deriving compare, eq]
 
 val pp : Format.formatter -> t -> unit
+
+val show : t -> string

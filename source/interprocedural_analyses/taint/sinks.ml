@@ -49,12 +49,7 @@ module T = struct
     | ParameterUpdate index -> Format.fprintf formatter "ParameterUpdate%d" index
     | AddFeatureToArgument -> Format.fprintf formatter "AddFeatureToArgument"
     | Transform { local; global; base } ->
-        SanitizeTransform.pp_kind
-          ~formatter
-          ~pp_base:pp
-          ~local:local.sanitize
-          ~global:global.sanitize
-          ~base
+        TaintTransforms.pp_kind ~formatter ~pp_base:pp ~local ~global ~base
 
 
   let equal = [%compare.equal: t]

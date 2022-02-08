@@ -45,17 +45,3 @@ module Set = struct
         | NamedSink _ -> true
         | _ -> false)
 end
-
-let show_transforms transforms =
-  transforms |> Set.elements |> List.map ~f:show |> String.concat ~sep:":"
-
-
-let pp_transforms formatter transforms = Format.fprintf formatter "%s" (show_transforms transforms)
-
-let pp_kind ~formatter ~pp_base ~local ~global ~base =
-  if Set.is_empty local then
-    Format.fprintf formatter "%a:%a" pp_transforms global pp_base base
-  else if Set.is_empty global then
-    Format.fprintf formatter "%a@@%a" pp_transforms local pp_base base
-  else
-    Format.fprintf formatter "%a@@%a:%a" pp_transforms local pp_transforms global pp_base base
