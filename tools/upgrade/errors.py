@@ -117,6 +117,32 @@ class LineBreakTransformer(libcst.CSTTransformer):
             value=LineBreakTransformer.basic_parenthesize(assign_value)
         )
 
+    def leave_AnnAssign(
+        self, original_node: libcst.AnnAssign, updated_node: libcst.AnnAssign
+    ) -> libcst.AnnAssign:
+        assign_value = updated_node.value
+        equal = updated_node.equal
+        if not isinstance(equal, libcst.AssignEqual):
+            return updated_node
+        assign_whitespace = equal.whitespace_after
+        updated_value = (
+            LineBreakTransformer.basic_parenthesize(assign_value, assign_whitespace)
+            if assign_value
+            else None
+        )
+        if libcst_matchers.matches(
+            assign_whitespace, libcst_matchers.ParenthesizedWhitespace()
+        ):
+            updated_equal = equal.with_changes(
+                whitespace_after=libcst.SimpleWhitespace(value=" ")
+            )
+
+            return updated_node.with_changes(
+                equal=updated_equal,
+                value=updated_value,
+            )
+        return updated_node.with_changes(value=updated_value)
+
     def leave_Del(
         self, original_node: libcst.Del, updated_node: libcst.Del
     ) -> libcst.Del:
