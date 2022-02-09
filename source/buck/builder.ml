@@ -17,15 +17,7 @@ module IncrementalBuildResult = struct
   }
 end
 
-type t = {
-  interface: Interface.t;
-  source_root: PyrePath.t;
-  artifact_root: PyrePath.t;
-}
-
-let create ~source_root ~artifact_root interface = { interface; source_root; artifact_root }
-
-let build ~targets { interface; source_root; artifact_root } =
+let build ~interface ~source_root ~artifact_root targets =
   let open Lwt.Infix in
   Interface.normalize_targets interface targets
   >>= fun normalized_targets ->
@@ -38,7 +30,7 @@ let build ~targets { interface; source_root; artifact_root } =
   | Result.Ok () -> Lwt.return build_result
 
 
-let restore ~build_map { source_root; artifact_root; _ } =
+let restore ~source_root ~artifact_root build_map =
   let open Lwt.Infix in
   Artifacts.populate ~source_root ~artifact_root build_map
   >>= function
@@ -65,7 +57,7 @@ let do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_m
   update_artifacts ~source_root ~artifact_root difference
 
 
-let full_incremental_build ~old_build_map ~targets { interface; source_root; artifact_root } =
+let full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets =
   let open Lwt.Infix in
   Interface.normalize_targets interface targets
   >>= fun normalized_targets ->
@@ -77,9 +69,11 @@ let full_incremental_build ~old_build_map ~targets { interface; source_root; art
 
 
 let incremental_build_with_normalized_targets
+    ~interface
+    ~source_root
+    ~artifact_root
     ~old_build_map
-    ~targets
-    { interface; source_root; artifact_root }
+    targets
   =
   let open Lwt.Infix in
   Interface.construct_build_map interface targets
@@ -135,12 +129,13 @@ let compute_difference_from_changed_paths ~source_root ~interface ~targets chang
 
 
 let build_map_and_difference_from_paths
+    ~interface
+    ~source_root
     ~old_build_map
     ~old_build_map_index
-    ~targets
     ~changed_paths
     ~removed_paths
-    { interface; source_root; _ }
+    targets
   =
   let open Lwt.Infix in
   Log.info "Computing build map deltas from changed paths...";
@@ -172,26 +167,34 @@ let build_map_and_difference_from_paths
 
 
 let fast_incremental_build_with_normalized_targets
+    ~interface
+    ~source_root
+    ~artifact_root
     ~old_build_map
     ~old_build_map_index
-    ~targets
     ~changed_paths
     ~removed_paths
-    ({ source_root; artifact_root; _ } as builder)
+    targets
   =
   let open Lwt.Infix in
   Log.info "Attempting to perform fast incremental rebuild...";
   build_map_and_difference_from_paths
+    ~interface
+    ~source_root
     ~old_build_map
     ~old_build_map_index
-    ~targets
     ~changed_paths
     ~removed_paths
-    builder
+    targets
   >>= function
   | Result.Error message ->
       Log.info "Fast incremental rebuild failed: %s. Falling back to the slow path..." message;
-      incremental_build_with_normalized_targets ~old_build_map ~targets builder
+      incremental_build_with_normalized_targets
+        ~interface
+        ~source_root
+        ~artifact_root
+        ~old_build_map
+        targets
   | Result.Ok (build_map, difference) ->
       let open Lwt.Infix in
       update_artifacts ~source_root ~artifact_root difference
@@ -200,11 +203,12 @@ let fast_incremental_build_with_normalized_targets
 
 
 let incremental_build_with_unchanged_build_map
+    ~source_root
+    ~artifact_root
     ~build_map
     ~build_map_index
-    ~targets
     ~changed_sources
-    { source_root; artifact_root; _ }
+    targets
   =
   let changed_artifacts =
     to_relative_paths ~root:source_root changed_sources
@@ -222,7 +226,7 @@ let do_lookup_source ~index ~source_root ~artifact_root path =
       |> Option.map ~f:(fun relative -> PyrePath.create_relative ~root:source_root ~relative)
 
 
-let lookup_source ~index ~builder:{ source_root; artifact_root; _ } path =
+let lookup_source ~source_root ~artifact_root ~index path =
   do_lookup_source ~index ~source_root ~artifact_root path
 
 
@@ -234,5 +238,122 @@ let do_lookup_artifact ~index ~source_root ~artifact_root path =
       |> List.map ~f:(fun relative -> PyrePath.create_relative ~root:artifact_root ~relative)
 
 
-let lookup_artifact ~index ~builder:{ source_root; artifact_root; _ } path =
+let lookup_artifact ~source_root ~artifact_root ~index path =
   do_lookup_artifact ~index ~source_root ~artifact_root path
+
+
+type t = {
+  build: string list -> Interface.BuildResult.t Lwt.t;
+  restore: BuildMap.t -> unit Lwt.t;
+  full_incremental_build: old_build_map:BuildMap.t -> string list -> IncrementalBuildResult.t Lwt.t;
+  incremental_build_with_normalized_targets:
+    old_build_map:BuildMap.t -> Target.t list -> IncrementalBuildResult.t Lwt.t;
+  fast_incremental_build_with_normalized_targets:
+    old_build_map:BuildMap.t ->
+    old_build_map_index:BuildMap.Indexed.t ->
+    changed_paths:PyrePath.t list ->
+    removed_paths:PyrePath.t list ->
+    Target.t list ->
+    IncrementalBuildResult.t Lwt.t;
+  incremental_build_with_unchanged_build_map:
+    build_map:BuildMap.t ->
+    build_map_index:BuildMap.Indexed.t ->
+    changed_sources:PyrePath.t list ->
+    Target.t list ->
+    IncrementalBuildResult.t Lwt.t;
+  lookup_source: index:BuildMap.Indexed.t -> PyrePath.t -> PyrePath.t option;
+  lookup_artifact: index:BuildMap.Indexed.t -> PyrePath.t -> PyrePath.t list;
+}
+
+let create ~source_root ~artifact_root interface =
+  {
+    build = build ~interface ~source_root ~artifact_root;
+    restore = restore ~source_root ~artifact_root;
+    full_incremental_build = full_incremental_build ~interface ~source_root ~artifact_root;
+    incremental_build_with_normalized_targets =
+      incremental_build_with_normalized_targets ~interface ~source_root ~artifact_root;
+    fast_incremental_build_with_normalized_targets =
+      fast_incremental_build_with_normalized_targets ~interface ~source_root ~artifact_root;
+    incremental_build_with_unchanged_build_map =
+      incremental_build_with_unchanged_build_map ~source_root ~artifact_root;
+    lookup_source = lookup_source ~source_root ~artifact_root;
+    lookup_artifact = lookup_artifact ~source_root ~artifact_root;
+  }
+
+
+let create_v2 ~source_root ~artifact_root interface =
+  let fast_incremental_build_with_normalized_targets
+      ~old_build_map
+      ~old_build_map_index:_
+      ~changed_paths:_
+      ~removed_paths:_
+      targets
+    =
+    (* TODO: The same query we relied on to optimize incremental build in Buck1 does not exist in
+       Buck2. For now, fallback to a less optimized rebuild approach. *)
+    incremental_build_with_normalized_targets
+      ~interface
+      ~source_root
+      ~artifact_root
+      ~old_build_map
+      targets
+  in
+  {
+    build = build ~interface ~source_root ~artifact_root;
+    restore = restore ~source_root ~artifact_root;
+    full_incremental_build = full_incremental_build ~interface ~source_root ~artifact_root;
+    incremental_build_with_normalized_targets =
+      incremental_build_with_normalized_targets ~interface ~source_root ~artifact_root;
+    fast_incremental_build_with_normalized_targets;
+    incremental_build_with_unchanged_build_map =
+      incremental_build_with_unchanged_build_map ~source_root ~artifact_root;
+    lookup_source = lookup_source ~source_root ~artifact_root;
+    lookup_artifact = lookup_artifact ~source_root ~artifact_root;
+  }
+
+
+let build ~targets { build; _ } = build targets
+
+let restore ~build_map { restore; _ } = restore build_map
+
+let full_incremental_build ~old_build_map ~targets { full_incremental_build; _ } =
+  full_incremental_build ~old_build_map targets
+
+
+let incremental_build_with_normalized_targets
+    ~old_build_map
+    ~targets
+    { incremental_build_with_normalized_targets; _ }
+  =
+  incremental_build_with_normalized_targets ~old_build_map targets
+
+
+let fast_incremental_build_with_normalized_targets
+    ~old_build_map
+    ~old_build_map_index
+    ~targets
+    ~changed_paths
+    ~removed_paths
+    { fast_incremental_build_with_normalized_targets; _ }
+  =
+  fast_incremental_build_with_normalized_targets
+    ~old_build_map
+    ~old_build_map_index
+    ~changed_paths
+    ~removed_paths
+    targets
+
+
+let incremental_build_with_unchanged_build_map
+    ~build_map
+    ~build_map_index
+    ~targets
+    ~changed_sources
+    { incremental_build_with_unchanged_build_map; _ }
+  =
+  incremental_build_with_unchanged_build_map ~build_map ~build_map_index ~changed_sources targets
+
+
+let lookup_source ~index ~builder:{ lookup_source; _ } path = lookup_source ~index path
+
+let lookup_artifact ~index ~builder:{ lookup_artifact; _ } path = lookup_artifact ~index path

@@ -422,7 +422,12 @@ module Builder : sig
   (** {1 Creation} *)
 
   val create : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.t -> t
-  (** Create an instance of [Builder.t] from an instance of {!Interface.t} and some buck options. *)
+  (** Create an instance of [Builder.t] from an instance of {!Interface.t} and some buck options.
+      Builders created this way are only compatible with Buck1. *)
+
+  val create_v2 : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.t -> t
+  (** Create an instance of [Builder.t] from an instance of {!Interface.t} and some buck options.
+      Builders created with way are only compatible with Buck2. *)
 
   (** {1 Build} *)
 
