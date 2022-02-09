@@ -442,7 +442,41 @@ class ErrorsTest(unittest.TestCase):
             max_line_length=20,
         )
 
-        # Remove unused ignores.
+        # Truncate long comments.
+        self.assertSuppressErrors(
+            {1: [{"code": "1", "description": "description"}]},
+            """
+            def foo() -> None: pass
+            """,
+            """
+            # FIXME[1]: descr...
+            def foo() -> None: pass
+            """,
+            max_line_length=25,
+            truncate=True,
+        )
+
+        self.assertSuppressErrors(
+            {
+                1: [
+                    {
+                        "code": "1",
+                        "description": "this description takes up over four lines \
+                        of content when it is split, given the max line length",
+                    }
+                ]
+            },
+            """
+            def foo() -> None: pass
+            """,
+            """
+            # FIXME[1]: this ...
+            def foo() -> None: pass
+            """,
+            max_line_length=25,
+        )
+
+    def test_suppress_errors__remove_unused(self) -> None:
         self.assertSuppressErrors(
             {1: [{"code": "0", "description": "description"}]},
             """
@@ -634,40 +668,7 @@ class ErrorsTest(unittest.TestCase):
             """,
         )
 
-        # Truncate long comments.
-        self.assertSuppressErrors(
-            {1: [{"code": "1", "description": "description"}]},
-            """
-            def foo() -> None: pass
-            """,
-            """
-            # FIXME[1]: descr...
-            def foo() -> None: pass
-            """,
-            max_line_length=25,
-            truncate=True,
-        )
-
-        self.assertSuppressErrors(
-            {
-                1: [
-                    {
-                        "code": "1",
-                        "description": "this description takes up over four lines \
-                        of content when it is split, given the max line length",
-                    }
-                ]
-            },
-            """
-            def foo() -> None: pass
-            """,
-            """
-            # FIXME[1]: this ...
-            def foo() -> None: pass
-            """,
-            max_line_length=25,
-        )
-
+    def test_suppress_errors__line_breaks(self) -> None:
         # Line breaks without errors.
         self.assertSuppressErrors(
             {},
