@@ -416,68 +416,6 @@
     "callable": "dictionary.test_items",
     "callable_line": 308,
     "code": 5002,
-    "line": 313,
-    "start": 19,
-    "end": 20,
-    "filename": "dictionary.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "dictionary.py",
-              "line": 309,
-              "start": 22,
-              "end": 36
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "dictionary.py",
-              "line": 313,
-              "start": 19,
-              "end": 20
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
-    "master_handles": [
-      "dictionary.test_items:5002:0:Call|_test_sink|3|formal(arg):a1a5cd53de970c95a4f65fe8250cfcec"
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "dictionary.test_items",
-    "callable_line": 308,
-    "code": 5002,
     "line": 321,
     "start": 19,
     "end": 20,
@@ -518,6 +456,68 @@
             "root": {
               "filename": "dictionary.py",
               "line": 321,
+              "start": 19,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "dictionary.test_items:5002:0:Call|_test_sink|3|formal(arg):a1a5cd53de970c95a4f65fe8250cfcec"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary.test_items",
+    "callable_line": 308,
+    "code": 5002,
+    "line": 313,
+    "start": 19,
+    "end": 20,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 309,
+              "start": 22,
+              "end": 36
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 313,
               "start": 19,
               "end": 20
             }
@@ -598,7 +598,7 @@
       { "always-via": "special_sink" }
     ],
     "master_handles": [
-      "dictionary.test_keys_and_values:5002:0:Call|_test_sink|0|formal(arg):4d2c82bafc7d29b00d2b85eee523f3e7"
+      "dictionary.test_keys_and_values:5002:0:Call|_test_sink|3|formal(arg):acea50d57e2f5e8db3d68f91d60ddab2"
     ]
   }
 }
@@ -666,7 +666,7 @@
       { "always-via": "special_sink" }
     ],
     "master_handles": [
-      "dictionary.test_keys_and_values:5002:0:Call|_test_sink|3|formal(arg):acea50d57e2f5e8db3d68f91d60ddab2"
+      "dictionary.test_keys_and_values:5002:0:Call|_test_sink|0|formal(arg):4d2c82bafc7d29b00d2b85eee523f3e7"
     ]
   }
 }
