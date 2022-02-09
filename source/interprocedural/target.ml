@@ -163,11 +163,15 @@ module OverrideKey = struct
   let from_string = ident
 end
 
+module Map = Core.Map.Make (Key)
 module Set = Caml.Set.Make (Key)
+module CallableMap = Core.Map.Make (CallableKey)
 module CallableSet = Caml.Set.Make (CallableKey)
+module CallableHashSet = Core.Hash_set.Make (CallableKey)
 module OverrideSet = Caml.Set.Make (OverrideKey)
-module HashSet = Hash_set.Make (Key)
-module CallableHashSet = Hash_set.Make (CallableKey)
+module Hashable = Core.Hashable.Make (Key)
+module HashMap = Hashable.Table
+module HashSet = Hashable.Hash_set
 
 let get_module_and_definition ~resolution callable =
   let get_bodies { class_name; method_name } =
@@ -286,8 +290,3 @@ let compare target1 target2 =
   let target1 = (target1 :> t) in
   let target2 = (target2 :> t) in
   compare target1 target2
-
-
-module CallableMap = Map.Make (CallableKey)
-module Map = Map.Make (Key)
-module Hashable = Hashable.Make (Key)

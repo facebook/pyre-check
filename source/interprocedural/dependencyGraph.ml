@@ -61,7 +61,7 @@ let empty_overrides = Reference.Map.empty
 
 (* Returns forest of nodes in reverse finish time order. *)
 let depth_first_search edges nodes =
-  let visited = Target.Hashable.Table.create ~size:(2 * List.length nodes) () in
+  let visited = Target.HashMap.create ~size:(2 * List.length nodes) () in
   let rec visit accumulator node =
     if Hashtbl.mem visited node then
       accumulator
@@ -79,13 +79,12 @@ let depth_first_search edges nodes =
 
 
 let reverse_edges edges =
-  let reverse_edges = Target.Hashable.Table.create () in
+  let reverse_edges = Target.HashMap.create () in
   let walk_reverse_edges ~key:caller ~data:callees =
     let walk_callees callee =
-      match Target.Hashable.Table.find reverse_edges callee with
-      | None -> Target.Hashable.Table.add_exn reverse_edges ~key:callee ~data:[caller]
-      | Some callers ->
-          Target.Hashable.Table.set reverse_edges ~key:callee ~data:(caller :: callers)
+      match Target.HashMap.find reverse_edges callee with
+      | None -> Target.HashMap.add_exn reverse_edges ~key:callee ~data:[caller]
+      | Some callers -> Target.HashMap.set reverse_edges ~key:callee ~data:(caller :: callers)
     in
     List.iter callees ~f:walk_callees
   in
@@ -93,7 +92,7 @@ let reverse_edges edges =
   let accumulate ~key ~data map =
     Target.Map.set map ~key ~data:(List.dedup_and_sort ~compare:Target.compare data)
   in
-  Target.Hashable.Table.fold reverse_edges ~init:Target.Map.empty ~f:accumulate
+  Target.HashMap.fold reverse_edges ~init:Target.Map.empty ~f:accumulate
 
 
 let reverse call_graph =
