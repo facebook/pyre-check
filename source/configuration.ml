@@ -23,6 +23,7 @@ module Buck = struct
   type t = {
     mode: string option;
     isolation_prefix: string option;
+    use_buck2: bool;
     targets: string list;
     (* This is the buck root of the source directory, i.e. output of `buck root`. *)
     source_root: PyrePath.t;
@@ -36,10 +37,11 @@ module Buck = struct
     try
       let mode = optional_string_member "mode" json in
       let isolation_prefix = optional_string_member "isolation_prefix" json in
+      let use_buck2 = bool_member ~default:false "use_buck2" json in
       let targets = string_list_member "targets" json ~default:[] in
       let source_root = path_member "source_root" json in
       let artifact_root = path_member "artifact_root" json in
-      Result.Ok { mode; isolation_prefix; targets; source_root; artifact_root }
+      Result.Ok { mode; isolation_prefix; use_buck2; targets; source_root; artifact_root }
     with
     | Yojson.Safe.Util.Type_error (message, _)
     | Yojson.Safe.Util.Undefined (message, _) ->
@@ -47,9 +49,10 @@ module Buck = struct
     | other_exception -> Result.Error (Exn.to_string other_exception)
 
 
-  let to_yojson { mode; isolation_prefix; targets; source_root; artifact_root } =
+  let to_yojson { mode; isolation_prefix; use_buck2; targets; source_root; artifact_root } =
     let result =
       [
+        "use_buck2", `Bool use_buck2;
         "targets", `List (List.map targets ~f:(fun target -> `String target));
         "source_root", `String (PyrePath.absolute source_root);
         "artifact_root", `String (PyrePath.absolute artifact_root);

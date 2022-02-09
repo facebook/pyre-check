@@ -377,10 +377,19 @@ let get_initializer source_paths =
   | Configuration.SourcePaths.WithUnwatchedDependency { unwatched_dependency; _ } ->
       Initializer.track_unwatched_dependency unwatched_dependency
   | Configuration.SourcePaths.Buck
-      { Configuration.Buck.mode; isolation_prefix; source_root; artifact_root; targets } ->
-      let raw = Buck.Raw.create ~additional_log_size:10 () in
-      let interface = Buck.Interface.create ?mode ?isolation_prefix raw in
-      let builder = Buck.Builder.create ~source_root ~artifact_root interface in
+      { Configuration.Buck.mode; isolation_prefix; use_buck2; source_root; artifact_root; targets }
+    ->
+      let builder =
+        match use_buck2 with
+        | false ->
+            let raw = Buck.Raw.create ~additional_log_size:10 () in
+            let interface = Buck.Interface.create ?mode ?isolation_prefix raw in
+            Buck.Builder.create ~source_root ~artifact_root interface
+        | true ->
+            let raw = Buck.Raw.create_v2 ~additional_log_size:10 () in
+            let interface = Buck.Interface.create_v2 ?mode ?isolation_prefix raw in
+            Buck.Builder.create_v2 ~source_root ~artifact_root interface
+      in
       Initializer.buck ~builder ~artifact_root ~targets ()
 
 
