@@ -102,6 +102,19 @@ def dict_update_sinks(x, y, z):
     return
 
 
+def dict_update_sinks_cycle(x):
+    # TODO(T111619575): Support cycle in update.
+    d = {"b": x}
+    d.update({"a": d["b"], "b": "safe"})
+    _test_sink(d["a"])
+
+
+def dict_update_cycle():
+    d = {"b": _test_source()}
+    d.update({"a": d["b"], "b": "safe"})
+    return d
+
+
 def dict_update_taint():
     x = {"a": "safe", "b": "safe"}
     x.update({"a": _test_source()})
