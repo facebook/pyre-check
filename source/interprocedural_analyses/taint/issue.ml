@@ -32,13 +32,9 @@ module Flow = struct
     }
 end
 
-module Flows = struct
-  type t = Flow.t list [@@deriving show]
-end
-
 module Candidate = struct
   type t = {
-    flows: Flows.t;
+    flows: Flow.t list;
     location: Location.WithModule.t;
   }
 

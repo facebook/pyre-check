@@ -23,13 +23,9 @@ module Flow : sig
   val join : t -> t -> t
 end
 
-module Flows : sig
-  type t = Flow.t list [@@deriving show]
-end
-
 module Candidate : sig
   type t = {
-    flows: Flows.t;
+    flows: Flow.t list;
     location: Location.WithModule.t;
   }
 
