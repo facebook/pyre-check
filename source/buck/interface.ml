@@ -14,6 +14,7 @@ module BuckOptions = struct
     raw: Raw.t;
     mode: string option;
     isolation_prefix: string option;
+    use_buck2: bool;
   }
 end
 
@@ -69,85 +70,185 @@ type t = {
   construct_build_map: Target.t list -> BuildResult.t Lwt.t;
 }
 
-let source_database_suffix = "#source-db"
+module V1 = struct
+  let source_database_suffix = "#source-db"
+
+  let query_buck_for_normalized_targets
+      { BuckOptions.raw; mode; isolation_prefix; use_buck2 = _ }
+      target_specifications
+    =
+    match target_specifications with
+    | [] -> Lwt.return "{}"
+    | _ ->
+        List.concat
+          [
+            (* Force `buck` to hand back structured JSON output instead of plain text. *)
+            ["--json"];
+            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
+            ["--config"; "client.id=pyre"];
+            Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
+            [
+              "kind(\"python_binary|python_library|python_test\", %s)"
+              (* Don't bother with generated rules. *)
+              ^ " - attrfilter(labels, generated, %s)"
+              (* `python_unittest()` sources are separated into a macro-generated library, so make
+                 sure we include those. *)
+              ^ " + attrfilter(labels, unittest-library, %s)"
+              ^ (* Provide an opt-out label so that rules can avoid type-checking (e.g. some
+                   libraries wrap generated sources which are expensive to build and therefore
+                   typecheck). *)
+              " - attrfilter(labels, no_pyre, %s)";
+            ];
+            target_specifications;
+          ]
+        |> Raw.query ?isolation_prefix raw
+
+
+  let query_buck_for_changed_targets
+      ~targets
+      { BuckOptions.raw; mode; isolation_prefix; use_buck2 = _ }
+      source_paths
+    =
+    match targets with
+    | [] -> Lwt.return "{}"
+    | targets -> (
+        match source_paths with
+        | [] -> Lwt.return "{}"
+        | source_paths ->
+            let target_string =
+              (* Targets need to be quoted since `buck query` can fail with syntax errors if target
+                 name contains special characters like `=`. *)
+              let quote_string value = Format.sprintf "\"%s\"" value in
+              let quote_target target = Target.show target |> quote_string in
+              List.map targets ~f:quote_target |> String.concat ~sep:" "
+            in
+            List.concat
+              [
+                ["--json"];
+                ["--config"; "client.id=pyre"];
+                Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
+                [
+                  (* This will get only those owner targets that are beneath our targets or the
+                     dependencies of our targets. *)
+                  Format.sprintf "owner(%%s) ^ deps(set(%s))" target_string;
+                ];
+                List.map source_paths ~f:PyrePath.show;
+                (* These attributes are all we need to locate the source and artifact relative
+                   paths. *)
+                ["--output-attributes"; "srcs"; "buck.base_path"; "buck.base_module"; "base_module"];
+              ]
+            |> Raw.query ?isolation_prefix raw)
+
+
+  let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix; use_buck2 = _ } targets =
+    match targets with
+    | [] -> Lwt.return "{}"
+    | _ ->
+        List.concat
+          [
+            (* Force `buck` to hand back structured JSON output instead of plain text. *)
+            ["--show-full-json-output"];
+            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
+            ["--config"; "client.id=pyre"];
+            Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
+            List.map targets ~f:(fun target ->
+                Format.sprintf "%s%s" (Target.show target) source_database_suffix);
+          ]
+        |> Raw.build ?isolation_prefix raw
+end
+
+module V2 = struct
+  let source_database_suffix = "[source-db]"
+
+  let query_buck_for_normalized_targets
+      { BuckOptions.raw; mode; isolation_prefix; use_buck2 = _ }
+      target_specifications
+    =
+    match target_specifications with
+    | [] -> Lwt.return "{}"
+    | _ ->
+        List.concat
+          [
+            (* Force `buck` to hand back structured JSON output instead of plain text. *)
+            ["--json"];
+            (* Force `buck` to opt-out fancy tui logging. *)
+            ["--console=simple"];
+            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
+            ["--config"; "client.id=pyre"];
+            Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
+            [
+              "kind(\"python_binary|python_library|python_test\", %s)"
+              (* Don't bother with generated rules. *)
+              ^ " - attrfilter(labels, generated, %s)"
+              (* `python_unittest()` sources are separated into a macro-generated library, so make
+                 sure we include those. *)
+              ^ " + attrfilter(labels, unittest-library, %s)"
+              ^ (* Provide an opt-out label so that rules can avoid type-checking (e.g. some
+                   libraries wrap generated sources which are expensive to build and therefore
+                   typecheck). *)
+              " - attrfilter(labels, no_pyre, %s)";
+            ];
+            target_specifications;
+          ]
+        |> Raw.query ?isolation_prefix raw
+
+
+  let query_buck_for_changed_targets ~targets:_ _ _ =
+    failwith "Changed targets query is currently not implemented for Buck2"
+
+
+  let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix; use_buck2 = _ } targets =
+    match targets with
+    | [] -> Lwt.return "{}"
+    | _ ->
+        List.concat
+          [
+            (* Force `buck` to opt-out fancy tui logging. *)
+            ["--console=simple"];
+            (* Force `buck` to hand back structured JSON output that contains absolute paths. *)
+            ["--show-full-json-output"];
+            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
+            ["--config"; "client.id=pyre"];
+            Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
+            List.map targets ~f:(fun target ->
+                Format.sprintf "%s%s" (Target.show target) source_database_suffix);
+          ]
+        |> Raw.build ?isolation_prefix raw
+end
+
+let get_source_database_suffix { BuckOptions.use_buck2; _ } =
+  if use_buck2 then
+    V2.source_database_suffix
+  else
+    V1.source_database_suffix
+
 
 let query_buck_for_normalized_targets
-    { BuckOptions.raw; mode; isolation_prefix }
+    ({ BuckOptions.use_buck2; _ } as buck_options)
     target_specifications
   =
-  match target_specifications with
-  | [] -> Lwt.return "{}"
-  | _ ->
-      List.concat
-        [
-          (* Force `buck` to hand back structured JSON output instead of plain text. *)
-          ["--json"];
-          (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
-          ["--config"; "client.id=pyre"];
-          Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
-          [
-            "kind(\"python_binary|python_library|python_test\", %s)"
-            (* Don't bother with generated rules. *)
-            ^ " - attrfilter(labels, generated, %s)"
-            (* `python_unittest()` sources are separated into a macro-generated library, so make
-               sure we include those. *)
-            ^ " + attrfilter(labels, unittest-library, %s)"
-            ^ (* Provide an opt-out label so that rules can avoid type-checking (e.g. some libraries
-                 wrap generated sources which are expensive to build and therefore typecheck). *)
-            " - attrfilter(labels, no_pyre, %s)";
-          ];
-          target_specifications;
-        ]
-      |> Raw.query ?isolation_prefix raw
+  if use_buck2 then
+    V2.query_buck_for_normalized_targets buck_options target_specifications
+  else
+    V1.query_buck_for_normalized_targets buck_options target_specifications
 
 
-let query_buck_for_changed_targets ~targets { BuckOptions.raw; mode; isolation_prefix } source_paths
+let query_buck_for_changed_targets
+    ~targets
+    ({ BuckOptions.use_buck2; _ } as buck_options)
+    source_paths
   =
-  match targets with
-  | [] -> Lwt.return "{}"
-  | targets -> (
-      match source_paths with
-      | [] -> Lwt.return "{}"
-      | source_paths ->
-          let target_string =
-            (* Targets need to be quoted since `buck query` can fail with syntax errors if target
-               name contains special characters like `=`. *)
-            let quote_string value = Format.sprintf "\"%s\"" value in
-            let quote_target target = Target.show target |> quote_string in
-            List.map targets ~f:quote_target |> String.concat ~sep:" "
-          in
-          List.concat
-            [
-              ["--json"];
-              ["--config"; "client.id=pyre"];
-              Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
-              [
-                (* This will get only those owner targets that are beneath our targets or the
-                   dependencies of our targets. *)
-                Format.sprintf "owner(%%s) ^ deps(set(%s))" target_string;
-              ];
-              List.map source_paths ~f:PyrePath.show;
-              (* These attributes are all we need to locate the source and artifact relative paths. *)
-              ["--output-attributes"; "srcs"; "buck.base_path"; "buck.base_module"; "base_module"];
-            ]
-          |> Raw.query ?isolation_prefix raw)
+  if use_buck2 then
+    V2.query_buck_for_changed_targets ~targets buck_options source_paths
+  else
+    V1.query_buck_for_changed_targets ~targets buck_options source_paths
 
 
-let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targets =
-  match targets with
-  | [] -> Lwt.return "{}"
-  | _ ->
-      List.concat
-        [
-          (* Force `buck` to hand back structured JSON output instead of plain text. *)
-          ["--show-full-json-output"];
-          (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
-          ["--config"; "client.id=pyre"];
-          Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
-          List.map targets ~f:(fun target ->
-              Format.sprintf "%s%s" (Target.show target) source_database_suffix);
-        ]
-      |> Raw.build ?isolation_prefix raw
+let run_buck_build_for_targets ({ BuckOptions.use_buck2; _ } as buck_options) targets =
+  if use_buck2 then
+    V2.run_buck_build_for_targets buck_options targets
+  else
+    V1.run_buck_build_for_targets buck_options targets
 
 
 let parse_buck_normalized_targets_query_output query_output =
@@ -282,7 +383,7 @@ let build_source_databases buck_options targets =
   Log.info "Building Buck source databases...";
   run_buck_build_for_targets buck_options targets
   >>= fun build_output ->
-  let source_database_suffix_length = String.length source_database_suffix in
+  let source_database_suffix_length = get_source_database_suffix buck_options |> String.length in
   parse_buck_build_output build_output
   |> List.map ~f:(fun (target, path) ->
          ( String.drop_suffix target source_database_suffix_length |> Target.of_string,
@@ -365,14 +466,18 @@ let construct_build_map_with_options buck_options normalized_targets =
   load_and_merge_source_databases target_and_source_database_paths
 
 
-let create ?mode ?isolation_prefix raw =
-  let buck_options = { BuckOptions.mode; isolation_prefix; raw } in
+let do_create ?mode ?isolation_prefix ~use_buck2 raw =
+  let buck_options = { BuckOptions.mode; isolation_prefix; raw; use_buck2 } in
   {
     normalize_targets = normalize_targets_with_options buck_options;
     query_owner_targets = query_owner_targets_with_options buck_options;
     construct_build_map = construct_build_map_with_options buck_options;
   }
 
+
+let create ?mode ?isolation_prefix raw = do_create ?mode ?isolation_prefix ~use_buck2:false raw
+
+let create_v2 ?mode ?isolation_prefix raw = do_create ?mode ?isolation_prefix ~use_buck2:true raw
 
 let create_for_testing ~normalize_targets ~construct_build_map () =
   let query_owner_targets ~targets:_ _ =

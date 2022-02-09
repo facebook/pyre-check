@@ -373,7 +373,12 @@ module Interface : sig
   end
 
   val create : ?mode:string -> ?isolation_prefix:string -> Raw.t -> t
-  (** Create an instance of [Interface.t] from an instance of {!Raw.t} and some buck options. *)
+  (** Create an instance of [Interface.t] from an instance of {!Raw.t} and some buck options.
+      Interfaces created this way is only compatible with Buck1. *)
+
+  val create_v2 : ?mode:string -> ?isolation_prefix:string -> Raw.t -> t
+  (** Create an instance of [Interface.t] from an instance of {!Raw.t} and some buck options.
+      Interfaces created this way is only compatible with Buck2.*)
 
   val create_for_testing
     :  normalize_targets:(string list -> Target.t list Lwt.t) ->
