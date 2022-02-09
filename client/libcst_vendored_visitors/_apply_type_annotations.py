@@ -291,10 +291,11 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
 
     This is one of the transforms that is available automatically to you when
     running a codemod. To use it in this manner, import
-    :class:`~libcst.codemod.visitors.ApplyTypeAnnotationsVisitor` and then call the static
-    :meth:`~libcst.codemod.visitors.ApplyTypeAnnotationsVisitor.store_stub_in_context` method,
-    giving it the current context (found as ``self.context`` for all subclasses of
-    :class:`~libcst.codemod.Codemod`), the stub module from which you wish to add annotations.
+    :class:`~libcst.codemod.visitors.ApplyTypeAnnotationsVisitor`, then call the static
+    :meth:`~libcst.codemod.visitors.ApplyTypeAnnotationsVisitor.store_stub_in_context`
+    method, giving it the current context (found as ``self.context`` for all subclasses
+    of :class:`~libcst.codemod.Codemod`), the stub module from which you wish to add
+    annotations.
 
     For example, you can store the type annotation ``int`` for ``x`` using::
 
@@ -311,7 +312,8 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
 
         x: int = 1
 
-    If the function or attribute already has a type annotation, it will not be overwritten.
+    If the function or attribute already has a type annotation, it will not be
+    overwritten.
 
     To overwrite existing annotations when applying annotations from a stub,
     use the keyword argument ``overwrite_existing_annotations=True`` when
