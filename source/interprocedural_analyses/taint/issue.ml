@@ -9,6 +9,7 @@ open Core
 open Ast
 open TaintConfiguration
 open Domains
+open Interprocedural
 
 module Flow = struct
   type t = {
@@ -52,6 +53,59 @@ module PartitionedFlow = struct
   }
 end
 
+module SinkHandle = struct
+  type t =
+    | Call of {
+        callee: Target.t;
+        index: int;
+        parameter: AccessPath.Root.t;
+      }
+    | Global of {
+        callee: Target.t;
+        index: int;
+      }
+    | Return
+    | LiteralStringSink of Sinks.t
+    | ConditionalTestSink of Sinks.t
+
+  let make_call ~call_target:{ CallGraph.CallTarget.target; index; _ } ~root =
+    let root =
+      (* Ignore extra information in the parameter in order to group issues together. *)
+      let open AccessPath.Root in
+      match root with
+      | LocalResult -> LocalResult
+      | PositionalParameter { name; _ } -> NamedParameter { name }
+      | NamedParameter { name } -> NamedParameter { name }
+      | StarParameter _ -> StarParameter { position = 0 }
+      | StarStarParameter _ -> StarStarParameter { excluded = [] }
+      | Variable name -> Variable name
+    in
+    Call { callee = target; index; parameter = root }
+
+
+  let make_global ~call_target:{ CallGraph.CallTarget.target; index; _ } =
+    Global { callee = target; index }
+end
+
+module SinkTreeWithHandle = struct
+  type t = {
+    sink_tree: BackwardState.Tree.t;
+    handle: SinkHandle.t;
+  }
+
+  let filter_bottom sink_tree_with_identifiers =
+    List.filter
+      ~f:(fun { sink_tree; _ } -> not (BackwardState.Tree.is_bottom sink_tree))
+      sink_tree_with_identifiers
+
+
+  let join sink_tree_with_identifiers =
+    List.fold
+      ~init:BackwardState.Tree.bottom
+      ~f:(fun sofar { sink_tree; _ } -> BackwardState.Tree.join sofar sink_tree)
+      sink_tree_with_identifiers
+end
+
 type t = {
   code: int;
   flow: Flow.t;
@@ -63,7 +117,7 @@ module Handle = struct
   type t = {
     code: int;
     location: Location.WithModule.t;
-    callable: Interprocedural.Target.t;
+    callable: Target.t;
   }
   [@@deriving sexp, compare]
 
@@ -85,7 +139,7 @@ end
    Let F and B for forward and backward taint respectively. For each path p in B from the root to
    some node with non-empty taint T, we match T with the join of taint in the upward and downward
    closure from node at path p in F. *)
-let generate_source_sink_matches ~location ~source_tree ~sink_tree =
+let generate_source_sink_matches ~location ~sink_handle:_ ~source_tree ~sink_tree =
   let make_source_sink_matches (path, sink_taint) matches =
     let source_taint =
       ForwardState.Tree.read path source_tree
@@ -306,12 +360,12 @@ let generate_error ({ code; location; define; _ } as issue) =
   | None -> failwith "issue with code that has no rule"
   | Some _ ->
       let name, detail = get_name_and_detailed_message issue in
-      let kind = { Interprocedural.Error.name; messages = [detail]; code } in
-      Interprocedural.Error.create ~location ~define ~kind
+      let kind = { Error.name; messages = [detail]; code } in
+      Error.create ~location ~define ~kind
 
 
 let to_json ~filename_lookup callable issue =
-  let callable_name = Interprocedural.Target.external_target_name callable in
+  let callable_name = Target.external_target_name callable in
   let _, message = get_name_and_detailed_message issue in
   let source_traces =
     Domains.ForwardTaint.to_external_json ~filename_lookup issue.flow.source_taint
@@ -381,7 +435,7 @@ let code_metadata () =
     (List.map configuration.rules ~f:(fun rule -> Format.sprintf "%d" rule.code, `String rule.name))
 
 
-let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
+let compute_triggered_sinks ~triggered_sinks ~location ~sink_handle ~source_tree ~sink_tree =
   let partial_sinks_to_taint =
     BackwardState.Tree.collapse
       ~transform:(BackwardTaint.add_local_breadcrumbs (Features.issue_broadening_set ()))
@@ -403,6 +457,7 @@ let compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree =
               let candidate =
                 generate_source_sink_matches
                   ~location
+                  ~sink_handle
                   ~source_tree
                   ~sink_tree:
                     (BackwardState.Tree.create_leaf

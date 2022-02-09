@@ -230,13 +230,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~return_type_breadcrumbs
       ~state:initial_state
       ~call_taint
-      {
-        CallGraph.CallTarget.target = call_target;
-        implicit_self;
-        implicit_dunder_call;
-        collapse_tito = _;
-        index = _;
-      }
+      ({
+         CallGraph.CallTarget.target;
+         implicit_self;
+         implicit_dunder_call;
+         collapse_tito = _;
+         index = _;
+       } as call_target)
     =
     let arguments =
       if implicit_self && not implicit_dunder_call then
@@ -263,13 +263,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       TaintProfiler.track_model_fetch
         ~profiler
         ~analysis:TaintProfiler.Backward
-        ~call_target
-        ~f:(fun () -> CallModel.at_callsite ~resolution ~call_target ~arguments)
+        ~call_target:target
+        ~f:(fun () -> CallModel.at_callsite ~resolution ~call_target:target ~arguments)
     in
     log
       "Backward analysis of call to `%a` with arguments (%a)@,Call site model:@,%a"
       Interprocedural.Target.pretty_print
-      call_target
+      target
       Ast.Expression.pp_expression_argument_list
       arguments
       Model.pp
@@ -297,7 +297,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~call_graph:FunctionContext.call_graph_of_define
           ~qualifier:FunctionContext.qualifier
           ~expression:argument
-        |> GlobalModel.get_sink
+        |> GlobalModel.get_sinks
+        |> Issue.SinkTreeWithHandle.join
       in
       let access_path = AccessPath.of_expression argument in
       get_taint access_path initial_state |> BackwardState.Tree.join global_sink
@@ -372,7 +373,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
       in
       let sink_taint =
-        CallModel.sink_tree_of_argument
+        CallModel.sink_trees_of_argument
           ~resolution
           ~transform_non_leaves
           ~model:taint_model
@@ -380,6 +381,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~call_target
           ~arguments
           ~sink_matches
+        |> Issue.SinkTreeWithHandle.join
       in
       let taint_in_taint_out =
         CallModel.taint_in_taint_out_mapping ~transform_non_leaves ~model:taint_model ~tito_matches
@@ -1308,7 +1310,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~call_graph:FunctionContext.call_graph_of_define
               ~qualifier:FunctionContext.qualifier
               ~expression:base
-            |> GlobalModel.get_sink
+            |> GlobalModel.get_sinks
+            |> Issue.SinkTreeWithHandle.join
           in
           BackwardState.Tree.join global_taint (get_taint access_path state)
         in
@@ -1661,7 +1664,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~call_graph:FunctionContext.call_graph_of_define
               ~qualifier:FunctionContext.qualifier
               ~expression:target
-            |> GlobalModel.get_sink
+            |> GlobalModel.get_sinks
+            |> Issue.SinkTreeWithHandle.join
           in
           BackwardState.Tree.join local_taint global_taint
         in

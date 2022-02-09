@@ -44,7 +44,7 @@ let test_no_errors _ =
       |> Node.create_with_default_location
     in
     let errors =
-      generate_source_sink_matches ~location ~source_tree ~sink_tree
+      generate_source_sink_matches ~location ~sink_handle:SinkHandle.Return ~source_tree ~sink_tree
       |> generate_issues ~define
       |> List.map ~f:generate_error
     in
@@ -92,7 +92,7 @@ let test_errors _ =
       |> Node.create_with_default_location
     in
     let errors =
-      generate_source_sink_matches ~location ~source_tree ~sink_tree
+      generate_source_sink_matches ~location ~sink_handle:SinkHandle.Return ~source_tree ~sink_tree
       |> generate_issues ~define
       |> List.map ~f:generate_error
     in

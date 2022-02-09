@@ -147,7 +147,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     Location.WithModule.Table.set candidates ~key:location ~data:candidate
 
 
-  let check_flow ~location ~source_tree ~sink_tree =
+  let check_flow ~location ~sink_handle ~source_tree ~sink_tree =
     let () =
       if
         (not (ForwardState.Tree.is_bottom source_tree))
@@ -162,13 +162,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           BackwardState.Tree.pp
           sink_tree
     in
-    let flow_candidate = Issue.generate_source_sink_matches ~location ~source_tree ~sink_tree in
-    add_flow_candidate flow_candidate
+    Issue.generate_source_sink_matches ~location ~sink_handle ~source_tree ~sink_tree
+    |> add_flow_candidate
 
 
-  let check_triggered_flows ~triggered_sinks ~location ~source_tree ~sink_tree =
+  let check_flow_to_global ~location ~source_tree global_model =
+    let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
+    let check { Issue.SinkTreeWithHandle.sink_tree; handle } =
+      check_flow ~location ~sink_handle:handle ~source_tree ~sink_tree
+    in
+    GlobalModel.get_sinks global_model |> List.iter ~f:check
+
+
+  let check_triggered_flows ~triggered_sinks ~sink_handle ~location ~source_tree ~sink_tree =
     let triggered, candidates =
-      Issue.compute_triggered_sinks ~triggered_sinks ~location ~source_tree ~sink_tree
+      Issue.compute_triggered_sinks ~triggered_sinks ~sink_handle ~location ~source_tree ~sink_tree
     in
     List.iter triggered ~f:(fun sink -> Hash_set.add triggered_sinks (Sinks.show_partial_sink sink));
     List.iter candidates ~f:add_flow_candidate
@@ -254,13 +262,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments_taint
       ~return_type_breadcrumbs
       ~state:initial_state
-      {
-        CallGraph.CallTarget.target = call_target;
-        implicit_self;
-        implicit_dunder_call;
-        collapse_tito;
-        index = _;
-      }
+      ({
+         CallGraph.CallTarget.target;
+         implicit_self;
+         implicit_dunder_call;
+         collapse_tito;
+         index = _;
+       } as call_target)
     =
     (* Add implicit self. *)
     let arguments, arguments_taint =
@@ -277,13 +285,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       TaintProfiler.track_model_fetch
         ~profiler
         ~analysis:TaintProfiler.Forward
-        ~call_target
-        ~f:(fun () -> CallModel.at_callsite ~resolution ~call_target ~arguments)
+        ~call_target:target
+        ~f:(fun () -> CallModel.at_callsite ~resolution ~call_target:target ~arguments)
     in
     log
       "Forward analysis of call to `%a` with arguments (%a)@,Call site model:@,%a"
       Interprocedural.Target.pretty_print
-      call_target
+      target
       Ast.Expression.pp_expression_argument_list
       arguments
       Model.pp
@@ -394,8 +402,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let location =
         Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
       in
-      let sink_tree =
-        CallModel.sink_tree_of_argument
+      let sink_trees =
+        CallModel.sink_trees_of_argument
           ~resolution
           ~transform_non_leaves:(fun _ tree -> tree)
           ~model:taint_model
@@ -406,7 +414,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       (* Compute triggered partial sinks, if any. *)
       let () =
-        check_triggered_flows ~triggered_sinks ~location ~source_tree:argument_taint ~sink_tree
+        List.iter sink_trees ~f:(fun { Issue.SinkTreeWithHandle.sink_tree; handle } ->
+            check_triggered_flows
+              ~triggered_sinks
+              ~sink_handle:handle
+              ~location
+              ~source_tree:argument_taint
+              ~sink_tree)
       in
 
       (* Add features to arguments. *)
@@ -414,8 +428,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match AccessPath.of_expression argument with
         | Some { AccessPath.root; path } ->
             let breadcrumbs_to_add =
-              BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_tree
-              |> BackwardTaint.accumulated_breadcrumbs
+              List.fold
+                sink_trees
+                ~f:(fun sofar { Issue.SinkTreeWithHandle.sink_tree; _ } ->
+                  sink_tree
+                  |> BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument
+                  |> BackwardTaint.accumulated_breadcrumbs
+                  |> Features.BreadcrumbSet.add_set ~to_add:sofar)
+                ~init:Features.BreadcrumbSet.bottom
             in
             if Features.BreadcrumbSet.is_bottom breadcrumbs_to_add then
               state
@@ -427,7 +447,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               store_taint ~root ~path taint state
         | None -> state
       in
-      check_flow ~location ~source_tree:argument_taint ~sink_tree;
+      let () =
+        List.iter sink_trees ~f:(fun { Issue.SinkTreeWithHandle.sink_tree; handle } ->
+            check_flow ~location ~sink_handle:handle ~source_tree:argument_taint ~sink_tree)
+      in
       tito_effects, state
     in
     let tito_effects, state =
@@ -442,7 +465,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> ForwardState.Tree.apply_call
            ~resolution
            ~location:(Location.with_module ~qualifier:FunctionContext.qualifier call_location)
-           ~callees:[call_target]
+           ~callees:[target]
            ~arguments
            ~port:AccessPath.Root.LocalResult
     in
@@ -472,19 +495,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (* We also have to consider the cases when the updated parameter has a global model, in which
          case we need to capture the flow. *)
       let apply_argument_effect ~argument:{ Call.Argument.value = argument; _ } ~source_tree state =
-        let sink_tree =
-          GlobalModel.from_expression
-            ~resolution
-            ~call_graph:FunctionContext.call_graph_of_define
-            ~qualifier:FunctionContext.qualifier
-            ~expression:argument
-          |> GlobalModel.get_sink
-        in
-        check_flow
-          ~location:
-            (Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location)
-          ~source_tree
-          ~sink_tree;
+        GlobalModel.from_expression
+          ~resolution
+          ~call_graph:FunctionContext.call_graph_of_define
+          ~qualifier:FunctionContext.qualifier
+          ~expression:argument
+        |> check_flow_to_global ~location:argument.Node.location ~source_tree;
         let access_path = AccessPath.of_expression argument in
         log
           "Propagating taint to argument `%a`: %a"
@@ -1341,18 +1357,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             new_taint, state
           in
           let taint, state = List.fold entries ~init:(taint, state) ~f:override_taint_from_update in
-          let sink_tree =
-            GlobalModel.from_expression
-              ~resolution
-              ~call_graph:FunctionContext.call_graph_of_define
-              ~qualifier:FunctionContext.qualifier
-              ~expression:base
-            |> GlobalModel.get_sink
-          in
-          check_flow
-            ~location:(Location.with_module ~qualifier:FunctionContext.qualifier base.Node.location)
-            ~source_tree:taint
-            ~sink_tree;
+          GlobalModel.from_expression
+            ~resolution
+            ~call_graph:FunctionContext.call_graph_of_define
+            ~qualifier:FunctionContext.qualifier
+            ~expression:base
+          |> check_flow_to_global ~location:base.Node.location ~source_tree:taint;
           let state =
             store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
           in
@@ -1655,19 +1665,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (* We try to be a bit clever about bailing out early and not computing the matches. *)
           if (not (List.is_empty literal_string_sinks)) && not (ForwardState.Tree.is_bottom taint)
           then
-            let backwards_taint =
-              List.fold
-                literal_string_sinks
-                ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->
-                  if Re2.matches pattern value then
+            List.iter literal_string_sinks ~f:(fun { TaintConfiguration.sink_kind; pattern } ->
+                if Re2.matches pattern value then
+                  let sink_tree =
                     BackwardTaint.singleton ~location sink_kind Frame.initial
                     |> BackwardState.Tree.create_leaf
-                    |> BackwardState.Tree.join taint
-                  else
-                    taint)
-                ~init:BackwardState.Tree.bottom
-            in
-            check_flow ~location ~source_tree:taint ~sink_tree:backwards_taint
+                  in
+                  check_flow
+                    ~location
+                    ~sink_handle:(Issue.SinkHandle.LiteralStringSink sink_kind)
+                    ~source_tree:taint
+                    ~sink_tree)
         in
         taint, state
 
@@ -1826,18 +1834,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ ->
         (* Check flows to tainted globals/attributes. *)
         let source_tree = taint in
-        let sink_tree =
-          GlobalModel.from_expression
-            ~resolution
-            ~call_graph:FunctionContext.call_graph_of_define
-            ~qualifier:FunctionContext.qualifier
-            ~expression:target
-          |> GlobalModel.get_sink
-        in
-        check_flow
-          ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
-          ~source_tree
-          ~sink_tree;
+        GlobalModel.from_expression
+          ~resolution
+          ~call_graph:FunctionContext.call_graph_of_define
+          ~qualifier:FunctionContext.qualifier
+          ~expression:target
+        |> check_flow_to_global ~location ~source_tree;
 
         (* Propagate taint. *)
         let access_path = AccessPath.of_expression target >>| AccessPath.extend ~path:fields in
@@ -1849,11 +1851,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
     let taint, state = analyze_expression ~resolution ~state ~expression in
     (* There maybe configured sinks for conditionals, so test them here. *)
-    let sink_taint =
-      TaintConfiguration.conditional_test_sinks () |> BackwardTaint.of_list ~location
+    let () =
+      TaintConfiguration.conditional_test_sinks ()
+      |> List.iter ~f:(fun sink_kind ->
+             let sink_tree =
+               BackwardTaint.singleton ~location sink_kind Frame.initial
+               |> BackwardState.Tree.create_leaf
+             in
+             check_flow
+               ~location
+               ~sink_handle:(Issue.SinkHandle.ConditionalTestSink sink_kind)
+               ~source_tree:taint
+               ~sink_tree)
     in
-    let sink_tree = BackwardState.Tree.create_leaf sink_taint in
-    check_flow ~location ~source_tree:taint ~sink_tree;
     state
 
 
@@ -1956,6 +1966,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
         check_flow
           ~location
+          ~sink_handle:Issue.SinkHandle.Return
           ~source_tree:taint
           ~sink_tree:(return_sink ~resolution ~return_location:location);
         store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state

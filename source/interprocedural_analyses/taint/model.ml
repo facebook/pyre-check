@@ -634,3 +634,10 @@ module WithTarget = struct
     target: Target.t;
   }
 end
+
+module WithCallTarget = struct
+  type nonrec t = {
+    model: t;
+    call_target: CallGraph.CallTarget.t;
+  }
+end

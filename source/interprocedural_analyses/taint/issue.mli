@@ -9,6 +9,7 @@ open Core
 open Ast
 open Statement
 open Domains
+open Interprocedural
 
 module Flow : sig
   type t = {
@@ -35,6 +36,39 @@ module Candidate : sig
   val join : t -> t -> t
 end
 
+(* A unique identifier that represents the first sink of an issue. *)
+module SinkHandle : sig
+  type t =
+    | Call of {
+        callee: Target.t;
+        index: int;
+        parameter: AccessPath.Root.t;
+      }
+    | Global of {
+        callee: Target.t;
+        index: int;
+      }
+    | Return
+    | LiteralStringSink of Sinks.t
+    | ConditionalTestSink of Sinks.t
+
+  val make_call : call_target:CallGraph.CallTarget.t -> root:AccessPath.Root.t -> t
+
+  val make_global : call_target:CallGraph.CallTarget.t -> t
+end
+
+module SinkTreeWithHandle : sig
+  type t = {
+    sink_tree: BackwardState.Tree.t;
+    handle: SinkHandle.t;
+  }
+
+  val filter_bottom : t list -> t list
+
+  (* Discard handles, join sink trees into a single tree. *)
+  val join : t list -> BackwardState.Tree.t
+end
+
 type t = {
   code: int;
   flow: Flow.t;
@@ -49,19 +83,16 @@ end
 
 val generate_source_sink_matches
   :  location:Location.WithModule.t ->
+  sink_handle:SinkHandle.t ->
   source_tree:ForwardState.Tree.t ->
   sink_tree:BackwardState.Tree.t ->
   Candidate.t
 
 val generate_issues : define:Define.t Node.t -> Candidate.t -> t list
 
-val to_json
-  :  filename_lookup:(Reference.t -> string option) ->
-  Interprocedural.Target.t ->
-  t ->
-  Yojson.Safe.json
+val to_json : filename_lookup:(Reference.t -> string option) -> Target.t -> t -> Yojson.Safe.json
 
-val generate_error : t -> Interprocedural.Error.t
+val generate_error : t -> Error.t
 
 val code_metadata : unit -> Yojson.Safe.json
 
@@ -69,6 +100,7 @@ val code_metadata : unit -> Yojson.Safe.json
 val compute_triggered_sinks
   :  triggered_sinks:TriggeredSinks.t ->
   location:Location.WithModule.t ->
+  sink_handle:SinkHandle.t ->
   source_tree:ForwardState.Tree.t ->
   sink_tree:BackwardState.Tree.t ->
   Sinks.partial_sink list * Candidate.t list

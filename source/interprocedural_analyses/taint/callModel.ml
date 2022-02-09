@@ -144,28 +144,25 @@ let return_paths ~kind ~tito_taint =
       [[]]
 
 
-let sink_tree_of_argument
+let sink_trees_of_argument
     ~resolution
     ~transform_non_leaves
     ~model:{ Model.backward; _ }
     ~location
-    ~call_target
+    ~call_target:({ CallGraph.CallTarget.target; _ } as call_target)
     ~arguments
     ~sink_matches
   =
-  let combine_sink_taint taint_tree { AccessPath.root; actual_path; formal_path } =
-    BackwardState.read ~transform_non_leaves ~root ~path:[] backward.sink_taint
-    |> BackwardState.Tree.apply_call
-         ~resolution
-         ~location
-         ~callees:[call_target]
-         ~arguments
-         ~port:root
-    |> BackwardState.Tree.read ~transform_non_leaves formal_path
-    |> BackwardState.Tree.prepend actual_path
-    |> BackwardState.Tree.join taint_tree
+  let to_sink_tree_with_identifier { AccessPath.root; actual_path; formal_path } =
+    let sink_tree =
+      BackwardState.read ~transform_non_leaves ~root ~path:[] backward.sink_taint
+      |> BackwardState.Tree.apply_call ~resolution ~location ~callees:[target] ~arguments ~port:root
+      |> BackwardState.Tree.read ~transform_non_leaves formal_path
+      |> BackwardState.Tree.prepend actual_path
+    in
+    { Issue.SinkTreeWithHandle.sink_tree; handle = Issue.SinkHandle.make_call ~call_target ~root }
   in
-  List.fold sink_matches ~f:combine_sink_taint ~init:BackwardState.Tree.empty
+  List.map sink_matches ~f:to_sink_tree_with_identifier |> Issue.SinkTreeWithHandle.filter_bottom
 
 
 let sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =

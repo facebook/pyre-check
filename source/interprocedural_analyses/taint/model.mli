@@ -107,3 +107,10 @@ module WithTarget : sig
     target: Target.t;
   }
 end
+
+module WithCallTarget : sig
+  type nonrec t = {
+    model: t;
+    call_target: CallGraph.CallTarget.t;
+  }
+end
