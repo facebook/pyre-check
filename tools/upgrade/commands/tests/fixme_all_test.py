@@ -162,7 +162,7 @@ class FixmeAllTest(unittest.TestCase):
         configuration.get_path()
         ErrorSuppressingCommand(
             command.CommandArguments.from_arguments(arguments), repository=repository
-        )._suppress_errors(
+        )._get_and_suppress_errors(
             configuration,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
@@ -176,7 +176,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.lint = True
         ErrorSuppressingCommand(
             command.CommandArguments.from_arguments(arguments), repository=repository
-        )._suppress_errors(
+        )._get_and_suppress_errors(
             configuration,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
@@ -197,7 +197,7 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.return_value = pyre_errors
         ErrorSuppressingCommand(
             command.CommandArguments.from_arguments(arguments), repository=repository
-        )._suppress_errors(
+        )._get_and_suppress_errors(
             configuration,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,

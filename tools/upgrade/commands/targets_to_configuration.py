@@ -284,7 +284,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             )
             strict_codemod.run()
         else:
-            self._suppress_errors(configuration)
+            self._get_and_suppress_errors(configuration)
 
     def _gather_directories(self, subdirectory: Path) -> List[Path]:
         configurations = find_files(subdirectory, ".pyre_configuration.local")

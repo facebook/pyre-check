@@ -103,7 +103,7 @@ class CommandTest(unittest.TestCase):
         )
 
     @patch(f"{command.__name__}.add_local_mode")
-    def test_suppress_errors(self, add_local_mode) -> None:
+    def test_get_and_suppress_errors(self, add_local_mode) -> None:
         arguments = MagicMock()
         repository = MagicMock()
         configuration = Configuration(Path("test"), {})
@@ -136,7 +136,7 @@ class CommandTest(unittest.TestCase):
         command._apply_suppressions = apply_suppressions
 
         # No fixme threshold set.
-        command._suppress_errors(configuration)
+        command._get_and_suppress_errors(configuration)
         apply_suppressions.assert_has_calls(
             [
                 call(errors),
@@ -146,12 +146,12 @@ class CommandTest(unittest.TestCase):
 
         # Fixme threshold specified.
         apply_suppressions.reset_mock()
-        command._suppress_errors(configuration, fixme_threshold=2)
+        command._get_and_suppress_errors(configuration, fixme_threshold=2)
         add_local_mode.assert_not_called()
         self.assertEqual(apply_suppressions.call_count, 3)
 
         apply_suppressions.reset_mock()
-        command._suppress_errors(configuration, fixme_threshold=1)
+        command._get_and_suppress_errors(configuration, fixme_threshold=1)
         add_local_mode.assert_called_once_with("path.py", LocalMode.IGNORE)
         self.assertEqual(apply_suppressions.call_count, 2)
 

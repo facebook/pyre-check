@@ -119,7 +119,7 @@ class FixConfiguration(ErrorSuppressingCommand):
         configuration = self._configuration
         if configuration:
             try:
-                self._suppress_errors(configuration)
+                self._get_and_suppress_errors(configuration)
             except UserError as error:
                 LOG.warning(
                     f"Configuration at {configuration.get_path()} still "

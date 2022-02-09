@@ -140,7 +140,7 @@ class ErrorSuppressingCommand(Command):
                 self._unsafe,
             )
 
-    def _suppress_errors(
+    def _get_and_suppress_errors(
         self,
         configuration: Configuration,
         error_source: ErrorSource = ErrorSource.GENERATE,

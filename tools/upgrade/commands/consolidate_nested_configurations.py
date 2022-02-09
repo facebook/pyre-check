@@ -131,7 +131,7 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
                 [Path(configuration) for configuration in nested],
             )
             configuration = Configuration(Path(topmost))
-            self._suppress_errors(configuration)
+            self._get_and_suppress_errors(configuration)
 
         self._repository.commit_changes(
             commit=(not self._no_commit),

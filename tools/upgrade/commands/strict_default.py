@@ -129,6 +129,6 @@ class StrictDefault(ErrorSuppressingCommand):
                 self._apply_suppressions(Errors(errors))
 
         # Re-suppress and apply lint after changing local modes.
-        self._suppress_errors(configuration)
+        self._get_and_suppress_errors(configuration)
 
         self._commit_changes()

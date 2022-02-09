@@ -82,7 +82,7 @@ class FixmeSingle(ErrorSuppressingCommand):
         configuration_path = self._path / ".pyre_configuration.local"
         configuration = Configuration(configuration_path)
         if self._fixme_threshold == 0:
-            self._suppress_errors(
+            self._get_and_suppress_errors(
                 configuration=configuration,
                 error_source=self._error_source,
                 upgrade_version=self._upgrade_version,
