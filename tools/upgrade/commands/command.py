@@ -11,6 +11,7 @@ from typing import Optional
 
 from ..configuration import Configuration
 from ..errors import Errors, PartialErrorSuppression
+from ..filesystem import add_local_mode, LocalMode
 from ..repository import Repository
 
 
@@ -145,6 +146,8 @@ class ErrorSuppressingCommand(Command):
         error_source: ErrorSource = ErrorSource.GENERATE,
         upgrade_version: bool = False,
         only_fix_error_code: Optional[int] = None,
+        fixme_threshold: Optional[int] = None,
+        fixme_threshold_fallback_mode: LocalMode = LocalMode.IGNORE,
     ) -> None:
         LOG.info("Processing %s", configuration.get_directory())
         if not configuration.is_local:
@@ -162,13 +165,25 @@ class ErrorSuppressingCommand(Command):
                 only_fix_error_code, should_clean=self._should_clean
             )
         )
-        if len(errors) > 0:
-            self._apply_suppressions(errors)
+        if len(errors) == 0:
+            return
 
-            # Lint and re-run pyre once to resolve most formatting issues
-            if self._lint:
-                if self._repository.format():
-                    errors = configuration.get_errors(
-                        only_fix_error_code, should_clean=False
+        if fixme_threshold is None:
+            self._apply_suppressions(errors)
+        else:
+            for path, path_errors in errors.paths_to_errors.items():
+                path_errors = list(path_errors)
+                if len(path_errors) > fixme_threshold:
+                    LOG.info(
+                        "%d errors found in `%s`. Adding file-level ignore.",
+                        len(path_errors),
+                        path,
                     )
-                    self._apply_suppressions(errors)
+                    add_local_mode(path, fixme_threshold_fallback_mode)
+                else:
+                    self._apply_suppressions(Errors(path_errors))
+
+        # Lint and re-run pyre once to resolve most formatting issues
+        if self._lint and self._repository.format():
+            errors = configuration.get_errors(only_fix_error_code, should_clean=False)
+            self._apply_suppressions(errors)
