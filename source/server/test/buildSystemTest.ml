@@ -265,53 +265,57 @@ let test_update context =
 
 let test_buck_renormalize context =
   (* Count how many times target renormalization has happened. *)
-  let query_counter = ref 0 in
-  let assert_query_counter expected =
-    assert_equal ~ctxt:context ~cmp:Int.equal ~printer:Int.to_string expected !query_counter
+  let normalize_counter = ref 0 in
+  let assert_normalize_counter expected =
+    assert_equal ~ctxt:context ~cmp:Int.equal ~printer:Int.to_string expected !normalize_counter
   in
 
+  let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let foo_source = PyrePath.create_relative ~root:source_root ~relative:"foo.py" in
+  File.create foo_source ~content:"" |> File.write;
   let get_buck_build_system () =
-    let raw =
-      let query ?isolation_prefix:_ _ =
-        incr query_counter;
-        Lwt.return "{}"
+    let interface =
+      let normalize_targets targets =
+        incr normalize_counter;
+        Lwt.return (List.map targets ~f:Buck.Target.of_string)
       in
-      let build ?isolation_prefix:_ _ = Lwt.return {| { "sources": {}, "dependencies": {} } |} in
-      Buck.Raw.create_for_testing ~query ~build ()
+      let construct_build_map targets =
+        Lwt.return
+          {
+            Buck.Interface.BuildResult.targets;
+            build_map = Buck.(BuildMap.(create (Partial.of_alist_exn ["foo.py", "foo.py"])));
+          }
+      in
+      Buck.Interface.create_for_testing ~normalize_targets ~construct_build_map ()
     in
-    let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
     let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
-    {
-      Configuration.Buck.mode = None;
-      isolation_prefix = None;
-      targets = ["//foo:target"];
-      source_root;
-      artifact_root;
-    }
-    |> BuildSystem.Initializer.buck ~raw
+    let builder = Buck.Builder.create ~source_root ~artifact_root interface in
+    BuildSystem.Initializer.buck ~builder ~artifact_root ~targets:["//foo:target"] ()
     |> BuildSystem.Initializer.run
   in
   let open Lwt.Infix in
   get_buck_build_system ()
   >>= fun buck_build_system ->
   (* Normalization will happen once upon initialization. *)
-  assert_query_counter 1;
+  assert_normalize_counter 1;
 
   (* Normalization won't happen if no target file changes. *)
   BuildSystem.update buck_build_system []
   >>= fun _ ->
-  assert_query_counter 1;
-  BuildSystem.update buck_build_system [PyrePath.create_absolute "/foo/derp.py"]
+  assert_normalize_counter 1;
+  BuildSystem.update buck_build_system [foo_source]
   >>= fun _ ->
-  assert_query_counter 1;
+  assert_normalize_counter 1;
 
   (* Normalization will happen if target file has changes. *)
-  BuildSystem.update buck_build_system [PyrePath.create_absolute "/foo/TARGETS"]
+  BuildSystem.update
+    buck_build_system
+    [PyrePath.create_relative ~root:source_root ~relative:"bar/TARGETS"]
   >>= fun _ ->
-  assert_query_counter 2;
-  BuildSystem.update buck_build_system [PyrePath.create_absolute "/foo/BUCK"]
+  assert_normalize_counter 2;
+  BuildSystem.update buck_build_system [PyrePath.create_relative ~root:source_root ~relative:"BUCK"]
   >>= fun _ ->
-  assert_query_counter 3;
+  assert_normalize_counter 3;
   Lwt.return_unit
 
 
@@ -328,44 +332,32 @@ let test_buck_update context =
   let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
 
   let get_buck_build_system () =
-    let source_database_path =
-      let root = bracket_tmpdir context |> PyrePath.create_absolute in
-      PyrePath.create_relative ~root ~relative:"foo_target_sourcedb.json"
-    in
-    let raw =
+    let interface =
       (* Here's the set up: we have 2 files, `foo/bar.py` and `foo/baz.py`. If `is_rebuild` is
          false, we'll only include `foo/bar.py` in the target. If `is_rebuild` is true, we'll
          include both files. The `is_rebuild` flag is initially false but will be set to true after
          the first build. This setup emulates an incremental Buck update where the user edits the
          TARGET file to include another source in the target. *)
       let is_rebuild = ref false in
-      let query ?isolation_prefix:_ _ = Lwt.return {| { "//foo:target": ["//foo:target"] } |} in
-      let build ?isolation_prefix:_ _ =
-        let content =
+      let normalize_targets targets = Lwt.return (List.map targets ~f:Buck.Target.of_string) in
+      let construct_build_map targets =
+        let build_mappings =
           if !is_rebuild then
-            {| {
-                 "sources": { "bar.py": "foo/bar.py", "baz.py": "foo/baz.py" },
-                 "dependencies": {}
-               }
-            |}
-          else
-            {| { "sources": { "bar.py": "foo/bar.py" }, "dependencies": {} } |}
+            ["bar.py", "foo/bar.py"; "baz.py", "foo/baz.py"]
+          else (
+            is_rebuild := true;
+            ["bar.py", "foo/bar.py"])
         in
-        File.create source_database_path ~content |> File.write;
-        is_rebuild := true;
-        Format.asprintf {| { "//foo:bar#source-db": "%a" } |} PyrePath.pp source_database_path
-        |> Lwt.return
+        Lwt.return
+          {
+            Buck.Interface.BuildResult.targets;
+            build_map = Buck.(BuildMap.(create (Partial.of_alist_exn build_mappings)));
+          }
       in
-      Buck.Raw.create_for_testing ~query ~build ()
+      Buck.Interface.create_for_testing ~normalize_targets ~construct_build_map ()
     in
-    {
-      Configuration.Buck.mode = None;
-      isolation_prefix = None;
-      targets = ["//foo:target"];
-      source_root;
-      artifact_root;
-    }
-    |> BuildSystem.Initializer.buck ~raw
+    let builder = Buck.Builder.create ~source_root ~artifact_root interface in
+    BuildSystem.Initializer.buck ~builder ~artifact_root ~targets:["//foo:target"] ()
     |> BuildSystem.Initializer.run
   in
   let open Lwt.Infix in
@@ -425,39 +417,28 @@ let test_buck_update_without_rebuild context =
   let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
 
   let get_buck_build_system () =
-    let source_database_path =
-      let root = bracket_tmpdir context |> PyrePath.create_absolute in
-      PyrePath.create_relative ~root ~relative:"foo_target_sourcedb.json"
-    in
-    let raw =
+    let interface =
       let is_rebuild = ref false in
-      let query ?isolation_prefix:_ _ = Lwt.return {| { "//foo:target": ["//foo:target"] } |} in
-      let build ?isolation_prefix:_ _ =
-        if not !is_rebuild then (
-          let content =
-            {| {
-                 "sources": { "bar.py": "foo/bar.py", "baz.py": "foo/baz.py" },
-                 "dependencies": {}
-               }
-            |}
-          in
-          File.create source_database_path ~content |> File.write;
-          is_rebuild := true;
-          Format.asprintf {| { "//foo:bar#source-db": "%a" } |} PyrePath.pp source_database_path
-          |> Lwt.return)
-        else
-          assert_failure "`buck build` is not expected to be invoked again after the initial build"
+      let normalize_targets targets = Lwt.return (List.map targets ~f:Buck.Target.of_string) in
+      let construct_build_map targets =
+        let build_mappings =
+          if not !is_rebuild then (
+            is_rebuild := true;
+            ["bar.py", "foo/bar.py"; "baz.py", "foo/baz.py"])
+          else
+            assert_failure
+              "Build map construction is not expected to be invoked again after the initial build"
+        in
+        Lwt.return
+          {
+            Buck.Interface.BuildResult.targets;
+            build_map = Buck.(BuildMap.(create (Partial.of_alist_exn build_mappings)));
+          }
       in
-      Buck.Raw.create_for_testing ~query ~build ()
+      Buck.Interface.create_for_testing ~normalize_targets ~construct_build_map ()
     in
-    {
-      Configuration.Buck.mode = None;
-      isolation_prefix = None;
-      targets = ["//foo:target"];
-      source_root;
-      artifact_root;
-    }
-    |> BuildSystem.Initializer.buck ~raw
+    let builder = Buck.Builder.create ~source_root ~artifact_root interface in
+    BuildSystem.Initializer.buck ~builder ~artifact_root ~targets:["//foo:target"] ()
     |> BuildSystem.Initializer.run
   in
   let open Lwt.Infix in

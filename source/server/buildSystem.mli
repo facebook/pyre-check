@@ -85,7 +85,7 @@ module Initializer : sig
       always assumes an identity source-to-artifact mapping. This can be used when the project being
       checked does not use a build system. This initializer never raises. *)
 
-  val buck : raw:Buck.Raw.t -> Configuration.Buck.t -> t
+  val buck : builder:Buck.Builder.t -> artifact_root:PyrePath.t -> targets:string list -> unit -> t
   (** [buck] initializes a build system that interops with Buck. See {!module:Buck} for more details
       about its behavior.
 

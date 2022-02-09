@@ -218,15 +218,8 @@ module BuckBuildSystem = struct
     { update; lookup_source; lookup_artifact; store }
 
 
-  let initialize_from_options
-      ~raw
-      ~buck_options:
-        { Configuration.Buck.mode; isolation_prefix; targets; source_root; artifact_root }
-      ()
-    =
+  let initialize_from_options ~builder targets =
     let open Lwt.Infix in
-    let interface = Buck.Interface.create ?mode ?isolation_prefix raw in
-    let builder = Buck.Builder.create ~source_root ~artifact_root interface in
     with_logging
       ~integers:(fun { State.build_map; _ } ->
         [
@@ -238,11 +231,7 @@ module BuckBuildSystem = struct
     >>= fun initial_state -> Lwt.return (initialize_from_state initial_state)
 
 
-  let initialize_from_saved_state
-      ~raw
-      ~buck_options:{ Configuration.Buck.mode; isolation_prefix; source_root; artifact_root; _ }
-      ()
-    =
+  let initialize_from_saved_state ~builder () =
     let open Lwt.Infix in
     (* NOTE (grievejia): For saved state loading, are still using the passed-in `mode`,
        `isolation_prefix`, `source_root`, and `artifact_root`, instead of preserving these options
@@ -253,8 +242,6 @@ module BuckBuildSystem = struct
     let { SerializableState.targets; normalized_targets; serialized_build_map } =
       SavedState.load ()
     in
-    let interface = Buck.Interface.create ?mode ?isolation_prefix raw in
-    let builder = Buck.Builder.create ~source_root ~artifact_root interface in
     with_logging
       ~integers:(fun { State.build_map; _ } ->
         [
@@ -337,7 +324,7 @@ module Initializer = struct
     }
 
 
-  let buck ~raw ({ Configuration.Buck.artifact_root; _ } as buck_options) =
+  let buck ~builder ~artifact_root ~targets () =
     let ensure_directory_exist_and_clean path =
       let result =
         let open Result in
@@ -350,11 +337,11 @@ module Initializer = struct
     in
     let initialize () =
       ensure_directory_exist_and_clean artifact_root;
-      BuckBuildSystem.initialize_from_options ~raw ~buck_options ()
+      BuckBuildSystem.initialize_from_options ~builder targets
     in
     let load () =
       ensure_directory_exist_and_clean artifact_root;
-      BuckBuildSystem.initialize_from_saved_state ~raw ~buck_options ()
+      BuckBuildSystem.initialize_from_saved_state ~builder ()
     in
     let cleanup () =
       match PyrePath.remove_contents_of_directory artifact_root with
@@ -389,9 +376,12 @@ let get_initializer source_paths =
   | Configuration.SourcePaths.Simple _ -> Initializer.null
   | Configuration.SourcePaths.WithUnwatchedDependency { unwatched_dependency; _ } ->
       Initializer.track_unwatched_dependency unwatched_dependency
-  | Configuration.SourcePaths.Buck buck_options ->
+  | Configuration.SourcePaths.Buck
+      { Configuration.Buck.mode; isolation_prefix; source_root; artifact_root; targets } ->
       let raw = Buck.Raw.create ~additional_log_size:10 () in
-      Initializer.buck ~raw buck_options
+      let interface = Buck.Interface.create ?mode ?isolation_prefix raw in
+      let builder = Buck.Builder.create ~source_root ~artifact_root interface in
+      Initializer.buck ~builder ~artifact_root ~targets ()
 
 
 let with_build_system ~f source_paths =
