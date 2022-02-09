@@ -111,6 +111,8 @@ module ExpressionCallees : sig
 
   val from_call : CallCallees.t -> t
 
+  val from_call_with_empty_attribute : CallCallees.t -> t
+
   val from_attribute_access : AttributeAccessCallees.t -> t
 
   val from_identifier : IdentifierCallees.t -> t
@@ -149,6 +151,9 @@ module DefineCallGraph : sig
     location:Ast.Location.t ->
     identifier:string ->
     IdentifierCallees.t option
+
+  (* For testing purpose only. *)
+  val equal_ignoring_types : t -> t -> bool
 end
 
 val call_graph_of_define

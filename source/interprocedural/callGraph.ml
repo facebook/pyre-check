@@ -59,6 +59,12 @@ module HigherOrderParameter = struct
 
 
   let all_targets { call_targets; _ } = List.map ~f:CallTarget.target call_targets
+
+  let equal_ignoring_types
+      { index = index_left; call_targets = call_targets_left; return_type = _ }
+      { index = index_right; call_targets = call_targets_right; return_type = _ }
+    =
+    index_left == index_right && List.equal CallTarget.equal call_targets_left call_targets_right
 end
 
 module CallCallees = struct
@@ -176,6 +182,34 @@ module CallCallees = struct
     |> List.map ~f:CallTarget.target
     |> List.rev_append
          (higher_order_parameter >>| HigherOrderParameter.all_targets |> Option.value ~default:[])
+
+
+  let equal_ignoring_types
+      {
+        call_targets = call_targets_left;
+        new_targets = new_targets_left;
+        init_targets = init_targets_left;
+        return_type = _;
+        higher_order_parameter = higher_order_parameter_left;
+        unresolved = unresolved_left;
+      }
+      {
+        call_targets = call_targets_right;
+        new_targets = new_targets_right;
+        init_targets = init_targets_right;
+        return_type = _;
+        higher_order_parameter = higher_order_parameter_right;
+        unresolved = unresolved_right;
+      }
+    =
+    List.equal CallTarget.equal call_targets_left call_targets_right
+    && List.equal CallTarget.equal new_targets_left new_targets_right
+    && List.equal CallTarget.equal init_targets_left init_targets_right
+    && Option.equal
+         HigherOrderParameter.equal_ignoring_types
+         higher_order_parameter_left
+         higher_order_parameter_right
+    && unresolved_left == unresolved_right
 end
 
 module AttributeAccessCallees = struct
@@ -229,6 +263,33 @@ module AttributeAccessCallees = struct
 
   let all_targets { property_targets; global_targets; _ } =
     List.rev_append property_targets global_targets |> List.map ~f:CallTarget.target
+
+
+  let equal_ignoring_types
+      {
+        property_targets = property_targets_left;
+        global_targets = global_targets_left;
+        is_attribute = is_attribute_left;
+        return_type = _;
+      }
+      {
+        property_targets = property_targets_right;
+        global_targets = global_targets_right;
+        is_attribute = is_attribute_right;
+        return_type = _;
+      }
+    =
+    List.equal CallTarget.equal property_targets_left property_targets_right
+    && List.equal CallTarget.equal global_targets_left global_targets_right
+    && is_attribute_left == is_attribute_right
+
+
+  let empty_attribute_access_callees =
+    { property_targets = []; global_targets = []; is_attribute = true; return_type = Type.none }
+
+
+  let is_empty attribute_access_callees =
+    equal_ignoring_types attribute_access_callees empty_attribute_access_callees
 end
 
 module IdentifierCallees = struct
@@ -256,6 +317,14 @@ module ExpressionCallees = struct
   [@@deriving eq, show { with_path = false }]
 
   let from_call callees = { call = Some callees; attribute_access = None; identifier = None }
+
+  let from_call_with_empty_attribute callees =
+    {
+      call = Some callees;
+      attribute_access = Some AttributeAccessCallees.empty_attribute_access_callees;
+      identifier = None;
+    }
+
 
   let from_attribute_access properties =
     { call = None; attribute_access = Some properties; identifier = None }
@@ -306,6 +375,28 @@ module ExpressionCallees = struct
       identifier >>| IdentifierCallees.all_targets |> Option.value ~default:[]
     in
     call_targets |> List.rev_append attribute_access_targets |> List.rev_append identifier_targets
+
+
+  let is_empty_attribute_access_callees = function
+    | { call = None; attribute_access = Some some_attribute_access; identifier = None } ->
+        AttributeAccessCallees.is_empty some_attribute_access
+    | _ -> false
+
+
+  let equal_ignoring_types
+      { call = call_left; attribute_access = attribute_access_left; identifier = identifier_left }
+      {
+        call = call_right;
+        attribute_access = attribute_access_right;
+        identifier = identifier_right;
+      }
+    =
+    Option.equal CallCallees.equal_ignoring_types call_left call_right
+    && Option.equal
+         AttributeAccessCallees.equal_ignoring_types
+         attribute_access_left
+         attribute_access_right
+    && Option.equal IdentifierCallees.equal identifier_left identifier_right
 end
 
 module LocationCallees = struct
@@ -333,6 +424,15 @@ module LocationCallees = struct
   let all_targets = function
     | Singleton raw_callees -> ExpressionCallees.all_targets raw_callees
     | Compound map -> String.Map.Tree.data map |> List.concat_map ~f:ExpressionCallees.all_targets
+
+
+  let equal_ignoring_types location_callees_left location_callees_right =
+    match location_callees_left, location_callees_right with
+    | Singleton callees_left, Singleton callees_right ->
+        ExpressionCallees.equal_ignoring_types callees_left callees_right
+    | Compound map_left, Compound map_right ->
+        String.Map.Tree.equal ExpressionCallees.equal_ignoring_types map_left map_right
+    | _ -> false
 end
 
 module UnprocessedLocationCallees = struct
@@ -402,6 +502,10 @@ module DefineCallGraph = struct
   let resolve_identifier call_graph ~location ~identifier =
     resolve_expression call_graph ~location ~expression_identifier:identifier
     >>= fun { identifier; _ } -> identifier
+
+
+  let equal_ignoring_types call_graph_left call_graph_right =
+    Location.Map.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
 end
 
 let defining_attribute ~resolution parent_type attribute =
@@ -1184,18 +1288,15 @@ let resolve_attribute_access ~resolution ~base ~attribute ~special ~setter =
     |> List.map ~f:CallTarget.create
   in
 
-  match property_targets, global_targets, is_attribute with
-  | [], [], true -> None
-  | _ ->
-      let return_type =
-        if setter then
-          Type.none
-        else
-          Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
-          |> Node.create_with_default_location
-          |> Resolution.resolve_expression_to_type resolution
-      in
-      Some { AttributeAccessCallees.property_targets; global_targets; return_type; is_attribute }
+  let return_type =
+    if setter then
+      Type.none
+    else
+      Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
+      |> Node.create_with_default_location
+      |> Resolution.resolve_expression_to_type resolution
+  in
+  { AttributeAccessCallees.property_targets; global_targets; return_type; is_attribute }
 
 
 let resolve_identifier ~resolution ~identifier =
@@ -1252,9 +1353,8 @@ struct
               | None -> false
             in
             resolve_attribute_access ~resolution ~base ~attribute ~special ~setter
-            >>| ExpressionCallees.from_attribute_access
-            >>| register_targets ~expression_identifier:attribute
-            |> ignore
+            |> ExpressionCallees.from_attribute_access
+            |> register_targets ~expression_identifier:attribute
         | Expression.Name (Name.Identifier identifier) ->
             resolve_identifier ~resolution ~identifier
             >>| ExpressionCallees.from_identifier
@@ -1292,9 +1392,8 @@ struct
                 ];
             } ->
             resolve_attribute_access ~resolution ~base ~attribute ~special:false ~setter:false
-            >>| ExpressionCallees.from_attribute_access
-            >>| register_targets ~expression_identifier:attribute
-            |> ignore
+            |> ExpressionCallees.from_attribute_access
+            |> register_targets ~expression_identifier:attribute
         | Expression.Call
             {
               callee =
@@ -1325,9 +1424,8 @@ struct
                 ];
             } ->
             resolve_attribute_access ~resolution ~base:self ~attribute ~special:true ~setter:true
-            >>| ExpressionCallees.from_attribute_access
-            >>| register_targets ~expression_identifier:attribute
-            |> ignore
+            |> ExpressionCallees.from_attribute_access
+            |> register_targets ~expression_identifier:attribute
         | _ -> ()
       in
       state
@@ -1453,6 +1551,13 @@ let call_graph_of_define
                ( location,
                  LocationCallees.Compound
                    (Core.String.Map.Tree.map ~f:ExpressionCallees.deduplicate unprocessed_callees) ))
+    |> List.filter ~f:(fun (_, callees) ->
+           match callees with
+           | LocationCallees.Singleton singleton ->
+               not (ExpressionCallees.is_empty_attribute_access_callees singleton)
+           | LocationCallees.Compound compound ->
+               Core.String.Map.Tree.exists compound ~f:(fun callees ->
+                   not (ExpressionCallees.is_empty_attribute_access_callees callees)))
     |> Location.Map.of_alist_exn
   in
   let call_graph =

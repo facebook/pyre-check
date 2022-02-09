@@ -14,7 +14,14 @@ open Interprocedural
 open CallGraph
 
 let test_call_graph_of_define context =
-  let assert_call_graph_of_define ?(object_targets = []) ~source ~define_name ~expected () =
+  let assert_call_graph_of_define
+      ?(object_targets = [])
+      ~source
+      ~define_name
+      ~expected
+      ?(cmp = DefineCallGraph.equal)
+      ()
+    =
     let expected =
       let parse_location location =
         let parse_position position =
@@ -67,7 +74,7 @@ let test_call_graph_of_define context =
     let overrides = DependencyGraph.create_overrides ~environment ~source:test_source in
     let _ = DependencyGraphSharedMemory.record_overrides overrides in
     assert_equal
-      ~cmp:DefineCallGraph.equal
+      ~cmp
       ~printer:DefineCallGraph.show
       expected
       (CallGraph.call_graph_of_define ~environment ~define);
@@ -1130,6 +1137,7 @@ let test_call_graph_of_define context =
     ();
 
   assert_call_graph_of_define
+    ~cmp:DefineCallGraph.equal_ignoring_types
     ~source:
       {|
         from contextlib import ContextManager
@@ -1146,7 +1154,7 @@ let test_call_graph_of_define context =
             (String.Map.Tree.of_alist_exn
                [
                  ( "__enter__",
-                   ExpressionCallees.from_call
+                   ExpressionCallees.from_call_with_empty_attribute
                      (CallCallees.create
                         ~call_targets:
                           [
@@ -1579,6 +1587,7 @@ let test_call_graph_of_define context =
     ();
   (* TODO(T105570363): Resolve calls with mixed function and methods. *)
   assert_call_graph_of_define
+    ~cmp:DefineCallGraph.equal_ignoring_types
     ~source:
       {|
       class Foo:
@@ -1600,7 +1609,7 @@ let test_call_graph_of_define context =
             (String.Map.Tree.of_alist_exn
                [
                  ( "__iter__",
-                   ExpressionCallees.from_call
+                   ExpressionCallees.from_call_with_empty_attribute
                      (CallCallees.create
                         ~call_targets:
                           [
@@ -1641,7 +1650,7 @@ let test_call_graph_of_define context =
                                 ]))
                         ()) );
                  ( "__next__",
-                   ExpressionCallees.from_call
+                   ExpressionCallees.from_call_with_empty_attribute
                      (CallCallees.create
                         ~call_targets:
                           [
@@ -1694,6 +1703,7 @@ let test_call_graph_of_define context =
     ();
   (* TODO(T105570363): Resolve calls with mixed function and constructors. *)
   assert_call_graph_of_define
+    ~cmp:DefineCallGraph.equal_ignoring_types
     ~source:
       {|
       class Foo:
@@ -1714,7 +1724,7 @@ let test_call_graph_of_define context =
             (String.Map.Tree.of_alist_exn
                [
                  ( "__iter__",
-                   ExpressionCallees.from_call
+                   ExpressionCallees.from_call_with_empty_attribute
                      (CallCallees.create
                         ~call_targets:
                           [
@@ -1758,7 +1768,7 @@ let test_call_graph_of_define context =
                                 ]))
                         ()) );
                  ( "__next__",
-                   ExpressionCallees.from_call
+                   ExpressionCallees.from_call_with_empty_attribute
                      (CallCallees.create
                         ~call_targets:
                           [

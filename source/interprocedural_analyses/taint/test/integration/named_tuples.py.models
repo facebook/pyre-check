@@ -393,34 +393,6 @@
             }
           }
         ]
-      },
-      {
-        "port": "formal(benign)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name":
-                      "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
-            ],
-            "root": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            }
-          }
-        ]
       }
     ],
     "tito": [
@@ -564,34 +536,6 @@
                 ],
                 "kind": "Test"
               }
-            ],
-            "root": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(benign)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name":
-                      "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
             ],
             "root": {
               "filename": "builtins.pyi",
@@ -745,34 +689,6 @@
                 ],
                 "kind": "Test"
               }
-            ],
-            "root": {
-              "filename": "named_tuples.py",
-              "line": 71,
-              "start": 0,
-              "end": 0
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(benign)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name":
-                      "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
             ],
             "root": {
               "filename": "named_tuples.py",
