@@ -380,7 +380,7 @@ let check_expectation
   let actual_errors =
     FixpointState.get_result callable
     |> AnalysisResult.get_result Taint.Result.kind
-    >>| List.map ~f:Issue.generate_error
+    >>| List.map ~f:Issue.to_error
     |> Option.value ~default:[]
   in
   let actual_errors =

@@ -43,11 +43,16 @@ let test_no_errors _ =
       Statement.Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
       |> Node.create_with_default_location
     in
-    let errors =
-      generate_source_sink_matches ~location ~sink_handle:SinkHandle.Return ~source_tree ~sink_tree
-      |> generate_issues ~define
-      |> List.map ~f:generate_error
+    let candidates = Candidates.create () in
+    let () =
+      Candidates.check_flow
+        candidates
+        ~location
+        ~sink_handle:SinkHandle.Return
+        ~source_tree
+        ~sink_tree
     in
+    let errors = Candidates.generate_issues candidates ~define |> List.map ~f:to_error in
     assert_equal
       ~msg:"Errors"
       ~printer:(fun errors -> Sexp.to_string [%message (errors : Interprocedural.Error.t list)])
@@ -91,11 +96,16 @@ let test_errors _ =
       Statement.Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
       |> Node.create_with_default_location
     in
-    let errors =
-      generate_source_sink_matches ~location ~sink_handle:SinkHandle.Return ~source_tree ~sink_tree
-      |> generate_issues ~define
-      |> List.map ~f:generate_error
+    let candidates = Candidates.create () in
+    let () =
+      Candidates.check_flow
+        candidates
+        ~location
+        ~sink_handle:SinkHandle.Return
+        ~source_tree
+        ~sink_tree
     in
+    let errors = Candidates.generate_issues candidates ~define |> List.map ~f:to_error in
     assert_equal
       ~msg:"Error"
       ~printer:(List.to_string ~f:Int.to_string)
@@ -104,7 +114,7 @@ let test_errors _ =
   in
   assert_errors ~source_tree:source_tree_a ~sink_tree:sink_tree_a [5001];
   assert_errors ~source_tree:source_tree_b ~sink_tree:sink_tree_b [5002];
-  assert_errors ~source_tree:source_tree_c ~sink_tree:sink_tree_c [5009; 6001];
+  assert_errors ~source_tree:source_tree_c ~sink_tree:sink_tree_c [6001; 5009];
   assert_errors ~source_tree:source_tree_a ~sink_tree:sink_tree_d [5002];
   ()
 

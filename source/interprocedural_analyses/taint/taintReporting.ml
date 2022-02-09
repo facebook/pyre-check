@@ -19,7 +19,7 @@ let get_model callable =
   FixpointState.get_model callable >>= AnalysisResult.get_model TaintResult.kind
 
 
-let get_errors result = List.map ~f:Issue.generate_error result
+let get_errors result = List.map ~f:Issue.to_error result
 
 let issues_to_json ~filename_lookup callable result_opt =
   match result_opt with

@@ -32,23 +32,6 @@ module Flow = struct
     }
 end
 
-module Candidate = struct
-  type t = {
-    flows: Flow.t list;
-    location: Location.WithModule.t;
-  }
-
-  let join { flows = left_flows; location } { flows = right_flows; _ } =
-    { flows = List.rev_append left_flows right_flows; location }
-end
-
-module PartitionedFlow = struct
-  type t = {
-    source_partition: (Sources.t, ForwardTaint.t) Map.Poly.t;
-    sink_partition: (Sinks.t, BackwardTaint.t) Map.Poly.t;
-  }
-end
-
 module SinkHandle = struct
   type t =
     | Call of {
@@ -109,6 +92,8 @@ type t = {
   define: Statement.Define.t Node.t;
 }
 
+type issue = t
+
 module Handle = struct
   type t = {
     code: int;
@@ -122,6 +107,16 @@ module Handle = struct
 end
 
 module HandleMap = Map.Make (Handle)
+
+module Candidate = struct
+  type t = {
+    flows: Flow.t list;
+    location: Location.WithModule.t;
+  }
+
+  let join { flows = left_flows; location } { flows = right_flows; _ } =
+    { flows = List.rev_append left_flows right_flows; location }
+end
 
 module TriggeredSinks = struct
   type t = String.Hash_set.t
@@ -156,31 +151,61 @@ let generate_source_sink_matches ~location ~sink_handle:_ ~source_tree ~sink_tre
   { Candidate.flows; location }
 
 
-type features = {
-  breadcrumbs: Features.BreadcrumbSet.t;
-  first_indices: Features.FirstIndexSet.t;
-  first_fields: Features.FirstFieldSet.t;
-}
-
-let get_issue_features { Flow.source_taint; sink_taint } =
-  let breadcrumbs =
-    let source_breadcrumbs = ForwardTaint.joined_breadcrumbs source_taint in
-    let sink_breadcrumbs = BackwardTaint.joined_breadcrumbs sink_taint in
-    Features.BreadcrumbSet.sequence_join source_breadcrumbs sink_breadcrumbs
+let compute_triggered_sinks ~triggered_sinks ~location ~sink_handle ~source_tree ~sink_tree =
+  let partial_sinks_to_taint =
+    BackwardState.Tree.collapse
+      ~transform:(BackwardTaint.add_local_breadcrumbs (Features.issue_broadening_set ()))
+      sink_tree
+    |> BackwardTaint.partition BackwardTaint.kind ByFilter ~f:Sinks.extract_partial_sink
   in
-  let first_indices =
-    let source_indices = ForwardTaint.first_indices source_taint in
-    let sink_indices = BackwardTaint.first_indices sink_taint in
-    Features.FirstIndexSet.join source_indices sink_indices
-  in
-  let first_fields =
-    let source_fields = ForwardTaint.first_fields source_taint in
-    let sink_fields = BackwardTaint.first_fields sink_taint in
-    Features.FirstFieldSet.join source_fields sink_fields
-  in
+  if not (Map.Poly.is_empty partial_sinks_to_taint) then
+    let sources =
+      ForwardState.Tree.fold ForwardTaint.kind ~f:List.cons ~init:[] source_tree
+      |> List.map ~f:Sources.discard_transforms
+    in
+    let add_triggered_sinks (triggered, candidates) sink =
+      let add_triggered_sinks_for_source source =
+        TaintConfiguration.get_triggered_sink ~partial_sink:sink ~source
+        |> function
+        | Some (Sinks.TriggeredPartialSink triggered_sink) ->
+            if Hash_set.mem triggered_sinks (Sinks.show_partial_sink sink) then
+              (* We have both pairs, let's check the flow directly for this sink being triggered. *)
+              let candidate =
+                generate_source_sink_matches
+                  ~location
+                  ~sink_handle
+                  ~source_tree
+                  ~sink_tree:
+                    (BackwardState.Tree.create_leaf
+                       (BackwardTaint.singleton
+                          ~location
+                          (Sinks.TriggeredPartialSink sink)
+                          Frame.initial))
+              in
+              None, Some candidate
+            else
+              Some triggered_sink, None
+        | _ -> None, None
+      in
+      let new_triggered, new_candidates =
+        List.map sources ~f:add_triggered_sinks_for_source
+        |> List.unzip
+        |> fun (triggered_sinks, candidates) ->
+        List.filter_opt triggered_sinks, List.filter_opt candidates
+      in
+      List.rev_append new_triggered triggered, List.rev_append new_candidates candidates
+    in
+    partial_sinks_to_taint |> Core.Map.Poly.keys |> List.fold ~f:add_triggered_sinks ~init:([], [])
+  else
+    [], []
 
-  { breadcrumbs; first_indices; first_fields }
 
+module PartitionedFlow = struct
+  type t = {
+    source_partition: (Sources.t, ForwardTaint.t) Map.Poly.t;
+    sink_partition: (Sinks.t, BackwardTaint.t) Map.Poly.t;
+  }
+end
 
 let generate_issues ~define { Candidate.flows; location } =
   let partitions =
@@ -320,6 +345,71 @@ let generate_issues ~define { Candidate.flows; location } =
     |> HandleMap.data
 
 
+module Candidates = struct
+  type t = Candidate.t Location.WithModule.Table.t
+
+  let create () = Location.WithModule.Table.create ()
+
+  let add_candidate candidates ({ Candidate.location; _ } as candidate) =
+    Location.WithModule.Table.update candidates location ~f:(function
+        | None -> candidate
+        | Some current_candidate -> Candidate.join current_candidate candidate)
+
+
+  let check_flow candidates ~location ~sink_handle ~source_tree ~sink_tree =
+    generate_source_sink_matches ~location ~sink_handle ~source_tree ~sink_tree
+    |> add_candidate candidates
+
+
+  let check_triggered_flows
+      candidates
+      ~triggered_sinks
+      ~location
+      ~sink_handle
+      ~source_tree
+      ~sink_tree
+    =
+    let triggered, new_candidates =
+      compute_triggered_sinks ~triggered_sinks ~sink_handle ~location ~source_tree ~sink_tree
+    in
+    List.iter triggered ~f:(fun sink -> Hash_set.add triggered_sinks (Sinks.show_partial_sink sink));
+    List.iter new_candidates ~f:(add_candidate candidates)
+
+
+  let generate_issues candidates ~define =
+    let accumulate ~key:_ ~data:candidate issues =
+      let new_issues = generate_issues ~define candidate in
+      List.rev_append new_issues issues
+    in
+    Location.WithModule.Table.fold candidates ~f:accumulate ~init:[]
+end
+
+type features = {
+  breadcrumbs: Features.BreadcrumbSet.t;
+  first_indices: Features.FirstIndexSet.t;
+  first_fields: Features.FirstFieldSet.t;
+}
+
+let get_issue_features { Flow.source_taint; sink_taint } =
+  let breadcrumbs =
+    let source_breadcrumbs = ForwardTaint.joined_breadcrumbs source_taint in
+    let sink_breadcrumbs = BackwardTaint.joined_breadcrumbs sink_taint in
+    Features.BreadcrumbSet.sequence_join source_breadcrumbs sink_breadcrumbs
+  in
+  let first_indices =
+    let source_indices = ForwardTaint.first_indices source_taint in
+    let sink_indices = BackwardTaint.first_indices sink_taint in
+    Features.FirstIndexSet.join source_indices sink_indices
+  in
+  let first_fields =
+    let source_fields = ForwardTaint.first_fields source_taint in
+    let sink_fields = BackwardTaint.first_fields sink_taint in
+    Features.FirstFieldSet.join source_fields sink_fields
+  in
+
+  { breadcrumbs; first_indices; first_fields }
+
+
 let sinks_regexp = Str.regexp_string "{$sinks}"
 
 let sources_regexp = Str.regexp_string "{$sources}"
@@ -350,7 +440,7 @@ let get_name_and_detailed_message { code; flow; _ } =
       name, message
 
 
-let generate_error ({ code; location; define; _ } as issue) =
+let to_error ({ code; location; define; _ } as issue) =
   let configuration = TaintConfiguration.get () in
   match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) configuration.rules with
   | None -> failwith "issue with code that has no rule"
@@ -429,55 +519,6 @@ let code_metadata () =
   let configuration = TaintConfiguration.get () in
   `Assoc
     (List.map configuration.rules ~f:(fun rule -> Format.sprintf "%d" rule.code, `String rule.name))
-
-
-let compute_triggered_sinks ~triggered_sinks ~location ~sink_handle ~source_tree ~sink_tree =
-  let partial_sinks_to_taint =
-    BackwardState.Tree.collapse
-      ~transform:(BackwardTaint.add_local_breadcrumbs (Features.issue_broadening_set ()))
-      sink_tree
-    |> BackwardTaint.partition BackwardTaint.kind ByFilter ~f:Sinks.extract_partial_sink
-  in
-  if not (Map.Poly.is_empty partial_sinks_to_taint) then
-    let sources =
-      ForwardState.Tree.fold ForwardTaint.kind ~f:List.cons ~init:[] source_tree
-      |> List.map ~f:Sources.discard_transforms
-    in
-    let add_triggered_sinks (triggered, candidates) sink =
-      let add_triggered_sinks_for_source source =
-        TaintConfiguration.get_triggered_sink ~partial_sink:sink ~source
-        |> function
-        | Some (Sinks.TriggeredPartialSink triggered_sink) ->
-            if Hash_set.mem triggered_sinks (Sinks.show_partial_sink sink) then
-              (* We have both pairs, let's check the flow directly for this sink being triggered. *)
-              let candidate =
-                generate_source_sink_matches
-                  ~location
-                  ~sink_handle
-                  ~source_tree
-                  ~sink_tree:
-                    (BackwardState.Tree.create_leaf
-                       (BackwardTaint.singleton
-                          ~location
-                          (Sinks.TriggeredPartialSink sink)
-                          Frame.initial))
-              in
-              None, Some candidate
-            else
-              Some triggered_sink, None
-        | _ -> None, None
-      in
-      let new_triggered, new_candidates =
-        List.map sources ~f:add_triggered_sinks_for_source
-        |> List.unzip
-        |> fun (triggered_sinks, candidates) ->
-        List.filter_opt triggered_sinks, List.filter_opt candidates
-      in
-      List.rev_append new_triggered triggered, List.rev_append new_candidates candidates
-    in
-    partial_sinks_to_taint |> Core.Map.Poly.keys |> List.fold ~f:add_triggered_sinks ~init:([], [])
-  else
-    [], []
 
 
 let source_can_match_rule = function

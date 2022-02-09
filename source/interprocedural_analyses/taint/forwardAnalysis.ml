@@ -136,16 +136,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ -> false
 
 
-  let candidates = Location.WithModule.Table.create ()
-
-  let add_flow_candidate ({ Issue.Candidate.location; _ } as candidate) =
-    let candidate =
-      match Hashtbl.find candidates location with
-      | Some current_candidate -> Issue.Candidate.join current_candidate candidate
-      | None -> candidate
-    in
-    Location.WithModule.Table.set candidates ~key:location ~data:candidate
-
+  let candidates = Issue.Candidates.create ()
 
   let check_flow ~location ~sink_handle ~source_tree ~sink_tree =
     let () =
@@ -162,8 +153,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           BackwardState.Tree.pp
           sink_tree
     in
-    Issue.generate_source_sink_matches ~location ~sink_handle ~source_tree ~sink_tree
-    |> add_flow_candidate
+    Issue.Candidates.check_flow candidates ~location ~sink_handle ~source_tree ~sink_tree
 
 
   let check_flow_to_global ~location ~source_tree global_model =
@@ -175,19 +165,17 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let check_triggered_flows ~triggered_sinks ~sink_handle ~location ~source_tree ~sink_tree =
-    let triggered, candidates =
-      Issue.compute_triggered_sinks ~triggered_sinks ~sink_handle ~location ~source_tree ~sink_tree
-    in
-    List.iter triggered ~f:(fun sink -> Hash_set.add triggered_sinks (Sinks.show_partial_sink sink));
-    List.iter candidates ~f:add_flow_candidate
+    Issue.Candidates.check_triggered_flows
+      candidates
+      ~triggered_sinks
+      ~sink_handle
+      ~location
+      ~source_tree
+      ~sink_tree
 
 
   let generate_issues () =
-    let accumulate ~key:_ ~data:candidate issues =
-      let new_issues = Issue.generate_issues ~define:FunctionContext.definition candidate in
-      List.rev_append new_issues issues
-    in
-    Location.WithModule.Table.fold candidates ~f:accumulate ~init:[]
+    Issue.Candidates.generate_issues candidates ~define:FunctionContext.definition
 
 
   let return_sink ~resolution ~return_location =
