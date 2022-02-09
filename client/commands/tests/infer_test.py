@@ -725,6 +725,7 @@ class TypeAnnotationTest(testslide.TestCase):
         expected: str,
         qualifier: str = "foo",
         prefix: str = "",
+        runtime_defined: bool = True,
         **stub_generation_options_kwargs: Any,
     ) -> None:
         actual = TypeAnnotation(
@@ -733,6 +734,7 @@ class TypeAnnotationTest(testslide.TestCase):
             options=StubGenerationOptions(
                 **stub_generation_options_kwargs,
             ),
+            runtime_defined=runtime_defined,
         ).to_stub(prefix=prefix)
         self.assertEqual(actual, expected)
 
@@ -779,6 +781,13 @@ class TypeAnnotationTest(testslide.TestCase):
             "typing.Union[foo.A[bar.B], bar.C[foo.B]]",
             '"typing.Union[foo.A[bar.B], bar.C[foo.B]]"',
             quote_annotations=True,
+        )
+
+    def test_sanitize__runtime_defined(self) -> None:
+        self.assert_to_stub(
+            "foo.A",
+            '"A"',
+            runtime_defined=False,
         )
 
     def test_to_stub_with_prefix(self) -> None:
@@ -1145,6 +1154,58 @@ class StubGenerationTest(testslide.TestCase):
             """,
         )
 
+        self._assert_stubs(
+            {
+                "defines": [
+                    {
+                        "return": "test.TestA",
+                        "name": "f",
+                        "parent": "test.TestA",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            },
+                            {
+                                "name": "input",
+                                "annotation": "test.TestA",
+                                "value": None,
+                                "index": 0,
+                            },
+                        ],
+                        "async": False,
+                    },
+                    {
+                        "return": "typing.Union[typing.Dict[str, int], str]",
+                        "name": "g",
+                        "parent": "test.TestA",
+                        "parameters": [
+                            {
+                                "name": "self",
+                                "annotation": None,
+                                "value": None,
+                                "index": 0,
+                            },
+                            {
+                                "name": "input",
+                                "annotation": "int",
+                                "value": None,
+                                "index": 0,
+                            },
+                        ],
+                        "async": False,
+                    },
+                ],
+            },
+            """\
+            class TestA:
+                def f(self, input: "TestA") -> "TestA": ...
+                def g(self, input: int) -> typing.Union[typing.Dict[str, int], str]: ...
+            """,
+        )
+
     def test_stubs_globals(self) -> None:
         self._assert_stubs(
             {
@@ -1185,6 +1246,22 @@ class StubGenerationTest(testslide.TestCase):
             """\
             """,
             annotate_attributes=False,
+        )
+        self._assert_stubs(
+            {
+                "attributes": [
+                    {
+                        "annotation": "test.test",
+                        "name": "attribute_name",
+                        "parent": "test.test",
+                    }
+                ],
+            },
+            """\
+            class test:
+                attribute_name: "test" = ...
+            """,
+            annotate_attributes=True,
         )
 
     def test_stubs_no_typing_import(self) -> None:

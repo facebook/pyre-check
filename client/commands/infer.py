@@ -301,6 +301,7 @@ class AnnotationFixer(libcst.CSTTransformer):
         qualifier: str,
         quote_annotations: bool = False,
         dequalify_all: bool = False,
+        runtime_defined: bool = True,
     ) -> str:
         """
         Transform raw annotations in an attempt to reduce incorrectly-imported
@@ -345,6 +346,8 @@ class AnnotationFixer(libcst.CSTTransformer):
         except libcst._exceptions.ParserSyntaxError:
             pass
 
+        if not runtime_defined:
+            return f'"{annotation}"'
         return annotation
 
 
@@ -371,17 +374,20 @@ class TypeAnnotation:
     annotation: Optional[str]
     qualifier: str
     options: StubGenerationOptions
+    runtime_defined: bool
 
     @staticmethod
     def from_raw(
         annotation: Optional[str],
         options: StubGenerationOptions,
         qualifier: str,
+        runtime_defined: bool = True,
     ) -> "TypeAnnotation":
         return TypeAnnotation(
             annotation=annotation,
             qualifier=qualifier,
             options=options,
+            runtime_defined=runtime_defined,
         )
 
     @staticmethod
@@ -401,6 +407,7 @@ class TypeAnnotation:
                 qualifier=self.qualifier,
                 quote_annotations=self.options.quote_annotations,
                 dequalify_all=self.options.dequalify,
+                runtime_defined=self.runtime_defined,
             )
             if self.options.simple_annotations and not TypeAnnotation.is_simple(
                 sanitized
@@ -484,11 +491,14 @@ class ModuleAnnotations:
         infer_output: RawInferOutputForPath,
         options: StubGenerationOptions,
     ) -> "ModuleAnnotations":
-        def type_annotation(annotation: Optional[str]) -> TypeAnnotation:
+        def type_annotation(
+            annotation: Optional[str], parent_class: Optional[str] = None
+        ) -> TypeAnnotation:
             return TypeAnnotation.from_raw(
                 annotation,
                 qualifier=infer_output.qualifier,
                 options=options,
+                runtime_defined=parent_class != annotation if parent_class else True,
             )
 
         return ModuleAnnotations(
@@ -503,7 +513,7 @@ class ModuleAnnotations:
                 AttributeAnnotation(
                     parent=attribute.parent,
                     name=attribute.name,
-                    annotation=type_annotation(attribute.annotation),
+                    annotation=type_annotation(attribute.annotation, attribute.parent),
                 )
                 for attribute in infer_output.attribute_annotations
             ]
@@ -530,11 +540,13 @@ class ModuleAnnotations:
                 MethodAnnotation(
                     parent=define.parent,
                     name=define.name,
-                    return_annotation=type_annotation(define.return_),
+                    return_annotation=type_annotation(define.return_, define.parent),
                     parameters=[
                         Parameter(
                             name=parameter.name,
-                            annotation=type_annotation(parameter.annotation),
+                            annotation=type_annotation(
+                                parameter.annotation, define.parent
+                            ),
                             value=parameter.value,
                         )
                         for parameter in define.parameters
