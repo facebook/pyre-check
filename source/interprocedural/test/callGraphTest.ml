@@ -1251,7 +1251,9 @@ let test_call_graph_of_define context =
                (CallCallees.create
                   ~call_targets:
                     [
-                      CallTarget.create (`Method { Target.class_name = "test.C"; method_name = "f" });
+                      CallTarget.create
+                        ~index:1
+                        (`Method { Target.class_name = "test.C"; method_name = "f" });
                     ]
                   ~return_type:Type.integer
                   ())) );
@@ -1305,6 +1307,7 @@ let test_call_graph_of_define context =
                    [
                      CallTarget.create
                        ~implicit_self:true
+                       ~index:1
                        (`Method { Target.class_name = "test.C"; method_name = "foo" });
                    ];
                  global_targets = [];
@@ -2422,6 +2425,104 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_identifier
                { IdentifierCallees.global_targets = [CallTarget.create (`Object "test.x")] }) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+     def foo():
+         pass
+
+     def bar():
+         pass
+
+     def baz():
+         foo()
+         foo()
+         bar()
+         foo()
+         bar()
+  |}
+    ~define_name:"test.baz"
+    ~expected:
+      [
+        ( "9:4-9:9",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create ~index:0 (`Function "test.foo")]
+                  ~return_type:Type.Any
+                  ())) );
+        ( "10:4-10:9",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create ~index:1 (`Function "test.foo")]
+                  ~return_type:Type.Any
+                  ())) );
+        ( "11:4-11:9",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create ~index:0 (`Function "test.bar")]
+                  ~return_type:Type.Any
+                  ())) );
+        ( "12:4-12:9",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create ~index:2 (`Function "test.foo")]
+                  ~return_type:Type.Any
+                  ())) );
+        ( "13:4-13:9",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create ~index:1 (`Function "test.bar")]
+                  ~return_type:Type.Any
+                  ())) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+     def foo(x=None):
+         pass
+
+     def bar():
+         foo(foo(), foo(foo()))
+  |}
+    ~define_name:"test.bar"
+    ~expected:
+      [
+        ( "6:4-6:26",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create ~index:0 (`Function "test.foo")]
+                  ~return_type:Type.Any
+                  ())) );
+        ( "6:8-6:13",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create ~index:1 (`Function "test.foo")]
+                  ~return_type:Type.Any
+                  ())) );
+        ( "6:15-6:25",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create ~index:2 (`Function "test.foo")]
+                  ~return_type:Type.Any
+                  ())) );
+        ( "6:19-6:24",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create ~index:3 (`Function "test.foo")]
+                  ~return_type:Type.Any
+                  ())) );
       ]
     ();
   ()

@@ -54,6 +54,10 @@ module HigherOrderParameter = struct
     | None, None -> None
 
 
+  let map_call_targets ~f ({ call_targets; _ } as higher_order_parameter) =
+    { higher_order_parameter with call_targets = List.map ~f call_targets }
+
+
   let all_targets { call_targets; _ } = List.map ~f:CallTarget.target call_targets
 end
 
@@ -151,6 +155,20 @@ module CallCallees = struct
     { call_targets; new_targets; init_targets; return_type; higher_order_parameter; unresolved }
 
 
+  let map_call_targets
+      ~f
+      { call_targets; new_targets; init_targets; return_type; higher_order_parameter; unresolved }
+    =
+    {
+      call_targets = List.map ~f call_targets;
+      new_targets = List.map ~f new_targets;
+      init_targets = List.map ~f init_targets;
+      return_type;
+      higher_order_parameter = higher_order_parameter >>| HigherOrderParameter.map_call_targets ~f;
+      unresolved;
+    }
+
+
   let all_targets { call_targets; new_targets; init_targets; higher_order_parameter; _ } =
     call_targets
     |> List.rev_append new_targets
@@ -200,6 +218,15 @@ module AttributeAccessCallees = struct
     }
 
 
+  let map_call_targets ~f { property_targets; global_targets; return_type; is_attribute } =
+    {
+      property_targets = List.map ~f property_targets;
+      global_targets = List.map ~f global_targets;
+      return_type;
+      is_attribute;
+    }
+
+
   let all_targets { property_targets; global_targets; _ } =
     List.rev_append property_targets global_targets |> List.map ~f:CallTarget.target
 end
@@ -214,6 +241,8 @@ module IdentifierCallees = struct
   let join { global_targets = left_global_targets } { global_targets = right_global_targets } =
     { global_targets = List.rev_append left_global_targets right_global_targets }
 
+
+  let map_call_targets ~f { global_targets } = { global_targets = List.map ~f global_targets }
 
   let all_targets { global_targets } = List.map ~f:CallTarget.target global_targets
 end
@@ -260,6 +289,14 @@ module ExpressionCallees = struct
     }
 
 
+  let map_call_targets ~f { call; attribute_access; identifier } =
+    {
+      call = call >>| CallCallees.map_call_targets ~f;
+      attribute_access = attribute_access >>| AttributeAccessCallees.map_call_targets ~f;
+      identifier = identifier >>| IdentifierCallees.map_call_targets ~f;
+    }
+
+
   let all_targets { call; attribute_access; identifier } =
     let call_targets = call >>| CallCallees.all_targets |> Option.value ~default:[] in
     let attribute_access_targets =
@@ -287,6 +324,11 @@ module LocationCallees = struct
 
 
   let show callees = Format.asprintf "%a" pp callees
+
+  let map ~f = function
+    | Singleton callees -> Singleton (f callees)
+    | Compound map -> Compound (String.Map.Tree.map ~f map)
+
 
   let all_targets = function
     | Singleton raw_callees -> ExpressionCallees.all_targets raw_callees
@@ -1412,6 +1454,19 @@ let call_graph_of_define
                  LocationCallees.Compound
                    (Core.String.Map.Tree.map ~f:ExpressionCallees.deduplicate unprocessed_callees) ))
     |> Location.Map.of_alist_exn
+  in
+  let call_graph =
+    let index_map = Target.HashMap.create () in
+    let index_call_target ({ CallTarget.target; _ } as call_target) =
+      let index = Target.HashMap.find index_map target |> Option.value ~default:0 in
+      Target.HashMap.incr index_map target;
+      { call_target with index }
+    in
+    let index_callees =
+      LocationCallees.map ~f:(ExpressionCallees.map_call_targets ~f:index_call_target)
+    in
+    (* map visits callees in the order of the keys, i.e locations. *)
+    Location.Map.map ~f:index_callees call_graph
   in
   Statistics.performance
     ~randomly_log_every:1000
