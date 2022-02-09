@@ -66,6 +66,9 @@
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_args_kwargs_with_sink|1|formal(y):7315584bf913d3a8482a86c3fd7f62de"
     ]
   }
 }
@@ -136,6 +139,9 @@
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_with_helper_function|0|formal(x):79a023bb314b79dbaaa797b4418a0ff8"
     ]
   }
 }
@@ -200,6 +206,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_async|0|formal(y):f3a4be07afbf6d338177c5c28d7b0103"
     ]
   }
 }
@@ -264,6 +273,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.Foo.self_has_generic_type|0|formal(x):1d904e1b10103dc63761eb151649220a"
     ]
   }
 }
@@ -334,6 +346,9 @@
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_log_first_parameter|0|formal(x):5ae16dac4bb4fe64e2aa75438894edf6"
     ]
   }
 }
@@ -398,6 +413,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_using_decorator_factory|0|formal(x):feb621b717fb8c1c72c833590bf4051a"
     ]
   }
 }
@@ -462,6 +480,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.Foo.foo|0|formal(x):698e390b3ce78adb9bb075b68552d797"
     ]
   }
 }
@@ -526,6 +547,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_args_kwargs|0|formal(x):1d108131364bdb806b02a8cb2668d990"
     ]
   }
 }
@@ -590,6 +614,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.Foo.some_class_method|0|formal(x):393e937dd9a9ecb6162292427e244201"
     ]
   }
 }
@@ -660,6 +687,9 @@
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_with_sink|0|formal(x):2777cc7f8c266e9329c3fe15799386ca"
     ]
   }
 }
@@ -724,6 +754,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.Foo.bar|0|formal(x):d6c399de2b9d476a13ea748378ba1a2a"
     ]
   }
 }
@@ -794,6 +827,9 @@
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo|0|formal(x):3260e990263b34bb8e48f747f4d4d381"
     ]
   }
 }
@@ -1302,6 +1338,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.foo_with_shady_decorators._inlined_with_logging_source:5002:0:Call|decorator.foo_with_shady_decorators._inlined_with_logging_sink|0|formal(y):82a70286f12b4d788c5be3bb7399cce2"
     ]
   }
 }

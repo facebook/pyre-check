@@ -62,6 +62,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "properties.TaintedGetterAndSetter.writes_to_property:5002:0:Call|Ovr{properties.TaintedGetterAndSetter::my_property$setter}|0|formal(value):529f1f15dcffe6e1d29083e68d97703e"
     ]
   }
 }
@@ -130,6 +133,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "properties.property_setter_in_constructor:5002:0:Call|_test_sink|1|formal(arg):defd41b52fc690af796fbfb7598f009e"
     ]
   }
 }
@@ -195,6 +201,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "properties.property_setter_in_constructor:5002:0:Call|_test_sink|0|formal(arg):845e2aa22281119cb404609f236231fd"
     ]
   }
 }
@@ -261,6 +270,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "properties.sets_tainted_value:5002:0:Call|Ovr{properties.TaintedGetterAndSetter::my_property$setter}|0|formal(value):13502aa3c8befe2e0aa7197e58eacdba"
     ]
   }
 }
@@ -326,6 +338,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "properties.setters_are_simulated:5002:0:Call|_test_sink|1|formal(arg):e4e70b1b6432ccfbd85c1fb3abda4447"
     ]
   }
 }
@@ -387,6 +402,9 @@
     "features": [
       { "always-via": "string_concat_lhs" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "properties.test_issue_in_class_property:5002:0:Call|_test_sink|0|formal(arg):1a2e137cd8ae4f99010605f61714a8fa"
     ]
   }
 }
@@ -451,6 +469,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "properties.test_property_callable:5002:0:Call|properties.PropertyCallableReturn.__call__|0|formal(y):f96f011397bf0667e304185f48e37aee"
     ]
   }
 }
@@ -518,6 +539,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "properties.test_property_callable:5002:0:Call|properties.PropertyCallable.attribute|0|formal(self):22359ed2d4ad35d3c5f1cebbdbd55bac"
     ]
   }
 }
@@ -591,6 +615,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "properties.test_property_callable:5002:0:Call|properties.PropertyCallableReturn.__call__|0|formal(self):4eec40b251db6623ac7b4f3ccb768535"
     ]
   }
 }
@@ -2261,7 +2288,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "properties.test_getattr_on_property:5002:0:Call|_test_sink|0|formal(arg):60a27373df088c4c8387ccc58a288e6e"
+    ]
   }
 }
 {
@@ -2393,7 +2423,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "properties.test_union_property_attribute_sink:5002:0:Call|_test_sink|0|formal(arg):c04eeb503daa467fcf4c551c94c4c965"
+    ]
   }
 }
 {
@@ -2518,6 +2551,9 @@
       { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "properties.test_union_property_attribute_source:5002:0:Call|properties.TaintedGetterAndSetter.my_property|0|formal(self):4f3c9a7a74d36807f13db93da639a40f"
     ]
   }
 }

@@ -60,6 +60,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "static_methods.run_test:5002:0:Call|static_methods.test|0|formal(source):e6558cd7986087b61e1685d8bafe03e4"
     ]
   }
 }

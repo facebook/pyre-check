@@ -61,6 +61,9 @@
       { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "multiline.test:5002:0:Call|_test_sink|0|formal(arg):a72e59962d22f1b031fbba207867ea4e"
     ]
   }
 }

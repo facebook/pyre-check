@@ -49,7 +49,10 @@
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "multiple_sources.combine_tainted_user_and_dangerous_vc:4321:0:Call|multiple_sources.Node.send|0|formal(vc):4b283006a4044ae3eb3809f82c65d061"
+    ]
   }
 }
 {
@@ -102,7 +105,10 @@
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|1|formal(vc):00952f5183650c224ff0c1236b161820"
+    ]
   }
 }
 {
@@ -155,7 +161,10 @@
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(vc):2952b352e0a37aa627ef7429212a7ad1"
+    ]
   }
 }
 {
@@ -218,7 +227,10 @@
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "multiple_sources.issue_with_triggered_context:4321:0:Call|multiple_sources.demonstrate_triggered_context|0|formal(vc):618ee3f551e51cbfdd4134288328fbfb"
+    ]
   }
 }
 {
@@ -290,6 +302,9 @@
       { "has": "first-index" },
       { "first-index": "<unknown>" },
       { "always-via": "tito" }
+    ],
+    "master_handles": [
+      "multiple_sources.issue_with_triggered_input:4321:0:Call|multiple_sources.demonstrate_triggered_input|0|formal(id):8a70cfef2676b9104e0817e743936160"
     ]
   }
 }

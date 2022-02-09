@@ -140,6 +140,9 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "always_in_none.test:5002:0:Call|_test_sink|0|formal(arg):1168c6477767d16ce96c21f36d6fcbba"
+    ]
   }
 }

@@ -58,6 +58,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "maximum_tito_depth.issue:1000:0:Call|_test_sink|0|formal(arg):0721fb3ffb38a4bf7b197f2be4855e62"
     ]
   }
 }

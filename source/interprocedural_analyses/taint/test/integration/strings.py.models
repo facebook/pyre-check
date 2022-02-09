@@ -62,6 +62,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.bad_1:5002:0:Call|_test_sink|0|formal(arg):9374fc8a8cb1be75930cf176292d491b"
     ]
   }
 }
@@ -128,6 +131,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.bad_2:5002:0:Call|_test_sink|0|formal(arg):8a88866aec2c37a9b55000f2781ba890"
     ]
   }
 }
@@ -215,6 +221,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.either:5002:0:Call|_test_sink|0|formal(arg):66d28ba04f85ddfe00f2392ff53ff9a5"
     ]
   }
 }
@@ -296,6 +305,9 @@
       { "via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.maybe_lhs:5002:0:Call|_test_sink|0|formal(arg):3407bb568c3164f7884d70dd2c73f63d"
     ]
   }
 }
@@ -377,6 +389,9 @@
       { "via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.maybe_rhs:5002:0:Call|_test_sink|0|formal(arg):a49a7406fb24e2fd499b036831901f9d"
     ]
   }
 }
@@ -443,6 +458,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.through_iadd:5002:0:Call|_test_sink|0|formal(arg):2e73aa579eafd32fe25063c5c69e1bb6"
     ]
   }
 }

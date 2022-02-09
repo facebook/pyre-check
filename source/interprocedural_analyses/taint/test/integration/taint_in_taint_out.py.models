@@ -66,6 +66,9 @@
       { "always-via": "string_concat_lhs" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "taint_in_taint_out.issue_with_indirect_sink_tito:5002:0:Call|taint_in_taint_out.adds_tito_with_indirect_sink|0|formal(src):2fbce496fb3c6d2b1ac7eb34c04a80c1"
     ]
   }
 }
@@ -132,6 +135,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "taint_in_taint_out.test_always_via_feature:5002:0:Call|_test_sink|0|formal(arg):5f5be39770a875ee131d712a9575c6ec"
     ]
   }
 }
@@ -202,6 +208,9 @@
       { "always-via": "special_source" },
       { "always-via": "obscure:unknown-callee" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "taint_in_taint_out.test_complex_evaluator:5002:0:Call|_test_sink|0|formal(arg):ab8fd57412bae9ae7f76b9d9e5b62315"
     ]
   }
 }
@@ -270,6 +279,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "taint_in_taint_out.test_explicit_call_to_superclass:5002:0:Call|_test_sink|0|formal(arg):542fa2512fcbd87d221e85e3ff59321e"
     ]
   }
 }
@@ -332,6 +344,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "taint_in_taint_out.test_simplified_evaluator:5002:0:Call|_test_sink|0|formal(arg):4ea1dfcb4011b7d278405c93836ee5d8"
     ]
   }
 }

@@ -46,6 +46,7 @@ module SinkHandle = struct
     | Return
     | LiteralStringSink of Sinks.t
     | ConditionalTestSink of Sinks.t
+  [@@deriving compare]
 
   let make_call ~call_target:{ CallGraph.CallTarget.target; index; _ } ~root =
     let root =
@@ -64,7 +65,36 @@ module SinkHandle = struct
 
   let make_global ~call_target:{ CallGraph.CallTarget.target; index; _ } =
     Global { callee = target; index }
+
+
+  let master_handle ~callable ~code sink_handle =
+    let version = 0 (* Increment the version on format change. *) in
+    let sink_handle =
+      match sink_handle with
+      | Call { callee; index; parameter } ->
+          Format.asprintf
+            "Call|%s|%d|%s"
+            (Target.external_target_name callee)
+            index
+            (AccessPath.Root.to_string parameter)
+      | Global { callee; index } ->
+          Format.asprintf "Global|%s|%d" (Target.external_target_name callee) index
+      | Return -> "Return"
+      | LiteralStringSink sink -> Format.asprintf "LiteralStringSink|%a" Sinks.pp sink
+      | ConditionalTestSink sink -> Format.asprintf "ConditionalTestSink|%a" Sinks.pp sink
+    in
+    let full_handle = Format.asprintf "%s:%d:%d:%s" callable code version sink_handle in
+    let hash = full_handle |> Digest.string |> Digest.to_hex in
+    let short_handle =
+      String.sub
+        full_handle
+        ~pos:0
+        ~len:(min (String.length full_handle) (255 - String.length hash - 1))
+    in
+    Format.asprintf "%s:%s" short_handle hash
 end
+
+module SinkHandleSet = Caml.Set.Make (SinkHandle)
 
 module SinkTreeWithHandle = struct
   type t = {
@@ -89,6 +119,7 @@ type t = {
   code: int;
   flow: Flow.t;
   location: Location.WithModule.t;
+  sink_handles: SinkHandleSet.t;
   define: Statement.Define.t Node.t;
 }
 
@@ -112,10 +143,18 @@ module Candidate = struct
   type t = {
     flows: Flow.t list;
     location: Location.WithModule.t;
+    sink_handles: SinkHandleSet.t;
   }
 
-  let join { flows = left_flows; location } { flows = right_flows; _ } =
-    { flows = List.rev_append left_flows right_flows; location }
+  let join
+      { flows = left_flows; location; sink_handles = left_sink_handles }
+      { flows = right_flows; sink_handles = right_sink_handles; _ }
+    =
+    {
+      flows = List.rev_append left_flows right_flows;
+      location;
+      sink_handles = SinkHandleSet.union left_sink_handles right_sink_handles;
+    }
 end
 
 module TriggeredSinks = struct
@@ -130,7 +169,7 @@ end
    Let F and B for forward and backward taint respectively. For each path p in B from the root to
    some node with non-empty taint T, we match T with the join of taint in the upward and downward
    closure from node at path p in F. *)
-let generate_source_sink_matches ~location ~sink_handle:_ ~source_tree ~sink_tree =
+let generate_source_sink_matches ~location ~sink_handle ~source_tree ~sink_tree =
   let make_source_sink_matches (path, sink_taint) matches =
     let source_taint =
       ForwardState.Tree.read path source_tree
@@ -148,7 +187,7 @@ let generate_source_sink_matches ~location ~sink_handle:_ ~source_tree ~sink_tre
     else
       BackwardState.Tree.fold BackwardState.Tree.Path ~init:[] ~f:make_source_sink_matches sink_tree
   in
-  { Candidate.flows; location }
+  { Candidate.flows; location; sink_handles = SinkHandleSet.singleton sink_handle }
 
 
 let compute_triggered_sinks ~triggered_sinks ~location ~sink_handle ~source_tree ~sink_tree =
@@ -207,7 +246,7 @@ module PartitionedFlow = struct
   }
 end
 
-let generate_issues ~define { Candidate.flows; location } =
+let generate_issues ~define { Candidate.flows; location; sink_handles } =
   let partitions =
     let partition { Flow.source_taint; sink_taint } =
       {
@@ -302,7 +341,7 @@ let generate_issues ~define { Candidate.flows; location } =
   let apply_rule_separate_access_path issues_so_far (rule : Rule.t) =
     let fold_partitions issues candidate =
       match apply_rule_on_flow rule candidate with
-      | Some flow -> { code = rule.code; flow; location; define } :: issues
+      | Some flow -> { code = rule.code; flow; location; sink_handles; define } :: issues
       | None -> issues
     in
     List.fold partitions ~init:issues_so_far ~f:fold_partitions
@@ -322,7 +361,7 @@ let generate_issues ~define { Candidate.flows; location } =
     if Flow.is_bottom flow then
       None
     else
-      Some { code = rule.code; flow; location; define }
+      Some { code = rule.code; flow; location; sink_handles; define }
   in
   let group_by_handle map issue =
     (* SAPP invariant: There should be a single issue per issue handle.
@@ -484,7 +523,7 @@ let to_json ~filename_lookup callable issue =
         json_features;
       ]
   in
-  let traces =
+  let traces : Yojson.Safe.json =
     `List
       [
         `Assoc ["name", `String "forward"; "roots", source_traces];
@@ -500,6 +539,14 @@ let to_json ~filename_lookup callable issue =
     Location.WithModule.instantiate ~lookup:filename_lookup issue.location
   in
   let callable_line = Ast.(Location.line issue.define.location) in
+  let master_handles =
+    SinkHandleSet.fold
+      (fun sink_handle handles ->
+        `String (SinkHandle.master_handle ~callable:callable_name ~code:issue.code sink_handle)
+        :: handles)
+      issue.sink_handles
+      []
+  in
   `Assoc
     [
       "callable", `String callable_name;
@@ -512,6 +559,7 @@ let to_json ~filename_lookup callable issue =
       "message", `String message;
       "traces", traces;
       "features", `List json_features;
+      "master_handles", `List master_handles;
     ]
 
 

@@ -132,6 +132,9 @@
       { "first-index": "a" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "first_field.alternate_fields:5002:0:Call|_test_sink|0|formal(arg):e344eba1a11b018a14afd4a5796566b9"
     ]
   }
 }

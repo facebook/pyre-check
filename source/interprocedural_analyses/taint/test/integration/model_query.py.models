@@ -53,7 +53,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "model_query.alarm_6:1008:0:Global|Obj{model_query.AttributeTestClass3.instance}|0:093c3aecbbf663d45349e66c87aac171"
+    ]
   }
 }
 {
@@ -110,7 +113,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "model_query.alarm_6:1006:0:Global|Obj{model_query.AttributeTestClass3.instance}|0:2fe4609a4f178a6be9d50be2b68231e2"
+    ]
   }
 }
 {
@@ -839,7 +845,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query.alarm_1:1001:0:Call|_test_sink|0|formal(arg):a9184d0be2a256b695ec5ce8331dd9c2"
+    ]
   }
 }
 {
@@ -927,7 +936,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query.alarm_10:1002:0:Call|_test_sink|0|formal(arg):ce3fa9be7b846215e3bb815f7047e579"
+    ]
   }
 }
 {
@@ -1015,7 +1027,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query.alarm_11:1002:0:Call|_test_sink|0|formal(arg):0840dd54d902986906b8c38fd6d11fb5"
+    ]
   }
 }
 {
@@ -1103,7 +1118,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query.alarm_12:1002:0:Call|_test_sink|0|formal(arg):bf745cfd45bdbdf218821bfdc731b704"
+    ]
   }
 }
 {
@@ -1188,7 +1206,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query.alarm_2:1001:0:Call|_test_sink|0|formal(arg):79d7747af82c4fcaf852e8ad561b7833"
+    ]
   }
 }
 {
@@ -1275,7 +1296,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query.alarm_3:1001:0:Call|_test_sink|0|formal(arg):74a1acc36a855c94819af6d06dd8b1b8"
+    ]
   }
 }
 {
@@ -1360,7 +1384,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query.alarm_4:1001:0:Call|_test_sink|0|formal(arg):4b0188ca3e78c717e07f7b0f621b7188"
+    ]
   }
 }
 {
@@ -1463,7 +1490,10 @@
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "model_query.alarm_5:1007:0:Global|Obj{model_query.AttributeTestClass3.attribute}|0:5e3a7d3bd2f5e607ca68e3dd6c249666"
+    ]
   }
 }
 {
@@ -1521,7 +1551,10 @@
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "model_query.alarm_5:1006:0:Global|Obj{model_query.AttributeTestClass3.attribute}|0:355cd4dd56695dd84d05903b9b97f639"
+    ]
   }
 }
 {
@@ -1630,7 +1663,10 @@
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "model_query.alarm_7:1004:0:Return:87bb6daab7f3a120a18ed61deb1b579d"
+    ]
   }
 }
 {
@@ -1683,7 +1719,10 @@
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "model_query.alarm_7:1003:0:Return:7bc53faf9fc59acf138e34e39b897a2f"
+    ]
   }
 }
 {
@@ -1768,7 +1807,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query.alarm_8:1005:0:Call|_test_sink|0|formal(arg):4e380b4a53b4601356ea46ccf5674f76"
+    ]
   }
 }
 {
@@ -1825,7 +1867,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query.alarm_8:1003:0:Call|_test_sink|0|formal(arg):bad451ecdee0aed4f2c31393e0723ead"
+    ]
   }
 }
 {
@@ -1913,7 +1958,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query.alarm_9:1002:0:Call|_test_sink|0|formal(arg):d52b1ec1ba56df50b439b8b37db26f1a"
+    ]
   }
 }
 {

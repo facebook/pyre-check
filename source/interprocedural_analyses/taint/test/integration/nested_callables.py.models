@@ -66,6 +66,9 @@
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "nested_callables.call_outer:5002:0:Call|nested_callables.outer|0|formal(x):f11ac69d012c226b17ae3bfe0e513454"
     ]
   }
 }
@@ -125,6 +128,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "nested_callables.foo.inner:5002:0:Call|_test_sink|0|formal(arg):f7ce9d0bca257e1b331966a0adc7a221"
     ]
   }
 }

@@ -64,7 +64,10 @@
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "parametric_models.f_and_g_to_test:7001:0:Call|parametric_models.sink|0|formal(x):990aa6fcb5124df94578025a4ac071d4"
+    ]
   }
 }
 {
@@ -130,7 +133,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "parametric_models.test_to_subkind_sink:7002:0:Call|parametric_models.inferred_sink|0|formal(x):dab13191364556881466b8c4df42a47b"
+    ]
   }
 }
 {

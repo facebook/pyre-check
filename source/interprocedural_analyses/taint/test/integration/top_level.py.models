@@ -60,6 +60,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "top_level.$toplevel:5002:0:Call|top_level.foo|0|formal(x):cafe6a91686adfadae5252ac54487cc6"
     ]
   }
 }
@@ -119,6 +122,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "top_level.$toplevel:5002:0:Call|_test_sink|0|formal(arg):b42fca11b7ca7b29d2700571455a4452"
     ]
   }
 }

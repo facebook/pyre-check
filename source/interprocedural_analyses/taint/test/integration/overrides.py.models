@@ -65,6 +65,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "overrides.testB:5002:0:Call|Ovr{overrides.B::classMethod}|0|formal(arg):6f1d11d7c4a41b6e328306c71bbef469"
     ]
   }
 }
@@ -134,6 +137,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "overrides.testB:5002:0:Call|Ovr{overrides.C::methodA}|0|formal(arg):675e80aeedecf222fa5a8611235983f4"
     ]
   }
 }
@@ -203,6 +209,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "overrides.testBase:5002:0:Call|Ovr{overrides.Base::classMethod}|0|formal(arg):c37983e035a1210aaac892e62de94067"
     ]
   }
 }
@@ -272,6 +281,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "overrides.testBase:5002:0:Call|Ovr{overrides.Base::methodA}|0|formal(arg):23ebf2d57da4ec32ed0bc3402f1e99d5"
     ]
   }
 }
@@ -361,6 +373,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "overrides.testC:5002:0:Call|Ovr{overrides.C::methodA}|0|formal(arg):8a3b19b30dfe7ca6a395cffeeafa0106"
     ]
   }
 }
@@ -430,6 +445,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "overrides.testD:5002:0:Call|Ovr{overrides.D::methodA}|0|formal(arg):11322891bb86e5e6e9429c9b184f3f21"
     ]
   }
 }
@@ -499,6 +517,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "overrides.testStaticB:5002:0:Call|overrides.B.classMethod|0|formal(arg):f2a01ecb9eb94ec06558f106bda300c4"
     ]
   }
 }

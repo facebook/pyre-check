@@ -60,7 +60,10 @@
         ]
       }
     ],
-    "features": [ { "has": "first-index" }, { "first-index": "tainted" } ]
+    "features": [ { "has": "first-index" }, { "first-index": "tainted" } ],
+    "master_handles": [
+      "string_conversion.repr_is_tainted:5001:0:Call|eval|0|formal(arg):23d81ad7230b52543f70b3bba37a8ce6"
+    ]
   }
 }
 {
@@ -124,7 +127,10 @@
         ]
       }
     ],
-    "features": [ { "has": "first-index" }, { "first-index": "tainted" } ]
+    "features": [ { "has": "first-index" }, { "first-index": "tainted" } ],
+    "master_handles": [
+      "string_conversion.str_falls_back_to_repr:5001:0:Call|eval|0|formal(arg):8fae9955ef2804b3e7cdc1b6da3bd8bf"
+    ]
   }
 }
 {
@@ -188,7 +194,10 @@
         ]
       }
     ],
-    "features": [ { "has": "first-index" }, { "first-index": "tainted" } ]
+    "features": [ { "has": "first-index" }, { "first-index": "tainted" } ],
+    "master_handles": [
+      "string_conversion.str_is_tainted:5001:0:Call|eval|0|formal(arg):7870f312970ef68ef994d2b872d99ad2"
+    ]
   }
 }
 {

@@ -62,6 +62,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "recognized_callable_targets.test_callable_target:5002:0:Call|recognized_callable_targets.callable_target|0|formal(arg):96a68efba06c1ca00a68e072416f925f"
     ]
   }
 }

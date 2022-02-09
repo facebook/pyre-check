@@ -65,6 +65,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "supers.B.g4:5002:0:Call|supers.B.f5|0|formal(x):2d4b1bc6d721a1e484a34d0e7dafabcb"
     ]
   }
 }
@@ -134,6 +137,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "supers.attribute_B_not_overwritten:5002:0:Call|Ovr{supers.B::g1}|0|formal(self):0086033306352f8790c5fdab7be5aab9"
     ]
   }
 }
@@ -203,6 +209,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "supers.attribute_C_not_overwritten:5002:0:Call|Ovr{supers.C::g1}|0|formal(self):4a31e44da11c02f9167dac9709b76bfc"
     ]
   }
 }
@@ -272,6 +281,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "supers.attribute_D_not_overwritten:5002:0:Call|supers.D.g1|0|formal(self):4efab0cd3bce52ce9554d5d4b7dd38a8"
     ]
   }
 }
@@ -918,6 +930,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "supers.B.g1:5002:0:Call|supers.A.f2|0|formal(x):bca647bf5e2ed5af745949c32f12e179"
     ]
   }
 }

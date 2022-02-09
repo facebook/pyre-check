@@ -472,6 +472,9 @@
       { "always-via": "special_source" },
       { "always-via": "a_feature" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "obscure_models.test_obscure_with_tito:5002:0:Call|_test_sink|0|formal(arg):92ad60b8a716874f6e42658a1c86185f"
     ]
   }
 }

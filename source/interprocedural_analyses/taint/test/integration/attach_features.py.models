@@ -141,6 +141,9 @@
     "features": [
       { "always-via": "string_concat_lhs" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "attach_features.attach_to_returned_sink:5002:0:Return:8218e4adbc4250811127e266f8a13911"
     ]
   }
 }

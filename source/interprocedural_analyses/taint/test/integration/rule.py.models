@@ -47,7 +47,10 @@
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "rule.alarm:5999:0:Call|rule.sink|0|formal(x):076d2475a85306067a619d027c5f3f05"
+    ]
   }
 }
 {

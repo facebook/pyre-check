@@ -70,6 +70,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "named_tuples.issue_with_bad:5002:0:Call|_test_sink|0|formal(arg):e89e0d97d39ad4c9aeffa0299b935629"
     ]
   }
 }
@@ -144,6 +147,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "named_tuples.issue_with_inherited_named_tuple:5002:0:Call|_test_sink|0|formal(arg):7cc3bcce733ca7e014d258073ca4480f"
     ]
   }
 }
@@ -211,7 +217,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "named_tuples.issue_with_named_tuple_with_tainted_attribute:5002:0:Call|named_tuples.NamedTupleWithTaintedAttribute.__init__|0|formal(bad):977049b125c3b118003728cf9b7cfb27"
+    ]
   }
 }
 {
@@ -285,6 +294,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "named_tuples.issue_with_old_school_named_tuples:5002:0:Call|_test_sink|0|formal(arg):7c43f1a34913fb7584197322a7b4c82d"
     ]
   }
 }

@@ -65,6 +65,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "port.match_flows:5002:0:Call|port.sink_field|0|formal(arg):0aa7e5a2830e39fae8409f8982e2230c"
     ]
   }
 }
@@ -140,6 +143,9 @@
       { "first-index": "<numeric>" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "port.match_star_arg_directly:5002:0:Call|port.star_arg_wrapper|0|formal(*rest0):567c174a993cd37392a220794cdc3456"
     ]
   }
 }
@@ -215,6 +221,9 @@
       { "first-index": "<numeric>" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "port.match_star_arg_with_star:5002:0:Call|port.star_arg_wrapper|0|formal(*rest0):7d80386b4e2b2584ff7801d13aff8e44"
     ]
   }
 }
@@ -290,6 +299,9 @@
       { "first-index": "arg" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "port.match_star_star_arg_directly:5002:0:Call|port.star_star_arg_wrapper|0|formal(**kw):d69dca21ec2bc2b20878ed87871d012b"
     ]
   }
 }
@@ -365,6 +377,9 @@
       { "first-index": "arg" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "port.match_star_star_arg_with_star:5002:0:Call|port.star_star_arg_wrapper|0|formal(**kw):cef5bd5ded9b7b5e37110897f64b4afa"
     ]
   }
 }
@@ -429,6 +444,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "port.refer_to_method_as_field:5002:0:Call|_test_sink|0|formal(arg):c7a47913d9f1119ff23e07d044bbf466"
     ]
   }
 }

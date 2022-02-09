@@ -51,7 +51,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "attributes.test_attribute_union_sink:5002:0:Global|Obj{attributes.Sink.token}|1:cb5576984115ab71838ed9c0be98c643"
+    ]
   }
 }
 {
@@ -106,7 +109,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "attributes.test_attribute_union_sink:5002:0:Global|Obj{attributes.Sink.token}|0:14935f90c85d01ed835cdc0a92c85dbf"
+    ]
   }
 }
 {
@@ -174,6 +180,9 @@
       { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "attributes.test_attribute_via_dunder_dict:5002:0:Call|_test_sink|0|formal(arg):62e7b46583720a9a3834cad383fbad3f"
     ]
   }
 }
@@ -242,6 +251,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "attributes.test_attribute_via_dunder_dict:5002:0:Call|_test_sink|1|formal(arg):da5fc540abbf310d75dd68aa49edc906"
     ]
   }
 }
@@ -302,6 +314,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "attributes.test_issue_with_update_to_self_attribute:5002:0:Global|Obj{attributes.D.buffer}|0:a87babfa59527e2779c9625bae05d282"
     ]
   }
 }
@@ -606,7 +621,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "attributes.test_attribute_union_source:5002:0:Call|_test_sink|1|formal(arg):a2bd11fa9758293fdf005fbfa793a61a"
+    ]
   }
 }
 {
@@ -661,7 +679,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "attributes.test_attribute_union_source:5002:0:Call|_test_sink|0|formal(arg):3e7e5ecb5638879f3585847c1274f5e1"
+    ]
   }
 }
 {
@@ -889,6 +910,9 @@
       { "has": "first-index" },
       { "first-index": "text" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "attributes.test_issue_with_text_key_of_dictionary:5002:0:Call|_test_sink|0|formal(arg):07aaa6860d20d5f97b7ef18d4f0ad4f6"
     ]
   }
 }

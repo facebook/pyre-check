@@ -76,6 +76,9 @@
       { "via": "tito" },
       { "via": "split" },
       { "always-via": "a_feature" }
+    ],
+    "master_handles": [
+      "multi_sink_ports.issue:1111:0:Call|multi_sink_ports.wrapper|0|formal(x):8efc69c6c3477bb5d58cf2bcf92bf8cb"
     ]
   }
 }
@@ -164,6 +167,9 @@
       { "always-via": "issue-broadening" },
       { "via": "split" },
       { "always-via": "a_feature" }
+    ],
+    "master_handles": [
+      "multi_sink_ports.issue2:1111:0:Call|multi_sink_ports.wrapper2|0|formal(x):4172744573c5aa281945f908403b12f8"
     ]
   }
 }

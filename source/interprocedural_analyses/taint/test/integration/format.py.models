@@ -55,6 +55,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "format.issue_in_format:5002:0:Call|_test_sink|0|formal(arg):40a4eb44494f7e5de24f3521ab803c1a"
     ]
   }
 }

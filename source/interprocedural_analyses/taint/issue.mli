@@ -44,6 +44,8 @@ module SinkHandle : sig
   val make_global : call_target:CallGraph.CallTarget.t -> t
 end
 
+module SinkHandleSet : Caml.Set.S with type elt = SinkHandle.t
+
 module SinkTreeWithHandle : sig
   type t = {
     sink_tree: BackwardState.Tree.t;
@@ -60,6 +62,7 @@ type t = {
   code: int;
   flow: Flow.t;
   location: Location.WithModule.t;
+  sink_handles: SinkHandleSet.t;
   (* Only used to create the Pyre errors. *)
   define: Ast.Statement.Define.t Ast.Node.t;
 }
@@ -75,6 +78,7 @@ module Candidate : sig
   type t = {
     flows: Flow.t list;
     location: Location.WithModule.t;
+    sink_handles: SinkHandleSet.t;
   }
 
   val join : t -> t -> t

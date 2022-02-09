@@ -50,6 +50,9 @@
     "features": [
       { "always-via": "format-string" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "implicit_sinks.inline_issue:1337:0:LiteralStringSink|Test:4b23f220f0c56c92a09c1005056d0f3c"
     ]
   }
 }

@@ -63,6 +63,9 @@
       { "always-via": "string_concat_lhs" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "add_feature_to_argument.test_add_feature_in_comprehension:5002:0:Call|_test_sink|0|formal(arg):e660dc46ee53a95cdb86c321f40be0a3"
     ]
   }
 }

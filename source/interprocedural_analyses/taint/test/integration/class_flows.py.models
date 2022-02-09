@@ -57,7 +57,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.tainted_class_attribute_through_double_underscore_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:b7f61664326b657c5227d14cc38865b0"
+    ]
   }
 }
 {
@@ -118,7 +121,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.tainted_class_attribute_through_optional_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:a139d3961b8e8b18bed9ef93c398cca6"
+    ]
   }
 }
 {
@@ -178,7 +184,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.global_class_attribute_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:3018a70369c9c80371f3853076f8a844"
+    ]
   }
 }
 {
@@ -235,7 +244,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.tainted_attribute_flow_issue:5002:0:Global|Obj{class_flows.C.tainted_attribute}|0:cba0e6980917c39855cb75c4ce3a3ebf"
+    ]
   }
 }
 {
@@ -292,7 +304,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.tainted_attribute_through_inheritance_issue:5002:0:Global|Obj{class_flows.C.tainted_attribute}|0:79778c5e234d08fb4b022de03cd0edd4"
+    ]
   }
 }
 {
@@ -352,7 +367,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.tainted_class_attribute_through_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:2542e9e60455731d983e298f2875bfbf"
+    ]
   }
 }
 {
@@ -418,6 +436,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "class_flows.test:5002:0:Call|class_flows.HasClassmethods._async_results_for_non_empty_query_from_db|0|formal(locale):a529aa7033e6a0d9c907672d49c19426"
     ]
   }
 }
@@ -484,6 +505,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "class_flows.test_decorated_classmethod:5002:0:Call|class_flows.HasDecoratedClassmethod.to_sink|0|formal(x):70aad8c4ef81c0c7ddff090277f2bbc8"
     ]
   }
 }

@@ -60,6 +60,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "functions_as_locals.a_or_b:5002:0:Call|functions_as_locals.barA|0|formal(arg1):30cb4ee0dc7fa4ac4965bd7e2913dd72"
     ]
   }
 }
@@ -130,6 +133,9 @@
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "functions_as_locals.a_or_b:5002:0:Call|functions_as_locals.barB|1|formal(arg2):8daf533961ef1e32dac8c9825f44bb59"
     ]
   }
 }
@@ -194,6 +200,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "functions_as_locals.foo_as_local:5002:0:Call|functions_as_locals.foo|1|formal(arg):f9fd65b7743aab8c6435c736a6187206"
     ]
   }
 }
@@ -258,6 +267,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "functions_as_locals.foo_as_local:5002:0:Call|functions_as_locals.foo|0|formal(arg):0ccc02e50d8c95db519c9028c2d81a57"
     ]
   }
 }
@@ -322,6 +334,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "functions_as_locals.local_function_with_method_sink:5002:0:Call|functions_as_locals.C.m|1|formal(arg):e32efb22ea07e58d1f96a3f47f94ebda"
     ]
   }
 }
@@ -386,6 +401,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "functions_as_locals.local_function_with_method_sink:5002:0:Call|functions_as_locals.C.m|0|formal(arg):97adcfed0589f681a662c47c2a3b3105"
     ]
   }
 }

@@ -57,7 +57,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "cross_repository.test:5002:0:Call|_test_sink|0|formal(arg):2b28136ab12d359dd3ac489d6d107423"
+    ]
   }
 }
 {
@@ -117,7 +120,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "cross_repository.test_cross_repository_anchor:5002:0:Call|cross_repository.cross_repository_anchor_sink|0|formal(sink_parameter):74ee8def1faa44962b9d423b58cd1772"
+    ]
   }
 }
 {
@@ -254,7 +260,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "cross_repository.cross_repository_source:5002:0:Call|_test_sink|0|formal(arg):ac21fdbf72127ac5c56bafd9b43a351b"
+    ]
   }
 }
 {

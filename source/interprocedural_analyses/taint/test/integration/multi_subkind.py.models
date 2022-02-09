@@ -59,7 +59,10 @@
         ]
       }
     ],
-    "features": [ { "has": "first-index" }, { "first-index": "b" } ]
+    "features": [ { "has": "first-index" }, { "first-index": "b" } ],
+    "master_handles": [
+      "multi_subkind.issue:1000:0:Call|multi_subkind.multi_sink|0|formal(d):58ce21d125b38395a964fbad39de0b2d"
+    ]
   }
 }
 {
@@ -122,7 +125,10 @@
         ]
       }
     ],
-    "features": [ { "has": "first-index" }, { "first-index": "a" } ]
+    "features": [ { "has": "first-index" }, { "first-index": "a" } ],
+    "master_handles": [
+      "multi_subkind.issue:1000:0:Call|multi_subkind.multi_sink|0|formal(d):58ce21d125b38395a964fbad39de0b2d"
+    ]
   }
 }
 {

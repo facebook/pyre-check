@@ -65,6 +65,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "maximum_trace_length.issue_source_one_sink_one:1000:0:Call|maximum_trace_length.sink_distance_one|0|formal(x):a08e4c0767d31879aad563d6ccd32a7b"
     ]
   }
 }
@@ -134,6 +137,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "maximum_trace_length.issue_source_one_sink_zero:1000:0:Call|maximum_trace_length.sink_distance_zero|0|formal(x):f1e39236af32c42d591fc6b91d1f3e01"
     ]
   }
 }
@@ -203,6 +209,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "maximum_trace_length.issue_source_zero_sink_zero:1000:0:Call|maximum_trace_length.sink_distance_zero|0|formal(x):25f77eba01683531b416229d0cd28e54"
     ]
   }
 }

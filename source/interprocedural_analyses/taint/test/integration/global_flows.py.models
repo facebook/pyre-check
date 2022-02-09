@@ -56,6 +56,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.append_directly:5002:0:Global|Obj{global_flows.l}|0:38ebc856813c45e0b032ff315d68b4d4"
     ]
   }
 }
@@ -120,6 +123,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.append_indirectly:5002:0:Call|global_flows.append_argument|0|formal(arg):f8ce531d2c9184ac5b223413f1cc59fe"
     ]
   }
 }
@@ -180,6 +186,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.update_x_at_arg1:5002:0:Global|Obj{global_flows.x}|0:ea658382ebbc54fd329b0c470e5a7788"
     ]
   }
 }
@@ -240,6 +249,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.update_x_at_arg2:5002:0:Global|Obj{global_flows.x}|0:060743aff11df8cc3d83cd7fcc245e30"
     ]
   }
 }
@@ -304,6 +316,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.x_tainted_indirectly_arg1:5002:0:Call|global_flows.indirectly_update_x_arg1|0|formal(arg):0169e118295abf5d783cfa0ea547596d"
     ]
   }
 }
@@ -368,6 +383,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.x_tainted_indirectly_arg2:5002:0:Call|global_flows.indirectly_update_x_arg2|0|formal(arg):97bee74051e71b0311d3b024c7a7e618"
     ]
   }
 }

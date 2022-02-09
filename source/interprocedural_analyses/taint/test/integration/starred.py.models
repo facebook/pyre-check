@@ -66,6 +66,9 @@
       { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "starred.test:5002:0:Call|starred.sink|0|formal(json):8538465db4f4e25b5ece27d2df9242f2"
     ]
   }
 }
