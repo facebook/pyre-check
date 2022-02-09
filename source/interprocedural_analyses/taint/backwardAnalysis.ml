@@ -235,6 +235,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         implicit_self;
         implicit_dunder_call;
         collapse_tito = _;
+        index = _;
       }
     =
     let arguments =
@@ -523,12 +524,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~return_type_breadcrumbs
                 ~state:initial_state
                 ~call_taint
-                {
-                  CallGraph.CallTarget.target;
-                  implicit_self = true;
-                  implicit_dunder_call = false;
-                  collapse_tito = true;
-                })
+                target)
           |> List.fold
                ~f:join_call_target_results
                ~init:
@@ -545,7 +541,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let call_target_result =
       match new_targets with
       | []
-      | [`Method { Interprocedural.Target.class_name = "object"; method_name = "__new__" }] ->
+      | [
+          {
+            CallGraph.CallTarget.target =
+              `Method { Interprocedural.Target.class_name = "object"; method_name = "__new__" };
+            _;
+          };
+        ] ->
           { arguments_taint = init_arguments_taint; self_taint = None; callee_taint = None; state }
       | new_targets ->
           (* Add the `cls` implicit argument. *)
@@ -566,12 +568,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~return_type_breadcrumbs
                   ~state
                   ~call_taint:self_taint
-                  {
-                    CallGraph.CallTarget.target;
-                    implicit_self = true;
-                    implicit_dunder_call = false;
-                    collapse_tito = true;
-                  })
+                  target)
             |> List.fold
                  ~f:join_call_target_results
                  ~init:
@@ -669,6 +666,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             implicit_self = false;
             implicit_dunder_call = false;
             collapse_tito = true;
+            index = 0;
           }
         in
         target :: call_targets)
@@ -819,17 +817,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let base_taint_property_call, state_property_call =
       match attribute_access_callees with
       | Some { property_targets = _ :: _ as property_targets; return_type; _ } ->
-          let call_targets =
-            List.map
-              ~f:(fun target ->
-                {
-                  CallGraph.CallTarget.target;
-                  implicit_self = true;
-                  implicit_dunder_call = false;
-                  collapse_tito = true;
-                })
-              property_targets
-          in
           let { arguments_taint = _; self_taint; callee_taint = _; state } =
             apply_callees_and_return_arguments_taint
               ~resolution
@@ -838,7 +825,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~arguments:[]
               ~state
               ~call_taint:attribute_taint
-              (CallGraph.CallCallees.create ~call_targets ~return_type ())
+              (CallGraph.CallCallees.create ~call_targets:property_targets ~return_type ())
           in
           let base_taint = Option.value_exn self_taint in
           base_taint, state
@@ -1729,17 +1716,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 match attribute_access_callees with
                 | Some { property_targets = _ :: _ as property_targets; return_type; _ } ->
                     (* Treat `a.property = x` as `a = a.property(x)` *)
-                    let call_targets =
-                      List.map
-                        ~f:(fun target ->
-                          {
-                            CallGraph.CallTarget.target;
-                            implicit_self = true;
-                            implicit_dunder_call = false;
-                            collapse_tito = true;
-                          })
-                        property_targets
-                    in
                     let taint = compute_assignment_taint ~resolution base state |> fst in
                     apply_callees
                       ~resolution
@@ -1749,7 +1725,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                       ~arguments:[{ name = None; value }]
                       ~state
                       ~call_taint:taint
-                      (CallGraph.CallCallees.create ~call_targets ~return_type ())
+                      (CallGraph.CallCallees.create ~call_targets:property_targets ~return_type ())
                 | _ -> bottom
               in
 

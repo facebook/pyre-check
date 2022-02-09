@@ -18,12 +18,20 @@ module CallTarget = struct
     implicit_self: bool;
     implicit_dunder_call: bool;
     collapse_tito: bool;
+    index: int;
   }
   [@@deriving compare, eq, show { with_path = false }]
 
-  let create ?(implicit_self = false) ?(implicit_dunder_call = false) ?(collapse_tito = true) target
+  let target { target; _ } = target
+
+  let create
+      ?(implicit_self = false)
+      ?(implicit_dunder_call = false)
+      ?(collapse_tito = true)
+      ?(index = 0)
+      target
     =
-    { target; implicit_self; implicit_dunder_call; collapse_tito }
+    { target; implicit_self; implicit_dunder_call; collapse_tito; index }
 end
 
 module HigherOrderParameter = struct
@@ -46,15 +54,14 @@ module HigherOrderParameter = struct
     | None, None -> None
 
 
-  let all_targets { call_targets; _ } =
-    List.map ~f:(fun { CallTarget.target; _ } -> target) call_targets
+  let all_targets { call_targets; _ } = List.map ~f:CallTarget.target call_targets
 end
 
 module CallCallees = struct
   type t = {
     call_targets: CallTarget.t list;
-    new_targets: Target.t list;
-    init_targets: Target.t list;
+    new_targets: CallTarget.t list;
+    init_targets: CallTarget.t list;
     return_type: Type.t;
     higher_order_parameter: HigherOrderParameter.t option;
     unresolved: bool;
@@ -128,8 +135,8 @@ module CallCallees = struct
       { call_targets; new_targets; init_targets; return_type; higher_order_parameter; unresolved }
     =
     let call_targets = List.dedup_and_sort ~compare:CallTarget.compare call_targets in
-    let new_targets = List.dedup_and_sort ~compare:Target.compare new_targets in
-    let init_targets = List.dedup_and_sort ~compare:Target.compare init_targets in
+    let new_targets = List.dedup_and_sort ~compare:CallTarget.compare new_targets in
+    let init_targets = List.dedup_and_sort ~compare:CallTarget.compare init_targets in
     let higher_order_parameter =
       match higher_order_parameter with
       | Some { HigherOrderParameter.index; call_targets; return_type } ->
@@ -145,17 +152,18 @@ module CallCallees = struct
 
 
   let all_targets { call_targets; new_targets; init_targets; higher_order_parameter; _ } =
-    List.map ~f:(fun { CallTarget.target; _ } -> target) call_targets
+    call_targets
     |> List.rev_append new_targets
     |> List.rev_append init_targets
+    |> List.map ~f:CallTarget.target
     |> List.rev_append
          (higher_order_parameter >>| HigherOrderParameter.all_targets |> Option.value ~default:[])
 end
 
 module AttributeAccessCallees = struct
   type t = {
-    property_targets: Target.t list;
-    global_targets: Target.t list;
+    property_targets: CallTarget.t list;
+    global_targets: CallTarget.t list;
     return_type: Type.t;
     is_attribute: bool;
   }
@@ -163,8 +171,8 @@ module AttributeAccessCallees = struct
 
   let deduplicate { property_targets; global_targets; return_type; is_attribute } =
     {
-      property_targets = List.dedup_and_sort ~compare:Target.compare property_targets;
-      global_targets = List.dedup_and_sort ~compare:Target.compare global_targets;
+      property_targets = List.dedup_and_sort ~compare:CallTarget.compare property_targets;
+      global_targets = List.dedup_and_sort ~compare:CallTarget.compare global_targets;
       return_type;
       is_attribute;
     }
@@ -193,21 +201,21 @@ module AttributeAccessCallees = struct
 
 
   let all_targets { property_targets; global_targets; _ } =
-    List.rev_append property_targets global_targets
+    List.rev_append property_targets global_targets |> List.map ~f:CallTarget.target
 end
 
 module IdentifierCallees = struct
-  type t = { global_targets: Target.t list } [@@deriving eq, show { with_path = false }]
+  type t = { global_targets: CallTarget.t list } [@@deriving eq, show { with_path = false }]
 
   let deduplicate { global_targets } =
-    { global_targets = List.dedup_and_sort ~compare:Target.compare global_targets }
+    { global_targets = List.dedup_and_sort ~compare:CallTarget.compare global_targets }
 
 
   let join { global_targets = left_global_targets } { global_targets = right_global_targets } =
     { global_targets = List.rev_append left_global_targets right_global_targets }
 
 
-  let all_targets { global_targets } = global_targets
+  let all_targets { global_targets } = List.map ~f:CallTarget.target global_targets
 end
 
 module ExpressionCallees = struct
@@ -574,6 +582,7 @@ let rec resolve_callees_from_type
                   implicit_self = true;
                   implicit_dunder_call = dunder_call;
                   collapse_tito;
+                  index = 0;
                 })
               targets
           in
@@ -592,6 +601,7 @@ let rec resolve_callees_from_type
                   implicit_self = false;
                   implicit_dunder_call = dunder_call;
                   collapse_tito;
+                  index = 0;
                 };
               ]
             ~return_type
@@ -655,6 +665,7 @@ let rec resolve_callees_from_type
                         implicit_self = true;
                         implicit_dunder_call = true;
                         collapse_tito;
+                        index = 0;
                       };
                     ]
                   ~return_type
@@ -702,16 +713,10 @@ and resolve_constructor_callee ~resolution ~return_type class_type =
           ~collapse_tito:true
           init_callable_type
       in
-      let new_targets =
-        List.map ~f:(fun { CallTarget.target; _ } -> target) new_callees.call_targets
-      in
-      let init_targets =
-        List.map ~f:(fun { CallTarget.target; _ } -> target) init_callees.call_targets
-      in
       Some
         (CallCallees.create
-           ~new_targets
-           ~init_targets
+           ~new_targets:new_callees.call_targets
+           ~init_targets:init_callees.call_targets
            ~unresolved:(new_callees.unresolved || init_callees.unresolved)
            ~return_type
            ())
@@ -871,6 +876,7 @@ let resolve_recognized_callees ~resolution ~callee ~return_type ~callee_type =
               implicit_self = false;
               implicit_dunder_call = false;
               collapse_tito;
+              index = 0;
             };
           ]
         ~return_type
@@ -896,6 +902,7 @@ let resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee =
               implicit_self = false;
               implicit_dunder_call = false;
               collapse_tito;
+              index = 0;
             }
       | Some
           (ResolvedReference.ModuleAttribute
@@ -920,6 +927,7 @@ let resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee =
                   implicit_self = not static;
                   implicit_dunder_call = false;
                   collapse_tito;
+                  index = 0;
                 }
           | _ -> None)
       | _ -> None)
@@ -941,6 +949,7 @@ let resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee =
                   implicit_self = true;
                   implicit_dunder_call = false;
                   collapse_tito;
+                  index = 0;
                 }
           | _ -> None)
       | _ -> None)
@@ -1124,11 +1133,13 @@ let resolve_attribute_access ~resolution ~base ~attribute ~special ~setter =
   let { property_targets; is_attribute } =
     resolve_attribute_access_properties ~resolution ~base_annotation ~attribute ~setter
   in
+  let property_targets = List.map ~f:(CallTarget.create ~implicit_self:true) property_targets in
 
   let global_targets =
     resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special
     |> List.map ~f:Target.create_object
     |> List.filter ~f:FixpointState.has_model
+    |> List.map ~f:CallTarget.create
   in
 
   match property_targets, global_targets, is_attribute with
@@ -1151,7 +1162,7 @@ let resolve_identifier ~resolution ~identifier =
   |> as_global_reference ~resolution
   >>| Target.create_object
   |> Option.filter ~f:FixpointState.has_model
-  >>| fun global -> { IdentifierCallees.global_targets = [global] }
+  >>| fun global -> { IdentifierCallees.global_targets = [CallTarget.create global] }
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the

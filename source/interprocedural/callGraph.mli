@@ -20,13 +20,18 @@ module CallTarget : sig
     implicit_dunder_call: bool;
     (* True if we should collapse the taint from arguments, cf. the taint analysis. *)
     collapse_tito: bool;
+    (* The textual order index of the call in the function. *)
+    index: int;
   }
   [@@deriving eq, show]
+
+  val target : t -> Target.t
 
   val create
     :  ?implicit_self:bool ->
     ?implicit_dunder_call:bool ->
     ?collapse_tito:bool ->
+    ?index:int ->
     Target.t ->
     t
 end
@@ -47,9 +52,9 @@ module CallCallees : sig
     (* Normal call targets. *)
     call_targets: CallTarget.t list;
     (* Call targets for calls to the `__new__` class method. *)
-    new_targets: Target.t list;
+    new_targets: CallTarget.t list;
     (* Call targets for calls to the `__init__` instance method. *)
-    init_targets: Target.t list;
+    init_targets: CallTarget.t list;
     (* The return type of the call. *)
     return_type: Type.t;
     (* Information about an argument being a callable, and possibly called. *)
@@ -62,8 +67,8 @@ module CallCallees : sig
 
   val create
     :  ?call_targets:CallTarget.t list ->
-    ?new_targets:Target.t list ->
-    ?init_targets:Target.t list ->
+    ?new_targets:CallTarget.t list ->
+    ?init_targets:CallTarget.t list ->
     ?higher_order_parameter:HigherOrderParameter.t ->
     ?unresolved:bool ->
     return_type:Type.t ->
@@ -80,8 +85,8 @@ end
 (* An aggregrate of all possible callees for a given attribute access. *)
 module AttributeAccessCallees : sig
   type t = {
-    property_targets: Target.t list;
-    global_targets: Target.t list;
+    property_targets: CallTarget.t list;
+    global_targets: CallTarget.t list;
     return_type: Type.t;
     (* True if the attribute access should also be considered a regular attribute.
      * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
@@ -92,7 +97,7 @@ end
 
 (* An aggregate of all possible callees for a given identifier expression. *)
 module IdentifierCallees : sig
-  type t = { global_targets: Target.t list } [@@deriving eq, show]
+  type t = { global_targets: CallTarget.t list } [@@deriving eq, show]
 end
 
 (* An aggregate of all possible callees for an arbitrary expression. *)

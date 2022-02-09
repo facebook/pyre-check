@@ -11,6 +11,7 @@ open Analysis
 open Expression
 open Pyre
 open Domains
+module CallGraph = Interprocedural.CallGraph
 
 type t = {
   models: Model.WithTarget.t list;
@@ -21,14 +22,14 @@ type t = {
 let get_global_targets ~call_graph ~expression =
   match Node.value expression with
   | Expression.Name (Name.Identifier identifier) ->
-      Interprocedural.CallGraph.DefineCallGraph.resolve_identifier
+      CallGraph.DefineCallGraph.resolve_identifier
         call_graph
         ~location:(Node.location expression)
         ~identifier
       >>| (fun { global_targets } -> global_targets)
       |> Option.value ~default:[]
   | Expression.Name (Name.Attribute { attribute; _ }) ->
-      Interprocedural.CallGraph.DefineCallGraph.resolve_attribute_access
+      CallGraph.DefineCallGraph.resolve_attribute_access
         call_graph
         ~location:(Node.location expression)
         ~attribute
@@ -38,7 +39,7 @@ let get_global_targets ~call_graph ~expression =
 
 
 let from_expression ~resolution ~call_graph ~qualifier ~expression =
-  let fetch_model target =
+  let fetch_model { CallGraph.CallTarget.target; _ } =
     let model = CallModel.at_callsite ~resolution ~call_target:target ~arguments:[] in
     { Model.WithTarget.model; target }
   in

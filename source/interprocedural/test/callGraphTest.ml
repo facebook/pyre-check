@@ -443,8 +443,18 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~init_targets:[`Method { Target.class_name = "test.C"; method_name = "__init__" }]
-                  ~new_targets:[`Method { Target.class_name = "object"; method_name = "__new__" }]
+                  ~init_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "test.C"; method_name = "__init__" });
+                    ]
+                  ~new_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "object"; method_name = "__new__" });
+                    ]
                   ~return_type:(Type.Primitive "test.C")
                   ())) );
       ]
@@ -464,8 +474,18 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~init_targets:[`Method { Target.class_name = "object"; method_name = "__init__" }]
-                  ~new_targets:[`Method { Target.class_name = "test.C"; method_name = "__new__" }]
+                  ~init_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "object"; method_name = "__init__" });
+                    ]
+                  ~new_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "test.C"; method_name = "__new__" });
+                    ]
                   ~return_type:(Type.Primitive "test.C")
                   ())) );
       ]
@@ -486,8 +506,18 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~init_targets:[`Method { Target.class_name = "test.B"; method_name = "__init__" }]
-                  ~new_targets:[`Method { Target.class_name = "object"; method_name = "__new__" }]
+                  ~init_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "test.B"; method_name = "__init__" });
+                    ]
+                  ~new_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "object"; method_name = "__new__" });
+                    ]
                   ~return_type:(Type.Primitive "test.B")
                   ())) );
       ]
@@ -508,8 +538,18 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~init_targets:[`Method { Target.class_name = "object"; method_name = "__init__" }]
-                  ~new_targets:[`Method { Target.class_name = "test.B"; method_name = "__new__" }]
+                  ~init_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "object"; method_name = "__init__" });
+                    ]
+                  ~new_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "test.B"; method_name = "__new__" });
+                    ]
                   ~return_type:(Type.Primitive "test.B")
                   ())) );
       ]
@@ -533,7 +573,11 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_attribute_access
                {
                  AttributeAccessCallees.property_targets =
-                   [`Method { Target.class_name = "test.C"; method_name = "p$setter" }];
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.C"; method_name = "p$setter" });
+                   ];
                  global_targets = [];
                  return_type = Type.none;
                  is_attribute = false;
@@ -543,7 +587,11 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_attribute_access
                {
                  AttributeAccessCallees.property_targets =
-                   [`Method { Target.class_name = "test.C"; method_name = "p" }];
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.C"; method_name = "p" });
+                   ];
                  global_targets = [];
                  return_type = Type.integer;
                  is_attribute = false;
@@ -767,8 +815,18 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~new_targets:[`Method { Target.class_name = "object"; method_name = "__new__" }]
-                  ~init_targets:[`Method { Target.class_name = "super"; method_name = "__init__" }]
+                  ~new_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "object"; method_name = "__new__" });
+                    ]
+                  ~init_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "super"; method_name = "__init__" });
+                    ]
                   ~return_type:(Type.Primitive "test.C")
                   ())) );
         ( "11:4-11:16",
@@ -904,9 +962,18 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~new_targets:[`Method { Target.class_name = "object"; method_name = "__new__" }]
+                  ~new_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "object"; method_name = "__new__" });
+                    ]
                   ~init_targets:
-                    [`Method { Target.class_name = "test.Builder"; method_name = "__init__" }]
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "test.Builder"; method_name = "__init__" });
+                    ]
                   ~return_type:(Type.Primitive "test.Builder")
                   ())) );
         ( "17:4-17:33",
@@ -1008,8 +1075,18 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~new_targets:[`Method { Target.class_name = "object"; method_name = "__new__" }]
-                  ~init_targets:[`Method { Target.class_name = "object"; method_name = "__init__" }]
+                  ~new_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "object"; method_name = "__new__" });
+                    ]
+                  ~init_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "object"; method_name = "__init__" });
+                    ]
                   ~return_type:(Type.Primitive "test.C")
                   ())) );
         ( "8:14-8:21",
@@ -1117,7 +1194,11 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_attribute_access
                {
                  AttributeAccessCallees.property_targets =
-                   [`Method { Target.class_name = "test.C"; method_name = "p" }];
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.C"; method_name = "p" });
+                   ];
                  global_targets = [];
                  return_type = Type.Primitive "test.C";
                  is_attribute = false;
@@ -1127,7 +1208,11 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_attribute_access
                {
                  AttributeAccessCallees.property_targets =
-                   [`Method { Target.class_name = "test.C"; method_name = "p$setter" }];
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.C"; method_name = "p$setter" });
+                   ];
                  global_targets = [];
                  return_type = Type.none;
                  is_attribute = false;
@@ -1201,8 +1286,12 @@ let test_call_graph_of_define context =
                {
                  AttributeAccessCallees.property_targets =
                    [
-                     `Method { Target.class_name = "test.C"; method_name = "foo" };
-                     `Method { Target.class_name = "test.D"; method_name = "foo" };
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.C"; method_name = "foo" });
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.D"; method_name = "foo" });
                    ];
                  global_targets = [];
                  return_type = Type.integer;
@@ -1213,7 +1302,11 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_attribute_access
                {
                  AttributeAccessCallees.property_targets =
-                   [`Method { Target.class_name = "test.C"; method_name = "foo" }];
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.C"; method_name = "foo" });
+                   ];
                  global_targets = [];
                  return_type = Type.integer;
                  is_attribute = true;
@@ -1247,8 +1340,12 @@ let test_call_graph_of_define context =
                {
                  AttributeAccessCallees.property_targets =
                    [
-                     `Method { Target.class_name = "test.C"; method_name = "foo" };
-                     `Method { Target.class_name = "test.D"; method_name = "foo" };
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.C"; method_name = "foo" });
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.D"; method_name = "foo" });
                    ];
                  global_targets = [];
                  return_type = Type.integer;
@@ -1388,7 +1485,11 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_attribute_access
                {
                  AttributeAccessCallees.property_targets =
-                   [`Method { Target.class_name = "test.C"; method_name = "attribute" }];
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.C"; method_name = "attribute" });
+                   ];
                  global_targets = [];
                  return_type = Type.Top;
                  is_attribute = false;
@@ -1450,8 +1551,18 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~new_targets:[`Method { Target.class_name = "object"; method_name = "__new__" }]
-                  ~init_targets:[`Method { Target.class_name = "object"; method_name = "__init__" }]
+                  ~new_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "object"; method_name = "__new__" });
+                    ]
+                  ~init_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "object"; method_name = "__init__" });
+                    ]
                   ~return_type:(Type.Primitive "Exception")
                   ())) );
         ( "10:4-10:10",
@@ -2152,7 +2263,7 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_attribute_access
                {
                  AttributeAccessCallees.property_targets = [];
-                 global_targets = [`Object "test.Token.token"];
+                 global_targets = [CallTarget.create (`Object "test.Token.token")];
                  return_type = Type.Primitive "str";
                  is_attribute = true;
                }) );
@@ -2184,7 +2295,11 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_attribute_access
                {
                  AttributeAccessCallees.property_targets = [];
-                 global_targets = [`Object "test.A.attribute"; `Object "test.C.attribute"];
+                 global_targets =
+                   [
+                     CallTarget.create (`Object "test.A.attribute");
+                     CallTarget.create (`Object "test.C.attribute");
+                   ];
                  return_type = Type.Primitive "str";
                  is_attribute = true;
                }) );
@@ -2213,7 +2328,7 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_attribute_access
                {
                  AttributeAccessCallees.property_targets = [];
-                 global_targets = [`Object "test.Token.token"];
+                 global_targets = [CallTarget.create (`Object "test.Token.token")];
                  return_type = Type.Top;
                  is_attribute = true;
                }) );
@@ -2246,7 +2361,7 @@ let test_call_graph_of_define context =
                    ExpressionCallees.from_attribute_access
                      {
                        AttributeAccessCallees.property_targets = [];
-                       global_targets = [`Object "test.Token.token"];
+                       global_targets = [CallTarget.create (`Object "test.Token.token")];
                        return_type = Type.Primitive "str";
                        is_attribute = true;
                      } );
@@ -2285,7 +2400,7 @@ let test_call_graph_of_define context =
                    ExpressionCallees.from_attribute_access
                      {
                        AttributeAccessCallees.property_targets = [];
-                       global_targets = [`Object "test.Token.token"];
+                       global_targets = [CallTarget.create (`Object "test.Token.token")];
                        return_type = Type.none;
                        is_attribute = true;
                      } );
@@ -2306,7 +2421,7 @@ let test_call_graph_of_define context =
         ( "5:9-5:10",
           LocationCallees.Singleton
             (ExpressionCallees.from_identifier
-               { IdentifierCallees.global_targets = [`Object "test.x"] }) );
+               { IdentifierCallees.global_targets = [CallTarget.create (`Object "test.x")] }) );
       ]
     ();
   ()
