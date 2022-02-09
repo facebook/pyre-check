@@ -495,6 +495,7 @@ def _lines_after_suppressing_errors(
     new_lines = []
     removing_pyre_comments = False
     line_break_block = LineBreakBlock()
+    in_multi_line_string = False
     for index, line in enumerate(lines):
         if removing_pyre_comments:
             stripped = line.lstrip()
@@ -535,6 +536,7 @@ def _lines_after_suppressing_errors(
             )
         ]
 
+        # Handle suppressions in line break blocks.
         line_break_block.process_line(line, comments)
         if line_break_block.ready_to_suppress():
             new_lines.append(line)
@@ -547,6 +549,24 @@ def _lines_after_suppressing_errors(
             line_break_block = LineBreakBlock()
             continue
 
+        # Handle suppressions around multi-line strings.
+        contains_multi_line_string_token = line.count('"""') % 2 != 0
+        if contains_multi_line_string_token:
+            is_end_of_multi_line_string = in_multi_line_string
+            in_multi_line_string = not in_multi_line_string
+        else:
+            is_end_of_multi_line_string = False
+
+        if is_end_of_multi_line_string and len(comments) > 0:
+            # Use a simple same-line suppression for errors on a multi-line string close
+            error_codes = [
+                error["code"] for error in relevant_errors if error["code"] != "0"
+            ]
+            line = line + "  # pyre-fixme[{}]".format(", ".join(error_codes))
+            new_lines.append(line)
+            continue
+
+        # Add suppression comments.
         if not line_break_block.is_active and len(comments) > 0:
             LOG.info(
                 "Adding comment%s on line %d: %s",

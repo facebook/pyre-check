@@ -918,6 +918,66 @@ class ErrorsTest(unittest.TestCase):
             """,
         )
 
+    def test_suppress_errors__multi_line_string(self) -> None:
+        self.assertSuppressErrors(
+            {5: [{"code": "1", "description": "description"}]},
+            """
+            def foo() -> None:
+                call(\"\"\"\\
+                    some text
+                    more text
+                    \"\"\", problem_arg)
+            """,
+            """
+            def foo() -> None:
+                call(\"\"\"\\
+                    some text
+                    more text
+                    \"\"\", problem_arg)  # FIXME[1]
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {
+                5: [
+                    {"code": "1", "description": "description"},
+                    {"code": "2", "description": "description"},
+                ],
+            },
+            """
+            def foo() -> None:
+                x = (\"\"\"\\
+                some text
+                more text
+                \"\"\", problem)
+            """,
+            """
+            def foo() -> None:
+                x = (\"\"\"\\
+                some text
+                more text
+                \"\"\", problem)  # FIXME[1, 2]
+            """,
+        )
+
+        self.assertSuppressErrors(
+            {5: [{"code": "0", "description": "unused ignore"}]},
+            """
+            def foo() -> None:
+                call(\"\"\"\\
+                    some text
+                    more text
+                    \"\"\", problem_arg)  # FIXME[1]
+            """,
+            """
+            def foo() -> None:
+                call(\"\"\"\\
+                    some text
+                    more text
+                    \"\"\", problem_arg)
+            """,
+        )
+
     def test_suppress_errors__format_string(self) -> None:
         self.assertSuppressErrors(
             {
