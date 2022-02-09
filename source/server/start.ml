@@ -91,7 +91,7 @@ let handle_request ~properties ~state request =
     let origin =
       match exn with
       | Buck.Raw.BuckError _
-      | Buck.Builder.JsonError _
+      | Buck.Interface.JsonError _
       | Buck.Builder.LinkTreeConstructionError _ ->
           "buck"
       | Watchman.ConnectionError _
@@ -648,7 +648,7 @@ let start_server_and_wait ?event_channel ~configuration start_options =
                 "Cannot build the project: %s.\n%s"
                 description
                 (String.concat ~sep:"\n" (List.append reproduce_message additional_messages)) )
-        | Buck.Builder.JsonError message ->
+        | Buck.Interface.JsonError message ->
             ( ServerEvent.ErrorKind.Pyre,
               Format.sprintf
                 "Cannot build the project because Buck returns malformed JSON: %s"

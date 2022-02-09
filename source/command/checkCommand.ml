@@ -194,7 +194,7 @@ let on_exception = function
         | _ -> ExitStatus.BuckInternalError
       in
       exit_status
-  | Buck.Builder.JsonError message ->
+  | Buck.Interface.JsonError message ->
       Log.error "Cannot build the project because Buck returns malformed JSON: %s" message;
       ExitStatus.BuckUserError
   | Buck.Builder.LinkTreeConstructionError message ->

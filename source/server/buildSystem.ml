@@ -63,7 +63,7 @@ module BuckBuildSystem = struct
     let create_from_scratch ~builder ~targets () =
       let open Lwt.Infix in
       Buck.Builder.build builder ~targets
-      >>= fun { Buck.Builder.BuildResult.targets = normalized_targets; build_map } ->
+      >>= fun { Buck.Interface.BuildResult.targets = normalized_targets; build_map } ->
       Lwt.return (create ~targets ~builder ~normalized_targets ~build_map ())
 
 
@@ -237,7 +237,8 @@ module BuckBuildSystem = struct
     =
     let open Lwt.Infix in
     ensure_directory_exist_and_clean artifact_root;
-    let builder = Buck.Builder.create ?mode ?isolation_prefix ~source_root ~artifact_root raw in
+    let interface = Buck.Interface.create ?mode ?isolation_prefix raw in
+    let builder = Buck.Builder.create ~source_root ~artifact_root interface in
     with_logging
       ~integers:(fun { State.build_map; _ } ->
         [
@@ -265,7 +266,8 @@ module BuckBuildSystem = struct
     let { SerializableState.targets; normalized_targets; serialized_build_map } =
       SavedState.load ()
     in
-    let builder = Buck.Builder.create ?mode ?isolation_prefix ~source_root ~artifact_root raw in
+    let interface = Buck.Interface.create ?mode ?isolation_prefix raw in
+    let builder = Buck.Builder.create ~source_root ~artifact_root interface in
     with_logging
       ~integers:(fun { State.build_map; _ } ->
         [
