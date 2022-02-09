@@ -11,10 +11,9 @@ from typing import Optional
 from typing_extensions import Final
 
 from ..configuration import Configuration
-from ..errors import Errors
-from ..filesystem import LocalMode, add_local_mode, find_files, path_exists
+from ..filesystem import LocalMode, find_files, path_exists
 from ..repository import Repository
-from .command import CommandArguments, ErrorSuppressingCommand
+from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -95,27 +94,12 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
         configuration.write()
 
         # Suppress errors
-        all_errors = configuration.get_errors()
-        error_threshold = self._fixme_threshold
-
-        for path, errors in all_errors.paths_to_errors.items():
-            errors = list(errors)
-            error_count = len(errors)
-            if error_threshold and error_count > error_threshold:
-                LOG.info(
-                    "%d errors found in `%s`. Adding file-level ignore.",
-                    error_count,
-                    path,
-                )
-                add_local_mode(path, LocalMode.IGNORE)
-            else:
-                self._apply_suppressions(Errors(errors))
-
-        # Lint and re-run pyre once to resolve most formatting issues
-        if self._lint:
-            if self._repository.format():
-                errors = configuration.get_errors(should_clean=False)
-                self._apply_suppressions(errors)
+        self._get_and_suppress_errors(
+            configuration,
+            error_source=ErrorSource.GENERATE,
+            fixme_threshold=self._fixme_threshold,
+            fixme_threshold_fallback_mode=LocalMode.IGNORE,
+        )
 
         self._repository.commit_changes(
             commit=(not self._no_commit),
