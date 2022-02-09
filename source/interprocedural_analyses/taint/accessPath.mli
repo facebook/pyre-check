@@ -26,6 +26,8 @@ module Root : sig
   val normalize_parameters : Parameter.t list -> (t * Identifier.t * Parameter.t) list
 
   val parameter_name : t -> string option
+
+  val to_string : t -> string
 end
 
 type t = {

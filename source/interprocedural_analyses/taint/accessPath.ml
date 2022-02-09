@@ -85,6 +85,15 @@ module Root = struct
     | StarParameter _ -> Some "*"
     | StarStarParameter _ -> Some "**"
     | _ -> None
+
+
+  let to_string = function
+    | LocalResult -> "result"
+    | PositionalParameter { position = _; name; _ } -> Format.sprintf "formal(%s)" name
+    | NamedParameter { name } -> Format.sprintf "formal(%s)" name
+    | StarParameter { position } -> Format.sprintf "formal(*rest%d)" position
+    | StarStarParameter _ -> "formal(**kw)"
+    | Variable name -> Format.sprintf "local(%s)" name
 end
 
 type argument_match = {
@@ -248,18 +257,7 @@ let get_index expression =
   | None -> Abstract.TreeDomain.Label.AnyIndex
 
 
-let to_json { root; path } =
-  let open Root in
-  let root_name = function
-    | LocalResult -> "result"
-    | PositionalParameter { position = _; name; _ } -> Format.sprintf "formal(%s)" name
-    | NamedParameter { name } -> Format.sprintf "formal(%s)" name
-    | StarParameter { position } -> Format.sprintf "formal(*rest%d)" position
-    | StarStarParameter _ -> "formal(**kw)"
-    | Variable name -> Format.sprintf "local(%s)" name
-  in
-  `String (root_name root ^ Abstract.TreeDomain.Label.show_path path)
-
+let to_json { root; path } = `String (Root.to_string root ^ Abstract.TreeDomain.Label.show_path path)
 
 let of_expression expression =
   let rec of_expression path = function
