@@ -106,17 +106,6 @@ module BuckBuildSystem = struct
 
   module SavedState = Memory.Serializer (SerializableState)
 
-  let ensure_directory_exist_and_clean path =
-    let result =
-      let open Result in
-      PyrePath.create_directory_recursively path
-      >>= fun () -> PyrePath.remove_contents_of_directory path
-    in
-    match result with
-    | Result.Error message -> raise (Buck.Builder.LinkTreeConstructionError message)
-    | Result.Ok () -> ()
-
-
   (* Both `integers` and `normals` are functions that return a list instead of a list directly,
      since some of the logging may depend on the return value of `f`. *)
   let with_logging ?(integers = fun _ -> []) ?(normals = fun _ -> []) f =
@@ -236,7 +225,6 @@ module BuckBuildSystem = struct
       ()
     =
     let open Lwt.Infix in
-    ensure_directory_exist_and_clean artifact_root;
     let interface = Buck.Interface.create ?mode ?isolation_prefix raw in
     let builder = Buck.Builder.create ~source_root ~artifact_root interface in
     with_logging
@@ -256,7 +244,6 @@ module BuckBuildSystem = struct
       ()
     =
     let open Lwt.Infix in
-    ensure_directory_exist_and_clean artifact_root;
     (* NOTE (grievejia): For saved state loading, are still using the passed-in `mode`,
        `isolation_prefix`, `source_root`, and `artifact_root`, instead of preserving these options
        in saved state itself. For `source_root` and `artifact_root`, this is actually mandatory
@@ -281,13 +268,6 @@ module BuckBuildSystem = struct
         in
         State.create_from_saved_state ~builder ~targets ~normalized_targets ~build_map ())
     >>= fun initial_state -> Lwt.return (initialize_from_state initial_state)
-
-
-  let cleanup artifact_root =
-    match PyrePath.remove_contents_of_directory artifact_root with
-    | Result.Error message ->
-        Log.warning "Encountered error during buck builder cleanup: %s" message
-    | Result.Ok () -> ()
 end
 
 module TrackUnwatchedDependencyBuildSystem = struct
@@ -358,14 +338,32 @@ module Initializer = struct
 
 
   let buck ~raw ({ Configuration.Buck.artifact_root; _ } as buck_options) =
-    {
-      initialize = BuckBuildSystem.initialize_from_options ~raw ~buck_options;
-      load = BuckBuildSystem.initialize_from_saved_state ~raw ~buck_options;
-      cleanup =
-        (fun () ->
-          BuckBuildSystem.cleanup artifact_root;
-          Lwt.return_unit);
-    }
+    let ensure_directory_exist_and_clean path =
+      let result =
+        let open Result in
+        PyrePath.create_directory_recursively path
+        >>= fun () -> PyrePath.remove_contents_of_directory path
+      in
+      match result with
+      | Result.Error message -> raise (Buck.Builder.LinkTreeConstructionError message)
+      | Result.Ok () -> ()
+    in
+    let initialize () =
+      ensure_directory_exist_and_clean artifact_root;
+      BuckBuildSystem.initialize_from_options ~raw ~buck_options ()
+    in
+    let load () =
+      ensure_directory_exist_and_clean artifact_root;
+      BuckBuildSystem.initialize_from_saved_state ~raw ~buck_options ()
+    in
+    let cleanup () =
+      match PyrePath.remove_contents_of_directory artifact_root with
+      | Result.Error message ->
+          Log.warning "Encountered error during buck builder cleanup: %s" message;
+          Lwt.return_unit
+      | Result.Ok () -> Lwt.return_unit
+    in
+    { initialize; load; cleanup }
 
 
   let track_unwatched_dependency unwatched_dependency =
