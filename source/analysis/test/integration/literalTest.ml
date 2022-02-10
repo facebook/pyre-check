@@ -525,6 +525,49 @@ let test_string_literal context =
   ()
 
 
+let test_pep_675 context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import LiteralString
+
+      def expect_literal_string(s: LiteralString) -> None: ...
+
+      def bar() -> None:
+        expect_literal_string("hello")
+
+        s: str
+        expect_literal_string(s)
+        expect_literal_string(1)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.Literal[str]` but got `str`.";
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.Literal[str]` but got `typing_extensions.Literal[1]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing_extensions import LiteralString
+
+      def expect_literal_string(s: LiteralString) -> None: ...
+
+      def bar() -> None:
+        expect_literal_string("hello")
+
+        s: str
+        expect_literal_string(s)
+        expect_literal_string(1)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.Literal[str]` but got `str`.";
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.Literal[str]` but got `typing_extensions.Literal[1]`.";
+    ];
+  ()
+
+
 let () =
   "literal"
   >::: [
@@ -535,5 +578,6 @@ let () =
          "literal_none" >:: test_literal_none;
          "literal_alias" >:: test_literal_alias;
          "string_literal" >:: test_string_literal;
+         "pep_675" >:: test_pep_675;
        ]
   |> Test.run

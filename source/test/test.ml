@@ -1139,6 +1139,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             args = object()
             kwargs = object()
             def __init__(self, *args: object, **kwargs: object) -> None: ...
+
+        LiteralString: _SpecialForm = ...
       |}
     );
     "asyncio/coroutines.pyi", {|
@@ -1295,6 +1297,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         from typing import Final as Final, ParamSpec as ParamSpec, _SpecialForm
         Literal: _SpecialForm = ...
+        LiteralString: _SpecialForm = ...
 
         TypeAlias: _SpecialForm = ...
 

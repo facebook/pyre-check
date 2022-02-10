@@ -3223,6 +3223,8 @@ let primitive_substitution_map =
     "TSelf", variable "_PathLike";
     (* This inherits from Any, and is expected to act just like Any *)
     "_NotImplementedType", Any;
+    "typing_extensions.LiteralString", Literal (String AnyLiteral);
+    "typing.LiteralString", Literal (String AnyLiteral);
   ]
   |> Identifier.Table.of_alist_exn
 
