@@ -2496,7 +2496,7 @@ let test_call_graph_of_define context =
   assert_call_graph_of_define
     ~source:
       {|
-     def foo(x=None):
+     def foo(x=None, y=None):
          pass
 
      def bar():
