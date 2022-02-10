@@ -360,9 +360,10 @@ let test_string_literal context =
     |}
     [
       "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.Literal[str]` but got `str`.";
+       parameter expected `typing_extensions.LiteralString` but got `str`.";
       "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.Literal[str]` but got `typing_extensions.Literal[1]`.";
+       parameter expected `typing_extensions.LiteralString` but got \
+       `typing_extensions.Literal[1]`.";
     ];
   assert_type_errors
     {|
@@ -382,7 +383,7 @@ let test_string_literal context =
     |}
     [
       "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal['hello']`.";
-      "Revealed type [-1]: Revealed type for `y2` is `typing_extensions.Literal[str]`.";
+      "Revealed type [-1]: Revealed type for `y2` is `typing_extensions.LiteralString`.";
     ];
   assert_type_errors
     {|
@@ -398,7 +399,7 @@ let test_string_literal context =
     |}
     [
       "Incompatible parameter type [6]: In call `return_literal_string`, for 1st positional only \
-       parameter expected `Variable[TLiteral (bound to typing_extensions.Literal[str])]` but got \
+       parameter expected `Variable[TLiteral (bound to typing_extensions.LiteralString)]` but got \
        `str`.";
     ];
   assert_type_errors
@@ -425,7 +426,7 @@ let test_string_literal context =
     |}
     [
       (* TODO(T48477564): We don't join literals to be their unions because it is too expensive. *)
-      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[str]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.LiteralString`.";
     ];
   assert_type_errors
     {|
@@ -437,7 +438,7 @@ let test_string_literal context =
         x = "hello" if some_bool else literal_string
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[str]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.LiteralString`."];
   assert_type_errors
     {|
       from typing import Literal
@@ -480,7 +481,7 @@ let test_string_literal context =
     |}
     [
       "Incompatible parameter type [6]: In call `connection_query`, for 1st positional only \
-       parameter expected `typing_extensions.Literal[str]` but got `str`.";
+       parameter expected `typing_extensions.LiteralString` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -517,9 +518,9 @@ let test_string_literal context =
         reveal_type(y4)
     |}
     [
-      "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[str]`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing_extensions.LiteralString`.";
       "Revealed type [-1]: Revealed type for `y2` is `str`.";
-      "Revealed type [-1]: Revealed type for `y3` is `typing_extensions.Literal[str]`.";
+      "Revealed type [-1]: Revealed type for `y3` is `typing_extensions.LiteralString`.";
       "Revealed type [-1]: Revealed type for `y4` is `str`.";
     ];
   ()
@@ -542,9 +543,10 @@ let test_pep_675 context =
     |}
     [
       "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.Literal[str]` but got `str`.";
+       parameter expected `typing_extensions.LiteralString` but got `str`.";
       "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.Literal[str]` but got `typing_extensions.Literal[1]`.";
+       parameter expected `typing_extensions.LiteralString` but got \
+       `typing_extensions.Literal[1]`.";
     ];
   assert_type_errors
     {|
@@ -561,9 +563,10 @@ let test_pep_675 context =
     |}
     [
       "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.Literal[str]` but got `str`.";
+       parameter expected `typing_extensions.LiteralString` but got `str`.";
       "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
-       parameter expected `typing_extensions.Literal[str]` but got `typing_extensions.Literal[1]`.";
+       parameter expected `typing_extensions.LiteralString` but got \
+       `typing_extensions.Literal[1]`.";
     ];
   ()
 

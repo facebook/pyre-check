@@ -2082,7 +2082,7 @@ let rec pp format annotation =
   | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal (String (LiteralValue literal)) ->
       Format.fprintf format "typing_extensions.Literal['%s']" literal
-  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.Literal[str]"
+  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.LiteralString"
   | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
   | Literal (EnumerationMember { enumeration_type; member_name }) ->
       Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
@@ -2168,7 +2168,7 @@ and pp_concise format annotation =
   | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal (String (LiteralValue literal)) ->
       Format.fprintf format "typing_extensions.Literal['%s']" literal
-  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.Literal[str]"
+  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.LiteralString"
   | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
   | Literal (EnumerationMember { enumeration_type; member_name }) ->
       Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
