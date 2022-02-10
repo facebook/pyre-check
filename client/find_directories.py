@@ -26,7 +26,7 @@ def _find_parent_directory_containing(
     predicate: Callable[[Path], bool],
     stop_search_after: Optional[int],
 ) -> Optional[Path]:
-    resolved_base = base.resolve(strict=False)
+    resolved_base = base.resolve(strict=True)
     # Using `itertools.chain` to avoid expanding `resolve_base.parents` eagerly
     for i, candidate_directory in enumerate(
         itertools.chain([resolved_base], resolved_base.parents)

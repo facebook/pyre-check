@@ -57,7 +57,9 @@ class InitializeTest(unittest.TestCase):
         isfile.side_effect = exists
         # One for shutil.which("watchman"), another for shutil.which(BINARY_NAME).
         which.side_effect = ["watchman", "binary"]
-        with patch.object(initialize, "find_typeshed", return_value=Path("/tmp")):
+        with patch.object(
+            initialize, "find_typeshed", return_value=Path("/tmp")
+        ), patch.object(initialize, "find_global_root", return_value=None):
             initialize.run()
             subprocess_run.assert_has_calls(
                 [

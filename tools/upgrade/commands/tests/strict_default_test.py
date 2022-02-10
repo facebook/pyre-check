@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, mock_open, patch
 
 from ... import errors
 from ...repository import Repository
+from .. import strict_default
 from ..strict_default import (
     Configuration,
     ErrorSuppressingCommand,
@@ -25,7 +26,7 @@ repository = Repository()
 
 
 class StrictDefaultTest(unittest.TestCase):
-    @patch.object(Configuration, "find_project_configuration", return_value=Path("."))
+    @patch.object(strict_default, "_get_configuration_path", return_value=Path("."))
     @patch.object(Configuration, "get_directory")
     @patch.object(Configuration, "write")
     @patch.object(Configuration, "add_strict")
@@ -36,7 +37,7 @@ class StrictDefaultTest(unittest.TestCase):
         add_strict,
         configuration_write,
         get_directory,
-        find_configuration,
+        get_configuration_path,
     ) -> None:
         arguments = MagicMock()
         arguments.local_configuration = Path("local")
