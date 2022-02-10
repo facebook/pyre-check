@@ -19,6 +19,7 @@ from ..backend_arguments import (
     BaseArguments,
     find_watchman_root,
     find_buck_root,
+    find_buck2_root,
     get_checked_directory_allowlist,
     get_source_path,
 )
@@ -97,6 +98,7 @@ class ArgumentsTest(testslide.TestCase):
                 "source_root": "/source",
                 "artifact_root": "/artifact",
                 "targets": ["//foo:bar", "//foo:baz"],
+                "use_buck2": False,
             },
         )
         self.assertDictEqual(
@@ -107,6 +109,7 @@ class ArgumentsTest(testslide.TestCase):
                 targets=["//foo:bar"],
                 mode="opt",
                 isolation_prefix=".lsp",
+                use_buck2=True,
             ).serialize(),
             {
                 "kind": "buck",
@@ -115,6 +118,7 @@ class ArgumentsTest(testslide.TestCase):
                 "targets": ["//foo:bar"],
                 "mode": "opt",
                 "isolation_prefix": ".lsp",
+                "use_buck2": True,
             },
         )
 
@@ -246,6 +250,37 @@ class ArgumentsTest(testslide.TestCase):
             self.assertIsNone(find_buck_root(root_path / "foo", stop_search_after=1))
             self.assertIsNone(find_buck_root(root_path, stop_search_after=0))
 
+    def test_find_buck2_root(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_files_exist(
+                root_path,
+                [
+                    "foo/.buckconfig",
+                    "foo/qux/derp",
+                    "foo/bar/.buckconfig",
+                    "foo/bar/baz/derp",
+                ],
+            )
+
+            expected_root = root_path / "foo"
+            self.assertEqual(
+                find_buck2_root(root_path / "foo/bar/baz", stop_search_after=3),
+                expected_root,
+            )
+            self.assertEqual(
+                find_buck2_root(root_path / "foo/bar", stop_search_after=2),
+                expected_root,
+            )
+            self.assertEqual(
+                find_buck2_root(root_path / "foo/qux", stop_search_after=2),
+                expected_root,
+            )
+            self.assertEqual(
+                find_buck2_root(root_path / "foo", stop_search_after=1), expected_root
+            )
+            self.assertIsNone(find_buck2_root(root_path, stop_search_after=0))
+
     def test_get_simple_source_path__exists(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
@@ -369,6 +404,39 @@ class ArgumentsTest(testslide.TestCase):
                     targets=["//ct:marle", "//ct:lucca"],
                     mode="opt",
                     isolation_prefix=".lsp",
+                ),
+            )
+
+    def test_get_buck2_source_path(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "repo_root"])
+            setup.ensure_files_exist(
+                root_path, ["repo_root/.buckconfig", "repo_root/buck_root/.buckconfig"]
+            )
+            setup.write_configuration_file(
+                root_path / "repo_root" / "buck_root",
+                {
+                    "targets": ["//ct:lavos"],
+                },
+            )
+            self.assertEqual(
+                get_source_path(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(
+                            dot_pyre_directory=root_path / ".pyre",
+                            use_buck2=True,
+                        ),
+                        root_path / "repo_root" / "buck_root",
+                    ),
+                    artifact_root_name="artifact_root",
+                ),
+                BuckSourcePath(
+                    source_root=root_path / "repo_root",
+                    artifact_root=root_path / ".pyre" / "artifact_root",
+                    checked_directory=root_path / "repo_root" / "buck_root",
+                    targets=["//ct:lavos"],
+                    use_buck2=True,
                 ),
             )
 

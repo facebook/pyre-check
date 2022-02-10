@@ -99,6 +99,7 @@ class BuckSourcePath:
     targets: Sequence[str] = dataclasses.field(default_factory=list)
     mode: Optional[str] = None
     isolation_prefix: Optional[str] = None
+    use_buck2: bool = False
 
     def serialize(self) -> Dict[str, object]:
         mode = self.mode
@@ -112,6 +113,7 @@ class BuckSourcePath:
                 if isolation_prefix is None
                 else {"isolation_prefix": isolation_prefix}
             ),
+            "use_buck2": self.use_buck2,
             "source_root": str(self.source_root),
             "artifact_root": str(self.artifact_root),
         }
@@ -222,6 +224,17 @@ def find_buck_root(
     )
 
 
+def find_buck2_root(
+    base: Path,
+    stop_search_after: Optional[int] = None,
+) -> Optional[Path]:
+    # Buck2 uses project root instead of cell root as its base directory.
+    # This is essentially what `buck2 root --kind project` does.
+    return find_directories.find_outermost_directory_containing_file(
+        base, ".buckconfig", stop_search_after
+    )
+
+
 def _get_global_or_local_root(
     configuration: configuration_module.Configuration,
 ) -> Path:
@@ -261,8 +274,11 @@ def get_source_path(
         if len(targets) == 0:
             LOG.warning("Pyre did not find any targets to check.")
 
+        use_buck2 = configuration.use_buck2
         search_base = _get_global_or_local_root(configuration)
-        source_root = find_buck_root(search_base)
+        source_root = (
+            find_buck2_root(search_base) if use_buck2 else find_buck_root(search_base)
+        )
         if source_root is None:
             raise configuration_module.InvalidConfiguration(
                 "Cannot find a buck root for the specified targets. "
@@ -276,6 +292,7 @@ def get_source_path(
             targets=targets,
             mode=configuration.buck_mode,
             isolation_prefix=configuration.isolation_prefix,
+            use_buck2=use_buck2,
         )
 
     if source_directories is not None and targets is not None:
