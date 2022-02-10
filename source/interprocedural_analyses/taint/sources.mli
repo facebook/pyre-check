@@ -58,3 +58,5 @@ val extract_sanitize_transforms : t -> SanitizeTransform.Set.t
 val apply_sanitize_transforms : SanitizeTransform.Set.t -> t -> t
 
 val apply_sanitize_sink_transforms : SanitizeTransform.Set.t -> t -> t
+
+val apply_ordered_transforms : TaintTransform.t list -> t -> t

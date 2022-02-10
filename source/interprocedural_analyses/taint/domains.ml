@@ -288,6 +288,8 @@ module type TAINT_DOMAIN = sig
   (* Apply sanitize transforms only to the special `LocalReturn` sink. *)
   val apply_sanitize_sink_transforms : SanitizeTransform.Set.t -> t -> t
 
+  val apply_ordered_transforms : TaintTransform.t list -> t -> t
+
   (* Add trace info at call-site *)
   val apply_call
     :  resolution:Analysis.Resolution.t ->
@@ -328,6 +330,8 @@ module type KIND_ARG = sig
   val apply_sanitize_transforms : SanitizeTransform.Set.t -> t -> t
 
   val apply_sanitize_sink_transforms : SanitizeTransform.Set.t -> t -> t
+
+  val apply_ordered_transforms : TaintTransform.t list -> t -> t
 
   module Set : Stdlib.Set.S with type elt = t
 end
@@ -736,6 +740,13 @@ end = struct
       transform KindTaintDomain.Key Map ~f:(Kind.apply_sanitize_sink_transforms transforms) taint
 
 
+  let apply_ordered_transforms transforms taint =
+    if List.is_empty transforms then
+      taint
+    else
+      transform KindTaintDomain.Key Map ~f:(Kind.apply_ordered_transforms transforms) taint
+
+
   let apply_call ~resolution ~location ~callees ~arguments ~port ~path ~element:taint =
     let apply (call_info, local_taint) =
       let local_taint =
@@ -955,6 +966,13 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       taint
     else
       transform Taint.Self Map ~f:(Taint.apply_sanitize_sink_transforms transforms) taint
+
+
+  let apply_ordered_transforms transforms taint =
+    if List.is_empty transforms then
+      taint
+    else
+      transform Taint.Self Map ~f:(Taint.apply_ordered_transforms transforms) taint
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct

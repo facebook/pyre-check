@@ -1114,6 +1114,125 @@ let test_tito_side_effects context =
     ]
 
 
+let test_taint_in_taint_out_transform context =
+  (* TODO(T90698159): Add a test where TITO model applies multiple transform (think
+     TestTransform:DemoTransform@LocalReturn). *)
+  assert_taint
+    ~context
+    ~models:
+      {|
+      def models.test_transform(arg: TaintInTaintOut[Transform[TestTransform]]): ...
+    |}
+    ~models_source:{|
+      def test_transform(arg): ...
+    |}
+    {|
+      def simple_source():
+        return _test_source()
+
+      def taint_with_tito_transform():
+        x = simple_source()
+        y = models.test_transform(x)
+        return y
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~returns:
+          [
+            Sources.Transform
+              {
+                local =
+                  { TaintTransforms.empty with ordered = [TaintTransform.Named "TestTransform"] };
+                global = TaintTransforms.empty;
+                base = Sources.NamedSource "Test";
+              };
+          ]
+        "qualifier.taint_with_tito_transform";
+    ];
+  assert_taint
+    ~context
+    ~models:
+      {|
+      def models.test_transform(arg: TaintInTaintOut[Transform[TestTransform]]): ...
+      def models.demo_transform(arg: TaintInTaintOut[Transform[DemoTransform]]): ...
+    |}
+    ~models_source:{|
+      def test_transform(arg): ...
+      def demo_transform(arg): ...
+    |}
+    {|
+      def simple_source():
+        return _test_source()
+
+      def taint_with_tito_transform():
+        x = simple_source()
+        y = models.test_transform(x)
+        return y
+
+      def taint_transforming_transform():
+        x = taint_with_tito_transform()
+        y = models.demo_transform(x)
+        return y
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~returns:
+          [
+            Sources.Transform
+              {
+                local =
+                  { TaintTransforms.empty with ordered = [TaintTransform.Named "DemoTransform"] };
+                global =
+                  { TaintTransforms.empty with ordered = [TaintTransform.Named "TestTransform"] };
+                base = Sources.NamedSource "Test";
+              };
+          ]
+        "qualifier.taint_transforming_transform";
+    ];
+  assert_taint
+    ~context
+    ~models:
+      {|
+      def models.test_transform(arg: TaintInTaintOut[Transform[TestTransform]]): ...
+      def models.demo_transform(arg: TaintInTaintOut[Transform[DemoTransform]]): ...
+    |}
+    ~models_source:{|
+      def test_transform(arg): ...
+      def demo_transform(arg): ...
+    |}
+    {|
+      def simple_source():
+        return _test_source()
+
+      def taint_with_two_tito_transform():
+        x = simple_source()
+        y = models.test_transform(x)
+        z = models.demo_transform(y)
+        return z
+    |}
+    [
+      outcome
+        ~kind:`Function
+        ~returns:
+          [
+            Sources.Transform
+              {
+                local =
+                  {
+                    TaintTransforms.empty with
+                    ordered =
+                      [TaintTransform.Named "DemoTransform"; TaintTransform.Named "TestTransform"];
+                  };
+                global = TaintTransforms.empty;
+                base = Sources.NamedSource "Test";
+              };
+          ]
+        "qualifier.taint_with_two_tito_transform";
+    ]
+
+
 let () =
   [
     "access_paths", test_access_paths;
@@ -1136,6 +1255,7 @@ let () =
     "starred", test_starred;
     "string", test_string;
     "taint_in_taint_out_application", test_taint_in_taint_out_application;
+    "taint_in_taint_out_transform", test_taint_in_taint_out_transform;
     "ternary", test_ternary;
     "tito_side_effects", test_tito_side_effects;
     "tuple", test_tuple;

@@ -181,3 +181,6 @@ let apply_sanitize_sink_transforms transforms sink =
   | Transform { base = LocalReturn; _ } ->
       apply_sanitize_transforms transforms sink
   | _ -> sink
+
+
+let apply_ordered_transforms _transforms sink = sink

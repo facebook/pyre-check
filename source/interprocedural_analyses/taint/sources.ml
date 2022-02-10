@@ -144,3 +144,17 @@ let apply_sanitize_transforms transforms source =
 
 
 let apply_sanitize_sink_transforms = apply_sanitize_transforms
+
+let apply_ordered_transforms transforms source =
+  match source with
+  | Attach -> Attach
+  | NamedSource _
+  | ParametricSource _ ->
+      Transform
+        {
+          local = { TaintTransforms.ordered = transforms; sanitize = SanitizeTransform.Set.empty };
+          global = TaintTransforms.empty;
+          base = source;
+        }
+  | Transform { local; global; base } ->
+      Transform { local = { local with ordered = transforms @ local.ordered }; global; base }
