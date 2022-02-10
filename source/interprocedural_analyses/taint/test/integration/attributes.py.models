@@ -623,7 +623,7 @@
     ],
     "features": [ { "always-via": "special_sink" } ],
     "master_handles": [
-      "attributes.test_attribute_union_source:5002:0:Call|_test_sink|1|formal(arg):a2bd11fa9758293fdf005fbfa793a61a"
+      "attributes.test_attribute_union_source:5002:0:Call|_test_sink|2|formal(arg):1086396563d2f0569c6c25258e58d2b0"
     ]
   }
 }

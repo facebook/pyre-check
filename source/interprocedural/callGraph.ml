@@ -54,10 +54,6 @@ module HigherOrderParameter = struct
     | None, None -> None
 
 
-  let map_call_targets ~f ({ call_targets; _ } as higher_order_parameter) =
-    { higher_order_parameter with call_targets = List.map ~f call_targets }
-
-
   let all_targets { call_targets; _ } = List.map ~f:CallTarget.target call_targets
 
   let equal_ignoring_types
@@ -161,20 +157,6 @@ module CallCallees = struct
     { call_targets; new_targets; init_targets; return_type; higher_order_parameter; unresolved }
 
 
-  let map_call_targets
-      ~f
-      { call_targets; new_targets; init_targets; return_type; higher_order_parameter; unresolved }
-    =
-    {
-      call_targets = List.map ~f call_targets;
-      new_targets = List.map ~f new_targets;
-      init_targets = List.map ~f init_targets;
-      return_type;
-      higher_order_parameter = higher_order_parameter >>| HigherOrderParameter.map_call_targets ~f;
-      unresolved;
-    }
-
-
   let all_targets { call_targets; new_targets; init_targets; higher_order_parameter; _ } =
     call_targets
     |> List.rev_append new_targets
@@ -252,15 +234,6 @@ module AttributeAccessCallees = struct
     }
 
 
-  let map_call_targets ~f { property_targets; global_targets; return_type; is_attribute } =
-    {
-      property_targets = List.map ~f property_targets;
-      global_targets = List.map ~f global_targets;
-      return_type;
-      is_attribute;
-    }
-
-
   let all_targets { property_targets; global_targets; _ } =
     List.rev_append property_targets global_targets |> List.map ~f:CallTarget.target
 
@@ -302,8 +275,6 @@ module IdentifierCallees = struct
   let join { global_targets = left_global_targets } { global_targets = right_global_targets } =
     { global_targets = List.rev_append left_global_targets right_global_targets }
 
-
-  let map_call_targets ~f { global_targets } = { global_targets = List.map ~f global_targets }
 
   let all_targets { global_targets } = List.map ~f:CallTarget.target global_targets
 end
@@ -358,14 +329,6 @@ module ExpressionCallees = struct
     }
 
 
-  let map_call_targets ~f { call; attribute_access; identifier } =
-    {
-      call = call >>| CallCallees.map_call_targets ~f;
-      attribute_access = attribute_access >>| AttributeAccessCallees.map_call_targets ~f;
-      identifier = identifier >>| IdentifierCallees.map_call_targets ~f;
-    }
-
-
   let all_targets { call; attribute_access; identifier } =
     let call_targets = call >>| CallCallees.all_targets |> Option.value ~default:[] in
     let attribute_access_targets =
@@ -415,11 +378,6 @@ module LocationCallees = struct
 
 
   let show callees = Format.asprintf "%a" pp callees
-
-  let map ~f = function
-    | Singleton callees -> Singleton (f callees)
-    | Compound map -> Compound (String.Map.Tree.map ~f map)
-
 
   let all_targets = function
     | Singleton raw_callees -> ExpressionCallees.all_targets raw_callees
@@ -506,6 +464,31 @@ module DefineCallGraph = struct
 
   let equal_ignoring_types call_graph_left call_graph_right =
     Location.Map.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
+end
+
+(* Produce call targets with a textual order index.
+ *
+ * The index is the number of times a given function or method was previously called,
+ * respecting the execution flow.
+ *
+ * ```
+ * def f():
+ *   a = source_with_hop() # index=0
+ *   sink_with_hop(x=a) # index=0
+ *   sink_with_hop(y=a) # index=1
+ *   b = source_with_hop() # index=1
+ *   sink_with_hop(z=a) # index=2
+ * ```
+ *)
+module CallTargetIndexer = struct
+  type t = int Target.HashMap.t
+
+  let create () = Target.HashMap.create ()
+
+  let create_target indexer ~implicit_self ~implicit_dunder_call ~collapse_tito target =
+    let index = Target.HashMap.find indexer target |> Option.value ~default:0 in
+    Target.HashMap.incr indexer target;
+    { CallTarget.target; implicit_self; implicit_dunder_call; collapse_tito; index }
 end
 
 let defining_attribute ~resolution parent_type attribute =
@@ -701,6 +684,7 @@ let collapse_tito ~resolution ~callee ~callable_type =
 
 let rec resolve_callees_from_type
     ~resolution
+    ~call_indexer
     ?(dunder_call = false)
     ?receiver_type
     ~return_type
@@ -723,13 +707,12 @@ let rec resolve_callees_from_type
           let targets =
             List.map
               ~f:(fun target ->
-                {
-                  CallTarget.target;
-                  implicit_self = true;
-                  implicit_dunder_call = dunder_call;
-                  collapse_tito;
-                  index = 0;
-                })
+                CallTargetIndexer.create_target
+                  call_indexer
+                  ~implicit_self:true
+                  ~implicit_dunder_call:dunder_call
+                  ~collapse_tito
+                  target)
               targets
           in
           CallCallees.create ~call_targets:targets ~return_type ()
@@ -742,13 +725,12 @@ let rec resolve_callees_from_type
           CallCallees.create
             ~call_targets:
               [
-                {
-                  CallTarget.target;
-                  implicit_self = false;
-                  implicit_dunder_call = dunder_call;
-                  collapse_tito;
-                  index = 0;
-                };
+                CallTargetIndexer.create_target
+                  call_indexer
+                  ~implicit_self:false
+                  ~implicit_dunder_call:dunder_call
+                  ~collapse_tito
+                  target;
               ]
             ~return_type
             ())
@@ -757,6 +739,7 @@ let rec resolve_callees_from_type
     ->
       resolve_callees_from_type
         ~resolution
+        ~call_indexer
         ~receiver_type
         ~return_type
         ~callee_kind
@@ -766,6 +749,7 @@ let rec resolve_callees_from_type
       let first_targets =
         resolve_callees_from_type
           ~resolution
+          ~call_indexer
           ~callee_kind
           ?receiver_type
           ~return_type
@@ -775,6 +759,7 @@ let rec resolve_callees_from_type
       List.fold elements ~init:first_targets ~f:(fun combined_targets new_target ->
           resolve_callees_from_type
             ~resolution
+            ~call_indexer
             ?receiver_type
             ~return_type
             ~callee_kind
@@ -782,7 +767,7 @@ let rec resolve_callees_from_type
             new_target
           |> CallCallees.join combined_targets)
   | Type.Parametric { name = "type"; _ } ->
-      resolve_constructor_callee ~resolution ~return_type callable_type
+      resolve_constructor_callee ~resolution ~call_indexer ~return_type callable_type
       |> Option.value ~default:(CallCallees.create_unresolved return_type)
   | callable_type -> (
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
@@ -806,13 +791,12 @@ let rec resolve_callees_from_type
                 CallCallees.create
                   ~call_targets:
                     [
-                      {
-                        CallTarget.target;
-                        implicit_self = true;
-                        implicit_dunder_call = true;
-                        collapse_tito;
-                        index = 0;
-                      };
+                      CallTargetIndexer.create_target
+                        call_indexer
+                        ~implicit_self:true
+                        ~implicit_dunder_call:true
+                        ~collapse_tito
+                        target;
                     ]
                   ~return_type
                   ())
@@ -821,6 +805,7 @@ let rec resolve_callees_from_type
           if not dunder_call then
             resolve_callees_from_type
               ~resolution
+              ~call_indexer
               ~return_type
               ~dunder_call:true
               ~callee_kind
@@ -830,7 +815,7 @@ let rec resolve_callees_from_type
             CallCallees.create_unresolved return_type)
 
 
-and resolve_constructor_callee ~resolution ~return_type class_type =
+and resolve_constructor_callee ~resolution ~call_indexer ~return_type class_type =
   match
     ( Resolution.resolve_attribute_access resolution ~base_type:class_type ~attribute:"__new__",
       Resolution.resolve_attribute_access resolution ~base_type:class_type ~attribute:"__init__" )
@@ -844,6 +829,7 @@ and resolve_constructor_callee ~resolution ~return_type class_type =
       let new_callees =
         resolve_callees_from_type
           ~resolution
+          ~call_indexer
           ~receiver_type:class_type
           ~return_type
           ~callee_kind:(Method { is_direct_call = true })
@@ -853,6 +839,7 @@ and resolve_constructor_callee ~resolution ~return_type class_type =
       let init_callees =
         resolve_callees_from_type
           ~resolution
+          ~call_indexer
           ~receiver_type:class_type
           ~return_type
           ~callee_kind:(Method { is_direct_call = true })
@@ -870,6 +857,7 @@ and resolve_constructor_callee ~resolution ~return_type class_type =
 
 let resolve_callee_from_defining_expression
     ~resolution
+    ~call_indexer
     ~callee:{ Node.value = callee; _ }
     ~return_type
     ~implementing_class
@@ -886,6 +874,7 @@ let resolve_callee_from_defining_expression
       >>| fun undecorated_signature ->
       resolve_callees_from_type
         ~resolution
+        ~call_indexer
         ~return_type
         ~callee_kind:Function
         ~collapse_tito:true
@@ -933,6 +922,7 @@ let resolve_callee_from_defining_expression
           Some
             (resolve_callees_from_type
                ~resolution
+               ~call_indexer
                ~receiver_type:implementing_class
                ~return_type
                ~callee_kind:(Method { is_direct_call = false })
@@ -989,7 +979,7 @@ let redirect_special_calls ~resolution call =
   | None -> Annotated.Call.redirect_special_calls ~resolution call
 
 
-let resolve_recognized_callees ~resolution ~callee ~return_type ~callee_type =
+let resolve_recognized_callees ~resolution ~call_indexer ~callee ~return_type ~callee_type =
   (* Special treatment for a set of hardcoded decorators returning callable classes. *)
   match Node.value callee, callee_type with
   | ( _,
@@ -999,14 +989,24 @@ let resolve_recognized_callees ~resolution ~callee ~return_type ~callee_type =
           parameters = [Single (Parametric { name; _ }); Single implementing_class];
         } )
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
-      resolve_callee_from_defining_expression ~resolution ~callee ~return_type ~implementing_class
+      resolve_callee_from_defining_expression
+        ~resolution
+        ~call_indexer
+        ~callee
+        ~return_type
+        ~implementing_class
   | Expression.Name (Name.Attribute { base; _ }), Parametric { name; _ }
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
       (* Because of the special class, we don't get a bound method & lose the self argument for
          non-classmethod LRU cache wrappers. Reconstruct self in this case. *)
       resolve_ignoring_optional ~resolution base
       |> fun implementing_class ->
-      resolve_callee_from_defining_expression ~resolution ~callee ~return_type ~implementing_class
+      resolve_callee_from_defining_expression
+        ~resolution
+        ~call_indexer
+        ~callee
+        ~return_type
+        ~implementing_class
   | Expression.Name name, _
     when is_all_names (Node.value callee)
          && Type.Set.mem SpecialCallResolution.recognized_callable_target_types callee_type ->
@@ -1017,20 +1017,19 @@ let resolve_recognized_callees ~resolution ~callee ~return_type ~callee_type =
       CallCallees.create
         ~call_targets:
           [
-            {
-              CallTarget.target = `Function name;
-              implicit_self = false;
-              implicit_dunder_call = false;
-              collapse_tito;
-              index = 0;
-            };
+            CallTargetIndexer.create_target
+              call_indexer
+              ~implicit_self:false
+              ~implicit_dunder_call:false
+              ~collapse_tito
+              (`Function name);
           ]
         ~return_type
         ()
   | _ -> None
 
 
-let resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee =
+let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito callee =
   let global_resolution = Resolution.global_resolution resolution in
   let open UnannotatedGlobalEnvironment in
   match Node.value callee with
@@ -1043,13 +1042,12 @@ let resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee =
             { export = ResolvedReference.Exported (Module.Export.Name.Define _); remaining = []; _ })
         ->
           Some
-            {
-              CallTarget.target = `Function (Reference.show name);
-              implicit_self = false;
-              implicit_dunder_call = false;
-              collapse_tito;
-              index = 0;
-            }
+            (CallTargetIndexer.create_target
+               call_indexer
+               ~implicit_self:false
+               ~implicit_dunder_call:false
+               ~collapse_tito
+               (`Function (Reference.show name)))
       | Some
           (ResolvedReference.ModuleAttribute
             {
@@ -1068,13 +1066,12 @@ let resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee =
           >>= function
           | { kind = Method { static; _ }; _ } ->
               Some
-                {
-                  CallTarget.target = `Method { Target.class_name; method_name = attribute };
-                  implicit_self = not static;
-                  implicit_dunder_call = false;
-                  collapse_tito;
-                  index = 0;
-                }
+                (CallTargetIndexer.create_target
+                   call_indexer
+                   ~implicit_self:(not static)
+                   ~implicit_dunder_call:false
+                   ~collapse_tito
+                   (`Method { Target.class_name; method_name = attribute }))
           | _ -> None)
       | _ -> None)
   | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
@@ -1090,22 +1087,21 @@ let resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee =
           >>= function
           | { kind = Method _; _ } ->
               Some
-                {
-                  CallTarget.target = `Method { Target.class_name; method_name = attribute };
-                  implicit_self = true;
-                  implicit_dunder_call = false;
-                  collapse_tito;
-                  index = 0;
-                }
+                (CallTargetIndexer.create_target
+                   call_indexer
+                   ~implicit_self:true
+                   ~implicit_dunder_call:false
+                   ~collapse_tito
+                   (`Method { Target.class_name; method_name = attribute }))
           | _ -> None)
       | _ -> None)
   | _ -> None
 
 
-let resolve_regular_callees ~resolution ~return_type ~callee =
+let resolve_regular_callees ~resolution ~call_indexer ~return_type ~callee =
   let callee_type = resolve_ignoring_optional ~resolution callee in
   let recognized_callees =
-    resolve_recognized_callees ~resolution ~callee ~return_type ~callee_type
+    resolve_recognized_callees ~resolution ~call_indexer ~callee ~return_type ~callee_type
     |> Option.value ~default:(CallCallees.create_unresolved return_type)
   in
   if CallCallees.is_partially_resolved recognized_callees then
@@ -1114,17 +1110,23 @@ let resolve_regular_callees ~resolution ~return_type ~callee =
     let callee_kind = callee_kind ~resolution callee callee_type in
     let collapse_tito = collapse_tito ~resolution ~callee ~callable_type:callee_type in
     let calleees_from_type =
-      resolve_callees_from_type ~resolution ~return_type ~callee_kind ~collapse_tito callee_type
+      resolve_callees_from_type
+        ~resolution
+        ~call_indexer
+        ~return_type
+        ~callee_kind
+        ~collapse_tito
+        callee_type
     in
     if CallCallees.is_partially_resolved calleees_from_type then
       calleees_from_type
     else
-      resolve_callee_ignoring_decorators ~resolution ~collapse_tito callee
+      resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito callee
       >>| (fun target -> CallCallees.create ~call_targets:[target] ~return_type ())
       |> Option.value ~default:(CallCallees.create_unresolved return_type)
 
 
-let resolve_callees ~resolution ~call =
+let resolve_callees ~resolution ~call_indexer ~call =
   let { Call.callee; arguments } = redirect_special_calls ~resolution call in
   let return_type =
     Expression.Call call
@@ -1133,7 +1135,9 @@ let resolve_callees ~resolution ~call =
   in
   let higher_order_parameter =
     let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
-      match resolve_regular_callees ~resolution ~return_type:Type.none ~callee:argument with
+      match
+        resolve_regular_callees ~resolution ~call_indexer ~return_type:Type.none ~callee:argument
+      with
       | { CallCallees.call_targets = _ :: _ as regular_targets; _ } ->
           let return_type =
             Expression.Call { callee = argument; arguments = [] }
@@ -1145,7 +1149,7 @@ let resolve_callees ~resolution ~call =
     in
     List.find_mapi arguments ~f:get_higher_order_function_targets
   in
-  let regular_callees = resolve_regular_callees ~resolution ~return_type ~callee in
+  let regular_callees = resolve_regular_callees ~resolution ~call_indexer ~return_type ~callee in
   { regular_callees with higher_order_parameter }
 
 
@@ -1273,19 +1277,34 @@ let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~
       find_targets [] base_annotation
 
 
-let resolve_attribute_access ~resolution ~base ~attribute ~special ~setter =
+let resolve_attribute_access ~resolution ~call_indexer ~base ~attribute ~special ~setter =
   let base_annotation = resolve_ignoring_optional ~resolution base in
 
   let { property_targets; is_attribute } =
     resolve_attribute_access_properties ~resolution ~base_annotation ~attribute ~setter
   in
-  let property_targets = List.map ~f:(CallTarget.create ~implicit_self:true) property_targets in
+  let property_targets =
+    List.map
+      ~f:
+        (CallTargetIndexer.create_target
+           call_indexer
+           ~implicit_self:true
+           ~implicit_dunder_call:false
+           ~collapse_tito:true)
+      property_targets
+  in
 
   let global_targets =
     resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special
     |> List.map ~f:Target.create_object
     |> List.filter ~f:FixpointState.has_model
-    |> List.map ~f:CallTarget.create
+    |> List.map
+         ~f:
+           (CallTargetIndexer.create_target
+              call_indexer
+              ~implicit_self:false
+              ~implicit_dunder_call:false
+              ~collapse_tito:true)
   in
 
   let return_type =
@@ -1299,13 +1318,24 @@ let resolve_attribute_access ~resolution ~base ~attribute ~special ~setter =
   { AttributeAccessCallees.property_targets; global_targets; return_type; is_attribute }
 
 
-let resolve_identifier ~resolution ~identifier =
+let resolve_identifier ~resolution ~call_indexer ~identifier =
   Expression.Name (Name.Identifier identifier)
   |> Node.create_with_default_location
   |> as_global_reference ~resolution
   >>| Target.create_object
   |> Option.filter ~f:FixpointState.has_model
-  >>| fun global -> { IdentifierCallees.global_targets = [CallTarget.create global] }
+  >>| fun global ->
+  {
+    IdentifierCallees.global_targets =
+      [
+        CallTargetIndexer.create_target
+          call_indexer
+          ~implicit_self:false
+          ~implicit_dunder_call:false
+          ~collapse_tito:true
+          global;
+      ];
+  }
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
@@ -1320,6 +1350,8 @@ module DefineCallGraphFixpoint (Context : sig
   val parent : Reference.t option
 
   val callees_at_location : UnprocessedLocationCallees.t Location.Table.t
+
+  val call_indexer : CallTargetIndexer.t
 end) =
 struct
   type assignment_target = { location: Location.t }
@@ -1328,6 +1360,8 @@ struct
     resolution: Resolution.t;
     assignment_target: assignment_target option;
   }
+
+  let call_indexer = Context.call_indexer
 
   module NodeVisitor = struct
     type nonrec t = visitor_t
@@ -1342,7 +1376,7 @@ struct
       let () =
         match value with
         | Expression.Call call ->
-            resolve_callees ~resolution ~call
+            resolve_callees ~resolution ~call_indexer ~call
             |> ExpressionCallees.from_call
             |> register_targets ~expression_identifier:(call_identifier call)
         | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special }) ->
@@ -1352,18 +1386,18 @@ struct
                   Location.equal assignment_target_location location
               | None -> false
             in
-            resolve_attribute_access ~resolution ~base ~attribute ~special ~setter
+            resolve_attribute_access ~resolution ~call_indexer ~base ~attribute ~special ~setter
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
         | Expression.Name (Name.Identifier identifier) ->
-            resolve_identifier ~resolution ~identifier
+            resolve_identifier ~resolution ~call_indexer ~identifier
             >>| ExpressionCallees.from_identifier
             >>| register_targets ~expression_identifier:identifier
             |> ignore
         | Expression.ComparisonOperator comparison -> (
             match ComparisonOperator.override ~location comparison with
             | Some { Node.value = Expression.Call call; _ } ->
-                resolve_callees ~resolution ~call
+                resolve_callees ~resolution ~call_indexer ~call
                 |> ExpressionCallees.from_call
                 |> register_targets ~expression_identifier:(call_identifier call)
             | _ -> ())
@@ -1391,7 +1425,13 @@ struct
                   { Call.Argument.value = _; _ };
                 ];
             } ->
-            resolve_attribute_access ~resolution ~base ~attribute ~special:false ~setter:false
+            resolve_attribute_access
+              ~resolution
+              ~call_indexer
+              ~base
+              ~attribute
+              ~special:false
+              ~setter:false
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
         | Expression.Call
@@ -1423,7 +1463,13 @@ struct
                   { Call.Argument.value = _; name = None };
                 ];
             } ->
-            resolve_attribute_access ~resolution ~base:self ~attribute ~special:true ~setter:true
+            resolve_attribute_access
+              ~resolution
+              ~call_indexer
+              ~base:self
+              ~attribute
+              ~special:true
+              ~setter:true
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
         | _ -> ()
@@ -1521,6 +1567,8 @@ let call_graph_of_define
     let parent = parent
 
     let callees_at_location = callees_at_location
+
+    let call_indexer = CallTargetIndexer.create ()
   end)
   in
   (* Handle parameters. *)
@@ -1559,19 +1607,6 @@ let call_graph_of_define
                Core.String.Map.Tree.exists compound ~f:(fun callees ->
                    not (ExpressionCallees.is_empty_attribute_access_callees callees)))
     |> Location.Map.of_alist_exn
-  in
-  let call_graph =
-    let index_map = Target.HashMap.create () in
-    let index_call_target ({ CallTarget.target; _ } as call_target) =
-      let index = Target.HashMap.find index_map target |> Option.value ~default:0 in
-      Target.HashMap.incr index_map target;
-      { call_target with index }
-    in
-    let index_callees =
-      LocationCallees.map ~f:(ExpressionCallees.map_call_targets ~f:index_call_target)
-    in
-    (* map visits callees in the order of the keys, i.e locations. *)
-    Location.Map.map ~f:index_callees call_graph
   in
   Statistics.performance
     ~randomly_log_every:1000

@@ -2509,14 +2509,14 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~call_targets:[CallTarget.create ~index:0 (`Function "test.foo")]
+                  ~call_targets:[CallTarget.create ~index:3 (`Function "test.foo")]
                   ~return_type:Type.Any
                   ())) );
         ( "6:8-6:13",
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~call_targets:[CallTarget.create ~index:1 (`Function "test.foo")]
+                  ~call_targets:[CallTarget.create ~index:0 (`Function "test.foo")]
                   ~return_type:Type.Any
                   ())) );
         ( "6:15-6:25",
@@ -2530,7 +2530,7 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~call_targets:[CallTarget.create ~index:3 (`Function "test.foo")]
+                  ~call_targets:[CallTarget.create ~index:1 (`Function "test.foo")]
                   ~return_type:Type.Any
                   ())) );
       ]
