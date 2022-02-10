@@ -145,6 +145,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 python_version="3.6.7",
                 shared_memory_heap_size=42,
                 number_of_workers=43,
+                use_buck2=True,
             )
         )
         self.assertEqual(configuration.binary, "binary")
@@ -168,6 +169,7 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=42))
         self.assertEqual(configuration.number_of_workers, 43)
+        self.assertEqual(configuration.use_buck2, True)
 
     def test_create_from_command_arguments__ide_features(self) -> None:
         configuration = PartialConfiguration.from_command_arguments(
@@ -392,6 +394,13 @@ class PartialConfigurationTest(unittest.TestCase):
             SharedMemory(hash_table_power=3),
         )
 
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"use_buck2": False})
+            ).use_buck2,
+            False,
+        )
+
         self.assertIsNone(PartialConfiguration.from_string("{}").source_directories)
         source_directories = PartialConfiguration.from_string(
             json.dumps({"source_directories": ["foo", "bar"]})
@@ -527,6 +536,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"shared_memory": "abc"}))
         assert_raises(json.dumps({"shared_memory": {"heap_size": "abc"}}))
         assert_raises(json.dumps({"unwatched_dependency": {"change_indicator": "abc"}}))
+        assert_raises(json.dumps({"use_buck2": {}}))
 
     def test_merge(self) -> None:
         # Unsafe features like `getattr` has to be used in this test to reduce boilerplates.
@@ -635,6 +645,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raise_when_overridden("targets")
         assert_overwritten("typeshed")
         assert_overwritten("unwatched_dependency")
+        assert_overwritten("use_buck2")
         assert_overwritten("version_hash")
 
     def test_merge__ide_features(self) -> None:
@@ -806,6 +817,7 @@ class ConfigurationTest(testslide.TestCase):
                 targets=None,
                 typeshed="typeshed",
                 unwatched_dependency=None,
+                use_buck2=None,
                 version_hash="abc",
             ),
             in_virtual_environment=False,
@@ -840,6 +852,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.targets, None)
         self.assertEqual(configuration.typeshed, "typeshed")
         self.assertEqual(configuration.unwatched_dependency, None)
+        self.assertEqual(configuration.use_buck2, False)
         self.assertEqual(configuration.version_hash, "abc")
 
     def test_get_site_roots(self) -> None:

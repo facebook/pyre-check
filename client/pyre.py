@@ -357,6 +357,13 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     default=None,
     hidden=True,
 )
+@click.option(
+    "--use-buck2/--no-use-buck2",
+    is_flag=True,
+    help="Whether Pyre should use Buck2 instead of Buck1 to build Buck projects.",
+    default=None,
+    hidden=True,
+)
 @click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
 def pyre(
     context: click.Context,
@@ -399,6 +406,7 @@ def pyre(
     shared_memory_hash_table_power: Optional[int],
     number_of_workers: Optional[int],
     enable_hover: Optional[bool],
+    use_buck2: Optional[bool],
 ) -> int:
     arguments = command_arguments.CommandArguments(
         local_configuration=local_configuration,
@@ -440,6 +448,7 @@ def pyre(
         shared_memory_hash_table_power=shared_memory_hash_table_power,
         number_of_workers=number_of_workers,
         enable_hover=enable_hover,
+        use_buck2=use_buck2,
     )
     if arguments.version:
         _show_pyre_version(arguments)
