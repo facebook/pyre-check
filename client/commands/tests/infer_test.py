@@ -15,6 +15,7 @@ from ... import configuration, command_arguments
 from ...tests import setup
 from .. import backend_arguments
 from ..infer import (
+    AnnotateModuleInPlace,
     Arguments,
     create_infer_arguments,
     create_module_annotations,
@@ -1368,4 +1369,75 @@ class StubGenerationTest(testslide.TestCase):
             def with_params(x: int, y, z: Union[int, str]) -> None: ...
             """,
             simple_annotations=True,
+        )
+
+
+class StubApplicationTest(testslide.TestCase):
+    def _normalize(self, block_string: str) -> str:
+        return textwrap.dedent(block_string).strip()
+
+    def _assert_in_place(
+        self,
+        stub_file_contents: str,
+        code_file_contents: str,
+        expected_annotated_code_file_contents: str,
+    ) -> None:
+        options = StubGenerationOptions(
+            annotate_attributes=True,
+            use_future_annotations=False,
+            dequalify=False,
+            quote_annotations=False,
+            simple_annotations=False,
+        )
+        annotated_code = AnnotateModuleInPlace._annotated_code(
+            stub=self._normalize(stub_file_contents),
+            code=self._normalize(code_file_contents),
+            options=options,
+        )
+        self.assertEqual(
+            self._normalize(expected_annotated_code_file_contents), annotated_code
+        )
+
+    def test_apply_globals(self) -> None:
+        self._assert_in_place(
+            """
+            a: int = ...
+            """,
+            """
+            a = 1 + 1
+            """,
+            """
+            a: int = 1 + 1
+            """,
+        )
+
+        self._assert_in_place(
+            """
+            a: int = ...
+            b: int = ...
+            """,
+            """
+            a = b = 1 + 1
+            """,
+            """
+            a: int
+            b: int
+
+            a = b = 1 + 1
+            """,
+        )
+
+        self._assert_in_place(
+            """
+            _: str = ...
+            a: str = ...
+            """,
+            """
+            _, a = "string".split("")
+            """,
+            """
+            a: str
+
+            _, a = "string".split("")
+            """,
         )

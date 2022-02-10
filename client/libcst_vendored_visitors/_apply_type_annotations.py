@@ -463,7 +463,7 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
             for element in only_target.elements:
                 value = element.value
                 name = get_full_name_for_node(value)
-                if name:
+                if name and name != "_":
                     self._add_to_toplevel_annotations(name)
         elif isinstance(only_target, (cst.Subscript)):
             pass
@@ -624,13 +624,12 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
     def leave_Assign(
         self, original_node: cst.Assign, updated_node: cst.Assign
     ) -> Union[cst.Assign, cst.AnnAssign]:
-
         if len(original_node.targets) > 1:
             for assign in original_node.targets:
                 target = assign.target
                 if isinstance(target, (cst.Name, cst.Attribute)):
                     name = get_full_name_for_node(target)
-                    if name is not None:
+                    if name is not None and name != "_":
                         # Add separate top-level annotations for `a = b = 1`
                         # as `a: int` and `b: int`.
                         self._add_to_toplevel_annotations(name)
