@@ -53,7 +53,8 @@ def find_parent_directory_containing_file(
     """
     Walk directories upwards from `base`, until the root directory is
     reached. At each step, check if the `target` file exist, and return
-    it if found. Return None if the search is unsuccessful.
+    the closest such directory if found. Return None if the search is
+    unsuccessful.
 
     We stop searching after checking `stop_search_after` parent
     directories of `base` if provided; this is mainly for testing.
@@ -68,6 +69,40 @@ def find_parent_directory_containing_file(
         predicate=is_file,
         stop_search_after=stop_search_after,
     )
+
+
+def find_outermost_directory_containing_file(
+    base: Path,
+    target: str,
+    stop_search_after: Optional[int],
+) -> Optional[Path]:
+    """
+    Walk directories upwards from `base`, until the root directory is
+    reached. At each step, check if the `target` file exist, and return
+    the farthest such directory if found. Return None if the search is
+    unsuccessful.
+
+    We stop searching after checking `stop_search_after` parent
+    directories of `base` if provided; this is mainly for testing.
+    """
+    result: Optional[Path] = None
+    resolved_base = base.resolve(strict=True)
+    # Using `itertools.chain` to avoid expanding `resolve_base.parents` eagerly
+    for i, candidate_directory in enumerate(
+        itertools.chain([resolved_base], resolved_base.parents)
+    ):
+        candidate_path = candidate_directory / target
+        try:
+            if candidate_path.is_file():
+                result = candidate_directory
+        except PermissionError:
+            # We might not have sufficient permission to read the file/directory.
+            # In that case, pretend the file doesn't exist.
+            pass
+        if stop_search_after is not None:
+            if i >= stop_search_after:
+                break
+    return result
 
 
 def find_global_root(base: Path) -> Optional[Path]:

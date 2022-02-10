@@ -16,6 +16,7 @@ from ..find_directories import (
     find_global_and_local_root,
     find_global_root,
     find_parent_directory_containing_directory,
+    find_outermost_directory_containing_file,
     find_parent_directory_containing_file,
     find_typeshed_search_paths,
     get_relative_local_root,
@@ -153,6 +154,104 @@ class FindParentDirectoryContainingFileTest(testslide.TestCase):
             files=["a/d", "a/b/e", "a/b/c/f"], base="a/b/e", target="d", expected="a"
         )
         self.assert_find_parent_directory_containing_file(
+            files=["a/d", "a/b/e", "a/b/c/f"], base="a/b/c/f", target="d", expected="a"
+        )
+
+
+class FindOutermostDirectoryContainingFileTest(testslide.TestCase):
+    def assert_find_outermost_directory_containing_file(
+        self, files: Iterable[str], base: str, target: str, expected: Optional[str]
+    ) -> None:
+        depth = len(base.split("/"))
+        with tempfile.TemporaryDirectory() as outer_root:
+            with tempfile.TemporaryDirectory(dir=outer_root) as root:
+                root_path = Path(root).resolve()
+                ensure_files_exist(root_path, files)
+                self.assertEqual(
+                    find_outermost_directory_containing_file(
+                        root_path / base,
+                        target,
+                        stop_search_after=depth,
+                    ),
+                    (root_path / expected) if expected is not None else None,
+                )
+
+    def test_find_outermost_directory_containing_file(self) -> None:
+        self.assert_find_outermost_directory_containing_file(
+            files=[], base=".", target="a", expected=None
+        )
+
+        self.assert_find_outermost_directory_containing_file(
+            files=["a"], base=".", target="a", expected="."
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a"], base=".", target="b", expected=None
+        )
+
+        self.assert_find_outermost_directory_containing_file(
+            files=["a", "b/c"], base="b", target="a", expected="."
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a", "b/c"], base="b", target="b", expected=None
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a", "b/c"], base="b", target="c", expected="b"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a", "b/c"], base="b", target="d", expected=None
+        )
+
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/b", "a/c/d"], base="a", target="b", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/b", "a/c/d"], base="a", target="c", expected=None
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/b", "a/c/d"], base="a/c", target="b", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/b", "a/c/d"], base="a/c", target="d", expected="a/c"
+        )
+
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"], base=".", target="d", expected=None
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"], base="a", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"], base="a", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"], base="a/b", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"],
+            base="a/b/c",
+            target="d",
+            expected="a",
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"],
+            base="a/b/c/d",
+            target="d",
+            expected="a",
+        )
+
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/e", "a/b/c/f"], base="a", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/e", "a/b/c/f"], base="a/b", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/e", "a/b/c/f"], base="a/b/c", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/e", "a/b/c/f"], base="a/b/e", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
             files=["a/d", "a/b/e", "a/b/c/f"], base="a/b/c/f", target="d", expected="a"
         )
 
