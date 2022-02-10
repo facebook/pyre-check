@@ -85,6 +85,54 @@ let test_simple _ =
     configuration.matching_sinks
 
 
+let test_transform _ =
+  let configuration =
+    assert_parse
+      {|
+    { sources:[],
+      sinks:[],
+      rules:[
+        {
+           name: "test rule",
+           sources: [],
+           sinks: [],
+           code: 2001,
+           message_format: "transforms are optional"
+        }
+      ]
+    }
+  |}
+  in
+  assert_equal configuration.transforms [];
+  assert_equal (List.length configuration.rules) 1;
+  assert_equal (List.hd_exn configuration.rules).transforms [];
+  let configuration =
+    assert_parse
+      {|
+    { sources:[],
+      sinks:[],
+      transforms: [
+        {name: "A"}
+      ],
+      rules:[
+        {
+           name: "test rule",
+           sources: [],
+           sinks: [],
+           transforms: ["A", "A"],
+           code: 2001,
+           message_format: "transforms can repeat in rules"
+        }
+      ]
+    }
+  |}
+  in
+  assert_equal
+    (List.hd_exn configuration.rules).transforms
+    [TaintTransform.Named "A"; TaintTransform.Named "A"];
+  ()
+
+
 let test_invalid_source _ =
   assert_parse_error
     ~errors:[Error.UnsupportedSource "C"]
@@ -126,6 +174,34 @@ let test_invalid_sink _ =
            name: "test rule",
            sources: [],
            sinks: ["B"],
+           code: 2001,
+           message_format: "whatever"
+        }
+      ]
+    }
+    |}
+
+
+let test_invalid_transform _ =
+  assert_parse_error
+    ~errors:[Error.UnsupportedTransform "B"]
+    {|
+    { sources: [
+      ],
+      sinks: [
+        { name: "A" }
+      ],
+      transforms: [
+        { name: "A" }
+      ],
+      features: [
+      ],
+      rules: [
+        {
+           name: "test rule",
+           sources: [],
+           sinks: [],
+           transforms: ["B"],
            code: 2001,
            message_format: "whatever"
         }
@@ -488,6 +564,20 @@ let test_validate _ =
       sinks: [
        { name: "Test" },
        { name: "Test" }
+      ]
+    }
+    |};
+  assert_parse_error
+    ~errors:[Error.TransformDuplicate "Test"]
+    {|
+    {
+      sources: [
+      ],
+      sinks: [
+      ],
+      transforms: [
+        { name: "Test" },
+        { name: "Test" }
       ]
     }
     |};
@@ -945,10 +1035,12 @@ let () =
          "implicit_sinks" >:: test_implicit_sinks;
          "invalid_sink" >:: test_invalid_sink;
          "invalid_source" >:: test_invalid_source;
+         "invalid_transform" >:: test_invalid_transform;
          "lineage_analysis" >:: test_lineage_analysis;
          "multiple_configurations" >:: test_multiple_configurations;
          "partial_sink_converter" >:: test_partial_sink_converter;
          "simple" >:: test_simple;
+         "transform" >:: test_transform;
          "validate" >:: test_validate;
          "matching_kinds" >:: test_matching_kinds;
        ]

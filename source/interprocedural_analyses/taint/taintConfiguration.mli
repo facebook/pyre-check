@@ -96,6 +96,7 @@ module Error : sig
       }
     | UnsupportedSource of string
     | UnsupportedSink of string
+    | UnsupportedTransform of string
     | UnexpectedCombinedSourceRule of Yojson.Safe.t
     | PartialSinkDuplicate of string
     | InvalidLabelMultiSink of {
@@ -108,6 +109,7 @@ module Error : sig
     | OptionDuplicate of string
     | SourceDuplicate of string
     | SinkDuplicate of string
+    | TransformDuplicate of string
     | FeatureDuplicate of string
   [@@deriving equal, show]
 

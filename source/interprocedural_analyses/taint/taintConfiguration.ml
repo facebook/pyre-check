@@ -148,6 +148,7 @@ module Error = struct
       }
     | UnsupportedSource of string
     | UnsupportedSink of string
+    | UnsupportedTransform of string
     | UnexpectedCombinedSourceRule of Json.t
     | PartialSinkDuplicate of string
     | InvalidLabelMultiSink of {
@@ -160,6 +161,7 @@ module Error = struct
     | OptionDuplicate of string
     | SourceDuplicate of string
     | SinkDuplicate of string
+    | TransformDuplicate of string
     | FeatureDuplicate of string
   [@@deriving equal]
 
@@ -195,6 +197,8 @@ module Error = struct
         Format.fprintf formatter "Unknown key `%s` encountered in section `%s`" key section
     | UnsupportedSource source -> Format.fprintf formatter "Unsupported taint source `%s`" source
     | UnsupportedSink sink -> Format.fprintf formatter "Unsupported taint sink `%s`" sink
+    | UnsupportedTransform transform ->
+        Format.fprintf formatter "Unsupported taint transform `%s`" transform
     | UnexpectedCombinedSourceRule json ->
         Format.fprintf
           formatter
@@ -220,6 +224,7 @@ module Error = struct
         Format.fprintf formatter "Multiple values were passed in for option `%s`" name
     | SourceDuplicate name -> Format.fprintf formatter "Duplicate entry for source: `%s`" name
     | SinkDuplicate name -> Format.fprintf formatter "Duplicate entry for sink: `%s`" name
+    | TransformDuplicate name -> Format.fprintf formatter "Duplicate entry for transform: `%s`" name
     | FeatureDuplicate name -> Format.fprintf formatter "Duplicate entry for feature: `%s`" name
 
 
@@ -242,6 +247,8 @@ module Error = struct
     | SourceDuplicate _ -> 16
     | SinkDuplicate _ -> 16
     | FeatureDuplicate _ -> 18
+    | UnsupportedTransform _ -> 19
+    | TransformDuplicate _ -> 20
 
 
   let show_kind = Format.asprintf "%a" pp_kind
@@ -420,6 +427,23 @@ let parse source_jsons =
     |> Result.combine_errors
     |> Result.map_error ~f:List.concat
   in
+  let parse_transform ~path ~section json =
+    check_keys
+      ~path
+      ~section
+      ~required_keys:["name"]
+      ~current_keys:(Json.Util.keys json)
+      ~valid_keys:["name"; "comment"]
+    >>= fun () ->
+    json_string_member ~path "name" json >>= fun name -> Ok (TaintTransform.Named name)
+  in
+  let parse_transforms (path, json) =
+    array_member ~path "transforms" json
+    >>= fun json ->
+    List.map ~f:(parse_transform ~path ~section:"transforms") json
+    |> Result.combine_errors
+    |> Result.map_error ~f:List.concat
+  in
   let parse_features (path, json) =
     array_member ~path "features" json
     >>= fun json ->
@@ -443,10 +467,17 @@ let parse source_jsons =
     AnnotationParser.parse_sink ~allowed:allowed_sinks sink
     |> Result.map_error ~f:(fun _ -> Error.create ~path ~kind:(Error.UnsupportedSink sink))
   in
-  let parse_rules ~allowed_sources ~allowed_sinks (path, json) =
+  let parse_transform_reference ~path ~allowed_transforms transform =
+    match
+      List.find allowed_transforms ~f:(TaintTransform.equal (TaintTransform.Named transform))
+    with
+    | Some transform -> Ok transform
+    | None -> Error (Error.create ~path ~kind:(Error.UnsupportedTransform transform))
+  in
+  let parse_rules ~allowed_sources ~allowed_sinks ~allowed_transforms (path, json) =
     let parse_rule json =
       let required_keys = ["name"; "code"; "sources"; "sinks"; "message_format"] in
-      let valid_keys = "oncall" :: "comment" :: required_keys in
+      let valid_keys = "oncall" :: "comment" :: "transforms" :: required_keys in
       check_keys
         ~path
         ~section:"rules"
@@ -466,6 +497,13 @@ let parse source_jsons =
       List.map ~f:(parse_sink_reference ~path ~allowed_sinks) sinks
       |> Result.combine_errors
       >>= fun sinks ->
+      (match member "transforms" json with
+      | `Null -> Ok []
+      | transforms -> json_string_list ~path ~section:"rules" transforms)
+      >>= fun transforms ->
+      List.map ~f:(parse_transform_reference ~path ~allowed_transforms) transforms
+      |> Result.combine_errors
+      >>= fun transforms ->
       json_string_member ~path "name" json
       >>= fun name ->
       json_string_member ~path "message_format" json
@@ -473,16 +511,7 @@ let parse source_jsons =
       json_integer_member ~path "code" json
       >>= fun code ->
       validate_code_uniqueness ~path code
-      >>| fun () ->
-      {
-        Rule.sources;
-        sinks;
-        (* TODO(T90698159): Support config parsing of transforms. *)
-        transforms = [];
-        name;
-        code;
-        message_format;
-      }
+      >>| fun () -> { Rule.sources; sinks; transforms; name; code; message_format }
     in
     array_member ~path "rules" json
     >>= fun rules ->
@@ -642,12 +671,19 @@ let parse source_jsons =
   |> Result.map_error ~f:List.concat
   >>| List.concat
   >>= fun sinks ->
+  List.map source_jsons ~f:parse_transforms
+  |> Result.combine_errors
+  |> Result.map_error ~f:List.concat
+  >>| List.concat
+  >>= fun transforms ->
   List.map source_jsons ~f:parse_features
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.concat
   >>= fun features ->
-  List.map source_jsons ~f:(parse_rules ~allowed_sources:sources ~allowed_sinks:sinks)
+  List.map
+    source_jsons
+    ~f:(parse_rules ~allowed_sources:sources ~allowed_sinks:sinks ~allowed_transforms:transforms)
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.concat
@@ -727,8 +763,7 @@ let parse source_jsons =
   {
     sources;
     sinks;
-    (* TODO(T90698159): Support config parsing of transforms. *)
-    transforms = [];
+    transforms;
     features;
     rules;
     partial_sink_converter;
@@ -750,7 +785,7 @@ let parse source_jsons =
   }
 
 
-let validate ({ sources; sinks; features; _ } as configuration) =
+let validate ({ sources; sinks; transforms; features; _ } as configuration) =
   let ensure_list_unique ~get_name ~get_error elements =
     let seen = String.Hash_set.create () in
     let ensure_unique element =
@@ -775,6 +810,10 @@ let validate ({ sources; sinks; features; _ } as configuration) =
         ~get_name:(fun { AnnotationParser.name; _ } -> name)
         ~get_error:(fun name -> Error.SinkDuplicate name)
         sinks;
+      ensure_list_unique
+        ~get_name:TaintTransform.show
+        ~get_error:(fun name -> Error.TransformDuplicate name)
+        transforms;
       ensure_list_unique
         ~get_name:Fn.id
         ~get_error:(fun name -> Error.FeatureDuplicate name)
