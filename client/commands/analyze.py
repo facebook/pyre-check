@@ -216,16 +216,6 @@ def _run_analyze_command(
             # Interpretation of the return code needs to be kept in sync with
             # `command/newAnalyzeCommand.ml`.
             if return_code == 0:
-                # TODO(T110634273): Remove this
-                model_validation_errors = parse_model_validation_errors(result.stdout)
-                if len(model_validation_errors) > 0:
-                    error_module.print_errors(
-                        model_validation_errors,
-                        output=output,
-                        error_kind="model verification",
-                    )
-                    return commands.ExitCode.FOUND_ERRORS
-
                 if forward_stdout:
                     log.stdout.write(result.stdout)
                 return commands.ExitCode.SUCCESS
