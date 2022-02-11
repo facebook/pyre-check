@@ -2580,12 +2580,7 @@ let test_call_graph_of_define context =
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
-                  ~call_targets:
-                    [
-                      (* TODO(T109867190): We should NOT create multiple calls to the same callee. *)
-                      CallTarget.create ~index:0 (`Function "isinstance");
-                      CallTarget.create ~index:1 (`Function "isinstance");
-                    ]
+                  ~call_targets:[CallTarget.create ~index:0 (`Function "isinstance")]
                   ~return_type:Type.bool
                   ())) );
         ( "17:8-17:15",
@@ -2623,9 +2618,8 @@ let test_call_graph_of_define context =
                (CallCallees.create
                   ~call_targets:
                     [
-                      (* TODO(T109867190): We should NOT create multiple calls to the same callee. *)
+                      (* Assigned index is 2 instead of 1, because we visit the if statement twice. *)
                       CallTarget.create ~index:2 (`Function "isinstance");
-                      CallTarget.create ~index:3 (`Function "isinstance");
                     ]
                   ~return_type:Type.bool
                   ())) );

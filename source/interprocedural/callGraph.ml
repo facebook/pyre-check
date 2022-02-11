@@ -24,6 +24,14 @@ module CallTarget = struct
 
   let target { target; _ } = target
 
+  let equal_ignoring_indices left right = equal left { right with index = left.index }
+
+  let dedup_and_sort targets =
+    targets
+    |> List.sort ~compare
+    |> List.remove_consecutive_duplicates ~which_to_keep:`First ~equal:equal_ignoring_indices
+
+
   let create
       ?(implicit_self = false)
       ?(implicit_dunder_call = false)
@@ -140,16 +148,16 @@ module CallCallees = struct
   let deduplicate
       { call_targets; new_targets; init_targets; return_type; higher_order_parameter; unresolved }
     =
-    let call_targets = List.dedup_and_sort ~compare:CallTarget.compare call_targets in
-    let new_targets = List.dedup_and_sort ~compare:CallTarget.compare new_targets in
-    let init_targets = List.dedup_and_sort ~compare:CallTarget.compare init_targets in
+    let call_targets = CallTarget.dedup_and_sort call_targets in
+    let new_targets = CallTarget.dedup_and_sort new_targets in
+    let init_targets = CallTarget.dedup_and_sort init_targets in
     let higher_order_parameter =
       match higher_order_parameter with
       | Some { HigherOrderParameter.index; call_targets; return_type } ->
           Some
             {
               HigherOrderParameter.index;
-              call_targets = List.dedup_and_sort ~compare:CallTarget.compare call_targets;
+              call_targets = CallTarget.dedup_and_sort call_targets;
               return_type;
             }
       | None -> None
@@ -205,8 +213,8 @@ module AttributeAccessCallees = struct
 
   let deduplicate { property_targets; global_targets; return_type; is_attribute } =
     {
-      property_targets = List.dedup_and_sort ~compare:CallTarget.compare property_targets;
-      global_targets = List.dedup_and_sort ~compare:CallTarget.compare global_targets;
+      property_targets = CallTarget.dedup_and_sort property_targets;
+      global_targets = CallTarget.dedup_and_sort global_targets;
       return_type;
       is_attribute;
     }
@@ -268,9 +276,7 @@ end
 module IdentifierCallees = struct
   type t = { global_targets: CallTarget.t list } [@@deriving eq, show { with_path = false }]
 
-  let deduplicate { global_targets } =
-    { global_targets = List.dedup_and_sort ~compare:CallTarget.compare global_targets }
-
+  let deduplicate { global_targets } = { global_targets = CallTarget.dedup_and_sort global_targets }
 
   let join { global_targets = left_global_targets } { global_targets = right_global_targets } =
     { global_targets = List.rev_append left_global_targets right_global_targets }
