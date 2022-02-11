@@ -190,7 +190,12 @@ module BuckBuildSystem = struct
             "number_of_user_changed_files", List.length paths;
             "number_of_updated_files", List.length changed_artifacts;
           ])
-        ~normals:(fun _ -> ["event_type", "rebuild"; "event_subtype", incremental_builder.name])
+        ~normals:(fun _ ->
+          [
+            "buck_builder_type", Buck.Builder.identifier_of state.builder;
+            "event_type", "rebuild";
+            "event_subtype", incremental_builder.name;
+          ])
         (fun () ->
           incremental_builder.run state.builder
           >>= fun {
@@ -226,7 +231,12 @@ module BuckBuildSystem = struct
           "number_of_user_changed_files", 0;
           "number_of_updated_files", Buck.BuildMap.artifact_count build_map;
         ])
-      ~normals:(fun _ -> ["event_type", "build"; "event_subtype", "cold_start"])
+      ~normals:(fun _ ->
+        [
+          "buck_builder_type", Buck.Builder.identifier_of builder;
+          "event_type", "build";
+          "event_subtype", "cold_start";
+        ])
       (fun () -> State.create_from_scratch ~builder ~targets ())
     >>= fun initial_state -> Lwt.return (initialize_from_state initial_state)
 
@@ -248,7 +258,12 @@ module BuckBuildSystem = struct
           "number_of_user_changed_files", 0;
           "number_of_updated_files", Buck.BuildMap.artifact_count build_map;
         ])
-      ~normals:(fun _ -> ["event_type", "build"; "event_subtype", "saved_state"])
+      ~normals:(fun _ ->
+        [
+          "buck_builder_type", Buck.Builder.identifier_of builder;
+          "event_type", "build";
+          "event_subtype", "saved_state";
+        ])
       (fun () ->
         let build_map =
           Buck.BuildMap.Partial.of_alist_exn serialized_build_map |> Buck.BuildMap.create

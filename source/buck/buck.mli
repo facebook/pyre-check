@@ -574,4 +574,9 @@ module Builder : sig
       The difference between this API and {!BuildMap.Indexed.lookup_artifact} is that the build map
       API only understands relative paths, while this API operates on full paths and takes care of
       relativizing/expanding the input/output paths against artifact/source root.*)
+
+  (** {1 Misc} *)
+
+  val identifier_of : t -> string
+  (** Return an identifier of the builder (for logging purpose). *)
 end

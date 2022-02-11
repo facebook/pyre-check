@@ -233,7 +233,6 @@ let log_exception caught_exception ~fatal ~origin =
 let buck_event ?(flush = false) ?(integers = []) ?(normals = []) () =
   let default_normals =
     [
-      "buck_builder_type", "new_server";
       "host", GlobalState.hostname;
       "user", GlobalState.username;
       "project_root", GlobalState.global_state.project_root;

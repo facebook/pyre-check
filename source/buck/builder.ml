@@ -263,6 +263,7 @@ type t = {
     IncrementalBuildResult.t Lwt.t;
   lookup_source: index:BuildMap.Indexed.t -> PyrePath.t -> PyrePath.t option;
   lookup_artifact: index:BuildMap.Indexed.t -> PyrePath.t -> PyrePath.t list;
+  identifier: string;
 }
 
 let create ~source_root ~artifact_root interface =
@@ -278,6 +279,7 @@ let create ~source_root ~artifact_root interface =
       incremental_build_with_unchanged_build_map ~source_root ~artifact_root;
     lookup_source = lookup_source ~source_root ~artifact_root;
     lookup_artifact = lookup_artifact ~source_root ~artifact_root;
+    identifier = "new_server";
   }
 
 
@@ -309,6 +311,7 @@ let create_v2 ~source_root ~artifact_root interface =
       incremental_build_with_unchanged_build_map ~source_root ~artifact_root;
     lookup_source = lookup_source ~source_root ~artifact_root;
     lookup_artifact = lookup_artifact ~source_root ~artifact_root;
+    identifier = "new_server_buck2";
   }
 
 
@@ -357,3 +360,5 @@ let incremental_build_with_unchanged_build_map
 let lookup_source ~index ~builder:{ lookup_source; _ } path = lookup_source ~index path
 
 let lookup_artifact ~index ~builder:{ lookup_artifact; _ } path = lookup_artifact ~index path
+
+let identifier_of { identifier; _ } = identifier
