@@ -40,12 +40,6 @@ include Taint.Result.Register (struct
       ()
 
 
-  let log_and_reraise_taint_model_exception exception_ =
-    Log.error "Error getting taint models.";
-    Log.error "%s" (Exn.to_string exception_);
-    raise exception_
-
-
   type model_query_data = {
     queries: ModelParser.Internal.ModelQuery.rule list;
     taint_configuration: TaintConfiguration.t;
@@ -72,54 +66,51 @@ include Taint.Result.Register (struct
         (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
         (module Analysis.TypeCheck.DummyContext)
     in
-    try
-      let models =
-        let callables =
-          Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:callables
-          |> List.filter_map ~f:(function
-                 | `Function _ as callable -> Some (callable :> Target.callable_t)
-                 | `Method _ as callable -> Some (callable :> Target.callable_t)
-                 | _ -> None)
+    let models =
+      let callables =
+        Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:callables
+        |> List.filter_map ~f:(function
+               | `Function _ as callable -> Some (callable :> Target.callable_t)
+               | `Method _ as callable -> Some (callable :> Target.callable_t)
+               | _ -> None)
+      in
+      TaintModelQuery.ModelQuery.apply_all_rules
+        ~resolution
+        ~scheduler
+        ~configuration:taint_configuration
+        ~rule_filter
+        ~rules:queries
+        ~callables
+        ~stubs
+        ~environment
+        ~models
+    in
+    let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
+    let add_obscure_sinks models =
+      let add_obscure_sink models callable =
+        let model =
+          Target.Map.find models callable
+          |> Option.value ~default:Model.empty_model
+          |> Model.add_obscure_sink ~resolution ~call_target:callable
+          |> Model.remove_obscureness
         in
-        TaintModelQuery.ModelQuery.apply_all_rules
-          ~resolution
-          ~scheduler
-          ~configuration:taint_configuration
-          ~rule_filter
-          ~rules:queries
-          ~callables
-          ~stubs
-          ~environment
-          ~models
+        Target.Map.set models ~key:callable ~data:model
       in
-      let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
-      let add_obscure_sinks models =
-        let add_obscure_sink models callable =
-          let model =
-            Target.Map.find models callable
-            |> Option.value ~default:Model.empty_model
-            |> Model.add_obscure_sink ~resolution ~call_target:callable
-            |> Model.remove_obscureness
-          in
-          Target.Map.set models ~key:callable ~data:model
-        in
-        stubs
-        |> Hash_set.filter ~f:(fun callable ->
-               Target.Map.find models callable >>| Model.is_obscure |> Option.value ~default:true)
-        |> Hash_set.fold ~f:add_obscure_sink ~init:models
-      in
-      let find_missing_flows =
-        find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
-      in
-      let models =
-        match find_missing_flows with
-        | Some Obscure -> models |> remove_sinks |> add_obscure_sinks
-        | Some Type -> models |> remove_sinks
-        | None -> models
-      in
-      { Interprocedural.AnalysisResult.initial_models = models; skip_overrides }
-    with
-    | exception_ -> log_and_reraise_taint_model_exception exception_
+      stubs
+      |> Hash_set.filter ~f:(fun callable ->
+             Target.Map.find models callable >>| Model.is_obscure |> Option.value ~default:true)
+      |> Hash_set.fold ~f:add_obscure_sink ~init:models
+    in
+    let find_missing_flows =
+      find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
+    in
+    let models =
+      match find_missing_flows with
+      | Some Obscure -> models |> remove_sinks |> add_obscure_sinks
+      | Some Type -> models |> remove_sinks
+      | None -> models
+    in
+    { Interprocedural.AnalysisResult.initial_models = models; skip_overrides }
 
 
   let parse_models_and_queries_from_sources
@@ -205,48 +196,43 @@ include Taint.Result.Register (struct
         ()
     in
     let add_models_and_queries_from_sources () =
-      try
-        let find_missing_flows =
-          find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
-        in
-        let taint_configuration =
-          TaintConfiguration.create
-            ~rule_filter
-            ~find_missing_flows
-            ~dump_model_query_results_path:dump_model_query_results
-            ~maximum_trace_length
-            ~maximum_tito_depth
-            ~taint_model_paths
-          |> TaintConfiguration.abort_on_error
-        in
-        TaintConfiguration.register taint_configuration;
-        let models, errors, skip_overrides, queries =
-          ModelParser.get_model_sources ~paths:taint_model_paths
-          |> create_models ~taint_configuration
-        in
-        ModelVerificationError.register errors;
-        let () =
-          if not (List.is_empty errors) then
-            (* Exit or log errors, depending on whether models need to be verified. *)
-            if not verify_models then begin
-              Log.error "Found %d model verification errors!" (List.length errors);
-              List.iter errors ~f:(fun error ->
-                  Log.error "%s" (ModelVerificationError.display error))
-            end
-            else begin
-              Yojson.Safe.pretty_to_string
-                (`Assoc ["errors", `List (List.map errors ~f:ModelVerificationError.to_json)])
-              |> Log.print "%s";
-              exit (Taint.ExitStatus.exit_code Taint.ExitStatus.ModelVerificationError)
-            end
-        in
-        {
-          initialize_result =
-            { Interprocedural.AnalysisResult.initial_models = models; skip_overrides };
-          query_data = Some { queries; taint_configuration };
-        }
-      with
-      | exception_ -> log_and_reraise_taint_model_exception exception_
+      let find_missing_flows =
+        find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
+      in
+      let taint_configuration =
+        TaintConfiguration.create
+          ~rule_filter
+          ~find_missing_flows
+          ~dump_model_query_results_path:dump_model_query_results
+          ~maximum_trace_length
+          ~maximum_tito_depth
+          ~taint_model_paths
+        |> TaintConfiguration.abort_on_error
+      in
+      TaintConfiguration.register taint_configuration;
+      let models, errors, skip_overrides, queries =
+        ModelParser.get_model_sources ~paths:taint_model_paths |> create_models ~taint_configuration
+      in
+      ModelVerificationError.register errors;
+      let () =
+        if not (List.is_empty errors) then
+          (* Exit or log errors, depending on whether models need to be verified. *)
+          if not verify_models then begin
+            Log.error "Found %d model verification errors!" (List.length errors);
+            List.iter errors ~f:(fun error -> Log.error "%s" (ModelVerificationError.display error))
+          end
+          else begin
+            Yojson.Safe.pretty_to_string
+              (`Assoc ["errors", `List (List.map errors ~f:ModelVerificationError.to_json)])
+            |> Log.print "%s";
+            exit (Taint.ExitStatus.exit_code Taint.ExitStatus.ModelVerificationError)
+          end
+      in
+      {
+        initialize_result =
+          { Interprocedural.AnalysisResult.initial_models = models; skip_overrides };
+        query_data = Some { queries; taint_configuration };
+      }
     in
     let ({ initialize_result = { initial_models = user_models; _ }; _ } as result) =
       add_models_and_queries_from_sources ()
