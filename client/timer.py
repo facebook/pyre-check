@@ -3,8 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import sys
 import time
-from typing import Callable
+from typing import Callable, Optional
 
 
 class Timer:
@@ -24,7 +25,8 @@ class Timer:
     start_time: int
 
     def __init__(
-        self, get_current_time_in_nanosecond: Callable[[], int] = time.perf_counter_ns
+        self,
+        get_current_time_in_nanosecond: Optional[Callable[[], int]] = None,
     ) -> None:
         """
         Initialize a Timer object. Starting time will be automatically reset to
@@ -39,7 +41,15 @@ class Timer:
             the recommendation is to use alternative clocks like
             :func:`time.process_time_ns` or :func:`time.thread_time_ns`.
         """
-        self.get_current_time_in_nanosecond = get_current_time_in_nanosecond
+        if get_current_time_in_nanosecond is not None:
+            self.get_current_time_in_nanosecond = get_current_time_in_nanosecond
+        else:
+            if (sys.version_info.major, sys.version_info.minor) >= (3, 7):
+                self.get_current_time_in_nanosecond = time.perf_counter_ns
+            else:
+                self.get_current_time_in_nanosecond = lambda: int(
+                    time.perf_counter() * 1e9
+                )
         self.reset()
 
     def reset(self) -> None:
