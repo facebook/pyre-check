@@ -1,0 +1,14 @@
+@generated
+Call dependencies
+taint_transform.$toplevel (fun) -> []
+taint_transform.a_to_b_no_issue (fun) -> [taint_transform.sink_b (fun) taint_transform.source_a (fun)]
+taint_transform.a_to_x_to_b_issue (fun) -> [taint_transform.sink_b (fun) taint_transform.source_a (fun) taint_transform.transform_x (fun)]
+taint_transform.a_to_y_to_z_to_b_issue (fun) -> [taint_transform.sink_b (fun) taint_transform.source_a (fun) taint_transform.transform_y (fun) taint_transform.transform_z (fun)]
+taint_transform.a_to_z_to_y_to_b_no_issue (fun) -> [taint_transform.sink_b (fun) taint_transform.source_a (fun) taint_transform.transform_y (fun) taint_transform.transform_z (fun)]
+taint_transform.taint_with_transform_x (fun) -> [taint_transform.source_a (fun) taint_transform.transform_x (fun)]
+taint_transform.taint_with_transform_x_obscure (fun) -> [taint_transform.source_a (fun) taint_transform.transform_x_obscure (fun)]
+taint_transform.taint_with_transform_x_skip_obscure (fun) -> [taint_transform.source_a (fun) taint_transform.transform_x_skip_obscure (fun)]
+taint_transform.taint_with_transform_yx (fun) -> [taint_transform.source_a (fun) taint_transform.transform_x (fun) taint_transform.transform_y (fun)]
+taint_transform.transform_x (fun) -> []
+taint_transform.transform_y (fun) -> []
+taint_transform.transform_z (fun) -> []

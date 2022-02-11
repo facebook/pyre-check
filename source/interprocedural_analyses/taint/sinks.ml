@@ -184,3 +184,7 @@ let apply_sanitize_sink_transforms transforms sink =
 
 
 let apply_ordered_transforms _transforms sink = sink
+
+let get_ordered_transforms = function
+  | Transform { local; global; _ } -> local.ordered @ global.ordered
+  | _ -> []

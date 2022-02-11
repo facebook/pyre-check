@@ -1,0 +1,370 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "taint_transform.a_to_x_to_b_issue",
+    "callable_line": 65,
+    "code": 123,
+    "line": 68,
+    "start": 11,
+    "end": 15,
+    "filename": "taint_transform.py",
+    "message": "[SourceA] transformed by [TransformX] to [SinkB]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "taint_transform.source_a" } ],
+                "kind": "TransformX@SourceA"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 67, "start": 23, "end": 28 } ],
+            "root": {
+              "filename": "taint_transform.py",
+              "line": 66,
+              "start": 12,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "taint_transform.sink_b" } ],
+                "kind": "SinkB"
+              }
+            ],
+            "root": {
+              "filename": "taint_transform.py",
+              "line": 68,
+              "start": 11,
+              "end": 15
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "tito" } ],
+    "master_handles": [
+      "taint_transform.a_to_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):8797d4879165d1d1386f471ab1fb93e2"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "taint_transform.a_to_y_to_z_to_b_issue",
+    "callable_line": 78,
+    "code": 124,
+    "line": 82,
+    "start": 11,
+    "end": 16,
+    "filename": "taint_transform.py",
+    "message": "[SourceA] transformed by [TransformY, TransformZ] to [SinkB]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "taint_transform.source_a" } ],
+                "kind": "TransformZ:TransformY@SourceA"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [
+              { "line": 80, "start": 23, "end": 28 },
+              { "line": 81, "start": 24, "end": 28 }
+            ],
+            "root": {
+              "filename": "taint_transform.py",
+              "line": 79,
+              "start": 12,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "taint_transform.sink_b" } ],
+                "kind": "SinkB"
+              }
+            ],
+            "root": {
+              "filename": "taint_transform.py",
+              "line": 82,
+              "start": 11,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "tito" } ],
+    "master_handles": [
+      "taint_transform.a_to_y_to_z_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):e5a8da0b9b8037467466ff05b61f4c6f"
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.sink_b",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [ { "kinds": [ { "kind": "SinkB" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.source_a",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "SourceA" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.taint_with_transform_x",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "taint_transform.source_a" } ],
+                "kind": "TransformX@SourceA"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 29, "start": 23, "end": 28 } ],
+            "root": {
+              "filename": "taint_transform.py",
+              "line": 28,
+              "start": 12,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.taint_with_transform_x_obscure",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "taint_transform.source_a" } ],
+                "kind": "SourceA"
+              },
+              {
+                "leaves": [ { "name": "taint_transform.source_a" } ],
+                "kind": "TransformX@SourceA"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 39, "start": 31, "end": 36 } ],
+            "root": {
+              "filename": "taint_transform.py",
+              "line": 38,
+              "start": 12,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.taint_with_transform_x_skip_obscure",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "taint_transform.source_a" } ],
+                "kind": "TransformX@SourceA"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 49, "start": 36, "end": 41 } ],
+            "root": {
+              "filename": "taint_transform.py",
+              "line": 48,
+              "start": 12,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.taint_with_transform_yx",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "taint_transform.source_a" } ],
+                "kind": "TransformY:TransformX@SourceA"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [
+              { "line": 55, "start": 23, "end": 28 },
+              { "line": 56, "start": 24, "end": 28 }
+            ],
+            "root": {
+              "filename": "taint_transform.py",
+              "line": 54,
+              "start": 12,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.transform_x",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "kind": "TransformX@LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.transform_x_obscure",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "kind": "TransformX@LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.transform_x_skip_obscure",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "kind": "TransformX@LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.transform_y",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "kind": "TransformY@LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.transform_z",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "kind": "TransformZ@LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}

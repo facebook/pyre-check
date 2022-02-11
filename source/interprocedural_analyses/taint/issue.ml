@@ -10,6 +10,7 @@ open Ast
 open TaintConfiguration
 open Domains
 open Interprocedural
+open Pyre
 
 module Flow = struct
   type t = {
@@ -17,6 +18,8 @@ module Flow = struct
     sink_taint: BackwardTaint.t;
   }
   [@@deriving show]
+
+  let bottom = { source_taint = ForwardTaint.bottom; sink_taint = BackwardTaint.bottom }
 
   let is_bottom { source_taint; sink_taint } =
     ForwardTaint.is_bottom source_taint || BackwardTaint.is_bottom sink_taint
@@ -246,6 +249,25 @@ module PartitionedFlow = struct
   }
 end
 
+(* Given a rule to find flows of the form:
+ *   source -> T1 -> T2 -> T3 -> ... -> Tn -> sink
+ * Following are different ways we can find matching flows:
+ *   source -> T1:T2:T3:...:Tn:sink
+ *   T1:source -> T2:T3:...:Tn:sink
+ *   T2:T1:source -> T3:...:Tn:sink
+ *   ...
+ *   Tn:...:T3:T2:T1:source -> sink
+ *)
+let transform_splits transforms =
+  let rec split ~result ~prefix ~suffix =
+    let result = (prefix, suffix) :: result in
+    match suffix with
+    | [] -> result
+    | next :: suffix -> split ~result ~prefix:(next :: prefix) ~suffix
+  in
+  split ~result:[] ~prefix:[] ~suffix:transforms
+
+
 let generate_issues ~define { Candidate.flows; location; sink_handles } =
   let partitions =
     let partition { Flow.source_taint; sink_taint } =
@@ -261,7 +283,7 @@ let generate_issues ~define { Candidate.flows; location; sink_handles } =
     List.map flows ~f:partition
   in
   let apply_rule_on_flow
-      { Rule.sources; sinks; _ }
+      { Rule.sources; sinks; transforms; _ }
       { PartitionedFlow.source_partition; sink_partition }
     =
     let add_source_taint source_taint source =
@@ -333,6 +355,27 @@ let generate_issues ~define { Candidate.flows; location; sink_handles } =
           { source_taint; sink_taint }
     in
     let partition_flow = apply_sanitizers { source_taint; sink_taint } in
+    let apply_ordered_transforms { Flow.source_taint; sink_taint } =
+      (* TODO(T90698159): Handle interaction with sanitizing transforms *)
+      let taint_by_source_transforms =
+        ForwardTaint.partition ForwardTaint.kind By source_taint ~f:Sources.get_ordered_transforms
+      in
+      let taint_by_sink_transforms =
+        BackwardTaint.partition BackwardTaint.kind By sink_taint ~f:Sinks.get_ordered_transforms
+      in
+      let find_flow source_transforms sink_transforms =
+        Map.Poly.find taint_by_source_transforms source_transforms
+        >>= fun source_taint ->
+        Map.Poly.find taint_by_sink_transforms sink_transforms
+        >>| fun sink_taint -> { Flow.source_taint; sink_taint }
+      in
+      let add_flow sofar (source_transforms, sink_transforms) =
+        find_flow source_transforms sink_transforms
+        |> Option.value_map ~default:sofar ~f:(Flow.join sofar)
+      in
+      transform_splits transforms |> List.fold ~init:Flow.bottom ~f:add_flow
+    in
+    let partition_flow = apply_ordered_transforms partition_flow in
     if Flow.is_bottom partition_flow then
       None
     else
@@ -453,11 +496,13 @@ let sinks_regexp = Str.regexp_string "{$sinks}"
 
 let sources_regexp = Str.regexp_string "{$sources}"
 
+let transforms_regexp = Str.regexp_string "{$transforms}"
+
 let get_name_and_detailed_message { code; flow; _ } =
   let configuration = TaintConfiguration.get () in
   match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) configuration.rules with
   | None -> failwith "issue with code that has no rule"
-  | Some { name; message_format; _ } ->
+  | Some { name; message_format; transforms; _ } ->
       let sources =
         Domains.ForwardTaint.kinds flow.source_taint
         |> List.map ~f:Sources.discard_sanitize_transforms
@@ -472,9 +517,11 @@ let get_name_and_detailed_message { code; flow; _ } =
         |> List.map ~f:Sinks.show
         |> String.concat ~sep:", "
       in
+      let transforms = List.map transforms ~f:TaintTransform.show |> String.concat ~sep:", " in
       let message =
         Str.global_replace sources_regexp sources message_format
         |> Str.global_replace sinks_regexp sinks
+        |> Str.global_replace transforms_regexp transforms
       in
       name, message
 
