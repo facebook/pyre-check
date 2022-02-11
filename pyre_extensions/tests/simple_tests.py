@@ -33,13 +33,13 @@ class BasicTestCase(unittest.TestCase):
         except Exception:
             self.fail("ParameterSpecification missing or broken")
 
-    def test_list_variadics(self) -> None:
+    def test_typevar_tuple_variadics(self) -> None:
         try:
-            from .. import ListVariadic
+            from .. import TypeVarTuple
             from ..type_variable_operators import Map
 
             TReturn = TypeVar("T")
-            Ts = ListVariadic("Ts")
+            Ts = TypeVarTuple("Ts")
 
             def better_map(
                 func: Callable[[Ts], TReturn], *args: Map[Iterable, Ts]
@@ -47,7 +47,7 @@ class BasicTestCase(unittest.TestCase):
                 return map(func, *args)
 
         except Exception:
-            self.fail("ListVariadics missing or broken")
+            self.fail("TypeVarTuple missing or broken")
 
     def test_none_throws(self) -> None:
         try:
@@ -67,37 +67,6 @@ class BasicTestCase(unittest.TestCase):
             safe_cast(Any, "string")
         except Exception:
             self.fail("safe_cast should not have runtime implications")
-
-    def test_generic(self) -> None:
-        try:
-            from typing import TypeVar  # usort: skip wants trailing whitespace
-            from .. import Generic, ListVariadic
-            from ..type_variable_operators import Concatenate
-
-            # permitted
-            class Foo(Generic):
-                pass
-
-            # permitted
-            class Bar(Generic[int]):
-                pass
-
-            # permitted
-            class Baz(Generic[42]):
-                pass
-
-            Shape = ListVariadic("Shape")
-            DType = TypeVar("DType")
-
-            # intended use
-            class Tensor(Generic[Concatenate[DType, Shape]]):
-                pass
-
-            # not handled in the backend ... yet
-            X = Tensor[int, 7, 8, 9]  # noqa
-
-        except Exception:
-            self.fail("Generic/GenericMeta/Concatenate missing or broken")
 
     def test_generic__metaclass_conflict(self) -> None:
         def try_generic_child_class() -> None:
