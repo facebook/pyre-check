@@ -4,9 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 from _torch import Tensor
-from pyre_extensions import ListVariadic
+from pyre_extensions import TypeVarTuple
 
-Shape = ListVariadic("Shape")
+Shape = TypeVarTuple("Shape")
 
 def softmax(t: Tensor[Shape], dim: int) -> Tensor[Shape]: ...
 def dropout(t: Tensor[Shape], p, training) -> Tensor[Shape]: ...

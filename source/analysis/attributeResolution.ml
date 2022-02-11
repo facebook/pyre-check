@@ -2983,7 +2983,7 @@ class base class_metadata_environment dependency =
                     (Type.Variable.Unary.create "$synthetic_attribute_resolution_variable")
                 in
                 match name with
-                (* This can't be expressed without IntVars, StrVars, and corresponding ListVariadic
+                (* This can't be expressed without IntVars, StrVars, and corresponding TypeVarTuple
                    variants of them *)
                 | "typing_extensions.Literal"
                 | "typing.Literal"

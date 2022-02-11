@@ -5,7 +5,7 @@
 
 from typing import Any, Generic, Tuple, TypeVar, overload
 
-from pyre_extensions import Add, ListVariadic
+from pyre_extensions import Add, TypeVarTuple
 from pyre_extensions.type_variable_operators import Concatenate
 from typing_extensions import Literal
 
@@ -14,8 +14,8 @@ B = TypeVar("B", bound=int)
 C = TypeVar("C", bound=int)
 D = TypeVar("D", bound=int)
 
-Shape = ListVariadic("Shape")
-Ts = ListVariadic("Ts")
+Shape = TypeVarTuple("Shape")
+Ts = TypeVarTuple("Ts")
 
 class Tensor(Generic[Shape]):
     def __init__(self, *shape: Shape): ...

@@ -8,13 +8,13 @@
 
 from typing import Generic, List, Sequence, Tuple, TypeVar, Union, overload
 
-from pyre_extensions import ListVariadic
+from pyre_extensions import TypeVarTuple
 from pyre_extensions.type_variable_operators import Concatenate
 from typing_extensions import Literal
 
 # New Variadic Type Variadic, a place-holder for an unknown number of
 # variables
-Shape = ListVariadic("Shape")
+Shape = TypeVarTuple("Shape")
 
 # ad-hoc dtypes for testing purpose
 DType = TypeVar("DType", int, float)

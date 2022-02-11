@@ -9,7 +9,7 @@
 from typing import TypeVar
 
 import torch
-from pyre_extensions import Generic, ListVariadic
+from pyre_extensions import Generic, TypeVarTuple
 from torch import cat, mm, randn, unsqueeze  # noqa
 
 from .nn import Linear  # noqa
@@ -17,7 +17,7 @@ from .nn import Linear  # noqa
 
 # New Variadic Type Variadic, a place-holder for an unknown number of
 # variables
-Shape = ListVariadic("Shape")
+Shape = TypeVarTuple("Shape")
 
 # ad-hoc dtypes for testing purpose
 DType = TypeVar("DType", int, float)

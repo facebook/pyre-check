@@ -7,10 +7,10 @@
 # pyre-strict
 
 import torch
-from pyre_extensions import Generic, ListVariadic
+from pyre_extensions import Generic, TypeVarTuple
 
 
-Shape = ListVariadic("Shape")
+Shape = TypeVarTuple("Shape")
 
 
 class Tensor(Generic[Shape], torch.Tensor):
