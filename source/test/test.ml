@@ -1450,35 +1450,32 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         _T1 = TypeVar("_T1")
         _T2 = TypeVar("_T2")
 
+        class TypeVarTuple:
+          def __init__(
+              self,
+              name: str,
+              *constraints: Type[Any],
+              bound: Union[None, Type[Any], str] = ...,
+              covariant: bool = ...,
+              contravariant: bool = ...,
+          ) -> None: ...
 
         def none_throws(optional: Optional[_T]) -> _T: ...
         def safe_cast(new_type: Type[_T], value: Any) -> _T: ...
         def ParameterSpecification(__name: str) -> List[Type]: ...
-        def ListVariadic(__name: str) -> Type: ...
         def classproperty(f: Any) -> Any: ...
         class Add(Generic[_A, _B], int): pass
         class Multiply(Generic[_A, _B], int): pass
         class Subtract(Generic[_A, _B], int): pass
         class Divide(Generic[_A, _B], int): pass
-        _Ts = ListVariadic("_Ts")
+        _Ts = TypeVarTuple("_Ts")
         class Length(Generic[_Ts], int): pass
         class Product(Generic[_Ts], int): pass
 
-        class TypeVarTuple:
-            def __init__(
-                self,
-                name: str,
-                *constraints: Type[Any],
-                bound: Union[None, Type[Any], str] = ...,
-                covariant: bool = ...,
-                contravariant: bool = ...,
-            ) -> None: ...
-
-        _Rs = TypeVarTuple("_Rs")
         class Unpack(Generic[_T]): ...
         class Broadcast(Generic[_T1, _T2]): ...
         class BroadcastError(Generic[_T1, _T2]): ...
-        class Compose(Generic[_Rs]): ...
+        class Compose(Generic[_Ts]): ...
         |}
     );
     ( "pyre_extensions/generic.pyi",
