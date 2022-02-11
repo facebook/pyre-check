@@ -481,13 +481,21 @@ end
  * ```
  *)
 module CallTargetIndexer = struct
-  type t = int Target.HashMap.t
+  type t = {
+    indices: int Target.HashMap.t;
+    mutable seen_targets: Target.Set.t;
+  }
 
-  let create () = Target.HashMap.create ()
+  let create () = { indices = Target.HashMap.create (); seen_targets = Target.Set.empty }
+
+  let generate_fresh_indices indexer =
+    Target.Set.iter (Target.HashMap.incr indexer.indices) indexer.seen_targets;
+    indexer.seen_targets <- Target.Set.empty
+
 
   let create_target indexer ~implicit_self ~implicit_dunder_call ~collapse_tito target =
-    let index = Target.HashMap.find indexer target |> Option.value ~default:0 in
-    Target.HashMap.incr indexer target;
+    let index = Target.HashMap.find indexer.indices target |> Option.value ~default:0 in
+    indexer.seen_targets <- Target.Set.add target indexer.seen_targets;
     { CallTarget.target; implicit_self; implicit_dunder_call; collapse_tito; index }
 end
 
@@ -1367,6 +1375,7 @@ struct
     type nonrec t = visitor_t
 
     let expression_visitor ({ resolution; assignment_target } as state) { Node.value; location } =
+      CallTargetIndexer.generate_fresh_indices call_indexer;
       let register_targets ~expression_identifier callees =
         Location.Table.update Context.callees_at_location location ~f:(function
             | None -> UnprocessedLocationCallees.singleton ~expression_identifier ~callees

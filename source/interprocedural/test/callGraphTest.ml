@@ -2569,14 +2569,9 @@ let test_call_graph_of_define context =
                (CallCallees.create
                   ~call_targets:
                     [
-                      (* TODO(T109867190): We should NOT create multiple calls to the same callee. *)
                       CallTarget.create
                         ~implicit_self:true
                         ~index:0
-                        (`Method { Target.class_name = "test.A"; method_name = "foo" });
-                      CallTarget.create
-                        ~implicit_self:true
-                        ~index:1
                         (`Method { Target.class_name = "test.A"; method_name = "foo" });
                     ]
                   ~return_type:Type.Any
@@ -2602,9 +2597,9 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:
                           true
-                          (* Assigned index is 3 instead of 2, because we use the control flow graph
+                          (* Assigned index is 2 instead of 1, because we use the control flow graph
                              traversal order. *)
-                        ~index:3
+                        ~index:2
                         (`Method { Target.class_name = "test.A"; method_name = "foo" });
                     ]
                   ~return_type:Type.Any
@@ -2617,7 +2612,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~index:2
+                        ~index:1
                         (`Method { Target.class_name = "test.A"; method_name = "foo" });
                     ]
                   ~return_type:Type.Any
@@ -2642,7 +2637,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~index:4
+                        ~index:3
                         (`Method { Target.class_name = "test.A"; method_name = "foo" });
                     ]
                   ~return_type:Type.Any
