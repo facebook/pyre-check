@@ -1195,7 +1195,7 @@ def statistics(
 
 @pyre.command()
 @click.argument(
-    "roots",
+    "paths_deprecated",
     type=str,
     nargs=-1,
 )
@@ -1207,18 +1207,29 @@ def statistics(
     type=str,
     help="In the output, make paths relative to directory specified.",
 )
+@click.option(
+    "--path",
+    "paths",
+    metavar="PATH",
+    type=str,
+    multiple=True,
+)
 @click.pass_context
 def coverage(
     context: click.Context,
-    roots: Iterable[str],
+    paths_deprecated: Iterable[str],
     working_directory: str,
+    paths: Iterable[str],
 ) -> int:
     """
     Collect line-level type coverage.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    return commands.coverage.run(configuration, working_directory, list(roots))
+    paths = list(paths)
+    paths_deprecated = list(paths_deprecated)
+    paths = paths if len(paths) > 0 else paths_deprecated
+    return commands.coverage.run(configuration, working_directory, paths)
 
 
 @pyre.command()
