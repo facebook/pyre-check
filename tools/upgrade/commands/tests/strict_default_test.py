@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Iterable, Optional
 from unittest.mock import MagicMock, mock_open, patch
 
-from ... import errors
 from ...repository import Repository
 from .. import strict_default
 from ..strict_default import (
