@@ -2535,6 +2535,120 @@ let test_call_graph_of_define context =
                   ())) );
       ]
     ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import Union
+
+      class A:
+          def foo():
+              pass
+
+      class B(A):
+          pass
+
+      class C(A):
+          pass
+
+      def test(x: Union[B, C]):
+          x.foo()
+          if isinstance(x, C):
+              x.foo()
+          else:
+              x.foo()
+
+          if isinstance(x, B):
+              x.foo()
+  |}
+    ~define_name:"test.test"
+    ~expected:
+      [
+        ( "15:4-15:11",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      (* TODO(T109867190): We should NOT create multiple calls to the same callee. *)
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~index:0
+                        (`Method { Target.class_name = "test.A"; method_name = "foo" });
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~index:1
+                        (`Method { Target.class_name = "test.A"; method_name = "foo" });
+                    ]
+                  ~return_type:Type.Any
+                  ())) );
+        ( "16:7-16:23",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      (* TODO(T109867190): We should NOT create multiple calls to the same callee. *)
+                      CallTarget.create ~index:0 (`Function "isinstance");
+                      CallTarget.create ~index:1 (`Function "isinstance");
+                    ]
+                  ~return_type:Type.bool
+                  ())) );
+        ( "17:8-17:15",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:
+                          true
+                          (* Assigned index is 3 instead of 2, because we use the control flow graph
+                             traversal order. *)
+                        ~index:3
+                        (`Method { Target.class_name = "test.A"; method_name = "foo" });
+                    ]
+                  ~return_type:Type.Any
+                  ())) );
+        ( "19:8-19:15",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~index:2
+                        (`Method { Target.class_name = "test.A"; method_name = "foo" });
+                    ]
+                  ~return_type:Type.Any
+                  ())) );
+        ( "21:7-21:23",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      (* TODO(T109867190): We should NOT create multiple calls to the same callee. *)
+                      CallTarget.create ~index:2 (`Function "isinstance");
+                      CallTarget.create ~index:3 (`Function "isinstance");
+                    ]
+                  ~return_type:Type.bool
+                  ())) );
+        ( "22:8-22:15",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~index:4
+                        (`Method { Target.class_name = "test.A"; method_name = "foo" });
+                    ]
+                  ~return_type:Type.Any
+                  ())) );
+      ]
+    ();
   ()
 
 
