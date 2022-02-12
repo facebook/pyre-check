@@ -1115,8 +1115,6 @@ let test_tito_side_effects context =
 
 
 let test_taint_in_taint_out_transform context =
-  (* TODO(T90698159): Add a test where TITO model applies multiple transform (think
-     TestTransform:DemoTransform@LocalReturn). *)
   assert_taint
     ~context
     ~models:

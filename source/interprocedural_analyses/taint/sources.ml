@@ -152,12 +152,17 @@ let apply_ordered_transforms transforms source =
   | ParametricSource _ ->
       Transform
         {
-          local = { TaintTransforms.ordered = transforms; sanitize = SanitizeTransform.Set.empty };
+          local =
+            {
+              TaintTransforms.ordered = List.rev transforms;
+              sanitize = SanitizeTransform.Set.empty;
+            };
           global = TaintTransforms.empty;
           base = source;
         }
   | Transform { local; global; base } ->
-      Transform { local = { local with ordered = transforms @ local.ordered }; global; base }
+      Transform
+        { local = { local with ordered = List.rev_append transforms local.ordered }; global; base }
 
 
 let get_ordered_transforms = function

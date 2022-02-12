@@ -183,7 +183,26 @@ let apply_sanitize_sink_transforms transforms sink =
   | _ -> sink
 
 
-let apply_ordered_transforms _transforms sink = sink
+let apply_ordered_transforms transforms sink =
+  match sink with
+  | Attach
+  | AddFeatureToArgument ->
+      sink
+  | PartialSink _
+  | TriggeredPartialSink _
+  | LocalReturn
+  | NamedSink _
+  | ParametricSink _
+  | ParameterUpdate _ ->
+      Transform
+        {
+          local = { TaintTransforms.ordered = transforms; sanitize = SanitizeTransform.Set.empty };
+          global = TaintTransforms.empty;
+          base = sink;
+        }
+  | Transform { local; global; base } ->
+      Transform { local = { local with ordered = transforms @ local.ordered }; global; base }
+
 
 let get_ordered_transforms = function
   | Transform { local; global; _ } -> local.ordered @ global.ordered
