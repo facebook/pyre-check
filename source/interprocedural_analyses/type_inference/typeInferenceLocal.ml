@@ -479,30 +479,37 @@ module State (Context : Context) = struct
              | _ -> true)
       |> Reference.create
     in
-    let reset_parameter index resolution { Node.value = { Parameter.name; value; annotation }; _ } =
+    let update_parameter index resolution { Node.value = { Parameter.name; value; annotation }; _ } =
       match index, parent with
       | 0, Some _ when Define.is_method define && not (Define.is_static_method define) -> resolution
-      | _ ->
-          let reset =
-            match annotation, value with
-            | Some annotation, None
-              when Type.is_any
-                     (GlobalResolution.parse_annotation
-                        (Resolution.global_resolution resolution)
-                        annotation) ->
-                true
-            | None, None -> true
-            | _ -> false
-          in
-          if reset then
+      | _ -> (
+          let create_new_local ~annotation =
             Resolution.new_local
               resolution
               ~reference:(make_parameter_name name)
-              ~annotation:(Annotation.create_mutable Type.Bottom)
-          else
-            resolution
+              ~annotation:(Annotation.create_mutable annotation)
+          in
+          match annotation, value with
+          | Some annotation, _
+            when Type.is_any
+                   (GlobalResolution.parse_annotation
+                      (Resolution.global_resolution resolution)
+                      annotation) ->
+              let annotation =
+                value
+                >>| Resolution.resolve_expression_to_type resolution
+                >>| Type.weaken_literals
+                |> Option.value ~default:Type.Bottom
+              in
+              create_new_local ~annotation
+          | None, None -> create_new_local ~annotation:Type.Bottom
+          | None, Some value ->
+              create_new_local
+                ~annotation:
+                  (value |> Resolution.resolve_expression_to_type resolution |> Type.weaken_literals)
+          | _ -> resolution)
     in
-    Value { state with resolution = List.foldi ~init:resolution ~f:reset_parameter parameters }
+    Value { state with resolution = List.foldi ~init:resolution ~f:update_parameter parameters }
 
 
   let initial_backward ~forward =

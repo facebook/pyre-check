@@ -627,6 +627,20 @@ let test_inferred_function_parameters context =
     |}
     ~target:"test.foo"
     ~expected:(single_parameter ~default:"5" "int");
+  check_inference_results
+    {|
+      def foo(x = 5) -> None:
+          return
+    |}
+    ~target:"test.foo"
+    ~expected:(single_parameter ~default:"5" "int");
+  check_inference_results
+    {|
+      def foo(x: typing.Any = 5) -> None:
+          return
+    |}
+    ~target:"test.foo"
+    ~expected:(single_parameter ~default:"5" "int");
   (* TODO(T84365830): Ensure we correctly qualify inferred parameter types. *)
   check_inference_results
     {|
