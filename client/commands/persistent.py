@@ -14,6 +14,8 @@ import tempfile
 import traceback
 from pathlib import Path
 from typing import (
+    TypeVar,
+    Type,
     Union,
     Optional,
     AsyncIterator,
@@ -487,15 +489,6 @@ class PathTypeInfo:
         )
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
-@dataclasses.dataclass(frozen=True)
-class QueryTypesResponse:
-    response: List[PathTypeInfo]
-
-
 async def _send_query_request(
     output_channel: connection.TextWriter, query_text: str
 ) -> None:
@@ -523,8 +516,38 @@ async def _receive_query_response(
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
+class QueryTypesResponse:
+    response: List[PathTypeInfo]
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
 class QueryModulesOfPathResponse:
     response: List[str]
+
+
+_T = TypeVar("_T")
+
+
+def _interpret_response(
+    response: query.Response, response_type: Type[_T]
+) -> Optional[_T]:
+    try:
+        # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
+        return response_type.from_dict(response.payload)
+    except (
+        KeyError,
+        ValueError,
+        dataclasses_json.mm.ValidationError,
+    ) as exception:
+        LOG.info(
+            f"When interpretting {response.payload} as {response_type.__name__} "
+            f"got: {type(exception).__name__}({exception})"
+        )
+        return None
 
 
 @dataclasses.dataclass
@@ -1037,23 +1060,25 @@ class PyreQueryHandler(connection.BackgroundTask):
             )
             return None
 
+    async def _query_and_interpret_response(
+        self, query_text: str, socket_path: Path, response_type: Type[_T]
+    ) -> Optional[_T]:
+        query_response = await self._query(query_text, socket_path)
+        if query_response is None:
+            return None
+        else:
+            return _interpret_response(query_response, response_type)
+
     async def _query_types(
         self, paths: List[Path], socket_path: Path
     ) -> Optional[Dict[Path, LocationTypeLookup]]:
         path_string = ", ".join(f"'{path}'" for path in paths)
         query_text = f"types({path_string})"
-        query_response = await self._query(query_text, socket_path)
+        query_types_response = await self._query_and_interpret_response(
+            query_text, socket_path, QueryTypesResponse
+        )
 
-        if query_response is None:
-            return None
-
-        try:
-            # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
-            query_types_response: QueryTypesResponse = QueryTypesResponse.from_dict(
-                query_response.payload
-            )
-        except (KeyError, ValueError, dataclasses_json.mm.ValidationError):
-            LOG.info(f"Failed to interpret {query_response.payload} as types response")
+        if query_types_response is None:
             return None
 
         return {
@@ -1077,16 +1102,9 @@ class PyreQueryHandler(connection.BackgroundTask):
         path: Path,
         socket_path: Path,
     ) -> Optional[QueryModulesOfPathResponse]:
-        query_text = f"modules_of_path('{path}')"
-        query_response = await self._query(query_text, socket_path)
-        if query_response is None:
-            return None
-        try:
-            # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
-            return QueryModulesOfPathResponse.from_dict(query_response.payload)
-        except (KeyError, ValueError, dataclasses_json.mm.ValidationError):
-            LOG.info(f"Failed to interpret {query_response.payload} as types response")
-            return None
+        return await self._query_and_interpret_response(
+            f"modules_of_path('{path}')", socket_path, QueryModulesOfPathResponse
+        )
 
     async def _query_is_typechecked(
         self,
