@@ -357,6 +357,12 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(
             PartialConfiguration.from_string(
+                json.dumps({"pysa_version": "abc"})
+            ).pysa_version_hash,
+            "abc",
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
                 json.dumps({"python_version": "3"})
             ).python_version,
             PythonVersion(major=3, minor=0, micro=0),
@@ -530,6 +536,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"targets": "abc"}))
         assert_raises(json.dumps({"typeshed": ["abc"]}))
         assert_raises(json.dumps({"version": 123}))
+        assert_raises(json.dumps({"pysa_version": 123}))
         assert_raises(json.dumps({"python_version": "abc"}))
         assert_raises(json.dumps({"python_version": 42}))
         assert_raises(json.dumps({"shared_memory": "abc"}))

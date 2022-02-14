@@ -499,6 +499,7 @@ class PartialConfiguration:
     number_of_workers: Optional[int] = None
     oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
+    pysa_version_hash: Optional[str] = None
     python_version: Optional[PythonVersion] = None
     shared_memory: SharedMemory = SharedMemory()
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
@@ -559,6 +560,7 @@ class PartialConfiguration:
             number_of_workers=arguments.number_of_workers,
             oncall=None,
             other_critical_files=[],
+            pysa_version_hash=None,
             python_version=(
                 PythonVersion.from_string(python_version_string)
                 if python_version_string is not None
@@ -760,6 +762,9 @@ class PartialConfiguration:
                 other_critical_files=ensure_string_list(
                     configuration_json, "critical_files"
                 ),
+                pysa_version_hash=ensure_option_type(
+                    configuration_json, "pysa_version", str
+                ),
                 python_version=python_version,
                 shared_memory=shared_memory,
                 search_path=search_path,
@@ -857,6 +862,7 @@ class PartialConfiguration:
             other_critical_files=[
                 expand_relative_path(root, path) for path in self.other_critical_files
             ],
+            pysa_version_hash=self.pysa_version_hash,
             python_version=self.python_version,
             shared_memory=self.shared_memory,
             search_path=[path.expand_relative_root(root) for path in self.search_path],
@@ -938,6 +944,9 @@ def merge_partial_configurations(
         other_critical_files=prepend_base(
             base.other_critical_files, override.other_critical_files
         ),
+        pysa_version_hash=overwrite_base(
+            base.pysa_version_hash, override.pysa_version_hash
+        ),
         python_version=overwrite_base(base.python_version, override.python_version),
         shared_memory=SharedMemory(
             heap_size=overwrite_base(
@@ -992,6 +1001,7 @@ class Configuration:
     number_of_workers: Optional[int] = None
     oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
+    pysa_version_hash: Optional[str] = None
     python_version: Optional[PythonVersion] = None
     shared_memory: SharedMemory = SharedMemory()
     relative_local_root: Optional[str] = None
@@ -1037,6 +1047,7 @@ class Configuration:
             number_of_workers=partial_configuration.number_of_workers,
             oncall=partial_configuration.oncall,
             other_critical_files=partial_configuration.other_critical_files,
+            pysa_version_hash=partial_configuration.pysa_version_hash,
             python_version=partial_configuration.python_version,
             shared_memory=partial_configuration.shared_memory,
             relative_local_root=relative_local_root,
@@ -1079,6 +1090,7 @@ class Configuration:
         logger = self.logger
         number_of_workers = self.number_of_workers
         oncall = self.oncall
+        pysa_version_hash = self.pysa_version_hash
         python_version = self.python_version
         relative_local_root = self.relative_local_root
         source_directories = self.source_directories
@@ -1111,6 +1123,11 @@ class Configuration:
             **({"oncall": oncall} if oncall is not None else {}),
             **({"workers": number_of_workers} if number_of_workers is not None else {}),
             "other_critical_files": list(self.other_critical_files),
+            **(
+                {"pysa_version_hash": pysa_version_hash}
+                if pysa_version_hash is not None
+                else {}
+            ),
             **(
                 {"python_version": python_version.to_string()}
                 if python_version is not None
@@ -1213,6 +1230,7 @@ class Configuration:
             number_of_workers=self.number_of_workers,
             oncall=self.oncall,
             other_critical_files=self.other_critical_files,
+            pysa_version_hash=self.pysa_version_hash,
             python_version=self.python_version,
             shared_memory=self.shared_memory,
             relative_local_root=self.relative_local_root,
