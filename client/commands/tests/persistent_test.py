@@ -1118,7 +1118,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         self.assertEqual(result, None)
 
     @setup.async_test
-    async def test_type_coverage_query(self) -> None:
+    async def test_query_type_coverage(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
@@ -1130,42 +1130,77 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 server_start_options_reader=server_start_options_reader,
                 client_output_channel=TextWriter(bytes_writer),
             )
-            await pyre_query_manager._handle_type_coverage_query(
-                TypeCoverageQuery(id=1, path=test_path), server_start_options_reader()
+            strict = False
+            input_channel = create_memory_text_reader(
+                '["Query", {"response": ["test"]}]\n'
             )
-            # A diagnostic update is sent via the output channel
-            self.assertEqual(len(bytes_writer.items()), 1)
-            self.assertIn(b"Consider adding type annotations", bytes_writer.items()[0])
-            self.assertNotIn(b"100.0", bytes_writer.items()[0])
+            memory_bytes_writer = MemoryBytesWriter()
+            output_channel = TextWriter(memory_bytes_writer)
+            result = await pyre_query_manager._query_type_coverage(
+                test_path, strict, input_channel, output_channel
+            )
+            self.assertEqual(len(memory_bytes_writer.items()), 1)
+            self.assertTrue(
+                memory_bytes_writer.items()[0].startswith(
+                    b'["Query", "modules_of_path('
+                )
+            )
+            self.assertTrue(result is not None)
+            self.assertEqual(len(result.uncovered_ranges), 1)
+            self.assertTrue(result.covered_percent < 100.0)
 
     @setup.async_test
-    async def test_type_coverage_request_strict(self) -> None:
+    async def test_query_type_coverage__bad_json(self) -> None:
+        pyre_query_manager = PyreQueryHandler(
+            state=PyreQueryState(),
+            server_start_options_reader=_fake_option_reader(),
+            client_output_channel=TextWriter(MemoryBytesWriter()),
+        )
+        input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
+        output_channel = TextWriter(MemoryBytesWriter())
+        result = await pyre_query_manager._query_type_coverage(
+            Path("test.py"), False, input_channel, output_channel
+        )
+        self.assertTrue(result is None)
+
+    @setup.async_test
+    async def test_query_type_coverage__strict(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
             tmpfile.flush()
             test_path = Path(tmpfile.name)
-            bytes_writer = MemoryBytesWriter()
-            server_start_options_reader = _create_server_start_options_reader(
-                binary="/bin/pyre",
-                server_identifier="foo",
-                start_arguments=start.Arguments(
-                    base_arguments=backend_arguments.BaseArguments(
-                        source_paths=backend_arguments.SimpleSourcePath(),
-                        log_path="/log/path",
-                        global_root="/global/root",
-                    )
-                ),
-                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
-                strict_defualt=True,
-            )
             pyre_query_manager = PyreQueryHandler(
                 state=PyreQueryState(),
-                server_start_options_reader=server_start_options_reader,
-                client_output_channel=TextWriter(bytes_writer),
+                server_start_options_reader=_fake_option_reader(),
+                client_output_channel=TextWriter(MemoryBytesWriter()),
             )
-            await pyre_query_manager._handle_type_coverage_query(
-                TypeCoverageQuery(id=1, path=test_path), server_start_options_reader()
+            strict = True
+            input_channel = create_memory_text_reader(
+                '["Query", {"response": ["test"]}]\n'
             )
-            # A diagnostic update is sent via the output channel, with 100% coverage.
-            self.assertEqual(len(bytes_writer.items()), 1)
-            self.assertIn(b"100.0", bytes_writer.items()[0])
+            output_channel = TextWriter(MemoryBytesWriter())
+            result = await pyre_query_manager._query_type_coverage(
+                test_path, strict, input_channel, output_channel
+            )
+            self.assertTrue(result is not None)
+            self.assertEqual(len(result.uncovered_ranges), 0)
+            self.assertEqual(result.covered_percent, 100.0)
+
+    @setup.async_test
+    async def test_query_type_coverage__not_typechecked(self) -> None:
+        pyre_query_manager = PyreQueryHandler(
+            state=PyreQueryState(),
+            server_start_options_reader=_fake_option_reader(),
+            client_output_channel=TextWriter(MemoryBytesWriter()),
+        )
+        input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
+        output_channel = TextWriter(MemoryBytesWriter())
+        result = await pyre_query_manager._query_type_coverage(
+            Path("test.py"), False, input_channel, output_channel
+        )
+        self.assertTrue(result is not None)
+        self.assertEqual(result.covered_percent, 0.0)
+        self.assertEqual(len(result.uncovered_ranges), 1)
+        self.assertEqual(
+            result.uncovered_ranges[0].message, "This file is not type checked by Pyre."
+        )
