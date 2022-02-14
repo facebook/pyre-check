@@ -504,21 +504,14 @@ async def _send_query_request(
     await output_channel.write(f"{query_message}\n")
 
 
-async def _receive_query_types_response(
+async def _receive_query_response(
     input_channel: connection.TextReader,
-) -> Optional[QueryTypesResponse]:
+) -> Optional[query.Response]:
     async with _read_server_response(input_channel) as raw_response:
         LOG.debug(f"Received `{log.truncate(raw_response, 400)}`")
         try:
-            payload = query.parse_query_response(raw_response).payload
-            # pyre-ignore[16]: Pyre does not understand dataclasses-json.
-            return QueryTypesResponse.from_dict(payload)
-        except (
-            KeyError,
-            ValueError,
-            query.InvalidQueryResponse,
-            dataclasses_json.mm.ValidationError,
-        ) as exception:
+            return query.parse_query_response(raw_response)
+        except query.InvalidQueryResponse as exception:
             LOG.info(
                 f"Failed to parse json {raw_response} due to exception: {exception}"
             )
@@ -532,27 +525,6 @@ async def _receive_query_types_response(
 @dataclasses.dataclass(frozen=True)
 class QueryModulesOfPathResponse:
     response: List[str]
-
-
-async def _receive_and_parse_query_modules_of_path_response(
-    input_channel: connection.TextReader,
-) -> Optional[QueryModulesOfPathResponse]:
-    async with _read_server_response(input_channel) as raw_response:
-        LOG.debug(f"Received `{log.truncate(raw_response, 400)}`")
-        try:
-            payload = query.parse_query_response(raw_response).payload
-            # pyre-ignore[16]: Pyre does not understand dataclasses-json.
-            return QueryModulesOfPathResponse.from_dict(payload)
-        except (
-            KeyError,
-            ValueError,
-            query.InvalidQueryResponse,
-            dataclasses_json.mm.ValidationError,
-        ) as exception:
-            LOG.info(
-                f"Failed to parse json {raw_response} due to exception: {exception}"
-            )
-            return None
 
 
 @dataclasses.dataclass
@@ -1047,19 +1019,41 @@ class PyreQueryHandler(connection.BackgroundTask):
         self.server_start_options_reader = server_start_options_reader
         self.client_output_channel = client_output_channel
 
+    async def _query(
+        self, query_text: str, socket_path: Path
+    ) -> Optional[query.Response]:
+        LOG.info(f"Querying for `{query_text}`")
+        try:
+            async with connection.connect_in_text_mode(socket_path) as (
+                input_channel,
+                output_channel,
+            ):
+                await _send_query_request(output_channel, query_text)
+                return await _receive_query_response(input_channel)
+        except connection.ConnectionFailure:
+            LOG.error(
+                "Could not establish connection with an existing Pyre server "
+                f"at {socket_path}."
+            )
+            return None
+
     async def _query_types(
-        self,
-        paths: List[Path],
-        input_channel: connection.TextReader,
-        output_channel: connection.TextWriter,
+        self, paths: List[Path], socket_path: Path
     ) -> Optional[Dict[Path, LocationTypeLookup]]:
         path_string = ", ".join(f"'{path}'" for path in paths)
         query_text = f"types({path_string})"
-        LOG.info(f"Querying for `{query_text}`")
-        await _send_query_request(output_channel, query_text)
-        query_types_response = await _receive_query_types_response(input_channel)
+        query_response = await self._query(query_text, socket_path)
 
-        if query_types_response is None:
+        if query_response is None:
+            return None
+
+        try:
+            # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
+            query_types_response: QueryTypesResponse = QueryTypesResponse.from_dict(
+                query_response.payload
+            )
+        except (KeyError, ValueError, dataclasses_json.mm.ValidationError):
+            LOG.info(f"Failed to interpret {query_response.payload} as types response")
             return None
 
         return {
@@ -1070,62 +1064,36 @@ class PyreQueryHandler(connection.BackgroundTask):
     async def _update_types_for_paths(
         self,
         paths: List[Path],
-        server_start_options: "PyreServerStartOptions",
+        socket_path: Path,
     ) -> None:
-        if (
-            server_start_options.ide_features is None
-            or not server_start_options.ide_features.is_hover_enabled()
-        ):
-            return
-
-        server_identifier = server_start_options.server_identifier
-        start_arguments = server_start_options.start_arguments
-        local_root = start_arguments.base_arguments.relative_local_root
-        socket_path = server_connection.get_default_socket_path(
-            project_root=Path(start_arguments.base_arguments.global_root),
-            relative_local_root=Path(local_root) if local_root else None,
-        )
-        try:
-            async with connection.connect_in_text_mode(socket_path) as (
-                input_channel,
-                output_channel,
-            ):
-                new_path_to_location_type_dict = await self._query_types(
-                    paths, input_channel, output_channel
-                )
-        except connection.ConnectionFailure:
-            LOG.error(
-                "Could not establish connection with an existing Pyre server."
-                f" Exiting the Pyre query handler: `{server_identifier}`.",
-            )
-            return None
-
+        new_path_to_location_type_dict = await self._query_types(paths, socket_path)
         if new_path_to_location_type_dict is None:
             return
-
         for path, location_type_lookup in new_path_to_location_type_dict.items():
             self.state.path_to_location_type_lookup[path] = location_type_lookup
 
     async def _query_modules_of_path(
         self,
         path: Path,
-        input_channel: connection.TextReader,
-        output_channel: connection.TextWriter,
+        socket_path: Path,
     ) -> Optional[QueryModulesOfPathResponse]:
         query_text = f"modules_of_path('{path}')"
-        LOG.info(f"Querying for `{query_text}`")
-        await _send_query_request(output_channel, query_text)
-        return await _receive_and_parse_query_modules_of_path_response(input_channel)
+        query_response = await self._query(query_text, socket_path)
+        if query_response is None:
+            return None
+        try:
+            # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
+            return QueryModulesOfPathResponse.from_dict(query_response.payload)
+        except (KeyError, ValueError, dataclasses_json.mm.ValidationError):
+            LOG.info(f"Failed to interpret {query_response.payload} as types response")
+            return None
 
     async def _query_is_typechecked(
         self,
         path: Path,
-        input_channel: connection.TextReader,
-        output_channel: connection.TextWriter,
+        socket_path: Path,
     ) -> Optional[bool]:
-        response = await self._query_modules_of_path(
-            path, input_channel, output_channel
-        )
+        response = await self._query_modules_of_path(path, socket_path)
         if response is None:
             return None
         else:
@@ -1135,12 +1103,9 @@ class PyreQueryHandler(connection.BackgroundTask):
         self,
         path: Path,
         strict_default: bool,
-        input_channel: connection.TextReader,
-        output_channel: connection.TextWriter,
+        socket_path: Path,
     ) -> Optional[lsp.TypeCoverageResult]:
-        is_typechecked = await self._query_is_typechecked(
-            path, input_channel, output_channel
-        )
+        is_typechecked = await self._query_is_typechecked(path, socket_path)
         if is_typechecked is None:
             return None
         elif is_typechecked:
@@ -1149,50 +1114,48 @@ class PyreQueryHandler(connection.BackgroundTask):
             return file_not_typechecked_coverage_result()
 
     async def _handle_type_coverage_query(
-        self, query: TypeCoverageQuery, server_start_options: "PyreServerStartOptions"
+        self,
+        query: TypeCoverageQuery,
+        strict_default: bool,
+        socket_path: Path,
     ) -> None:
-        server_identifier = server_start_options.server_identifier
+        type_coverage_result = await self._query_type_coverage(
+            query.path,
+            strict_default,
+            socket_path,
+        )
+        if type_coverage_result is not None:
+            await lsp.write_json_rpc(
+                self.client_output_channel,
+                json_rpc.SuccessResponse(
+                    id=query.id,
+                    # pyre-ignore[16]: Pyre does not understand
+                    # `dataclasses_json`.
+                    result=type_coverage_result.to_dict(),
+                ),
+            )
+
+    async def _run(self, server_start_options: "PyreServerStartOptions") -> None:
         start_arguments = server_start_options.start_arguments
         local_root = start_arguments.base_arguments.relative_local_root
         socket_path = server_connection.get_default_socket_path(
             project_root=Path(start_arguments.base_arguments.global_root),
             relative_local_root=Path(local_root) if local_root else None,
         )
-        try:
-            async with connection.connect_in_text_mode(socket_path) as (
-                input_channel,
-                output_channel,
-            ):
-                type_coverage_result = await self._query_type_coverage(
-                    query.path,
-                    server_start_options.strict_default,
-                    input_channel,
-                    output_channel,
-                )
-                if type_coverage_result is not None:
-                    await lsp.write_json_rpc(
-                        self.client_output_channel,
-                        json_rpc.SuccessResponse(
-                            id=query.id,
-                            # pyre-ignore[16]: Pyre does not understand
-                            # `dataclasses_json`.
-                            result=type_coverage_result.to_dict(),
-                        ),
-                    )
-        except connection.ConnectionFailure:
-            LOG.error(
-                "Could not establish connection with an existing Pyre server."
-                f" Exiting the Pyre query handler: `{server_identifier}`.",
-            )
-            return None
-
-    async def _run(self, server_start_options: "PyreServerStartOptions") -> None:
+        strict_default = server_start_options.strict_default
+        type_queries_enabled = (
+            server_start_options.ide_features is not None
+            and server_start_options.ide_features.is_hover_enabled()
+        )
         while True:
             query = await self.state.queries.get()
             if isinstance(query, TypesQuery):
-                await self._update_types_for_paths([query.path], server_start_options)
+                if type_queries_enabled:
+                    await self._update_types_for_paths([query.path], socket_path)
             elif isinstance(query, TypeCoverageQuery):
-                await self._handle_type_coverage_query(query, server_start_options)
+                await self._handle_type_coverage_query(
+                    query, strict_default, socket_path
+                )
 
     def read_server_start_options(self) -> "PyreServerStartOptions":
         try:

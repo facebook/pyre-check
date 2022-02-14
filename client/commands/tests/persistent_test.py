@@ -6,8 +6,10 @@
 import asyncio
 import json
 import tempfile
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Sequence, Iterable, Optional
+from typing import Iterator, Sequence, Iterable, Optional
+from unittest.mock import patch, CallableMixin
 
 import testslide
 from libcst.metadata import CodeRange, CodePosition
@@ -15,7 +17,12 @@ from libcst.metadata import CodeRange, CodePosition
 from ... import json_rpc, error, configuration as configuration_module
 from ...coverage_collector import CoveredAndUncoveredLines
 from ...tests import setup
-from .. import language_server_protocol as lsp, start, backend_arguments
+from .. import (
+    language_server_protocol as lsp,
+    start,
+    backend_arguments,
+    async_server_connection,
+)
 from ..async_server_connection import (
     TextReader,
     TextWriter,
@@ -1004,6 +1011,18 @@ class PyreQueryStateTest(testslide.TestCase):
         )
 
 
+@contextmanager
+def patch_connect_in_text_mode(
+    input_channel: TextReader, output_channel: TextWriter
+) -> Iterator[CallableMixin]:
+    with patch.object(async_server_connection, "connect_in_text_mode") as mock:
+        mock.return_value.__aenter__.return_value = (
+            input_channel,
+            output_channel,
+        )
+        yield mock
+
+
 class PyreQueryHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_types(self) -> None:
@@ -1066,9 +1085,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
         output_channel = TextWriter(memory_bytes_writer)
 
-        result = await pyre_query_manager._query_types(
-            [Path("test.py")], input_channel, output_channel
-        )
+        with patch_connect_in_text_mode(input_channel, output_channel):
+            result = await pyre_query_manager._query_types(
+                [Path("test.py")], Path("fake_socket_path")
+            )
 
         self.assertEqual(
             result,
@@ -1111,9 +1131,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = TextWriter(memory_bytes_writer)
-        result = await pyre_query_manager._query_types(
-            [Path("test.py")], input_channel, output_channel
-        )
+        with patch_connect_in_text_mode(input_channel, output_channel):
+            result = await pyre_query_manager._query_types(
+                [Path("test.py")], Path("fake_socket_path")
+            )
 
         self.assertEqual(result, None)
 
@@ -1136,9 +1157,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
             )
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = TextWriter(memory_bytes_writer)
-            result = await pyre_query_manager._query_type_coverage(
-                test_path, strict, input_channel, output_channel
-            )
+            with patch_connect_in_text_mode(input_channel, output_channel):
+                result = await pyre_query_manager._query_type_coverage(
+                    test_path, strict, Path("fake_socket_path")
+                )
             self.assertEqual(len(memory_bytes_writer.items()), 1)
             self.assertTrue(
                 memory_bytes_writer.items()[0].startswith(
@@ -1158,9 +1180,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
         )
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
         output_channel = TextWriter(MemoryBytesWriter())
-        result = await pyre_query_manager._query_type_coverage(
-            Path("test.py"), False, input_channel, output_channel
-        )
+        with patch_connect_in_text_mode(input_channel, output_channel):
+            result = await pyre_query_manager._query_type_coverage(
+                Path("test.py"), False, Path("fake_socket_path")
+            )
         self.assertTrue(result is None)
 
     @setup.async_test
@@ -1179,9 +1202,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 '["Query", {"response": ["test"]}]\n'
             )
             output_channel = TextWriter(MemoryBytesWriter())
-            result = await pyre_query_manager._query_type_coverage(
-                test_path, strict, input_channel, output_channel
-            )
+            with patch_connect_in_text_mode(input_channel, output_channel):
+                result = await pyre_query_manager._query_type_coverage(
+                    test_path, strict, Path("fake_socket_path")
+                )
             self.assertTrue(result is not None)
             self.assertEqual(len(result.uncovered_ranges), 0)
             self.assertEqual(result.covered_percent, 100.0)
@@ -1195,9 +1219,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
         )
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
         output_channel = TextWriter(MemoryBytesWriter())
-        result = await pyre_query_manager._query_type_coverage(
-            Path("test.py"), False, input_channel, output_channel
-        )
+        with patch_connect_in_text_mode(input_channel, output_channel):
+            result = await pyre_query_manager._query_type_coverage(
+                Path("test.py"), False, Path("fake_socket_path")
+            )
         self.assertTrue(result is not None)
         self.assertEqual(result.covered_percent, 0.0)
         self.assertEqual(len(result.uncovered_ranges), 1)
