@@ -1995,6 +1995,7 @@ let reverse_substitute name =
   match name with
   | "collections.defaultdict" -> "typing.DefaultDict"
   | "dict" -> "typing.Dict"
+  | "frozenset" -> "typing.FrozenSet"
   | "list" -> "typing.List"
   | "set" -> "typing.Set"
   | "type" -> "typing.Type"
@@ -3211,6 +3212,7 @@ let primitive_substitution_map =
     "typing.DefaultDict", Primitive "collections.defaultdict";
     "typing.Deque", Primitive "collections.deque";
     "typing.Dict", Primitive "dict";
+    "typing.FrozenSet", Primitive "frozenset";
     "typing.List", Primitive "list";
     "typing.OrderedDict", Primitive "collections.OrderedDict";
     "typing.Set", Primitive "set";
