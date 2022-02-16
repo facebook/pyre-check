@@ -1976,7 +1976,9 @@ let test_invalid_models context =
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[X, Y, LocalReturn]): ..."
-    ~expect:"Invalid model for `test.sink`: Invalid TaintSink annotation `LocalReturn`"
+    ~expect:
+      "`TaintSink[(X, Y, LocalReturn)]` is an invalid taint annotation: Unsupported taint sink \
+       `LocalReturn`"
     ();
   assert_invalid_model
     ~model_source:"def test.source() -> TaintSource[Invalid]: ..."
@@ -1989,7 +1991,9 @@ let test_invalid_models context =
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintInTaintOut[Test]): ..."
-    ~expect:"Invalid model for `test.sink`: Invalid TaintInTaintOut annotation `Test`"
+    ~expect:
+      "`TaintInTaintOut[Test]` is an invalid taint annotation: Unsupported taint in taint out \
+       specification `Test`"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: InvalidTaintDirection[Test]): ..."

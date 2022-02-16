@@ -25,3 +25,5 @@ val parse_sink
   ?subkind:string ->
   string ->
   (Sinks.t, string) result
+
+val parse_tito : ?subkind:string -> string -> (Sinks.t, string) result

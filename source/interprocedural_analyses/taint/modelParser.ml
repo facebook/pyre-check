@@ -483,15 +483,14 @@ let rec parse_annotations
     |> map_error ~f:annotation_error
   in
   let get_taint_in_taint_out expression =
-    let open TaintConfiguration in
     extract_leafs expression
     >>= fun (kinds, breadcrumbs, via_features) ->
     match kinds with
     | [] -> Ok [Tito { tito = Sinks.LocalReturn; breadcrumbs; via_features; path = [] }]
     | _ ->
         List.map kinds ~f:(fun (kind, subkind) ->
-            AnnotationParser.parse_sink ~allowed:configuration.sinks ?subkind kind
-            >>| fun sink -> Tito { tito = sink; breadcrumbs; via_features; path = [] })
+            AnnotationParser.parse_tito ?subkind kind
+            >>| fun tito -> Tito { tito; breadcrumbs; via_features; path = [] })
         |> all
         |> map_error ~f:annotation_error
   in

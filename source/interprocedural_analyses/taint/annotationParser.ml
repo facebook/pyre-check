@@ -30,26 +30,6 @@ let parse_source ~allowed ?subkind name =
 
 
 let parse_sink ~allowed ?subkind name =
-  let create name subkind =
-    match name with
-    | "LocalReturn" -> Ok Sinks.LocalReturn
-    | update when String.is_prefix update ~prefix:"ParameterUpdate" ->
-        let index = String.chop_prefix_exn update ~prefix:"ParameterUpdate" in
-        Ok (ParameterUpdate (Int.of_string index))
-    | "Transform" when Option.is_some subkind ->
-        Ok
-          (Sinks.Transform
-             {
-               local =
-                 {
-                   TaintTransforms.empty with
-                   ordered = [TaintTransform.Named (Option.value_exn subkind)];
-                 };
-               global = TaintTransforms.empty;
-               base = Sinks.LocalReturn;
-             })
-    | name -> Error (Format.sprintf "Unsupported taint sink `%s`" name)
-  in
   match
     List.find allowed ~f:(fun { name = sink_name; _ } -> String.equal sink_name name), subkind
   with
@@ -58,4 +38,25 @@ let parse_sink ~allowed ?subkind name =
   | Some _, None -> Ok (Sinks.NamedSink name)
   | Some { kind = Parametric; _ }, Some subkind ->
       Ok (Sinks.ParametricSink { sink_name = name; subkind })
-  | _ -> create name subkind
+  | _ -> Error (Format.sprintf "Unsupported taint sink `%s`" name)
+
+
+let parse_tito ?subkind name =
+  match name with
+  | "LocalReturn" -> Ok Sinks.LocalReturn
+  | update when String.is_prefix update ~prefix:"ParameterUpdate" ->
+      let index = String.chop_prefix_exn update ~prefix:"ParameterUpdate" in
+      Ok (ParameterUpdate (Int.of_string index))
+  | "Transform" when Option.is_some subkind ->
+      Ok
+        (Sinks.Transform
+           {
+             local =
+               {
+                 TaintTransforms.empty with
+                 ordered = [TaintTransform.Named (Option.value_exn subkind)];
+               };
+             global = TaintTransforms.empty;
+             base = Sinks.LocalReturn;
+           })
+  | name -> Error (Format.sprintf "Unsupported taint in taint out specification `%s`" name)
