@@ -164,7 +164,7 @@ class Repository:
     def __iter__(self) -> "Repository":
         return self
 
-    def __next__(self):
+    def __next__(self) -> str:
         self._current_commit = self._commits_list.__next__()
         LOG.info("Moving to commit named: %s" % self._current_commit)
 
