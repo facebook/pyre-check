@@ -36,6 +36,7 @@ DEPENDENCIES = [
     "lwt.5.5.0",
     "ounit2-lwt.2.2.4",
     "pyre-ast.0.1.8",
+    "mtime.1.3.0",
 ]
 
 
