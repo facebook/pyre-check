@@ -49,6 +49,7 @@ let set_up_environment ?source ?rules ~context ~model_source () =
             named "XSS";
             { AnnotationParser.name = "TestSinkWithSubkind"; kind = Parametric };
           ];
+        transforms = [TaintTransform.Named "TestTransform"; TaintTransform.Named "DemoTransform"];
         features = ["special"];
         partial_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
         rules;
@@ -1994,6 +1995,12 @@ let test_invalid_models context =
     ~expect:
       "`TaintInTaintOut[Test]` is an invalid taint annotation: Unsupported taint in taint out \
        specification `Test`"
+    ();
+  assert_invalid_model
+    ~model_source:"def test.sink(parameter: TaintInTaintOut[Transform[Invalid]]): ..."
+    ~expect:
+      "`TaintInTaintOut[Transform[Invalid]]` is an invalid taint annotation: Unsupported transform \
+       `Invalid`"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: InvalidTaintDirection[Test]): ..."

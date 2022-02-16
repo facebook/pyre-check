@@ -468,11 +468,9 @@ let parse source_jsons =
     |> Result.map_error ~f:(fun _ -> Error.create ~path ~kind:(Error.UnsupportedSink sink))
   in
   let parse_transform_reference ~path ~allowed_transforms transform =
-    match
-      List.find allowed_transforms ~f:(TaintTransform.equal (TaintTransform.Named transform))
-    with
-    | Some transform -> Ok transform
-    | None -> Error (Error.create ~path ~kind:(Error.UnsupportedTransform transform))
+    AnnotationParser.parse_transform ~allowed:allowed_transforms transform
+    |> Result.map_error ~f:(fun _ ->
+           Error.create ~path ~kind:(Error.UnsupportedTransform transform))
   in
   let parse_rules ~allowed_sources ~allowed_sinks ~allowed_transforms (path, json) =
     let parse_rule json =

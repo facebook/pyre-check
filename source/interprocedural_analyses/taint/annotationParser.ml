@@ -41,22 +41,27 @@ let parse_sink ~allowed ?subkind name =
   | _ -> Error (Format.sprintf "Unsupported taint sink `%s`" name)
 
 
-let parse_tito ?subkind name =
-  match name with
-  | "LocalReturn" -> Ok Sinks.LocalReturn
-  | update when String.is_prefix update ~prefix:"ParameterUpdate" ->
+let parse_transform ~allowed name =
+  match List.find allowed ~f:(TaintTransform.equal (TaintTransform.Named name)) with
+  | Some transform -> Ok transform
+  | None -> Error (Format.sprintf "Unsupported transform `%s`" name)
+
+
+let parse_tito ~allowed_transforms ?subkind name =
+  match name, subkind with
+  | "LocalReturn", _ -> Ok Sinks.LocalReturn
+  | update, _ when String.is_prefix update ~prefix:"ParameterUpdate" ->
       let index = String.chop_prefix_exn update ~prefix:"ParameterUpdate" in
       Ok (ParameterUpdate (Int.of_string index))
-  | "Transform" when Option.is_some subkind ->
+  | "Transform", None -> Error "Tito transform requires name of the transform as parameter"
+  | "Transform", Some transform ->
+      parse_transform ~allowed:allowed_transforms transform
+      >>= fun transform ->
       Ok
         (Sinks.Transform
            {
-             local =
-               {
-                 TaintTransforms.empty with
-                 ordered = [TaintTransform.Named (Option.value_exn subkind)];
-               };
+             local = { TaintTransforms.empty with ordered = [transform] };
              global = TaintTransforms.empty;
              base = Sinks.LocalReturn;
            })
-  | name -> Error (Format.sprintf "Unsupported taint in taint out specification `%s`" name)
+  | name, _ -> Error (Format.sprintf "Unsupported taint in taint out specification `%s`" name)
