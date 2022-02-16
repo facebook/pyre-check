@@ -5,22 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
+open Base
 
-type t = Time_stamp_counter.t
+type t = Mtime_clock.counter
 
-let calibrator = Time_stamp_counter.Calibrator.create ()
+let start () = Mtime_clock.counter ()
 
-let start () = Time_stamp_counter.now ()
+let stop counter = Mtime_clock.count counter
 
-let span start_time =
-  let stop_time = Time_stamp_counter.now () in
-  let timestamp_span = Time_stamp_counter.diff stop_time start_time in
-  Time_stamp_counter.Span.to_time_span ~calibrator timestamp_span
+let stop_in_sec counter = stop counter |> Mtime.Span.to_s
 
+let stop_in_ms counter = stop counter |> Mtime.Span.to_ms |> Int.of_float
 
-let stop start_time = start_time |> span
-
-let stop_in_ms start_time = stop start_time |> Time.Span.to_ms |> Int.of_float
-
-let stop_in_us start_time = stop start_time |> Time.Span.to_us |> Int.of_float
+let stop_in_us counter = stop counter |> Mtime.Span.to_us |> Int.of_float

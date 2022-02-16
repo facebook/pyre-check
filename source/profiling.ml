@@ -50,11 +50,8 @@ module Event = struct
   [@@deriving yojson]
 
   let now_in_microseconds () =
-    Time_stamp_counter.now ()
-    |> Time_stamp_counter.to_time ~calibrator:Timer.calibrator
-    |> Time.to_span_since_epoch
-    |> Time.Span.to_us
-    |> Int.of_float
+    let now_in_nanoseconds = Mtime_clock.now () |> Mtime.to_uint64_ns |> Int.of_int64_trunc in
+    now_in_nanoseconds / 1000
 
 
   let create ?(timestamp = now_in_microseconds ()) ?(tags = []) ~event_type name =

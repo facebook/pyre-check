@@ -53,7 +53,7 @@ let track_duration ~profiler ~name ~f =
   | Some profiler ->
       let timer = Timer.start () in
       let result = f () in
-      let seconds = timer |> Timer.stop |> Time.Span.to_sec in
+      let seconds = Timer.stop_in_sec timer in
       profiler.step_events <- { name; seconds } :: profiler.step_events;
       result
 
@@ -64,7 +64,7 @@ let track_statement_analysis ~profiler ~analysis ~statement ~f =
   | Some profiler ->
       let timer = Timer.start () in
       let result = f () in
-      let seconds = timer |> Timer.stop |> Time.Span.to_sec in
+      let seconds = Timer.stop_in_sec timer in
       profiler.statement_events <- { statement; analysis; seconds } :: profiler.statement_events;
       result
 
@@ -75,7 +75,7 @@ let track_model_fetch ~profiler ~analysis ~call_target ~f =
   | Some profiler ->
       let timer = Timer.start () in
       let model = f () in
-      let seconds = timer |> Timer.stop |> Time.Span.to_sec in
+      let seconds = Timer.stop_in_sec timer in
       let model_words = model |> Obj.repr |> Obj.reachable_words in
       profiler.fetch_model_events <-
         { target = call_target; analysis; seconds; model_words } :: profiler.fetch_model_events;
@@ -105,7 +105,7 @@ module FetchModelEventMap = Map.Make (TargetKey)
 let dump = function
   | None -> ()
   | Some { step_events; statement_events; fetch_model_events; timer } ->
-      let total_seconds = timer |> Timer.stop |> Time.Span.to_sec in
+      let total_seconds = Timer.stop_in_sec timer in
       Log.dump "Performance metrics:";
       Log.dump "Total time: %.2fs" total_seconds;
 

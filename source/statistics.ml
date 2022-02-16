@@ -161,9 +161,8 @@ let performance
     ?(normals = [])
     ()
   =
-  let time_span = Timer.stop timer in
-  let time_in_seconds = Time.Span.to_sec time_span in
-  let integer_time_in_microseconds = Time.Span.to_us time_span |> Int.of_float in
+  let time_in_seconds = Timer.stop_in_sec timer in
+  let integer_time_in_microseconds = time_in_seconds *. 1e6 |> Int.of_float in
   Log.log ~section "%s: %.2fs" (String.capitalize name) time_in_seconds;
   Profiling.log_performance_event (fun () ->
       let tags =

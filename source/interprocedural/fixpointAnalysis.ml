@@ -468,14 +468,15 @@ let one_analysis_pass ~analysis ~step ~environment ~callables =
     let result = analyze_callable analysis step callable environment in
     FixpointState.add step callable result;
     (* Log outliers. *)
-    if Timer.stop_in_ms timer > 500 then begin
+    let time_to_analyze_in_ms = Timer.stop_in_ms timer in
+    if time_to_analyze_in_ms > 500 then begin
       Statistics.performance
         ~name:"static analysis of expensive callable"
         ~timer
         ~section:`Interprocedural
         ~normals:["callable", Target.show callable]
         ();
-      { time_to_analyze_in_ms = Timer.stop_in_ms timer; callable } :: expensive_callables
+      { time_to_analyze_in_ms; callable } :: expensive_callables
     end
     else
       expensive_callables
@@ -660,7 +661,7 @@ let compute_fixpoint
           iteration
           number_of_callables
           (Int.to_float (SharedMem.heap_size ()) /. 1000000000.0)
-          (Timer.stop timer |> Time.Span.to_sec)
+          (Timer.stop_in_sec timer)
       in
       iterate ~iteration:(iteration + 1) callables_to_analyze
   in
