@@ -1016,10 +1016,18 @@ def patch_connect_in_text_mode(
     input_channel: TextReader, output_channel: TextWriter
 ) -> Iterator[CallableMixin]:
     with patch.object(async_server_connection, "connect_in_text_mode") as mock:
-        mock.return_value.__aenter__.return_value = (
-            input_channel,
-            output_channel,
-        )
+
+        class MockedConnection:
+            async def __aenter__(self):
+                return (
+                    input_channel,
+                    output_channel,
+                )
+
+            async def __aexit__(self, exc_type, exc, tb):
+                pass
+
+        mock.return_value = MockedConnection()
         yield mock
 
 
