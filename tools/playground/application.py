@@ -185,61 +185,63 @@ class Pysa:
             emit("pysa_results_channel", result)
 
 
-application = Flask(__name__)
+def start_server(debug: bool) -> None:
+    application = Flask(__name__)
 
-# You may need to modify the origin to the pyre-check website
-# before deployment.
-CORS(application)
-socketio = SocketIO(application, cors_allowed_origins="*")
+    # You may need to modify the origin to the pyre-check website
+    # before deployment.
+    CORS(application)
+    socketio = SocketIO(application, cors_allowed_origins="*")
 
-LOG.info("Initializizing the pyre server")
-pyre = Pyre()
+    LOG.info("Initializizing the pyre server")
+    pyre = Pyre()
 
-LOG.info("Pyre server is initialized, configuring application routes")
-
-
-@application.route("/check", methods=["GET", "POST"])
-def check() -> str:
-    input = (
-        request.args.get("input")
-        or request.form.get("input")
-        or request.json.get("input")
-    )
-    if input is None:
-        return jsonify(errors=["Input not provided"])
-
-    LOG.info(f"Checking `{input}`...")
-    return pyre.check(input)
+    LOG.info("Pyre server is initialized, configuring application routes")
 
 
-@socketio.on("analyze", namespace="/analyze")
-def analyze(json) -> None:
-    input = json.get("input", None)
-    use_builtin_pysa_models = json.get("use_builtin_pysa_models", False)
-    model = json.get("model", "")
-    if input is None:
-        emit(
-            "pysa_results_channel",
-            {
-                "type": "finished",
-                "result": "error",
-                "reason": "No code given to analyze.",
-            },
+    @application.route("/check", methods=["GET", "POST"])
+    def check() -> str:
+        input = (
+            request.args.get("input")
+            or request.form.get("input")
+            or request.json.get("input")
         )
-    else:
-        pysa = Pysa(input, model, use_builtin_pysa_models)
+        if input is None:
+            return jsonify(errors=["Input not provided"])
+
         LOG.info(f"Checking `{input}`...")
-        pysa.analyze()
+        return pyre.check(input)
 
 
-@application.route("/")
-def index() -> str:
-    return "404"
+    @socketio.on("analyze", namespace="/analyze")
+    def analyze(json) -> None:
+        input = json.get("input", None)
+        use_builtin_pysa_models = json.get("use_builtin_pysa_models", False)
+        model = json.get("model", "")
+        if input is None:
+            emit(
+                "pysa_results_channel",
+                {
+                    "type": "finished",
+                    "result": "error",
+                    "reason": "No code given to analyze.",
+                },
+            )
+        else:
+            pysa = Pysa(input, model, use_builtin_pysa_models)
+            LOG.info(f"Checking `{input}`...")
+            pysa.analyze()
+
+
+    @application.route("/")
+    def index() -> str:
+        return "404"
+
+    socketio.run(application, debug=debug)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true")
     arguments: argparse.Namespace = parser.parse_args()
-
-    socketio.run(application, debug=arguments.debug)
+    start_server(debug=arguments.debug)
