@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
+# pyre-unsafe
 
 import argparse
 import json
@@ -198,7 +198,6 @@ def start_server(debug: bool) -> None:
 
     LOG.info("Pyre server is initialized, configuring application routes")
 
-
     @application.route("/check", methods=["GET", "POST"])
     def check() -> str:
         input = (
@@ -211,7 +210,6 @@ def start_server(debug: bool) -> None:
 
         LOG.info(f"Checking `{input}`...")
         return pyre.check(input)
-
 
     @socketio.on("analyze", namespace="/analyze")
     def analyze(json) -> None:
@@ -231,7 +229,6 @@ def start_server(debug: bool) -> None:
             pysa = Pysa(input, model, use_builtin_pysa_models)
             LOG.info(f"Checking `{input}`...")
             pysa.analyze()
-
 
     @application.route("/")
     def index() -> str:
