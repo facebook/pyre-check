@@ -457,6 +457,34 @@ let test_buck_update_without_rebuild context =
   Lwt.return_unit
 
 
+let test_unwatched_dependency_no_failure_on_initialize context =
+  let bucket_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let bucket = "BUCKET" in
+  let wheel_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let checksum_path = "CHECKSUM" in
+  let open Lwt.Infix in
+  let test_initializer =
+    BuildSystem.Initializer.track_unwatched_dependency
+      {
+        Configuration.UnwatchedDependency.change_indicator =
+          { Configuration.ChangeIndicator.root = bucket_root; relative = bucket };
+        files = { Configuration.UnwatchedFiles.root = wheel_root; checksum_path };
+      }
+  in
+  BuildSystem.Initializer.run test_initializer
+  >>= fun build_system ->
+  (* Initialization should not crash, even when the checksum path does not exist *)
+  let bucket_path = PyrePath.create_relative ~root:bucket_root ~relative:bucket in
+  Lwt.catch
+    (fun () ->
+      (* Update should crash, if the checksum path does not exist *)
+      BuildSystem.update build_system [bucket_path]
+      >>= fun _ -> assert_failure "should not reach here")
+    (function
+      | ChecksumMap.LoadError _ -> Lwt.return_unit
+      | _ -> assert_failure "wrong exception raised")
+
+
 let test_unwatched_dependency_update context =
   let assert_paths_no_order = assert_paths_no_order ~context in
   let bucket_root = bracket_tmpdir context |> PyrePath.create_absolute in
@@ -533,6 +561,8 @@ let () =
          "buck_renormalize" >:: OUnitLwt.lwt_wrapper test_buck_renormalize;
          "buck_update" >:: OUnitLwt.lwt_wrapper test_buck_update;
          "buck_update_without_rebuild" >:: OUnitLwt.lwt_wrapper test_buck_update_without_rebuild;
+         "unwatched_dependency_no_failure_on_initialize"
+         >:: OUnitLwt.lwt_wrapper test_unwatched_dependency_no_failure_on_initialize;
          "unwatched_dependency_update" >:: OUnitLwt.lwt_wrapper test_unwatched_dependency_update;
        ]
   |> Test.run

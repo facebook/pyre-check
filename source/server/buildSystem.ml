@@ -290,6 +290,9 @@ module TrackUnwatchedDependencyBuildSystem = struct
       let paths =
         if unwatched_files_may_change ~change_indicator_path:state.change_indicator_path paths then (
           Log.info "Detecting potential changes in unwatched files...";
+          (* NOTE(grievejia): If checksum map loading fails, there will be no way for us to figure
+             out what has changed in the unwatched directory. Bring down the server immediately to
+             avoid incremental inconsistency. *)
           let new_checksum_map = ChecksumMap.load_exn state.unwatched_files in
           let differences = ChecksumMap.difference ~original:state.checksum_map new_checksum_map in
           state.checksum_map <- new_checksum_map;
@@ -311,7 +314,16 @@ module TrackUnwatchedDependencyBuildSystem = struct
       { Configuration.UnwatchedDependency.change_indicator; files = unwatched_files }
     =
     let change_indicator_path = Configuration.ChangeIndicator.to_path change_indicator in
-    let checksum_map = ChecksumMap.load_exn unwatched_files in
+    let checksum_map =
+      match ChecksumMap.load unwatched_files with
+      | Result.Ok checksum_map -> checksum_map
+      | Result.Error message ->
+          (* NOTE(grievejia): We do not want a hard crash here, as the initialization may be invoked
+             from a non-server command where incremental check is not needed and therefore the
+             content of the checksum map does not matter. *)
+          Log.warning "Initial checksum map loading failed: %s. Assuming an empty map." message;
+          ChecksumMap.empty
+    in
     Lwt.return
       (initialize_from_state { State.change_indicator_path; unwatched_files; checksum_map })
 end

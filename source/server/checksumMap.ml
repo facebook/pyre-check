@@ -45,6 +45,8 @@ let of_alist_exn list = Hashtbl.of_alist_exn (module String) list
 
 let to_alist table = Hashtbl.to_alist table
 
+let empty = of_alist_exn []
+
 module Difference = struct
   module Kind = struct
     type t =
