@@ -56,6 +56,8 @@ val external_target_name : [< t ] -> string
 
 val class_name : [< t ] -> string option
 
+val method_name : [< t ] -> string option
+
 val compare : ([< t ] as 'a) -> 'a -> int
 
 type t_with_result = callable_t

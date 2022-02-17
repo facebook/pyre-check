@@ -285,38 +285,66 @@ module IdentifierCallees = struct
   let all_targets { global_targets } = List.map ~f:CallTarget.target global_targets
 end
 
+module FormatStringCallees = struct
+  type t = { call_targets: CallTarget.t list } [@@deriving eq, show { with_path = false }]
+
+  let deduplicate { call_targets } =
+    { call_targets = List.dedup_and_sort ~compare:CallTarget.compare call_targets }
+
+
+  let join { call_targets = left_call_targets } { call_targets = right_call_targets } =
+    { call_targets = List.rev_append left_call_targets right_call_targets }
+
+
+  let all_targets { call_targets } = List.map ~f:CallTarget.target call_targets
+end
+
 module ExpressionCallees = struct
   type t = {
     call: CallCallees.t option;
     attribute_access: AttributeAccessCallees.t option;
     identifier: IdentifierCallees.t option;
+    format_string: FormatStringCallees.t option;
   }
   [@@deriving eq, show { with_path = false }]
 
-  let from_call callees = { call = Some callees; attribute_access = None; identifier = None }
+  let from_call callees =
+    { call = Some callees; attribute_access = None; identifier = None; format_string = None }
+
 
   let from_call_with_empty_attribute callees =
     {
       call = Some callees;
       attribute_access = Some AttributeAccessCallees.empty_attribute_access_callees;
       identifier = None;
+      format_string = None;
     }
 
 
   let from_attribute_access properties =
-    { call = None; attribute_access = Some properties; identifier = None }
+    { call = None; attribute_access = Some properties; identifier = None; format_string = None }
 
 
   let from_identifier identifier =
-    { call = None; attribute_access = None; identifier = Some identifier }
+    { call = None; attribute_access = None; identifier = Some identifier; format_string = None }
+
+
+  let from_format_string format_string =
+    { call = None; attribute_access = None; identifier = None; format_string = Some format_string }
 
 
   let join
-      { call = left_call; attribute_access = left_attribute_access; identifier = left_identifier }
+      {
+        call = left_call;
+        attribute_access = left_attribute_access;
+        identifier = left_identifier;
+        format_string = left_format_string;
+      }
       {
         call = right_call;
         attribute_access = right_attribute_access;
         identifier = right_identifier;
+        format_string = right_format_string;
       }
     =
     {
@@ -324,18 +352,21 @@ module ExpressionCallees = struct
       attribute_access =
         Option.merge ~f:AttributeAccessCallees.join left_attribute_access right_attribute_access;
       identifier = Option.merge ~f:IdentifierCallees.join left_identifier right_identifier;
+      format_string =
+        Option.merge ~f:FormatStringCallees.join left_format_string right_format_string;
     }
 
 
-  let deduplicate { call; attribute_access; identifier } =
+  let deduplicate { call; attribute_access; identifier; format_string } =
     {
       call = call >>| CallCallees.deduplicate;
       attribute_access = attribute_access >>| AttributeAccessCallees.deduplicate;
       identifier = identifier >>| IdentifierCallees.deduplicate;
+      format_string = format_string >>| FormatStringCallees.deduplicate;
     }
 
 
-  let all_targets { call; attribute_access; identifier } =
+  let all_targets { call; attribute_access; identifier; format_string } =
     let call_targets = call >>| CallCallees.all_targets |> Option.value ~default:[] in
     let attribute_access_targets =
       attribute_access >>| AttributeAccessCallees.all_targets |> Option.value ~default:[]
@@ -343,21 +374,38 @@ module ExpressionCallees = struct
     let identifier_targets =
       identifier >>| IdentifierCallees.all_targets |> Option.value ~default:[]
     in
-    call_targets |> List.rev_append attribute_access_targets |> List.rev_append identifier_targets
+    let format_string_targets =
+      format_string >>| FormatStringCallees.all_targets |> Option.value ~default:[]
+    in
+    call_targets
+    |> List.rev_append attribute_access_targets
+    |> List.rev_append identifier_targets
+    |> List.rev_append format_string_targets
 
 
   let is_empty_attribute_access_callees = function
-    | { call = None; attribute_access = Some some_attribute_access; identifier = None } ->
+    | {
+        call = None;
+        attribute_access = Some some_attribute_access;
+        identifier = None;
+        format_string = None;
+      } ->
         AttributeAccessCallees.is_empty some_attribute_access
     | _ -> false
 
 
   let equal_ignoring_types
-      { call = call_left; attribute_access = attribute_access_left; identifier = identifier_left }
+      {
+        call = call_left;
+        attribute_access = attribute_access_left;
+        identifier = identifier_left;
+        format_string = format_string_left;
+      }
       {
         call = call_right;
         attribute_access = attribute_access_right;
         identifier = identifier_right;
+        format_string = format_string_right;
       }
     =
     Option.equal CallCallees.equal_ignoring_types call_left call_right
@@ -366,6 +414,7 @@ module ExpressionCallees = struct
          attribute_access_left
          attribute_access_right
     && Option.equal IdentifierCallees.equal identifier_left identifier_right
+    && Option.equal FormatStringCallees.equal format_string_left format_string_right
 end
 
 module LocationCallees = struct
@@ -466,6 +515,16 @@ module DefineCallGraph = struct
   let resolve_identifier call_graph ~location ~identifier =
     resolve_expression call_graph ~location ~expression_identifier:identifier
     >>= fun { identifier; _ } -> identifier
+
+
+  let format_string_expression_identifier = "$__str__$"
+
+  let resolve_format_string call_graph ~location =
+    resolve_expression
+      call_graph
+      ~location
+      ~expression_identifier:format_string_expression_identifier
+    >>= fun { format_string; _ } -> format_string
 
 
   let equal_ignoring_types call_graph_left call_graph_right =
@@ -1352,6 +1411,22 @@ let resolve_identifier ~resolution ~call_indexer ~identifier =
   }
 
 
+let ignored_stringify_targets =
+  [
+    "bool", "__str__";
+    "bytes", "__str__";
+    "complex", "__str__";
+    "float", "__str__";
+    "numbers.Number", "__str__";
+    "str", "__str__";
+    "int", "__str__";
+    "object", "__str__";
+    "object", "__repr__";
+  ]
+  |> List.map ~f:(fun (class_name, method_name) -> `Method { Target.class_name; method_name })
+  |> Target.Set.of_list
+
+
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
    fixpoint (shared across the type check and additional static analysis modules). By having a
    fixpoint that always terminates (by having a state = unit), we re-use the fixpoint id's without
@@ -1382,7 +1457,7 @@ struct
 
     let expression_visitor ({ resolution; assignment_target } as state) { Node.value; location } =
       CallTargetIndexer.generate_fresh_indices call_indexer;
-      let register_targets ~expression_identifier callees =
+      let register_targets ~expression_identifier ?(location = location) callees =
         Location.Table.update Context.callees_at_location location ~f:(function
             | None -> UnprocessedLocationCallees.singleton ~expression_identifier ~callees
             | Some existing_callees ->
@@ -1416,6 +1491,42 @@ struct
                 |> ExpressionCallees.from_call
                 |> register_targets ~expression_identifier:(call_identifier call)
             | _ -> ())
+        | Expression.FormatString substrings ->
+            List.iter substrings ~f:(function
+                | Substring.Literal _ -> ()
+                | Substring.Format ({ Node.location = expression_location; _ } as expression) ->
+                    let { CallCallees.call_targets; _ } =
+                      let callee =
+                        let method_name =
+                          Annotated.Call.resolve_stringify_call ~resolution expression
+                        in
+                        {
+                          Node.value =
+                            Expression.Name
+                              (Name.Attribute
+                                 { base = expression; attribute = method_name; special = false });
+                          location = expression_location;
+                        }
+                      in
+                      resolve_regular_callees
+                        ~resolution
+                        ~call_indexer
+                        ~return_type:Type.string
+                        ~callee
+                    in
+                    let call_targets =
+                      List.filter call_targets ~f:(fun { CallTarget.target; _ } ->
+                          not (Target.Set.mem target ignored_stringify_targets))
+                    in
+
+                    if not (List.is_empty call_targets) then
+                      let callees =
+                        ExpressionCallees.from_format_string { FormatStringCallees.call_targets }
+                      in
+                      register_targets
+                        ~expression_identifier:DefineCallGraph.format_string_expression_identifier
+                        ~location:expression_location
+                        callees)
         | _ -> ()
       in
       (* Special-case `getattr()` and `setattr()` for the taint analysis. *)

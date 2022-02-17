@@ -2437,6 +2437,192 @@ let test_call_graph_of_define context =
                { IdentifierCallees.global_targets = [CallTarget.create (`Object "test.x")] }) );
       ]
     ();
+  let source =
+    {|
+      class A:
+        def __str__(self):
+          return "A"
+
+      class B:
+        def __repr__(self):
+          return "B"
+
+      class C:
+        def __str__(self):
+          return "C"
+        def __repr__(self):
+          return "C"
+
+      class D:
+        def foo():
+          pass
+
+      def foo():
+        a = A()
+        b = B()
+        c = C()
+        d = D()
+        return f"{a}hello{b}world{c}{d}"
+
+      def bar(x: typing.Union[A, B, C, D]):
+        return f"{x}"
+    |}
+  in
+  let () =
+    assert_call_graph_of_define
+      ~source
+      ~define_name:"test.foo"
+      ~expected:
+        [
+          ( "21:6-21:9",
+            LocationCallees.Singleton
+              (ExpressionCallees.from_call
+                 (CallCallees.create
+                    ~init_targets:
+                      [
+                        CallTarget.create
+                          ~implicit_self:true
+                          (`Method { Target.class_name = "object"; method_name = "__init__" });
+                      ]
+                    ~new_targets:
+                      [
+                        CallTarget.create
+                          ~implicit_self:true
+                          (`Method { Target.class_name = "object"; method_name = "__new__" });
+                      ]
+                    ~return_type:(Type.Primitive "test.A")
+                    ())) );
+          ( "22:6-22:9",
+            LocationCallees.Singleton
+              (ExpressionCallees.from_call
+                 (CallCallees.create
+                    ~init_targets:
+                      [
+                        CallTarget.create
+                          ~implicit_self:true
+                          ~index:1
+                          (`Method { Target.class_name = "object"; method_name = "__init__" });
+                      ]
+                    ~new_targets:
+                      [
+                        CallTarget.create
+                          ~implicit_self:true
+                          ~index:1
+                          (`Method { Target.class_name = "object"; method_name = "__new__" });
+                      ]
+                    ~return_type:(Type.Primitive "test.B")
+                    ())) );
+          ( "23:6-23:9",
+            LocationCallees.Singleton
+              (ExpressionCallees.from_call
+                 (CallCallees.create
+                    ~init_targets:
+                      [
+                        CallTarget.create
+                          ~implicit_self:true
+                          ~index:2
+                          (`Method { Target.class_name = "object"; method_name = "__init__" });
+                      ]
+                    ~new_targets:
+                      [
+                        CallTarget.create
+                          ~implicit_self:true
+                          ~index:2
+                          (`Method { Target.class_name = "object"; method_name = "__new__" });
+                      ]
+                    ~return_type:(Type.Primitive "test.C")
+                    ())) );
+          ( "24:6-24:9",
+            LocationCallees.Singleton
+              (ExpressionCallees.from_call
+                 (CallCallees.create
+                    ~init_targets:
+                      [
+                        CallTarget.create
+                          ~implicit_self:true
+                          ~index:3
+                          (`Method { Target.class_name = "object"; method_name = "__init__" });
+                      ]
+                    ~new_targets:
+                      [
+                        CallTarget.create
+                          ~implicit_self:true
+                          ~index:3
+                          (`Method { Target.class_name = "object"; method_name = "__new__" });
+                      ]
+                    ~return_type:(Type.Primitive "test.D")
+                    ())) );
+          ( "25:12-25:13",
+            LocationCallees.Singleton
+              (ExpressionCallees.from_format_string
+                 {
+                   FormatStringCallees.call_targets =
+                     [
+                       CallTarget.create
+                         ~implicit_self:true
+                         (`Method { Target.class_name = "test.A"; method_name = "__str__" });
+                     ];
+                 }) );
+          ( "25:20-25:21",
+            LocationCallees.Singleton
+              (ExpressionCallees.from_format_string
+                 {
+                   FormatStringCallees.call_targets =
+                     [
+                       CallTarget.create
+                         ~implicit_self:true
+                         (`Method { Target.class_name = "test.B"; method_name = "__repr__" });
+                     ];
+                 }) );
+          ( "25:28-25:29",
+            LocationCallees.Singleton
+              (ExpressionCallees.from_format_string
+                 {
+                   FormatStringCallees.call_targets =
+                     [
+                       CallTarget.create
+                         ~implicit_self:true
+                         (`Method { Target.class_name = "test.C"; method_name = "__str__" });
+                     ];
+                 }) );
+        ]
+      ()
+  in
+  assert_call_graph_of_define
+    ~source
+    ~define_name:"test.bar"
+    ~expected:
+      [
+        ( "28:12-28:13",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     (* TODO(T112028293): Properly resolve `__str__` calls on union-typed variables *)
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.A"; method_name = "__str__" });
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "test.C"; method_name = "__str__" });
+                   ];
+               }) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+      def foo(a: int, b: float, c: str, d: typing.List[int], e):
+        w = [1, 2, 3]
+        x = 1
+        y = "str"
+        z = 2.3
+        return f"{a}{b}{c}{d}{w}{x}{y}{z}{e}"
+    |}
+    ~define_name:"test.foo"
+    ~expected:[]
+    ();
   assert_call_graph_of_define
     ~source:
       {|

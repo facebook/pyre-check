@@ -119,6 +119,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     callees
 
 
+  let get_format_string_callees ~location =
+    CallGraph.DefineCallGraph.resolve_format_string FunctionContext.call_graph_of_define ~location
+
+
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution FunctionContext.environment
 
   let local_annotations =
@@ -1639,11 +1643,65 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     match nested_expressions with
     | [] -> value_taint, state
     | _ ->
+        let analyze_stringify_callee
+            (taint_to_join, state_to_join)
+            ~call_target
+            ~call_location
+            ~base
+            ~base_taint
+            ~base_state
+          =
+          let callees =
+            CallGraph.CallCallees.create ~call_targets:[call_target] ~return_type:Type.string ()
+          in
+          let callee =
+            let method_name =
+              Option.value_exn (Interprocedural.Target.method_name call_target.target)
+            in
+            {
+              Node.value =
+                Expression.Name (Name.Attribute { base; attribute = method_name; special = false });
+              location = call_location;
+            }
+          in
+          let new_taint, new_state =
+            apply_callees_with_arguments_taint
+              ~resolution
+              ~call_location
+              ~arguments:[]
+              ~self_taint:(Some base_taint)
+              ~callee_taint:None
+              ~arguments_taint:[]
+              ~state:base_state
+              ~callee
+              callees
+          in
+          ForwardState.Tree.join taint_to_join new_taint, join state_to_join new_state
+        in
+        let analyze_nested_expression
+            (taint, state)
+            ({ Node.location = expression_location; _ } as expression)
+          =
+          let base_taint, base_state = analyze_expression ~resolution ~state ~expression in
+          match get_format_string_callees ~location:expression_location with
+          | Some { CallGraph.FormatStringCallees.call_targets } ->
+              List.fold
+                call_targets
+                ~init:(taint, { taint = ForwardState.empty })
+                ~f:(fun (taint_to_join, state_to_join) call_target ->
+                  analyze_stringify_callee
+                    (taint_to_join, state_to_join)
+                    ~call_target
+                    ~call_location:expression_location
+                    ~base:expression
+                    ~base_taint
+                    ~base_state)
+          | None -> ForwardState.Tree.join taint base_taint, base_state
+        in
         let taint, state =
           List.fold
             nested_expressions
-            ~f:(fun (taint, state) expression ->
-              analyze_expression ~resolution ~state ~expression |>> ForwardState.Tree.join taint)
+            ~f:analyze_nested_expression
             ~init:(ForwardState.Tree.empty, state)
           |>> ForwardState.Tree.add_local_breadcrumb (Features.format_string ())
           |>> ForwardState.Tree.join value_taint

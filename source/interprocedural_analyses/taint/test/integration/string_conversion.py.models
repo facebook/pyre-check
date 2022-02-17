@@ -2,10 +2,456 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "string_conversion.repr_is_tainted",
-    "callable_line": 27,
+    "callable": "string_conversion.explicit_str",
+    "callable_line": 49,
     "code": 5001,
-    "line": 29,
+    "line": 51,
+    "start": 9,
+    "end": 37,
+    "filename": "string_conversion.py",
+    "message":
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": {
+                "filename": "string_conversion.py",
+                "line": 51,
+                "start": 18,
+                "end": 29
+              },
+              "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 51,
+              "start": 9,
+              "end": 37
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" }
+    ],
+    "master_handles": [
+      "string_conversion.explicit_str:5001:0:Call|eval|0|formal(arg):d15763e1c2cbfc32ce62890235e81baa"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.implicit_repr",
+    "callable_line": 44,
+    "code": 5001,
+    "line": 46,
+    "start": 9,
+    "end": 27,
+    "filename": "string_conversion.py",
+    "message":
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": {
+                "filename": "string_conversion.py",
+                "line": 46,
+                "start": 18,
+                "end": 19
+              },
+              "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 46,
+              "start": 9,
+              "end": 27
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" }
+    ],
+    "master_handles": [
+      "string_conversion.implicit_repr:5001:0:Call|eval|0|formal(arg):2a2ee08bf65691e8e61d45cdd2487850"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.implicit_str",
+    "callable_line": 39,
+    "code": 5001,
+    "line": 41,
+    "start": 9,
+    "end": 27,
+    "filename": "string_conversion.py",
+    "message":
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": {
+                "filename": "string_conversion.py",
+                "line": 41,
+                "start": 18,
+                "end": 19
+              },
+              "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 41,
+              "start": 9,
+              "end": 27
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" }
+    ],
+    "master_handles": [
+      "string_conversion.implicit_str:5001:0:Call|eval|0|formal(arg):8b2abca0699fbe46ed4b1bf6e7ba61bf"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.join_source_and_attribute_source",
+    "callable_line": 89,
+    "code": 5001,
+    "line": 94,
+    "start": 9,
+    "end": 15,
+    "filename": "string_conversion.py",
+    "message":
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 94, "start": 12, "end": 13 } ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 91,
+              "start": 17,
+              "end": 28
+            }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{string_conversion.C.g}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": {
+                "filename": "string_conversion.py",
+                "line": 94,
+                "start": 12,
+                "end": 13
+              },
+              "resolves_to": [ "string_conversion.C.__str__" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 94,
+              "start": 9,
+              "end": 15
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" },
+      { "via": "tito" }
+    ],
+    "master_handles": [
+      "string_conversion.join_source_and_attribute_source:5001:0:Call|eval|0|formal(arg):53aff03a56106f3bb97f4109a7a68445"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.joined_base",
+    "callable_line": 101,
+    "code": 5001,
+    "line": 104,
+    "start": 9,
+    "end": 18,
+    "filename": "string_conversion.py",
+    "message":
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" },
+              { "always-via": "format-string" }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 102,
+              "start": 8,
+              "end": 19
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 104,
+              "start": 9,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" }
+    ],
+    "master_handles": [
+      "string_conversion.joined_base:5001:0:Call|eval|0|formal(arg):a89a4128c1864cc8f4db26b2eef217cd"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.propagate_taint",
+    "callable_line": 62,
+    "code": 5001,
+    "line": 63,
+    "start": 9,
+    "end": 39,
+    "filename": "string_conversion.py",
+    "message":
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [
+              { "line": 63, "start": 12, "end": 37 },
+              { "line": 63, "start": 14, "end": 36 }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 63,
+              "start": 14,
+              "end": 25
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 63,
+              "start": 9,
+              "end": 39
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" },
+      { "always-via": "tito" }
+    ],
+    "master_handles": [
+      "string_conversion.propagate_taint:5001:0:Call|eval|0|formal(arg):4fbb7ee4358c96a3fda2c589a1a839fb"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.repr_is_tainted",
+    "callable_line": 29,
+    "code": 5001,
+    "line": 31,
     "start": 9,
     "end": 16,
     "filename": "string_conversion.py",
@@ -30,7 +476,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 29,
+                "line": 31,
                 "start": 9,
                 "end": 16
               },
@@ -52,7 +498,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 29,
+              "line": 31,
               "start": 9,
               "end": 16
             }
@@ -70,9 +516,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.str_falls_back_to_repr",
-    "callable_line": 32,
+    "callable_line": 34,
     "code": 5001,
-    "line": 34,
+    "line": 36,
     "start": 9,
     "end": 15,
     "filename": "string_conversion.py",
@@ -97,7 +543,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 34,
+                "line": 36,
                 "start": 9,
                 "end": 15
               },
@@ -119,7 +565,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 34,
+              "line": 36,
               "start": 9,
               "end": 15
             }
@@ -137,9 +583,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.str_is_tainted",
-    "callable_line": 22,
+    "callable_line": 24,
     "code": 5001,
-    "line": 24,
+    "line": 26,
     "start": 9,
     "end": 15,
     "filename": "string_conversion.py",
@@ -164,7 +610,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 24,
+                "line": 26,
                 "start": 9,
                 "end": 15
               },
@@ -186,7 +632,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 24,
+              "line": 26,
               "start": 9,
               "end": 15
             }
@@ -209,6 +655,60 @@
         "port": "result",
         "taint": [
           { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{string_conversion.B.f}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{string_conversion.C.g}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{object::__init__}",
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[value]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
         ]
       }
     ]
@@ -256,7 +756,14 @@
           {
             "kinds": [
               {
-                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "leaves": [ { "name": "Obj{string_conversion.B.f}" } ],
+                "kind": "Test"
+              },
+              {
+                "leaves": [
+                  { "name": "Obj{string_conversion.C.g}" },
+                  { "name": "Obj{django.http.Request.GET}" }
+                ],
                 "kind": "UserControlled"
               }
             ],
@@ -270,6 +777,156 @@
               "start": -1,
               "end": -1
             }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)[f]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[g]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[value]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{string_conversion.A::__init__}",
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[value]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{string_conversion.A::__str__}",
+    "tito": [
+      {
+        "port": "formal(self)[value]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{string_conversion.B::__str__}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{string_conversion.B.f}" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)[f]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{string_conversion.C::__str__}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{string_conversion.C.g}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)[g]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -341,6 +998,127 @@
 {
   "kind": "model",
   "data": {
+    "callable": "string_conversion.A.__init__",
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[value]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.A.__str__",
+    "tito": [
+      {
+        "port": "formal(self)[value]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.B.__str__",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{string_conversion.B.f}" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 79,
+              "start": 15,
+              "end": 21
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)[f]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.C.__str__",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{string_conversion.C.g}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 86,
+              "start": 15,
+              "end": 21
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)[g]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "string_conversion.ReprIsTainted.__repr__",
     "sources": [
       {
@@ -359,7 +1137,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 19,
+              "line": 21,
               "start": 15,
               "end": 26
             }
@@ -390,13 +1168,205 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 14,
+              "line": 16,
               "start": 15,
               "end": 26
             }
           }
         ]
       }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.multiple_targets_for_single_expression",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 72,
+              "start": 9,
+              "end": 15
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.multiple_targets_for_single_expression",
+    "callable_line": 70,
+    "code": 5001,
+    "line": 72,
+    "start": 9,
+    "end": 15,
+    "filename": "string_conversion.py",
+    "message":
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": {
+                "filename": "string_conversion.py",
+                "line": 72,
+                "start": 12,
+                "end": 13
+              },
+              "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 72,
+              "start": 9,
+              "end": 15
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" }
+    ],
+    "master_handles": [
+      "string_conversion.multiple_targets_for_single_expression:5001:0:Call|eval|0|formal(arg):b9cc3c511ddc86e7475a252fa462eadc"
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.multiple_targets_for_single_expression_2",
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 98,
+              "start": 9,
+              "end": 15
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.multiple_targets_for_single_expression_2",
+    "callable_line": 97,
+    "code": 5001,
+    "line": 98,
+    "start": 9,
+    "end": 15,
+    "filename": "string_conversion.py",
+    "message":
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{string_conversion.C.g}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": {
+                "filename": "string_conversion.py",
+                "line": 98,
+                "start": 12,
+                "end": 13
+              },
+              "resolves_to": [ "string_conversion.C.__str__" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 98,
+              "start": 9,
+              "end": 15
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "format-string" } ],
+    "master_handles": [
+      "string_conversion.multiple_targets_for_single_expression_2:5001:0:Call|eval|0|formal(arg):48ad7e71c84860b5b46b69082a1926f4"
     ]
   }
 }
