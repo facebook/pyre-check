@@ -75,9 +75,9 @@ class Pyre:
         subprocess.check_call(["watchman", "watch", str(self._directory)])
 
         LOG.debug("Priming the server")
-        # TODO(T82114844): incremental is borked on Ubuntu 20.04.
         subprocess.check_call(
-            ["pyre", "--noninteractive", "check"], cwd=self._directory
+            ["pyre", "--noninteractive"],
+            cwd=self._directory,
         )
 
     def check(self, input: str) -> str:
@@ -85,9 +85,8 @@ class Pyre:
         code_path = self._directory / INPUT_FILE
         code_path.write_text(input)
 
-        # TODO(T82114844): incremental is borked on Ubuntu 20.04.
         with subprocess.Popen(
-            ["pyre", "--output=json", "--noninteractive", "check"],
+            ["pyre", "--output=json", "--noninteractive"],
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE,
             cwd=self._directory,
@@ -187,10 +186,16 @@ class Pysa:
 
 
 application = Flask(__name__)
+
 # You may need to modify the origin to the pyre-check website
 # before deployment.
 CORS(application)
 socketio = SocketIO(application, cors_allowed_origins="*")
+
+LOG.info("Initializizing the pyre server")
+pyre = Pyre()
+
+LOG.info("Pyre server is initialized, configuring application routes")
 
 
 @application.route("/check", methods=["GET", "POST"])
@@ -204,7 +209,6 @@ def check() -> str:
         return jsonify(errors=["Input not provided"])
 
     LOG.info(f"Checking `{input}`...")
-    pyre = Pyre()
     return pyre.check(input)
 
 
