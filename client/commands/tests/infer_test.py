@@ -1374,13 +1374,17 @@ class StubGenerationTest(testslide.TestCase):
 
 class StubApplicationTest(testslide.TestCase):
     def _normalize(self, block_string: str) -> str:
-        return textwrap.dedent(block_string).strip()
+        return (
+            textwrap.dedent(block_string)
+            .strip()
+            .replace("@_GENERATED", "@" + "generated")
+        )
 
     def _assert_in_place(
         self,
         stub_file_contents: str,
         code_file_contents: str,
-        expected_annotated_code_file_contents: str,
+        expected_annotated_code_file_contents: Optional[str],
     ) -> None:
         options = StubGenerationOptions(
             annotate_attributes=True,
@@ -1390,13 +1394,17 @@ class StubApplicationTest(testslide.TestCase):
             simple_annotations=False,
         )
         annotated_code = AnnotateModuleInPlace._annotated_code(
+            code_path="code_path.py",
             stub=self._normalize(stub_file_contents),
             code=self._normalize(code_file_contents),
             options=options,
         )
-        self.assertEqual(
-            self._normalize(expected_annotated_code_file_contents), annotated_code
+        expected_code = (
+            self._normalize(expected_annotated_code_file_contents)
+            if expected_annotated_code_file_contents is not None
+            else None
         )
+        self.assertEqual(expected_code, annotated_code)
 
     def test_apply_globals(self) -> None:
         self._assert_in_place(
@@ -1440,4 +1448,32 @@ class StubApplicationTest(testslide.TestCase):
 
             _, a = "string".split("")
             """,
+        )
+
+    def test_generated(self) -> None:
+        self._assert_in_place(
+            """
+            def foo() -> None: ...
+            """,
+            """
+            # not generated
+            def foo():
+                return
+            """,
+            """
+            # not generated
+            def foo() -> None:
+                return
+            """,
+        )
+        self._assert_in_place(
+            """
+            def foo() -> None: ...
+            """,
+            """
+            # @_GENERATED
+            def foo():
+                return
+            """,
+            None,
         )

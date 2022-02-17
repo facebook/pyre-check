@@ -646,14 +646,18 @@ class AnnotateModuleInPlace:
 
     @staticmethod
     def _annotated_code(
+        code_path: str,
         stub: str,
         code: str,
         options: StubGenerationOptions,
-    ) -> str:
+    ) -> Optional[str]:
         """
         Merge inferred annotations from stubs with source code to get
         annotated code.
         """
+        if "@" "generated" in code:
+            LOG.warning(f"Skipping generated file {code_path}")
+            return
         context = CodemodContext()
         ApplyTypeAnnotationsVisitor.store_stub_in_context(
             context=context,
@@ -671,18 +675,18 @@ class AnnotateModuleInPlace:
         code_path: str,
         options: StubGenerationOptions,
     ) -> None:
-        "Merge a stub file of inferred annotations with a code file inplace."
+        "Merge a stub file of inferred annotations with a code file in place."
         try:
-            with open(stub_path) as stub_file, open(code_path) as code_file:
-                stub = stub_file.read()
-                code = code_file.read()
-                annotated_code = AnnotateModuleInPlace._annotated_code(
-                    stub=stub,
-                    code=code,
-                    options=options,
-                )
-            with open(code_path, "w") as code_file:
-                code_file.write(annotated_code)
+            stub = Path(stub_path).read_text()
+            code = Path(code_path).read_text()
+            annotated_code = AnnotateModuleInPlace._annotated_code(
+                code_path=code_path,
+                stub=stub,
+                code=code,
+                options=options,
+            )
+            if annotated_code is not None:
+                Path(code_path).write_text(annotated_code)
             LOG.info(f"Annotated {code_path}")
         except Exception as error:
             LOG.warning(f"Failed to annotate {code_path}")
