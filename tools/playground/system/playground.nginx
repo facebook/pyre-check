@@ -4,6 +4,6 @@ server {
 
     location / {
         include uwsgi_params;
-        uwsgi_pass unix:/home/ubuntu/sandbox/sandbox.sock;
+        uwsgi_pass unix:/home/ubuntu/playground/playground.sock;
     }
 }
