@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-strict
+# pyre-unsafe
 
 import argparse
 import json
@@ -15,9 +15,11 @@ import threading
 from pathlib import Path
 from typing import IO, List
 
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_socketio import SocketIO, emit
+
+# pyre-fixme[21]: pyre cannot seem to find this module
+from flask_socketio import emit, SocketIO
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s",
@@ -75,9 +77,9 @@ class Pyre:
         subprocess.check_call(["watchman", "watch", str(self._directory)])
 
         LOG.debug("Priming the server")
-        # TODO(T82114844): incremental is borked on Ubuntu 20.04.
         subprocess.check_call(
-            ["pyre", "--noninteractive", "check"], cwd=self._directory
+            ["pyre", "--noninteractive"],
+            cwd=self._directory,
         )
 
     def check(self, input: str) -> str:
@@ -85,9 +87,8 @@ class Pyre:
         code_path = self._directory / INPUT_FILE
         code_path.write_text(input)
 
-        # TODO(T82114844): incremental is borked on Ubuntu 20.04.
         with subprocess.Popen(
-            ["pyre", "--output=json", "--noninteractive", "check"],
+            ["pyre", "--output=json", "--noninteractive"],
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE,
             cwd=self._directory,
@@ -152,6 +153,7 @@ class Pysa:
             text=True,
         ) as process:
             model_verification_errors = []
+            # pyre-fixme[16]: process.stderr is marked as Optional
             for line in iter(process.stderr.readline, b""):
                 line = line.rstrip()
                 if line == "":
@@ -186,56 +188,60 @@ class Pysa:
             emit("pysa_results_channel", result)
 
 
-application = Flask(__name__)
-# You may need to modify the origin to the pyre-check website
-# before deployment.
-CORS(application)
-socketio = SocketIO(application, cors_allowed_origins="*")
+def run_server(debug: bool) -> None:
+    application = Flask(__name__)
 
+    # You may need to modify the origin to the pyre-check website
+    # before deployment.
+    CORS(application)
+    socketio = SocketIO(application, cors_allowed_origins="*")
 
-@application.route("/check", methods=["GET", "POST"])
-def check() -> str:
-    input = (
-        request.args.get("input")
-        or request.form.get("input")
-        or request.json.get("input")
-    )
-    if input is None:
-        return jsonify(errors=["Input not provided"])
-
-    LOG.info(f"Checking `{input}`...")
+    LOG.info("Initializizing the pyre server")
     pyre = Pyre()
-    return pyre.check(input)
 
+    LOG.info("Pyre server is initialized, configuring application routes")
 
-@socketio.on("analyze", namespace="/analyze")
-def analyze(json) -> None:
-    input = json.get("input", None)
-    use_builtin_pysa_models = json.get("use_builtin_pysa_models", False)
-    model = json.get("model", "")
-    if input is None:
-        emit(
-            "pysa_results_channel",
-            {
-                "type": "finished",
-                "result": "error",
-                "reason": "No code given to analyze.",
-            },
+    @application.route("/check", methods=["GET", "POST"])
+    def check() -> str:
+        input = (
+            request.args.get("input")
+            or request.form.get("input")
+            or request.json.get("input")
         )
-    else:
-        pysa = Pysa(input, model, use_builtin_pysa_models)
+        if input is None:
+            return jsonify(errors=["Input not provided"])
+
         LOG.info(f"Checking `{input}`...")
-        pysa.analyze()
+        return pyre.check(input)
 
+    @socketio.on("analyze", namespace="/analyze")
+    def analyze(json) -> None:
+        input = json.get("input", None)
+        use_builtin_pysa_models = json.get("use_builtin_pysa_models", False)
+        model = json.get("model", "")
+        if input is None:
+            emit(
+                "pysa_results_channel",
+                {
+                    "type": "finished",
+                    "result": "error",
+                    "reason": "No code given to analyze.",
+                },
+            )
+        else:
+            pysa = Pysa(input, model, use_builtin_pysa_models)
+            LOG.info(f"Checking `{input}`...")
+            pysa.analyze()
 
-@application.route("/")
-def index() -> str:
-    return "404"
+    @application.route("/")
+    def index() -> str:
+        return "404"
+
+    socketio.run(application, debug=debug)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true")
     arguments: argparse.Namespace = parser.parse_args()
-
-    socketio.run(application, debug=arguments.debug)
+    run_server(debug=arguments.debug)

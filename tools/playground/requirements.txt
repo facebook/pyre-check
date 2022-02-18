@@ -35,8 +35,6 @@ prompt-toolkit==3.0.8
 psutil==5.8.0
 ptyprocess==0.6.0
 Pygments==2.7.3
-pyre-check-nightly==0.0.101608763182
-pyre-extensions==0.0.19
 PyYAML==5.3.1
 Rx==1.6.1
 singledispatch==3.4.0.3
@@ -47,7 +45,9 @@ traitlets==5.0.5
 typing-extensions==3.7.4.3
 typing-inspect==0.6.0
 ujson==4.0.1
-uWSGI==2.0.19.1
 wcwidth==0.2.5
 Werkzeug==1.0.1
 xxhash==2.0.0
+uWSGI==2.0.20
+pyre-check-nightly
+pyre-extensions
