@@ -4,12 +4,11 @@
     ".*/generate_taint_models/.*",
     ".*/scripts/.*",
     ".*/source/.*",
-    ".*/pyre-check/stubs/.*"
+    ".*/pyre-check/stubs/.*",
   ],
   "ignore_all_errors": [
     "client/tests/configuration_test.py",
-    "pyre_extensions/safe_json.py",
-    "tools/sandbox/application.py"
+    "pyre_extensions/safe_json.py"
   ],
   "search_path": [
     {
