@@ -312,30 +312,26 @@ module ClassDecorators = struct
     match_args: bool;
   }
 
-  let extract_options
+  let get_decorators
       ~class_metadata_environment
       ~names
-      ~default
-      ~init
-      ~repr
-      ~eq
-      ~order
       ?dependency
       { Node.value = { ClassSummary.decorators; _ }; _ }
     =
-    let open Expression in
-    let get_decorators ~names =
-      let get_decorator decorator =
-        List.filter_map
-          ~f:
-            (UnannotatedGlobalEnvironment.ReadOnly.resolve_decorator_if_matches
-               (unannotated_global_environment class_metadata_environment)
-               ?dependency
-               ~target:decorator)
-          decorators
-      in
-      names |> List.map ~f:get_decorator |> List.concat
+    let get_decorator decorator =
+      List.filter_map
+        ~f:
+          (UnannotatedGlobalEnvironment.ReadOnly.resolve_decorator_if_matches
+             (unannotated_global_environment class_metadata_environment)
+             ?dependency
+             ~target:decorator)
+        decorators
     in
+    names |> List.map ~f:get_decorator |> List.concat
+
+
+  let extract_options ~default ~init ~repr ~eq ~order decorators =
+    let open Expression in
     let extract_options_from_arguments =
       let apply_arguments default argument =
         let recognize_value ~default = function
@@ -384,30 +380,39 @@ module ClassDecorators = struct
       in
       List.fold ~init:default ~f:apply_arguments
     in
-    match get_decorators ~names with
+    match decorators with
     | [] -> None
-    | { arguments = Some arguments; _ } :: _ -> Some (extract_options_from_arguments arguments)
+    | { Decorator.arguments = Some arguments; _ } :: _ ->
+        Some (extract_options_from_arguments arguments)
     | _ -> Some default
 
 
-  let dataclass_options =
-    extract_options
+  let dataclass_options ~class_metadata_environment ?dependency class_summary =
+    get_decorators
       ~names:["dataclasses.dataclass"; "dataclass"]
-      ~default:{ init = true; repr = true; eq = true; order = false; match_args = true }
-      ~init:"init"
-      ~repr:"repr"
-      ~eq:"eq"
-      ~order:"order"
+      ~class_metadata_environment
+      ?dependency
+      class_summary
+    |> extract_options
+         ~default:{ init = true; repr = true; eq = true; order = false; match_args = true }
+         ~init:"init"
+         ~repr:"repr"
+         ~eq:"eq"
+         ~order:"order"
 
 
-  let attrs_attributes =
-    extract_options
+  let attrs_attributes ~class_metadata_environment ?dependency class_summary =
+    get_decorators
       ~names:["attr.s"; "attr.attrs"]
-      ~default:{ init = true; repr = true; eq = true; order = true; match_args = false }
-      ~init:"init"
-      ~repr:"repr"
-      ~eq:"cmp"
-      ~order:"cmp"
+      ~class_metadata_environment
+      ?dependency
+      class_summary
+    |> extract_options
+         ~default:{ init = true; repr = true; eq = true; order = true; match_args = false }
+         ~init:"init"
+         ~repr:"repr"
+         ~eq:"cmp"
+         ~order:"cmp"
 
 
   let apply
