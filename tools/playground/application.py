@@ -15,10 +15,11 @@ import threading
 from pathlib import Path
 from typing import IO, List
 
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+
 # pyre-fixme[21]: pyre cannot seem to find this module
-from flask_socketio import SocketIO, emit
+from flask_socketio import emit, SocketIO
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(message)s",
