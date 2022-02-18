@@ -966,10 +966,120 @@ let test_match_args context =
   ()
 
 
+let test_dataclass_transform context =
+  let assert_equivalent_attributes = assert_equivalent_attributes ~context in
+  assert_equivalent_attributes
+    {|
+      @__dataclass_transform__
+      def mytransform():
+        ...
+
+      @mytransform
+      class Foo:
+        x: int
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          def __init__(self, x: int) -> None:
+            self.x = x
+          def __eq__(self, o: object) -> bool:
+            pass
+      |};
+    ];
+  assert_equivalent_attributes
+    {|
+      @__dataclass_transform__
+      def mytransform():
+        ...
+
+      @mytransform()
+      class Foo:
+        x: int
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          def __init__(self, x: int) -> None:
+            self.x = x
+          def __eq__(self, o: object) -> bool:
+            pass
+      |};
+    ];
+  assert_equivalent_attributes
+    {|
+      @__dataclass_transform__
+      def mytransform():
+        ...
+
+      @mytransform(eq=False)
+      class Foo:
+        x: int
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          def __init__(self, x: int) -> None:
+            self.x = x
+      |};
+    ];
+  assert_equivalent_attributes
+    {|
+      @__dataclass_transform__
+      def mytransform():
+        ...
+
+      @mytransform(order=True)
+      class Foo:
+        x: int
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          def __init__(self, x: int) -> None:
+            self.x = x
+          def __eq__(self, o: object) -> bool:
+            pass
+          def __lt__(self, o: object) -> bool:
+            pass
+          def __le__(self, o: object) -> bool:
+            pass
+          def __gt__(self, o: object) -> bool:
+            pass
+          def __ge__(self, o: object) -> bool:
+            pass
+      |};
+    ];
+  assert_equivalent_attributes
+    {|
+      @__dataclass_transform__
+      def mytransform():
+        ...
+
+      @mytransform(init=False)
+      class Foo:
+        x: int
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          def __eq__(self, o: object) -> bool:
+            pass
+      |};
+    ];
+  ()
+
+
 let () =
   "dataClass"
   >::: [
          "transform_environment" >: test_case ~length:Long test_transform_environment;
          "match_args" >:: test_match_args;
+         "dataclass_transform" >:: test_dataclass_transform;
        ]
   |> Test.run

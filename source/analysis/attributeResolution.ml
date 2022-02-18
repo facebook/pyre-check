@@ -413,6 +413,51 @@ module ClassDecorators = struct
           ~order:"cmp"
 
 
+  let find_dataclass_transform_decorator
+      ~class_metadata_environment
+      ?dependency
+      { Node.value = { ClassSummary.decorators; _ }; _ }
+    =
+    let is_dataclass_transform_decorator decorator =
+      let decorator_reference { Decorator.name = { Node.value; _ }; _ } = value in
+      let lookup_function reference =
+        UnannotatedGlobalEnvironment.ReadOnly.get_define
+          (unannotated_global_environment class_metadata_environment)
+          ?dependency
+          reference
+        >>= fun { FunctionDefinition.body; _ } -> body >>| Node.value
+      in
+      let function_decorators { Define.signature = { Define.Signature.decorators; _ }; _ } =
+        decorators
+      in
+      let is_dataclass_transform decorator =
+        Decorator.from_expression decorator
+        >>| decorator_reference
+        >>| Reference.last
+        >>| String.equal "__dataclass_transform__"
+        |> Option.value ~default:false
+      in
+      decorator_reference decorator
+      |> lookup_function
+      >>| function_decorators
+      >>| List.exists ~f:is_dataclass_transform
+      |> Option.value ~default:false
+    in
+    decorators
+    |> List.filter_map ~f:Decorator.from_expression
+    |> List.find ~f:is_dataclass_transform_decorator
+
+
+  let dataclass_transform_options ~class_metadata_environment ?dependency class_summary =
+    find_dataclass_transform_decorator ~class_metadata_environment ?dependency class_summary
+    >>| extract_options
+          ~default:{ init = true; repr = false; eq = true; order = false; match_args = false }
+          ~init:"init"
+          ~repr:"repr"
+          ~eq:"eq"
+          ~order:"order"
+
+
   let apply
       ~definition
       ~class_metadata_environment
@@ -766,7 +811,11 @@ module ClassDecorators = struct
       (* TODO (T41039225): Add support for other methods *)
       generate_attributes ~options:(attrs_attributes ~class_metadata_environment ?dependency)
     in
-    dataclass_attributes () @ attrs_attributes ()
+    let dataclass_transform_attributes () =
+      generate_attributes
+        ~options:(dataclass_transform_options ~class_metadata_environment ?dependency)
+    in
+    dataclass_attributes () @ attrs_attributes () @ dataclass_transform_attributes ()
     |> List.iter ~f:(UninstantiatedAttributeTable.add table)
 end
 
