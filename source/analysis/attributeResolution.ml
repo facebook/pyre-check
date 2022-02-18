@@ -312,25 +312,25 @@ module ClassDecorators = struct
     match_args: bool;
   }
 
-  let get_decorators
+  let find_decorator
       ~class_metadata_environment
       ~names
       ?dependency
       { Node.value = { ClassSummary.decorators; _ }; _ }
     =
-    let get_decorator decorator =
-      List.filter_map
+    let get_decorator name =
+      List.find_map
         ~f:
           (UnannotatedGlobalEnvironment.ReadOnly.resolve_decorator_if_matches
              (unannotated_global_environment class_metadata_environment)
              ?dependency
-             ~target:decorator)
+             ~target:name)
         decorators
     in
-    names |> List.map ~f:get_decorator |> List.concat
+    names |> List.find_map ~f:get_decorator
 
 
-  let extract_options ~default ~init ~repr ~eq ~order decorators =
+  let extract_options ~default ~init ~repr ~eq ~order decorator =
     let open Expression in
     let extract_options_from_arguments =
       let apply_arguments default argument =
@@ -380,39 +380,37 @@ module ClassDecorators = struct
       in
       List.fold ~init:default ~f:apply_arguments
     in
-    match decorators with
-    | [] -> None
-    | { Decorator.arguments = Some arguments; _ } :: _ ->
-        Some (extract_options_from_arguments arguments)
-    | _ -> Some default
+    match decorator with
+    | { Decorator.arguments = Some arguments; _ } -> extract_options_from_arguments arguments
+    | _ -> default
 
 
   let dataclass_options ~class_metadata_environment ?dependency class_summary =
-    get_decorators
+    find_decorator
       ~names:["dataclasses.dataclass"; "dataclass"]
       ~class_metadata_environment
       ?dependency
       class_summary
-    |> extract_options
-         ~default:{ init = true; repr = true; eq = true; order = false; match_args = true }
-         ~init:"init"
-         ~repr:"repr"
-         ~eq:"eq"
-         ~order:"order"
+    >>| extract_options
+          ~default:{ init = true; repr = true; eq = true; order = false; match_args = true }
+          ~init:"init"
+          ~repr:"repr"
+          ~eq:"eq"
+          ~order:"order"
 
 
   let attrs_attributes ~class_metadata_environment ?dependency class_summary =
-    get_decorators
+    find_decorator
       ~names:["attr.s"; "attr.attrs"]
       ~class_metadata_environment
       ?dependency
       class_summary
-    |> extract_options
-         ~default:{ init = true; repr = true; eq = true; order = true; match_args = false }
-         ~init:"init"
-         ~repr:"repr"
-         ~eq:"cmp"
-         ~order:"cmp"
+    >>| extract_options
+          ~default:{ init = true; repr = true; eq = true; order = true; match_args = false }
+          ~init:"init"
+          ~repr:"repr"
+          ~eq:"cmp"
+          ~order:"cmp"
 
 
   let apply
