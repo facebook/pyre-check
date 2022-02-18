@@ -17,6 +17,7 @@ from typing import IO, List
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+# pyre-fixme[21]: pyre cannot seem to find this module
 from flask_socketio import SocketIO, emit
 
 logging.basicConfig(
@@ -151,6 +152,7 @@ class Pysa:
             text=True,
         ) as process:
             model_verification_errors = []
+            # pyre-fixme[16]: process.stderr is marked as Optional
             for line in iter(process.stderr.readline, b""):
                 line = line.rstrip()
                 if line == "":
