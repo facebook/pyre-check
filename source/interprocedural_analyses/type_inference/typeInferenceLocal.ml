@@ -65,6 +65,8 @@ module type Signature = sig
 
   val initial_backward : forward:t -> t
 
+  val widen_resolution_with_snapshots : t -> t
+
   include Fixpoint.State with type t := t
 end
 
@@ -164,7 +166,11 @@ module State (Context : Context) = struct
     if bottom then
       Bottom
     else
-      create_with_errors ~errors:ErrorMap.Map.empty ~resolution ~snapshot_resolution:resolution
+      create_with_errors
+        ~errors:ErrorMap.Map.empty
+        ~resolution
+        ~snapshot_resolution:
+          (Resolution.with_annotation_store resolution ~annotation_store:Refinement.Store.empty)
 
 
   let errors = function
@@ -253,7 +259,20 @@ module State (Context : Context) = struct
     match state with
     | Bottom -> Bottom
     | Value ({ resolution; snapshot_resolution; _ } as state_value) ->
-        let resolution = Resolution.outer_join_refinements resolution snapshot_resolution in
+        let resolution_without_unknowns =
+          let filter _ (annotation : Annotation.t) =
+            let resolved_type = Annotation.annotation annotation in
+            not (Type.is_top resolved_type || Type.is_any resolved_type)
+          in
+          Resolution.update_refinements_with_filter
+            ~old_resolution:
+              (Resolution.with_annotation_store resolution ~annotation_store:Refinement.Store.empty)
+            ~new_resolution:resolution
+            ~filter
+        in
+        let resolution =
+          Resolution.outer_join_refinements resolution_without_unknowns snapshot_resolution
+        in
         Value { state_value with resolution }
 
 
@@ -645,22 +664,16 @@ module State (Context : Context) = struct
     (* In general, backwards inference relies on meets to handle usages. *)
     match state with
     | Bottom -> Bottom
-    | Value ({ resolution; _ } as state) ->
+    | Value ({ resolution; snapshot_resolution; _ } as state) ->
         Type.Variable.Namespace.reset ();
-        let resolve_assign value_type target_type =
-          let global_resolution = Resolution.global_resolution resolution in
+        let global_resolution = Resolution.global_resolution resolution in
+        let resolve_usage value_type target_type =
           let target_type = Type.weaken_literals target_type in
           match value_type, target_type with
           | Type.Top, Type.Top -> None
           | Type.Top, target_type -> Some target_type
           | value_type, Type.Top -> Some value_type
           | _ -> Some (GlobalResolution.meet global_resolution value_type target_type)
-        in
-        let resolve_usage value_type target_type =
-          match value_type, target_type with
-          | Type.Top, Type.Top -> None
-          | Type.Top, target_type -> Some target_type
-          | _ -> Some value_type
         in
         let forward_expression ~state:{ resolution; _ } ~expression =
           Resolution.resolve_expression_to_type resolution expression
@@ -773,7 +786,7 @@ module State (Context : Context) = struct
                 | Expression.Name (Name.Identifier identifier) ->
                     let resolution =
                       let resolved = forward_expression ~state ~expression:value in
-                      resolve_assign target_annotation resolved
+                      resolve_usage target_annotation resolved
                       >>| (fun refined ->
                             Resolution.refine_local
                               resolution
@@ -795,7 +808,7 @@ module State (Context : Context) = struct
                       arguments = [{ Call.Argument.value; _ }];
                     } ->
                     let resolution =
-                      resolve_assign target_annotation (forward_expression ~state ~expression:value)
+                      resolve_usage target_annotation (forward_expression ~state ~expression:value)
                       >>| (fun refined ->
                             refine_local
                               ~resolution
@@ -868,7 +881,50 @@ module State (Context : Context) = struct
               | _ -> resolution)
           | _ -> annotate_call_accesses statement resolution
         in
-        Value { state with resolution }
+        let resolution, snapshot_resolution =
+          (* Reset inferred annotation of a variable to Top if we see it being assigned to, but save
+             the annotation to snapshot_resolution to be joined into the final inferred type in the
+             end. *)
+          match Node.value statement with
+          | Statement.Assign { target = { Node.value = Name name; _ } as target; _ }
+            when is_simple_name name ->
+              let target_reference = Ast.Expression.name_to_reference_exn name in
+              let wiped_resolution =
+                Resolution.unset_local resolution ~reference:target_reference
+              in
+              let augmented_snapshot_resolution =
+                let existing_snapshot =
+                  forward_expression
+                    ~state:{ state with resolution = snapshot_resolution }
+                    ~expression:target
+                in
+                let current_snapshot =
+                  forward_expression ~state:{ state with resolution } ~expression:target
+                  |> Type.weaken_literals
+                in
+                let snapshot =
+                  match existing_snapshot, current_snapshot with
+                  | existing, current when Type.is_untyped existing && Type.is_untyped current ->
+                      None
+                  | existing, _ when Type.is_untyped existing -> Some current_snapshot
+                  | _, current when Type.is_untyped current -> Some existing_snapshot
+                  | _ ->
+                      Some
+                        (GlobalResolution.join global_resolution existing_snapshot current_snapshot)
+                in
+                snapshot
+                >>| Annotation.create_mutable
+                >>| (fun annotation ->
+                      Resolution.new_local
+                        snapshot_resolution
+                        ~reference:target_reference
+                        ~annotation)
+                |> Option.value ~default:snapshot_resolution
+              in
+              wiped_resolution, augmented_snapshot_resolution
+          | _ -> resolution, snapshot_resolution
+        in
+        Value { state with resolution; snapshot_resolution }
 end
 
 (* Perform a local type analysis to infer parameter and return type annotations. *)

@@ -28,6 +28,8 @@ module type Signature = sig
 
   val initial_backward : forward:t -> t
 
+  val widen_resolution_with_snapshots : t -> t
+
   include Analysis.Fixpoint.State with type t := t
 end
 

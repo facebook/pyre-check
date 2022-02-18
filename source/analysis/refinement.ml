@@ -304,7 +304,7 @@ module Store = struct
 
       The way we handle temporary vs non-temporary is very particular:
 
-      - If `temporary` is truewe only apply this to `temporary_annotations`
+      - If `temporary` is true we only apply this to `temporary_annotations`
       - Otherwise, we apply it to `annotations` and also apply it to any *existing* data in
         `temporary_annotations`, but we don't create any new `temporary_annotations`.
       - The idea here is to minimize the amount of duplicated data, but ensure that `annotations`

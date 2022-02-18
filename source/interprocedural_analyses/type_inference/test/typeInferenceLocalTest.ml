@@ -62,7 +62,9 @@ let assert_backward ~resolution precondition statement postcondition =
   assert_state_equal
     (create postcondition)
     (List.fold_right
-       ~f:(fun statement state -> State.backward ~statement_key:Cfg.exit_index state ~statement)
+       ~f:(fun statement state ->
+         State.backward ~statement_key:Cfg.exit_index state ~statement
+         |> State.widen_resolution_with_snapshots)
        ~init:(create precondition)
        parsed)
 
@@ -82,7 +84,7 @@ let test_backward_resolution_handling context =
     "x = y = z"
     ["x", Type.Primitive "B"; "y", Type.Primitive "C"; "z", Type.Bottom];
   assert_backward ["a", Type.integer] "a, b = c, d" ["a", Type.integer; "c", Type.integer];
-  assert_backward ["a", Type.Top; "b", Type.integer] "a = b" ["a", Type.Top; "b", Type.integer];
+  assert_backward ["a", Type.Top; "b", Type.integer] "a = b" ["b", Type.integer];
 
   (* Tuples *)
   assert_backward
@@ -768,6 +770,28 @@ let test_inferred_function_parameters context =
     ~expected:no_inferences;
   check_inference_results
     {|
+      def takes_int(input: int) -> None: ...
+      def takes_str(input: str) -> None: ...
+      def foo(x) -> None:
+          x = 1
+          takes_int(x)
+          x = "string"
+          takes_str(x)
+    |}
+    ~target:"test.foo"
+    ~expected:(single_parameter "typing.Union[int, str]");
+  check_inference_results
+    {|
+      def takes_int(input: int) -> None: ...
+      def takes_float(input: float) -> None: ...
+      def foo(x) -> None:
+          takes_int(x)
+          takes_float(x)
+    |}
+    ~target:"test.foo"
+    ~expected:(single_parameter "int");
+  check_inference_results
+    {|
       def foo(x, y) -> int:
           b = 5
           a, b = x, y
@@ -778,7 +802,7 @@ let test_inferred_function_parameters context =
     ~expected:
       {|
         [
-          { "name": "x", "annotation": "int", "value": null, "index": 0 },
+          { "name": "x", "annotation": null, "value": null, "index": 0 },
           { "name": "y", "annotation": "int", "value": null, "index": 1 }
         ]
       |};
