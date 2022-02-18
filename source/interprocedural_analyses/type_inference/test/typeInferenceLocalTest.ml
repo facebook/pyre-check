@@ -641,6 +641,22 @@ let test_inferred_function_parameters context =
     |}
     ~target:"test.foo"
     ~expected:(single_parameter ~default:"5" "int");
+  check_inference_results
+    {|
+      def foo(x = None) -> None:
+          x = 1
+          return
+    |}
+    ~target:"test.foo"
+    ~expected:(single_parameter ~default:"None" "typing.Optional[int]");
+  (* TODO(T84365830): Addition with integer should imply integer. *)
+  check_inference_results
+    {|
+      def foo(x = None) -> None:
+          z = x + 1
+    |}
+    ~target:"test.foo"
+    ~expected:(no_inferences_with_default ~default:"None");
   (* TODO(T84365830): Ensure we correctly qualify inferred parameter types. *)
   check_inference_results
     {|
@@ -685,7 +701,6 @@ let test_inferred_function_parameters context =
     |}
     ~target:"test.foo"
     ~expected:(single_parameter "int");
-  (* TODO(T84365830): Handle union with default values *)
   check_inference_results
     {|
       def foo(x = None) -> None:
@@ -693,7 +708,7 @@ let test_inferred_function_parameters context =
               x = ""
     |}
     ~target:"test.foo"
-    ~expected:(no_inferences_with_default ~default:"None");
+    ~expected:(single_parameter "typing.Optional[str]" ~default:"None");
   check_inference_results
     {|
       from typing import Optional

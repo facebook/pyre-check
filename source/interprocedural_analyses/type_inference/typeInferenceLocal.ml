@@ -88,6 +88,7 @@ module State (Context : Context) = struct
   module TypeCheckState = TypeCheck.State (TypeCheckContext)
 
   type non_bottom_t = {
+    snapshot_resolution: Resolution.t;
     resolution: Resolution.t;
     errors: Error.t ErrorMap.Map.t;
   }
@@ -103,7 +104,7 @@ module State (Context : Context) = struct
 
   let pp format = function
     | Bottom -> Format.fprintf format " Bottom: true\n"
-    | Value { resolution; errors } ->
+    | Value { snapshot_resolution; resolution; errors } ->
         let global_resolution = Resolution.global_resolution resolution in
         let expected =
           let parser = GlobalResolution.annotation_parser global_resolution in
@@ -133,11 +134,13 @@ module State (Context : Context) = struct
         in
         Format.fprintf
           format
-          "  Expected return: %a\n  Resolution:\n%a\n  Errors:\n%s\n"
+          "  Expected return: %a\n  Resolution:\n%a\n  Aggregate Resolution:\n%a\n  Errors:\n%s\n"
           Type.pp
           expected
           Resolution.pp
           resolution
+          Resolution.pp
+          snapshot_resolution
           errors
 
 
@@ -153,18 +156,20 @@ module State (Context : Context) = struct
 
   let bottom = Bottom
 
-  let create_with_errors ~errors ~resolution = Value { resolution; errors }
+  let create_with_errors ~errors ~resolution ~snapshot_resolution =
+    Value { snapshot_resolution; resolution; errors }
+
 
   let create ?(bottom = false) ~resolution () =
     if bottom then
       Bottom
     else
-      create_with_errors ~errors:ErrorMap.Map.empty ~resolution
+      create_with_errors ~errors:ErrorMap.Map.empty ~resolution ~snapshot_resolution:resolution
 
 
   let errors = function
     | Bottom -> []
-    | Value { resolution; errors } ->
+    | Value { resolution; errors; _ } ->
         let global_resolution = Resolution.global_resolution resolution in
         Map.data errors
         |> Error.deduplicate
@@ -222,6 +227,12 @@ module State (Context : Context) = struct
                 ~widening_threshold
                 previous.resolution
                 next.resolution;
+            snapshot_resolution =
+              Resolution.outer_widen_refinements
+                ~iteration
+                ~widening_threshold
+                previous.snapshot_resolution
+                next.snapshot_resolution;
           }
 
 
@@ -236,6 +247,14 @@ module State (Context : Context) = struct
         let resolution = Resolution.update_existing_refinements ~old_resolution ~new_resolution in
         Value { initial with resolution }
     | _ -> new_state
+
+
+  let widen_resolution_with_snapshots state =
+    match state with
+    | Bottom -> Bottom
+    | Value ({ resolution; snapshot_resolution; _ } as state_value) ->
+        let resolution = Resolution.outer_join_refinements resolution snapshot_resolution in
+        Value { state_value with resolution }
 
 
   let check_entry = function
@@ -289,6 +308,7 @@ module State (Context : Context) = struct
 
 
   let initial ~resolution =
+    let empty_resolution = resolution in
     let state = TypeCheckState.initial ~resolution in
     let resolution = TypeCheckState.resolution state |> Option.value ~default:resolution in
     let errors =
@@ -297,7 +317,7 @@ module State (Context : Context) = struct
       |> Option.value ~default:[]
       |> List.fold ~init:ErrorMap.Map.empty ~f:(fun errors error -> ErrorMap.add ~errors error)
     in
-    Value { resolution; errors }
+    Value { snapshot_resolution = empty_resolution; resolution; errors }
 
 
   let initial_forward ~resolution =
@@ -305,13 +325,18 @@ module State (Context : Context) = struct
       Context.define
     in
     (* Re-use forward state from type check logic. *)
-    let ({ resolution; _ } as state) = value_exn (initial ~resolution) in
-    (* Set parameters with Any or missing annotations to Bottom in preparation for joins. *)
-    let update_parameter index resolution { Node.value = { Parameter.name; value; annotation }; _ } =
+    let ({ resolution; snapshot_resolution; _ } as state) = value_exn (initial ~resolution) in
+
+    let update_parameter
+        index
+        (resolution, snapshot_resolution)
+        { Node.value = { Parameter.name; value; annotation }; _ }
+      =
       match index, parent with
-      | 0, Some _ when Define.is_method define && not (Define.is_static_method define) -> resolution
-      | _ -> (
-          let create_new_local ~annotation =
+      | 0, Some _ when Define.is_method define && not (Define.is_static_method define) ->
+          resolution, snapshot_resolution
+      | _ ->
+          let create_new_local ~resolution ~annotation =
             let make_parameter_name name =
               name
               |> String.filter ~f:(function
@@ -324,33 +349,41 @@ module State (Context : Context) = struct
               ~reference:(make_parameter_name name)
               ~annotation:(Annotation.create_mutable annotation)
           in
-          match annotation, value with
-          | Some annotation, _
-            when Type.is_any
-                   (GlobalResolution.parse_annotation
-                      (Resolution.global_resolution resolution)
-                      annotation) ->
-              let annotation =
-                value
-                >>| Resolution.resolve_expression_to_type resolution
-                >>| Type.weaken_literals
-                |> Option.value ~default:Type.Bottom
-              in
-              create_new_local ~annotation
-          | None, None -> create_new_local ~annotation:Type.Bottom
-          | None, Some value ->
-              create_new_local
-                ~annotation:
-                  (value |> Resolution.resolve_expression_to_type resolution |> Type.weaken_literals)
-          | _ -> resolution)
+          let snapshot_resolution =
+            (* Capture default parameter values as annotation snapshots to be joined into the final
+               inferred type after analysis is over. We don't want to treat these as assignments
+               that can be "narrowed" away in backwards inference. *)
+            value
+            >>| Resolution.resolve_expression_to_type resolution
+            >>| Type.weaken_literals
+            >>| (fun value_annotation ->
+                  create_new_local ~resolution:snapshot_resolution ~annotation:value_annotation)
+            |> Option.value ~default:snapshot_resolution
+          in
+          let resolution =
+            (* Set parameters with Any or missing annotations to Bottom in preparation for joins. *)
+            match annotation with
+            | Some annotation
+              when Type.is_any
+                     (GlobalResolution.parse_annotation
+                        (Resolution.global_resolution resolution)
+                        annotation) ->
+                create_new_local ~resolution ~annotation:Type.Bottom
+            | None -> create_new_local ~resolution ~annotation:Type.Bottom
+            | _ -> resolution
+          in
+          resolution, snapshot_resolution
     in
-    Value { state with resolution = List.foldi ~init:resolution ~f:update_parameter parameters }
+    let resolution, snapshot_resolution =
+      List.foldi ~init:(resolution, snapshot_resolution) ~f:update_parameter parameters
+    in
+    Value { state with resolution; snapshot_resolution }
 
 
   let initial_backward ~forward =
     match forward with
     | Bottom -> Bottom
-    | Value { resolution; errors } ->
+    | Value { snapshot_resolution; resolution; errors } ->
         let resolution =
           (* Include $return type annotation for backwards propagation. *)
           let resolution_with_return =
@@ -378,7 +411,7 @@ module State (Context : Context) = struct
             ~new_resolution:resolution
             ~filter
         in
-        create_with_errors ~errors ~resolution
+        create_with_errors ~errors ~resolution ~snapshot_resolution
 
 
   let forward ~statement_key:_ state ~statement:({ Node.value; _ } as statement) =
@@ -387,7 +420,7 @@ module State (Context : Context) = struct
        expressions that would usually not refine types, or that would produce Anys. *)
     match state with
     | Bottom -> Bottom
-    | Value ({ resolution; errors } as state) -> (
+    | Value ({ resolution; errors; _ } as state) -> (
         let global_resolution = Resolution.global_resolution resolution in
         let resolve annotation =
           Resolution.resolve_expression_to_type resolution annotation |> Type.weaken_literals
@@ -899,6 +932,7 @@ let infer_local
   in
   let exit =
     backward_fixpoint ~initial_state:(State.initial_forward ~resolution)
+    >>| State.widen_resolution_with_snapshots
     >>| print_state "Entry"
     >>| State.check_entry
   in
