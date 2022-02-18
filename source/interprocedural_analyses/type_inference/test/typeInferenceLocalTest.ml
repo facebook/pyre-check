@@ -80,7 +80,7 @@ let test_backward_resolution_handling context =
   assert_backward
     ["x", Type.Primitive "B"; "y", Type.Primitive "C"]
     "x = y = z"
-    ["x", Type.Primitive "B"; "y", Type.Primitive "C"; "z", Type.Primitive "B"];
+    ["x", Type.Primitive "B"; "y", Type.Primitive "C"; "z", Type.Bottom];
   assert_backward ["a", Type.integer] "a, b = c, d" ["a", Type.integer; "c", Type.integer];
   assert_backward ["a", Type.Top; "b", Type.integer] "a = b" ["a", Type.Top; "b", Type.integer];
 
@@ -652,13 +652,30 @@ let test_inferred_function_parameters context =
     ~expected:(single_parameter "typing.Optional[str]");
   check_inference_results
     {|
-      def foo(y) -> typing.Tuple[int, float]:
-          x = y
-          z = y
-          return (x, z)
+      def foo(x) -> typing.Tuple[int, float]:
+          y = x
+          z = x
+          return (y, z)
     |}
     ~target:"test.foo"
-    ~expected:(single_parameter ~name:"y" "int");
+    ~expected:(single_parameter ~name:"x" "int");
+  check_inference_results
+    {|
+      def foo(x) -> typing.Tuple[int, str]:
+          y = x
+          z = x
+          return (y, z)
+    |}
+    ~target:"test.foo"
+    ~expected:no_inferences;
+  check_inference_results
+    {|
+      def foo(x) -> int:
+          y += x
+          return y
+    |}
+    ~target:"test.foo"
+    ~expected:(single_parameter ~name:"x" "int");
   check_inference_results
     {|
       def foo(x) -> typing.Tuple[int, float]:
@@ -706,7 +723,7 @@ let test_inferred_function_parameters context =
           x += 1
     |}
     ~target:"test.foo"
-    ~expected:no_inferences;
+    ~expected:(single_parameter "int");
   (* Ensure analysis doesn't crash when __iadd__ is called with non-simple names. *)
   check_inference_results
     {|

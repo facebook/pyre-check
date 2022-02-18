@@ -516,22 +516,22 @@ module State (Context : Context) = struct
     match forward with
     | Bottom -> Bottom
     | Value { resolution; errors } ->
-        let expected_return =
-          let parser =
-            GlobalResolution.annotation_parser (Resolution.global_resolution resolution)
-          in
-          let { Node.value = { Define.signature; _ }; _ } = Context.define in
-          Annotation.create_mutable
-            (Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser)
-        in
         let resolution =
           let resolution_with_return =
+            let expected_return =
+              let parser =
+                GlobalResolution.annotation_parser (Resolution.global_resolution resolution)
+              in
+              let { Node.value = { Define.signature; _ }; _ } = Context.define in
+              Annotation.create_mutable
+                (Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser)
+            in
             Resolution.with_annotation_store resolution ~annotation_store:Refinement.Store.empty
             |> Resolution.new_local ~reference:return_reference ~annotation:expected_return
           in
           let filter name (annotation : Annotation.t) =
             not
-              (Type.contains_unknown annotation.annotation
+              (Type.contains_undefined annotation.annotation
               || Type.is_not_instantiated annotation.annotation
               || Reference.equal name return_reference)
           in
@@ -608,6 +608,15 @@ module State (Context : Context) = struct
     | Value ({ resolution; _ } as state) ->
         Type.Variable.Namespace.reset ();
         let resolve_assign annotation target_annotation =
+          let global_resolution = Resolution.global_resolution resolution in
+          let target_annotation = Type.weaken_literals target_annotation in
+          match annotation, target_annotation with
+          | Type.Top, Type.Top -> None
+          | Type.Top, target_annotation -> Some target_annotation
+          | annotation, Type.Top -> Some annotation
+          | _ -> Some (GlobalResolution.meet global_resolution annotation target_annotation)
+        in
+        let resolve_usage annotation target_annotation =
           match annotation, target_annotation with
           | Type.Top, Type.Top -> None
           | Type.Top, target_annotation -> Some target_annotation
@@ -648,7 +657,7 @@ module State (Context : Context) = struct
                     | Expression.Name name when is_simple_name name ->
                         let reference = name_to_reference_exn name in
                         let resolved = forward_expression ~state ~expression:argument in
-                        resolve_assign parameter_annotation resolved
+                        resolve_usage parameter_annotation resolved
                         >>| (fun refined ->
                               Resolution.refine_local
                                 resolution
