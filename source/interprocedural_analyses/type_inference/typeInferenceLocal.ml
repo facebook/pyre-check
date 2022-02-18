@@ -738,7 +738,10 @@ module State (Context : Context) = struct
                         let rec refine resolution parameter_annotation argument_expression =
                           match argument_expression, parameter_annotation with
                           | ({ Node.value = Expression.Name name; _ } as argument), _
-                            when is_simple_name name ->
+                            when is_simple_name name
+                                 && not
+                                      (Type.is_untyped parameter_annotation
+                                      || Type.is_object parameter_annotation) ->
                               forward_expression ~state ~expression:argument
                               |> resolve_usage parameter_annotation
                               >>| (fun refined ->

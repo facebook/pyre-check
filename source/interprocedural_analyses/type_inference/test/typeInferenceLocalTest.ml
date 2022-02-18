@@ -859,6 +859,22 @@ let test_inferred_function_parameters context =
           { "name": "b", "annotation": "str", "value": null, "index": 1 }
         ]
      |};
+  (* Intentionally avoid propagating catch-all annotations *)
+  check_inference_results
+    {|
+      def format( *args: object, **kwargs: object) -> str: ...
+
+      def foo(a, b) -> None:
+        format(a=a, b=b)
+    |}
+    ~target:"test.foo"
+    ~expected:
+      {|
+        [
+          { "name": "a", "annotation": null, "value": null, "index": 0 },
+          { "name": "b", "annotation": null, "value": null, "index": 1 }
+        ]
+     |};
 
   (* Calls with generics *)
   (* TODO(T84365830): Knowing the return type should inform the parameter type. *)
