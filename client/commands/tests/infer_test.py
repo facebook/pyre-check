@@ -1447,7 +1447,6 @@ class StubApplicationTest(testslide.TestCase):
             """,
         )
 
-
     def test_apply_globals(self) -> None:
         self._assert_in_place(
             """
