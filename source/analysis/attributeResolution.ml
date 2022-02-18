@@ -413,12 +413,12 @@ module ClassDecorators = struct
           ~order:"cmp"
 
 
-  let find_dataclass_transform_decorator
+  let find_dataclass_transform_decorator_with_default
       ~class_metadata_environment
       ?dependency
       { Node.value = { ClassSummary.decorators; _ }; _ }
     =
-    let is_dataclass_transform_decorator decorator =
+    let get_dataclass_transform_decorator_with_default decorator =
       let decorator_reference { Decorator.name = { Node.value; _ }; _ } = value in
       let lookup_function reference =
         UnannotatedGlobalEnvironment.ReadOnly.get_define
@@ -440,22 +440,28 @@ module ClassDecorators = struct
       decorator_reference decorator
       |> lookup_function
       >>| function_decorators
-      >>| List.exists ~f:is_dataclass_transform
-      |> Option.value ~default:false
+      >>= List.find ~f:is_dataclass_transform
+      >>= Decorator.from_expression
+      >>| extract_options
+            ~default:{ init = true; repr = false; eq = true; order = false; match_args = false }
+            ~init:""
+            ~repr:""
+            ~eq:"eq_default"
+            ~order:"order_default"
+      >>| fun default -> decorator, default
     in
     decorators
     |> List.filter_map ~f:Decorator.from_expression
-    |> List.find ~f:is_dataclass_transform_decorator
+    |> List.find_map ~f:get_dataclass_transform_decorator_with_default
 
 
   let dataclass_transform_options ~class_metadata_environment ?dependency class_summary =
-    find_dataclass_transform_decorator ~class_metadata_environment ?dependency class_summary
-    >>| extract_options
-          ~default:{ init = true; repr = false; eq = true; order = false; match_args = false }
-          ~init:"init"
-          ~repr:"repr"
-          ~eq:"eq"
-          ~order:"order"
+    find_dataclass_transform_decorator_with_default
+      ~class_metadata_environment
+      ?dependency
+      class_summary
+    >>| fun (decorator, default) ->
+    extract_options ~default ~init:"init" ~repr:"repr" ~eq:"eq" ~order:"order" decorator
 
 
   let apply
