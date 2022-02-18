@@ -71,18 +71,18 @@ function Results(props) {
   return <div style={{fontFamily: 'monospace'}}>{content}</div>;
 }
 
-function Sandbox() {
+function Playground() {
   const [results, setResults] = useState(null);
   const [code, setCode] = useState('reveal_type(1)');
   const [busy, setBusy] = useState(false);
 
   const check = () => {
     setBusy(true);
-    fetch('http://ec2-3-17-23-247.us-east-2.compute.amazonaws.com/check', {
-      method: 'POST',
+    const encodedCode = encodeURIComponent(code)
+    fetch(`https://play.pyre-check.org/check?input=${encodedCode}`, {
+      method: 'GET',
       mode: 'cors',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({input: code}),
     })
       .then(response => response.json())
       .then(data => {
@@ -93,9 +93,9 @@ function Sandbox() {
   };
 
   return (
-    <Layout title="Sandbox">
+    <Layout title="Playground">
       <main className={styles.main}>
-        <h1 className={styles.heading}>Sandbox</h1>
+        <h1 className={styles.heading}>Playground</h1>
         <Code code={code} setCode={setCode} busy={busy} />
         <br />
         <CheckButton check={check} busy={busy} />
@@ -106,4 +106,4 @@ function Sandbox() {
   );
 }
 
-export default Sandbox;
+export default Playground;
