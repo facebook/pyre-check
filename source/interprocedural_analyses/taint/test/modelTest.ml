@@ -1459,7 +1459,31 @@ let test_cross_repository_models context =
           TaintSource[UserControlled],
           'crossRepositorySource',
           'formal(0)',
-          0
+          0,
+        ]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~source_parameters:
+            [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
+          "test.cross_repository_source";
+      ]
+    ();
+  assert_model
+    ~source:{|
+      def cross_repository_source(source_parameter): ...
+    |}
+    ~model_source:
+      {|
+      def test.cross_repository_source(
+        source_parameter: CrossRepositoryTaint[
+          TaintSource[UserControlled],
+          'crossRepositorySource',
+          'formal(0)',
+          0,
+          1,
         ]): ...
     |}
     ~expect:
@@ -2691,7 +2715,7 @@ let test_invalid_models context =
     ~expect:
       "`CrossRepositoryTaint[TaintSource[UserControlled]]` is an invalid taint annotation: Cross \
        repository taint must be of the form CrossRepositoryTaint[taint, canonical_name, \
-       canonical_port, producer_id]."
+       canonical_port, producer_id, trace_length]."
     ();
   assert_invalid_model
     ~source:"def f(parameter): ..."
@@ -2701,7 +2725,7 @@ let test_invalid_models context =
     ~expect:
       "`CrossRepositoryTaint[(TaintSource[UserControlled], some_canonical_name, \"formal(0)\", \
        0)]` is an invalid taint annotation: Cross repository taint must be of the form \
-       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id]."
+       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id, trace_length]."
     ();
   assert_invalid_model
     ~source:"def f(parameter): ..."
@@ -2711,7 +2735,17 @@ let test_invalid_models context =
     ~expect:
       "`CrossRepositoryTaint[(TaintSource[UserControlled], \"some_canonical_name\", 0, 0)]` is an \
        invalid taint annotation: Cross repository taint must be of the form \
-       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id]."
+       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id, trace_length]."
+    ();
+  assert_invalid_model
+    ~source:"def f(parameter): ..."
+    ~model_source:
+      "def test.f(parameter: CrossRepositoryTaint[TaintSource[UserControlled], 'canonical_name', \
+       'formal(x)', 0, 'oh']): ..."
+    ~expect:
+      "`CrossRepositoryTaint[(TaintSource[UserControlled], \"canonical_name\", \"formal(x)\", 0, \
+       \"oh\")]` is an invalid taint annotation: Cross repository taint must be of the form \
+       CrossRepositoryTaint[taint, canonical_name, canonical_port, producer_id, trace_length]."
     ();
   (* Ensure that we're verifying models against the undecorated signature. *)
   assert_valid_model

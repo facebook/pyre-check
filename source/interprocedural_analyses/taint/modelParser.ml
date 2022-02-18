@@ -558,34 +558,46 @@ let rec parse_annotations
         >>= fun annotations -> List.map ~f:(extend_path field) annotations |> all
     | Call { callee; arguments }
       when [%compare.equal: string option] (base_name callee) (Some "CrossRepositoryTaint") -> (
-        match arguments with
-        | [
-         {
-           Call.Argument.value =
-             {
-               Node.value =
-                 Expression.Tuple
-                   [
-                     { Node.value = taint; _ };
-                     {
-                       Node.value =
-                         Expression.Constant
-                           (Constant.String { StringLiteral.value = canonical_name; _ });
-                       _;
-                     };
-                     {
-                       Node.value =
-                         Expression.Constant
-                           (Constant.String { StringLiteral.value = canonical_port; _ });
-                       _;
-                     };
-                     { Node.value = Expression.Constant (Constant.Integer producer_id); _ };
-                   ];
-               _;
-             };
-           _;
-         };
-        ] ->
+        let required_arguments, optional_arguments =
+          match arguments with
+          | [
+           {
+             Call.Argument.value =
+               {
+                 Node.value =
+                   Expression.Tuple
+                     ({ Node.value = taint; _ }
+                     :: {
+                          Node.value =
+                            Expression.Constant
+                              (Constant.String { StringLiteral.value = canonical_name; _ });
+                          _;
+                        }
+                        :: {
+                             Node.value =
+                               Expression.Constant
+                                 (Constant.String { StringLiteral.value = canonical_port; _ });
+                             _;
+                           }
+                           :: { Node.value = Expression.Constant (Constant.Integer producer_id); _ }
+                              :: remaining_arguments);
+                 _;
+               };
+             _;
+           };
+          ] ->
+              Some (taint, canonical_name, canonical_port, producer_id), remaining_arguments
+          | _ -> None, []
+        in
+        let optional_arguments =
+          match optional_arguments with
+          | [{ Node.value = Expression.Constant (Constant.Integer trace_length); _ }] ->
+              Some trace_length
+          | [] -> Some 0
+          | _ -> None
+        in
+        match required_arguments, optional_arguments with
+        | Some (taint, canonical_name, canonical_port, producer_id), Some _ ->
             let add_cross_repository_information annotation =
               let leaf_name =
                 Features.LeafName.
@@ -616,7 +628,7 @@ let rec parse_annotations
             Error
               (annotation_error
                  "Cross repository taint must be of the form CrossRepositoryTaint[taint, \
-                  canonical_name, canonical_port, producer_id]."))
+                  canonical_name, canonical_port, producer_id, trace_length]."))
     | Call { callee; arguments }
       when [%compare.equal: string option] (base_name callee) (Some "CrossRepositoryTaintAnchor")
       -> (

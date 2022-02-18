@@ -3,14 +3,16 @@ def cross_repository.cross_repository_source(
     TaintSource[UserControlled],
     'crossRepositorySource',
     'formal(0)',
-    1
+    1,
+    2
   ]): ...
 
 def cross_repository.returns_crtex_source() -> CrossRepositoryTaint[
     TaintSource[UserControlled],
     'crossRepositorySource',
     'result',
-    1
+    1,
+    3
   ]: ...
 
 
