@@ -545,7 +545,7 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
                 annotated_parameters.append(parameter)
             return annotated_parameters
 
-        return annotations.parameters.with_changes(
+        return updated_node.params.with_changes(
             params=update_annotation(
                 updated_node.params.params, annotations.parameters.params
             ),

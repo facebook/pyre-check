@@ -1406,6 +1406,48 @@ class StubApplicationTest(testslide.TestCase):
         )
         self.assertEqual(expected_code, annotated_code)
 
+    def test_apply_functions(self) -> None:
+        self._assert_in_place(
+            """
+            def foo(x: int) -> None: ...
+            """,
+            """
+            def foo(x):
+                pass
+            """,
+            """
+            def foo(x: int) -> None:
+                pass
+            """,
+        )
+        self._assert_in_place(
+            """
+            def incomplete_stubs(x: int, y) -> None: ...
+            """,
+            """
+            def incomplete_stubs(x, y: int):
+                pass
+            """,
+            """
+            def incomplete_stubs(x: int, y: int) -> None:
+                pass
+            """,
+        )
+        self._assert_in_place(
+            """
+            def incomplete_stubs_with_stars(x: int, *args, **kwargs) -> None: ...
+            """,
+            """
+            def incomplete_stubs_with_stars(x, *args: P.args, **kwargs: P.kwargs):
+                pass
+            """,
+            """
+            def incomplete_stubs_with_stars(x: int, *args: P.args, **kwargs: P.kwargs) -> None:
+                pass
+            """,
+        )
+
+
     def test_apply_globals(self) -> None:
         self._assert_in_place(
             """
