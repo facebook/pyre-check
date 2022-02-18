@@ -102,3 +102,31 @@ def joined_base():
     a = request.GET["tainted"]
     b = "benign"
     eval(f"{a}{b}")  # noqa: P204
+
+
+def analyze_implicit_call():
+    b = B()
+    b.f = request.GET["tainted"]
+    # Require inferring a tito model for `B.__str__`
+    eval(f"{str(b)}")  # noqa: P204.
+    # Require analyzing an implicit call to `str(b)`
+    eval(f"{b}")  # noqa: P204.
+
+
+def multiple_targets_for_single_expression_3(b_or_c: Union[B, C], d: int):
+    a = 1
+    # Require the proper accumulation of tito information under implicit `str`
+    return f"{a}{b_or_c}{d}"
+
+
+def tito_f(x):
+    return x
+
+
+def tito_g(y):
+    return y
+
+
+def compute_tito(x, y):
+    # Require the proper accumulation of tito information
+    return f"{tito_g(y)}{tito_f(x)}"

@@ -2,6 +2,146 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "string_conversion.analyze_implicit_call",
+    "callable_line": 107,
+    "code": 5001,
+    "line": 111,
+    "start": 9,
+    "end": 20,
+    "filename": "string_conversion.py",
+    "message":
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 111, "start": 16, "end": 17 } ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 109,
+              "start": 10,
+              "end": 21
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 111,
+              "start": 9,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" },
+      { "always-via": "tito" }
+    ],
+    "master_handles": [
+      "string_conversion.analyze_implicit_call:5001:0:Call|eval|0|formal(arg):47162a06740e61b2ff38aff07e5fd6fb"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.analyze_implicit_call",
+    "callable_line": 107,
+    "code": 5001,
+    "line": 113,
+    "start": 9,
+    "end": 15,
+    "filename": "string_conversion.py",
+    "message":
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 113, "start": 12, "end": 13 } ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 109,
+              "start": 10,
+              "end": 21
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 113,
+              "start": 9,
+              "end": 15
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" },
+      { "always-via": "tito" }
+    ],
+    "master_handles": [
+      "string_conversion.analyze_implicit_call:5001:0:Call|eval|1|formal(arg):60c3fc42d556350aebd2ae733337759f"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "string_conversion.explicit_str",
     "callable_line": 49,
     "code": 5001,
@@ -663,18 +803,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Obj{string_conversion.B.f}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "Obj{string_conversion.C.g}",
     "sources": [
       {
@@ -755,10 +883,6 @@
         "taint": [
           {
             "kinds": [
-              {
-                "leaves": [ { "name": "Obj{string_conversion.B.f}" } ],
-                "kind": "Test"
-              },
               {
                 "leaves": [
                   { "name": "Obj{string_conversion.C.g}" },
@@ -861,27 +985,6 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{string_conversion.B::__str__}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "Obj{string_conversion.B.f}" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            }
-          }
-        ]
-      }
-    ],
     "tito": [
       {
         "port": "formal(self)[f]",
@@ -1044,27 +1147,6 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.B.__str__",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "Obj{string_conversion.B.f}" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "string_conversion.py",
-              "line": 79,
-              "start": 15,
-              "end": 21
-            }
-          }
-        ]
-      }
-    ],
     "tito": [
       {
         "port": "formal(self)[f]",
@@ -1181,10 +1263,50 @@
 {
   "kind": "model",
   "data": {
+    "callable": "string_conversion.compute_tito",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 132, "start": 21, "end": 22 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 132, "start": 32, "end": 33 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "string_conversion.multiple_targets_for_single_expression",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x)[value]",
         "taint": [
           {
             "kinds": [
@@ -1193,7 +1315,11 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 72, "start": 12, "end": 13 } ],
             "root": {
               "filename": "string_conversion.py",
               "line": 72,
@@ -1284,7 +1410,7 @@
     "callable": "string_conversion.multiple_targets_for_single_expression_2",
     "sinks": [
       {
-        "port": "formal(a)",
+        "port": "formal(a)[f]",
         "taint": [
           {
             "kinds": [
@@ -1293,7 +1419,35 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 98, "start": 12, "end": 13 } ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 98,
+              "start": 9,
+              "end": 15
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(a)[g]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 98, "start": 12, "end": 13 } ],
             "root": {
               "filename": "string_conversion.py",
               "line": 98,
@@ -1367,6 +1521,121 @@
     "features": [ { "always-via": "format-string" } ],
     "master_handles": [
       "string_conversion.multiple_targets_for_single_expression_2:5001:0:Call|eval|0|formal(arg):48ad7e71c84860b5b46b69082a1926f4"
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.multiple_targets_for_single_expression_3",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{string_conversion.C.g}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": {
+                "filename": "string_conversion.py",
+                "line": 119,
+                "start": 17,
+                "end": 23
+              },
+              "resolves_to": [ "string_conversion.C.__str__" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(d)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-via": "format-string" },
+              { "always-type": "scalar" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(b_or_c)[f]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 119, "start": 17, "end": 23 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(b_or_c)[g]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 119, "start": 17, "end": 23 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.tito_f",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.tito_g",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
     ]
   }
 }

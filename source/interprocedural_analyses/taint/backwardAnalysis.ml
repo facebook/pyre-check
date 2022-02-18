@@ -113,6 +113,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     callees
 
 
+  let get_format_string_callees ~location =
+    CallGraph.DefineCallGraph.resolve_format_string FunctionContext.call_graph_of_define ~location
+
+
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution FunctionContext.environment
 
   let local_annotations =
@@ -1498,13 +1502,62 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~init:taint
     in
     let taint = BackwardState.Tree.add_local_breadcrumb (Features.format_string ()) taint in
-    List.fold
-      substrings
-      ~f:(fun state substring ->
-        match substring with
-        | Substring.Format expression -> analyze_expression ~resolution ~taint ~state ~expression
-        | Substring.Literal _ -> state)
-      ~init:state
+    let analyze_stringify_callee
+        ~state_to_join
+        ~call_target
+        ~call_location
+        ~base_expression
+        ~base_state
+      =
+      let { arguments_taint = _; self_taint; callee_taint; state = new_state } =
+        let callees =
+          CallGraph.CallCallees.create ~call_targets:[call_target] ~return_type:Type.string ()
+        in
+        let callee =
+          let method_name =
+            Option.value_exn (Interprocedural.Target.method_name call_target.target)
+          in
+          {
+            Node.value =
+              Expression.Name
+                (Name.Attribute { base = base_expression; attribute = method_name; special = false });
+            location = call_location;
+          }
+        in
+        apply_callees_and_return_arguments_taint
+          ~resolution
+          ~callee
+          ~call_location
+          ~arguments:[]
+          ~state:base_state
+          ~call_taint:taint
+          callees
+      in
+      match callee_taint, self_taint with
+      | None, Some self_taint ->
+          analyze_expression
+            ~resolution
+            ~taint:self_taint
+            ~state:new_state
+            ~expression:base_expression
+          |> join state_to_join
+      | _ -> failwith "unexpected"
+    in
+    let analyze_nested_expression state = function
+      | Substring.Format ({ Node.location = expression_location; _ } as expression) -> (
+          match get_format_string_callees ~location:expression_location with
+          | Some { CallGraph.FormatStringCallees.call_targets } ->
+              List.fold call_targets ~init:state ~f:(fun state_to_join call_target ->
+                  analyze_stringify_callee
+                    ~state_to_join
+                    ~call_target
+                    ~call_location:expression_location
+                    ~base_expression:expression
+                    ~base_state:state)
+          | None -> analyze_expression ~resolution ~taint ~state ~expression)
+      | Substring.Literal _ -> state
+    in
+    List.fold (List.rev substrings) ~f:analyze_nested_expression ~init:state
 
 
   and analyze_expression ~resolution ~taint ~state ~expression:({ Node.location; _ } as expression) =
