@@ -88,45 +88,21 @@ let infer ~environment ~user_models =
       List.exists attributes ~f:(fun attribute ->
           String.equal (Annotated.Attribute.name attribute) name)
     in
-    (* If a user-specified __new__ or __init__ exist, don't override it. *)
-    let models =
-      if has_attribute "__init__" then
-        []
-      else
-        GlobalResolution.class_definition global_resolution (Primitive class_name)
-        >>| Node.value
-        >>= ClassSummary.fields_tuple_value
-        >>| (fun attributes ->
-              [
-                ( `Method { Target.class_name; method_name = "__init__" },
-                  {
-                    Model.forward = Model.Forward.empty;
-                    backward =
-                      {
-                        Model.Backward.taint_in_taint_out =
-                          List.foldi ~f:add_parameter_tito ~init:BackwardState.empty attributes;
-                        sink_taint = BackwardState.empty;
-                      };
-                    sanitizers = Model.Sanitizers.empty;
-                    modes = Model.ModeSet.empty;
-                  } );
-              ])
-        |> Option.value ~default:[]
-    in
-    let models =
-      if has_attribute "__new__" then
-        models
-      else
+    (* If a user-specified __new__ exist, don't override it. *)
+    if has_attribute "__new__" then
+      []
+    else
+      (* Should not omit this model. Otherwise the mode is "obscure", thus leading to a tito model,
+         which joins the taint on every element of the tuple. *)
+      [
         ( `Method { Target.class_name; method_name = "__new__" },
           {
             Model.forward = Model.Forward.empty;
             backward = Model.Backward.empty;
             sanitizers = Model.Sanitizers.empty;
             modes = Model.ModeSet.empty;
-          } )
-        :: models
-    in
-    models
+          } );
+      ]
   in
   let compute_models class_name class_summary =
     let is_dataclass =
