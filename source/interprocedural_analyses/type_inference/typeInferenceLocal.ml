@@ -304,7 +304,9 @@ module State (Context : Context) = struct
     let { Node.value = { Define.signature = { parameters; parent; _ }; _ } as define; _ } =
       Context.define
     in
+    (* Re-use forward state from type check logic. *)
     let ({ resolution; _ } as state) = value_exn (initial ~resolution) in
+    (* Set parameters with Any or missing annotations to Bottom in preparation for joins. *)
     let update_parameter index resolution { Node.value = { Parameter.name; value; annotation }; _ } =
       match index, parent with
       | 0, Some _ when Define.is_method define && not (Define.is_static_method define) -> resolution
@@ -350,6 +352,7 @@ module State (Context : Context) = struct
     | Bottom -> Bottom
     | Value { resolution; errors } ->
         let resolution =
+          (* Include $return type annotation for backwards propagation. *)
           let resolution_with_return =
             let expected_return =
               let parser =
@@ -379,6 +382,9 @@ module State (Context : Context) = struct
 
 
   let forward ~statement_key:_ state ~statement:({ Node.value; _ } as statement) =
+    (* In general, forward inference relies on joins to handle assignments. Type check forward logic
+       is used to propagate local types in most cases, with special matches for certain assigns or
+       expressions that would usually not refine types, or that would produce Anys. *)
     match state with
     | Bottom -> Bottom
     | Value ({ resolution; errors } as state) -> (
@@ -603,6 +609,7 @@ module State (Context : Context) = struct
 
 
   let backward ~statement_key:_ state ~statement =
+    (* In general, backwards inference relies on meets to handle usages. *)
     match state with
     | Bottom -> Bottom
     | Value ({ resolution; _ } as state) ->
@@ -865,34 +872,33 @@ let infer_local
     state
   in
   let cfg = Cfg.create define in
-  let backward_fixpoint ~initial_forward ~initialize_backward =
-    let rec fixpoint iteration ~initial_forward ~initialize_backward =
-      let invariants =
-        Fixpoint.forward ~cfg ~initial:initial_forward
+  let backward_fixpoint ~initial_state =
+    let rec fixpoint iteration ~initial_state =
+      (* Run the initial state through forward, then backwards, before comparing to see whether
+         another iteration needs to run to reach a fixpoint state. *)
+      let final_state =
+        Fixpoint.forward ~cfg ~initial:initial_state
         |> Fixpoint.exit
-        >>| (fun forward_state -> initialize_backward ~forward:forward_state)
-        |> Option.value ~default:initial_forward
-        |> fun initial -> Fixpoint.backward ~cfg ~initial
-      in
-      let entry =
-        invariants
+        >>| (fun forward_exit_state -> State.initial_backward ~forward:forward_exit_state)
+        |> Option.value ~default:initial_state
+        |> (fun initial_backward_state -> Fixpoint.backward ~cfg ~initial:initial_backward_state)
         |> Fixpoint.entry
-        >>| State.update_only_existing_annotations initial_forward
-        >>| (fun post -> State.widen ~previous:initial_forward ~next:post ~iteration)
-        |> Option.value ~default:initial_forward
       in
-      if State.less_or_equal ~left:entry ~right:initial_forward then
-        invariants
+      let updated_initial_state =
+        final_state
+        >>| State.update_only_existing_annotations initial_state
+        >>| (fun post -> State.widen ~previous:initial_state ~next:post ~iteration)
+        |> Option.value ~default:initial_state
+      in
+      if State.less_or_equal ~left:updated_initial_state ~right:initial_state then
+        final_state
       else
-        fixpoint (iteration + 1) ~initial_forward:entry ~initialize_backward
+        fixpoint (iteration + 1) ~initial_state:updated_initial_state
     in
-    fixpoint 0 ~initial_forward ~initialize_backward
+    fixpoint 0 ~initial_state
   in
   let exit =
-    backward_fixpoint
-      ~initial_forward:(State.initial_forward ~resolution)
-      ~initialize_backward:State.initial_backward
-    |> Fixpoint.entry
+    backward_fixpoint ~initial_state:(State.initial_forward ~resolution)
     >>| print_state "Entry"
     >>| State.check_entry
   in
