@@ -35,7 +35,7 @@ prompt-toolkit==3.0.8
 psutil==5.8.0
 ptyprocess==0.6.0
 Pygments==2.7.3
-PyYAML==5.3.1
+PyYAML==5.4
 Rx==1.6.1
 singledispatch==3.4.0.3
 six==1.15.0
