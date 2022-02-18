@@ -816,6 +816,22 @@ let test_inferred_function_parameters context =
           { "name": "x", "annotation": null, "value": null, "index": 0 }
         ]
      |};
+  check_inference_results
+    {|
+      def foo(a: int, b: str) -> None:
+          pass
+
+      def bar(a, b) -> None:
+        foo(b=b, a=a)
+    |}
+    ~target:"test.bar"
+    ~expected:
+      {|
+        [
+          { "name": "a", "annotation": "int", "value": null, "index": 0 },
+          { "name": "b", "annotation": "str", "value": null, "index": 1 }
+        ]
+     |};
   ()
 
 
