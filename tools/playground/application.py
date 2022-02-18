@@ -187,7 +187,7 @@ class Pysa:
             emit("pysa_results_channel", result)
 
 
-def start_server(debug: bool) -> None:
+def run_server(debug: bool) -> None:
     application = Flask(__name__)
 
     # You may need to modify the origin to the pyre-check website
@@ -243,4 +243,4 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true")
     arguments: argparse.Namespace = parser.parse_args()
-    start_server(debug=arguments.debug)
+    run_server(debug=arguments.debug)
