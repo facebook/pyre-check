@@ -227,6 +227,67 @@ module State (Context : Context) = struct
 
   let join left right = widen ~previous:left ~next:right ~iteration:0
 
+  let return_reference = Reference.create "$return"
+
+  let update_only_existing_annotations initial_state new_state =
+    match initial_state, new_state with
+    | ( Value ({ resolution = old_resolution; _ } as initial),
+        Value { resolution = new_resolution; _ } ) ->
+        let resolution = Resolution.update_existing_refinements ~old_resolution ~new_resolution in
+        Value { initial with resolution }
+    | _ -> new_state
+
+
+  let check_entry = function
+    | Bottom -> Bottom
+    | Value ({ resolution; errors; _ } as state) ->
+        let { Node.value = { Define.signature = { parameters; _ }; _ } as define; _ } =
+          Context.define
+        in
+        let add_parameter_errors errors { Node.value = { Parameter.name; annotation; _ }; location }
+          =
+          let add_missing_parameter_error ~given_annotation =
+            let reference = Reference.create name in
+            Resolution.get_local resolution ~reference
+            >>= (fun actual ->
+                  Option.some_if (not (Type.is_any (Annotation.annotation actual))) actual)
+            >>| (fun { Annotation.annotation; _ } ->
+                  let error =
+                    Error.create
+                      ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                      ~kind:
+                        (Error.MissingParameterAnnotation
+                           {
+                             name = reference;
+                             annotation = Some annotation;
+                             given_annotation;
+                             evidence_locations = [];
+                             thrown_at_source = true;
+                           })
+                      ~define:Context.define
+                  in
+                  ErrorMap.add ~errors error)
+            |> Option.value ~default:errors
+          in
+          match annotation with
+          | None -> add_missing_parameter_error ~given_annotation:None
+          | Some annotation
+            when Type.is_any
+                   (GlobalResolution.parse_annotation
+                      (Resolution.global_resolution resolution)
+                      annotation) ->
+              add_missing_parameter_error ~given_annotation:(Some Type.Any)
+          | _ -> errors
+        in
+        let parameters =
+          if Define.is_method define && not (Define.is_static_method define) then
+            List.tl parameters |> Option.value ~default:[]
+          else
+            parameters
+        in
+        Value { state with errors = List.fold parameters ~init:errors ~f:add_parameter_errors }
+
+
   let initial ~resolution =
     let state = TypeCheckState.initial ~resolution in
     let resolution = TypeCheckState.resolution state |> Option.value ~default:resolution in
@@ -237,6 +298,84 @@ module State (Context : Context) = struct
       |> List.fold ~init:ErrorMap.Map.empty ~f:(fun errors error -> ErrorMap.add ~errors error)
     in
     Value { resolution; errors }
+
+
+  let initial_forward ~resolution =
+    let { Node.value = { Define.signature = { parameters; parent; _ }; _ } as define; _ } =
+      Context.define
+    in
+    let ({ resolution; _ } as state) = value_exn (initial ~resolution) in
+    let make_parameter_name name =
+      name
+      |> String.filter ~f:(function
+             | '*' -> false
+             | _ -> true)
+      |> Reference.create
+    in
+    let update_parameter index resolution { Node.value = { Parameter.name; value; annotation }; _ } =
+      match index, parent with
+      | 0, Some _ when Define.is_method define && not (Define.is_static_method define) -> resolution
+      | _ -> (
+          let create_new_local ~annotation =
+            Resolution.new_local
+              resolution
+              ~reference:(make_parameter_name name)
+              ~annotation:(Annotation.create_mutable annotation)
+          in
+          match annotation, value with
+          | Some annotation, _
+            when Type.is_any
+                   (GlobalResolution.parse_annotation
+                      (Resolution.global_resolution resolution)
+                      annotation) ->
+              let annotation =
+                value
+                >>| Resolution.resolve_expression_to_type resolution
+                >>| Type.weaken_literals
+                |> Option.value ~default:Type.Bottom
+              in
+              create_new_local ~annotation
+          | None, None -> create_new_local ~annotation:Type.Bottom
+          | None, Some value ->
+              create_new_local
+                ~annotation:
+                  (value |> Resolution.resolve_expression_to_type resolution |> Type.weaken_literals)
+          | _ -> resolution)
+    in
+    Value { state with resolution = List.foldi ~init:resolution ~f:update_parameter parameters }
+
+
+  let initial_backward ~forward =
+    match forward with
+    | Bottom -> Bottom
+    | Value { resolution; errors } ->
+        let resolution =
+          let resolution_with_return =
+            let expected_return =
+              let parser =
+                GlobalResolution.annotation_parser (Resolution.global_resolution resolution)
+              in
+              let { Node.value = { Define.signature; _ }; _ } = Context.define in
+              Annotation.create_mutable
+                (Annotated.Callable.return_annotation_without_applying_decorators
+                   ~signature
+                   ~parser)
+            in
+            Resolution.with_annotation_store resolution ~annotation_store:Refinement.Store.empty
+            |> Resolution.new_local ~reference:return_reference ~annotation:expected_return
+          in
+          let filter name (annotation : Annotation.t) =
+            not
+              (Type.contains_undefined annotation.annotation
+              || Type.is_not_instantiated annotation.annotation
+              || Reference.equal name return_reference)
+          in
+          Resolution.update_refinements_with_filter
+            ~old_resolution:resolution_with_return
+            ~new_resolution:resolution
+            ~filter
+        in
+        create_with_errors ~errors ~resolution
 
 
   let forward ~statement_key:_ state ~statement:({ Node.value; _ } as statement) =
@@ -463,143 +602,6 @@ module State (Context : Context) = struct
                       List.fold statement_errors ~init:errors ~f:(fun errors error ->
                           ErrorMap.add ~errors error);
                   }))
-
-
-  let return_reference = Reference.create "$return"
-
-  let initial_forward ~resolution =
-    let { Node.value = { Define.signature = { parameters; parent; _ }; _ } as define; _ } =
-      Context.define
-    in
-    let ({ resolution; _ } as state) = value_exn (initial ~resolution) in
-    let make_parameter_name name =
-      name
-      |> String.filter ~f:(function
-             | '*' -> false
-             | _ -> true)
-      |> Reference.create
-    in
-    let update_parameter index resolution { Node.value = { Parameter.name; value; annotation }; _ } =
-      match index, parent with
-      | 0, Some _ when Define.is_method define && not (Define.is_static_method define) -> resolution
-      | _ -> (
-          let create_new_local ~annotation =
-            Resolution.new_local
-              resolution
-              ~reference:(make_parameter_name name)
-              ~annotation:(Annotation.create_mutable annotation)
-          in
-          match annotation, value with
-          | Some annotation, _
-            when Type.is_any
-                   (GlobalResolution.parse_annotation
-                      (Resolution.global_resolution resolution)
-                      annotation) ->
-              let annotation =
-                value
-                >>| Resolution.resolve_expression_to_type resolution
-                >>| Type.weaken_literals
-                |> Option.value ~default:Type.Bottom
-              in
-              create_new_local ~annotation
-          | None, None -> create_new_local ~annotation:Type.Bottom
-          | None, Some value ->
-              create_new_local
-                ~annotation:
-                  (value |> Resolution.resolve_expression_to_type resolution |> Type.weaken_literals)
-          | _ -> resolution)
-    in
-    Value { state with resolution = List.foldi ~init:resolution ~f:update_parameter parameters }
-
-
-  let initial_backward ~forward =
-    match forward with
-    | Bottom -> Bottom
-    | Value { resolution; errors } ->
-        let resolution =
-          let resolution_with_return =
-            let expected_return =
-              let parser =
-                GlobalResolution.annotation_parser (Resolution.global_resolution resolution)
-              in
-              let { Node.value = { Define.signature; _ }; _ } = Context.define in
-              Annotation.create_mutable
-                (Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser)
-            in
-            Resolution.with_annotation_store resolution ~annotation_store:Refinement.Store.empty
-            |> Resolution.new_local ~reference:return_reference ~annotation:expected_return
-          in
-          let filter name (annotation : Annotation.t) =
-            not
-              (Type.contains_undefined annotation.annotation
-              || Type.is_not_instantiated annotation.annotation
-              || Reference.equal name return_reference)
-          in
-          Resolution.update_refinements_with_filter
-            ~old_resolution:resolution_with_return
-            ~new_resolution:resolution
-            ~filter
-        in
-        create_with_errors ~errors ~resolution
-
-
-  let update_only_existing_annotations initial_state new_state =
-    match initial_state, new_state with
-    | ( Value ({ resolution = old_resolution; _ } as initial),
-        Value { resolution = new_resolution; _ } ) ->
-        let resolution = Resolution.update_existing_refinements ~old_resolution ~new_resolution in
-        Value { initial with resolution }
-    | _ -> new_state
-
-
-  let check_entry = function
-    | Bottom -> Bottom
-    | Value ({ resolution; errors; _ } as state) ->
-        let { Node.value = { Define.signature = { parameters; _ }; _ } as define; _ } =
-          Context.define
-        in
-        let add_parameter_errors errors { Node.value = { Parameter.name; annotation; _ }; location }
-          =
-          let add_missing_parameter_error ~given_annotation =
-            let reference = Reference.create name in
-            Resolution.get_local resolution ~reference
-            >>= (fun actual ->
-                  Option.some_if (not (Type.is_any (Annotation.annotation actual))) actual)
-            >>| (fun { Annotation.annotation; _ } ->
-                  let error =
-                    Error.create
-                      ~location:(Location.with_module ~qualifier:Context.qualifier location)
-                      ~kind:
-                        (Error.MissingParameterAnnotation
-                           {
-                             name = reference;
-                             annotation = Some annotation;
-                             given_annotation;
-                             evidence_locations = [];
-                             thrown_at_source = true;
-                           })
-                      ~define:Context.define
-                  in
-                  ErrorMap.add ~errors error)
-            |> Option.value ~default:errors
-          in
-          match annotation with
-          | None -> add_missing_parameter_error ~given_annotation:None
-          | Some annotation
-            when Type.is_any
-                   (GlobalResolution.parse_annotation
-                      (Resolution.global_resolution resolution)
-                      annotation) ->
-              add_missing_parameter_error ~given_annotation:(Some Type.Any)
-          | _ -> errors
-        in
-        let parameters =
-          if Define.is_method define && not (Define.is_static_method define) then
-            List.tl parameters |> Option.value ~default:[]
-          else
-            parameters
-        in
-        Value { state with errors = List.fold parameters ~init:errors ~f:add_parameter_errors }
 
 
   let backward ~statement_key:_ state ~statement =
