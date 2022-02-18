@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_transform.a_to_x_to_b_issue",
-    "callable_line": 73,
+    "callable_line": 86,
     "code": 123,
-    "line": 76,
+    "line": 89,
     "start": 11,
     "end": 15,
     "filename": "taint_transform.py",
@@ -22,10 +22,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 75, "start": 23, "end": 28 } ],
+            "tito": [ { "line": 88, "start": 23, "end": 28 } ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 74,
+              "line": 87,
               "start": 12,
               "end": 22
             }
@@ -44,7 +44,7 @@
             ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 76,
+              "line": 89,
               "start": 11,
               "end": 15
             }
@@ -62,9 +62,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_transform.a_to_y_to_z_to_b_issue",
-    "callable_line": 104,
+    "callable_line": 117,
     "code": 124,
-    "line": 108,
+    "line": 121,
     "start": 11,
     "end": 16,
     "filename": "taint_transform.py",
@@ -82,12 +82,12 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 106, "start": 23, "end": 28 },
-              { "line": 107, "start": 24, "end": 28 }
+              { "line": 119, "start": 23, "end": 28 },
+              { "line": 120, "start": 24, "end": 28 }
             ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 105,
+              "line": 118,
               "start": 12,
               "end": 22
             }
@@ -106,7 +106,7 @@
             ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 108,
+              "line": 121,
               "start": 11,
               "end": 16
             }
@@ -124,9 +124,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_transform.a_to_y_zb_issue",
-    "callable_line": 199,
+    "callable_line": 217,
     "code": 124,
-    "line": 202,
+    "line": 220,
     "start": 32,
     "end": 36,
     "filename": "taint_transform.py",
@@ -143,10 +143,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 201, "start": 23, "end": 28 } ],
+            "tito": [ { "line": 219, "start": 23, "end": 28 } ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 200,
+              "line": 218,
               "start": 12,
               "end": 22
             }
@@ -168,7 +168,7 @@
             "call": {
               "position": {
                 "filename": "taint_transform.py",
-                "line": 202,
+                "line": 220,
                 "start": 32,
                 "end": 36
               },
@@ -191,9 +191,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_transform.a_to_yz_to_b_issue",
-    "callable_line": 181,
+    "callable_line": 199,
     "code": 124,
-    "line": 184,
+    "line": 202,
     "start": 11,
     "end": 15,
     "filename": "taint_transform.py",
@@ -210,10 +210,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 183, "start": 34, "end": 39 } ],
+            "tito": [ { "line": 201, "start": 34, "end": 39 } ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 182,
+              "line": 200,
               "start": 12,
               "end": 22
             }
@@ -232,7 +232,7 @@
             ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 184,
+              "line": 202,
               "start": 11,
               "end": 15
             }
@@ -250,9 +250,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_transform.a_to_yzb_issue",
-    "callable_line": 154,
+    "callable_line": 172,
     "code": 124,
-    "line": 156,
+    "line": 174,
     "start": 33,
     "end": 38,
     "filename": "taint_transform.py",
@@ -270,7 +270,7 @@
             ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 155,
+              "line": 173,
               "start": 12,
               "end": 22
             }
@@ -292,7 +292,7 @@
             "call": {
               "position": {
                 "filename": "taint_transform.py",
-                "line": 156,
+                "line": 174,
                 "start": 33,
                 "end": 38
               },
@@ -315,9 +315,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_transform.ay_to_z_to_b_issue",
-    "callable_line": 175,
+    "callable_line": 193,
     "code": 124,
-    "line": 178,
+    "line": 196,
     "start": 11,
     "end": 15,
     "filename": "taint_transform.py",
@@ -336,11 +336,11 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 177, "start": 23, "end": 28 } ],
+            "tito": [ { "line": 195, "start": 23, "end": 28 } ],
             "call": {
               "position": {
                 "filename": "taint_transform.py",
-                "line": 176,
+                "line": 194,
                 "start": 12,
                 "end": 43
               },
@@ -364,7 +364,7 @@
             ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 178,
+              "line": 196,
               "start": 11,
               "end": 15
             }
@@ -382,9 +382,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_transform.ay_to_zb_issue",
-    "callable_line": 170,
+    "callable_line": 188,
     "code": 124,
-    "line": 172,
+    "line": 190,
     "start": 32,
     "end": 37,
     "filename": "taint_transform.py",
@@ -405,7 +405,7 @@
             "call": {
               "position": {
                 "filename": "taint_transform.py",
-                "line": 171,
+                "line": 189,
                 "start": 12,
                 "end": 43
               },
@@ -432,7 +432,7 @@
             "call": {
               "position": {
                 "filename": "taint_transform.py",
-                "line": 172,
+                "line": 190,
                 "start": 32,
                 "end": 37
               },
@@ -455,9 +455,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_transform.ayz_to_b_issue",
-    "callable_line": 149,
+    "callable_line": 167,
     "code": 124,
-    "line": 151,
+    "line": 169,
     "start": 11,
     "end": 16,
     "filename": "taint_transform.py",
@@ -478,7 +478,7 @@
             "call": {
               "position": {
                 "filename": "taint_transform.py",
-                "line": 150,
+                "line": 168,
                 "start": 12,
                 "end": 47
               },
@@ -502,7 +502,7 @@
             ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 151,
+              "line": 169,
               "start": 11,
               "end": 16
             }
@@ -520,9 +520,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_transform.c_to_d_issue",
-    "callable_line": 86,
+    "callable_line": 99,
     "code": 125,
-    "line": 88,
+    "line": 101,
     "start": 11,
     "end": 16,
     "filename": "taint_transform.py",
@@ -540,7 +540,7 @@
             ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 87,
+              "line": 100,
               "start": 12,
               "end": 22
             }
@@ -559,7 +559,7 @@
             ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 88,
+              "line": 101,
               "start": 11,
               "end": 16
             }
@@ -577,9 +577,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_transform.issue_with_repeated_transforms",
-    "callable_line": 210,
+    "callable_line": 228,
     "code": 126,
-    "line": 212,
+    "line": 230,
     "start": 33,
     "end": 38,
     "filename": "taint_transform.py",
@@ -601,7 +601,7 @@
             "call": {
               "position": {
                 "filename": "taint_transform.py",
-                "line": 211,
+                "line": 229,
                 "start": 12,
                 "end": 37
               },
@@ -626,7 +626,7 @@
             "call": {
               "position": {
                 "filename": "taint_transform.py",
-                "line": 212,
+                "line": 230,
                 "start": 33,
                 "end": 38
               },
@@ -662,7 +662,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 134, "start": 34, "end": 37 } ],
+            "tito": [ { "line": 152, "start": 34, "end": 37 } ],
             "decl": null
           }
         ]
@@ -712,10 +712,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 145, "start": 35, "end": 38 } ],
+            "tito": [ { "line": 163, "start": 35, "end": 38 } ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 146,
+              "line": 164,
               "start": 11,
               "end": 16
             }
@@ -741,10 +741,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 112, "start": 24, "end": 27 } ],
+            "tito": [ { "line": 125, "start": 24, "end": 27 } ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 113,
+              "line": 126,
               "start": 11,
               "end": 16
             }
@@ -771,12 +771,12 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 117, "start": 24, "end": 27 },
-              { "line": 118, "start": 23, "end": 28 }
+              { "line": 135, "start": 24, "end": 27 },
+              { "line": 136, "start": 23, "end": 28 }
             ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 119,
+              "line": 137,
               "start": 11,
               "end": 15
             }
@@ -802,10 +802,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 166, "start": 24, "end": 27 } ],
+            "tito": [ { "line": 184, "start": 24, "end": 27 } ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 167,
+              "line": 185,
               "start": 11,
               "end": 16
             }
@@ -857,10 +857,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 140, "start": 34, "end": 39 } ],
+            "tito": [ { "line": 158, "start": 34, "end": 39 } ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 139,
+              "line": 157,
               "start": 12,
               "end": 22
             }
@@ -886,10 +886,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 161, "start": 23, "end": 28 } ],
+            "tito": [ { "line": 179, "start": 23, "end": 28 } ],
             "root": {
               "filename": "taint_transform.py",
-              "line": 160,
+              "line": 178,
               "start": 12,
               "end": 22
             }
@@ -1042,7 +1042,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 123, "start": 24, "end": 27 } ],
+            "tito": [ { "line": 141, "start": 24, "end": 27 } ],
             "decl": null
           }
         ]
@@ -1068,8 +1068,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
-              { "line": 128, "start": 24, "end": 27 },
-              { "line": 129, "start": 23, "end": 28 }
+              { "line": 146, "start": 24, "end": 27 },
+              { "line": 147, "start": 23, "end": 28 }
             ],
             "decl": null
           }

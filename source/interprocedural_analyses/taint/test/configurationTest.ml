@@ -133,6 +133,18 @@ let test_transform _ =
   ()
 
 
+let test_transform_splits _ =
+  assert_equal [[], []] (TaintConfiguration.transform_splits []);
+  assert_equal [["T1"], []; [], ["T1"]] (TaintConfiguration.transform_splits ["T1"]);
+  assert_equal
+    [["T2"; "T1"], []; ["T1"], ["T2"]; [], ["T1"; "T2"]]
+    (TaintConfiguration.transform_splits ["T1"; "T2"]);
+  assert_equal
+    [["T3"; "T2"; "T1"], []; ["T2"; "T1"], ["T3"]; ["T1"], ["T2"; "T3"]; [], ["T1"; "T2"; "T3"]]
+    (TaintConfiguration.transform_splits ["T1"; "T2"; "T3"]);
+  ()
+
+
 let test_invalid_source _ =
   assert_parse_error
     ~errors:[Error.UnsupportedSource "C"]
@@ -1024,6 +1036,75 @@ let test_matching_kinds _ =
         Sinks.NamedSink "C", Sources.Set.of_list [Sources.NamedSource "A"];
         Sinks.NamedSink "D", Sources.Set.of_list [Sources.NamedSource "A"];
       ];
+  let transformed_source transform_names source_name =
+    Sources.Transform
+      {
+        base = Sources.NamedSource source_name;
+        global =
+          {
+            TaintTransforms.empty with
+            ordered = List.map transform_names ~f:(fun name -> TaintTransform.Named name);
+          };
+        local = TaintTransforms.empty;
+      }
+  in
+  let transformed_sink transform_names sink_name =
+    Sinks.Transform
+      {
+        base = Sinks.NamedSink sink_name;
+        global =
+          {
+            TaintTransforms.empty with
+            ordered = List.map transform_names ~f:(fun name -> TaintTransform.Named name);
+          };
+        local = TaintTransforms.empty;
+      }
+  in
+  assert_matching
+    ~configuration:
+      {|
+        { sources: [
+            { name: "A" },
+            { name: "B" }
+          ],
+          sinks: [
+            { name: "C" },
+            { name: "D" }
+          ],
+          transforms: [
+            { name: "X" },
+            { name: "Y" }
+          ],
+          rules: [
+            {
+               name: "test rule",
+               sources: ["A"],
+               transforms: ["X", "Y"],
+               sinks: ["C", "D"],
+               code: 1,
+               message_format: ""
+            }
+          ]
+        }
+      |}
+    ~matching_sinks:
+      [
+        ( Sources.NamedSource "A",
+          Sinks.Set.of_list [transformed_sink ["X"; "Y"] "C"; transformed_sink ["X"; "Y"] "D"] );
+        ( transformed_source ["X"] "A",
+          Sinks.Set.of_list [transformed_sink ["Y"] "C"; transformed_sink ["Y"] "D"] );
+        ( transformed_source ["Y"; "X"] "A",
+          Sinks.Set.of_list [Sinks.NamedSink "C"; Sinks.NamedSink "D"] );
+      ]
+    ~matching_sources:
+      [
+        Sinks.NamedSink "C", Sources.Set.of_list [transformed_source ["Y"; "X"] "A"];
+        Sinks.NamedSink "D", Sources.Set.of_list [transformed_source ["Y"; "X"] "A"];
+        transformed_sink ["Y"] "C", Sources.Set.of_list [transformed_source ["X"] "A"];
+        transformed_sink ["Y"] "D", Sources.Set.of_list [transformed_source ["X"] "A"];
+        transformed_sink ["X"; "Y"] "C", Sources.Set.of_list [Sources.NamedSource "A"];
+        transformed_sink ["X"; "Y"] "D", Sources.Set.of_list [Sources.NamedSource "A"];
+      ];
   ()
 
 
@@ -1041,6 +1122,7 @@ let () =
          "partial_sink_converter" >:: test_partial_sink_converter;
          "simple" >:: test_simple;
          "transform" >:: test_transform;
+         "transform_splits" >:: test_transform_splits;
          "validate" >:: test_validate;
          "matching_kinds" >:: test_matching_kinds;
        ]

@@ -119,23 +119,4 @@ let test_errors _ =
   ()
 
 
-let test_transform_splits _ =
-  assert_equal [[], []] (Issue.transform_splits []);
-  assert_equal [["T1"], []; [], ["T1"]] (Issue.transform_splits ["T1"]);
-  assert_equal
-    [["T2"; "T1"], []; ["T1"], ["T2"]; [], ["T1"; "T2"]]
-    (Issue.transform_splits ["T1"; "T2"]);
-  assert_equal
-    [["T3"; "T2"; "T1"], []; ["T2"; "T1"], ["T3"]; ["T1"], ["T2"; "T3"]; [], ["T1"; "T2"; "T3"]]
-    (Issue.transform_splits ["T1"; "T2"; "T3"]);
-  ()
-
-
-let () =
-  "taint_flow"
-  >::: [
-         "no_errors" >:: test_no_errors;
-         "errors" >:: test_errors;
-         "transform_splits" >:: test_transform_splits;
-       ]
-  |> Test.run
+let () = "taint_flow" >::: ["no_errors" >:: test_no_errors; "errors" >:: test_errors] |> Test.run

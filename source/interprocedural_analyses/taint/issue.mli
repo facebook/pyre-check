@@ -128,6 +128,3 @@ val code_metadata : unit -> Yojson.Safe.json
 val source_can_match_rule : Sources.t -> bool
 
 val sink_can_match_rule : Sinks.t -> bool
-
-(* Exposed for testing *)
-val transform_splits : 'a list -> ('a list * 'a list) list

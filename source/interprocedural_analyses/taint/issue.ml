@@ -249,25 +249,6 @@ module PartitionedFlow = struct
   }
 end
 
-(* Given a rule to find flows of the form:
- *   source -> T1 -> T2 -> T3 -> ... -> Tn -> sink
- * Following are different ways we can find matching flows:
- *   source -> T1:T2:T3:...:Tn:sink
- *   T1:source -> T2:T3:...:Tn:sink
- *   T2:T1:source -> T3:...:Tn:sink
- *   ...
- *   Tn:...:T3:T2:T1:source -> sink
- *)
-let transform_splits transforms =
-  let rec split ~result ~prefix ~suffix =
-    let result = (prefix, suffix) :: result in
-    match suffix with
-    | [] -> result
-    | next :: suffix -> split ~result ~prefix:(next :: prefix) ~suffix
-  in
-  split ~result:[] ~prefix:[] ~suffix:transforms
-
-
 let generate_issues ~define { Candidate.flows; location; sink_handles } =
   let partitions =
     let partition { Flow.source_taint; sink_taint } =
@@ -620,7 +601,18 @@ let source_can_match_rule = function
   | Sources.Transform { local; global; base = NamedSource name }
   | Sources.Transform { local; global; base = ParametricSource { source_name = name; _ } } -> (
       let { matching_sinks; _ } = TaintConfiguration.get () in
-      match Sources.Map.find_opt (Sources.NamedSource name) matching_sinks with
+      let source =
+        match local.ordered @ global.ordered with
+        | [] -> Sources.NamedSource name
+        | ordered ->
+            Sources.Transform
+              {
+                local = TaintTransforms.empty;
+                global = { TaintTransforms.empty with ordered };
+                base = Sources.NamedSource name;
+              }
+      in
+      match Sources.Map.find_opt source matching_sinks with
       | None ->
           (* TODO(T104600511): Filter out sources that are never used in any rule. *)
           false
@@ -637,7 +629,18 @@ let sink_can_match_rule = function
   | Sinks.Transform { local; global; base = NamedSink name }
   | Sinks.Transform { local; global; base = ParametricSink { sink_name = name; _ } } -> (
       let { matching_sources; _ } = TaintConfiguration.get () in
-      match Sinks.Map.find_opt (NamedSink name) matching_sources with
+      let sink =
+        match local.ordered @ global.ordered with
+        | [] -> Sinks.NamedSink name
+        | ordered ->
+            Sinks.Transform
+              {
+                local = TaintTransforms.empty;
+                global = { TaintTransforms.empty with ordered };
+                base = Sinks.NamedSink name;
+              }
+      in
+      match Sinks.Map.find_opt sink matching_sources with
       | None ->
           (* TODO(T104600511): Filter out sinks that are never used in any rule. *)
           false

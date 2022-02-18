@@ -65,6 +65,19 @@ def taint_with_transform_yx():
     return gamma
 
 
+def no_source_taint_with_transform_z():
+    alpha = source_a()
+    beta = transform_z(alpha)
+    return beta
+
+
+def no_source_taint_with_transform_zx():
+    alpha = source_a()
+    beta = transform_x(alpha)
+    gamma = transform_z(beta)
+    return gamma
+
+
 def a_to_b_no_issue():
     alpha = source_a()
     sink_b(alpha)
@@ -110,6 +123,11 @@ def a_to_y_to_z_to_b_issue():
 
 def sink_taint_with_transform_x(arg):
     alpha = transform_x(arg)
+    sink_b(alpha)
+
+
+def no_sink_taint_with_transform_y(arg):
+    alpha = transform_y(arg)
     sink_b(alpha)
 
 

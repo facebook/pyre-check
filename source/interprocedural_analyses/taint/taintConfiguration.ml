@@ -269,8 +269,27 @@ module Error = struct
     `Assoc ["description", `String (show_kind kind); "path", path; "code", `Int (code kind)]
 end
 
+(* Given a rule to find flows of the form:
+ *   source -> T1 -> T2 -> T3 -> ... -> Tn -> sink
+ * Following are different ways we can find matching flows:
+ *   source -> T1:T2:T3:...:Tn:sink
+ *   T1:source -> T2:T3:...:Tn:sink
+ *   T2:T1:source -> T3:...:Tn:sink
+ *   ...
+ *   Tn:...:T3:T2:T1:source -> sink
+ *)
+let transform_splits transforms =
+  let rec split ~result ~prefix ~suffix =
+    let result = (prefix, suffix) :: result in
+    match suffix with
+    | [] -> result
+    | next :: suffix -> split ~result ~prefix:(next :: prefix) ~suffix
+  in
+  split ~result:[] ~prefix:[] ~suffix:transforms
+
+
 let matching_kinds_from_rules rules =
-  let add_rule (matching_sources, matching_sinks) { Rule.sources; sinks; _ } =
+  let add_sources_sinks (matching_sources, matching_sinks) (sources, sinks) =
     let sinks_set = Sinks.Set.of_list sinks in
     let sources_set = Sources.Set.of_list sources in
     let update_matching_sources matching_sources sink =
@@ -292,6 +311,36 @@ let matching_kinds_from_rules rules =
     let matching_sources = List.fold ~f:update_matching_sources ~init:matching_sources sinks in
     let matching_sinks = List.fold ~f:update_matching_sinks ~init:matching_sinks sources in
     matching_sources, matching_sinks
+  in
+  let add_rule sofar { Rule.sources; sinks; transforms; _ } =
+    let update sofar (source_transforms, sink_transforms) =
+      let sources =
+        if List.is_empty source_transforms then
+          sources
+        else
+          List.map sources ~f:(fun base ->
+              Sources.Transform
+                {
+                  base;
+                  global = { TaintTransforms.empty with ordered = source_transforms };
+                  local = TaintTransforms.empty;
+                })
+      in
+      let sinks =
+        if List.is_empty sink_transforms then
+          sinks
+        else
+          List.map sinks ~f:(fun base ->
+              Sinks.Transform
+                {
+                  base;
+                  global = { TaintTransforms.empty with ordered = sink_transforms };
+                  local = TaintTransforms.empty;
+                })
+      in
+      add_sources_sinks sofar (sources, sinks)
+    in
+    transform_splits transforms |> List.fold ~init:sofar ~f:update
   in
   List.fold ~f:add_rule ~init:(Sinks.Map.empty, Sources.Map.empty) rules
 
@@ -935,6 +984,24 @@ let default =
         code = 5010;
         name = "User data to getattr.";
         message_format = "Attacker may control at least one argument to getattr(,).";
+      };
+      {
+        sources = [Sources.NamedSource "Test"];
+        sinks = [Sinks.NamedSink "Test"];
+        transforms = [TaintTransform.Named "TestTransform"];
+        code = 5011;
+        name = "Flow with one transform.";
+        message_format =
+          "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
+      };
+      {
+        sources = [Sources.NamedSource "Test"];
+        sinks = [Sinks.NamedSink "Test"];
+        transforms = [TaintTransform.Named "TestTransform"; TaintTransform.Named "DemoTransform"];
+        code = 5011;
+        name = "Flow with two transforms.";
+        message_format =
+          "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
       };
       {
         sources = [Sources.NamedSource "Demo"];
