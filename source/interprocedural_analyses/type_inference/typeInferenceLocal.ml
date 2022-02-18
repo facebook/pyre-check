@@ -305,18 +305,18 @@ module State (Context : Context) = struct
       Context.define
     in
     let ({ resolution; _ } as state) = value_exn (initial ~resolution) in
-    let make_parameter_name name =
-      name
-      |> String.filter ~f:(function
-             | '*' -> false
-             | _ -> true)
-      |> Reference.create
-    in
     let update_parameter index resolution { Node.value = { Parameter.name; value; annotation }; _ } =
       match index, parent with
       | 0, Some _ when Define.is_method define && not (Define.is_static_method define) -> resolution
       | _ -> (
           let create_new_local ~annotation =
+            let make_parameter_name name =
+              name
+              |> String.filter ~f:(function
+                     | '*' -> false
+                     | _ -> true)
+              |> Reference.create
+            in
             Resolution.new_local
               resolution
               ~reference:(make_parameter_name name)
@@ -466,6 +466,31 @@ module State (Context : Context) = struct
               { state with errors = emit_error errors error }
         in
         match value with
+        | Statement.Assign
+            {
+              value = { value = Dictionary { keywords = []; entries = [] }; _ };
+              target = { Node.value = Name name; _ };
+              _;
+            }
+          when is_simple_name name ->
+            let resolution =
+              refine_local
+                ~resolution
+                ~name
+                ~annotation:
+                  (Annotation.create_mutable (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom))
+            in
+            Value { state with resolution }
+        | Statement.Assign
+            { value = { value = List []; _ }; target = { Node.value = Name name; _ }; _ }
+          when is_simple_name name ->
+            let resolution =
+              refine_local
+                ~resolution
+                ~name
+                ~annotation:(Annotation.create_mutable (Type.list Type.Bottom))
+            in
+            Value { state with resolution }
         | Statement.Expression
             {
               Node.value =
@@ -533,55 +558,28 @@ module State (Context : Context) = struct
               |> Annotation.create_mutable
             in
             Value { state with resolution = refine_local ~resolution ~name ~annotation }
-        | Statement.Assign
-            {
-              value = { value = Dictionary { keywords = []; entries = [] }; _ };
-              target = { Node.value = Name name; _ };
-              _;
-            }
-          when is_simple_name name ->
-            let resolution =
-              refine_local
-                ~resolution
-                ~name
-                ~annotation:
-                  (Annotation.create_mutable (Type.dictionary ~key:Type.Bottom ~value:Type.Bottom))
-            in
-            Value { state with resolution }
-        | Expression expression -> (
+        | Statement.Expression { Node.value = Expression.Yield yielded; _ } ->
             let { Node.value = { Define.signature = { async; _ }; _ }; _ } = Context.define in
-            match expression with
-            | { Node.value = Expression.Yield yielded; _ } ->
-                let yield_type =
-                  match yielded with
-                  | Some expression -> Resolution.resolve_expression_to_type resolution expression
-                  | None -> Type.none
-                in
-                let actual =
-                  if async then
-                    Type.async_generator ~yield_type ()
-                  else
-                    Type.generator ~yield_type ()
-                in
-                Value (validate_return ~expression:None ~actual)
-            | { Node.value = Expression.YieldFrom yielded_from; _ } ->
-                let actual =
-                  Resolution.resolve_expression_to_type resolution yielded_from
-                  |> GlobalResolution.type_of_iteration_value ~global_resolution
-                  |> Option.value ~default:Type.Any
-                in
-                Value (validate_return ~expression:None ~actual)
-            | _ -> Value { state with resolution })
-        | Statement.Assign
-            { value = { value = List []; _ }; target = { Node.value = Name name; _ }; _ }
-          when is_simple_name name ->
-            let resolution =
-              refine_local
-                ~resolution
-                ~name
-                ~annotation:(Annotation.create_mutable (Type.list Type.Bottom))
+            let yield_type =
+              match yielded with
+              | Some expression -> Resolution.resolve_expression_to_type resolution expression
+              | None -> Type.none
             in
-            Value { state with resolution }
+            let actual =
+              if async then
+                Type.async_generator ~yield_type ()
+              else
+                Type.generator ~yield_type ()
+            in
+            Value (validate_return ~expression:None ~actual)
+        | Statement.Expression { Node.value = Expression.YieldFrom yielded_from; _ } ->
+            let actual =
+              Resolution.resolve_expression_to_type resolution yielded_from
+              |> GlobalResolution.type_of_iteration_value ~global_resolution
+              |> Option.value ~default:Type.Any
+            in
+            Value (validate_return ~expression:None ~actual)
+        | Statement.Expression _ -> Value { state with resolution }
         | Statement.Return { Return.expression; _ } ->
             let actual =
               Option.value_map
@@ -609,34 +607,34 @@ module State (Context : Context) = struct
     | Bottom -> Bottom
     | Value ({ resolution; _ } as state) ->
         Type.Variable.Namespace.reset ();
-        let resolve_assign annotation target_annotation =
+        let resolve_assign value_type target_type =
           let global_resolution = Resolution.global_resolution resolution in
-          let target_annotation = Type.weaken_literals target_annotation in
-          match annotation, target_annotation with
+          let target_type = Type.weaken_literals target_type in
+          match value_type, target_type with
           | Type.Top, Type.Top -> None
-          | Type.Top, target_annotation -> Some target_annotation
-          | annotation, Type.Top -> Some annotation
-          | _ -> Some (GlobalResolution.meet global_resolution annotation target_annotation)
+          | Type.Top, target_type -> Some target_type
+          | value_type, Type.Top -> Some value_type
+          | _ -> Some (GlobalResolution.meet global_resolution value_type target_type)
         in
-        let resolve_usage annotation target_annotation =
-          match annotation, target_annotation with
+        let resolve_usage value_type target_type =
+          match value_type, target_type with
           | Type.Top, Type.Top -> None
-          | Type.Top, target_annotation -> Some target_annotation
-          | _ -> Some annotation
+          | Type.Top, target_type -> Some target_type 
+          | _ -> Some value_type 
         in
         let forward_expression ~state:{ resolution; _ } ~expression =
           Resolution.resolve_expression_to_type resolution expression
         in
         let annotate_call_accesses statement resolution =
           let propagate resolution { Call.callee; arguments } =
-            let resolved = forward_expression ~state ~expression:callee in
+            let resolved_callee = forward_expression ~state ~expression:callee in
             let callable =
-              match resolved with
+              match resolved_callee with
               | Type.Callable callable -> Some callable
               | Type.Parametric { name = "BoundMethod"; _ } -> (
                   GlobalResolution.attribute_from_annotation
                     (Resolution.global_resolution resolution)
-                    ~parent:resolved
+                    ~parent:resolved_callee
                     ~name:"__call__"
                   >>| Annotated.Attribute.annotation
                   >>| Annotation.annotation
@@ -758,10 +756,7 @@ module State (Context : Context) = struct
               | Tuple targets, Tuple values when List.length targets = List.length values ->
                   let target_annotations =
                     let resolve expression =
-                      let resolved =
-                        forward_expression ~state:{ state with resolution } ~expression
-                      in
-                      resolved
+                      forward_expression ~state:{ state with resolution } ~expression
                     in
                     List.map targets ~f:resolve
                   in
