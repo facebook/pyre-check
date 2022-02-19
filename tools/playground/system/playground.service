@@ -1,15 +1,17 @@
-Unit]
-Description=uWSGI instance to serve playground
+[Unit]
+Description=Gunicorn instance to serve playground
 After=network.target
 
 [Service]
 User=ubuntu
 Group=www-data
 WorkingDirectory=/home/ubuntu/playground
-Environment="PATH=/home/ubuntu/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="PATH=/home/ubuntu/play-env/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 Environment="PYSA_PLAYGROUND_STUBS=/home/ubuntu/pyre-check/stubs"
 Environment="PYSA_PLAYGROUND_TAINT_MODELS=/home/ubuntu/pyre-check/stubs/taint"
-ExecStart=/home/ubuntu/venv/bin/uwsgi --ini playground.ini
+ExecStart=/home/ubuntu/play-env/bin/gunicorn --workers 3 --timeout 120 --bind 127.0.0.1:5000 wsgi:application
+StandardOutput=file:/var/log/playground.out
+StandardError=file:/var/log/playground.err
 
 [Install]
 WantedBy=multi-user.target

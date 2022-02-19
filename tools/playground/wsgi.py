@@ -5,8 +5,6 @@
 
 # pyre-ignore-all-errors
 
-from application import application
+from application import get_server
 
-
-if __name__ == "__main__":
-    application.run()
+application, _ = get_server()
