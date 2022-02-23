@@ -138,13 +138,28 @@ def subprocess.getstatusoutput(cmd: TaintSink[RemoteCodeExecution, ViaTypeOf[cmd
 
 def subprocess.getoutput(cmd: TaintSink[RemoteCodeExecution, ViaTypeOf[cmd]]): ...
 
-def subprocess.Popen.__new__(self, args: TaintSink[ExecArgSink, ViaTypeOf[args], ViaValueOf[shell, WithTag["shell"]]], bufsize, executable: TaintSink[ExecArgSink],
-                 stdin, stdout, stderr,
-                 preexec_fn: TaintSink[RemoteCodeExecution], close_fds,
-                 shell, cwd: TaintSink[ExecArgSink], env: TaintSink[ExecEnvSink], universal_newlines,
-                 startupinfo, creationflags,
-                 restore_signals, start_new_session,
-                 pass_fds, *, encoding, errors): ...
+def subprocess.Popen.__new__(
+  cls,
+  args: TaintSink[ExecArgSink, ViaTypeOf[args], ViaValueOf[shell, WithTag["shell"]]],
+  bufsize,
+  executable: TaintSink[ExecArgSink],
+  stdin,
+  stdout,
+  stderr,
+  preexec_fn: TaintSink[RemoteCodeExecution], close_fds,
+  shell,
+  cwd: TaintSink[ExecArgSink],
+  env: TaintSink[ExecEnvSink],
+  universal_newlines,
+  startupinfo,
+  creationflags,
+  restore_signals,
+  start_new_session,
+  pass_fds,
+  *,
+  encoding,
+  errors
+): ...
 
 # Asyncio
 async def asyncio.subprocess.create_subprocess_exec(

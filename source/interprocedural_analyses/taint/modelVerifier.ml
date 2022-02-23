@@ -220,8 +220,8 @@ let verify_imported_model ~path ~location ~callable_name ~callable_annotation =
   | _ -> Ok ()
 
 
-let model_compatible_errors ~type_parameters ~normalized_model_parameters =
-  let parameter_requirements = create_parameters_requirements ~type_parameters in
+let model_compatible_errors ~callable_overload ~normalized_model_parameters =
+  let open ModelVerificationError in
   (* Once a requirement has been satisfied, it is removed from requirement object. At the end, we
      check whether there remains unsatisfied requirements. *)
   let validate_model_parameter (errors, requirements) (model_parameter, _, _) =
@@ -236,7 +236,7 @@ let model_compatible_errors ~type_parameters ~normalized_model_parameters =
         if anonymous_parameters_count >= 1 then
           errors, { requirements with anonymous_parameters_count = anonymous_parameters_count - 1 }
         else
-          ModelVerificationError.UnexpectedPositionalOnlyParameter name :: errors, requirements
+          IncompatibleModelError.UnexpectedPositionalOnlyParameter name :: errors, requirements
     | AccessPath.Root.PositionalParameter { name; _ }
     | AccessPath.Root.NamedParameter { name } ->
         let name = Identifier.sanitized name in
@@ -249,7 +249,7 @@ let model_compatible_errors ~type_parameters ~normalized_model_parameters =
             (* If all positional only parameter quota is used, it might be covered by a `*args` *)
             errors, requirements
           else
-            ModelVerificationError.UnexpectedPositionalOnlyParameter name :: errors, requirements
+            IncompatibleModelError.UnexpectedPositionalOnlyParameter name :: errors, requirements
         else
           let { parameter_set; has_star_parameter; has_star_star_parameter; _ } = requirements in
           (* Consume an required or optional named parameter. *)
@@ -264,25 +264,31 @@ let model_compatible_errors ~type_parameters ~normalized_model_parameters =
             | PositionalParameter _ -> errors, requirements
             | _ -> UnexpectedNamedParameter name :: errors, requirements
           else
-            ModelVerificationError.UnexpectedNamedParameter name :: errors, requirements
+            IncompatibleModelError.UnexpectedNamedParameter name :: errors, requirements
     | AccessPath.Root.StarParameter _ ->
         if requirements.has_star_parameter then
           errors, requirements
         else
-          ModelVerificationError.UnexpectedStarredParameter :: errors, requirements
+          IncompatibleModelError.UnexpectedStarredParameter :: errors, requirements
     | AccessPath.Root.StarStarParameter _ ->
         if requirements.has_star_star_parameter then
           errors, requirements
         else
-          ModelVerificationError.UnexpectedDoubleStarredParameter :: errors, requirements
+          IncompatibleModelError.UnexpectedDoubleStarredParameter :: errors, requirements
   in
-  let errors, _ =
-    List.fold_left
-      normalized_model_parameters
-      ~f:validate_model_parameter
-      ~init:([], parameter_requirements)
-  in
-  errors
+  match callable_overload with
+  | { Type.Callable.parameters = Type.Callable.Defined type_parameters; _ } ->
+      let parameter_requirements = create_parameters_requirements ~type_parameters in
+      let errors, _ =
+        List.fold_left
+          normalized_model_parameters
+          ~f:validate_model_parameter
+          ~init:([], parameter_requirements)
+      in
+      List.map
+        ~f:(fun reason -> { IncompatibleModelError.reason; overload = Some callable_overload })
+        errors
+  | _ -> []
 
 
 let verify_signature
@@ -298,27 +304,33 @@ let verify_signature
   verify_imported_model ~path ~location ~callable_name ~callable_annotation
   >>= fun () ->
   match callable_annotation with
-  | Some
-      ({
-         Type.Callable.implementation =
-           { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
-         overloads = [];
-         _;
-       } as callable) ->
+  | Some ({ Type.Callable.implementation; overloads; _ } as callable) ->
       let errors =
-        model_compatible_errors
-          ~type_parameters:implementation_parameters
-          ~normalized_model_parameters
+        model_compatible_errors ~callable_overload:implementation ~normalized_model_parameters
       in
-      if List.is_empty errors then
-        Ok ()
-      else
+      let errors =
+        if (not (List.is_empty errors)) && not (List.is_empty overloads) then
+          (* We might be refering to a parameter defined in an overload. *)
+          let errors_in_overloads =
+            List.map overloads ~f:(fun callable_overload ->
+                model_compatible_errors ~callable_overload ~normalized_model_parameters)
+          in
+          if List.find ~f:List.is_empty errors_in_overloads |> Option.is_some then
+            []
+          else
+            errors @ List.concat errors_in_overloads
+        else
+          List.map ~f:ModelVerificationError.IncompatibleModelError.strip_overload errors
+      in
+      if not (List.is_empty errors) then
         Error
           (model_verification_error
              ~path
              ~location
              (IncompatibleModelError
-                { name = Reference.show callable_name; callable_type = callable; reasons = errors }))
+                { name = Reference.show callable_name; callable_type = callable; errors }))
+      else
+        Ok ()
   | _ -> Ok ()
 
 

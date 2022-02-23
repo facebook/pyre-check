@@ -2737,7 +2737,11 @@ let create_model_from_signature
                             name = Reference.show callable_name;
                             callable_type =
                               Option.value_exn (Caml.Result.get_ok callable_annotation);
-                            reasons = [UnexpectedPositionalParameter name];
+                            errors =
+                              [
+                                ModelVerificationError.IncompatibleModelError.
+                                  { reason = UnexpectedPositionalParameter name; overload = None };
+                              ];
                           };
                       path;
                       location;

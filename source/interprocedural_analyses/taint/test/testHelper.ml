@@ -438,8 +438,8 @@ let run_with_taint_models tests ~name =
     in
     assert_bool
       (Format.sprintf
-         "The models shouldn't have any parsing errors: %s."
-         (List.to_string errors ~f:ModelVerificationError.display))
+         "The models shouldn't have any parsing errors:\n%s."
+         (List.map errors ~f:ModelVerificationError.display |> String.concat ~sep:"\n"))
       (List.is_empty errors);
     Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
     |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
@@ -548,8 +548,8 @@ let initialize
         in
         assert_bool
           (Format.sprintf
-             "The models shouldn't have any parsing errors: %s."
-             (List.to_string errors ~f:ModelVerificationError.display))
+             "The models shouldn't have any parsing errors:\n%s."
+             (List.map errors ~f:ModelVerificationError.display |> String.concat ~sep:"\n"))
           (List.is_empty errors);
 
         let models =

@@ -116,6 +116,8 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
     | Some source -> source
     | None ->
         {|
+              from typing import overload, Union
+
               unannotated_global = source()
               def sink(parameter) -> None: pass
               def sink_with_optional(parameter, firstOptional=1, secondOptional=2) -> None: pass
@@ -128,6 +130,11 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
               def anonymous_with_optional(__arg1, __arg2, __arg3=2) -> None: pass
               class C:
                 unannotated_class_variable = source()
+              def function_with_overloads(__key: str) -> Union[int, str]: pass
+              @overload
+              def function_with_overloads(__key: str, firstNamed: int) -> int: pass
+              @overload
+              def function_with_overloads(__key: str, secondNamed: str) -> str: pass
             |}
   in
   let sources = ("test.py", source) :: sources in
@@ -2047,7 +2054,7 @@ let test_invalid_models context =
     ();
   assert_invalid_model
     ~model_source:"def test.partial_sink(x: PartialSink[X[a]], y: PartialSink[X[b]]): ..."
-    ~expect:"`PartialSink[X[b]]` is an invalid taint annotation: Unrecognized partial sink `X`."
+    ~expect:"`PartialSink[X[a]]` is an invalid taint annotation: Unrecognized partial sink `X`."
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSource.foo(A)): ..."
@@ -2418,7 +2425,7 @@ let test_invalid_models context =
     ~expect:
       "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
        sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
-       unknown = ...) -> None: ...`. Reason: unexpected positional parameter: `secondBad`."
+       unknown = ...) -> None: ...`. Reason: unexpected positional parameter: `firstBad`."
     ();
   assert_invalid_model
     ~model_source:"def test.sink_with_optional(parameter, *args): ..."
@@ -2469,6 +2476,28 @@ let test_invalid_models context =
       "Model signature parameters for `test.function_with_kwargs` do not match implementation `def \
        function_with_kwargs(normal_arg: unknown, **(unknown)) -> None: ...`. Reason: unexpected \
        positional parameter: `crazy_arg`."
+    ();
+  assert_valid_model ~model_source:"def test.function_with_overloads(__key): ..." ();
+  assert_valid_model ~model_source:"def test.function_with_overloads(firstNamed): ..." ();
+  assert_valid_model ~model_source:"def test.function_with_overloads(secondNamed): ..." ();
+  assert_invalid_model
+    ~model_source:"def test.function_with_overloads(unknownNamed): ..."
+    ~expect:
+      "Model signature parameters for `test.function_with_overloads` do not match implementation \
+       `def function_with_overloads(str) -> Union[int, str]: ...`. Reasons:\n\
+       unexpected named parameter: `unknownNamed` in overload `(str) -> Union[int, str]`\n\
+       unexpected named parameter: `unknownNamed` in overload `(str, firstNamed: int) -> int`\n\
+       unexpected named parameter: `unknownNamed` in overload `(str, secondNamed: str) -> str`"
+    ();
+  assert_invalid_model
+    ~model_source:"def test.function_with_overloads(firstNamed, secondNamed): ..."
+    ~expect:
+      "Model signature parameters for `test.function_with_overloads` do not match implementation \
+       `def function_with_overloads(str) -> Union[int, str]: ...`. Reasons:\n\
+       unexpected named parameter: `secondNamed` in overload `(str) -> Union[int, str]`\n\
+       unexpected named parameter: `firstNamed` in overload `(str) -> Union[int, str]`\n\
+       unexpected named parameter: `secondNamed` in overload `(str, firstNamed: int) -> int`\n\
+       unexpected named parameter: `firstNamed` in overload `(str, secondNamed: str) -> str`"
     ();
   assert_valid_model
     ~model_source:"def test.function_with_kwargs(normal_arg, *, crazy_arg, **kwargs): ..."
@@ -2706,7 +2735,7 @@ let test_invalid_models context =
     ~model_source:
       "def test.partial_sink(x: PartialSink[Nonexistent[a]], y: PartialSink[Nonexistent[b]]): ..."
     ~expect:
-      "`PartialSink[Nonexistent[b]]` is an invalid taint annotation: Unrecognized partial sink \
+      "`PartialSink[Nonexistent[a]]` is an invalid taint annotation: Unrecognized partial sink \
        `Nonexistent`."
     ();
   assert_invalid_model

@@ -8,13 +8,23 @@
 open Core
 open Ast
 
-type incompatible_model_error_reason =
-  | UnexpectedPositionalOnlyParameter of string
-  | UnexpectedPositionalParameter of string
-  | UnexpectedNamedParameter of string
-  | UnexpectedStarredParameter
-  | UnexpectedDoubleStarredParameter
-[@@deriving sexp, compare, show]
+module IncompatibleModelError = struct
+  type reason =
+    | UnexpectedPositionalOnlyParameter of string
+    | UnexpectedPositionalParameter of string
+    | UnexpectedNamedParameter of string
+    | UnexpectedStarredParameter
+    | UnexpectedDoubleStarredParameter
+  [@@deriving sexp, compare, show]
+
+  type t = {
+    reason: reason;
+    overload: Type.t Type.Callable.overload option;
+  }
+  [@@deriving sexp, compare, show]
+
+  let strip_overload { reason; _ } = { reason; overload = None }
+end
 
 type kind =
   | ParseError
@@ -27,7 +37,7 @@ type kind =
   | IncompatibleModelError of {
       name: string;
       callable_type: Type.Callable.t;
-      reasons: incompatible_model_error_reason list;
+      errors: IncompatibleModelError.t list;
     }
   | ImportedFunctionModel of {
       name: Reference.t;
@@ -118,24 +128,39 @@ let description error =
         callable_name
         name
         (Expression.show expression)
-  | IncompatibleModelError { name; callable_type; reasons } ->
+  | IncompatibleModelError { name; callable_type; errors } ->
+      let errors =
+        List.map errors ~f:(fun { reason; overload } ->
+            let reason =
+              match reason with
+              | UnexpectedPositionalOnlyParameter name ->
+                  Format.sprintf "unexpected positional only parameter: `%s`" name
+              | UnexpectedPositionalParameter name ->
+                  Format.sprintf "unexpected positional parameter: `%s`" name
+              | UnexpectedNamedParameter name ->
+                  Format.sprintf "unexpected named parameter: `%s`" name
+              | UnexpectedStarredParameter -> "unexpected star parameter"
+              | UnexpectedDoubleStarredParameter -> "unexpected star star parameter"
+            in
+            match overload with
+            | Some overload ->
+                Format.asprintf
+                  "%s in overload `%s`"
+                  reason
+                  (Type.show_for_hover
+                     (Type.Callable { kind = Anonymous; implementation = overload; overloads = [] }))
+            | None -> reason)
+      in
       let reasons =
-        List.map reasons ~f:(function
-            | UnexpectedPositionalOnlyParameter name ->
-                Format.sprintf "unexpected positional only parameter: `%s`" name
-            | UnexpectedPositionalParameter name ->
-                Format.sprintf "unexpected positional parameter: `%s`" name
-            | UnexpectedNamedParameter name ->
-                Format.sprintf "unexpected named parameter: `%s`" name
-            | UnexpectedStarredParameter -> "unexpected star parameter"
-            | UnexpectedDoubleStarredParameter -> "unexpected star star parameter")
+        match errors with
+        | [error] -> Format.sprintf "Reason: %s." error
+        | errors -> Format.sprintf "Reasons:\n%s" (String.concat errors ~sep:"\n")
       in
       Format.asprintf
-        "Model signature parameters for `%s` do not match implementation `%s`. Reason%s: %s."
+        "Model signature parameters for `%s` do not match implementation `%s`. %s"
         name
         (Type.show_for_hover (Type.Callable callable_type))
-        (if List.length reasons > 1 then "s" else "")
-        (String.concat reasons ~sep:"; ")
+        reasons
   | ImportedFunctionModel { name; actual_name } ->
       Format.asprintf
         "The modelled function `%a` is an imported function, please model `%a` directly."

@@ -157,8 +157,8 @@ let test_match_actuals_to_formals _ =
       [
         ( "*[1, 2, 3, 4]",
           [
-            positional ~actual_path:[Abstract.TreeDomain.Label.Index "1"] (1, "y");
             positional ~actual_path:[Abstract.TreeDomain.Label.Index "0"] (0, "x");
+            positional ~actual_path:[Abstract.TreeDomain.Label.Index "1"] (1, "y");
           ] );
       ];
   assert_match
@@ -170,9 +170,16 @@ let test_match_actuals_to_formals _ =
     ~call:"foo(1, 2, 3, *[4], 5, c = 6, q = 7, r = 8, **{9:9})"
     ~expected:
       [
-        "1", [positional (0, "a")];
-        "2", [positional (1, "b")];
-        "3", [starred ~position:2 ~formal_path:0];
+        ( "**{ 9:9 }",
+          [
+            named ~actual_path:[Abstract.TreeDomain.Label.Index "d"] "d";
+            {
+              AccessPath.root =
+                AccessPath.Root.StarStarParameter { excluded = ["d"; "c"; "b"; "a"] };
+              actual_path = [];
+              formal_path = [];
+            };
+          ] );
         ( "*[4]",
           [
             {
@@ -181,6 +188,9 @@ let test_match_actuals_to_formals _ =
               formal_path = [];
             };
           ] );
+        "1", [positional (0, "a")];
+        "2", [positional (1, "b")];
+        "3", [starred ~position:2 ~formal_path:0];
         ( "5",
           [
             {
@@ -192,15 +202,6 @@ let test_match_actuals_to_formals _ =
         "6", [named "c"];
         "7", [double_starred ~excluded:["d"; "c"; "b"; "a"] "q"];
         "8", [double_starred ~excluded:["d"; "c"; "b"; "a"] "r"];
-        ( "**{ 9:9 }",
-          [
-            {
-              AccessPath.root = AccessPath.Root.StarStarParameter { excluded = ["d"; "c"; "b"; "a"] };
-              actual_path = [];
-              formal_path = [];
-            };
-            named ~actual_path:[Abstract.TreeDomain.Label.Index "d"] "d";
-          ] );
       ];
   assert_match
     ~signature:"def foo(x): ..."

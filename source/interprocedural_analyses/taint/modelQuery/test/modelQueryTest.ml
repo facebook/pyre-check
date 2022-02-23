@@ -247,11 +247,11 @@ let test_apply_rule context =
       [
         ( ModelParser.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
-               { position = 1; name = "y"; positional_only = false }),
+               { position = 0; name = "x"; positional_only = false }),
           source "Test" );
         ( ModelParser.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
-               { position = 0; name = "x"; positional_only = false }),
+               { position = 1; name = "y"; positional_only = false }),
           source "Test" );
       ];
   assert_applied_rules
@@ -653,11 +653,11 @@ let test_apply_rule context =
       [
         ( ModelParser.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
-               { position = 1; name = "y"; positional_only = false }),
+               { position = 0; name = "x"; positional_only = false }),
           source "Test" );
         ( ModelParser.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
-               { position = 0; name = "x"; positional_only = false }),
+               { position = 1; name = "y"; positional_only = false }),
           source "Test" );
       ];
 
@@ -1061,11 +1061,11 @@ let test_apply_rule context =
       [
         ( ModelParser.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
-               { position = 2; name = "c"; positional_only = false }),
+               { position = 1; name = "b"; positional_only = false }),
           source "Test" );
         ( ModelParser.ParameterAnnotation
             (AccessPath.Root.PositionalParameter
-               { position = 1; name = "b"; positional_only = false }),
+               { position = 2; name = "c"; positional_only = false }),
           source "Test" );
       ];
   assert_applied_rules

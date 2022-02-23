@@ -75,7 +75,7 @@ module Root = struct
           :: normalized )
     in
     List.foldi parameters ~f:normalize_parameters ~init:(false, [], [])
-    |> fun (_, _, parameters) -> parameters
+    |> fun (_, _, parameters) -> List.rev parameters
 
 
   let parameter_name = function
