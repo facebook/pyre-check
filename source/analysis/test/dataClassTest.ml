@@ -1250,6 +1250,58 @@ let test_dataclass_transform context =
             pass
       |};
     ];
+  assert_equivalent_attributes
+    {|
+      @__dataclass_transform__
+      class Bar:
+        ...
+
+      class Foo(Bar):
+        x: int
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          def __init__(self, x: int) -> None:
+            self.x = x
+          def __eq__(self, o: object) -> bool:
+            pass
+      |};
+    ];
+  assert_equivalent_attributes
+    {|
+      @__dataclass_transform__
+      class Bar:
+        def __init_subclass__(
+            cls,
+            *,
+            init: bool = True,
+            frozen: bool = False,
+            eq: bool = True,
+            order: bool = False,
+        ) -> None:
+          pass
+
+      class Foo(Bar, eq=False, order=True):
+        x: int
+    |}
+    [
+      {|
+        class Foo:
+          x: int
+          def __init__(self, x: int) -> None:
+            self.x = x
+          def __lt__(self, o: object) -> bool:
+            pass
+          def __le__(self, o: object) -> bool:
+            pass
+          def __gt__(self, o: object) -> bool:
+            pass
+          def __ge__(self, o: object) -> bool:
+            pass
+      |};
+    ];
   ()
 
 

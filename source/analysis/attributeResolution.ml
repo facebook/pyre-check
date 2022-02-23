@@ -413,6 +413,19 @@ module ClassDecorators = struct
           ~order:"cmp"
 
 
+  let is_dataclass_transform decorator =
+    let decorator_reference { Decorator.name = { Node.value; _ }; _ } = value in
+    Decorator.from_expression decorator
+    >>| decorator_reference
+    >>| Reference.last
+    >>| String.equal "__dataclass_transform__"
+    |> Option.value ~default:false
+
+
+  let dataclass_transform_default =
+    { init = true; repr = false; eq = true; order = false; match_args = false }
+
+
   let find_dataclass_transform_decorator_with_default
       ~class_metadata_environment
       ?dependency
@@ -430,20 +443,13 @@ module ClassDecorators = struct
       let function_decorators { Define.signature = { Define.Signature.decorators; _ }; _ } =
         decorators
       in
-      let is_dataclass_transform decorator =
-        Decorator.from_expression decorator
-        >>| decorator_reference
-        >>| Reference.last
-        >>| String.equal "__dataclass_transform__"
-        |> Option.value ~default:false
-      in
       decorator_reference decorator
       |> lookup_function
       >>| function_decorators
       >>= List.find ~f:is_dataclass_transform
       >>= Decorator.from_expression
       >>| extract_options
-            ~default:{ init = true; repr = false; eq = true; order = false; match_args = false }
+            ~default:dataclass_transform_default
             ~init:""
             ~repr:""
             ~eq:"eq_default"
@@ -462,6 +468,51 @@ module ClassDecorators = struct
       class_summary
     >>| fun (decorator, default) ->
     extract_options ~default ~init:"init" ~repr:"repr" ~eq:"eq" ~order:"order" decorator
+
+
+  let find_dataclass_transform_class_as_decorator
+      ~class_metadata_environment
+      ?dependency
+      { Node.value = { ClassSummary.name; bases = { init_subclass_arguments; _ }; _ }; _ }
+    =
+    let is_dataclass_transform name =
+      let class_decorators { ClassSummary.decorators; _ } = decorators in
+      name
+      |> UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+           (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+              class_metadata_environment)
+           ?dependency
+      >>| Node.value
+      >>| class_decorators
+      >>| List.exists ~f:is_dataclass_transform
+      |> Option.value ~default:false
+    in
+    ClassMetadataEnvironment.ReadOnly.successors
+      class_metadata_environment
+      ?dependency
+      (Reference.show name)
+    |> List.exists ~f:is_dataclass_transform
+    |> function
+    | true ->
+        Some
+          {
+            Decorator.name = Node.create_with_default_location name;
+            arguments = Some init_subclass_arguments;
+          }
+    | false -> None
+
+
+  let dataclass_transform_class_options ~class_metadata_environment ?dependency class_summary =
+    find_dataclass_transform_class_as_decorator
+      ~class_metadata_environment
+      ?dependency
+      class_summary
+    >>| extract_options
+          ~default:dataclass_transform_default
+          ~init:"init"
+          ~repr:"repr"
+          ~eq:"eq"
+          ~order:"order"
 
 
   let apply
@@ -821,7 +872,14 @@ module ClassDecorators = struct
       generate_attributes
         ~options:(dataclass_transform_options ~class_metadata_environment ?dependency)
     in
-    dataclass_attributes () @ attrs_attributes () @ dataclass_transform_attributes ()
+    let dataclass_transform_class_attributes () =
+      generate_attributes
+        ~options:(dataclass_transform_class_options ~class_metadata_environment ?dependency)
+    in
+    dataclass_attributes ()
+    @ attrs_attributes ()
+    @ dataclass_transform_attributes ()
+    @ dataclass_transform_class_attributes ()
     |> List.iter ~f:(UninstantiatedAttributeTable.add table)
 end
 
