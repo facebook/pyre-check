@@ -187,41 +187,44 @@ let demangle_class_attribute name =
 
 let model_verification_error ~path ~location kind = { ModelVerificationError.kind; path; location }
 
-let model_compatible
-    ~path
-    ~location
-    ~callable_name
-    ~callable_type
-    ~type_parameters
-    ~normalized_model_parameters
-  =
-  let open Result in
+let verify_model_syntax ~path ~location ~callable_name ~normalized_model_parameters =
+  (* Ensure that the parameter's default value is either not present or `...` to catch common errors
+     when declaring models. *)
+  let check_default_value (_, _, original) =
+    match Node.value original with
+    | { Parameter.value = None; _ }
+    | { Parameter.value = Some { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
+        None
+    | { Parameter.value = Some expression; name; _ } ->
+        Some
+          (model_verification_error
+             ~path
+             ~location
+             (InvalidDefaultValue { callable_name = Reference.show callable_name; name; expression }))
+  in
+  List.find_map normalized_model_parameters ~f:check_default_value
+  |> function
+  | Some error -> Error error
+  | None -> Ok ()
+
+
+let verify_imported_model ~path ~location ~callable_name ~callable_annotation =
+  match callable_annotation with
+  | Some { Type.Callable.kind = Type.Callable.Named actual_name; _ }
+    when not (Reference.equal callable_name actual_name) ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (ImportedFunctionModel { name = callable_name; actual_name }))
+  | _ -> Ok ()
+
+
+let model_compatible_errors ~type_parameters ~normalized_model_parameters =
   let parameter_requirements = create_parameters_requirements ~type_parameters in
   (* Once a requirement has been satisfied, it is removed from requirement object. At the end, we
      check whether there remains unsatisfied requirements. *)
-  let validate_model_parameter errors_and_requirements (model_parameter, _, original) =
-    (* Ensure that the parameter's default value is either not present or `...` to catch common
-       errors when declaring models. *)
-    let errors_and_requirements =
-      match Node.value original with
-      | { Parameter.value = Some expression; name; _ } ->
-          if
-            not
-              ([%compare.equal: Expression.expression]
-                 (Node.value expression)
-                 (Expression.Constant Constant.Ellipsis))
-          then
-            Error
-              (model_verification_error
-                 ~path
-                 ~location
-                 (InvalidDefaultValue { callable_name; name; expression }))
-          else
-            errors_and_requirements
-      | _ -> errors_and_requirements
-    in
-    errors_and_requirements
-    >>| fun (errors, requirements) ->
+  let validate_model_parameter (errors, requirements) (model_parameter, _, _) =
     match model_parameter with
     | AccessPath.Root.LocalResult
     | AccessPath.Root.Variable _ ->
@@ -273,47 +276,50 @@ let model_compatible
         else
           ModelVerificationError.UnexpectedDoubleStarredParameter :: errors, requirements
   in
-  let errors_and_requirements =
+  let errors, _ =
     List.fold_left
       normalized_model_parameters
       ~f:validate_model_parameter
-      ~init:(Result.Ok ([], parameter_requirements))
+      ~init:([], parameter_requirements)
   in
-  errors_and_requirements
-  >>= fun (errors, _) ->
-  if List.is_empty errors then
-    Result.Ok ()
-  else
-    Result.Error
-      (model_verification_error
-         ~path
-         ~location
-         (IncompatibleModelError { name = callable_name; callable_type; reasons = errors }))
+  errors
 
 
-let verify_signature ~path ~location ~normalized_model_parameters ~name callable_annotation =
+let verify_signature
+    ~path
+    ~location
+    ~normalized_model_parameters
+    ~name:callable_name
+    callable_annotation
+  =
+  let open Result in
+  verify_model_syntax ~path ~location ~callable_name ~normalized_model_parameters
+  >>= fun () ->
+  verify_imported_model ~path ~location ~callable_name ~callable_annotation
+  >>= fun () ->
   match callable_annotation with
   | Some
       ({
          Type.Callable.implementation =
            { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
-         kind;
          overloads = [];
          _;
-       } as callable) -> (
-      match kind with
-      | Type.Callable.Named actual_name when not (Reference.equal name actual_name) ->
-          Error
-            (model_verification_error ~path ~location (ImportedFunctionModel { name; actual_name }))
-      | _ ->
-          model_compatible
-            ~path
-            ~location
-            ~callable_name:(Reference.show name)
-            ~callable_type:callable
-            ~type_parameters:implementation_parameters
-            ~normalized_model_parameters)
-  | _ -> Result.Ok ()
+       } as callable) ->
+      let errors =
+        model_compatible_errors
+          ~type_parameters:implementation_parameters
+          ~normalized_model_parameters
+      in
+      if List.is_empty errors then
+        Ok ()
+      else
+        Error
+          (model_verification_error
+             ~path
+             ~location
+             (IncompatibleModelError
+                { name = Reference.show callable_name; callable_type = callable; reasons = errors }))
+  | _ -> Ok ()
 
 
 let verify_global ~path ~location ~resolution ~name =
@@ -357,9 +363,9 @@ let verify_global ~path ~location ~resolution ~name =
             Identifier.SerializableMap.mem attribute_name attributes
             || Identifier.SerializableMap.mem attribute_name constructor_attributes
           then
-            Result.Ok ()
+            Ok ()
           else
-            Result.Error
+            Error
               (model_verification_error
                  ~path
                  ~location
@@ -371,13 +377,13 @@ let verify_global ~path ~location ~resolution ~name =
           let module_resolved = resolve_global ~resolution (Reference.create module_name) in
           match module_resolved with
           | Some _ ->
-              Result.Error
+              Error
                 (model_verification_error
                    ~path
                    ~location
                    (MissingSymbol { module_name; symbol_name = Reference.show name }))
           | None ->
-              Result.Error
+              Error
                 (model_verification_error
                    ~path
                    ~location
