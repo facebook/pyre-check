@@ -451,8 +451,8 @@ let test_check_invalid_type context =
       x: typing.Dict[int, [str]]
     |}
     [
-      "Invalid type parameters [24]: Single type parameter `Variable[_S]` expected, but a callable \
-       parameters `[str]` was given for generic type dict.";
+      "Invalid type parameters [24]: Single type parameter `Variable[_VT]` expected, but a \
+       callable parameters `[str]` was given for generic type dict.";
     ];
   assert_type_errors
     {|

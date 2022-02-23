@@ -1012,7 +1012,7 @@ let test_unbound_variables context =
     |}
     [
       "Incompatible variable type [9]: x is declared to have type `Dict[int, str]` but is used as \
-       type `DefaultDict[Variable[_KT], Dict[Variable[_T], Variable[_S]]]`.";
+       type `DefaultDict[Variable[collections._KT], Dict[Variable[_KT], Variable[_VT]]]`.";
     ];
   assert_type_errors
     {|
