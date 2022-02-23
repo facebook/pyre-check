@@ -1541,7 +1541,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~state:new_state
             ~expression:base_expression
           |> join state_to_join
-      | _ -> failwith "unexpected"
+      | None, None ->
+          analyze_expression
+            ~resolution
+            ~taint (* taint on the entire base expression *)
+            ~state:new_state
+            ~expression:base_expression
+          |> join state_to_join
+      | Some callee_taint, None ->
+          analyze_expression
+            ~resolution
+            ~taint:callee_taint (* taint on the implicit callee *)
+            ~state:new_state
+            ~expression:base_expression
+          |> join state_to_join
+      | Some _, Some _ -> failwith "callee_taint and self_taint should not co-exist"
     in
     let analyze_nested_expression state = function
       | Substring.Format ({ Node.location = expression_location; _ } as expression) -> (

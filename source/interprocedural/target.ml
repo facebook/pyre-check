@@ -272,18 +272,17 @@ let external_target_name = function
 
 let class_name = function
   | `Method { class_name; _ } -> Some class_name
+  | `OverrideTarget { class_name; _ } -> Some class_name
   | `Function _
-  | `OverrideTarget _
   | `Object _ ->
       None
 
 
 let method_name = function
   | `Method { method_name; _ } -> Some method_name
-  | `Function _
-  | `OverrideTarget _
-  | `Object _ ->
-      None
+  | `Function function_name -> Some function_name
+  | `OverrideTarget { method_name; _ } -> Some method_name
+  | `Object _ -> None
 
 
 let get_short_name = function
