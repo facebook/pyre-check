@@ -10,10 +10,14 @@ open Ast
 module IncompatibleModelError : sig
   type reason =
     | UnexpectedPositionalOnlyParameter of string
-    | UnexpectedPositionalParameter of string
     | UnexpectedNamedParameter of string
     | UnexpectedStarredParameter
     | UnexpectedDoubleStarredParameter
+    | InvalidNamedParameterPosition of {
+        name: string;
+        position: int;
+        valid_positions: int list;
+      }
   [@@deriving sexp, compare]
 
   type t = {

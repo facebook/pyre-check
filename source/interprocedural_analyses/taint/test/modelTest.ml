@@ -130,11 +130,14 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
               def anonymous_with_optional(__arg1, __arg2, __arg3=2) -> None: pass
               class C:
                 unannotated_class_variable = source()
-              def function_with_overloads(__key: str) -> Union[int, str]: pass
+              def function_with_overloads(__key: str) -> Union[int, str]: ...
               @overload
-              def function_with_overloads(__key: str, firstNamed: int) -> int: pass
+              def function_with_overloads(__key: str, firstNamed: int) -> int: ...
               @overload
-              def function_with_overloads(__key: str, secondNamed: str) -> str: pass
+              def function_with_overloads(__key: str, secondNamed: str) -> str: ...
+              def function_with_multiple_positions(a: int, b: int, c: int) -> Union[int, str]: ...
+              @overload
+              def function_with_multiple_positions(a: int, c: int) -> str: ...
             |}
   in
   let sources = ("test.py", source) :: sources in
@@ -2418,14 +2421,14 @@ let test_invalid_models context =
     ~expect:
       "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
        sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
-       unknown = ...) -> None: ...`. Reason: unexpected positional parameter: `thirdOptional`."
+       unknown = ...) -> None: ...`. Reason: unexpected named parameter: `thirdOptional`."
     ();
   assert_invalid_model
     ~model_source:"def test.sink_with_optional(parameter, firstBad, secondBad): ..."
     ~expect:
       "Model signature parameters for `test.sink_with_optional` do not match implementation `def \
        sink_with_optional(parameter: unknown, firstOptional: unknown = ..., secondOptional: \
-       unknown = ...) -> None: ...`. Reason: unexpected positional parameter: `firstBad`."
+       unknown = ...) -> None: ...`. Reason: unexpected named parameter: `firstBad`."
     ();
   assert_invalid_model
     ~model_source:"def test.sink_with_optional(parameter, *args): ..."
@@ -2453,7 +2456,7 @@ let test_invalid_models context =
     ~expect:
       "Model signature parameters for `test.function_with_args` do not match implementation `def \
        function_with_args(normal_arg: unknown, unknown, *(unknown)) -> None: ...`. Reason: \
-       unexpected positional parameter: `named_arg`."
+       unexpected named parameter: `named_arg`."
     ();
   assert_valid_model
     ~model_source:"def test.function_with_args(normal_arg, __random_name, *args): ..."
@@ -2475,7 +2478,7 @@ let test_invalid_models context =
     ~expect:
       "Model signature parameters for `test.function_with_kwargs` do not match implementation `def \
        function_with_kwargs(normal_arg: unknown, **(unknown)) -> None: ...`. Reason: unexpected \
-       positional parameter: `crazy_arg`."
+       named parameter: `crazy_arg`."
     ();
   assert_valid_model ~model_source:"def test.function_with_overloads(__key): ..." ();
   assert_valid_model ~model_source:"def test.function_with_overloads(firstNamed): ..." ();
@@ -2484,10 +2487,8 @@ let test_invalid_models context =
     ~model_source:"def test.function_with_overloads(unknownNamed): ..."
     ~expect:
       "Model signature parameters for `test.function_with_overloads` do not match implementation \
-       `def function_with_overloads(str) -> Union[int, str]: ...`. Reasons:\n\
-       unexpected named parameter: `unknownNamed` in overload `(str) -> Union[int, str]`\n\
-       unexpected named parameter: `unknownNamed` in overload `(str, firstNamed: int) -> int`\n\
-       unexpected named parameter: `unknownNamed` in overload `(str, secondNamed: str) -> str`"
+       `def function_with_overloads(str) -> Union[int, str]: ...`. Reason: unexpected named \
+       parameter: `unknownNamed`."
     ();
   assert_invalid_model
     ~model_source:"def test.function_with_overloads(firstNamed, secondNamed): ..."
@@ -2498,6 +2499,13 @@ let test_invalid_models context =
        unexpected named parameter: `firstNamed` in overload `(str) -> Union[int, str]`\n\
        unexpected named parameter: `secondNamed` in overload `(str, firstNamed: int) -> int`\n\
        unexpected named parameter: `firstNamed` in overload `(str, secondNamed: str) -> str`"
+    ();
+  assert_invalid_model
+    ~model_source:"def test.function_with_multiple_positions(c): ..."
+    ~expect:
+      "Model signature parameters for `test.function_with_multiple_positions` do not match \
+       implementation `def function_with_multiple_positions(a: int, b: int, c: int) -> Union[int, \
+       str]: ...`. Reason: invalid position for named parameter `c` (0 not in {1, 2})."
     ();
   assert_valid_model
     ~model_source:"def test.function_with_kwargs(normal_arg, *, crazy_arg, **kwargs): ..."
@@ -2637,7 +2645,7 @@ let test_invalid_models context =
     |}
     ~expect:
       "Model signature parameters for `test.C.foo` do not match implementation `(self: C) -> int`. \
-       Reason: unexpected positional parameter: `value`."
+       Reason: unexpected named parameter: `value`."
     ();
   assert_valid_model
     ~source:

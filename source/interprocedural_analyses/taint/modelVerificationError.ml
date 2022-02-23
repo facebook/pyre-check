@@ -11,10 +11,14 @@ open Ast
 module IncompatibleModelError = struct
   type reason =
     | UnexpectedPositionalOnlyParameter of string
-    | UnexpectedPositionalParameter of string
     | UnexpectedNamedParameter of string
     | UnexpectedStarredParameter
     | UnexpectedDoubleStarredParameter
+    | InvalidNamedParameterPosition of {
+        name: string;
+        position: int;
+        valid_positions: int list;
+      }
   [@@deriving sexp, compare, show]
 
   type t = {
@@ -135,12 +139,16 @@ let description error =
               match reason with
               | UnexpectedPositionalOnlyParameter name ->
                   Format.sprintf "unexpected positional only parameter: `%s`" name
-              | UnexpectedPositionalParameter name ->
-                  Format.sprintf "unexpected positional parameter: `%s`" name
               | UnexpectedNamedParameter name ->
                   Format.sprintf "unexpected named parameter: `%s`" name
               | UnexpectedStarredParameter -> "unexpected star parameter"
               | UnexpectedDoubleStarredParameter -> "unexpected star star parameter"
+              | InvalidNamedParameterPosition { name; position; valid_positions } ->
+                  Format.sprintf
+                    "invalid position for named parameter `%s` (%d not in {%s})"
+                    name
+                    position
+                    (List.map ~f:string_of_int valid_positions |> String.concat ~sep:", ")
             in
             match overload with
             | Some overload ->

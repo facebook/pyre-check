@@ -263,7 +263,8 @@ let rec parse_annotations
       Option.value ~default:String.Map.empty callable_parameter_names_to_positions
     in
     match Map.find callable_parameter_names_to_positions name with
-    | Some position -> Ok position
+    | Some (position :: _) -> Ok position
+    | Some []
     | None -> (
         (* `callable_parameter_names_to_positions` might be missing the `self` parameter. *)
         let matches_parameter_name index { Node.value = parameter; _ } =
@@ -1864,51 +1865,55 @@ let parse_model_clause
   | _ -> parse_model expression >>| List.return
 
 
-let find_positional_parameter_annotation position parameters =
-  List.nth parameters position |> Option.bind ~f:Type.Record.Callable.RecordParameter.annotation
-
-
-let find_named_parameter_annotation search_name parameters =
-  let has_name = function
-    | Type.Record.Callable.RecordParameter.KeywordOnly { name; _ } ->
-        String.equal name ("$parameter$" ^ search_name)
-    | Type.Record.Callable.RecordParameter.Named { name; _ } -> String.equal name search_name
-    | _ -> false
+let parameters_of_callable_annotation { Type.Callable.implementation; overloads; _ } =
+  let parameters_of_overload = function
+    | { Type.Callable.parameters = Type.Callable.Defined parameters; _ } ->
+        List.mapi parameters ~f:(fun position parameter -> position, parameter)
+    | _ -> []
   in
-  List.find ~f:has_name parameters |> Option.bind ~f:Type.Record.Callable.RecordParameter.annotation
+  parameters_of_overload implementation
+  @ (List.map overloads ~f:parameters_of_overload |> List.concat)
 
 
-let add_signature_based_breadcrumbs ~resolution root ~callable_annotation =
-  let type_breadcrumbs =
-    match root, callable_annotation with
-    | ( AccessPath.Root.PositionalParameter { position; _ },
-        Some
-          {
-            Type.Callable.implementation =
-              { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
-            overloads = [];
-            _;
-          } ) ->
-        let parameter_annotation =
-          find_positional_parameter_annotation position implementation_parameters
-        in
-        Features.type_breadcrumbs ~resolution parameter_annotation
-    | ( AccessPath.Root.NamedParameter { name; _ },
-        Some
-          {
-            Type.Callable.implementation =
-              { Type.Callable.parameters = Type.Callable.Defined implementation_parameters; _ };
-            overloads = [];
-            _;
-          } ) ->
-        let parameter_annotation = find_named_parameter_annotation name implementation_parameters in
-        Features.type_breadcrumbs ~resolution parameter_annotation
-    | ( AccessPath.Root.LocalResult,
-        Some { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ } ) ->
-        Features.type_breadcrumbs ~resolution (Some annotation)
-    | _ -> Features.BreadcrumbSet.empty
-  in
-  List.rev_append (Features.BreadcrumbSet.to_approximation type_breadcrumbs)
+let add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadcrumbs =
+  match callable_annotation with
+  | None -> breadcrumbs
+  | Some callable_annotation ->
+      let type_breadcrumbs =
+        match root with
+        | AccessPath.Root.PositionalParameter { position; _ } ->
+            parameters_of_callable_annotation callable_annotation
+            |> List.filter_map ~f:(fun (parameter_position, parameter) ->
+                   Option.some_if (parameter_position = position) parameter)
+            |> List.fold ~init:Features.BreadcrumbSet.bottom ~f:(fun sofar parameter ->
+                   parameter
+                   |> Type.Callable.Parameter.annotation
+                   |> Features.type_breadcrumbs ~resolution
+                   |> Features.BreadcrumbSet.add_set ~to_add:sofar)
+        | AccessPath.Root.NamedParameter { name; _ } ->
+            parameters_of_callable_annotation callable_annotation
+            |> List.filter_map ~f:(fun (_, parameter) ->
+                   match parameter with
+                   | Type.Callable.Parameter.KeywordOnly { name = parameter_name; _ }
+                     when String.equal parameter_name ("$parameter$" ^ name) ->
+                       Some parameter
+                   | Type.Callable.Parameter.Named { name = parameter_name; _ }
+                     when String.equal parameter_name name ->
+                       Some parameter
+                   | _ -> None)
+            |> List.fold ~init:Features.BreadcrumbSet.bottom ~f:(fun sofar parameter ->
+                   parameter
+                   |> Type.Callable.Parameter.annotation
+                   |> Features.type_breadcrumbs ~resolution
+                   |> Features.BreadcrumbSet.add_set ~to_add:sofar)
+        | AccessPath.Root.LocalResult ->
+            let { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ } =
+              callable_annotation
+            in
+            Features.type_breadcrumbs ~resolution (Some annotation)
+        | _ -> Features.BreadcrumbSet.empty
+      in
+      List.rev_append (Features.BreadcrumbSet.to_approximation type_breadcrumbs) breadcrumbs
 
 
 let parse_parameter_taint
@@ -2692,22 +2697,21 @@ let create_model_from_signature
   (* Check model matches callables primary signature. *)
   let callable_parameter_names_to_positions =
     match callable_annotation with
-    | Ok
-        (Some
-          {
-            Type.Callable.implementation =
-              { Type.Callable.parameters = Type.Callable.Defined parameters; _ };
-            overloads = [];
-            _;
-          }) ->
-        let add_parameter_to_position position map parameter =
+    | Ok (Some callable_annotation) ->
+        let add_parameter_to_position map (position, parameter) =
           match parameter with
           | Type.Callable.Parameter.Named { name; _ }
           | Type.Callable.Parameter.KeywordOnly { name; _ } ->
-              Map.set map ~key:(Identifier.sanitized name) ~data:position
+              Map.update map (Identifier.sanitized name) ~f:(function
+                  | None -> [position]
+                  | Some positions -> position :: positions)
           | _ -> map
         in
-        Some (List.foldi parameters ~f:add_parameter_to_position ~init:String.Map.empty)
+        callable_annotation
+        |> parameters_of_callable_annotation
+        |> List.fold ~init:String.Map.empty ~f:add_parameter_to_position
+        |> String.Map.map ~f:(List.dedup_and_sort ~compare:Int.compare)
+        |> Option.some
     | _ -> None
   in
   (* If there were parameters omitted from the model, the positioning will be off in the access path
@@ -2717,36 +2721,45 @@ let create_model_from_signature
     match callable_parameter_names_to_positions with
     | None -> Ok parameters
     | Some names_to_positions ->
+        let create_error reason =
+          {
+            ModelVerificationError.kind =
+              IncompatibleModelError
+                {
+                  name = Reference.show callable_name;
+                  callable_type = Option.value_exn (Caml.Result.get_ok callable_annotation);
+                  errors =
+                    [ModelVerificationError.IncompatibleModelError.{ reason; overload = None }];
+                };
+            path;
+            location;
+          }
+        in
+        let adjust_position_of_positional_parameter ~name ~position =
+          match Map.find names_to_positions name with
+          | Some [accurate_position] -> Ok accurate_position
+          | Some accurate_positions when List.mem ~equal:Int.equal accurate_positions position ->
+              Ok position
+          | Some valid_positions ->
+              Error
+                (create_error
+                   (ModelVerificationError.IncompatibleModelError.InvalidNamedParameterPosition
+                      { name; position; valid_positions }))
+          | None ->
+              Error
+                (create_error
+                   (ModelVerificationError.IncompatibleModelError.UnexpectedNamedParameter name))
+        in
+        let adjust_position_of_root = function
+          | AccessPath.Root.PositionalParameter { name; position; positional_only = false }
+            when not (String.is_prefix ~prefix:"__" name) ->
+              adjust_position_of_positional_parameter ~name ~position
+              >>| fun position ->
+              AccessPath.Root.PositionalParameter { name; position; positional_only = false }
+          | root -> Ok root
+        in
         let adjust_position (root, name, parameter) =
-          match root with
-          | AccessPath.Root.PositionalParameter { name; positional_only = false; _ }
-            when not (String.is_prefix ~prefix:"__" name) -> (
-              match Map.find names_to_positions name with
-              | Some accurate_position ->
-                  Ok
-                    ( AccessPath.Root.PositionalParameter
-                        { position = accurate_position; name; positional_only = false },
-                      name,
-                      parameter )
-              | None ->
-                  Error
-                    {
-                      ModelVerificationError.kind =
-                        IncompatibleModelError
-                          {
-                            name = Reference.show callable_name;
-                            callable_type =
-                              Option.value_exn (Caml.Result.get_ok callable_annotation);
-                            errors =
-                              [
-                                ModelVerificationError.IncompatibleModelError.
-                                  { reason = UnexpectedPositionalParameter name; overload = None };
-                              ];
-                          };
-                      path;
-                      location;
-                    })
-          | _ -> Ok (root, name, parameter)
+          adjust_position_of_root root >>| fun root -> root, name, parameter
         in
         List.map parameters ~f:adjust_position |> all
   in
