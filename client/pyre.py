@@ -479,6 +479,12 @@ def pyre(
     help="Do not verify models for the taint analysis.",
 )
 @click.option(
+    "--version",
+    is_flag=True,
+    default=False,
+    help="Print the client and binary versions of Pysa.",
+)
+@click.option(
     "--save-results-to",
     type=filesystem.writable_directory,
     help="Directory to write analysis results to.",
@@ -535,6 +541,7 @@ def analyze(
     analysis: str,
     taint_models_path: Iterable[str],
     no_verify: bool,
+    version: bool,
     save_results_to: Optional[str],
     dump_call_graph: Optional[str],
     repository_root: Optional[str],
@@ -550,6 +557,10 @@ def analyze(
     Run Pysa, the inter-procedural static analysis tool.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    if version:
+        _show_pyre_version(command_argument)
+        return commands.ExitCode.SUCCESS
+
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     _check_configuration(configuration)
     _start_logging_to_directory(configuration.log_directory)
