@@ -19,7 +19,6 @@ from . import (
     configuration as configuration_module,
     filesystem,
     log,
-    recently_used_configurations,
 )
 from . import commands
 from .version import __version__
@@ -69,7 +68,7 @@ def start_logging_to_directory(log_directory: str) -> None:
 def _run_check_command(
     arguments: command_arguments.CommandArguments,
 ) -> commands.ExitCode:
-    configuration = _create_configuration_with_retry(arguments, Path("."))
+    configuration = configuration_module.create_configuration(arguments, Path("."))
     _check_configuration(configuration)
     start_logging_to_directory(configuration.log_directory)
     check_arguments = command_arguments.CheckArguments(
@@ -92,7 +91,7 @@ def _run_incremental_command(
     no_start_server: bool,
     no_watchman: bool,
 ) -> commands.ExitCode:
-    configuration = _create_configuration_with_retry(arguments, Path("."))
+    configuration = configuration_module.create_configuration(arguments, Path("."))
     _check_configuration(configuration)
     start_logging_to_directory(configuration.log_directory)
     start_arguments = command_arguments.StartArguments(
@@ -145,60 +144,7 @@ def _run_default_command(
         return _run_check_command(arguments)
 
 
-def _create_configuration_with_retry(
-    arguments: command_arguments.CommandArguments, base_directory: Path
-) -> configuration_module.Configuration:
-    configuration = configuration_module.create_configuration(arguments, base_directory)
-    if (
-        configuration.source_directories is not None
-        or configuration.targets is not None
-    ):
-        return configuration
-
-    if arguments.local_configuration is not None:
-        raise configuration_module.InvalidConfiguration(
-            "No buck targets or source directories to analyze.\nHint: Include"
-            + ' a "source_directories" or "targets" entry in your local'
-            + " configuration file."
-        )
-
-    # Heuristic: If neither `source_directories` nor `targets` is specified,
-    # and if there exists recently-used local configurations, we guess that
-    # the user may have forgotten to specifiy `-l`.
-    error_message = "No buck targets or source directories to analyze."
-    recently_used_local_roots = recently_used_configurations.Cache(
-        configuration.dot_pyre_directory
-    ).get_all_items()
-    if len(recently_used_local_roots) == 0:
-        raise configuration_module.InvalidConfiguration(error_message)
-
-    LOG.warning(error_message)
-    local_root_for_rerun = recently_used_configurations.prompt_user_for_local_root(
-        recently_used_local_roots
-    )
-    if local_root_for_rerun is None:
-        raise configuration_module.InvalidConfiguration(
-            "Cannot determine which recent local root to rerun. "
-        )
-
-    LOG.warning(f"Running pyre under local root `{local_root_for_rerun}`...")
-    LOG.warning(
-        f"Hint: To avoid this prompt, run `pyre -l {local_root_for_rerun}` "
-        + f"or `cd {local_root_for_rerun} && pyre`."
-    )
-    new_configuration = configuration_module.create_configuration(
-        replace(arguments, local_configuration=local_root_for_rerun), base_directory
-    )
-    if (
-        new_configuration.source_directories is not None
-        or new_configuration.targets is not None
-    ):
-        return new_configuration
-    raise configuration_module.InvalidConfiguration(error_message)
-
-
 def _check_configuration(configuration: configuration_module.Configuration) -> None:
-    configuration_module.check_nested_local_configuration(configuration)
     configuration_module.check_open_source_version(configuration)
 
 
@@ -207,12 +153,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     context_settings={"help_option_names": ["-h", "--help"]},
 )
 @click.pass_context
-@click.option(
-    "-l",
-    "--local-configuration",
-    type=str,
-    help="Specify a path where Pyre could find a local configuration.",
-)
 @click.option(
     "--version",
     is_flag=True,
@@ -357,7 +297,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 @click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
 def pyre(
     context: click.Context,
-    local_configuration: Optional[str],
     version: bool,
     debug: bool,
     sequential: Optional[bool],
@@ -396,7 +335,7 @@ def pyre(
     use_buck2: Optional[bool],
 ) -> int:
     arguments = command_arguments.CommandArguments(
-        local_configuration=local_configuration,
+        local_configuration=None,
         version=version,
         debug=debug,
         sequential=sequential or False,
@@ -545,7 +484,9 @@ def analyze(
         show_pyre_version(command_argument)
         return commands.ExitCode.SUCCESS
 
-    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
     _check_configuration(configuration)
     start_logging_to_directory(configuration.log_directory)
     return commands.analyze.run(
@@ -741,7 +682,9 @@ def infer(
     ignored unless the `--in-place` flag is set.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
     working_directory = Path.cwd()
     modify_paths = (
         None
@@ -895,7 +838,9 @@ def profile(context: click.Context, profile_output: str) -> int:
         raise ValueError(f"Unrecognized value for --profile-output: {profile_output}")
 
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
     return commands.profile.run(configuration, get_profile_output(profile_output))
 
 
@@ -912,7 +857,9 @@ def query(context: click.Context, query: str) -> int:
     To get a full list of queries, you can run `pyre query help`.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
     start_logging_to_directory(configuration.log_directory)
     return commands.query.run(configuration, query)
 
@@ -991,7 +938,9 @@ def restart(
     Restarts a server. Equivalent to `pyre stop && pyre`.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
     _check_configuration(configuration)
     start_logging_to_directory(configuration.log_directory)
     start_arguments = command_arguments.StartArguments(
@@ -1103,7 +1052,9 @@ def start(
     Starts a pyre server as a daemon.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
     _check_configuration(configuration)
     start_logging_to_directory(configuration.log_directory)
     return commands.start.run(
@@ -1155,7 +1106,9 @@ def statistics(
     Collect various syntactic metrics on type coverage.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
     return commands.statistics.run(
         configuration,
         command_arguments.StatisticsArguments(
@@ -1199,7 +1152,9 @@ def coverage(
     Collect line-level type coverage.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
     paths = list(paths)
     paths_deprecated = list(paths_deprecated)
     paths = paths if len(paths) > 0 else paths_deprecated
@@ -1227,7 +1182,9 @@ def validate_models(context: click.Context) -> int:
     Validate the taint models for the given project by querying the Pyre server.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = _create_configuration_with_retry(command_argument, Path("."))
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
     start_logging_to_directory(configuration.log_directory)
     return commands.validate_models.run(configuration, output=command_argument.output)
 
