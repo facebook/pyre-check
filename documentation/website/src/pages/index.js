@@ -84,7 +84,7 @@ function VideoContainer() {
     <div className="container text--center margin-bottom--xl">
       <div className="row">
         <div className="col">
-          <h2>Brief Introduction into Pyre</h2>
+          <h2>Brief Introduction to Pyre</h2>
           <div>
             <iframe
               width="560"
@@ -98,7 +98,7 @@ function VideoContainer() {
           </div>
         </div>
         <div className="col">
-          <h2>Brief Introduction into Pysa</h2>
+          <h2>Brief Introduction to Pysa</h2>
           <div>
             <iframe
               width="560"
