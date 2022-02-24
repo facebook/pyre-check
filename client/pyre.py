@@ -88,7 +88,6 @@ def _run_check_command(
 
 def _run_incremental_command(
     arguments: command_arguments.CommandArguments,
-    nonblocking: bool,
     incremental_style: command_arguments.IncrementalStyle,
     no_start_server: bool,
     no_watchman: bool,
@@ -131,7 +130,6 @@ def _run_default_command(
     if shutil.which("watchman"):
         return _run_incremental_command(
             arguments=arguments,
-            nonblocking=False,
             incremental_style=command_arguments.IncrementalStyle.FINE_GRAINED,
             no_start_server=False,
             no_watchman=False,
@@ -232,7 +230,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     default=None,
     help="Check all file in strict mode by default.",
 )
-@click.option("--additional-check", type=str, multiple=True, hidden=True)
 @click.option("--show-error-traces/--no-show-error-traces", default=False, hidden=True)
 @click.option(
     "--output",
@@ -300,12 +297,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 @click.option(
     "--binary", type=str, show_envvar=True, help="Override location of the Pyre binary."
 )
-@click.option(
-    "--buck-builder-binary",
-    type=str,
-    show_envvar=True,
-    help="Override location of the buck builder binary.",
-)
 @click.option("--exclude", type=str, multiple=True, hidden=True)
 @click.option(
     "--typeshed",
@@ -317,7 +308,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 @click.option("--load-initial-state-from", type=str, hidden=True)
 @click.option("--changed-files-path", type=str, hidden=True)
 @click.option("--saved-state-project", type=str, hidden=True)
-@click.option("--features", type=str, hidden=True)
 @click.option(
     "--use-command-v2/--no-use-command-v2", is_flag=True, default=None, hidden=True
 )
@@ -372,7 +362,6 @@ def pyre(
     debug: bool,
     sequential: Optional[bool],
     strict: Optional[bool],
-    additional_check: Iterable[str],
     show_error_traces: bool,
     output: str,
     enable_profiling: bool,
@@ -389,14 +378,12 @@ def pyre(
     no_saved_state: bool,
     search_path: Iterable[str],
     binary: Optional[str],
-    buck_builder_binary: Optional[str],
     exclude: Iterable[str],
     typeshed: Optional[str],
     save_initial_state_to: Optional[str],
     load_initial_state_from: Optional[str],
     changed_files_path: Optional[str],
     saved_state_project: Optional[str],
-    features: Optional[str],
     # TODO(T111203329): This option is dead. Deprecate it
     use_command_v2: Optional[bool],
     isolation_prefix: Optional[str],
@@ -414,7 +401,6 @@ def pyre(
         debug=debug,
         sequential=sequential or False,
         strict=strict or False,
-        additional_checks=list(additional_check),
         show_error_traces=show_error_traces,
         output=output,
         enable_profiling=enable_profiling,
@@ -430,7 +416,6 @@ def pyre(
         no_saved_state=no_saved_state,
         search_path=list(search_path),
         binary=binary,
-        buck_builder_binary=buck_builder_binary,
         exclude=list(exclude),
         typeshed=typeshed,
         save_initial_state_to=save_initial_state_to,
@@ -440,7 +425,6 @@ def pyre(
         dot_pyre_directory=Path(dot_pyre_directory)
         if dot_pyre_directory is not None
         else None,
-        features=features,
         isolation_prefix=isolation_prefix,
         python_version=python_version,
         shared_memory_heap_size=shared_memory_heap_size,
@@ -602,15 +586,6 @@ def check(context: click.Context) -> int:
 
 @pyre.command()
 @click.option(
-    "--nonblocking",
-    is_flag=True,
-    default=False,
-    help=(
-        "[DEPRECATED] Ask the server to return partial results immediately, "
-        "even if analysis is still in progress."
-    ),
-)
-@click.option(
     "--incremental-style",
     type=click.Choice(
         [
@@ -627,7 +602,6 @@ def check(context: click.Context) -> int:
 @click.pass_context
 def incremental(
     context: click.Context,
-    nonblocking: bool,
     incremental_style: str,
     no_start: bool,
     no_watchman: bool,
@@ -636,15 +610,10 @@ def incremental(
     Connects to a running Pyre server and returns the current type errors for your
     project. If no server exists for your projects, starts a new one. Running `pyre`
     implicitly runs `pyre incremental`.
-
-    By default, incremental checks ensure that all dependencies of changed files are
-    analyzed before returning results. If you'd like to get partial type checking
-    results eagerly, you can run `pyre incremental --nonblocking`.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     return _run_incremental_command(
         arguments=command_argument,
-        nonblocking=nonblocking,
         incremental_style=command_arguments.IncrementalStyle.SHALLOW
         if incremental_style == str(command_arguments.IncrementalStyle.SHALLOW)
         else command_arguments.IncrementalStyle.FINE_GRAINED,
@@ -804,14 +773,8 @@ def infer(
 
 
 @pyre.command()
-@click.option(
-    "--local",
-    is_flag=True,
-    default=False,
-    help="[DEPRECATED] Initializes a local configuration.",
-)
 @click.pass_context
-def init(context: click.Context, local: bool) -> int:
+def init(context: click.Context) -> int:
     """
     Create a pyre configuration file at the current directory.
     """

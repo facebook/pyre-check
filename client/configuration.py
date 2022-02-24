@@ -484,7 +484,6 @@ class UnwatchedDependency:
 @dataclass(frozen=True)
 class PartialConfiguration:
     binary: Optional[str] = None
-    buck_builder_binary: Optional[str] = None
     buck_mode: Optional[str] = None
     disabled: Optional[bool] = None
     do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
@@ -545,7 +544,6 @@ class PartialConfiguration:
         )
         return PartialConfiguration(
             binary=arguments.binary,
-            buck_builder_binary=arguments.buck_builder_binary,
             buck_mode=arguments.buck_mode,
             disabled=None,
             do_not_ignore_errors_in=arguments.do_not_ignore_errors_in,
@@ -728,9 +726,6 @@ class PartialConfiguration:
 
             partial_configuration = PartialConfiguration(
                 binary=ensure_option_type(configuration_json, "binary", str),
-                buck_builder_binary=ensure_option_type(
-                    configuration_json, "buck_builder_binary", str
-                ),
                 buck_mode=ensure_option_type(configuration_json, "buck_mode", str),
                 disabled=ensure_option_type(configuration_json, "disabled", bool),
                 do_not_ignore_errors_in=ensure_string_list(
@@ -812,9 +807,6 @@ class PartialConfiguration:
         binary = self.binary
         if binary is not None:
             binary = expand_relative_path(root, binary)
-        buck_builder_binary = self.buck_builder_binary
-        if buck_builder_binary is not None:
-            buck_builder_binary = expand_relative_path(root, buck_builder_binary)
         logger = self.logger
         if logger is not None:
             logger = expand_relative_path(root, logger)
@@ -838,7 +830,6 @@ class PartialConfiguration:
             )
         return PartialConfiguration(
             binary=binary,
-            buck_builder_binary=buck_builder_binary,
             buck_mode=self.buck_mode,
             disabled=self.disabled,
             do_not_ignore_errors_in=[
@@ -913,9 +904,6 @@ def merge_partial_configurations(
 
     return PartialConfiguration(
         binary=overwrite_base(base.binary, override.binary),
-        buck_builder_binary=overwrite_base(
-            base.buck_builder_binary, override.buck_builder_binary
-        ),
         buck_mode=overwrite_base(base.buck_mode, override.buck_mode),
         disabled=overwrite_base(base.disabled, override.disabled),
         do_not_ignore_errors_in=prepend_base(
@@ -987,7 +975,6 @@ class Configuration:
     dot_pyre_directory: Path
 
     binary: Optional[str] = None
-    buck_builder_binary: Optional[str] = None
     buck_mode: Optional[str] = None
     disabled: bool = False
     do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
@@ -1033,7 +1020,6 @@ class Configuration:
                 partial_configuration.dot_pyre_directory, project_root / LOG_DIRECTORY
             ),
             binary=partial_configuration.binary,
-            buck_builder_binary=partial_configuration.buck_builder_binary,
             buck_mode=partial_configuration.buck_mode,
             disabled=_get_optional_value(partial_configuration.disabled, default=False),
             do_not_ignore_errors_in=partial_configuration.do_not_ignore_errors_in,
@@ -1084,7 +1070,6 @@ class Configuration:
         to produce JSONs that can be de-serialized back into configurations.
         """
         binary = self.binary
-        buck_builder_binary = self.buck_builder_binary
         buck_mode = self.buck_mode
         isolation_prefix = self.isolation_prefix
         logger = self.logger
@@ -1102,11 +1087,6 @@ class Configuration:
             "global_root": self.project_root,
             "dot_pyre_directory": str(self.dot_pyre_directory),
             **({"binary": binary} if binary is not None else {}),
-            **(
-                {"buck_builder_binary": buck_builder_binary}
-                if buck_builder_binary is not None
-                else {}
-            ),
             **({"buck_mode": buck_mode} if buck_mode is not None else {}),
             "disabled": self.disabled,
             "do_not_ignore_errors_in": list(self.do_not_ignore_errors_in),
@@ -1216,7 +1196,6 @@ class Configuration:
             project_root=self.project_root,
             dot_pyre_directory=self.dot_pyre_directory,
             binary=self.binary,
-            buck_builder_binary=self.buck_builder_binary,
             buck_mode=self.buck_mode,
             disabled=self.disabled,
             do_not_ignore_errors_in=self.do_not_ignore_errors_in,

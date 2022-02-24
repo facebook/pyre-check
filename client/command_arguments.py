@@ -49,7 +49,6 @@ class CommandArguments:
     debug: bool = False
     sequential: bool = False
     strict: bool = False
-    additional_checks: List[str] = field(default_factory=list)
     show_error_traces: bool = False
     output: str = TEXT
     enable_profiling: bool = False
@@ -65,7 +64,6 @@ class CommandArguments:
     no_saved_state: bool = False
     search_path: List[str] = field(default_factory=list)
     binary: Optional[str] = None
-    buck_builder_binary: Optional[str] = None
     exclude: List[str] = field(default_factory=list)
     typeshed: Optional[str] = None
     save_initial_state_to: Optional[str] = None
@@ -73,7 +71,6 @@ class CommandArguments:
     changed_files_path: Optional[str] = None
     saved_state_project: Optional[str] = None
     dot_pyre_directory: Optional[Path] = None
-    features: Optional[str] = None
     isolation_prefix: Optional[str] = None
     python_version: Optional[str] = None
     shared_memory_heap_size: Optional[int] = None

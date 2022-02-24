@@ -136,7 +136,6 @@ class PartialConfigurationTest(unittest.TestCase):
                 source_directories=[],
                 search_path=["x", "y"],
                 binary="binary",
-                buck_builder_binary="buck_builder_binary",
                 buck_mode="opt",
                 exclude=["excludes"],
                 typeshed="typeshed",
@@ -148,7 +147,6 @@ class PartialConfigurationTest(unittest.TestCase):
             )
         )
         self.assertEqual(configuration.binary, "binary")
-        self.assertEqual(configuration.buck_builder_binary, "buck_builder_binary")
         self.assertEqual(configuration.buck_mode, "opt")
         self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
         self.assertListEqual(list(configuration.excludes), ["excludes"])
@@ -193,12 +191,6 @@ class PartialConfigurationTest(unittest.TestCase):
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
             PartialConfiguration.from_string(json.dumps({"binary": "foo"})).binary,
-            "foo",
-        )
-        self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"buck_builder_binary": "foo"})
-            ).buck_builder_binary,
             "foo",
         )
         self.assertEqual(
@@ -516,7 +508,6 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises("")
         assert_raises("{")
         assert_raises(json.dumps({"binary": True}))
-        assert_raises(json.dumps({"buck_builder_binary": ["."]}))
         assert_raises(json.dumps({"buck_mode": {}}))
         assert_raises(json.dumps({"disabled": "False"}))
         assert_raises(json.dumps({"do_not_ignore_errors_in": "abc"}))
@@ -630,7 +621,6 @@ class PartialConfigurationTest(unittest.TestCase):
                     override=create_configuration(attribute_name, override_value),
                 )
 
-        assert_overwritten("buck_builder_binary")
         assert_overwritten("buck_mode")
         assert_overwritten("disabled")
         assert_prepended("do_not_ignore_errors_in")
@@ -694,12 +684,6 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(
             PartialConfiguration(binary="~/foo").expand_relative_paths("bar").binary,
             str(Path.home() / "foo"),
-        )
-        self.assertEqual(
-            PartialConfiguration(buck_builder_binary="foo")
-            .expand_relative_paths("bar")
-            .buck_builder_binary,
-            "bar/foo",
         )
         self.assertEqual(
             PartialConfiguration(do_not_ignore_errors_in=["foo", "bar"])
@@ -800,7 +784,6 @@ class ConfigurationTest(testslide.TestCase):
             relative_local_root="local",
             partial_configuration=PartialConfiguration(
                 binary="binary",
-                buck_builder_binary="buck_builder_binary",
                 buck_mode="opt",
                 disabled=None,
                 do_not_ignore_errors_in=["foo"],
@@ -831,7 +814,6 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.project_root, "root")
         self.assertEqual(configuration.relative_local_root, "local")
         self.assertEqual(configuration.binary, "binary")
-        self.assertEqual(configuration.buck_builder_binary, "buck_builder_binary")
         self.assertEqual(configuration.buck_mode, "opt")
         self.assertEqual(configuration.disabled, False)
         self.assertListEqual(list(configuration.do_not_ignore_errors_in), ["foo"])
