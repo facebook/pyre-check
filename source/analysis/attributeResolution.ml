@@ -470,12 +470,12 @@ module ClassDecorators = struct
     extract_options ~default ~init:"init" ~repr:"repr" ~eq:"eq" ~order:"order" decorator
 
 
-  let find_dataclass_transform_class_as_decorator
+  let find_dataclass_transform_class_as_decorator_with_default
       ~class_metadata_environment
       ?dependency
       { Node.value = { ClassSummary.name; bases = { init_subclass_arguments; _ }; _ }; _ }
     =
-    let is_dataclass_transform name =
+    let get_dataclass_transform_default name =
       let class_decorators { ClassSummary.decorators; _ } = decorators in
       name
       |> UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
@@ -484,35 +484,35 @@ module ClassDecorators = struct
            ?dependency
       >>| Node.value
       >>| class_decorators
-      >>| List.exists ~f:is_dataclass_transform
-      |> Option.value ~default:false
+      >>= List.find ~f:is_dataclass_transform
+      >>= Decorator.from_expression
+      >>| extract_options
+            ~default:dataclass_transform_default
+            ~init:""
+            ~repr:""
+            ~eq:"eq_default"
+            ~order:"order_default"
     in
     ClassMetadataEnvironment.ReadOnly.successors
       class_metadata_environment
       ?dependency
       (Reference.show name)
-    |> List.exists ~f:is_dataclass_transform
-    |> function
-    | true ->
-        Some
-          {
-            Decorator.name = Node.create_with_default_location name;
-            arguments = Some init_subclass_arguments;
-          }
-    | false -> None
+    |> List.find_map ~f:get_dataclass_transform_default
+    >>| fun default ->
+    ( {
+        Decorator.name = Node.create_with_default_location name;
+        arguments = Some init_subclass_arguments;
+      },
+      default )
 
 
   let dataclass_transform_class_options ~class_metadata_environment ?dependency class_summary =
-    find_dataclass_transform_class_as_decorator
+    find_dataclass_transform_class_as_decorator_with_default
       ~class_metadata_environment
       ?dependency
       class_summary
-    >>| extract_options
-          ~default:dataclass_transform_default
-          ~init:"init"
-          ~repr:"repr"
-          ~eq:"eq"
-          ~order:"order"
+    >>| fun (decorator, default) ->
+    extract_options ~default ~init:"init" ~repr:"repr" ~eq:"eq" ~order:"order" decorator
 
 
   let apply
