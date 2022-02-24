@@ -191,18 +191,7 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     help="Enable verbose non-interactive logging.",
 )
 @click.option("--logging-sections", type=str, hidden=True)
-@click.option("--log-identifier", type=str, default=None, hidden=True)
 @click.option("--dot-pyre-directory", type=str, hidden=True)
-@click.option(
-    "--target",
-    type=str,
-    multiple=True,
-    help=(
-        "The buck target to check. "
-        "Can be specified multiple times to include multiple directories."
-    ),
-)
-@click.option("--buck-mode", type=str, help="Mode to pass to `buck query`")
 @click.option(
     "--source-directory",
     type=str,
@@ -234,7 +223,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 @click.option("--save-initial-state-to", type=str, hidden=True)
 @click.option("--load-initial-state-from", type=str, hidden=True)
 @click.option("--changed-files-path", type=str, hidden=True)
-@click.option("--isolation-prefix", type=str, hidden=True)
 @click.option(
     "--python-version",
     type=str,
@@ -270,13 +258,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     default=None,
     hidden=True,
 )
-@click.option(
-    "--use-buck2/--no-use-buck2",
-    is_flag=True,
-    help="Whether Pyre should use Buck2 instead of Buck1 to build Buck projects.",
-    default=None,
-    hidden=True,
-)
 @click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
 def pyre(
     context: click.Context,
@@ -290,10 +271,7 @@ def pyre(
     enable_memory_profiling: bool,
     noninteractive: bool,
     logging_sections: Optional[str],
-    log_identifier: Optional[str],
     dot_pyre_directory: Optional[str],
-    target: Iterable[str],
-    buck_mode: Optional[str],
     source_directory: Iterable[str],
     search_path: Iterable[str],
     binary: Optional[str],
@@ -302,14 +280,12 @@ def pyre(
     save_initial_state_to: Optional[str],
     load_initial_state_from: Optional[str],
     changed_files_path: Optional[str],
-    isolation_prefix: Optional[str],
     python_version: Optional[str],
     shared_memory_heap_size: Optional[int],
     shared_memory_dependency_table_power: Optional[int],
     shared_memory_hash_table_power: Optional[int],
     number_of_workers: Optional[int],
     enable_hover: Optional[bool],
-    use_buck2: Optional[bool],
 ) -> int:
     arguments = command_arguments.CommandArguments(
         local_configuration=None,
@@ -323,12 +299,12 @@ def pyre(
         enable_memory_profiling=enable_memory_profiling,
         noninteractive=noninteractive,
         logging_sections=logging_sections,
-        log_identifier=log_identifier,
+        log_identifier=None,
         logger=None,
-        targets=list(target),
+        targets=[],
         source_directories=list(source_directory),
         do_not_ignore_errors_in=[],
-        buck_mode=buck_mode,
+        buck_mode=None,
         no_saved_state=True,
         search_path=list(search_path),
         binary=binary,
@@ -341,14 +317,14 @@ def pyre(
         dot_pyre_directory=Path(dot_pyre_directory)
         if dot_pyre_directory is not None
         else None,
-        isolation_prefix=isolation_prefix,
+        isolation_prefix=None,
         python_version=python_version,
         shared_memory_heap_size=shared_memory_heap_size,
         shared_memory_dependency_table_power=shared_memory_dependency_table_power,
         shared_memory_hash_table_power=shared_memory_hash_table_power,
         number_of_workers=number_of_workers,
         enable_hover=enable_hover,
-        use_buck2=use_buck2,
+        use_buck2=None,
     )
     if arguments.version:
         show_pyre_version(arguments)
