@@ -46,7 +46,7 @@ def _show_pyre_version_as_json(
     log.stdout.write(f"{json.dumps(version_json)}\n")
 
 
-def _show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
+def show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
     binary_version: Optional[str] = None
     client_version: str = __version__
     try:
@@ -60,7 +60,7 @@ def _show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
         _show_pyre_version_as_text(binary_version, client_version)
 
 
-def _start_logging_to_directory(log_directory: str) -> None:
+def start_logging_to_directory(log_directory: str) -> None:
     log_directory_path = Path(log_directory)
     log_directory_path.mkdir(parents=True, exist_ok=True)
     log.enable_file_logging(log_directory_path / "pyre.stderr")
@@ -71,7 +71,7 @@ def _run_check_command(
 ) -> commands.ExitCode:
     configuration = _create_configuration_with_retry(arguments, Path("."))
     _check_configuration(configuration)
-    _start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory)
     check_arguments = command_arguments.CheckArguments(
         debug=arguments.debug,
         enable_memory_profiling=arguments.enable_memory_profiling,
@@ -94,7 +94,7 @@ def _run_incremental_command(
 ) -> commands.ExitCode:
     configuration = _create_configuration_with_retry(arguments, Path("."))
     _check_configuration(configuration)
-    _start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory)
     start_arguments = command_arguments.StartArguments(
         changed_files_path=arguments.changed_files_path,
         debug=arguments.debug,
@@ -435,7 +435,7 @@ def pyre(
         use_buck2=use_buck2,
     )
     if arguments.version:
-        _show_pyre_version(arguments)
+        show_pyre_version(arguments)
         return commands.ExitCode.SUCCESS
 
     context.ensure_object(dict)
@@ -542,12 +542,12 @@ def analyze(
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     if version:
-        _show_pyre_version(command_argument)
+        show_pyre_version(command_argument)
         return commands.ExitCode.SUCCESS
 
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     _check_configuration(configuration)
-    _start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory)
     return commands.analyze.run(
         configuration,
         command_arguments.AnalyzeArguments(
@@ -823,7 +823,7 @@ def persistent(context: click.Context) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, base_directory
     )
-    _start_logging_to_directory(
+    start_logging_to_directory(
         configuration.log_directory,
     )
     return commands.persistent.run(
@@ -848,7 +848,7 @@ def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    _start_logging_to_directory(
+    start_logging_to_directory(
         configuration.log_directory,
     )
     return commands.pysa_server.run(
@@ -913,7 +913,7 @@ def query(context: click.Context, query: str) -> int:
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    _start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory)
     return commands.query.run(configuration, query)
 
 
@@ -993,7 +993,7 @@ def restart(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     _check_configuration(configuration)
-    _start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory)
     start_arguments = command_arguments.StartArguments(
         changed_files_path=command_argument.changed_files_path,
         debug=command_argument.debug,
@@ -1105,7 +1105,7 @@ def start(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
     _check_configuration(configuration)
-    _start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory)
     return commands.start.run(
         configuration,
         command_arguments.StartArguments(
@@ -1216,7 +1216,7 @@ def stop(context: click.Context) -> int:
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    _start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory)
     return commands.stop.run(configuration)
 
 
@@ -1228,7 +1228,7 @@ def validate_models(context: click.Context) -> int:
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = _create_configuration_with_retry(command_argument, Path("."))
-    _start_logging_to_directory(configuration.log_directory)
+    start_logging_to_directory(configuration.log_directory)
     return commands.validate_models.run(configuration, output=command_argument.output)
 
 
