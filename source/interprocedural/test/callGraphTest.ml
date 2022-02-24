@@ -1464,17 +1464,32 @@ let test_call_graph_of_define context =
     ~expected:
       [
         ( "7:18-7:23",
-          LocationCallees.Singleton
-            (ExpressionCallees.from_call
-               (CallCallees.create
-                  ~call_targets:
-                    [
-                      CallTarget.create
-                        ~implicit_self:true
-                        (`Method { Target.class_name = "test.C"; method_name = "m" });
-                    ]
-                  ~return_type:(Type.Primitive "str")
-                  ())) );
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "$__str__$",
+                   ExpressionCallees.from_format_string
+                     {
+                       FormatStringCallees.call_targets =
+                         [
+                           CallTarget.create
+                             ~implicit_self:true
+                             ~collapse_tito:false
+                             (`Method { Target.class_name = "str"; method_name = "__str__" });
+                         ];
+                     } );
+                 ( "m",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              (`Method { Target.class_name = "test.C"; method_name = "m" });
+                          ]
+                        ~return_type:(Type.Primitive "str")
+                        ()) );
+               ]) );
       ]
     ();
   assert_call_graph_of_define
@@ -2585,6 +2600,17 @@ let test_call_graph_of_define context =
                          (`Method { Target.class_name = "test.C"; method_name = "__str__" });
                      ];
                  }) );
+          ( "25:31-25:32",
+            LocationCallees.Singleton
+              (ExpressionCallees.from_format_string
+                 {
+                   FormatStringCallees.call_targets =
+                     [
+                       CallTarget.create
+                         ~implicit_self:true
+                         (`Method { Target.class_name = "object"; method_name = "__repr__" });
+                     ];
+                 }) );
         ]
       ()
   in
@@ -2600,6 +2626,9 @@ let test_call_graph_of_define context =
                  FormatStringCallees.call_targets =
                    [
                      (* TODO(T112028293): Properly resolve `__str__` calls on union-typed variables *)
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "object"; method_name = "__str__" });
                      CallTarget.create
                        ~implicit_self:true
                        (`Method { Target.class_name = "test.A"; method_name = "__str__" });
@@ -2621,7 +2650,184 @@ let test_call_graph_of_define context =
         return f"{a}{b}{c}{d}{w}{x}{y}{z}{e}"
     |}
     ~define_name:"test.foo"
-    ~expected:[]
+    ~expected:
+      [
+        ( "7:12-7:13",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "int"; method_name = "__str__" });
+                   ];
+               }) );
+        ( "7:15-7:16",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "object"; method_name = "__repr__" });
+                   ];
+               }) );
+        ( "7:18-7:19",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       ~collapse_tito:false
+                       (`Method { Target.class_name = "str"; method_name = "__str__" });
+                   ];
+               }) );
+        ( "7:21-7:22",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "object"; method_name = "__repr__" });
+                   ];
+               }) );
+        ( "7:24-7:25",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "object"; method_name = "__repr__" });
+                   ];
+               }) );
+        ( "7:27-7:28",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "int"; method_name = "__str__" });
+                   ];
+               }) );
+        ( "7:30-7:31",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "str"; method_name = "__str__" });
+                   ];
+               }) );
+        ( "7:33-7:34",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "object"; method_name = "__repr__" });
+                   ];
+               }) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:{|
+      def foo(x: object):
+        return f"{x}"
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "3:12-3:13",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     (* TODO(T112761296): Probably wrong call resolution *)
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "object"; method_name = "__repr__" });
+                   ];
+               }) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:{|
+      def foo(x: Any):
+        return f"{x}"
+    |}
+    ~define_name:"test.foo"
+    ~expected:[] (* TODO(T112761296): Probably wrong call resolution *)
+    ();
+  assert_call_graph_of_define
+    ~cmp:DefineCallGraph.equal_ignoring_types
+    ~source:{|
+      def foo(e: Exception):
+        f"{e}"
+        f"{type(e)}"
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "3:5-3:6",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "BaseException"; method_name = "__str__" });
+                   ];
+               }) );
+        ( "4:5-4:12",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "$__str__$",
+                   ExpressionCallees.from_format_string
+                     {
+                       FormatStringCallees.call_targets =
+                         [
+                           (* TODO(T112761296): Probably wrong call resolution *)
+                           CallTarget.create
+                             (`Method
+                               { Target.class_name = "BaseException"; method_name = "__repr__" });
+                         ];
+                     } );
+                 ( "type",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~new_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              (`Method { Target.class_name = "type"; method_name = "__new__" });
+                          ]
+                        ~init_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              (`Method { Target.class_name = "type"; method_name = "__init__" });
+                          ]
+                        ~return_type:(Type.Primitive "Exception")
+                        ()) );
+               ]) );
+      ]
     ();
   assert_call_graph_of_define
     ~source:

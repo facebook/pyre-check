@@ -1411,22 +1411,6 @@ let resolve_identifier ~resolution ~call_indexer ~identifier =
   }
 
 
-let ignored_stringify_targets =
-  [
-    "bool", "__str__";
-    "bytes", "__str__";
-    "complex", "__str__";
-    "float", "__str__";
-    "numbers.Number", "__str__";
-    "str", "__str__";
-    "int", "__str__";
-    "object", "__str__";
-    "object", "__repr__";
-  ]
-  |> List.map ~f:(fun (class_name, method_name) -> `Method { Target.class_name; method_name })
-  |> Target.Set.of_list
-
-
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
    fixpoint (shared across the type check and additional static analysis modules). By having a
    fixpoint that always terminates (by having a state = unit), we re-use the fixpoint id's without
@@ -1513,10 +1497,6 @@ struct
                         ~call_indexer
                         ~return_type:Type.string
                         ~callee
-                    in
-                    let call_targets =
-                      List.filter call_targets ~f:(fun { CallTarget.target; _ } ->
-                          not (Target.Set.mem target ignored_stringify_targets))
                     in
 
                     if not (List.is_empty call_targets) then

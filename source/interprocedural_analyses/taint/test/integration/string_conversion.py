@@ -3,7 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Union
+from builtins import _test_source
+from typing import Union, Any
 
 from django.http import Request
 
@@ -130,3 +131,44 @@ def tito_g(y):
 def compute_tito(x, y):
     # Require the proper accumulation of tito information
     return f"{tito_g(y)}{tito_f(x)}"
+
+
+class D:
+    def __str__(self):
+        return "benign"
+
+
+def forward_unioned_callees():
+    x: Union[str, D] = _test_source()
+    return f"{x}"
+
+
+def forward_unioned_callees_2():
+    x: Union[Any, D] = _test_source()
+    return f"{x}"
+
+
+def backward_unioned_callees(x: Union[str, D]):
+    return f"{x}"
+
+
+def backward_unioned_callees_2(x: Union[Any, D]):
+    return f"{x}"
+
+
+def any_type(x: Any):
+    return f"{x}"
+
+
+def object_type(x: object):
+    return f"{x}"
+
+
+class OverrideStr(float):
+    def __str__(self):
+        x = _test_source()
+        return f"{x}"  # __str__ method may introduce sources
+
+
+def base_exception(e: Exception):
+    return f"{type(e)}"

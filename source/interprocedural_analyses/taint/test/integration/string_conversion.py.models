@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.analyze_implicit_call",
-    "callable_line": 107,
+    "callable_line": 108,
     "code": 5001,
-    "line": 111,
+    "line": 112,
     "start": 9,
     "end": 20,
     "filename": "string_conversion.py",
@@ -28,10 +28,10 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 111, "start": 16, "end": 17 } ],
+            "tito": [ { "line": 112, "start": 16, "end": 17 } ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 109,
+              "line": 110,
               "start": 10,
               "end": 21
             }
@@ -50,7 +50,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 111,
+              "line": 112,
               "start": 9,
               "end": 20
             }
@@ -73,9 +73,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.analyze_implicit_call",
-    "callable_line": 107,
+    "callable_line": 108,
     "code": 5001,
-    "line": 113,
+    "line": 114,
     "start": 9,
     "end": 15,
     "filename": "string_conversion.py",
@@ -98,10 +98,10 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 113, "start": 12, "end": 13 } ],
+            "tito": [ { "line": 114, "start": 12, "end": 13 } ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 109,
+              "line": 110,
               "start": 10,
               "end": 21
             }
@@ -120,7 +120,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 113,
+              "line": 114,
               "start": 9,
               "end": 15
             }
@@ -143,9 +143,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.explicit_str",
-    "callable_line": 49,
+    "callable_line": 50,
     "code": 5001,
-    "line": 51,
+    "line": 52,
     "start": 9,
     "end": 37,
     "filename": "string_conversion.py",
@@ -171,7 +171,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 51,
+                "line": 52,
                 "start": 18,
                 "end": 29
               },
@@ -193,7 +193,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 51,
+              "line": 52,
               "start": 9,
               "end": 37
             }
@@ -215,9 +215,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.implicit_repr",
-    "callable_line": 44,
+    "callable_line": 45,
     "code": 5001,
-    "line": 46,
+    "line": 47,
     "start": 9,
     "end": 27,
     "filename": "string_conversion.py",
@@ -243,7 +243,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 46,
+                "line": 47,
                 "start": 18,
                 "end": 19
               },
@@ -265,7 +265,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 46,
+              "line": 47,
               "start": 9,
               "end": 27
             }
@@ -287,9 +287,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.implicit_str",
-    "callable_line": 39,
+    "callable_line": 40,
     "code": 5001,
-    "line": 41,
+    "line": 42,
     "start": 9,
     "end": 27,
     "filename": "string_conversion.py",
@@ -315,7 +315,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 41,
+                "line": 42,
                 "start": 18,
                 "end": 19
               },
@@ -337,7 +337,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 41,
+              "line": 42,
               "start": 9,
               "end": 27
             }
@@ -359,9 +359,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.join_source_and_attribute_source",
-    "callable_line": 89,
+    "callable_line": 90,
     "code": 5001,
-    "line": 94,
+    "line": 95,
     "start": 9,
     "end": 15,
     "filename": "string_conversion.py",
@@ -381,13 +381,14 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "tainted" },
+              { "via": "obscure:model" },
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 94, "start": 12, "end": 13 } ],
+            "tito": [ { "line": 95, "start": 12, "end": 13 } ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 91,
+              "line": 92,
               "start": 17,
               "end": 28
             }
@@ -404,7 +405,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 94,
+                "line": 95,
                 "start": 12,
                 "end": 13
               },
@@ -426,7 +427,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 94,
+              "line": 95,
               "start": 9,
               "end": 15
             }
@@ -437,6 +438,7 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "tainted" },
+      { "via": "obscure:model" },
       { "always-via": "format-string" },
       { "via": "tito" }
     ],
@@ -449,9 +451,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.joined_base",
-    "callable_line": 101,
+    "callable_line": 102,
     "code": 5001,
-    "line": 104,
+    "line": 105,
     "start": 9,
     "end": 18,
     "filename": "string_conversion.py",
@@ -475,7 +477,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 102,
+              "line": 103,
               "start": 8,
               "end": 19
             }
@@ -494,7 +496,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 104,
+              "line": 105,
               "start": 9,
               "end": 18
             }
@@ -516,9 +518,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.propagate_taint",
-    "callable_line": 62,
+    "callable_line": 63,
     "code": 5001,
-    "line": 63,
+    "line": 64,
     "start": 9,
     "end": 39,
     "filename": "string_conversion.py",
@@ -542,12 +544,12 @@
               { "always-via": "tito" }
             ],
             "tito": [
-              { "line": 63, "start": 12, "end": 37 },
-              { "line": 63, "start": 14, "end": 36 }
+              { "line": 64, "start": 12, "end": 37 },
+              { "line": 64, "start": 14, "end": 36 }
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 63,
+              "line": 64,
               "start": 14,
               "end": 25
             }
@@ -566,7 +568,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 63,
+              "line": 64,
               "start": 9,
               "end": 39
             }
@@ -589,9 +591,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.repr_is_tainted",
-    "callable_line": 29,
+    "callable_line": 30,
     "code": 5001,
-    "line": 31,
+    "line": 32,
     "start": 9,
     "end": 16,
     "filename": "string_conversion.py",
@@ -616,7 +618,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 31,
+                "line": 32,
                 "start": 9,
                 "end": 16
               },
@@ -638,7 +640,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 31,
+              "line": 32,
               "start": 9,
               "end": 16
             }
@@ -656,9 +658,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.str_falls_back_to_repr",
-    "callable_line": 34,
+    "callable_line": 35,
     "code": 5001,
-    "line": 36,
+    "line": 37,
     "start": 9,
     "end": 15,
     "filename": "string_conversion.py",
@@ -683,7 +685,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 36,
+                "line": 37,
                 "start": 9,
                 "end": 15
               },
@@ -705,7 +707,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 36,
+              "line": 37,
               "start": 9,
               "end": 15
             }
@@ -723,9 +725,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.str_is_tainted",
-    "callable_line": 24,
+    "callable_line": 25,
     "code": 5001,
-    "line": 26,
+    "line": 27,
     "start": 9,
     "end": 15,
     "filename": "string_conversion.py",
@@ -750,7 +752,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 26,
+                "line": 27,
                 "start": 9,
                 "end": 15
               },
@@ -772,7 +774,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 26,
+              "line": 27,
               "start": 9,
               "end": 15
             }
@@ -884,6 +886,11 @@
           {
             "kinds": [
               {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              },
+              {
                 "leaves": [
                   { "name": "Obj{string_conversion.C.g}" },
                   { "name": "Obj{django.http.Request.GET}" }
@@ -893,7 +900,8 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "tainted" }
+              { "first-index": "tainted" },
+              { "via": "format-string" }
             ],
             "root": {
               "filename": "builtins.pyi",
@@ -1030,6 +1038,35 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{string_conversion.OverrideStr::__str__}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
           }
         ]
       }
@@ -1177,7 +1214,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 86,
+              "line": 87,
               "start": 15,
               "end": 21
             }
@@ -1192,6 +1229,35 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.OverrideStr.__str__",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 169,
+              "start": 12,
+              "end": 26
+            }
           }
         ]
       }
@@ -1219,7 +1285,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 21,
+              "line": 22,
               "start": 15,
               "end": 26
             }
@@ -1250,10 +1316,99 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 16,
+              "line": 17,
               "start": 15,
               "end": 26
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.any_type",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.backward_unioned_callees",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 152, "start": 14, "end": 15 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.backward_unioned_callees_2",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.base_exception",
+    "tito": [
+      {
+        "port": "formal(e)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [
+              { "line": 174, "start": 14, "end": 21 },
+              { "line": 174, "start": 19, "end": 20 }
+            ],
+            "decl": null
           }
         ]
       }
@@ -1276,7 +1431,7 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 132, "start": 21, "end": 22 } ],
+            "tito": [ { "line": 133, "start": 21, "end": 22 } ],
             "decl": null
           }
         ]
@@ -1292,8 +1447,71 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 132, "start": 32, "end": 33 } ],
+            "tito": [ { "line": 133, "start": 32, "end": 33 } ],
             "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.forward_unioned_callees",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 143, "start": 14, "end": 15 } ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 142,
+              "start": 23,
+              "end": 37
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.forward_unioned_callees_2",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 147,
+              "start": 23,
+              "end": 37
+            }
           }
         ]
       }
@@ -1319,10 +1537,10 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 72, "start": 12, "end": 13 } ],
+            "tito": [ { "line": 73, "start": 12, "end": 13 } ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 72,
+              "line": 73,
               "start": 9,
               "end": 15
             }
@@ -1336,9 +1554,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.multiple_targets_for_single_expression",
-    "callable_line": 70,
+    "callable_line": 71,
     "code": 5001,
-    "line": 72,
+    "line": 73,
     "start": 9,
     "end": 15,
     "filename": "string_conversion.py",
@@ -1364,7 +1582,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 72,
+                "line": 73,
                 "start": 12,
                 "end": 13
               },
@@ -1386,7 +1604,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 72,
+              "line": 73,
               "start": 9,
               "end": 15
             }
@@ -1410,7 +1628,7 @@
     "callable": "string_conversion.multiple_targets_for_single_expression_2",
     "sinks": [
       {
-        "port": "formal(a)[f]",
+        "port": "formal(a)",
         "taint": [
           {
             "kinds": [
@@ -1420,37 +1638,14 @@
               }
             ],
             "local_features": [
+              { "via": "obscure:model" },
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 98, "start": 12, "end": 13 } ],
+            "tito": [ { "line": 99, "start": 12, "end": 13 } ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 98,
-              "start": 9,
-              "end": 15
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(a)[g]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "eval" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
-            ],
-            "tito": [ { "line": 98, "start": 12, "end": 13 } ],
-            "root": {
-              "filename": "string_conversion.py",
-              "line": 98,
+              "line": 99,
               "start": 9,
               "end": 15
             }
@@ -1464,9 +1659,9 @@
   "kind": "issue",
   "data": {
     "callable": "string_conversion.multiple_targets_for_single_expression_2",
-    "callable_line": 97,
+    "callable_line": 98,
     "code": 5001,
-    "line": 98,
+    "line": 99,
     "start": 9,
     "end": 15,
     "filename": "string_conversion.py",
@@ -1488,7 +1683,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 98,
+                "line": 99,
                 "start": 12,
                 "end": 13
               },
@@ -1510,7 +1705,7 @@
             ],
             "root": {
               "filename": "string_conversion.py",
-              "line": 98,
+              "line": 99,
               "start": 9,
               "end": 15
             }
@@ -1544,7 +1739,7 @@
             "call": {
               "position": {
                 "filename": "string_conversion.py",
-                "line": 119,
+                "line": 120,
                 "start": 17,
                 "end": 23
               },
@@ -1560,12 +1755,17 @@
         "port": "formal(d)",
         "taint": [
           {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
             "local_features": [
+              { "always-via": "obscure:model" },
               { "always-type": "integer" },
               { "always-via": "format-string" },
-              { "always-type": "scalar" }
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
             ],
+            "tito": [ { "line": 120, "start": 25, "end": 26 } ],
             "decl": null
           }
         ]
@@ -1581,7 +1781,7 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 119, "start": 17, "end": 23 } ],
+            "tito": [ { "line": 120, "start": 17, "end": 23 } ],
             "decl": null
           }
         ]
@@ -1597,8 +1797,45 @@
               { "always-via": "format-string" },
               { "always-via": "tito" }
             ],
-            "tito": [ { "line": 119, "start": 17, "end": 23 } ],
+            "tito": [ { "line": 120, "start": 17, "end": 23 } ],
             "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "string_conversion.object_type",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "call": {
+              "position": {
+                "filename": "string_conversion.py",
+                "line": 164,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
+              "port": "result"
+            }
           }
         ]
       }
