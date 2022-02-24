@@ -221,7 +221,19 @@ let test_qualifier _ =
   assert_equal
     (SourcePath.qualifier_of_relative "module/builtins.py")
     (qualifier ["module"; "builtins"]);
-  assert_equal (SourcePath.qualifier_of_relative "module/__init__.pyi") (qualifier ["module"])
+  assert_equal (SourcePath.qualifier_of_relative "module/__init__.pyi") (qualifier ["module"]);
+  assert_equal
+    (SourcePath.qualifier_of_relative "foo/bar-stubs/baz.py")
+    (qualifier ["foo"; "bar"; "baz"]);
+  assert_equal
+    (SourcePath.qualifier_of_relative "foo/bar-stubs/__init__.pyi")
+    (qualifier ["foo"; "bar"]);
+  (* It's unclear what should be done in this case. For now, strip the `-stubs` suffix for all
+     directories. *)
+  assert_equal
+    (SourcePath.qualifier_of_relative "foo-stubs/bar-stubs/baz.pyi")
+    (qualifier ["foo"; "bar"; "baz"]);
+  ()
 
 
 let test_extension_suffix _ =
