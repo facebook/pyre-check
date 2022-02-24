@@ -344,3 +344,19 @@ def test_items_backward_values(x, y):
 def test_with_issue_in_dict_items_comprehension():
     sources = {"k": _test_source()}
     return {k: v for k, v in sources.items()}
+
+
+def test_dict_sanitize_get(d: Dict):
+    _test_sink(d.get(_test_source()))
+
+
+def test_dict_sanitize_getitem(d: Dict):
+    _test_sink(d[_test_source()])
+
+
+def test_mapping_sanitize_get(d: Mapping):
+    _test_sink(d.get(_test_source()))
+
+
+def test_mapping_sanitize_getitem(d: Mapping):
+    _test_sink(d[_test_source()])

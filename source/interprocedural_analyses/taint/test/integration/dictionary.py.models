@@ -763,7 +763,7 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" },
+              { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
             "tito": [ { "line": 295, "start": 41, "end": 55 } ],
@@ -798,7 +798,7 @@
       }
     ],
     "features": [
-      { "via": "obscure:model" },
+      { "always-via": "obscure:model" },
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
@@ -1010,6 +1010,14 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dict.__getitem__",
+    "sanitizers": [ { "port": "formal(__key)", "tito": "All" } ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dict.get",
     "tito": [
       {
@@ -1104,7 +1112,7 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
-              { "via": "obscure:model" },
+              { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
             "tito": [
@@ -1929,6 +1937,72 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dictionary.test_dict_sanitize_get",
+    "sinks": [
+      {
+        "port": "formal(d)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 350, "start": 15, "end": 16 } ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 350,
+              "start": 15,
+              "end": 36
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.test_dict_sanitize_getitem",
+    "sinks": [
+      {
+        "port": "formal(d)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 354,
+              "start": 15,
+              "end": 32
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.test_items_backward_keys",
     "sinks": [
       {
@@ -1975,6 +2049,73 @@
               "line": 341,
               "start": 19,
               "end": 20
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.test_mapping_sanitize_get",
+    "sinks": [
+      {
+        "port": "formal(d)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 358, "start": 15, "end": 16 } ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 358,
+              "start": 15,
+              "end": 36
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.test_mapping_sanitize_getitem",
+    "sinks": [
+      {
+        "port": "formal(d)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 362,
+              "start": 15,
+              "end": 32
             }
           }
         ]
@@ -2128,6 +2269,14 @@
 {
   "kind": "model",
   "data": {
+    "callable": "typing.Mapping.__getitem__",
+    "sanitizers": [ { "port": "formal(__key)", "tito": "All" } ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "typing.Mapping.get",
     "tito": [
       {
@@ -2139,6 +2288,8 @@
           }
         ]
       }
-    ]
+    ],
+    "sanitizers": [ { "port": "formal(__key)", "tito": "All" } ],
+    "modes": [ "Obscure" ]
   }
 }
