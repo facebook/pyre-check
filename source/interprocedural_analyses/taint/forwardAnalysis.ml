@@ -1655,14 +1655,20 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             CallGraph.CallCallees.create ~call_targets:[call_target] ~return_type:Type.string ()
           in
           let callee =
-            let method_name =
-              Option.value_exn (Interprocedural.Target.method_name call_target.target)
+            let callee_from_method_name method_name =
+              {
+                Node.value =
+                  Expression.Name
+                    (Name.Attribute { base; attribute = method_name; special = false });
+                location = call_location;
+              }
             in
-            {
-              Node.value =
-                Expression.Name (Name.Attribute { base; attribute = method_name; special = false });
-              location = call_location;
-            }
+            match call_target.target with
+            | `Method { method_name; _ } -> callee_from_method_name method_name
+            | `OverrideTarget { method_name; _ } -> callee_from_method_name method_name
+            | `Function function_name ->
+                { Node.value = Name (Name.Identifier function_name); location = call_location }
+            | `Object _ -> failwith "callees should be either methods or functions"
           in
           let new_taint, new_state =
             apply_callees_with_arguments_taint

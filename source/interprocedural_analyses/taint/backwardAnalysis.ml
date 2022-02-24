@@ -1507,7 +1507,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~state_to_join
         ~call_target
         ~call_location
-        ~base_expression
+        ~base
         ~base_state
       =
       let { arguments_taint = _; self_taint; callee_taint; state = new_state } =
@@ -1515,15 +1515,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           CallGraph.CallCallees.create ~call_targets:[call_target] ~return_type:Type.string ()
         in
         let callee =
-          let method_name =
-            Option.value_exn (Interprocedural.Target.method_name call_target.target)
+          let callee_from_method_name method_name =
+            {
+              Node.value =
+                Expression.Name (Name.Attribute { base; attribute = method_name; special = false });
+              location = call_location;
+            }
           in
-          {
-            Node.value =
-              Expression.Name
-                (Name.Attribute { base = base_expression; attribute = method_name; special = false });
-            location = call_location;
-          }
+          match call_target.target with
+          | `Method { method_name; _ } -> callee_from_method_name method_name
+          | `OverrideTarget { method_name; _ } -> callee_from_method_name method_name
+          | `Function function_name ->
+              { Node.value = Name (Name.Identifier function_name); location = call_location }
+          | `Object _ -> failwith "callees should be either methods or functions"
         in
         apply_callees_and_return_arguments_taint
           ~resolution
@@ -1558,7 +1562,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                       ~state_to_join
                       ~call_target
                       ~call_location:expression_location
-                      ~base_expression:expression
+                      ~base:expression
                       ~base_state:state)
             | _ -> taint, state
           in

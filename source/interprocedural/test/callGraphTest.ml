@@ -2832,6 +2832,140 @@ let test_call_graph_of_define context =
   assert_call_graph_of_define
     ~source:
       {|
+      def foo(error_type: typing.Union[str, typing.Type[Exception]]):
+        return f"{error_type}"
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "3:12-3:22",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     (* TODO(T112761296): Wrong call resolution *)
+                     CallTarget.create (`Function "BaseException.__str__");
+                     CallTarget.create
+                       ~implicit_self:true
+                       (`Method { Target.class_name = "str"; method_name = "__str__" });
+                   ];
+               }) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+      def foo(error_type: typing.Type[Exception]):
+        return f"{error_type}"
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "3:12-3:22",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_format_string
+               {
+                 FormatStringCallees.call_targets =
+                   [
+                     (* TODO(T112761296): Wrong call resolution *)
+                     CallTarget.create
+                       (`Method { Target.class_name = "BaseException"; method_name = "__repr__" });
+                   ];
+               }) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~cmp:DefineCallGraph.equal_ignoring_types
+    ~source:
+      {|
+      class A:
+        def __str__(self):
+          return "A"
+      class B:
+        pass
+      def foo(x: typing.Union[A, B]):
+        f"{x.__class__}"
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "8:5-8:16",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "$__str__$",
+                   ExpressionCallees.from_format_string
+                     {
+                       FormatStringCallees.call_targets =
+                         [
+                           (* TODO(T112761296): Probably wrong call resolution *)
+                           CallTarget.create (`Function "object.__str__");
+                           CallTarget.create (`Function "test.A.__str__");
+                         ];
+                     } );
+                 ( "__class__",
+                   ExpressionCallees.from_attribute_access
+                     {
+                       AttributeAccessCallees.property_targets =
+                         [
+                           CallTarget.create
+                             ~implicit_self:true
+                             (`Method { Target.class_name = "object"; method_name = "__class__" });
+                         ];
+                       global_targets = [];
+                       return_type = Type.none;
+                       is_attribute = false;
+                     } );
+               ]) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~cmp:DefineCallGraph.equal_ignoring_types
+    ~source:
+      {|
+      class A:
+        def __str__(self):
+          return "A"
+      def foo(x: A):
+        f"{x.__class__}"
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "6:5-6:16",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "$__str__$",
+                   ExpressionCallees.from_format_string
+                     {
+                       FormatStringCallees.call_targets =
+                         [
+                           (* TODO(T112761296): Probably wrong call resolution *)
+                           CallTarget.create
+                             (`Method { Target.class_name = "object"; method_name = "__repr__" });
+                         ];
+                     } );
+                 ( "__class__",
+                   ExpressionCallees.from_attribute_access
+                     {
+                       AttributeAccessCallees.property_targets =
+                         [
+                           CallTarget.create
+                             ~implicit_self:true
+                             (`Method { Target.class_name = "object"; method_name = "__class__" });
+                         ];
+                       global_targets = [];
+                       return_type = Type.none;
+                       is_attribute = false;
+                     } );
+               ]) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
      def foo():
          pass
 

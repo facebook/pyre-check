@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_source
-from typing import Union, Any
+from typing import Union, Any, Type
 
 from django.http import Request
 
@@ -172,3 +172,11 @@ class OverrideStr(float):
 
 def base_exception(e: Exception):
     return f"{type(e)}"
+
+
+def function_call_target_1(error_type: Union[str, Type[Exception]]):
+    f"{error_type}"  # Resolved as an implicit call to a function
+
+
+def function_call_target_2(x: Union[B, C]):
+    f"{x.__class__}"  # Resolved as an implicit call to a function

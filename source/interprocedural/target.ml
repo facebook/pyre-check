@@ -280,9 +280,10 @@ let class_name = function
 
 let method_name = function
   | `Method { method_name; _ } -> Some method_name
-  | `Function function_name -> Some function_name
   | `OverrideTarget { method_name; _ } -> Some method_name
-  | `Object _ -> None
+  | `Function _
+  | `Object _ ->
+      None
 
 
 let get_short_name = function
