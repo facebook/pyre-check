@@ -3427,17 +3427,19 @@ class base class_metadata_environment dependency =
             let annotation, final, class_variable =
               parsed_annotation
               >>| (fun annotation ->
-                    let is_final, annotation =
-                      match Type.final_value annotation with
-                      | Some annotation -> true, annotation
-                      | None -> false, annotation
-                    in
-                    let is_class_variable, annotation =
+                    let process_class_variable annotation =
                       match Type.class_variable_value annotation with
                       | Some annotation -> true, annotation
                       | None -> false, annotation
                     in
-                    Some annotation, is_final, is_class_variable)
+                    match Type.final_value annotation with
+                    | `NoParameter -> None, true, false
+                    | `NotFinal ->
+                        let is_class_variable, annotation = process_class_variable annotation in
+                        Some annotation, false, is_class_variable
+                    | `Ok annotation ->
+                        let is_class_variable, annotation = process_class_variable annotation in
+                        Some annotation, true, is_class_variable)
               |> Option.value ~default:(None, false, false)
             in
             (* Handle enumeration attributes. *)
@@ -4535,17 +4537,16 @@ class base class_metadata_environment dependency =
               >>| self#parse_annotation ~assumptions
               >>= fun annotation -> Option.some_if (not (Type.is_type_alias annotation)) annotation
             in
-            let annotation, is_final =
+            let annotation, is_explicit, is_final =
               match explicit_annotation with
-              | Some explicit when Type.is_final explicit ->
-                  Type.final_value explicit |> Option.value ~default:explicit, true
-              | Some explicit -> explicit, false
-              | None -> self#resolve_literal value ~assumptions, false
+              | None -> self#resolve_literal value ~assumptions, false, false
+              | Some explicit -> (
+                  match Type.final_value explicit with
+                  | `Ok final_value -> final_value, true, true
+                  | `NoParameter -> self#resolve_literal value ~assumptions, false, true
+                  | `NotFinal -> explicit, true, false)
             in
-            produce_assignment_global
-              ~is_explicit:(Option.is_some explicit_annotation)
-              ~is_final
-              annotation
+            produce_assignment_global ~is_explicit ~is_final annotation
             |> fun annotation ->
             Some { Global.annotation; undecorated_signature = None; problem = None }
         | TupleAssign { value; index; total_length; _ } ->

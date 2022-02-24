@@ -683,8 +683,6 @@ val is_dictionary_or_mapping : t -> bool
 
 val is_ellipsis : t -> bool
 
-val is_final : t -> bool
-
 val is_generic_primitive : t -> bool
 
 val is_iterable : t -> bool
@@ -818,7 +816,7 @@ val class_variable : t -> t
 
 val class_variable_value : t -> t option
 
-val final_value : t -> t option
+val final_value : t -> [> `NoParameter | `NotFinal | `Ok of t ]
 
 val assume_any : t -> t
 

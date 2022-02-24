@@ -1870,12 +1870,6 @@ let is_ellipsis = function
   | _ -> false
 
 
-let is_final = function
-  | Parametric { name = "typing.Final" | "typing_extensions.Final"; _ } -> true
-  | Primitive ("typing.Final" | "typing_extensions.Final") -> true
-  | _ -> false
-
-
 let is_generic_primitive = function
   | Primitive "typing.Generic" -> true
   | _ -> false
@@ -4346,7 +4340,24 @@ let contains_literal annotation =
   exists annotation ~predicate
 
 
-let contains_final annotation = exists annotation ~predicate:is_final
+let final_value = function
+  | Parametric
+      { name = "typing.Final" | "typing_extensions.Final"; parameters = [Single parameter] } ->
+      `Ok parameter
+  | Primitive ("typing.Final" | "typing_extensions.Final") -> `NoParameter
+  | _ -> `NotFinal
+
+
+let contains_final annotation =
+  let predicate annotation =
+    match final_value annotation with
+    | `Ok _
+    | `NoParameter ->
+        true
+    | `NotFinal -> false
+  in
+  exists annotation ~predicate
+
 
 let collect annotation ~predicate =
   let module CollectorTransform = Transform.Make (struct
@@ -4581,14 +4592,6 @@ let class_variable annotation = parametric "typing.ClassVar" [Single annotation]
 
 let class_variable_value = function
   | Parametric { name = "typing.ClassVar"; parameters = [Single parameter] } -> Some parameter
-  | _ -> None
-
-
-let final_value = function
-  | Parametric
-      { name = "typing.Final" | "typing_extensions.Final"; parameters = [Single parameter] } ->
-      Some parameter
-  | Primitive ("typing.Final" | "typing_extensions.Final") -> Some Top
   | _ -> None
 
 

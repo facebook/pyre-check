@@ -260,6 +260,14 @@ let test_final_attributes context =
       "Incompatible attribute type [8]: Attribute `x` declared in class `A` has type `int` but is \
        used as type `str`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Final
+      x: Final = 1
+      def foo() -> str:
+        return x
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
   ()
 
 

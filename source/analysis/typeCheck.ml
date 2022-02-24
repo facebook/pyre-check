@@ -3524,12 +3524,16 @@ module State (Context : Context) = struct
           let annotation_errors, parsed_annotation =
             parse_and_check_annotation ~resolution annotation
           in
-          let unwrap ~f annotation = f annotation |> Option.value ~default:annotation in
-          ( annotation_errors,
-            Type.is_final parsed_annotation,
-            unwrap parsed_annotation ~f:Type.final_value
-            |> unwrap ~f:Type.class_variable_value
-            |> Option.some )
+          let final_annotation, is_final =
+            match Type.final_value parsed_annotation with
+            | `Ok final_annotation -> Some final_annotation, true
+            | `NoParameter -> None, true
+            | `NotFinal -> Some parsed_annotation, false
+          in
+          let unwrap_class_variable annotation =
+            Type.class_variable_value annotation |> Option.value ~default:annotation
+          in
+          annotation_errors, is_final, Option.map final_annotation ~f:unwrap_class_variable
     in
     match Node.value target with
     | Expression.Name (Name.Identifier _)
