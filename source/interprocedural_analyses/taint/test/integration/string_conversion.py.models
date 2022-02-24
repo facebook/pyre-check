@@ -1353,13 +1353,11 @@
         "port": "formal(x)",
         "taint": [
           {
-            "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
-            ],
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
-              { "always-via": "obscure:model" },
+              { "via": "obscure:model" },
               { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "via": "tito" }
             ],
             "tito": [ { "line": 152, "start": 14, "end": 15 } ],
             "decl": null
@@ -1524,7 +1522,7 @@
     "callable": "string_conversion.multiple_targets_for_single_expression",
     "sinks": [
       {
-        "port": "formal(x)[value]",
+        "port": "formal(x)",
         "taint": [
           {
             "kinds": [
@@ -1535,7 +1533,7 @@
             ],
             "local_features": [
               { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "via": "tito" }
             ],
             "tito": [ { "line": 73, "start": 12, "end": 13 } ],
             "root": {
@@ -1640,7 +1638,7 @@
             "local_features": [
               { "via": "obscure:model" },
               { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "via": "tito" }
             ],
             "tito": [ { "line": 99, "start": 12, "end": 13 } ],
             "root": {
@@ -1755,15 +1753,13 @@
         "port": "formal(d)",
         "taint": [
           {
-            "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
-            ],
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
-              { "always-via": "obscure:model" },
+              { "via": "obscure:model" },
               { "always-type": "integer" },
               { "always-via": "format-string" },
               { "always-type": "scalar" },
-              { "always-via": "tito" }
+              { "via": "tito" }
             ],
             "tito": [ { "line": 120, "start": 25, "end": 26 } ],
             "decl": null
@@ -1771,31 +1767,13 @@
         ]
       },
       {
-        "port": "formal(b_or_c)[f]",
+        "port": "formal(b_or_c)",
         "taint": [
           {
-            "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
-            ],
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
               { "always-via": "format-string" },
-              { "always-via": "tito" }
-            ],
-            "tito": [ { "line": 120, "start": 17, "end": 23 } ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(b_or_c)[g]",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
-            ],
-            "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "via": "tito" }
             ],
             "tito": [ { "line": 120, "start": 17, "end": 23 } ],
             "decl": null
@@ -1836,6 +1814,18 @@
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
               "port": "result"
             }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "format-string" } ],
+            "decl": null
           }
         ]
       }

@@ -1503,6 +1503,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let taint = BackwardState.Tree.add_local_breadcrumb (Features.format_string ()) taint in
     let analyze_stringify_callee
+        ~taint_to_join
         ~state_to_join
         ~call_target
         ~call_location
@@ -1533,42 +1534,35 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~call_taint:taint
           callees
       in
-      match callee_taint, self_taint with
-      | None, Some self_taint ->
-          analyze_expression
-            ~resolution
-            ~taint:self_taint
-            ~state:new_state
-            ~expression:base_expression
-          |> join state_to_join
-      | None, None ->
-          analyze_expression
-            ~resolution
-            ~taint (* taint on the entire base expression *)
-            ~state:new_state
-            ~expression:base_expression
-          |> join state_to_join
-      | Some callee_taint, None ->
-          analyze_expression
-            ~resolution
-            ~taint:callee_taint (* taint on the implicit callee *)
-            ~state:new_state
-            ~expression:base_expression
-          |> join state_to_join
-      | Some _, Some _ -> failwith "callee_taint and self_taint should not co-exist"
+      let new_taint =
+        match callee_taint, self_taint with
+        | None, Some self_taint -> BackwardState.Tree.join taint_to_join self_taint
+        | None, None -> taint_to_join
+        | Some _, None ->
+            failwith "Probably a rare case: callee_taint is Some and self_taint is None"
+        | Some _, Some _ -> failwith "callee_taint and self_taint should not co-exist"
+      in
+      new_taint, join state_to_join new_state
     in
     let analyze_nested_expression state = function
-      | Substring.Format ({ Node.location = expression_location; _ } as expression) -> (
-          match get_format_string_callees ~location:expression_location with
-          | Some { CallGraph.FormatStringCallees.call_targets } ->
-              List.fold call_targets ~init:state ~f:(fun state_to_join call_target ->
-                  analyze_stringify_callee
-                    ~state_to_join
-                    ~call_target
-                    ~call_location:expression_location
-                    ~base_expression:expression
-                    ~base_state:state)
-          | None -> analyze_expression ~resolution ~taint ~state ~expression)
+      | Substring.Format ({ Node.location = expression_location; _ } as expression) ->
+          let new_taint, new_state =
+            match get_format_string_callees ~location:expression_location with
+            | Some { CallGraph.FormatStringCallees.call_targets } ->
+                List.fold
+                  call_targets
+                  ~init:(taint, state)
+                  ~f:(fun (taint_to_join, state_to_join) call_target ->
+                    analyze_stringify_callee
+                      ~taint_to_join
+                      ~state_to_join
+                      ~call_target
+                      ~call_location:expression_location
+                      ~base_expression:expression
+                      ~base_state:state)
+            | _ -> taint, state
+          in
+          analyze_expression ~resolution ~taint:new_taint ~state:new_state ~expression
       | Substring.Literal _ -> state
     in
     List.fold (List.rev substrings) ~f:analyze_nested_expression ~init:state
