@@ -193,7 +193,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 @click.option("--logging-sections", type=str, hidden=True)
 @click.option("--log-identifier", type=str, default=None, hidden=True)
 @click.option("--dot-pyre-directory", type=str, hidden=True)
-@click.option("--logger", type=str, hidden=True)
 @click.option(
     "--target",
     type=str,
@@ -212,18 +211,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
         "The source directory to check. "
         "Can be specified multiple times to include multiple directories."
     ),
-)
-@click.option(
-    "--do-not-ignore-errors-in",
-    type=str,
-    multiple=True,
-    help=("Report type errors within the given directory."),
-)
-@click.option(
-    "--no-saved-state",
-    is_flag=True,
-    hidden=True,
-    help="Do not attempt loading Pyre from saved state.",
 )
 @click.option(
     "--search-path",
@@ -247,10 +234,6 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
 @click.option("--save-initial-state-to", type=str, hidden=True)
 @click.option("--load-initial-state-from", type=str, hidden=True)
 @click.option("--changed-files-path", type=str, hidden=True)
-@click.option("--saved-state-project", type=str, hidden=True)
-@click.option(
-    "--use-command-v2/--no-use-command-v2", is_flag=True, default=None, hidden=True
-)
 @click.option("--isolation-prefix", type=str, hidden=True)
 @click.option(
     "--python-version",
@@ -309,12 +292,9 @@ def pyre(
     logging_sections: Optional[str],
     log_identifier: Optional[str],
     dot_pyre_directory: Optional[str],
-    logger: Optional[str],
     target: Iterable[str],
     buck_mode: Optional[str],
     source_directory: Iterable[str],
-    do_not_ignore_errors_in: Iterable[str],
-    no_saved_state: bool,
     search_path: Iterable[str],
     binary: Optional[str],
     exclude: Iterable[str],
@@ -322,9 +302,6 @@ def pyre(
     save_initial_state_to: Optional[str],
     load_initial_state_from: Optional[str],
     changed_files_path: Optional[str],
-    saved_state_project: Optional[str],
-    # TODO(T111203329): This option is dead. Deprecate it
-    use_command_v2: Optional[bool],
     isolation_prefix: Optional[str],
     python_version: Optional[str],
     shared_memory_heap_size: Optional[int],
@@ -347,12 +324,12 @@ def pyre(
         noninteractive=noninteractive,
         logging_sections=logging_sections,
         log_identifier=log_identifier,
-        logger=logger,
+        logger=None,
         targets=list(target),
         source_directories=list(source_directory),
-        do_not_ignore_errors_in=list(do_not_ignore_errors_in),
+        do_not_ignore_errors_in=[],
         buck_mode=buck_mode,
-        no_saved_state=no_saved_state,
+        no_saved_state=True,
         search_path=list(search_path),
         binary=binary,
         exclude=list(exclude),
@@ -360,7 +337,7 @@ def pyre(
         save_initial_state_to=save_initial_state_to,
         load_initial_state_from=load_initial_state_from,
         changed_files_path=changed_files_path,
-        saved_state_project=saved_state_project,
+        saved_state_project=None,
         dot_pyre_directory=Path(dot_pyre_directory)
         if dot_pyre_directory is not None
         else None,
