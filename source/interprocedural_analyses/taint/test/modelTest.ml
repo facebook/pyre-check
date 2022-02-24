@@ -138,6 +138,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
               def function_with_multiple_positions(a: int, b: int, c: int) -> Union[int, str]: ...
               @overload
               def function_with_multiple_positions(a: int, c: int) -> str: ...
+              def function_with_positional_and_named(a: str, __x: str, __y: str, b: str) -> None: ...
             |}
   in
   let sources = ("test.py", source) :: sources in
@@ -2507,10 +2508,37 @@ let test_invalid_models context =
        implementation `def function_with_multiple_positions(a: int, b: int, c: int) -> Union[int, \
        str]: ...`. Reason: invalid position for named parameter `c` (0 not in {1, 2})."
     ();
+  assert_invalid_model
+    ~model_source:"def test.function_with_positional_and_named(__x): ..."
+    ~expect:
+      "Model signature parameters for `test.function_with_positional_and_named` do not match \
+       implementation `def function_with_positional_and_named(a: str, str, str, b: str) -> None: \
+       ...`. Reason: unexpected positional only parameter: `__x` at position: 0 (0 not in {1, 2})."
+    ();
+  assert_valid_model
+    ~model_source:"def test.function_with_positional_and_named(a, __random_name): ..."
+    ();
+  assert_valid_model
+    ~model_source:"def test.function_with_positional_and_named(a, __random_name, b): ..."
+    ();
+  assert_invalid_model
+    ~model_source:"def test.function_with_positional_and_named(a, __x, b, __y): ..."
+    ~expect:
+      "Model signature parameters for `test.function_with_positional_and_named` do not match \
+       implementation `def function_with_positional_and_named(a: str, str, str, b: str) -> None: \
+       ...`. Reason: unexpected positional only parameter: `__y` at position: 3 (3 not in {1, 2})."
+    ();
   assert_valid_model
     ~model_source:"def test.function_with_kwargs(normal_arg, *, crazy_arg, **kwargs): ..."
     ();
   assert_valid_model ~model_source:"def test.anonymous_only(__a1, __a2, __a3): ..." ();
+  assert_invalid_model
+    ~model_source:"def test.anonymous_only(parameter: Any): ..."
+    ~expect:
+      "Model signature parameters for `test.anonymous_only` do not match implementation `def \
+       anonymous_only(unknown, unknown, unknown) -> None: ...`. Reason: unexpected named \
+       parameter: `parameter`."
+    ();
   assert_valid_model ~model_source:"def test.anonymous_with_optional(__a1, __a2): ..." ();
   assert_valid_model ~model_source:"def test.anonymous_with_optional(__a1, __a2, __a3=...): ..." ();
   assert_invalid_model

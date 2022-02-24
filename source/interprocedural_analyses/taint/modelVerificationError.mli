@@ -9,7 +9,11 @@ open Ast
 
 module IncompatibleModelError : sig
   type reason =
-    | UnexpectedPositionalOnlyParameter of string
+    | UnexpectedPositionalOnlyParameter of {
+        name: string;
+        position: int;
+        valid_positions: int list;
+      }
     | UnexpectedNamedParameter of string
     | UnexpectedStarredParameter
     | UnexpectedDoubleStarredParameter
