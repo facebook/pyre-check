@@ -599,33 +599,20 @@ module ClassDecorators = struct
       | Some { init; repr; eq; order; match_args } ->
           let init_parameters ~implicitly_initialize =
             let extract_dataclass_field_arguments (_, value) =
+              let field_descriptors =
+                [
+                  Reference.create "dataclasses.field"
+                  |> Ast.Expression.from_reference ~location:Location.any;
+                ]
+              in
               match value with
-              | {
-               Node.value =
-                 Expression.Call
-                   {
-                     callee =
-                       {
-                         Node.value =
-                           Expression.Name
-                             (Name.Attribute
-                               {
-                                 base =
-                                   {
-                                     Node.value = Expression.Name (Name.Identifier "dataclasses");
-                                     _;
-                                   };
-                                 attribute = "field";
-                                 _;
-                               });
-                         _;
-                       };
-                     arguments;
-                     _;
-                   };
-               _;
-              } ->
-                  Some arguments
+              | { Node.value = Expression.Call { callee; arguments; _ }; _ } ->
+                  Option.some_if
+                    (List.exists field_descriptors ~f:(fun field_descriptor ->
+                         Int.equal
+                           (Ast.Expression.location_insensitive_compare callee field_descriptor)
+                           0))
+                    arguments
               | _ -> None
             in
             let init_not_disabled attribute =
