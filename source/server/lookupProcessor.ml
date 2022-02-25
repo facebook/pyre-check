@@ -47,7 +47,7 @@ let find_all_annotations_batch ~environment ~build_system ~configuration paths =
       path;
       types_by_location =
         get_lookup ~configuration ~environment ~build_system path
-        >>| Lookup.get_all_annotations
+        >>| Lookup.get_all_resolved_types
         >>| List.sort ~compare:[%compare: Location.t * Type.t];
     }
   in

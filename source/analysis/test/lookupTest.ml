@@ -35,7 +35,7 @@ let assert_annotation_list ~lookup expected =
     ~printer:(String.concat ~sep:", ")
     ~pp_diff:(diff ~print:list_diff)
     expected
-    (Lookup.get_all_annotations lookup
+    (Lookup.get_all_resolved_types lookup
     |> List.map ~f:(fun (key, data) -> Format.asprintf "%s/%a" (show_location key) Type.pp data)
     |> List.sort ~compare:String.compare)
 
@@ -44,7 +44,7 @@ let assert_annotation ~lookup ~position ~annotation =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
     annotation
-    (Lookup.get_annotation lookup ~position
+    (Lookup.get_resolved_type lookup ~position
     >>| fun (location, annotation) ->
     Format.asprintf "%s/%a" (show_location location) Type.pp annotation)
 
@@ -80,7 +80,7 @@ let test_lookup_out_of_bounds_location context =
         List.map indices ~f:(fun index_two -> index_one, index_two))
   in
   let test_one (line, column) =
-    Lookup.get_annotation lookup ~position:{ Location.line; column } |> ignore
+    Lookup.get_resolved_type lookup ~position:{ Location.line; column } |> ignore
   in
   List.iter indices_product ~f:test_one
 

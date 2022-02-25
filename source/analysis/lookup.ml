@@ -374,7 +374,7 @@ let get_best_location lookup_table ~position =
          weight location_left - weight location_right)
 
 
-let get_annotation { resolved_types_lookup; _ } ~position =
+let get_resolved_type { resolved_types_lookup; _ } ~position =
   get_best_location resolved_types_lookup ~position
 
 
@@ -382,6 +382,6 @@ let get_definition { definitions_lookup; _ } ~position =
   get_best_location definitions_lookup ~position >>| snd
 
 
-let get_all_annotations { resolved_types_lookup; _ } = Hashtbl.to_alist resolved_types_lookup
+let get_all_resolved_types { resolved_types_lookup; _ } = Hashtbl.to_alist resolved_types_lookup
 
 let get_all_definitions { definitions_lookup; _ } = Hashtbl.to_alist definitions_lookup

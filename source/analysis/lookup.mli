@@ -11,9 +11,9 @@ type t
 
 val create_of_module : TypeEnvironment.ReadOnly.t -> Reference.t -> t
 
-val get_annotation : t -> position:Location.position -> (Location.t * Type.t) option
+val get_resolved_type : t -> position:Location.position -> (Location.t * Type.t) option
 
-val get_all_annotations : t -> (Location.t * Type.t) list
+val get_all_resolved_types : t -> (Location.t * Type.t) list
 
 val get_definition : t -> position:Location.position -> Location.t option
 
