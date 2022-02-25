@@ -13,10 +13,7 @@ type error_reason =
   | StubShadowing
   | FileNotFound
 
-type types_by_path = {
-  path: string;
-  types_by_location: ((Location.t * Type.t) list, error_reason) Result.t;
-}
+type types_by_location = ((Location.t * Type.t) list, error_reason) Result.t
 
 let get_lookup ~configuration ~build_system ~environment path =
   let generate_lookup_for_existent_path { SourcePath.qualifier; _ } =
@@ -40,15 +37,8 @@ let get_lookup ~configuration ~build_system ~environment path =
       | ModuleTracker.PathLookup.NotFound -> generate_lookup_for_nonexistent_path FileNotFound)
 
 
-let find_all_annotations_batch ~environment ~build_system ~configuration paths =
-  let get_annotations path =
-    let open Result in
-    {
-      path;
-      types_by_location =
-        get_lookup ~configuration ~environment ~build_system path
-        >>| Lookup.get_all_resolved_types
-        >>| List.sort ~compare:[%compare: Location.t * Type.t];
-    }
-  in
-  paths |> List.map ~f:get_annotations
+let find_all_resolved_types_for_path ~environment ~build_system ~configuration path =
+  let open Result in
+  get_lookup ~configuration ~environment ~build_system path
+  >>| Lookup.get_all_resolved_types
+  >>| List.sort ~compare:[%compare: Location.t * Type.t]

@@ -746,16 +746,19 @@ let rec process_request ~environment ~build_system ~configuration request =
         let annotation = Resolution.resolve_expression_to_type resolution expression in
         Single (Type annotation)
     | TypesInFiles paths ->
-        let annotations =
-          LookupProcessor.find_all_annotations_batch ~environment ~build_system ~configuration paths
-        in
-        let create_result { LookupProcessor.path; types_by_location } =
-          match types_by_location with
+        let find_resolved_types path =
+          match
+            LookupProcessor.find_all_resolved_types_for_path
+              ~environment
+              ~build_system
+              ~configuration
+              path
+          with
           | Result.Ok types ->
               Either.First { Base.path; types = List.map ~f:create_type_at_location types }
           | Result.Error error_reason -> Either.Second (path, error_reason)
         in
-        let results, errors = List.partition_map ~f:create_result annotations in
+        let results, errors = List.partition_map ~f:find_resolved_types paths in
         if List.is_empty errors then
           Single (Base.TypesByPath results)
         else
