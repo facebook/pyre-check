@@ -49,18 +49,6 @@ let assert_annotation ~lookup ~position ~annotation =
     Format.asprintf "%s/%a" (show_location location) Type.pp annotation)
 
 
-let test_lookup context =
-  let source =
-    {|
-      def foo(x):
-          return 1
-      def boo(x):
-          return foo(x)
-    |}
-  in
-  generate_lookup ~context source |> ignore
-
-
 let test_lookup_out_of_bounds_location context =
   let source =
     {|
@@ -882,7 +870,6 @@ let test_lookup_unknown_accesses context =
 let () =
   "lookup"
   >::: [
-         "lookup" >:: test_lookup;
          "lookup_out_of_bounds_location" >:: test_lookup_out_of_bounds_location;
          "lookup_pick_narrowest" >:: test_lookup_pick_narrowest;
          "lookup_definitions" >:: test_lookup_definitions;
