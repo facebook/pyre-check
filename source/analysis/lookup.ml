@@ -190,7 +190,10 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
   let visit_format_string_children _ _ = false
 end
 
-module Visit = struct
+(** This is a simple wrapper around [CreateDefinitionAndAnnotationLookupVisitor]. It ensures that
+    the lookup for type annotations, such as `x: Foo`, points to the definition of the type `Foo`,
+    not `Type[Foo]`. *)
+module CreateLookupsIncludingTypeAnnotationsVisitor = struct
   include Visit.MakeNodeVisitor (CreateDefinitionAndAnnotationLookupVisitor)
 
   let visit state source =
@@ -205,8 +208,7 @@ module Visit = struct
           ~state
           ~visitor_override:CreateDefinitionAndAnnotationLookupVisitor.node_postcondition
       in
-      (* Special-casing for annotations that should be parsed rather than resolved as expressions. *)
-      let store_annotation annotation =
+      let store_type_annotation annotation =
         let { CreateDefinitionAndAnnotationLookupVisitor.pre_resolution; annotations_lookup; _ } =
           !state
         in
@@ -221,7 +223,7 @@ module Visit = struct
       match Node.value statement with
       | Statement.Assign { Assign.target; annotation; value; _ } ->
           postcondition_visit target;
-          annotation >>| store_annotation |> ignore;
+          annotation >>| store_type_annotation |> ignore;
           precondition_visit value
       | Define
           ({ Define.signature = { name; parameters; decorators; return_annotation; _ }; _ } as
@@ -244,7 +246,7 @@ module Visit = struct
             in
             Expression.Name (Name.Identifier name) |> Node.create ~location |> postcondition_visit;
             Option.iter ~f:postcondition_visit value;
-            annotation >>| store_annotation |> ignore
+            annotation >>| store_type_annotation |> ignore
           in
           precondition_visit
             (Ast.Expression.from_reference
@@ -308,7 +310,7 @@ let create_of_module type_environment qualifier =
           ~annotation_store:post_annotations
           (module TypeCheck.DummyContext)
       in
-      Visit.visit
+      CreateLookupsIncludingTypeAnnotationsVisitor.visit
         {
           CreateDefinitionAndAnnotationLookupVisitor.pre_resolution;
           post_resolution;
