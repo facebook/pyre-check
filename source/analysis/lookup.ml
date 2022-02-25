@@ -11,12 +11,12 @@ open Ast
 open Expression
 open Statement
 
-type annotation_lookup = Type.t Location.Table.t
+type resolved_type_lookup = Type.t Location.Table.t
 
 type definition_lookup = Location.t Location.Table.t
 
 type t = {
-  annotations_lookup: annotation_lookup;
+  resolved_types_lookup: resolved_type_lookup;
   definitions_lookup: definition_lookup;
 }
 
@@ -26,8 +26,8 @@ type t = {
     Definition: For names (such as `foo` or `bar.baz.some_method`), it stores the definition in the
     `definitions_lookup` table on the key of the name's location.
 
-    Resolved type: For all expressions, store the resolved type in `annotations_lookup` on the key
-    of the expression's location. Special-case names such as named arguments or the names in
+    Resolved type: For all expressions, store the resolved type in `resolved_types_lookup` on the
+    key of the expression's location. Special-case names such as named arguments or the names in
     comprehensions and generators.
 
     The result state of this visitor is ignored. We need two read-only pieces of information to
@@ -37,13 +37,13 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
   type t = {
     pre_resolution: Resolution.t;
     post_resolution: Resolution.t;
-    annotations_lookup: annotation_lookup;
+    resolved_types_lookup: resolved_type_lookup;
     definitions_lookup: definition_lookup;
   }
 
   let node_base
       ~postcondition
-      ({ pre_resolution; post_resolution; annotations_lookup; definitions_lookup; _ } as state)
+      ({ pre_resolution; post_resolution; resolved_types_lookup; definitions_lookup; _ } as state)
       node
     =
     let resolve ~resolution ~expression =
@@ -96,7 +96,7 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
         if not (Location.equal location Location.any) then
           Hashtbl.set table ~key:location ~data |> ignore
       in
-      let store_resolved_type = store_lookup ~table:annotations_lookup in
+      let store_resolved_type = store_lookup ~table:resolved_types_lookup in
       let store_generator_and_compute_resolution
           resolution
           { Comprehension.Generator.target; iterator; conditions; _ }
@@ -209,7 +209,7 @@ module CreateLookupsIncludingTypeAnnotationsVisitor = struct
           ~visitor_override:CreateDefinitionAndAnnotationLookupVisitor.node_postcondition
       in
       let store_type_annotation annotation =
-        let { CreateDefinitionAndAnnotationLookupVisitor.pre_resolution; annotations_lookup; _ } =
+        let { CreateDefinitionAndAnnotationLookupVisitor.pre_resolution; resolved_types_lookup; _ } =
           !state
         in
         let resolved =
@@ -218,7 +218,7 @@ module CreateLookupsIncludingTypeAnnotationsVisitor = struct
         in
         let location = Node.location annotation in
         if not (Location.equal location Location.any) then
-          Hashtbl.add annotations_lookup ~key:location ~data:resolved |> ignore
+          Hashtbl.add resolved_types_lookup ~key:location ~data:resolved |> ignore
       in
       match Node.value statement with
       | Statement.Assign { Assign.target; annotation; value; _ } ->
@@ -275,25 +275,25 @@ module CreateLookupsIncludingTypeAnnotationsVisitor = struct
 end
 
 let create_of_module type_environment qualifier =
-  let annotations_lookup = Location.Table.create () in
+  let resolved_types_lookup = Location.Table.create () in
   let definitions_lookup = Location.Table.create () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
       ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
     =
-    let annotation_lookup =
+    let resolved_type_lookup =
       TypeCheck.get_or_recompute_local_annotations ~environment:type_environment name
       |> function
-      | Some annotation_lookup -> annotation_lookup
+      | Some resolved_type_lookup -> resolved_type_lookup
       | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
     in
     let cfg = Cfg.create define in
     let walk_statement node_id statement_index statement =
       let pre_annotations, post_annotations =
         let statement_key = [%hash: int * int] (node_id, statement_index) in
-        ( LocalAnnotationMap.ReadOnly.get_precondition annotation_lookup ~statement_key
+        ( LocalAnnotationMap.ReadOnly.get_precondition resolved_type_lookup ~statement_key
           |> Option.value ~default:Refinement.Store.empty,
-          LocalAnnotationMap.ReadOnly.get_postcondition annotation_lookup ~statement_key
+          LocalAnnotationMap.ReadOnly.get_postcondition resolved_type_lookup ~statement_key
           |> Option.value ~default:Refinement.Store.empty )
       in
       let pre_resolution =
@@ -314,7 +314,7 @@ let create_of_module type_environment qualifier =
         {
           CreateDefinitionAndAnnotationLookupVisitor.pre_resolution;
           post_resolution;
-          annotations_lookup;
+          resolved_types_lookup;
           definitions_lookup;
         }
         (Source.create [statement])
@@ -343,7 +343,7 @@ let create_of_module type_environment qualifier =
          ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment)
   in
   List.iter all_defines ~f:walk_define;
-  { annotations_lookup; definitions_lookup }
+  { resolved_types_lookup; definitions_lookup }
 
 
 let get_best_location lookup_table ~position =
@@ -374,14 +374,14 @@ let get_best_location lookup_table ~position =
          weight location_left - weight location_right)
 
 
-let get_annotation { annotations_lookup; _ } ~position =
-  get_best_location annotations_lookup ~position
+let get_annotation { resolved_types_lookup; _ } ~position =
+  get_best_location resolved_types_lookup ~position
 
 
 let get_definition { definitions_lookup; _ } ~position =
   get_best_location definitions_lookup ~position >>| snd
 
 
-let get_all_annotations { annotations_lookup; _ } = Hashtbl.to_alist annotations_lookup
+let get_all_annotations { resolved_types_lookup; _ } = Hashtbl.to_alist resolved_types_lookup
 
 let get_all_definitions { definitions_lookup; _ } = Hashtbl.to_alist definitions_lookup
