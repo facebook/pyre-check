@@ -120,16 +120,16 @@ let assert_definition_list ~lookup expected =
     ~pp_diff:(diff ~print:list_diff)
     expected
     (LocationBasedLookup.get_all_definitions lookup
-    |> List.sort ~compare:[%compare: Location.t * Location.t]
+    |> List.sort ~compare:[%compare: Location.t * Location.WithModule.t]
     |> List.map ~f:(fun (key, data) ->
-           Format.asprintf "%s -> %s" (show_location key) (show_location data)))
+           Format.asprintf "%s -> %s" (show_location key) ([%show: Location.WithModule.t] data)))
 
 
 let assert_definition ~lookup ~position ~definition =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
     definition
-    (LocationBasedLookup.get_definition lookup ~position >>| show_location)
+    (LocationBasedLookup.get_definition lookup ~position >>| [%show: Location.WithModule.t])
 
 
 let test_lookup_definitions context =
@@ -169,22 +169,22 @@ let test_lookup_definitions context =
   assert_definition_list
     ~lookup
     [
-      "2:20-2:24 -> 2:0-2:15";
-      "2:26-2:36 -> 4:0-5:18";
-      "4:4-4:10 -> 4:0-5:13";
-      "4:16-4:19 -> 120:0-181:32";
-      "7:4-7:11 -> 7:0-8:8";
-      "10:4-10:7 -> 10:0-11:8";
-      "13:4-13:8 -> 13:0-17:10";
-      "14:4-14:7 -> 10:0-11:8";
-      "14:10-14:16 -> 4:0-5:13";
-      "15:4-15:11 -> 7:0-8:8";
-      "15:12-15:18 -> 4:0-5:13";
-      "16:8-16:18 -> 4:0-5:18";
-      "17:4-17:8 -> 2:0-2:15";
+      "2:20-2:24 -> library:2:0-2:15";
+      "2:26-2:36 -> library:4:0-5:18";
+      "4:4-4:10 -> test:4:0-5:13";
+      "4:16-4:19 -> :120:0-181:32";
+      "7:4-7:11 -> test:7:0-8:8";
+      "10:4-10:7 -> test:10:0-11:8";
+      "13:4-13:8 -> test:13:0-17:10";
+      "14:4-14:7 -> test:10:0-11:8";
+      "14:10-14:16 -> test:4:0-5:13";
+      "15:4-15:11 -> test:7:0-8:8";
+      "15:12-15:18 -> test:4:0-5:13";
+      "16:8-16:18 -> library:4:0-5:18";
+      "17:4-17:8 -> library:2:0-2:15";
     ];
   assert_definition ~position:{ Location.line = 14; column = 0 } ~definition:None;
-  assert_definition ~position:{ Location.line = 14; column = 4 } ~definition:(Some "10:0-11:8");
+  assert_definition ~position:{ Location.line = 14; column = 4 } ~definition:(Some "test:10:0-11:8");
   assert_definition ~position:{ Location.line = 14; column = 7 } ~definition:None
 
 
@@ -216,21 +216,21 @@ let test_lookup_definitions_instances context =
   assert_definition_list
     ~lookup
     [
-      "2:6-2:7 -> 2:0-4:12";
-      "3:8-3:11 -> 2:0-4:12";
-      "6:6-6:7 -> 6:0-9:18";
-      "7:4-7:5 -> 6:0-9:18";
-      "7:7-7:8 -> 2:0-4:12";
-      "7:11-7:12 -> 2:0-4:12";
-      "8:8-8:11 -> 6:0-9:18";
-      "8:21-8:22 -> 2:0-4:12";
-      "9:15-9:16 -> 2:0-4:12";
-      "11:4-11:8 -> 11:0-19:15";
-      "12:8-12:9 -> 2:0-4:12";
-      "14:4-14:5 -> 2:0-4:12";
-      "15:8-15:9 -> 6:0-9:18";
-      "17:4-17:5 -> 6:0-9:18";
-      "19:4-19:5 -> 6:0-9:18";
+      "2:6-2:7 -> test:2:0-4:12";
+      "3:8-3:11 -> test:2:0-4:12";
+      "6:6-6:7 -> test:6:0-9:18";
+      "7:4-7:5 -> test:6:0-9:18";
+      "7:7-7:8 -> test:2:0-4:12";
+      "7:11-7:12 -> test:2:0-4:12";
+      "8:8-8:11 -> test:6:0-9:18";
+      "8:21-8:22 -> test:2:0-4:12";
+      "9:15-9:16 -> test:2:0-4:12";
+      "11:4-11:8 -> test:11:0-19:15";
+      "12:8-12:9 -> test:2:0-4:12";
+      "14:4-14:5 -> test:2:0-4:12";
+      "15:8-15:9 -> test:6:0-9:18";
+      "17:4-17:5 -> test:6:0-9:18";
+      "19:4-19:5 -> test:6:0-9:18";
     ];
   assert_definition ~position:{ Location.line = 16; column = 4 } ~definition:None;
   assert_definition ~position:{ Location.line = 16; column = 5 } ~definition:None;

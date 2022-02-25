@@ -13,7 +13,7 @@ open Statement
 
 type resolved_type_lookup = Type.t Location.Table.t
 
-type definition_lookup = Location.t Location.Table.t
+type definition_lookup = Location.WithModule.t Location.Table.t
 
 type t = {
   resolved_types_lookup: resolved_type_lookup;
@@ -65,8 +65,10 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
       let resolve_definition_for_name ~resolution ~expression =
         let find_definition reference =
           GlobalResolution.global_location (Resolution.global_resolution resolution) reference
-          >>| Location.strip_module
-          >>= fun location -> if Location.equal location Location.any then None else Some location
+          >>= fun location ->
+          Option.some_if
+            (not ([%compare.equal: Location.WithModule.t] location Location.WithModule.any))
+            location
         in
         match Node.value expression with
         | Expression.Name (Name.Identifier identifier) ->
