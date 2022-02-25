@@ -1199,8 +1199,7 @@ let resolve_regular_callees ~resolution ~call_indexer ~return_type ~callee =
       |> Option.value ~default:(CallCallees.create_unresolved return_type)
 
 
-let resolve_callees ~resolution ~call_indexer ~call =
-  let { Call.callee; arguments } = redirect_special_calls ~resolution call in
+let resolve_callees ~resolution ~call_indexer ~call:({ Call.callee; arguments } as call) =
   let return_type =
     Expression.Call call
     |> Node.create_with_default_location
@@ -1450,6 +1449,7 @@ struct
       let () =
         match value with
         | Expression.Call call ->
+            let call = redirect_special_calls ~resolution call in
             resolve_callees ~resolution ~call_indexer ~call
             |> ExpressionCallees.from_call
             |> register_targets ~expression_identifier:(call_identifier call)
@@ -1471,6 +1471,7 @@ struct
         | Expression.ComparisonOperator comparison -> (
             match ComparisonOperator.override ~location comparison with
             | Some { Node.value = Expression.Call call; _ } ->
+                let call = redirect_special_calls ~resolution call in
                 resolve_callees ~resolution ~call_indexer ~call
                 |> ExpressionCallees.from_call
                 |> register_targets ~expression_identifier:(call_identifier call)

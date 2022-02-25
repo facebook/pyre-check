@@ -721,7 +721,7 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_call
                (CallCallees.create
                   ~call_targets:[CallTarget.create (`Function "test.f")]
-                  ~return_type:(Type.parametric "functools.partial" [Single Type.Any])
+                  ~return_type:Type.Any
                   ())) );
       ]
     ();
@@ -745,7 +745,7 @@ let test_call_graph_of_define context =
             (ExpressionCallees.from_call
                (CallCallees.create
                   ~call_targets:[CallTarget.create (`Function "test.callable_target")]
-                  ~return_type:Type.Any
+                  ~return_type:Type.integer
                   ())) );
       ]
     ();
@@ -2961,6 +2961,49 @@ let test_call_graph_of_define context =
                        is_attribute = false;
                      } );
                ]) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~cmp:DefineCallGraph.equal_ignoring_types
+    ~source:{|
+      def foo(e: Exception):
+        return str(e) + "hello"
+    |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "3:9-3:15",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__add__",
+                   ExpressionCallees.from_attribute_access
+                     AttributeAccessCallees.empty_attribute_access_callees );
+                 ( "__str__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              (`Method
+                                { Target.class_name = "BaseException"; method_name = "__str__" });
+                          ]
+                        ~return_type:Type.string
+                        ()) );
+               ]) );
+        ( "3:9-3:25",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (`Method { Target.class_name = "str"; method_name = "__add__" });
+                    ]
+                  ~return_type:Type.string
+                  ())) );
       ]
     ();
   assert_call_graph_of_define

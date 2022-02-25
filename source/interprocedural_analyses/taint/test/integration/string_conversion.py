@@ -180,3 +180,9 @@ def function_call_target_1(error_type: Union[str, Type[Exception]]):
 
 def function_call_target_2(x: Union[B, C]):
     f"{x.__class__}"  # Resolved as an implicit call to a function
+
+
+def multiple_callees_same_location():
+    s = StrIsTainted()
+    # The call to str() and the attribute access to str.__add__ have the same location in the AST.
+    return str(s) + "hello"

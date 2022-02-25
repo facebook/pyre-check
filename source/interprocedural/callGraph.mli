@@ -93,6 +93,8 @@ module AttributeAccessCallees : sig
     is_attribute: bool;
   }
   [@@deriving eq, show]
+
+  val empty_attribute_access_callees : t
 end
 
 (* An aggregate of all possible callees for a given identifier expression. *)

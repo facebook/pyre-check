@@ -1519,6 +1519,48 @@
 {
   "kind": "model",
   "data": {
+    "callable": "string_conversion.multiple_callees_same_location",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "tainted" }
+                ],
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "__add__" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito": [ { "line": 188, "start": 11, "end": 17 } ],
+            "call": {
+              "position": {
+                "filename": "string_conversion.py",
+                "line": 188,
+                "start": 11,
+                "end": 17
+              },
+              "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "string_conversion.multiple_targets_for_single_expression",
     "sinks": [
       {
