@@ -17,7 +17,9 @@ type types_by_location = ((Location.t * Type.t) list, error_reason) Result.t
 
 let get_lookup ~configuration ~build_system ~environment path =
   let generate_lookup_for_existent_path { SourcePath.qualifier; _ } =
-    let lookup = Lookup.create_of_module (TypeEnvironment.read_only environment) qualifier in
+    let lookup =
+      LocationBasedLookup.create_of_module (TypeEnvironment.read_only environment) qualifier
+    in
     Result.Ok lookup
   in
   let generate_lookup_for_nonexistent_path error_reason = Result.Error error_reason in
@@ -40,5 +42,5 @@ let get_lookup ~configuration ~build_system ~environment path =
 let find_all_resolved_types_for_path ~environment ~build_system ~configuration path =
   let open Result in
   get_lookup ~configuration ~environment ~build_system path
-  >>| Lookup.get_all_resolved_types
+  >>| LocationBasedLookup.get_all_resolved_types
   >>| List.sort ~compare:[%compare: Location.t * Type.t]

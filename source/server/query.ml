@@ -527,8 +527,8 @@ let rec process_request ~environment ~build_system ~configuration request =
         ~init:""
         ~f:(fun sofar (path, error_reason) ->
           let print_reason = function
-            | LookupProcessor.StubShadowing -> " (file shadowed by .pyi stub file)"
-            | LookupProcessor.FileNotFound -> " (file not found)"
+            | LocationBasedLookupProcessor.StubShadowing -> " (file shadowed by .pyi stub file)"
+            | LocationBasedLookupProcessor.FileNotFound -> " (file not found)"
           in
           Format.asprintf
             "%s%s`%s`%s"
@@ -748,7 +748,7 @@ let rec process_request ~environment ~build_system ~configuration request =
     | TypesInFiles paths ->
         let find_resolved_types path =
           match
-            LookupProcessor.find_all_resolved_types_for_path
+            LocationBasedLookupProcessor.find_all_resolved_types_for_path
               ~environment
               ~build_system
               ~configuration

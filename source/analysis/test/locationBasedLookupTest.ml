@@ -24,7 +24,7 @@ let generate_lookup ~context ?(environment_sources = []) source =
     in
     TypeEnvironment.read_only type_environment
   in
-  let lookup = Lookup.create_of_module environment !&"test" in
+  let lookup = LocationBasedLookup.create_of_module environment !&"test" in
   Memory.reset_shared_memory ();
   lookup
 
@@ -35,7 +35,7 @@ let assert_annotation_list ~lookup expected =
     ~printer:(String.concat ~sep:", ")
     ~pp_diff:(diff ~print:list_diff)
     expected
-    (Lookup.get_all_resolved_types lookup
+    (LocationBasedLookup.get_all_resolved_types lookup
     |> List.sort ~compare:[%compare: Location.t * Type.t]
     |> List.map ~f:(fun (key, data) -> Format.asprintf "%s/%a" (show_location key) Type.pp data))
 
@@ -44,7 +44,7 @@ let assert_annotation ~lookup ~position ~annotation =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
     annotation
-    (Lookup.get_resolved_type lookup ~position
+    (LocationBasedLookup.get_resolved_type lookup ~position
     >>| fun (location, annotation) ->
     Format.asprintf "%s/%a" (show_location location) Type.pp annotation)
 
@@ -68,7 +68,7 @@ let test_lookup_out_of_bounds_location context =
         List.map indices ~f:(fun index_two -> index_one, index_two))
   in
   let test_one (line, column) =
-    Lookup.get_resolved_type lookup ~position:{ Location.line; column } |> ignore
+    LocationBasedLookup.get_resolved_type lookup ~position:{ Location.line; column } |> ignore
   in
   List.iter indices_product ~f:test_one
 
@@ -119,7 +119,7 @@ let assert_definition_list ~lookup expected =
     ~printer:(String.concat ~sep:", ")
     ~pp_diff:(diff ~print:list_diff)
     expected
-    (Lookup.get_all_definitions lookup
+    (LocationBasedLookup.get_all_definitions lookup
     |> List.sort ~compare:[%compare: Location.t * Location.t]
     |> List.map ~f:(fun (key, data) ->
            Format.asprintf "%s -> %s" (show_location key) (show_location data)))
@@ -129,7 +129,7 @@ let assert_definition ~lookup ~position ~definition =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
     definition
-    (Lookup.get_definition lookup ~position >>| show_location)
+    (LocationBasedLookup.get_definition lookup ~position >>| show_location)
 
 
 let test_lookup_definitions context =
