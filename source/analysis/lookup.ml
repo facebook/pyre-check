@@ -33,7 +33,7 @@ type t = {
     The result state of this visitor is ignored. We need two read-only pieces of information to
     build the location table: the types resolved for this statement, and a reference to the
     (mutable) location table to update. *)
-module NodeVisitor = struct
+module CreateDefinitionAndAnnotationLookupVisitor = struct
   type t = {
     pre_resolution: Resolution.t;
     post_resolution: Resolution.t;
@@ -96,9 +96,7 @@ module NodeVisitor = struct
         if not (Location.equal location Location.any) then
           Hashtbl.set table ~key:location ~data |> ignore
       in
-      let store_annotation location annotation =
-        store_lookup ~table:annotations_lookup ~location annotation
-      in
+      let store_resolved_type = store_lookup ~table:annotations_lookup in
       let store_generator_and_compute_resolution
           resolution
           { Comprehension.Generator.target; iterator; conditions; _ }
@@ -106,7 +104,7 @@ module NodeVisitor = struct
         (* The basic idea here is to simulate element for x in generator if cond as the following: x
            = generator.__iter__().__next__() assert cond element *)
         let annotate_expression resolution ({ Node.location; _ } as expression) =
-          resolve ~resolution ~expression >>| store_annotation location |> ignore
+          resolve ~resolution ~expression >>| store_resolved_type ~location |> ignore
         in
         annotate_expression resolution iterator;
         let resolution =
@@ -140,12 +138,12 @@ module NodeVisitor = struct
         resolution
       in
       let resolution = if postcondition then post_resolution else pre_resolution in
-      resolve ~resolution ~expression >>| store_annotation location |> ignore;
+      resolve ~resolution ~expression >>| store_resolved_type ~location |> ignore;
       match value with
       | Call { arguments; _ } ->
           let annotate_argument_name { Call.Argument.name; value } =
             match name, resolve ~resolution ~expression:value with
-            | Some { Node.location; _ }, Some annotation -> store_annotation location annotation
+            | Some { Node.location; _ }, Some annotation -> store_resolved_type ~location annotation
             | _ -> ()
           in
           List.iter ~f:annotate_argument_name arguments
@@ -154,14 +152,16 @@ module NodeVisitor = struct
             List.fold generators ~f:store_generator_and_compute_resolution ~init:resolution
           in
           let annotate_expression ({ Node.location; _ } as expression) =
-            store_annotation location (Resolution.resolve_expression_to_type resolution expression)
+            store_resolved_type
+              ~location
+              (Resolution.resolve_expression_to_type resolution expression)
           in
           annotate_expression key;
           annotate_expression value
       | ListComprehension { element; generators; _ }
       | SetComprehension { element; generators; _ } ->
           let annotate resolution ({ Node.location; _ } as expression) =
-            resolve ~resolution ~expression >>| store_annotation location |> ignore
+            resolve ~resolution ~expression >>| store_resolved_type ~location |> ignore
           in
           let resolution =
             List.fold generators ~f:store_generator_and_compute_resolution ~init:resolution
@@ -191,19 +191,25 @@ module NodeVisitor = struct
 end
 
 module Visit = struct
-  include Visit.MakeNodeVisitor (NodeVisitor)
+  include Visit.MakeNodeVisitor (CreateDefinitionAndAnnotationLookupVisitor)
 
   let visit state source =
     let state = ref state in
     let visit_statement_override ~state statement =
       (* Special-casing for statements that require lookup using the postcondition. *)
-      let precondition_visit = visit_expression ~state ~visitor_override:NodeVisitor.node in
+      let precondition_visit =
+        visit_expression ~state ~visitor_override:CreateDefinitionAndAnnotationLookupVisitor.node
+      in
       let postcondition_visit =
-        visit_expression ~state ~visitor_override:NodeVisitor.node_postcondition
+        visit_expression
+          ~state
+          ~visitor_override:CreateDefinitionAndAnnotationLookupVisitor.node_postcondition
       in
       (* Special-casing for annotations that should be parsed rather than resolved as expressions. *)
       let store_annotation annotation =
-        let { NodeVisitor.pre_resolution; annotations_lookup; _ } = !state in
+        let { CreateDefinitionAndAnnotationLookupVisitor.pre_resolution; annotations_lookup; _ } =
+          !state
+        in
         let resolved =
           GlobalResolution.parse_annotation (Resolution.global_resolution pre_resolution) annotation
           |> Type.meta
@@ -303,7 +309,12 @@ let create_of_module type_environment qualifier =
           (module TypeCheck.DummyContext)
       in
       Visit.visit
-        { NodeVisitor.pre_resolution; post_resolution; annotations_lookup; definitions_lookup }
+        {
+          CreateDefinitionAndAnnotationLookupVisitor.pre_resolution;
+          post_resolution;
+          annotations_lookup;
+          definitions_lookup;
+        }
         (Source.create [statement])
       |> ignore
     in
