@@ -20,7 +20,13 @@ type t = {
   definitions_lookup: definition_lookup;
 }
 
-(** The result state of this visitor is ignored. We need two read-only pieces of information to
+(** This visitor stores two kinds of information for an expression: its definition and resolved
+    type.
+
+    Definition: For names (such as `foo` or `bar.baz.some_method`), it stores the definition in the
+    `definition_lookup` table on the key of the name's location.
+
+    The result state of this visitor is ignored. We need two read-only pieces of information to
     build the location table: the types resolved for this statement, and a reference to the
     (mutable) location table to update. *)
 module NodeVisitor = struct
@@ -54,7 +60,7 @@ module NodeVisitor = struct
         with
         | ClassHierarchy.Untracked _ -> None
       in
-      let resolve_definition ~expression =
+      let resolve_definition_for_name ~expression =
         let find_definition reference =
           GlobalResolution.global_location global_resolution reference
           >>| Location.strip_module
@@ -84,7 +90,7 @@ module NodeVisitor = struct
       in
       let store_definition location data = store_lookup ~table:definitions_lookup ~location ~data in
       resolve ~resolution ~expression >>| store_annotation location |> ignore;
-      resolve_definition ~expression >>| store_definition location |> ignore;
+      resolve_definition_for_name ~expression >>| store_definition location |> ignore;
       let store_generator_and_compute_resolution
           resolution
           { Comprehension.Generator.target; iterator; conditions; _ }
