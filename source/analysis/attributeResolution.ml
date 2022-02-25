@@ -310,6 +310,7 @@ module ClassDecorators = struct
     eq: bool;
     order: bool;
     match_args: bool;
+    field_descriptors: Ast.Expression.t list;
   }
 
   let find_decorator
@@ -386,13 +387,24 @@ module ClassDecorators = struct
 
 
   let dataclass_options ~class_metadata_environment ?dependency class_summary =
+    let field_descriptors =
+      [Reference.create "dataclasses.field" |> Ast.Expression.from_reference ~location:Location.any]
+    in
     find_decorator
       ~names:["dataclasses.dataclass"; "dataclass"]
       ~class_metadata_environment
       ?dependency
       class_summary
     >>| extract_options
-          ~default:{ init = true; repr = true; eq = true; order = false; match_args = true }
+          ~default:
+            {
+              init = true;
+              repr = true;
+              eq = true;
+              order = false;
+              match_args = true;
+              field_descriptors;
+            }
           ~init:"init"
           ~repr:"repr"
           ~eq:"eq"
@@ -406,7 +418,15 @@ module ClassDecorators = struct
       ?dependency
       class_summary
     >>| extract_options
-          ~default:{ init = true; repr = true; eq = true; order = true; match_args = false }
+          ~default:
+            {
+              init = true;
+              repr = true;
+              eq = true;
+              order = true;
+              match_args = false;
+              field_descriptors = [];
+            }
           ~init:"init"
           ~repr:"repr"
           ~eq:"cmp"
@@ -423,7 +443,14 @@ module ClassDecorators = struct
 
 
   let dataclass_transform_default =
-    { init = true; repr = false; eq = true; order = false; match_args = false }
+    {
+      init = true;
+      repr = false;
+      eq = true;
+      order = false;
+      match_args = false;
+      field_descriptors = [];
+    }
 
 
   let find_dataclass_transform_decorator_with_default
@@ -596,15 +623,9 @@ module ClassDecorators = struct
       in
       match options definition with
       | None -> []
-      | Some { init; repr; eq; order; match_args } ->
+      | Some { init; repr; eq; order; match_args; field_descriptors } ->
           let init_parameters ~implicitly_initialize =
             let extract_dataclass_field_arguments (_, value) =
-              let field_descriptors =
-                [
-                  Reference.create "dataclasses.field"
-                  |> Ast.Expression.from_reference ~location:Location.any;
-                ]
-              in
               match value with
               | { Node.value = Expression.Call { callee; arguments; _ }; _ } ->
                   Option.some_if
