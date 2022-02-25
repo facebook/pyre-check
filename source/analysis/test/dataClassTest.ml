@@ -1252,6 +1252,42 @@ let test_dataclass_transform context =
     ];
   assert_equivalent_attributes
     {|
+      def myfield(
+        *,
+        default: Optional[Any] = ...,
+        default_factory: Optional[Callable[[], Any]] = ...,
+        init: bool = True,
+      ):
+        ...
+
+      @__dataclass_transform__(field_descriptors=(myfield,))
+      def mytransform():
+        ...
+
+      @mytransform
+      class Foo:
+        x1: int = myfield(init=False)
+        x2: int = myfield(init=True)
+        x3: int = myfield(init=True, default=1)
+        x4: int = myfield(init=True, default_factory=foo)
+    |}
+    [
+      {|
+        class Foo:
+          x1: int = myfield(init=False)
+          x2: int = myfield(init=True)
+          x3: int = myfield(init=True, default=1)
+          x4: int = myfield(init=True, default_factory=foo)
+          def __init__(self, x2: int, x3: int = 1, x4: int = foo()) -> None:
+            self.x2 = x2
+            self.x3 = x3
+            self.x4 = x4
+          def __eq__(self, o: object) -> bool:
+            pass
+      |};
+    ];
+  assert_equivalent_attributes
+    {|
       @__dataclass_transform__
       class Bar:
         ...

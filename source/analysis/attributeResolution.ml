@@ -376,6 +376,14 @@ module ClassDecorators = struct
               else
                 default
             in
+            let default =
+              if String.equal argument_name "field_descriptors" then
+                match value with
+                | Expression.Tuple field_descriptors -> { default with field_descriptors }
+                | _ -> default
+              else
+                default
+            in
             default
         | _ -> default
       in
