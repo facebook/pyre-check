@@ -135,6 +135,8 @@ let assert_definition ~lookup ~position ~definition =
 let test_lookup_definitions context =
   let source =
     {|
+      from library import Base, return_str
+
       def getint() -> int:
           return 12
 
@@ -147,26 +149,43 @@ let test_lookup_definitions context =
       def test() -> None:
           foo(a=getint(), b="one")
           takeint(getint())
+          y = return_str()
+          Base()
     |}
   in
-  let lookup = generate_lookup ~context source in
+  let environment_sources =
+    [
+      ( "library.py",
+        {|
+      class Base: ...
+
+      def return_str() -> str:
+          return "hello"
+    |} );
+    ]
+  in
+  let lookup = generate_lookup ~environment_sources ~context source in
   let assert_definition = assert_definition ~lookup in
   assert_definition_list
     ~lookup
     [
-      "2:4-2:10 -> 2:0-3:13";
-      "2:16-2:19 -> 120:0-181:32";
-      "5:4-5:11 -> 5:0-6:8";
-      "8:4-8:7 -> 8:0-9:8";
-      "11:4-11:8 -> 11:0-13:21";
-      "12:4-12:7 -> 8:0-9:8";
-      "12:10-12:16 -> 2:0-3:13";
-      "13:4-13:11 -> 5:0-6:8";
-      "13:12-13:18 -> 2:0-3:13";
+      "2:20-2:24 -> 2:0-2:15";
+      "2:26-2:36 -> 4:0-5:18";
+      "4:4-4:10 -> 4:0-5:13";
+      "4:16-4:19 -> 120:0-181:32";
+      "7:4-7:11 -> 7:0-8:8";
+      "10:4-10:7 -> 10:0-11:8";
+      "13:4-13:8 -> 13:0-17:10";
+      "14:4-14:7 -> 10:0-11:8";
+      "14:10-14:16 -> 4:0-5:13";
+      "15:4-15:11 -> 7:0-8:8";
+      "15:12-15:18 -> 4:0-5:13";
+      "16:8-16:18 -> 4:0-5:18";
+      "17:4-17:8 -> 2:0-2:15";
     ];
-  assert_definition ~position:{ Location.line = 12; column = 0 } ~definition:None;
-  assert_definition ~position:{ Location.line = 12; column = 4 } ~definition:(Some "8:0-9:8");
-  assert_definition ~position:{ Location.line = 12; column = 7 } ~definition:None
+  assert_definition ~position:{ Location.line = 14; column = 0 } ~definition:None;
+  assert_definition ~position:{ Location.line = 14; column = 4 } ~definition:(Some "10:0-11:8");
+  assert_definition ~position:{ Location.line = 14; column = 7 } ~definition:None
 
 
 let test_lookup_definitions_instances context =
