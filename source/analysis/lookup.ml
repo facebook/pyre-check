@@ -24,7 +24,11 @@ type t = {
     type.
 
     Definition: For names (such as `foo` or `bar.baz.some_method`), it stores the definition in the
-    `definition_lookup` table on the key of the name's location.
+    `definitions_lookup` table on the key of the name's location.
+
+    Resolved type: For all expressions, store the resolved type in `annotations_lookup` on the key
+    of the expression's location. Special-case names such as named arguments or the names in
+    comprehensions and generators.
 
     The result state of this visitor is ignored. We need two read-only pieces of information to
     build the location table: the types resolved for this statement, and a reference to the
@@ -42,27 +46,25 @@ module NodeVisitor = struct
       ({ pre_resolution; post_resolution; annotations_lookup; definitions_lookup; _ } as state)
       node
     =
-    let annotate_expression ({ Node.location; value } as expression) =
-      let resolution = if postcondition then post_resolution else pre_resolution in
-      let global_resolution = Resolution.global_resolution resolution in
-      let resolve ~resolution ~expression =
-        try
-          let annotation = Resolution.resolve_expression_to_annotation resolution expression in
-          let original = Annotation.original annotation in
-          if Type.is_top original || Type.is_unbound original then
-            let annotation = Annotation.annotation annotation in
-            if Type.is_top annotation || Type.is_unbound annotation then
-              None
-            else
-              Some annotation
+    let resolve ~resolution ~expression =
+      try
+        let annotation = Resolution.resolve_expression_to_annotation resolution expression in
+        let original = Annotation.original annotation in
+        if Type.is_top original || Type.is_unbound original then
+          let annotation = Annotation.annotation annotation in
+          if Type.is_top annotation || Type.is_unbound annotation then
+            None
           else
-            Some original
-        with
-        | ClassHierarchy.Untracked _ -> None
-      in
-      let resolve_definition_for_name ~expression =
+            Some annotation
+        else
+          Some original
+      with
+      | ClassHierarchy.Untracked _ -> None
+    in
+    let store_definition ({ Node.location; _ } as expression) =
+      let resolve_definition_for_name ~resolution ~expression =
         let find_definition reference =
-          GlobalResolution.global_location global_resolution reference
+          GlobalResolution.global_location (Resolution.global_resolution resolution) reference
           >>| Location.strip_module
           >>= fun location -> if Location.equal location Location.any then None else Some location
         in
@@ -81,16 +83,22 @@ module NodeVisitor = struct
                 >>= find_definition)
         | _ -> None
       in
-      let store_lookup ~table ~location ~data =
+      let store_lookup ~table ~location data =
+        if not (Location.equal location Location.any) then
+          Hashtbl.set table ~key:location ~data |> ignore
+      in
+      let resolution = if postcondition then post_resolution else pre_resolution in
+      resolve_definition_for_name ~resolution ~expression
+      |> Option.iter ~f:(store_lookup ~table:definitions_lookup ~location)
+    in
+    let store_resolved_type ({ Node.location; value } as expression) =
+      let store_lookup ~table ~location data =
         if not (Location.equal location Location.any) then
           Hashtbl.set table ~key:location ~data |> ignore
       in
       let store_annotation location annotation =
-        store_lookup ~table:annotations_lookup ~location ~data:annotation
+        store_lookup ~table:annotations_lookup ~location annotation
       in
-      let store_definition location data = store_lookup ~table:definitions_lookup ~location ~data in
-      resolve ~resolution ~expression >>| store_annotation location |> ignore;
-      resolve_definition_for_name ~expression >>| store_definition location |> ignore;
       let store_generator_and_compute_resolution
           resolution
           { Comprehension.Generator.target; iterator; conditions; _ }
@@ -131,6 +139,8 @@ module NodeVisitor = struct
         annotate_expression resolution target;
         resolution
       in
+      let resolution = if postcondition then post_resolution else pre_resolution in
+      resolve ~resolution ~expression >>| store_annotation location |> ignore;
       match value with
       | Call { arguments; _ } ->
           let annotate_argument_name { Call.Argument.name; value } =
@@ -161,10 +171,12 @@ module NodeVisitor = struct
     in
     match node with
     | Visit.Expression expression ->
-        annotate_expression expression;
+        store_definition expression;
+        store_resolved_type expression;
         state
     | Visit.Reference { Node.value = reference; location } ->
-        annotate_expression (Ast.Expression.from_reference ~location reference);
+        store_definition (Ast.Expression.from_reference ~location reference);
+        store_resolved_type (Ast.Expression.from_reference ~location reference);
         state
     | _ -> state
 
