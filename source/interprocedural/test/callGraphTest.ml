@@ -2976,9 +2976,7 @@ let test_call_graph_of_define context =
           LocationCallees.Compound
             (String.Map.Tree.of_alist_exn
                [
-                 ( "__add__",
-                   ExpressionCallees.from_attribute_access
-                     AttributeAccessCallees.empty_attribute_access_callees );
+                 "__add__", ExpressionCallees.from_attribute_access AttributeAccessCallees.empty;
                  ( "__str__",
                    ExpressionCallees.from_call
                      (CallCallees.create

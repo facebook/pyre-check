@@ -265,12 +265,11 @@ module AttributeAccessCallees = struct
     && is_attribute_left == is_attribute_right
 
 
-  let empty_attribute_access_callees =
+  let empty =
     { property_targets = []; global_targets = []; is_attribute = true; return_type = Type.none }
 
 
-  let is_empty attribute_access_callees =
-    equal_ignoring_types attribute_access_callees empty_attribute_access_callees
+  let is_empty attribute_access_callees = equal_ignoring_types attribute_access_callees empty
 end
 
 module IdentifierCallees = struct
@@ -315,7 +314,7 @@ module ExpressionCallees = struct
   let from_call_with_empty_attribute callees =
     {
       call = Some callees;
-      attribute_access = Some AttributeAccessCallees.empty_attribute_access_callees;
+      attribute_access = Some AttributeAccessCallees.empty;
       identifier = None;
       format_string = None;
     }

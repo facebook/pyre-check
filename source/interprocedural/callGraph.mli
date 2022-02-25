@@ -94,7 +94,7 @@ module AttributeAccessCallees : sig
   }
   [@@deriving eq, show]
 
-  val empty_attribute_access_callees : t
+  val empty : t
 end
 
 (* An aggregate of all possible callees for a given identifier expression. *)
