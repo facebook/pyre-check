@@ -1,5 +1,3 @@
-(copy_files ../../scripts/get_build_id.c)
-
 (library
  (foreign_stubs
   (language c)

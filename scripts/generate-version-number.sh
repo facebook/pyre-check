@@ -53,3 +53,9 @@ let log_version_banner () =
   Log.info "Version: %s" (version ());
   Log.info "Build info: %s" (build_info ())
 EOF
+
+
+cat > "${SCRIPTS_DIRECTORY}/../source/hack_parallel/hack_parallel/utils/get_build_id.c" <<EOF
+const char* const BuildInfo_kRevision = "${VERSION}";
+const unsigned long BuildInfo_kRevisionCommitTimeUnix = 0ul;
+EOF

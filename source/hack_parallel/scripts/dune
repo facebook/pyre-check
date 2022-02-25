@@ -1,5 +1,0 @@
-(rule
- (targets get_build_id.c)
- (deps gen_build_id.ml script_utils.ml)
- (action
-  (run ocaml -I scripts -w -3 unix.cma gen_build_id.ml get_build_id.c)))
