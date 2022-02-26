@@ -490,13 +490,18 @@ class DidCopyModelParameters:
         return _parse_parameters(parameters, target=DidCopyModelParameters)
 
 
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
 class HoverTextDocumentParameters:
     text_document: TextDocumentIdentifier
     position: LspPosition
 
     @staticmethod
     def from_json_rpc_parameters(
-        parameters: json_rpc.Parameters,    
+        parameters: json_rpc.Parameters,
     ) -> "HoverTextDocumentParameters":
         return _parse_parameters(parameters, target=HoverTextDocumentParameters)
 

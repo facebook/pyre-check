@@ -14,7 +14,6 @@ import {
   LanguageClient,
   LanguageClientOptions,
   DidChangeConfigurationNotification,
-  ResponseMessage,
 } from "vscode-languageclient/node";
 
 let languageClient: LanguageClient;
@@ -51,7 +50,7 @@ export async function activate(_: vscode.ExtensionContext) {
     },
   };
 
-  languageClient = new LanguageClient(
+  const languageClient = new LanguageClient(
     "pyre",
     "Pyre Language Client",
     serverOptions,
