@@ -15,6 +15,9 @@ from os.path import relpath, exists
 from pathlib import Path
 from typing import List, Optional, Sequence, Dict
 
+from . import query as query_v2
+from . import types as types_query
+
 from ....api import query, connection as api_connection
 from ....api.connection import PyreQueryError
 from ... import (
@@ -121,24 +124,29 @@ class PysaServer:
     ) -> Optional[str]:
         rel_path = relpath(document_path, self.pyre_arguments.global_root)
         try:
-            types = query.types(self.pyre_connection, [rel_path])
+
+            types = types_query.types(
+                Path(self.pyre_arguments.base_arguments.log_path), [rel_path]
+            )
+
             for t in types[0].types:
-                start = query.Position(
+                start = types_query.Position(
                     line=t.location["start"].line,
                     column=t.location["start"].column,
                 )
-                stop = query.Position(
+                stop = types_query.Position(
                     line=t.location["stop"].line,
                     column=t.location["stop"].column,
                 )
-                selected = query.Position(
+                selected = types_query.Position(
                     line=position.line,
                     column=position.character,
                 )
                 if selected > start and selected < stop:
                     function_model = t.extract_function_model()
                     return function_model
-        except PyreQueryError as e:
+
+        except query_v2.InvalidQueryResponse as e:
             await self.log_and_show_message_to_client(e, lsp.MessageType.ERROR)
 
     async def show_message_to_client(
