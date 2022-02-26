@@ -1,95 +1,130 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
 
 open Core
-open Pyre
 open Ast
 
-module T = struct
-  type incompatible_model_error_reason =
-    | UnexpectedPositionalOnlyParameter of string
-    | UnexpectedPositionalParameter of string
+module IncompatibleModelError = struct
+  type reason =
+    | UnexpectedPositionalOnlyParameter of {
+        name: string;
+        position: int;
+        valid_positions: int list;
+      }
     | UnexpectedNamedParameter of string
     | UnexpectedStarredParameter
     | UnexpectedDoubleStarredParameter
-  [@@deriving sexp, compare, eq, show]
-
-  type kind =
-    | ParseError
-    | UnexpectedStatement of Statement.t
-    | InvalidDefaultValue of {
-        callable_name: string;
+    | InvalidNamedParameterPosition of {
         name: string;
-        expression: Expression.t;
+        position: int;
+        valid_positions: int list;
       }
-    | IncompatibleModelError of {
-        name: string;
-        callable_type: Type.Callable.t;
-        reasons: incompatible_model_error_reason list;
-      }
-    | ImportedFunctionModel of {
-        name: Reference.t;
-        actual_name: Reference.t;
-      }
-    | InvalidModelQueryClauses of Expression.Call.Argument.t list
-    | InvalidModelQueryWhereClause of {
-        expression: Expression.t;
-        find_clause_kind: string;
-      }
-    | InvalidModelQueryModelClause of {
-        expression: Expression.t;
-        find_clause_kind: string;
-      }
-    | InvalidParameterExclude of Expression.t
-    | InvalidExtendsIsTransitive of Expression.t
-    | InvalidModelQueryClauseArguments of {
-        callee: Expression.t;
-        arguments: Expression.Call.Argument.t list;
-      }
-    | InvalidArgumentsClause of Expression.t
-    | InvalidNameClause of Expression.t
-    | InvalidTaintAnnotation of {
-        taint_annotation: Expression.t;
-        reason: string;
-      }
-    | MissingAttribute of {
-        class_name: string;
-        attribute_name: string;
-      }
-    | ModelingClassAsDefine of string
-    | ModelingModuleAsDefine of string
-    | ModelingAttributeAsDefine of string
-    | ModelingClassAsAttribute of string
-    | ModelingModuleAsAttribute of string
-    | ModelingCallableAsAttribute of string
-    | NotInEnvironment of string
-    | UnexpectedDecorators of {
-        name: Reference.t;
-        unexpected_decorators: Statement.Decorator.t list;
-      }
-    | InvalidIdentifier of Expression.t
-    | ClassBodyNotEllipsis of string
-    | DefineBodyNotEllipsis of string
-    (* TODO(T81363867): Remove this variant. *)
-    | UnclassifiedError of {
-        model_name: string;
-        message: string;
-      }
-  [@@deriving sexp, compare, eq, show]
+  [@@deriving sexp, compare, show]
 
   type t = {
-    kind: kind;
-    path: Path.t option;
-    location: Location.t;
+    reason: reason;
+    overload: Type.t Type.Callable.overload option;
   }
-  [@@deriving sexp, compare, eq, show]
+  [@@deriving sexp, compare, show]
+
+  let strip_overload { reason; _ } = { reason; overload = None }
 end
 
-include T
+type kind =
+  | ParseError
+  | UnexpectedStatement of Statement.t
+  | InvalidDefaultValue of {
+      callable_name: string;
+      name: string;
+      expression: Expression.t;
+    }
+  | IncompatibleModelError of {
+      name: string;
+      callable_type: Type.Callable.t;
+      errors: IncompatibleModelError.t list;
+    }
+  | ImportedFunctionModel of {
+      name: Reference.t;
+      actual_name: Reference.t;
+    }
+  | InvalidModelQueryClauses of Expression.Call.Argument.t list
+  | InvalidModelQueryWhereClause of {
+      expression: Expression.t;
+      find_clause_kind: string;
+    }
+  | InvalidModelQueryModelClause of {
+      expression: Expression.t;
+      find_clause_kind: string;
+    }
+  | InvalidParameterExclude of Expression.t
+  | InvalidExtendsIsTransitive of Expression.t
+  | InvalidModelQueryClauseArguments of {
+      callee: Expression.t;
+      arguments: Expression.Call.Argument.t list;
+    }
+  | InvalidArgumentsClause of Expression.t
+  | InvalidNameClause of Expression.t
+  | InvalidTypeAnnotationClause of Expression.t
+  | InvalidTaintAnnotation of {
+      taint_annotation: Expression.t;
+      reason: string;
+    }
+  | MissingAttribute of {
+      class_name: string;
+      attribute_name: string;
+    }
+  | MissingSymbol of {
+      module_name: string;
+      symbol_name: string;
+    }
+  | ModelingClassAsDefine of string
+  | ModelingModuleAsDefine of string
+  | ModelingAttributeAsDefine of string
+  | ModelingClassAsAttribute of string
+  | ModelingModuleAsAttribute of string
+  | ModelingCallableAsAttribute of string
+  | NotInEnvironment of {
+      module_name: string;
+      name: string;
+    }
+  | UnexpectedDecorators of {
+      name: Reference.t;
+      unexpected_decorators: Expression.t list;
+    }
+  | InvalidIdentifier of Expression.t
+  | ClassBodyNotEllipsis of string
+  | DefineBodyNotEllipsis of string
+  | UnsupportedCallee of Expression.t
+  | UnexpectedTaintAnnotation of string
+  | UnexpectedModelExpression of Expression.t
+  | UnsupportedFindClause of string
+  | InvalidFindClauseType of Expression.t
+  | InvalidReturnAnnotation of {
+      model_name: string;
+      annotation: string;
+    }
+  | UnsupportedConstraint of Expression.t
+  | InvalidModelForTaint of {
+      model_name: string;
+      error: string;
+    }
+  | NoCorrespondingCallable of string
+  | InvalidAnnotationForAttributeModel of {
+      name: Reference.t;
+      annotation: string;
+    }
+[@@deriving sexp, compare, show]
+
+type t = {
+  kind: kind;
+  path: PyrePath.t option;
+  location: Location.t;
+}
+[@@deriving sexp, compare, show]
 
 let description error =
   match error with
@@ -101,24 +136,58 @@ let description error =
         callable_name
         name
         (Expression.show expression)
-  | IncompatibleModelError { name; callable_type; reasons } ->
+  | IncompatibleModelError { name; callable_type; errors } ->
+      let errors =
+        List.map errors ~f:(fun { reason; overload } ->
+            let reason =
+              match reason with
+              | UnexpectedPositionalOnlyParameter { name; valid_positions = []; _ } ->
+                  Format.sprintf "unexpected positional only parameter: `%s`" name
+              | UnexpectedPositionalOnlyParameter
+                  { name; position; valid_positions = [valid_position] } ->
+                  Format.sprintf
+                    "unexpected positional only parameter: `%s` at position: %d, expected position \
+                     %d"
+                    name
+                    position
+                    valid_position
+              | UnexpectedPositionalOnlyParameter { name; position; valid_positions } ->
+                  Format.sprintf
+                    "unexpected positional only parameter: `%s` at position: %d (%d not in {%s})"
+                    name
+                    position
+                    position
+                    (List.map ~f:string_of_int valid_positions |> String.concat ~sep:", ")
+              | UnexpectedNamedParameter name ->
+                  Format.sprintf "unexpected named parameter: `%s`" name
+              | UnexpectedStarredParameter -> "unexpected star parameter"
+              | UnexpectedDoubleStarredParameter -> "unexpected star star parameter"
+              | InvalidNamedParameterPosition { name; position; valid_positions } ->
+                  Format.sprintf
+                    "invalid position for named parameter `%s` (%d not in {%s})"
+                    name
+                    position
+                    (List.map ~f:string_of_int valid_positions |> String.concat ~sep:", ")
+            in
+            match overload with
+            | Some overload ->
+                Format.asprintf
+                  "%s in overload `%s`"
+                  reason
+                  (Type.show_for_hover
+                     (Type.Callable { kind = Anonymous; implementation = overload; overloads = [] }))
+            | None -> reason)
+      in
       let reasons =
-        List.map reasons ~f:(function
-            | UnexpectedPositionalOnlyParameter name ->
-                Format.sprintf "unexpected positional only parameter: `%s`" name
-            | UnexpectedPositionalParameter name ->
-                Format.sprintf "unexpected positional parameter: `%s`" name
-            | UnexpectedNamedParameter name ->
-                Format.sprintf "unexpected named parameter: `%s`" name
-            | UnexpectedStarredParameter -> "unexpected star parameter"
-            | UnexpectedDoubleStarredParameter -> "unexpected star star parameter")
+        match errors with
+        | [error] -> Format.sprintf "Reason: %s." error
+        | errors -> Format.sprintf "Reasons:\n%s" (String.concat errors ~sep:"\n")
       in
       Format.asprintf
-        "Model signature parameters for `%s` do not match implementation `%s`. Reason%s: %s."
+        "Model signature parameters for `%s` do not match implementation `%s`. %s"
         name
         (Type.show_for_hover (Type.Callable callable_type))
-        (if List.length reasons > 1 then "s" else "")
-        (String.concat reasons ~sep:"; ")
+        reasons
   | ImportedFunctionModel { name; actual_name } ->
       Format.asprintf
         "The modelled function `%a` is an imported function, please model `%a` directly."
@@ -144,6 +213,8 @@ let description error =
       Format.asprintf "`%s` is not a valid arguments clause." (Expression.show expression)
   | InvalidNameClause expression ->
       Format.asprintf "`%s` is not a valid name clause." (Expression.show expression)
+  | InvalidTypeAnnotationClause expression ->
+      Format.asprintf "`%s` is not a valid type annotation clause." (Expression.show expression)
   | InvalidParameterExclude expression ->
       Format.asprintf
         "The AllParameters exclude must be either a string or a list of strings, got: `%s`."
@@ -163,10 +234,7 @@ let description error =
         (Expression.show taint_annotation)
         reason
   | UnexpectedDecorators { name; unexpected_decorators } ->
-      let decorators =
-        List.map unexpected_decorators ~f:Statement.Decorator.to_expression
-        |> List.map ~f:Expression.show
-      in
+      let decorators = List.map unexpected_decorators ~f:Expression.show in
       let property_decorator_message =
         if List.exists decorators ~f:(String.is_substring ~substring:"property") then
           " If you're looking to model a custom property decorator, use the @property decorator."
@@ -179,18 +247,22 @@ let description error =
         name
         (String.concat decorators ~sep:", ")
         property_decorator_message
+  | InvalidFindClauseType clause_type ->
+      Format.sprintf "Find clauses must be strings, got: `%s`" (Expression.show clause_type)
   | InvalidIdentifier expression ->
       Format.sprintf
         "Invalid identifier: `%s`. Expected a fully-qualified name."
         (Expression.show expression)
+  | InvalidReturnAnnotation { model_name; annotation } ->
+      Format.sprintf "Invalid model for `%s`: Invalid return annotation `%s`." model_name annotation
   | ClassBodyNotEllipsis class_name ->
       Format.sprintf "Class model for `%s` must have a body of `...`." class_name
   | DefineBodyNotEllipsis model_name ->
       Format.sprintf "Callable model for `%s` must have a body of `...`." model_name
-  | UnclassifiedError { model_name; message } ->
-      Format.sprintf "Invalid model for `%s`: %s" model_name message
   | MissingAttribute { class_name; attribute_name } ->
       Format.sprintf "Class `%s` has no attribute `%s`." class_name attribute_name
+  | MissingSymbol { module_name; symbol_name } ->
+      Format.sprintf "Module `%s` does not define `%s`." module_name symbol_name
   | ModelingClassAsDefine class_name ->
       Format.sprintf
         "The class `%s` is not a valid define - did you mean to model `%s.__init__()`?"
@@ -216,12 +288,32 @@ let description error =
          %s(): ...`?"
         callable_name
         callable_name
-  | NotInEnvironment name -> Format.sprintf "`%s` is not part of the environment!" name
+  | NotInEnvironment { module_name; name } ->
+      Format.sprintf
+        "`%s` is not part of the environment, no module `%s` in search path."
+        name
+        module_name
+  | UnexpectedTaintAnnotation taint_annotation ->
+      Format.sprintf "Unexpected taint annotation `%s`" taint_annotation
+  | UnsupportedConstraint constraint_name ->
+      Format.sprintf "Unsupported constraint: %s" (Expression.show constraint_name)
+  | UnsupportedCallee callee -> Format.sprintf "Unsupported callee: %s" (Expression.show callee)
+  | UnsupportedFindClause clause -> Format.sprintf "Unsupported find clause `%s`" clause
+  | UnexpectedModelExpression expression ->
+      Format.sprintf "Unexpected model expression: `%s`" (Expression.show expression)
+  | InvalidModelForTaint { model_name; error } ->
+      Format.sprintf "Invalid model for `%s`: %s" model_name error
+  | NoCorrespondingCallable callable ->
+      Format.sprintf "No callable corresponding to `%s` found." callable
+  | InvalidAnnotationForAttributeModel { name; annotation } ->
+      Format.sprintf
+        "Invalid annotation for attribute model `%s`: `%s`."
+        (Reference.show name)
+        annotation
 
 
 let code { kind; _ } =
   match kind with
-  | UnclassifiedError _ -> -1
   | InvalidDefaultValue _ -> 1
   | IncompatibleModelError _ -> 2
   | ImportedFunctionModel _ -> 3
@@ -248,13 +340,25 @@ let code { kind; _ } =
   | InvalidNameClause _ -> 24
   | ParseError -> 25
   | InvalidArgumentsClause _ -> 26
+  | InvalidTypeAnnotationClause _ -> 27
+  | MissingSymbol _ -> 28
+  | UnsupportedCallee _ -> 29
+  | UnexpectedTaintAnnotation _ -> 30
+  | UnexpectedModelExpression _ -> 31
+  | UnsupportedFindClause _ -> 32
+  | UnsupportedConstraint _ -> 33
+  | InvalidFindClauseType _ -> 34
+  | InvalidReturnAnnotation _ -> 35
+  | InvalidModelForTaint _ -> 36
+  | NoCorrespondingCallable _ -> 37
+  | InvalidAnnotationForAttributeModel _ -> 38
 
 
 let display { kind = error; path; location } =
   let model_origin =
     match path with
     | None -> ""
-    | Some path -> Format.sprintf "%s:%d: " (Path.absolute path) Location.(location.start.line)
+    | Some path -> Format.sprintf "%s:%d: " (PyrePath.absolute path) Location.(location.start.line)
   in
   Format.sprintf "%s%s" model_origin (description error)
 
@@ -263,7 +367,7 @@ let to_json ({ kind; path; location } as error) =
   let path =
     match path with
     | None -> `Null
-    | Some path -> `String (Path.absolute path)
+    | Some path -> `String (PyrePath.absolute path)
   in
   `Assoc
     [

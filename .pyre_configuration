@@ -8,8 +8,7 @@
   ],
   "ignore_all_errors": [
     "client/tests/configuration_test.py",
-    "pyre_extensions/safe_json.py",
-    "tools/sandbox/application.py"
+    "pyre_extensions/safe_json.py"
   ],
   "search_path": [
     {
@@ -26,6 +25,9 @@
     },
     {
       "site-package": "graphql"
+    },
+    {
+      "site-package": "intervaltree"
     },
     {
       "site-package": "libcst"
@@ -50,5 +52,5 @@
     "."
   ],
   "strict": true,
-  "version": "0.0.101628593794"
+  "version": "0.0.101645531904"
 }

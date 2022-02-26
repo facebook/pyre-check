@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -103,4 +103,21 @@ module Serializer (Value : SerializableValueType) : sig
   val load : unit -> Value.t
 
   val store : Value.t -> unit
+end
+
+module type InternerValueType = sig
+  include ValueType
+
+  val to_string : t -> string
+end
+
+(* Provide a unique integer for a given value. *)
+module Interner (Value : InternerValueType) : sig
+  type t = int
+
+  val intern : Value.t -> t
+
+  val unintern : t -> Value.t
+
+  val compare : t -> t -> int
 end

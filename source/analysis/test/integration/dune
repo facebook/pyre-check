@@ -13,10 +13,10 @@
    decoratorTest descriptorTest deleteTest enumerationTest errorMessageTest
    finalTest formatStringTest generatorTest globalTest importTest inferTest
    isinstanceTest iterableTest lambdaTest literalTest methodTest modeTest
-   overloadTest parseErrorTest protocolTest redundantCastTest refinementTest
+   overloadTest parseErrorTest protocolTest redundantCastTest typeRefinementTest
    returnTest revealTypeTest scopeTest signatureSelectionTest sqlAlchemyTest
    tupleTest typeGuardTest typeVariableTest typedDictionaryTest unionTest
-   varianceTest walrusOperatorTest)
+   varianceTest walrusOperatorTest matchTest)
  (modules :standard \ integrationTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_compare ppx_sexp_conv

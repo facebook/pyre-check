@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,6 +18,13 @@ module Binding : sig
       [@@deriving sexp, compare, hash]
     end
 
+    module Import : sig
+      type t =
+        | From of Reference.t
+        | Module
+      [@@deriving sexp, compare, hash]
+    end
+
     type t =
       | AssignTarget of Expression.t option
       | ClassName
@@ -25,7 +32,8 @@ module Binding : sig
       | DefineName of Statement.Define.Signature.t
       | ExceptTarget of Expression.t option
       | ForTarget
-      | ImportName
+      | ImportName of Import.t
+      | MatchTarget
       | ParameterName of {
           index: int;
           annotation: Expression.t option;

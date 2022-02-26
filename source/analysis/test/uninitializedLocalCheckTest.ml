@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -28,7 +28,7 @@ let test_simple context =
         x = y
         y = 5
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
   assert_uninitialized_errors {|
       def f(y):
         x = y
@@ -43,7 +43,7 @@ let test_simple context =
         z = 5
         return z   # OK
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       def f(x):
@@ -51,7 +51,7 @@ let test_simple context =
           y = 2
         return y
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       def f() -> int:
@@ -61,7 +61,7 @@ let test_simple context =
           except ZeroDivisionError:
               return x
     |}
-    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       x, y, z = 0, 0, 0
@@ -73,7 +73,7 @@ let test_simple context =
         y = 1
         _ = z      # Refers to global `z`, implicitly
     |}
-    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       class Foo(object):
@@ -158,7 +158,14 @@ let test_simple context =
         _ = x, y
         x, y = None, None
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
+  assert_uninitialized_errors
+    {|
+      def f():
+        y = [x for x in x]
+        x = []
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       def f():
@@ -167,17 +174,15 @@ let test_simple context =
         _ = x, y
         y = None
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
 
   ()
 
 
-(* Tests documenting behavior, arguably, outside the scope of the check itself. Changes to the CFG
-   would automatically handle these cases. *)
-let test_cfg_weakness context =
+(* Tests about uninitialized locals reliant on correct CFG construction. *)
+let test_cfg context =
   let assert_uninitialized_errors = assert_uninitialized_errors ~context in
 
-  (* TODO (T93984519): Inconsistent handling of "assert False" and raising AssertionError. *)
   assert_uninitialized_errors
     {|
       def f():
@@ -201,10 +206,7 @@ let test_cfg_weakness context =
           assert True, "error"
         return z
     |}
-    [
-      "Uninitialized local [61]: Local variable `z` may not be initialized here.";
-      "Uninitialized local [61]: Local variable `y` may not be initialized here.";
-    ];
+    ["Uninitialized local [61]: Local variable `z` is undefined, or not always defined."];
   assert_uninitialized_errors
     {|
       def baz() -> int:
@@ -213,11 +215,56 @@ let test_cfg_weakness context =
               break
           return b
     |}
-    ["Uninitialized local [61]: Local variable `b` may not be initialized here."];
+    [];
+  assert_uninitialized_errors
+    {|
+      def f():
+        try:
+          x = 1
+        except Exception:
+          x = 2
+        finally:
+          print(x)
+    |}
+    [];
+  (* TODO(T106611060): False positive due to CFG construction for `finally`. *)
+  assert_uninitialized_errors
+    {|
+      def f():
+        try:
+          x = 1
+          return
+        finally:
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+  (* TODO(T106611060): False positive due to CFG construction for `finally`. *)
+  assert_uninitialized_errors
+    {|
+      def f():
+        try:
+          return (x := 1)
+        finally:
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+  assert_uninitialized_errors
+    {|
+      def may_raise() -> bool:
+        if 1 > 2:
+          raise Exception()
+        else:
+          return True
+
+      def f() -> bool:
+        try:
+          x = may_raise()
+          return x
+        finally:
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
   ()
 
 
-let () =
-  "uninitializedCheck"
-  >::: ["simple" >:: test_simple; "cfg_weakness" >:: test_cfg_weakness]
-  |> Test.run
+let () = "uninitializedCheck" >::: ["simple" >:: test_simple; "cfg" >:: test_cfg] |> Test.run

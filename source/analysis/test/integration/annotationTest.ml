@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -451,8 +451,8 @@ let test_check_invalid_type context =
       x: typing.Dict[int, [str]]
     |}
     [
-      "Invalid type parameters [24]: Single type parameter `Variable[_S]` expected, but a callable \
-       parameters `[str]` was given for generic type dict.";
+      "Invalid type parameters [24]: Single type parameter `Variable[_VT]` expected, but a \
+       callable parameters `[str]` was given for generic type dict.";
     ];
   assert_type_errors
     {|
@@ -497,14 +497,6 @@ let test_check_illegal_annotation_target context =
       "Illegal annotation target [35]: Target `x.a` cannot be annotated.";
       "Revealed type [-1]: Revealed type for `x.a` is `str`.";
     ];
-  assert_type_errors
-    {|
-      class Bar: ...
-      class Foo:
-        def foo(self) -> None:
-          Bar(): int = 1
-    |}
-    ["Illegal annotation target [35]: Target `Bar()` cannot be annotated."];
   assert_type_errors
     {|
       class Bar: ...
@@ -777,7 +769,7 @@ let test_check_immutable_annotations context =
           return constant
         return 0
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Optional[int]`."];
   assert_type_errors
     {|
       import typing
@@ -1147,8 +1139,8 @@ let test_check_refinement context =
         l.append('a')
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `list.append` but got `str`.";
+      "Incompatible parameter type [6]: In call `list.append`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1158,10 +1150,10 @@ let test_check_refinement context =
         l.append('a')
     |}
     [
-      "Incompatible variable type [9]: l is declared to have type `typing.List[int]` "
+      "Incompatible variable type [9]: l is declared to have type `List[int]` "
       ^ "but is used as type `None`.";
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `list.append` but got `str`.";
+      "Incompatible parameter type [6]: In call `list.append`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1180,7 +1172,7 @@ let test_check_refinement context =
           y = x
         return x
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Optional[int]`."];
   assert_type_errors
     {|
       import typing
@@ -1216,7 +1208,7 @@ let test_check_refinement context =
               else:
                   return 1
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Optional[int]`."];
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -1403,8 +1395,8 @@ let test_check_aliases context =
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: `BAR` has no attribute `x`.";
-      "Incompatible parameter type [6]: Expected `BAR` for 1st positional only parameter to call \
-       `foo` but got `FOO`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `BAR` but got `FOO`.";
     ];
 
   (* Locals are not aliases *)
@@ -1486,10 +1478,110 @@ let test_final_type context =
     |} [];
   assert_type_errors
     {|
+      from typing import Final, List
+      x: List[Final[int]] = [3]
+    |}
+    [
+      "Incompatible variable type [9]: x is declared to have type `List[Final[int]]` but is used \
+       as type `List[int]`.";
+      "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. Final cannot be \
+       nested.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+
+      def foo(x: Final[int]) -> None:
+        pass
+    |}
+    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."];
+  assert_type_errors
+    {|
       from typing import Final
       x: Final[str] = 3
     |}
-    ["Incompatible variable type [9]: x is declared to have type `str` but is used as type `int`."]
+    ["Incompatible variable type [9]: x is declared to have type `str` but is used as type `int`."];
+  assert_type_errors
+    {|
+      from typing import Final
+
+      class Foo:
+        uninitialized_attribute: Final[int]
+        attribute: Final[int]
+
+        def __init__(self) -> None:
+          self.attribute = 1
+    |}
+    [
+      "Uninitialized attribute [13]: Attribute `uninitialized_attribute` is declared in class \
+       `Foo` to have type `int` but is never initialized.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+
+      class Foo:
+        attribute: Final[int] = 1
+
+      class Bar(Foo):
+        attribute = 2
+
+      def test(foo: Foo) -> int:
+        foo.attribute = 2
+        return foo.attribute
+    |}
+    [
+      "Invalid assignment [41]: Cannot reassign final attribute `attribute`.";
+      "Invalid assignment [41]: Cannot reassign final attribute `foo.attribute`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Final
+
+      def foo() -> int:
+        x: Final[int] = 1
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Final
+
+      def foo() -> None:
+        x: Final[int] = 1
+        x = 2
+    |}
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
+  assert_type_errors
+    {|
+      from typing import Final
+      x: Final[int] = 3
+
+      def foo() -> None:
+        global x
+        x = 2
+    |}
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
+  assert_type_errors
+    {|
+      from typing import Final, List
+      x: Final[List[int]] = [3]
+
+      def foo() -> None:
+        global x
+        x.append(4)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Final
+      x: Final[int] = 3
+
+      def foo() -> int:
+        return x
+    |}
+    [];
+  ()
 
 
 let test_check_invalid_inheritance context =
@@ -1522,6 +1614,15 @@ let test_check_invalid_inheritance context =
       "Invalid inheritance [39]: `test.D (resolves to Dict[str, Union[D, str]])` is not a valid \
        parent class.";
     ];
+  assert_type_errors
+    {|
+      from typing import List, Tuple
+
+      class Foo(List[int]): ...
+
+      class Bar(Tuple[int, int]): ...
+     |}
+    [];
   ()
 
 
@@ -1548,8 +1649,8 @@ let test_check_invalid_generic_inheritance context =
     [
       "Incompatible variable type [9]: y is declared to have type `Base[str]` but is used as type \
        `Base[int]`.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `Base.__init__` but got `str`.";
+      "Incompatible parameter type [6]: In call `Base.__init__`, for 1st positional only parameter \
+       expected `int` but got `str`.";
       "Incompatible variable type [9]: x is declared to have type `Child[str]` but is used as type \
        `Child[int]`.";
       "Incompatible variable type [9]: correct is declared to have type `Child[str]` but is used \
@@ -1573,8 +1674,8 @@ let test_check_invalid_generic_inheritance context =
         PartialChild("hello", "world")
       |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `Base.__new__` but got `str`.";
+      "Incompatible parameter type [6]: In call `Base.__new__`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1595,16 +1696,16 @@ let test_check_invalid_generic_inheritance context =
         y4: PartialChild[int] = PartialChild(0, "hello")
       |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `Base.__init__` but got `str`.";
+      "Incompatible parameter type [6]: In call `Base.__init__`, for 1st positional only parameter \
+       expected `int` but got `str`.";
       "Incompatible variable type [9]: y1 is declared to have type `PartialChild[str]` but is used \
        as type `PartialChild[typing_extensions.Literal['hello']]`.";
       "Incompatible variable type [9]: y2 is declared to have type `PartialChild[str]` but is used \
        as type `PartialChild[int]`.";
       "Incompatible variable type [9]: y3 is declared to have type `PartialChild[str]` but is used \
        as type `PartialChild[int]`.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `Base.__init__` but got `str`.";
+      "Incompatible parameter type [6]: In call `Base.__init__`, for 1st positional only parameter \
+       expected `int` but got `str`.";
       "Incompatible variable type [9]: y4 is declared to have type `PartialChild[int]` but is used \
        as type `PartialChild[str]`.";
     ];
@@ -1628,8 +1729,8 @@ let test_check_invalid_generic_inheritance context =
         y3: PartialChildWithConstructor[str] = PartialChildWithConstructor(0, 0, "world")
       |}
     [
-      "Incompatible parameter type [6]: Expected `str` for 3rd positional only parameter to call \
-       `PartialChildWithConstructor.__init__` but got `int`.";
+      "Incompatible parameter type [6]: In call `PartialChildWithConstructor.__init__`, for 3rd \
+       positional only parameter expected `str` but got `int`.";
       "Incompatible variable type [9]: y3 is declared to have type \
        `PartialChildWithConstructor[str]` but is used as type `PartialChildWithConstructor[int]`.";
     ];
@@ -1659,8 +1760,8 @@ let test_check_invalid_generic_inheritance context =
       |}
     [
       "Revealed type [-1]: Revealed type for `y1.identity(0)` is `int`.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `TypeNotUsedInConstructor.identity` but got `str`.";
+      "Incompatible parameter type [6]: In call `TypeNotUsedInConstructor.identity`, for 1st \
+       positional only parameter expected `int` but got `str`.";
       "Revealed type [-1]: Revealed type for `y1.identity(\"hello\")` is `int`.";
     ];
   assert_type_errors
@@ -1698,12 +1799,12 @@ let test_check_invalid_generic_inheritance context =
        as type `Child[typing_extensions.Literal['hello'], typing_extensions.Literal[1]]`.";
       "Incompatible variable type [9]: y3 is declared to have type `PartialChild[str]` but is used \
        as type `PartialChild[typing_extensions.Literal['hello']]`.";
-      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
-       `Base.generic_method` but got `str`.";
-      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
-       `Base.generic_method` but got `str`.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `Base.generic_method` but got `str`.";
+      "Incompatible parameter type [6]: In call `Base.generic_method`, for 2nd positional only \
+       parameter expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `Base.generic_method`, for 2nd positional only \
+       parameter expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `Base.generic_method`, for 1st positional only \
+       parameter expected `int` but got `str`.";
     ];
   ()
 
@@ -1734,6 +1835,23 @@ let test_check_literal_assignment context =
       "Incompatible variable type [9]: literal_string is declared to have type `Foo[str]` but is \
        used as type `Foo[typing_extensions.Literal['bar']]`.";
     ];
+  ()
+
+
+let test_check_pyre_extensions_generic context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from pyre_extensions import Generic
+      from typing import TypeVar
+
+      T = TypeVar("T")
+
+      # Pyre should not complain about the `pyre_extensions` Generic not being
+      # subscriptable.
+      class Foo(Generic[T]): ...
+    |}
+    [];
   ()
 
 
@@ -1936,8 +2054,8 @@ let test_check_typevar_arithmetic context =
 
        Eventually, we would like this to work at least for polynomials of degree 1. See T70449275 *)
     [
-      "Incompatible parameter type [6]: Expected `Vec[pyre_extensions.IntExpression[M + N]]` for \
-       1st positional only parameter to call `pop` but got `Vec[int]`.";
+      "Incompatible parameter type [6]: In call `pop`, for 1st positional only parameter expected \
+       `Vec[pyre_extensions.IntExpression[M + N]]` but got `Vec[int]`.";
     ];
   assert_default_type_errors
     {|
@@ -2770,7 +2888,7 @@ let test_check_broadcast context =
 
       Ts = TypeVarTuple("Ts")
 
-      def foo(x: Tuple[*Ts]) -> Tuple[L[1], *Broadcast[Tuple[*Ts], Tuple[L[2], L[3]]]]: ...
+      def foo(x: Tuple[Unpack[Ts]]) -> Tuple[L[1], Unpack[Broadcast[Tuple[Unpack[Ts]], Tuple[L[2], L[3]]]]]: ...
 
       res1 = foo((1, 3))
       res2 = foo((3, 3))
@@ -2798,8 +2916,8 @@ let test_check_broadcast context =
       Qs = TypeVarTuple("Qs")
 
 
-      class NewTensor(Generic[DType, *Ts]):
-        def __add__(self: NewTensor[DType, *Rs], other: NewTensor[DType, *Qs]) -> NewTensor[DType, *Broadcast[Tuple[*Rs], Tuple[*Qs]]]: ...
+      class NewTensor(Generic[DType, Unpack[Ts]]):
+        def __add__(self: NewTensor[DType, Unpack[Rs]], other: NewTensor[DType, Unpack[Qs]]) -> NewTensor[DType, Unpack[Broadcast[Tuple[Unpack[Rs]], Tuple[Unpack[Qs]]]]]: ...
 
       t1: NewTensor[int, L[1], L[2], L[3]]
       t2: NewTensor[int, L[2], L[3]]
@@ -2868,13 +2986,13 @@ let test_check_broadcast context =
       Ts = TypeVarTuple("Ts")
       Rs = TypeVarTuple("Rs")
 
-      class Foo(Generic[T, *Ts]):
-        def bar(self: Foo[T, *Rs]) -> Foo[T, *Broadcast[Tuple[*Rs], Tuple[L[1], L[2]]], str]: ...
+      class Foo(Generic[T, Unpack[Ts]]):
+        def bar(self: Foo[T, Unpack[Rs]]) -> Foo[T, Unpack[Broadcast[Tuple[Unpack[Rs]], Tuple[L[1], L[2]]]], str]: ...
 
         @overload
-        def foo(self, *other: *Broadcast[Tuple[L[3], T], Tuple[*Ts]]) -> None: ...
+        def foo(self, *other: Unpack[Broadcast[Tuple[L[3], T], Tuple[Unpack[Ts]]]]) -> None: ...
         @overload
-        def foo(self, *other: *Broadcast[Tuple[L[2], T], Tuple[*Ts]]) -> None: ...
+        def foo(self, *other: Unpack[Broadcast[Tuple[L[2], T], Tuple[Unpack[Ts]]]]) -> None: ...
         def foo(self, *other: Any) -> None:
           return
 
@@ -2895,6 +3013,34 @@ let test_check_broadcast context =
        `pyre_extensions.BroadcastError[Tuple[typing_extensions.Literal[2], \
        typing_extensions.Literal[3]], Tuple[typing_extensions.Literal[3], \
        typing_extensions.Literal[3]]]`.";
+    ];
+  assert_default_type_errors
+    {|
+      from pyre_extensions import Broadcast, Unpack
+      from typing import Tuple, TypeVar
+
+      N1 = TypeVar("N1", bound=int)
+      N2 = TypeVar("N2", bound=int)
+      N3 = TypeVar("N3", bound=int)
+      N4 = TypeVar("N4", bound=int)
+
+      def foo(x: Tuple[N1, N2], y: Tuple[N3, N4]) -> Tuple[Unpack[Broadcast[Tuple[N1, N2], Tuple[N3, N4]]]]: ...
+
+      def main() -> None:
+        y1 = foo((1, 3), (4, 1))
+        reveal_type(y1)
+
+        y2 = foo((1, 3), (4, 99))
+        reveal_type(y2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y1` is `Tuple[typing_extensions.Literal[4], \
+       typing_extensions.Literal[3]]`.";
+      "Broadcast error [2001]: Broadcast error at expression `test.foo((1, 3), (4, 99))`; types \
+       `Tuple[typing_extensions.Literal[1], typing_extensions.Literal[3]]` and \
+       `Tuple[typing_extensions.Literal[4], typing_extensions.Literal[99]]` cannot be broadcasted \
+       together.";
+      "Revealed type [-1]: Revealed type for `y2` is `typing.Any`.";
     ];
   ()
 
@@ -3152,7 +3298,7 @@ let test_check_compose context =
       class Tensor(Generic[Unpack[Ts]]): ...
 
       class Linear(Generic[In, Out]):
-        def __call__(self, input: Tensor[*Ts, In]) -> Tensor[*Ts, Out]: ...
+        def __call__(self, input: Tensor[Unpack[Ts], In]) -> Tensor[Unpack[Ts], Out]: ...
 
       x: Compose[
         Compose[
@@ -3189,16 +3335,16 @@ let test_check_compose context =
 
       class Tensor(Generic[Unpack[Ts]]): ...
 
-      class Sequential(Generic[*Ts]):
-        def __init__(self, *layers: *Ts) -> None: ...
-        __call__: Compose[*Ts] = ...
+      class Sequential(Generic[Unpack[Ts]]):
+        def __init__(self, *layers: Unpack[Ts]) -> None: ...
+        __call__: Compose[Unpack[Ts]] = ...
 
       class Linear(Generic[In, Out]):
         def __init__(self, x: In, y: Out) -> None: ...
-        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+        def __call__(self, input: Tensor[DType, Unpack[Ts], In]) -> Tensor[DType, Unpack[Ts], Out]: ...
 
       class Foo:
-        def __call__(self, x: Tensor[DType, *Ts, L[20]]) -> Tensor[DType, *Ts, L[30]]: ...
+        def __call__(self, x: Tensor[DType, Unpack[Ts], L[20]]) -> Tensor[DType, Unpack[Ts], L[30]]: ...
 
       layer: Compose[Foo, Foo]
       x = (1, "hi")
@@ -3228,15 +3374,15 @@ let test_check_compose context =
 
       class Tensor(Generic[Unpack[Ts]]): ...
 
-      class Sequential(Generic[*Ts]):
-        def __init__(self, *layers: *Ts) -> None: ...
-        __call__: Compose[*Ts] = ...
+      class Sequential(Generic[Unpack[Ts]]):
+        def __init__(self, *layers: Unpack[Ts]) -> None: ...
+        __call__: Compose[Unpack[Ts]] = ...
 
       class Linear(Generic[In, Out]):
         def __init__(self, x: In, y: Out) -> None: ...
-        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+        def __call__(self, input: Tensor[DType, Unpack[Ts], In]) -> Tensor[DType, Unpack[Ts], Out]: ...
 
-      def bar(x: Tensor[DType, *Rs, L[40]]) -> Tensor[DType, *Rs, L[50]]: ...
+      def bar(x: Tensor[DType, Unpack[Rs], L[40]]) -> Tensor[DType, Unpack[Rs], L[50]]: ...
 
       layer = Sequential(
         Linear(10, 20),
@@ -3330,13 +3476,13 @@ let test_check_compose context =
 
       class Tensor(Generic[Unpack[Ts]]): ...
 
-      class Sequential(Generic[*Ts]):
-        def __init__(self, *layers: *Ts) -> None: ...
-        __call__: Compose[*Ts] = ...
+      class Sequential(Generic[Unpack[Ts]]):
+        def __init__(self, *layers: Unpack[Ts]) -> None: ...
+        __call__: Compose[Unpack[Ts]] = ...
 
       class Linear(Generic[In, Out]):
         def __init__(self, x: In, y: Out) -> None: ...
-        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+        def __call__(self, input: Tensor[DType, Unpack[Ts], In]) -> Tensor[DType, Unpack[Ts], Out]: ...
 
       layer = Sequential(
                 Sequential(
@@ -3381,13 +3527,13 @@ let test_check_compose context =
 
       class Tensor(Generic[Unpack[Ts]]): ...
 
-      class Sequential(Generic[*Ts]):
-        def __init__(self, *layers: *Ts) -> None: ...
-        __call__: Compose[*Ts] = ...
+      class Sequential(Generic[Unpack[Ts]]):
+        def __init__(self, *layers: Unpack[Ts]) -> None: ...
+        __call__: Compose[Unpack[Ts]] = ...
 
       class Linear(Generic[In, Out]):
         def __init__(self, x: In, y: Out) -> None: ...
-        def __call__(self, input: Tensor[DType, *Ts, In]) -> Tensor[DType, *Ts, Out]: ...
+        def __call__(self, input: Tensor[DType, Unpack[Ts], In]) -> Tensor[DType, Unpack[Ts], Out]: ...
 
       def foo(x: Callable[[T], T2]) -> Callable[[T], T2]: ...
       x = Sequential(Linear(10, 20), Linear(20, 30))
@@ -3404,12 +3550,12 @@ let test_check_compose context =
        inconsistently. Type `pyre_extensions.Compose[*test.Ts]` is not a subtype of the overridden \
        attribute `BoundMethod[typing.Callable(Sequential.__init__)[[Named(self, \
        Sequential[*test.Ts]), Variable(*test.Ts)], Sequential[*test.Ts]], Sequential[*test.Ts]]`.";
-      "Incompatible parameter type [6]: Expected `typing.Callable[[Variable[T]], Variable[T2]]` \
-       for 1st positional only parameter to call `foo` but got `Sequential[Linear[int, int], \
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing.Callable[[Variable[T]], Variable[T2]]` but got `Sequential[Linear[int, int], \
        Linear[int, int]]`.";
-      "Incompatible parameter type [6]: Expected `typing.Callable[[Variable[T]], Variable[T2]]` \
-       for 1st positional only parameter to call `foo` but got \
-       `pyre_extensions.Compose[Linear[int, int], Linear[int, int]]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing.Callable[[Variable[T]], Variable[T2]]` but got `pyre_extensions.Compose[Linear[int, \
+       int], Linear[int, int]]`.";
       "Revealed type [-1]: Revealed type for `result` is `typing.Callable[[typing.Any], \
        typing.Any]`.";
       "Revealed type [-1]: Revealed type for `result2` is `typing.Callable[[typing.Any], \
@@ -3561,7 +3707,7 @@ let test_check_product context =
       from typing_extensions import Literal as L
       from typing import Tuple
 
-      x: Product[*Tuple[Tuple[L[2]], ...]]
+      x: Product[Unpack[Tuple[Tuple[L[2]], ...]]]
       reveal_type(x)
     |}
     [
@@ -3586,8 +3732,8 @@ let test_check_product context =
     |}
     [
       "Revealed type [-1]: Revealed type for `result` is `typing_extensions.Literal[27]`.";
-      "Incompatible parameter type [6]: Expected `Variable[N (bound to int)]` for 1st positional \
-       only parameter to call `cube` but got `str`.";
+      "Incompatible parameter type [6]: In call `cube`, for 1st positional only parameter expected \
+       `Variable[N (bound to int)]` but got `str`.";
     ];
   assert_default_type_errors
     {|
@@ -3598,8 +3744,8 @@ let test_check_product context =
       DType = TypeVar("DType")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[DType, *Ts]): ...
-      def flatten(input: Tensor[DType, *Ts]) -> Tensor[DType, Product[*Ts]]: ...
+      class Tensor(Generic[DType, Unpack[Ts]]): ...
+      def flatten(input: Tensor[DType, Unpack[Ts]]) -> Tensor[DType, Product[Unpack[Ts]]]: ...
 
       x: Tensor[int, L[2], L[3], L[4]]
       result = flatten(x)
@@ -3623,8 +3769,8 @@ let test_check_product context =
       DType = TypeVar("DType")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[DType, *Ts]): ...
-      def foo(input: Tensor[DType, *Ts]) -> Tensor[DType, Product[*Broadcast[Tuple[*Ts], Tuple[L[2], L[1]]]]]: ...
+      class Tensor(Generic[DType, Unpack[Ts]]): ...
+      def foo(input: Tensor[DType, Unpack[Ts]]) -> Tensor[DType, Product[Unpack[Broadcast[Tuple[Unpack[Ts]], Tuple[L[2], L[1]]]]]]: ...
 
       x: Tensor[int, L[2], L[3]]
       result = foo(x)
@@ -3662,6 +3808,7 @@ let () =
          "check_invalid_inheritance" >:: test_check_invalid_inheritance;
          "check_invalid_generic_inheritance" >:: test_check_invalid_generic_inheritance;
          "check_literal_assignment" >:: test_check_literal_assignment;
+         "check_pyre_extensions_generic" >:: test_check_pyre_extensions_generic;
          "check_safe_cast" >:: test_check_safe_cast;
          "check_annotation_with_any" >:: test_check_annotation_with_any;
          "check_typevar_arithmetic" >:: test_check_typevar_arithmetic;

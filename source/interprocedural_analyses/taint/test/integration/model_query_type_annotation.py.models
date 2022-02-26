@@ -1,0 +1,230 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_type_annotation.Test7_C.taint_1}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_type_annotation.Test7_C.taint_2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_type_annotation.Test8_C.taint_1}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_type_annotation.Test8_C.taint_2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_type_annotation.Test9_C.taint_1}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_type_annotation.Test9_C.taint_2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_type_annotation.Test2_C.test2_f1",
+    "sources": [
+      {
+        "port": "formal(taint_2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      },
+      {
+        "port": "formal(taint_1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_type_annotation.Test2_C.test2_f2",
+    "sources": [
+      {
+        "port": "formal(taint_1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_type_annotation.Test6_C.test6_taint_1",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_type_annotation.Test6_C.test6_taint_2",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_type_annotation.test1_f1",
+    "sources": [
+      {
+        "port": "formal(taint_3)",
+        "taint": [
+          {
+            "kinds": [
+              { "features": [ { "always-type": "scalar" } ], "kind": "Test" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(taint_2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      },
+      {
+        "port": "formal(taint_1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_type_annotation.test3_f1",
+    "sources": [
+      {
+        "port": "formal(taint_2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(taint_1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_type_annotation.test4_taint_1",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_type_annotation.test5_taint_1",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_type_annotation.test5_taint_2",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}

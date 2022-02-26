@@ -7,7 +7,7 @@
       {
         "port": "formal(arg)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
+          { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
         ]
       }
     ]
@@ -21,7 +21,7 @@
       {
         "port": "formal(arg1)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
+          { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
         ]
       }
     ],
@@ -36,11 +36,41 @@
       {
         "port": "formal(arg0)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "ParameterUpdate1" } ] }
+          { "kinds": [ { "kind": "ParameterUpdate1" } ], "decl": null }
         ]
       }
     ],
     "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "side_effects.dict_to_sink_via_side_effect",
+    "sinks": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 55, "start": 26, "end": 27 } ],
+            "root": {
+              "filename": "side_effects.py",
+              "line": 56,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ]
   }
 }
 {
@@ -52,18 +82,21 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 17, "start": 16, "end": 30 } ],
             "root": {
               "filename": "side_effects.py",
               "line": 17,
               "start": 16,
               "end": 30
-            },
-            "tito": [ { "line": 17, "start": 16, "end": 30 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -79,18 +112,21 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 11, "start": 19, "end": 33 } ],
             "root": {
               "filename": "side_effects.py",
               "line": 11,
               "start": 19,
               "end": 33
-            },
-            "tito": [ { "line": 11, "start": 19, "end": 33 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -106,20 +142,25 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "foo" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 23, "start": 23, "end": 37 } ],
             "root": {
               "filename": "side_effects.py",
               "line": 23,
               "start": 23,
               "end": 37
-            },
-            "tito": [ { "line": 23, "start": 23, "end": 37 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-field" },
-              { "first-field": "foo" },
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -135,18 +176,21 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 35, "start": 13, "end": 27 } ],
             "root": {
               "filename": "side_effects.py",
               "line": 35,
               "start": 13,
               "end": 27
-            },
-            "tito": [ { "line": 35, "start": 13, "end": 27 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -162,18 +206,21 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 49, "start": 19, "end": 20 } ],
             "root": {
               "filename": "side_effects.py",
               "line": 50,
               "start": 15,
               "end": 16
-            },
-            "tito": [ { "line": 49, "start": 19, "end": 20 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }

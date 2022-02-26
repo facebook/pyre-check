@@ -8,26 +8,37 @@
         "port": "formal(b)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "string_concat_rhs" }
-            ]
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-via": "string_concat_rhs" },
+                  { "always-type": "scalar" }
+                ],
+                "kind": "Attach"
+              }
+            ],
+            "decl": null
           },
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-via": "string_concat_rhs" },
+              { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "attach_features.py",
               "line": 59,
               "start": 19,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -43,14 +54,19 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "attach_features.py",
               "line": 63,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       }
@@ -60,11 +76,15 @@
         "port": "result",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
-          },
-          { "decl": null, "leaves": [ { "kind": "Test" } ] }
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Attach"
+              },
+              { "kind": "Test" }
+            ],
+            "decl": null
+          }
         ]
       }
     ]
@@ -86,14 +106,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "attach_features.py",
               "line": 63,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -101,14 +126,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [ { "kind": "Test" } ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
             "root": {
               "filename": "attach_features.py",
               "line": 64,
               "start": 4,
               "end": 12
-            },
-            "leaves": [ { "kind": "Test" } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            }
           }
         ]
       }
@@ -116,6 +141,9 @@
     "features": [
       { "always-via": "string_concat_lhs" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "attach_features.attach_to_returned_sink:5002:0:Return:8218e4adbc4250811127e266f8a13911"
     ]
   }
 }
@@ -128,9 +156,13 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Attach"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -146,6 +178,14 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [ { "name": "attach_features.source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "attach_features.py",
@@ -154,13 +194,8 @@
                 "end": 33
               },
               "resolves_to": [ "attach_features.source_with_inferred" ],
-              "port": "result",
-              "length": 1
-            },
-            "leaves": [
-              { "kind": "Test", "name": "attach_features.source" }
-            ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+              "port": "result"
+            }
           }
         ]
       }
@@ -176,14 +211,19 @@
         "port": "formal(taint_without_feature)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "attach_features.py",
               "line": 25,
               "start": 15,
               "end": 36
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       },
@@ -191,22 +231,29 @@
         "port": "formal(taint_right)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "always-via": "string_concat_rhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_rhs" } ],
+                "kind": "Attach"
+              }
+            ],
+            "decl": null
           },
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "string_concat_rhs" } ],
             "root": {
               "filename": "attach_features.py",
               "line": 24,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       },
@@ -214,22 +261,29 @@
         "port": "formal(taint_left)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Attach"
+              }
+            ],
+            "decl": null
           },
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
             "root": {
               "filename": "attach_features.py",
               "line": 23,
               "start": 15,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -245,26 +299,37 @@
         "port": "formal(b)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "string_concat_rhs" }
-            ]
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-via": "string_concat_rhs" },
+                  { "always-type": "scalar" }
+                ],
+                "kind": "Attach"
+              }
+            ],
+            "decl": null
           },
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-via": "string_concat_rhs" },
+              { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "attach_features.py",
               "line": 54,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -280,6 +345,17 @@
         "port": "formal(argument)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "string_concat_lhs" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "attach_features.py",
@@ -288,14 +364,8 @@
                 "end": 26
               },
               "resolves_to": [ "attach_features.inferred_sink" ],
-              "port": "formal(taint_left)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(taint_left)"
+            }
           }
         ]
       }
@@ -309,7 +379,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -323,21 +393,28 @@
         "port": "result",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Attach"
+              }
+            ],
+            "decl": null
           },
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "attach_features.source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
             "root": {
               "filename": "attach_features.py",
               "line": 14,
               "start": 8,
               "end": 16
-            },
-            "leaves": [
-              { "kind": "Test", "name": "attach_features.source" }
-            ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            }
           }
         ]
       }
@@ -353,14 +430,15 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
-          },
-          {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Attach"
+              },
+              { "return_paths": [ "" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [ { "via": "string_concat_lhs" } ],
+            "decl": null
           }
         ]
       }
@@ -376,22 +454,29 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "always-via": "string_concat_rhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_rhs" } ],
+                "kind": "Attach"
+              }
+            ],
+            "decl": null
           },
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "string_concat_rhs" } ],
             "root": {
               "filename": "attach_features.py",
               "line": 37,
               "start": 15,
               "end": 18
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -401,14 +486,15 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
-          },
-          {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Attach"
+              },
+              { "return_paths": [ "" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [ { "via": "string_concat_lhs" } ],
+            "decl": null
           }
         ]
       }
@@ -424,13 +510,15 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "via": "string_concat_lhs" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 42, "start": 30, "end": 33 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" }
-            ]
+            "decl": null
           }
         ]
       }

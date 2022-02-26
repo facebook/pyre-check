@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,7 +10,7 @@ open Pyre
 open Sexplib.Conv
 
 module T = struct
-  type t = Identifier.t list [@@deriving compare, eq, sexp, hash, to_yojson, show]
+  type t = Identifier.t list [@@deriving compare, sexp, hash, to_yojson, show]
 end
 
 include T
@@ -85,6 +85,8 @@ let sanitize_qualified reference =
   |> List.rev
 
 
+let equal = [%compare.equal: t]
+
 let equal_sanitized left right = equal (sanitized left) (sanitized right)
 
 let pp_sanitized format reference =
@@ -143,6 +145,11 @@ let prefix reference =
 
 
 let head reference = List.hd reference >>| fun head -> [head]
+
+let first = function
+  | [] -> ""
+  | head :: _ -> head
+
 
 let last = function
   | [] -> ""

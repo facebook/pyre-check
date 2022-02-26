@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -26,8 +26,8 @@ end = struct
   let final count = count
 
   let expression _ = function
-    | { Node.location; value = Expression.Integer number } ->
-        { Node.location; value = Expression.Integer (number + 1) }
+    | { Node.location; value = Expression.Constant (Constant.Integer number) } ->
+        { Node.location; value = Expression.Constant (Constant.Integer (number + 1)) }
     | expression -> expression
 end
 
@@ -64,50 +64,58 @@ let assert_modifying_source ?(shallow = false) statements expected_statements ex
 
 let test_transform _ =
   assert_modifying_source
-    [+Statement.Expression (+Expression.Integer 1); +Statement.Expression (+Expression.Integer 2)]
-    [+Statement.Expression (+Expression.Integer 2); +Statement.Expression (+Expression.Integer 3)]
+    [
+      +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+      +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+    ]
+    [
+      +Statement.Expression (+Expression.Constant (Constant.Integer 2));
+      +Statement.Expression (+Expression.Constant (Constant.Integer 3));
+    ]
     0;
   assert_modifying_source
     [
       +Statement.Expression
-         (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 });
+         (+Expression.WalrusOperator
+             { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
     ]
     [
       +Statement.Expression
-         (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 2 });
+         (+Expression.WalrusOperator
+             { target = !"a"; value = +Expression.Constant (Constant.Integer 2) });
     ]
     0;
   assert_modifying_source
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
+           If.test = +Expression.Constant (Constant.Integer 1);
            body =
              [
                +Statement.If
                   {
-                    If.test = +Expression.Integer 2;
-                    body = [+Statement.Expression (+Expression.Integer 3)];
-                    orelse = [+Statement.Expression (+Expression.Integer 4)];
+                    If.test = +Expression.Constant (Constant.Integer 2);
+                    body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+                    orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 4))];
                   };
              ];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 2;
+           If.test = +Expression.Constant (Constant.Integer 2);
            body =
              [
                +Statement.If
                   {
-                    If.test = +Expression.Integer 3;
-                    body = [+Statement.Expression (+Expression.Integer 4)];
-                    orelse = [+Statement.Expression (+Expression.Integer 5)];
+                    If.test = +Expression.Constant (Constant.Integer 3);
+                    body = [+Statement.Expression (+Expression.Constant (Constant.Integer 4))];
+                    orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
                   };
              ];
-           orelse = [+Statement.Expression (+Expression.Integer 6)];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 6))];
          };
     ]
     0;
@@ -116,33 +124,63 @@ let test_transform _ =
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
+           If.test = +Expression.Constant (Constant.Integer 1);
            body =
              [
                +Statement.If
                   {
-                    If.test = +Expression.Integer 2;
-                    body = [+Statement.Expression (+Expression.Integer 3)];
-                    orelse = [+Statement.Expression (+Expression.Integer 4)];
+                    If.test = +Expression.Constant (Constant.Integer 2);
+                    body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+                    orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 4))];
                   };
              ];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
+           If.test = +Expression.Constant (Constant.Integer 1);
            body =
              [
                +Statement.If
                   {
-                    If.test = +Expression.Integer 2;
-                    body = [+Statement.Expression (+Expression.Integer 3)];
-                    orelse = [+Statement.Expression (+Expression.Integer 4)];
+                    If.test = +Expression.Constant (Constant.Integer 2);
+                    body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+                    orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 4))];
                   };
              ];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
+         };
+    ]
+    0;
+  assert_modifying_source
+    [
+      +Statement.Match
+         {
+           Match.subject = +Expression.Constant (Constant.Integer 0);
+           cases =
+             [
+               {
+                 Match.Case.pattern = +Match.Pattern.MatchSingleton (Constant.Integer 2);
+                 guard = Some (+Expression.Constant (Constant.Integer 4));
+                 body = [];
+               };
+             ];
+         };
+    ]
+    [
+      +Statement.Match
+         {
+           Match.subject = +Expression.Constant (Constant.Integer 1);
+           cases =
+             [
+               {
+                 Match.Case.pattern = +Match.Pattern.MatchSingleton (Constant.Integer 3);
+                 guard = Some (+Expression.Constant (Constant.Integer 5));
+                 body = [];
+               };
+             ];
          };
     ]
     0
@@ -187,58 +225,64 @@ let assert_expanded_source ?(shallow = false) statements expected_statements =
 
 let test_expansion _ =
   assert_expanded_source
-    [+Statement.Expression (+Expression.Float 1.0); +Statement.Expression (+Expression.Float 2.0)]
     [
-      +Statement.Expression (+Expression.Float 1.0);
-      +Statement.Expression (+Expression.Float 1.0);
-      +Statement.Expression (+Expression.Float 2.0);
-      +Statement.Expression (+Expression.Float 2.0);
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
+    ]
+    [
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
     ];
   assert_expanded_source
     ~shallow:true
-    [+Statement.Expression (+Expression.Float 1.0); +Statement.Expression (+Expression.Float 2.0)]
     [
-      +Statement.Expression (+Expression.Float 1.0);
-      +Statement.Expression (+Expression.Float 1.0);
-      +Statement.Expression (+Expression.Float 2.0);
-      +Statement.Expression (+Expression.Float 2.0);
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
+    ]
+    [
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
     ];
   assert_expanded_source
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
-           body = [+Statement.Expression (+Expression.Integer 3)];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           If.test = +Expression.Constant (Constant.Integer 1);
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
+           If.test = +Expression.Constant (Constant.Integer 1);
            body =
              [
-               +Statement.Expression (+Expression.Integer 3);
-               +Statement.Expression (+Expression.Integer 3);
+               +Statement.Expression (+Expression.Constant (Constant.Integer 3));
+               +Statement.Expression (+Expression.Constant (Constant.Integer 3));
              ];
            orelse =
              [
-               +Statement.Expression (+Expression.Integer 5);
-               +Statement.Expression (+Expression.Integer 5);
+               +Statement.Expression (+Expression.Constant (Constant.Integer 5));
+               +Statement.Expression (+Expression.Constant (Constant.Integer 5));
              ];
          };
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
+           If.test = +Expression.Constant (Constant.Integer 1);
            body =
              [
-               +Statement.Expression (+Expression.Integer 3);
-               +Statement.Expression (+Expression.Integer 3);
+               +Statement.Expression (+Expression.Constant (Constant.Integer 3));
+               +Statement.Expression (+Expression.Constant (Constant.Integer 3));
              ];
            orelse =
              [
-               +Statement.Expression (+Expression.Integer 5);
-               +Statement.Expression (+Expression.Integer 5);
+               +Statement.Expression (+Expression.Constant (Constant.Integer 5));
+               +Statement.Expression (+Expression.Constant (Constant.Integer 5));
              ];
          };
     ];
@@ -247,23 +291,23 @@ let test_expansion _ =
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
-           body = [+Statement.Expression (+Expression.Integer 3)];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           If.test = +Expression.Constant (Constant.Integer 1);
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
     [
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
-           body = [+Statement.Expression (+Expression.Integer 3)];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           If.test = +Expression.Constant (Constant.Integer 1);
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
       +Statement.If
          {
-           If.test = +Expression.Integer 1;
-           body = [+Statement.Expression (+Expression.Integer 3)];
-           orelse = [+Statement.Expression (+Expression.Integer 5)];
+           If.test = +Expression.Constant (Constant.Integer 1);
+           body = [+Statement.Expression (+Expression.Constant (Constant.Integer 3))];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Integer 5))];
          };
     ]
 
@@ -502,10 +546,15 @@ let test_statement_transformer _ =
       let count, value =
         match value with
         | Statement.Assign
-            ({ Assign.value = { Node.value = Integer number; _ } as value; _ } as assign) ->
+            ({ Assign.value = { Node.value = Constant (Constant.Integer number); _ } as value; _ }
+            as assign) ->
             ( count + number,
               Statement.Assign
-                { assign with Assign.value = { value with Node.value = Integer (number + 1) } } )
+                {
+                  assign with
+                  Assign.value =
+                    { value with Node.value = Constant (Constant.Integer (number + 1)) };
+                } )
         | _ -> count, value
       in
       count, [{ Node.location; value }]
@@ -533,6 +582,9 @@ let test_statement_transformer _ =
           y = 6
       class C:
         z = 7
+      match x:
+        case 1:
+          w = 0
     |}
     {|
       def foo():
@@ -549,6 +601,9 @@ let test_statement_transformer _ =
           y = 7
       class C:
         z = 8
+      match x:
+        case 1:
+          w = 1
     |}
     28
 
@@ -601,9 +656,9 @@ let test_transform_expression _ =
 
 
 let test_sanitize_statement _ =
-  let assert_sanitized source expected =
+  let assert_sanitized statements expected =
     let given_statement, expected_statement =
-      match parse source |> Source.statements, parse expected |> Source.statements with
+      match statements, parse expected |> Source.statements with
       | [{ Node.value = given_statement; _ }], [{ Node.value = expected_statement; _ }] ->
           given_statement, expected_statement
       | _ -> failwith "Expected defines"
@@ -615,12 +670,64 @@ let test_sanitize_statement _ =
       (Transform.sanitize_statement given_statement |> Node.create_with_default_location)
   in
   assert_sanitized
-    {|
-    def $local_test?foo$bar($parameter$a: int) -> int:
-      $local_test?foo?bar$my_kwargs = { "a":$parameter$a }
-      print($local_test?foo?bar$my_kwargs)
-      return $local_test?foo$baz($parameter$a)
-    |}
+    [
+      +Statement.Define
+         {
+           Define.signature =
+             {
+               Define.Signature.name = !&"$local_test?foo$bar";
+               parameters =
+                 [+{ Parameter.name = "$parameter$a"; value = None; annotation = Some !"int" }];
+               decorators = [];
+               return_annotation = Some !"int";
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           captures = [];
+           unbound_names = [];
+           body =
+             [
+               +Statement.Assign
+                  {
+                    Assign.target = !"$local_test?foo?bar$my_kwargs";
+                    annotation = None;
+                    value =
+                      +Expression.Dictionary
+                         {
+                           Dictionary.entries =
+                             [
+                               {
+                                 Dictionary.Entry.key =
+                                   +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                                 value = !"$parameter$a";
+                               };
+                             ];
+                           keywords = [];
+                         };
+                  };
+               +Statement.Expression
+                  (+Expression.Call
+                      {
+                        Call.callee = !"print";
+                        arguments =
+                          [{ Call.Argument.name = None; value = !"$local_test?foo?bar$my_kwargs" }];
+                      });
+               +Statement.Return
+                  {
+                    Return.is_implicit = false;
+                    expression =
+                      Some
+                        (+Expression.Call
+                            {
+                              Call.callee = !"$local_test?foo$baz";
+                              arguments = [{ Call.Argument.name = None; value = !"$parameter$a" }];
+                            });
+                  };
+             ];
+         };
+    ]
     {|
     def bar(a: int) -> int:
       my_kwargs = { "a":a }
@@ -628,12 +735,62 @@ let test_sanitize_statement _ =
       return baz(a)
     |};
   assert_sanitized
-    {|
-    def bar(a: int) -> int:
-      my_kwargs = { "a":a }
-      print(my_kwargs)
-      return baz(a)
-    |}
+    [
+      +Statement.Define
+         {
+           Define.signature =
+             {
+               Define.Signature.name = !&"bar";
+               parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"int" }];
+               decorators = [];
+               return_annotation = Some !"int";
+               async = false;
+               generator = false;
+               parent = None;
+               nesting_define = None;
+             };
+           captures = [];
+           unbound_names = [];
+           body =
+             [
+               +Statement.Assign
+                  {
+                    Assign.target = !"my_kwargs";
+                    annotation = None;
+                    value =
+                      +Expression.Dictionary
+                         {
+                           Dictionary.entries =
+                             [
+                               {
+                                 Dictionary.Entry.key =
+                                   +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                                 value = !"a";
+                               };
+                             ];
+                           keywords = [];
+                         };
+                  };
+               +Statement.Expression
+                  (+Expression.Call
+                      {
+                        Call.callee = !"print";
+                        arguments = [{ Call.Argument.name = None; value = !"my_kwargs" }];
+                      });
+               +Statement.Return
+                  {
+                    Return.is_implicit = false;
+                    expression =
+                      Some
+                        (+Expression.Call
+                            {
+                              Call.callee = !"baz";
+                              arguments = [{ Call.Argument.name = None; value = !"a" }];
+                            });
+                  };
+             ];
+         };
+    ]
     {|
     def bar(a: int) -> int:
       my_kwargs = { "a":a }

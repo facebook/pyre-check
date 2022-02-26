@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -73,6 +73,30 @@ let test_check_walrus_operator context =
     ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[3]`."];
   assert_type_errors
     {|
+      if (b := 42) and True:
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[42]`."];
+  assert_type_errors
+    {|
+      if True and (b := 42):
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[42]`."];
+  assert_type_errors
+    {|
+      if (b := 0) or True:
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[0]`."];
+  assert_type_errors
+    {|
+      if False or (b := 0):
+        reveal_type(b)
+    |}
+    ["Revealed type [-1]: Revealed type for `b` is `typing_extensions.Literal[0]`."];
+  assert_type_errors
+    {|
       if (b := 3) > 4:
         pass
       reveal_type(b)
@@ -90,4 +114,4 @@ let test_check_walrus_operator context =
     ["Revealed type [-1]: Revealed type for `a` is `int`."]
 
 
-let () = "variance" >::: ["check_walrus_operator" >:: test_check_walrus_operator] |> Test.run
+let () = "walrus" >::: ["check_walrus_operator" >:: test_check_walrus_operator] |> Test.run

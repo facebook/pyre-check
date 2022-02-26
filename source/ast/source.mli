@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,14 +12,14 @@ type mode =
   | Strict
   | Unsafe
   | Declare
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 type local_mode =
   | Strict
   | Unsafe
   | Declare
   | PlaceholderStub
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 module Metadata : sig
   type t = {
@@ -27,9 +27,8 @@ module Metadata : sig
     unused_local_modes: local_mode Node.t list;
     ignore_codes: int list;
     ignore_lines: Ignore.t list;
-    raw_hash: int;
   }
-  [@@deriving compare, eq, show, hash, sexp]
+  [@@deriving compare, show, hash, sexp]
 
   val is_placeholder_stub : local_mode Node.t option -> bool
 
@@ -38,7 +37,6 @@ module Metadata : sig
     ?unused_local_modes:local_mode Node.t list ->
     ?ignore_codes:int list ->
     ?ignore_lines:Ignore.t list ->
-    ?raw_hash:int ->
     unit ->
     t
 
@@ -51,7 +49,7 @@ type t = {
   top_level_unbound_names: Statement.Define.NameAccess.t list;
   statements: Statement.t list;
 }
-[@@deriving compare, eq, hash, show, sexp]
+[@@deriving compare, hash, show, sexp]
 
 val ignored_lines_including_format_strings
   :  ?collect_format_strings_with_ignores:

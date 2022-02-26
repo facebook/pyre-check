@@ -1,58 +1,41 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
 # pyre-ignore-all-errors
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Callable, Dict, List, TypeVar, Union
+
+from typing_extensions import Protocol
 
 # Surfacing `tests` is important for importers to be able to run our tests
 # in their own environment
 from . import safe_json, tests, type_variable_operators
 from .generic import Generic
+from .refinement import none_throws, assert_is_instance, safe_cast
 
 
 __all__ = [
-    "safe_json",
-    "type_variable_operators",
-    "tests",
-    "Generic",
-    "none_throws",
     "assert_is_instance",
-    "safe_cast",
+    "DecoratorFactory",
+    "Generic",
+    "JSON",
+    "none_throws",
     "ParameterSpecification",
-    "ListVariadic",
+    "safe_cast",
+    "safe_json",
+    "tests",
+    "type_variable_operators",
     "TypeVarTuple",
     "Unpack",
 ]
 
 
 _T = TypeVar("_T")
-
-
-def none_throws(optional: Optional[_T], message: str = "Unexpected `None`") -> _T:
-    """Convert an optional to its value. Raises an `AssertionError` if the
-    value is `None`"""
-    if optional is None:
-        raise AssertionError(message)
-    return optional
-
-
+_R = TypeVar("_R")
 TClass = TypeVar("TClass")
 
-
-def assert_is_instance(obj: object, cls: Type[TClass]) -> TClass:
-    """Assert that the given object is an instance of the given class. Raises a
-    `TypeError` if not."""
-    if not isinstance(obj, cls):
-        raise TypeError(f"obj is not an instance of cls: obj={obj} cls={cls}")
-    return obj
-
-
-def safe_cast(new_type: Type[_T], value: Any) -> _T:
-    """safe_cast will change the type checker's inference of x if it was
-    already a subtype of what we are casting to, and error otherwise."""
-    return value
+JSON = Union[bool, float, int, str, Dict[str, "JSON"], List["JSON"]]
 
 
 class ParameterSpecification(list):
@@ -94,7 +77,7 @@ class ParameterSpecification(list):
         pass
 
 
-def ListVariadic(name) -> object:
+def TypeVarTuple(name: str) -> object:
     return Any
 
 
@@ -102,7 +85,15 @@ _A = TypeVar("_A", bound=int)
 _B = TypeVar("_B", bound=int)
 _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
-_Ts = ListVariadic("_Ts")
+_Ts = TypeVarTuple("_Ts")
+_P = ParameterSpecification("_P")
+
+
+class DecoratorFactory(Protocol):
+    """Usable as a return type for simple decorator factories"""
+
+    def __call__(self, __f: Callable[_P, _R]) -> Callable[_P, _R]:
+        ...
 
 
 class Add(Generic[_A, _B], int):
@@ -129,14 +120,6 @@ class Product(Generic[_Ts], int):
     pass
 
 
-class TypeVarTuple:
-    def __init__(
-        self,
-        name: str,
-    ) -> None:
-        pass
-
-
 class Unpack(Generic[_T]):
     pass
 
@@ -149,8 +132,5 @@ class BroadcastError(Generic[_T1, _T2]):
     pass
 
 
-_Rs = TypeVarTuple("_Rs")
-
-
-class Compose(Generic[_Rs]):
+class Compose(Generic[_Ts]):
     pass

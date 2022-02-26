@@ -6,7 +6,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -18,7 +18,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -30,7 +30,7 @@
     "sinks": [
       {
         "port": "formal(x)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -43,7 +43,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -58,17 +58,20 @@
         "port": "formal(x)[unknown]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "root": {
               "filename": "missing_type.py",
               "line": 31,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "special_sink" },
-              { "always-via": "obscure" }
-            ]
+            }
           }
         ]
       }
@@ -91,20 +94,25 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{missing_type.UnknownSourceAttribute.unknown}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": [ { "line": 30, "start": 8, "end": 17 } ],
             "root": {
               "filename": "missing_type.py",
               "line": 30,
               "start": 8,
               "end": 17
-            },
-            "tito": [ { "line": 30, "start": 8, "end": 17 } ],
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{missing_type.UnknownSourceAttribute.unknown}"
-              }
-            ],
-            "features": [ { "always-via": "obscure" } ]
+            }
           }
         ]
       },
@@ -112,21 +120,29 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "missing_type.py",
               "line": 31,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via": "obscure:unknown-callee" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "missing_type.test_unknown_source_attribute:5002:0:Call|_test_sink|0|formal(arg):1584cf04889a0197e642b9b46c97bc33"
     ]
   }
 }
@@ -139,17 +155,20 @@
         "port": "formal(x)[unknown]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "root": {
               "filename": "missing_type.py",
               "line": 19,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "special_sink" },
-              { "always-via": "obscure" }
-            ]
+            }
           }
         ]
       }

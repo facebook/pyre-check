@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,16 +8,30 @@
 open Core
 open Pyre
 
+let name_location
+    ~offset_columns
+    ~body_location:{ Location.start = { line = start_line; column = start_column }; _ }
+    name_string
+  =
+  let start_column = start_column + offset_columns in
+  let stop_column_ =
+    let name_length = name_string |> String.length in
+    start_column + name_length
+  in
+  Location.
+    {
+      start = { line = start_line; column = start_column };
+      stop = { line = start_line; column = stop_column_ };
+    }
+
+
 module Assign = struct
   type t = {
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t;
-    parent: Reference.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let is_static_attribute_initialization { parent; _ } = Option.is_some parent
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.target right.target with
@@ -27,44 +41,35 @@ module Assign = struct
           Option.compare Expression.location_insensitive_compare left.annotation right.annotation
         with
         | x when not (Int.equal x 0) -> x
-        | _ -> (
-            match Expression.location_insensitive_compare left.value right.value with
-            | x when not (Int.equal x 0) -> x
-            | _ -> [%compare: Reference.t option] left.parent right.parent))
+        | _ -> Expression.location_insensitive_compare left.value right.value)
 end
 
 module Import = struct
   type import = {
-    name: Reference.t Node.t;
-    alias: Identifier.t Node.t option;
+    name: Reference.t;
+    alias: Identifier.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   type t = {
-    from: Reference.t Node.t option;
-    imports: import list;
+    from: Reference.t option;
+    imports: import Node.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     let location_insensitive_compare_import left right =
-      match
-        Option.compare
-          (Node.location_insensitive_compare [%compare: Identifier.t])
-          left.alias
-          right.alias
-      with
+      match Option.compare [%compare: Identifier.t] left.alias right.alias with
       | x when not (Int.equal x 0) -> x
-      | _ -> Node.location_insensitive_compare [%compare: Reference.t] left.name right.name
+      | _ -> [%compare: Reference.t] left.name right.name
     in
-    match
-      Option.compare
-        (Node.location_insensitive_compare [%compare: Reference.t])
-        left.from
-        right.from
-    with
+    match Option.compare [%compare: Reference.t] left.from right.from with
     | x when not (Int.equal x 0) -> x
-    | _ -> List.compare location_insensitive_compare_import left.imports right.imports
+    | _ ->
+        List.compare
+          (Node.location_insensitive_compare location_insensitive_compare_import)
+          left.imports
+          right.imports
 end
 
 module Raise = struct
@@ -72,7 +77,7 @@ module Raise = struct
     expression: Expression.t option;
     from: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match
@@ -87,7 +92,7 @@ module Return = struct
     is_implicit: bool;
     expression: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Bool.compare left.is_implicit right.is_implicit with
@@ -100,7 +105,7 @@ module Decorator = struct
     name: Reference.t Node.t;
     arguments: Expression.Call.Argument.t list option;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Reference.compare left.name.value right.name.value with
@@ -117,6 +122,24 @@ module Decorator = struct
     | Some arguments ->
         Node.create ~location (Expression.Expression.Call { callee = name; arguments })
     | None -> name
+
+
+  let from_expression { Node.value; location } =
+    let open Expression in
+    match value with
+    | Expression.Name name -> (
+        match name_to_reference name with
+        | Some reference -> Some { name = Node.create ~location reference; arguments = None }
+        | None -> None)
+    | Call { callee = { Node.value; location }; arguments } -> (
+        match value with
+        | Expression.Name name -> (
+            match name_to_reference name with
+            | Some reference ->
+                Some { name = Node.create ~location reference; arguments = Some arguments }
+            | None -> None)
+        | _ -> None)
+    | _ -> None
 end
 
 module rec Assert : sig
@@ -125,7 +148,8 @@ module rec Assert : sig
       | Assertion
       | If of { true_branch: bool }
       | While of { true_branch: bool }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+      | Match
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
   end
@@ -135,7 +159,7 @@ module rec Assert : sig
     message: Expression.t option;
     origin: Origin.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -144,15 +168,18 @@ end = struct
       | Assertion
       | If of { true_branch: bool }
       | While of { true_branch: bool }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+      | Match
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right : int =
       match left, right with
       | Assertion, Assertion -> 0
       | If left, If right -> Bool.compare left.true_branch right.true_branch
+      | Match, Match -> 0
       | While left, While right -> Bool.compare left.true_branch right.true_branch
       | Assertion, _ -> -1
       | If _, _ -> -1
+      | Match, _ -> -1
       | While _, _ -> 1
   end
 
@@ -161,7 +188,7 @@ end = struct
     message: Expression.t option;
     origin: Origin.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.test right.test with
@@ -174,13 +201,13 @@ end
 
 and Class : sig
   type t = {
-    name: Reference.t Node.t;
+    name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
-    decorators: Decorator.t list;
+    decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
@@ -200,21 +227,23 @@ and Class : sig
 
   val init_subclass_arguments : t -> Expression.Call.Argument.t list
 
-  type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  val name_location : body_location:Location.t -> t -> Location.t
+
+  type class_t = t [@@deriving compare, sexp, show, hash, to_yojson]
 end = struct
   type t = {
-    name: Reference.t Node.t;
+    name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
-    decorators: Decorator.t list;
+    decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
-  type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  type class_t = t [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
-    match Node.location_insensitive_compare [%compare: Reference.t] left.name right.name with
+    match Reference.compare left.name right.name with
     | x when not (Int.equal x 0) -> x
     | _ -> (
         match
@@ -230,7 +259,7 @@ end = struct
             | _ -> (
                 match
                   List.compare
-                    Decorator.location_insensitive_compare
+                    Expression.location_insensitive_compare
                     left.decorators
                     right.decorators
                 with
@@ -242,10 +271,10 @@ end = struct
                       right.top_level_unbound_names)))
 
 
-  let toplevel_define { name = { Node.value; _ }; top_level_unbound_names; body; _ } =
+  let toplevel_define { name; top_level_unbound_names; body; _ } =
     Define.create_class_toplevel
       ~unbound_names:top_level_unbound_names
-      ~parent:value
+      ~parent:name
       ~statements:body
 
 
@@ -279,12 +308,12 @@ end = struct
   let is_frozen { decorators; _ } =
     let open Expression in
     let is_frozen_dataclass decorator =
-      match decorator with
-      | { Decorator.name = { Node.value = name; _ }; arguments = Some arguments }
+      match Decorator.from_expression decorator with
+      | Some { Decorator.name = { Node.value = name; _ }; arguments = Some arguments }
         when Reference.equal name (Reference.create "dataclasses.dataclass") ->
           let has_frozen_argument Call.Argument.{ name; value } =
             match name, value with
-            | Some { Node.value; _ }, { Node.value = Expression.True; _ } ->
+            | Some { Node.value; _ }, { Node.value = Expression.Constant Constant.True; _ } ->
                 String.equal "frozen" (Identifier.sanitized value)
             | _, _ -> false
           in
@@ -325,14 +354,19 @@ end = struct
         | Some _ -> true
         | None -> false)
       base_arguments
+
+
+  let name_location ~body_location { name; _ } =
+    let class_and_space_offset = 6 in
+    name |> Reference.last |> name_location ~offset_columns:class_and_space_offset ~body_location
 end
 
 and Define : sig
   module Signature : sig
     type t = {
-      name: Reference.t Node.t;
+      name: Reference.t;
       parameters: Expression.Parameter.t list;
-      decorators: Decorator.t list;
+      decorators: Expression.t list;
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
@@ -341,7 +375,7 @@ and Define : sig
       (* If the define is nested, this is the name of the nesting define. *)
       nesting_define: Reference.t option;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
 
@@ -393,14 +427,14 @@ and Define : sig
         | Self of Reference.t
         | ClassSelf of Reference.t
         | DefineSignature of Define.Signature.t
-      [@@deriving compare, eq, sexp, show, hash, to_yojson]
+      [@@deriving compare, sexp, show, hash, to_yojson]
     end
 
     type t = {
       name: Identifier.t;
       kind: Kind.t;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
   end
 
   module NameAccess : sig
@@ -408,7 +442,7 @@ and Define : sig
       name: Identifier.t;
       location: Location.t;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
   end
 
   type t = {
@@ -417,7 +451,7 @@ and Define : sig
     unbound_names: NameAccess.t list;
     body: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
@@ -433,9 +467,11 @@ and Define : sig
     statements:Statement.t list ->
     t
 
-  val name : t -> Reference.t Node.t
+  val name : t -> Reference.t
 
   val unqualified_name : t -> Identifier.t
+
+  val name_location : body_location:Location.t -> t -> Location.t
 
   val self_identifier : t -> Identifier.t
 
@@ -481,6 +517,8 @@ and Define : sig
 
   val dump_call_graph : t -> bool
 
+  val dump_perf : t -> bool
+
   val show_json : t -> string
 
   val has_decorator : ?match_prefix:bool -> t -> string -> bool
@@ -489,9 +527,9 @@ and Define : sig
 end = struct
   module Signature = struct
     type t = {
-      name: Reference.t Node.t;
+      name: Reference.t;
       parameters: Expression.Parameter.t list;
-      decorators: Decorator.t list;
+      decorators: Expression.t list;
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
@@ -500,10 +538,10 @@ end = struct
       (* If the define is nested, this is the name of the nesting define. *)
       nesting_define: Reference.t option;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right =
-      match Node.location_insensitive_compare [%compare: Reference.t] left.name right.name with
+      match Reference.compare left.name right.name with
       | x when not (Int.equal x 0) -> x
       | _ -> (
           match
@@ -515,7 +553,10 @@ end = struct
           | x when not (Int.equal x 0) -> x
           | _ -> (
               match
-                List.compare Decorator.location_insensitive_compare left.decorators right.decorators
+                List.compare
+                  Expression.location_insensitive_compare
+                  left.decorators
+                  right.decorators
               with
               | x when not (Int.equal x 0) -> x
               | _ -> (
@@ -543,7 +584,7 @@ end = struct
 
     let create_toplevel ~qualifier =
       {
-        name = Reference.create ?prefix:qualifier "$toplevel" |> Node.create_with_default_location;
+        name = Reference.create ?prefix:qualifier "$toplevel";
         parameters = [];
         decorators = [];
         return_annotation = None;
@@ -556,8 +597,7 @@ end = struct
 
     let create_class_toplevel ~parent =
       {
-        name =
-          Reference.create ~prefix:parent "$class_toplevel" |> Node.create_with_default_location;
+        name = Reference.create ~prefix:parent "$class_toplevel";
         parameters = [];
         decorators = [];
         return_annotation = None;
@@ -568,7 +608,7 @@ end = struct
       }
 
 
-    let unqualified_name { name; _ } = Reference.last (Node.value name)
+    let unqualified_name { name; _ } = Reference.last name
 
     let self_identifier { parameters; _ } =
       match parameters with
@@ -579,7 +619,6 @@ end = struct
     let is_method { parent; _ } = Option.is_some parent
 
     let has_decorator ?(match_prefix = false) { decorators; _ } decorator =
-      let decorators = List.map decorators ~f:Decorator.to_expression in
       Expression.exists_in_list ~match_prefix ~expression_list:decorators decorator
 
 
@@ -682,7 +721,7 @@ end = struct
         | Self of Reference.t
         | ClassSelf of Reference.t
         | DefineSignature of Define.Signature.t
-      [@@deriving compare, eq, sexp, show, hash, to_yojson]
+      [@@deriving compare, sexp, show, hash, to_yojson]
 
       let location_insensitive_compare left right =
         match left, right with
@@ -702,7 +741,7 @@ end = struct
       name: Identifier.t;
       kind: Kind.t;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right =
       match [%compare: Identifier.t] left.name right.name with
@@ -715,7 +754,7 @@ end = struct
       name: Identifier.t;
       location: Location.t;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right = [%compare: Identifier.t] left.name right.name
   end
@@ -726,7 +765,7 @@ end = struct
     unbound_names: NameAccess.t list;
     body: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Signature.location_insensitive_compare left.signature right.signature with
@@ -766,6 +805,18 @@ end = struct
   let name { signature = { Signature.name; _ }; _ } = name
 
   let unqualified_name { signature; _ } = Signature.unqualified_name signature
+
+  let name_location ~body_location define =
+    if Signature.is_class_toplevel define.signature then
+      (* This causes lookup.ml to skip class toplevel defines, which is what we want because they
+         are handled by reading class bodies. *)
+      Location.any
+    else
+      let def_and_space_offset = 4 in
+      define
+      |> unqualified_name
+      |> name_location ~offset_columns:def_and_space_offset ~body_location
+
 
   let self_identifier { signature; _ } = Signature.self_identifier signature
 
@@ -833,8 +884,10 @@ end = struct
   let is_stub { body; _ } =
     let open Expression in
     match List.rev body with
-    | { Node.value = Expression { Node.value = Expression.Ellipsis; _ }; _ } :: _
-    | _ :: { Node.value = Expression { Node.value = Expression.Ellipsis; _ }; _ } :: _ ->
+    | { Node.value = Expression { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } :: _
+    | _
+      :: { Node.value = Expression { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ }
+         :: _ ->
         true
     | _ -> false
 
@@ -847,6 +900,8 @@ end = struct
 
   let dump_call_graph define = contains_call define "pyre_dump_call_graph"
 
+  let dump_perf define = contains_call define "pyre_dump_perf"
+
   let show_json define = define |> to_yojson |> Yojson.Safe.pretty_to_string
 end
 
@@ -858,7 +913,7 @@ and For : sig
     orelse: Statement.t list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val preamble : t -> Statement.t
 
@@ -871,7 +926,7 @@ end = struct
     orelse: Statement.t list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let preamble { target = { Node.location; _ } as target; iterator; async; _ } =
     let open Expression in
@@ -921,10 +976,7 @@ end = struct
       else
         { Node.location; value }
     in
-    {
-      Node.location;
-      value = Statement.Assign { Assign.target; annotation = None; value; parent = None };
-    }
+    { Node.location; value = Statement.Assign { Assign.target; annotation = None; value } }
 
 
   let location_insensitive_compare left right =
@@ -950,7 +1002,7 @@ and If : sig
     body: Statement.t list;
     orelse: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -959,7 +1011,7 @@ end = struct
     body: Statement.t list;
     orelse: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.test right.test with
@@ -970,6 +1022,169 @@ end = struct
         | _ -> List.compare Statement.location_insensitive_compare left.orelse right.orelse)
 end
 
+and Match : sig
+  module Pattern : sig
+    type pattern =
+      | MatchAs of {
+          pattern: t option;
+          name: Identifier.t;
+        }
+      | MatchClass of {
+          class_name: Expression.Name.t Node.t;
+          patterns: t list;
+          keyword_attributes: Identifier.t list;
+          keyword_patterns: t list;
+        }
+      | MatchMapping of {
+          keys: Expression.t list;
+          patterns: t list;
+          rest: Identifier.t option;
+        }
+      | MatchOr of t list
+      | MatchSequence of t list
+      | MatchSingleton of Expression.Constant.t
+      | MatchStar of Identifier.t option
+      | MatchValue of Expression.t
+      | MatchWildcard
+    [@@deriving compare, sexp, show, hash, to_yojson]
+
+    and t = pattern Node.t [@@deriving compare, sexp, show, hash, to_yojson]
+
+    val location_insensitive_compare : t -> t -> int
+  end
+
+  module Case : sig
+    type t = {
+      pattern: Pattern.t;
+      guard: Expression.t option;
+      body: Statement.t list;
+    }
+    [@@deriving compare, sexp, show, hash, to_yojson]
+
+    val location_insensitive_compare : t -> t -> int
+
+    val is_refutable : t -> bool
+  end
+
+  type t = {
+    subject: Expression.t;
+    cases: Case.t list;
+  }
+  [@@deriving compare, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end = struct
+  module Pattern = struct
+    type pattern =
+      | MatchAs of {
+          pattern: t option;
+          name: Identifier.t;
+        }
+      | MatchClass of {
+          class_name: Expression.Name.t Node.t;
+          patterns: t list;
+          keyword_attributes: Identifier.t list;
+          keyword_patterns: t list;
+        }
+      | MatchMapping of {
+          keys: Expression.t list;
+          patterns: t list;
+          rest: Identifier.t option;
+        }
+      | MatchOr of t list
+      | MatchSequence of t list
+      | MatchSingleton of Expression.Constant.t
+      | MatchStar of Identifier.t option
+      | MatchValue of Expression.t
+      | MatchWildcard
+    [@@deriving compare, sexp, show, hash, to_yojson]
+
+    and t = pattern Node.t [@@deriving compare, sexp, show, hash, to_yojson]
+
+    let rec location_insensitive_equal_pattern left right =
+      let location_insensitive_equal_expression left right =
+        Int.equal (Expression.location_insensitive_compare left right) 0
+      in
+      match left, right with
+      | MatchAs left, MatchAs right ->
+          Option.equal location_insensitive_equal left.pattern right.pattern
+          && Identifier.equal left.name right.name
+      | MatchClass left, MatchClass right ->
+          [%compare.equal: Expression.Name.t]
+            (Node.value left.class_name)
+            (Node.value right.class_name)
+          && List.equal location_insensitive_equal left.patterns right.patterns
+          && List.equal Identifier.equal left.keyword_attributes right.keyword_attributes
+          && List.equal location_insensitive_equal left.keyword_patterns right.keyword_patterns
+      | MatchMapping left, MatchMapping right ->
+          List.equal location_insensitive_equal_expression left.keys right.keys
+          && List.equal location_insensitive_equal left.patterns right.patterns
+          && Option.equal Identifier.equal left.rest right.rest
+      | MatchOr left, MatchOr right
+      | MatchSequence left, MatchSequence right ->
+          List.equal location_insensitive_equal left right
+      | MatchSingleton left, MatchSingleton right ->
+          Int.equal (Expression.Constant.location_insensitive_compare left right) 0
+      | MatchStar left, MatchStar right -> Option.equal Identifier.equal left right
+      | MatchValue left, MatchValue right -> location_insensitive_equal_expression left right
+      | MatchWildcard, MatchWildcard -> true
+      | _, _ -> false
+
+
+    and location_insensitive_equal left right =
+      Node.location_insensitive_equal location_insensitive_equal_pattern left right
+
+
+    (* TODO(T104733576): This doesn't give a total order, but we use it for equality checks so it is
+       OK. Should be removed as part of removing broader usage of location_insensitive_compare. *)
+    let location_insensitive_compare left right =
+      match location_insensitive_equal left right with
+      | true -> 0
+      | false -> -1
+  end
+
+  module Case = struct
+    type t = {
+      pattern: Pattern.t;
+      guard: Expression.t option;
+      body: Statement.t list;
+    }
+    [@@deriving compare, sexp, show, hash, to_yojson]
+
+    let location_insensitive_compare left right =
+      match Pattern.location_insensitive_compare left.pattern right.pattern with
+      | x when not (Int.equal x 0) -> x
+      | _ -> (
+          match Option.compare Expression.location_insensitive_compare left.guard right.guard with
+          | x when not (Int.equal x 0) -> x
+          | _ -> List.compare Statement.location_insensitive_compare left.body right.body)
+
+
+    let is_refutable { Match.Case.guard; pattern; _ } =
+      let rec is_pattern_irrefutable { Node.value = pattern; _ } =
+        match pattern with
+        | Match.Pattern.MatchAs { pattern = None; _ }
+        | MatchWildcard ->
+            true
+        | Match.Pattern.MatchAs { pattern = Some pattern; _ } -> is_pattern_irrefutable pattern
+        | MatchOr patterns -> List.exists ~f:is_pattern_irrefutable patterns
+        | _ -> false
+      in
+      Option.is_some guard || not (is_pattern_irrefutable pattern)
+  end
+
+  type t = {
+    subject: Expression.t;
+    cases: Case.t list;
+  }
+  [@@deriving compare, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare left right =
+    match Expression.location_insensitive_compare left.subject right.subject with
+    | x when not (Int.equal x 0) -> x
+    | _ -> List.compare Case.location_insensitive_compare left.cases right.cases
+end
+
 and Try : sig
   module Handler : sig
     type t = {
@@ -977,7 +1192,7 @@ and Try : sig
       name: Identifier.t option;
       body: Statement.t list;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
   end
@@ -988,7 +1203,7 @@ and Try : sig
     orelse: Statement.t list;
     finally: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val preamble : Handler.t -> Statement.t list
 
@@ -1000,7 +1215,7 @@ end = struct
       name: Identifier.t option;
       body: Statement.t list;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right =
       match Option.compare Expression.location_insensitive_compare left.kind right.kind with
@@ -1017,7 +1232,7 @@ end = struct
     orelse: Statement.t list;
     finally: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let preamble { Handler.kind; name; _ } =
     let open Expression in
@@ -1030,8 +1245,7 @@ end = struct
               {
                 Assign.target;
                 annotation = None;
-                value = Node.create ~location Expression.Ellipsis;
-                parent = None;
+                value = Node.create ~location (Expression.Constant Constant.Ellipsis);
               };
         };
         {
@@ -1086,7 +1300,7 @@ and While : sig
     body: Statement.t list;
     orelse: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -1095,7 +1309,7 @@ end = struct
     body: Statement.t list;
     orelse: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.test right.test with
@@ -1112,7 +1326,7 @@ and With : sig
     body: Statement.t list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val preamble : t -> Statement.t list
 
@@ -1123,7 +1337,7 @@ end = struct
     body: Statement.t list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare_item (left_value, left_target) (right_value, right_target) =
     match Expression.location_insensitive_compare left_value right_value with
@@ -1169,7 +1383,7 @@ end = struct
       in
       match target with
       | Some target ->
-          let assign = { Assign.target; annotation = None; value = enter_call; parent = None } in
+          let assign = { Assign.target; annotation = None; value = enter_call } in
           Node.create ~location (Statement.Assign assign)
       | None -> Node.create ~location (Statement.Expression enter_call)
     in
@@ -1184,12 +1398,13 @@ and Statement : sig
     | Class of Class.t
     | Continue
     | Define of Define.t
-    | Delete of Expression.t
+    | Delete of Expression.t list
     | Expression of Expression.t
     | For of For.t
     | Global of Identifier.t list
     | If of If.t
     | Import of Import.t
+    | Match of Match.t
     | Nonlocal of Identifier.t list
     | Pass
     | Raise of Raise.t
@@ -1197,11 +1412,9 @@ and Statement : sig
     | Try of Try.t
     | With of With.t
     | While of While.t
-    | Yield of Expression.t
-    | YieldFrom of Expression.t
-  [@@deriving compare, eq, sexp, hash, to_yojson]
+  [@@deriving compare, sexp, hash, to_yojson]
 
-  type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  type t = statement Node.t [@@deriving compare, sexp, show, hash, to_yojson]
 
   val assume : ?origin:Assert.Origin.t -> Expression.t -> t
 
@@ -1216,12 +1429,13 @@ end = struct
     | Class of Class.t
     | Continue
     | Define of Define.t
-    | Delete of Expression.t
+    | Delete of Expression.t list
     | Expression of Expression.t
     | For of For.t
     | Global of Identifier.t list
     | If of If.t
     | Import of Import.t
+    | Match of Match.t
     | Nonlocal of Identifier.t list
     | Pass
     | Raise of Raise.t
@@ -1229,11 +1443,9 @@ end = struct
     | Try of Try.t
     | With of With.t
     | While of While.t
-    | Yield of Expression.t
-    | YieldFrom of Expression.t
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
-  type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  type t = statement Node.t [@@deriving compare, sexp, show, hash, to_yojson]
 
   let rec location_insensitive_compare_statement left right =
     match left, right with
@@ -1243,12 +1455,13 @@ end = struct
     | Class left, Class right -> Class.location_insensitive_compare left right
     | Continue, Continue -> 0
     | Define left, Define right -> Define.location_insensitive_compare left right
-    | Delete left, Delete right -> Expression.location_insensitive_compare left right
+    | Delete left, Delete right -> List.compare Expression.location_insensitive_compare left right
     | Expression left, Expression right -> Expression.location_insensitive_compare left right
     | For left, For right -> For.location_insensitive_compare left right
     | Global left, Global right -> List.compare Identifier.compare left right
     | If left, If right -> If.location_insensitive_compare left right
     | Import left, Import right -> Import.location_insensitive_compare left right
+    | Match left, Match right -> Match.location_insensitive_compare left right
     | Nonlocal left, Nonlocal right -> List.compare Identifier.compare left right
     | Pass, Pass -> 0
     | Raise left, Raise right -> Raise.location_insensitive_compare left right
@@ -1256,8 +1469,6 @@ end = struct
     | Try left, Try right -> Try.location_insensitive_compare left right
     | With left, With right -> With.location_insensitive_compare left right
     | While left, While right -> While.location_insensitive_compare left right
-    | Yield left, Yield right -> Expression.location_insensitive_compare left right
-    | YieldFrom left, YieldFrom right -> Expression.location_insensitive_compare left right
     | Assign _, _ -> -1
     | Assert _, _ -> -1
     | Break, _ -> -1
@@ -1270,6 +1481,7 @@ end = struct
     | Global _, _ -> -1
     | If _, _ -> -1
     | Import _, _ -> -1
+    | Match _, _ -> -1
     | Nonlocal _, _ -> -1
     | Pass, _ -> -1
     | Raise _, _ -> -1
@@ -1277,8 +1489,6 @@ end = struct
     | Try _, _ -> -1
     | With _, _ -> -1
     | While _, _ -> -1
-    | Yield _, _ -> -1
-    | YieldFrom _, _ -> 1
 
 
   and location_insensitive_compare left right =
@@ -1368,7 +1578,7 @@ end = struct
               };
         }
     in
-    { Assign.target; annotation = None; value; parent = None }
+    { Assign.target; annotation = None; value }
 end
 
 include Statement
@@ -1379,7 +1589,6 @@ module PrettyPrinter = struct
   let pp_decorators formatter = function
     | [] -> ()
     | decorators ->
-        let decorators = List.map decorators ~f:Decorator.to_expression in
         Format.fprintf formatter "@[<v>@@(%a)@;@]" Expression.pp_expression_list decorators
 
 
@@ -1422,12 +1631,10 @@ module PrettyPrinter = struct
         Format.fprintf formatter "%a@;%a" pp_statement_t statement pp_statement_list statement_list
 
 
-  and pp_assign formatter { Assign.target; annotation; value; parent } =
+  and pp_assign formatter { Assign.target; annotation; value } =
     Format.fprintf
       formatter
-      "%a%a%a = %a"
-      pp_reference_option
-      parent
+      "%a%a = %a"
       Expression.pp
       target
       pp_expression_option
@@ -1443,7 +1650,7 @@ module PrettyPrinter = struct
       pp_decorators
       decorators
       Reference.pp
-      (Node.value name)
+      name
       Expression.pp_expression_argument_list
       base_arguments
       pp_statement_list
@@ -1475,7 +1682,7 @@ module PrettyPrinter = struct
       parent
       (if Option.is_some parent then "#" else "")
       Reference.pp
-      (Node.value name)
+      name
       Expression.pp_expression_parameter_list
       parameters
       return_annotation
@@ -1498,7 +1705,10 @@ module PrettyPrinter = struct
     | Class definition -> Format.fprintf formatter "%a" pp_class definition
     | Continue -> Format.fprintf formatter "continue"
     | Define define -> Format.fprintf formatter "%a" pp_define define
-    | Delete expression -> Format.fprintf formatter "del %a" Expression.pp expression
+    | Delete expressions ->
+        List.map expressions ~f:Expression.show
+        |> String.concat ~sep:", "
+        |> Format.fprintf formatter "del %s"
     | Expression expression -> Expression.pp formatter expression
     | For { For.target; iterator; body; orelse; async } ->
         Format.fprintf
@@ -1535,18 +1745,18 @@ module PrettyPrinter = struct
             pp_statement_list
             orelse
     | Import { Import.from; imports } -> (
-        let pp_import formatter { Import.name; alias } =
+        let pp_import formatter { Node.value = { Import.name; alias }; _ } =
           match alias with
-          | None -> Format.fprintf formatter "%a" Reference.pp (Node.value name)
-          | Some { Node.value = alias; _ } ->
-              Format.fprintf formatter "%a as %a" Reference.pp (Node.value name) Identifier.pp alias
+          | None -> Format.fprintf formatter "%a" Reference.pp name
+          | Some alias -> Format.fprintf formatter "%a as %a" Reference.pp name Identifier.pp alias
         in
         let pp_imports formatter import_list = pp_list formatter pp_import ", " import_list in
         match from with
         | None -> Format.fprintf formatter "@[<v>import %a@]" pp_imports imports
-        | Some { Node.value = from; _ } ->
+        | Some from ->
             Format.fprintf formatter "@[<v>from %a import %a@]" Reference.pp from pp_imports imports
         )
+    | Match _ -> Format.fprintf formatter "%s" "match"
     | Nonlocal nonlocal_list -> pp_list formatter String.pp "," nonlocal_list
     | Pass -> Format.fprintf formatter "%s" "pass"
     | Raise { Raise.expression; _ } ->
@@ -1630,8 +1840,6 @@ module PrettyPrinter = struct
           body
           pp_statement_list
           orelse
-    | Yield expression -> Format.fprintf formatter "yield %a" Expression.pp expression
-    | YieldFrom expression -> Format.fprintf formatter "yield from %a" Expression.pp expression
 
 
   let pp = pp_statement_t
@@ -1649,7 +1857,10 @@ let is_generator statements =
   let open Expression in
   let rec is_expression_generator { Node.value; _ } =
     match value with
-    | Expression.Await await -> is_expression_generator await
+    | Expression.Yield _
+    | Expression.YieldFrom _ ->
+        true
+    | Await await -> is_expression_generator await
     | BooleanOperator { BooleanOperator.left; right; _ }
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
         is_expression_generator left || is_expression_generator right
@@ -1675,24 +1886,21 @@ let is_generator statements =
     | Tuple expressions ->
         List.exists expressions ~f:is_expression_generator
     | Starred Starred.(Once expression | Twice expression) -> is_expression_generator expression
-    | String { StringLiteral.kind = StringLiteral.Format expressions; _ } ->
-        List.exists expressions ~f:is_expression_generator
+    | FormatString substrings ->
+        let is_substring_generator = function
+          | Substring.(Literal _) -> false
+          | Substring.Format expression -> is_expression_generator expression
+        in
+        List.exists substrings ~f:is_substring_generator
     | Ternary { Ternary.target; test; alternative } ->
         is_expression_generator target
         || is_expression_generator test
         || is_expression_generator alternative
     | UnaryOperator { UnaryOperator.operand; _ } -> is_expression_generator operand
     | WalrusOperator { WalrusOperator.value; _ } -> is_expression_generator value
-    | Yield _ -> true
-    | Complex _
-    | Ellipsis
-    | False
-    | Float _
-    | Integer _
+    | Constant _
     | Lambda _
-    | Name _
-    | String _
-    | True ->
+    | Name _ ->
         false
   and is_comprehension_generator
         : 'a. is_element_generator:('a -> bool) -> 'a Comprehension.t -> bool
@@ -1710,9 +1918,8 @@ let is_generator statements =
     | Assign { Assign.value; _ } -> is_expression_generator value
     | Assert { Assert.test; message; _ } ->
         is_expression_generator test || is_optional_expression_generator message
-    | Delete expression
-    | Expression expression ->
-        is_expression_generator expression
+    | Delete expressions -> List.exists expressions ~f:is_expression_generator
+    | Expression expression -> is_expression_generator expression
     | Raise { Raise.expression; from } ->
         is_optional_expression_generator expression || is_optional_expression_generator from
     | Return { Return.expression; _ } -> is_optional_expression_generator expression
@@ -1720,6 +1927,10 @@ let is_generator statements =
         is_expression_generator iterator
         || is_statements_generator body
         || is_statements_generator orelse
+    | Match { Match.subject; cases } ->
+        is_expression_generator subject
+        || List.exists cases ~f:(fun { Match.Case.body; guard; _ } ->
+               is_optional_expression_generator guard || is_statements_generator body)
     | If { If.test; body; orelse }
     | While { While.test; body; orelse } ->
         is_expression_generator test
@@ -1733,9 +1944,6 @@ let is_generator statements =
     | With { With.items; body; _ } ->
         List.exists items ~f:(fun (expression, _) -> is_expression_generator expression)
         || is_statements_generator body
-    | Yield _
-    | YieldFrom _ ->
-        true
     | Break
     | Continue
     | Class _

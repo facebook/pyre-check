@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -284,7 +284,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             )
             strict_codemod.run()
         else:
-            self._suppress_errors(configuration)
+            self._get_and_suppress_errors(configuration)
 
     def _gather_directories(self, subdirectory: Path) -> List[Path]:
         configurations = find_files(subdirectory, ".pyre_configuration.local")

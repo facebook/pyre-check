@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -532,8 +532,8 @@ let test_check_user_decorators context =
       reveal_type(function_returning_callable)
     |}
     [
-      "Invalid decoration [56]: While applying decorator `test.not_a_decorator`: Expected `int` \
-       for 1st positional only parameter to call `test.not_a_decorator` but got \
+      "Invalid decoration [56]: While applying decorator `test.not_a_decorator`: In call \
+       `test.not_a_decorator`, for 1st positional only parameter expected `int` but got \
        `typing.Callable(test.function_returning_callable)[[], typing.Callable[[int], str]]`.";
       "Revealed type [-1]: Revealed type for `test.function_returning_callable` is `typing.Any`.";
     ];
@@ -839,6 +839,19 @@ let test_decorator_factories context =
 
      def decorator_factory(name: str) -> Callable[[Callable[[str], int]], Callable[[], str]]: ...
 
+     @decorator_factory(f"{1+2}")
+     def foo(name: str) -> int:
+         return len(name)
+
+     reveal_type(foo)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.foo` is `typing.Callable[[], str]`."];
+  assert_type_errors
+    {|
+     from typing import Callable
+
+     def decorator_factory(name: str) -> Callable[[Callable[[str], int]], Callable[[], str]]: ...
+
      @decorator_factory(name="literal")
      def foo(name: str) -> int:
          return len(name)
@@ -1043,11 +1056,10 @@ let test_decorator_factories context =
      reveal_type(foo)
     |}
     [
-      "Invalid decoration [56]: While applying decorator factory `test.decorator_factory`: \
-       Expected `str` for 1st positional only parameter to call `test.decorator_factory` but got \
-       `int`.";
-      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to call \
-       `decorator_factory` but got `int`.";
+      "Invalid decoration [56]: While applying decorator factory `test.decorator_factory`: In call \
+       `test.decorator_factory`, for 1st positional only parameter expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `decorator_factory`, for 1st positional only \
+       parameter expected `str` but got `int`.";
       "Revealed type [-1]: Revealed type for `test.foo` is `typing.Any`.";
     ];
   assert_type_errors
@@ -1068,12 +1080,12 @@ let test_decorator_factories context =
           return 1
     |}
     [
-      "Invalid decoration [56]: While applying decorator `test.decorator_factory(...)`: Expected \
-       `typing.Callable[[str], int]` for 1st positional only parameter to anonymous call but got \
-       `typing.Callable(test.foo_a)[[Named(x, str)], str]`.";
-      "Invalid decoration [56]: While applying decorator `test.decorator_factory(...)`: Expected \
-       `typing.Callable[[str], str]` for 1st positional only parameter to anonymous call but got \
-       `typing.Callable(test.foo_b)[[Named(x, int)], int]`.";
+      "Invalid decoration [56]: While applying decorator `test.decorator_factory(...)`: In \
+       anonymous call, for 1st positional only parameter expected `typing.Callable[[str], int]` \
+       but got `typing.Callable(test.foo_a)[[Named(x, str)], str]`.";
+      "Invalid decoration [56]: While applying decorator `test.decorator_factory(...)`: In \
+       anonymous call, for 1st positional only parameter expected `typing.Callable[[str], str]` \
+       but got `typing.Callable(test.foo_b)[[Named(x, int)], int]`.";
     ];
   assert_type_errors
     {|
@@ -1096,6 +1108,16 @@ let test_decorator_factories context =
       "Revealed type [-1]: Revealed type for `test.test_foo` is `typing.Callable[[int], str]`.";
       "Revealed type [-1]: Revealed type for `test.test_bar` is `typing.Callable[[int], str]`.";
     ];
+  assert_type_errors
+    {|
+     from typing import Callable, Tuple, Optional
+
+     def factory(x: Tuple[int, Optional[str]]) -> Callable[[Callable[[], None]], int]: ...
+
+     @factory((1, None))
+     def bar() -> None: ...
+    |}
+    [];
   ()
 
 

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -25,12 +25,12 @@ let setup_environment scratch_project =
 let static_analysis_configuration { ScratchProject.configuration; _ } =
   {
     Configuration.StaticAnalysis.result_json_path = None;
-    dump_call_graph = false;
+    dump_call_graph = None;
     verify_models = false;
     configuration;
     rule_filter = None;
     find_missing_flows = None;
-    dump_model_query_results = false;
+    dump_model_query_results = None;
     use_cache = false;
     maximum_trace_length = None;
     maximum_tito_depth = None;
@@ -67,7 +67,7 @@ module AnalysisA = ResultA.Register (struct
       ~callables:_
       ~stubs:_
     =
-    AnalysisResult.InitializedModels.empty
+    AnalysisResult.empty_initialize_result
 
 
   let analyze ~environment:_ ~callable:_ ~qualifier:_ ~define:_ ~existing:_ = "A", 5

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -102,7 +102,7 @@ let make_assert_functions context =
         pass
 
       class Constructable:
-        def Constructable.__init__(self, x: int) -> None:
+        def __init__(self, x: int) -> None:
           pass
 
       class Parent: pass
@@ -468,11 +468,11 @@ let test_add_constraint context =
   assert_add
     ~left:"typing.Tuple[D, ...]"
     ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
-    [];
+    [["T_Unconstrained", "D"]];
   assert_add
     ~left:"typing.Tuple[C, Q, D]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"
-    [["T_Unconstrained", "typing.Union[C, D, Q]"]];
+    [["T_Unconstrained", "typing.Union[C, Q]"]];
   assert_add
     ~left:"G_covariant[C]"
     ~right:"typing.Union[G_covariant[T_Unconstrained], int]"
@@ -942,7 +942,7 @@ let test_add_constraint_type_variable_tuple context =
     ~left:"typing.Tuple[int, ...]"
     ~right:"typing.Tuple[pyre_extensions.Unpack[Ts]]"
     [["Ts", "typing.Tuple[pyre_extensions.Unpack[typing.Tuple[int, ...]]]"]];
-  assert_add ~left:"typing.Tuple[int, ...]" ~right:"typing.Tuple[T]" [];
+  assert_add ~left:"typing.Tuple[int, ...]" ~right:"typing.Tuple[T]" [["T", "int"]];
   assert_add
     ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
@@ -956,19 +956,37 @@ let test_add_constraint_type_variable_tuple context =
     ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], str, bool]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[T, ...]], bool]"
     [["T", "str"]];
+  assert_add
+    ~left:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], str]"
+    ~right:"typing.Tuple[T1, T2, T3, T4]"
+    [["T4", "str"; "T3", "str"; "T2", "str"; "T1", "int"]];
+  assert_add ~left:"typing.Tuple[int, int]" ~right:"typing.Tuple[int, ...]" [[]];
+  assert_add ~left:"typing.Tuple[str, ...]" ~right:"typing.Tuple[int]" [];
 
-  (* Not valid because the unbounded tuple may be empty. *)
+  (* Stretch the unbounded tuple to meet the expected length. *)
   assert_add
     ~left:"typing.Tuple[int, ...]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
-    [];
+    [["Ts", "typing.Tuple[int, ...]"]];
   assert_add
     ~left:"typing.Tuple[int, ...]"
     ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], int]"
+    [["Ts", "typing.Tuple[int, ...]"]];
+  assert_add
+    ~left:"typing.Tuple[int, ...]"
+    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], str]"
     [];
   assert_add
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     ~right:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    [[]];
+  assert_add
+    ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], T, bool]"
+    [["T", "str"]];
+  assert_add
+    ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], int, bool]"
     [];
   ()
 
@@ -1146,6 +1164,17 @@ let test_instantiate_protocol_parameters context =
     ~candidate:"A"
     ~protocol:"P"
     (Some ![Type.integer]);
+
+  (* Protocol implicitly implemented via `__getattr__` *)
+  assert_instantiate_protocol_parameters
+    ~source:{|
+      class P(): pass
+    |}
+    ~classes:["A", ["__getattr__", "typing.Callable[[], typing.Any]"]]
+    ~protocols:["P", ["method", "typing.Callable[[int], str]"; "prop", "int"]]
+    ~candidate:"A"
+    ~protocol:"P"
+    (Some []);
 
   (* Protocol depends on other protocol *)
   assert_instantiate_protocol_parameters

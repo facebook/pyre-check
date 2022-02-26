@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -146,6 +146,17 @@ let full_order ({ dependency; _ } as resolution) =
 
 let less_or_equal resolution = full_order resolution |> TypeOrder.always_less_or_equal
 
+let join resolution = full_order resolution |> TypeOrder.join
+
+let meet resolution = full_order resolution |> TypeOrder.meet
+
+let widen resolution = full_order resolution |> TypeOrder.widen
+
+let types_are_orderable resolution type0 type1 =
+  less_or_equal resolution ~left:type0 ~right:type1
+  || less_or_equal resolution ~left:type1 ~right:type0
+
+
 let is_compatible_with resolution = full_order resolution |> TypeOrder.is_compatible_with
 
 let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy resolution)
@@ -204,6 +215,9 @@ let global ({ dependency; _ } as resolution) reference =
   | "__name__"
   | "__package__" ->
       let annotation = Annotation.create_immutable Type.string in
+      Some { AttributeResolution.Global.annotation; undecorated_signature = None; problem = None }
+  | "__path__" ->
+      let annotation = Type.list Type.string |> Annotation.create_immutable in
       Some { AttributeResolution.Global.annotation; undecorated_signature = None; problem = None }
   | "__dict__" ->
       let annotation =
@@ -331,7 +345,7 @@ let is_transitive_successor ?placeholder_subclass_extends_all resolution ~predec
    difficulty of handling nested classes within test cases, etc., we use the heuristic that a class
    which inherits from unittest.TestCase indicates that the entire file is a test file. *)
 let source_is_unit_test resolution ~source =
-  let is_unittest { Node.value = { Class.name = { Node.value = name; _ }; _ }; _ } =
+  let is_unittest { Node.value = { Class.name; _ }; _ } =
     try
       is_transitive_successor
         ~placeholder_subclass_extends_all:false
@@ -410,12 +424,6 @@ let resolve_exports ({ dependency; _ } as resolution) ?from reference =
     reference
 
 
-let widen resolution = full_order resolution |> TypeOrder.widen
-
-let join resolution = full_order resolution |> TypeOrder.join
-
-let meet resolution = full_order resolution |> TypeOrder.meet
-
 let check_invalid_type_parameters ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.check_invalid_type_parameters
     (attribute_resolution resolution)
@@ -481,6 +489,39 @@ let extract_type_parameters resolution ~source ~target =
       >>= fun solution ->
       List.map unaries ~f:(ConstraintsSet.Solution.instantiate_single_variable solution)
       |> Option.all
+
+
+let type_of_iteration_value ~global_resolution iterator_type =
+  match
+    extract_type_parameters global_resolution ~target:"typing.Iterable" ~source:iterator_type
+  with
+  | Some [iteration_type] -> Some iteration_type
+  | _ -> None
+
+
+(* Determine the appropriate type for `yield` expressions in a generator function, based on the
+   return annotation. *)
+let type_of_generator_send_and_return ~global_resolution generator_type =
+  (* First match against Generator *)
+  match
+    extract_type_parameters global_resolution ~target:"typing.Generator" ~source:generator_type
+  with
+  | Some [_yield_type; send_type; return_type] -> send_type, return_type
+  | _ -> (
+      (* Fall back to match against AsyncGenerator. We fall back instead of using an explicit flag
+         because, if the user mixes these types up we still ought to resolve their yield expressions
+         to reasonable types *)
+      match
+        extract_type_parameters
+          global_resolution
+          ~target:"typing.AsyncGenerator"
+          ~source:generator_type
+      with
+      | Some [_yield_type; send_type] -> send_type, Type.none
+      | _ ->
+          (* Fall back to Type.none because it's legal to use other annotations like `object` or
+             `Iterator` on a generator function, but in those cases the send type is always NoneType *)
+          Type.none, Type.none)
 
 
 let parse_annotation ({ dependency; _ } as resolution) =
@@ -563,9 +604,7 @@ let define resolution decorator_name =
     | [{ Node.value = { Define.body; _ } as define; location }] ->
         let transform_statement = function
           | {
-              Node.value =
-                Statement.Define
-                  { body = []; signature = { name = { Node.value = define_name; _ }; _ }; _ };
+              Node.value = Statement.Define { body = []; signature = { name = define_name; _ }; _ };
               _;
             } as statement ->
               get_define define_name
@@ -578,3 +617,16 @@ let define resolution decorator_name =
     | _ -> None
   in
   get_define decorator_name
+
+
+let refine ~global_resolution annotation refined_type =
+  let solve_less_or_equal ~left ~right =
+    ConstraintsSet.add
+      ConstraintsSet.empty
+      ~new_constraint:(LessOrEqual { left; right })
+      ~global_resolution
+    |> ConstraintsSet.solve ~global_resolution
+    >>| fun solution -> ConstraintsSet.Solution.instantiate solution left
+  in
+  let type_less_or_equal = less_or_equal global_resolution in
+  Annotation.refine ~type_less_or_equal ~solve_less_or_equal ~refined_type annotation

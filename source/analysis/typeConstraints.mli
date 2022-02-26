@@ -1,11 +1,11 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t [@@deriving show]
+type t [@@deriving compare, show]
 
 val empty : t
 
@@ -13,7 +13,7 @@ val empty : t
 val exists_in_bounds : t -> variables:Type.Variable.t list -> bool
 
 module Solution : sig
-  type t [@@deriving eq]
+  type t [@@deriving show, eq]
 
   val empty : t
 
@@ -32,8 +32,6 @@ module Solution : sig
 
   (* For testing *)
   val create : Type.Variable.pair list -> t
-
-  val show : t -> string
 end
 
 module type OrderedConstraintsType = sig

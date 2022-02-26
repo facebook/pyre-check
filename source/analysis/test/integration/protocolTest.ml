@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -96,8 +96,8 @@ let test_check_protocol context =
         takesFooBarProtocol(FooBarClass())
     |}
     [
-      "Incompatible parameter type [6]: Expected `FooBarProtocol` for 1st positional only parameter "
-      ^ "to call `takesFooBarProtocol` but got `FooClass`.";
+      "Incompatible parameter type [6]: In call `takesFooBarProtocol`, for 1st positional only \
+       parameter expected `FooBarProtocol` but got `FooClass`.";
     ];
   assert_type_errors
     {|
@@ -271,9 +271,8 @@ let test_check_protocol context =
 
     |}
     [
-      "Incompatible parameter type [6]: Expected `P` for 1st positional only parameter to call \
-       `foo` "
-      ^ "but got `Alpha`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `P` but got `Alpha`.";
     ];
   assert_type_errors
     {|
@@ -316,9 +315,8 @@ let test_check_protocol context =
 
     |}
     [
-      "Incompatible parameter type [6]: Expected `P` for 1st positional only parameter to call \
-       `foo` "
-      ^ "but got `Alpha`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `P` but got `Alpha`.";
     ];
   assert_type_errors
     {|
@@ -387,8 +385,8 @@ let test_check_protocol context =
         foo(Alpha)
     |}
     [
-      "Incompatible parameter type [6]: Expected `P` for 1st positional only parameter to call \
-       `foo` but got `Alpha`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `P` but got `Alpha`.";
     ];
   assert_type_errors
     {|
@@ -526,8 +524,8 @@ let test_check_generic_protocols context =
 
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `P[str]` for 1st positional only parameter to call `foo` but got `Alpha`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `P[str]` but got `Alpha`.";
     ];
   assert_type_errors
     {|
@@ -571,8 +569,8 @@ let test_check_generic_protocols context =
 
     |}
     [
-      "Incompatible parameter type [6]: Expected `P[Variable[T2 <: [int, str]]]` for 1st "
-      ^ "positional only parameter to call `foo` but got `Alpha`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `P[Variable[T2 <: [int, str]]]` but got `Alpha`.";
     ];
   assert_type_errors
     {|
@@ -684,8 +682,8 @@ let test_check_generic_implementors context =
 
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `P[bool]` for 1st positional only parameter to call `foo` but got `Alpha[int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `P[bool]` but got `Alpha[int]`.";
     ];
   assert_type_errors
     {|
@@ -754,8 +752,8 @@ let test_callback_protocols context =
         takesP(doesNotMatch)
     |}
     [
-      "Incompatible parameter type [6]: Expected `P` for 1st positional only parameter to call "
-      ^ "`takesP` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`.";
+      "Incompatible parameter type [6]: In call `takesP`, for 1st positional only parameter \
+       expected `P` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`.";
     ];
   assert_type_errors
     {|
@@ -787,8 +785,9 @@ let test_callback_protocols context =
         takesPInt(doesNotMatch)
     |}
     [
-      "Incompatible parameter type [6]: Expected `P[int]` for 1st positional only parameter to call "
-      ^ "`takesPInt` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], str]`.";
+      "Incompatible parameter type [6]: In call `takesPInt`, for 1st positional only parameter \
+       expected `P[int]` but got `typing.Callable(doesNotMatch)[[Named(x, int), Named(y, str)], \
+       str]`.";
     ];
   assert_type_errors
     {|
@@ -815,10 +814,9 @@ let test_callback_protocols context =
     [
       "Revealed type [-1]: Revealed type for `v` is `int`.";
       "Revealed type [-1]: Revealed type for `v` is `str`.";
-      "Incompatible parameter type [6]: Expected `P[Variable[T2]]` for 1st positional only \
-       parameter "
-      ^ "to call `takesPGeneric` but got "
-      ^ "`typing.Callable(doesNotMatch)[[Named(x, str), Named(y, int)], int]`.";
+      "Incompatible parameter type [6]: In call `takesPGeneric`, for 1st positional only parameter \
+       expected `P[Variable[T2]]` but got `typing.Callable(doesNotMatch)[[Named(x, str), Named(y, \
+       int)], int]`.";
     ];
   assert_type_errors
     {|
@@ -851,7 +849,7 @@ let test_callback_protocols context =
     |}
     [
       "Incompatible variable type [9]: y is declared to have type `ShouldNotMatch` but is used as \
-       type `typing.Type[H]`.";
+       type `Type[H]`.";
     ];
 
   (* We should be able to pass a named callable type to a callable protocol that is generic in the
@@ -888,8 +886,8 @@ let test_callback_protocols context =
       "Revealed type [-1]: Revealed type for `test.my_exit` is \
        `_WithException[typing.Callable(my_exit)[[Named(msg, str), Named(returncode, Optional[int], \
        default)], NoReturn], Type[Exit]]`.";
-      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to call \
-       `my_exit` but got `int`.";
+      "Incompatible parameter type [6]: In call `my_exit`, for 1st positional only parameter \
+       expected `str` but got `int`.";
     ];
   ()
 

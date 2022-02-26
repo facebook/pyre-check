@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+port.$toplevel (fun) -> []
+port.Foo::$class_toplevel (method) -> []
 port.Foo::some_source (method) -> [_test_source (fun)]
 port.match_flows (fun) -> [port.sink_field (fun) port.source_field (fun)]
 port.match_star_arg_directly (fun) -> [port.source_field (fun) port.star_arg_wrapper (fun)]

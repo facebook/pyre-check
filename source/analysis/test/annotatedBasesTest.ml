@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -34,7 +34,7 @@ let test_inferred_generic_base context =
     let target =
       let target = function
         | { Node.location; value = Statement.Class ({ StatementClass.name; _ } as definition) }
-          when String.equal (Reference.show (Node.value name)) target ->
+          when String.equal (Reference.show name) target ->
             Some { Node.location; value = definition }
         | _ -> None
       in
@@ -48,7 +48,7 @@ let test_inferred_generic_base context =
     in
     assert_equal
       ~printer:[%show: Expression.t list]
-      ~cmp:(List.equal Expression.equal)
+      ~cmp:(List.equal [%compare.equal: Expression.t])
       expected
       (Annotated.Bases.inferred_generic_base target ~parse_annotation)
   in
@@ -120,9 +120,9 @@ let test_inferred_generic_base context =
     {|
       Ts = pyre_extensions.TypeVarTuple("Ts")
 
-      class Base(typing.Generic[*Ts]): ...
+      class Base(typing.Generic[pyre_extensions.Unpack[Ts]]): ...
 
-      class Child(Base[*Ts]): ...
+      class Child(Base[pyre_extensions.Unpack[Ts]]): ...
     |}
     [
       Type.expression

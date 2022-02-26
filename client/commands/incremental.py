@@ -1,162 +1,213 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import json
 import logging
-import os
-from logging import Logger
-from typing import List, Optional
+from pathlib import Path
+from typing import Iterable, Dict, Sequence, List, Optional
 
 from .. import (
     command_arguments,
-    configuration_monitor,
-    filesystem,
-    json_rpc,
-    project_files_monitor,
+    configuration as configuration_module,
+    error,
+    statistics_logger,
 )
-from ..analysis_directory import AnalysisDirectory
-from ..configuration import Configuration
-from .command import ExitCode, IncrementalStyle, Result, State
-from .reporting import Reporting
-from .start import Start
+from . import (
+    commands,
+    server_connection,
+    server_event,
+    start,
+    remote_logging as remote_logging_module,
+    backend_arguments,
+)
 
 
-LOG: Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger(__name__)
+
+COMMAND_NAME = "incremental"
 
 
-class ClientInitializationError(Exception):
+class InvalidServerResponse(Exception):
     pass
 
 
-class Incremental(Reporting):
-    NAME = "incremental"
+def parse_type_error_response_json(response_json: object) -> List[error.Error]:
+    try:
+        # The response JSON is expected to have the following form:
+        # `["TypeErrors", [error_json0, error_json1, ...]]`
+        if (
+            isinstance(response_json, list)
+            and len(response_json) > 1
+            and response_json[0] == "TypeErrors"
+        ):
+            errors_json = response_json[1]
+            if isinstance(errors_json, list):
+                return [error.Error.from_json(error_json) for error_json in errors_json]
 
-    def __init__(
-        self,
-        command_arguments: command_arguments.CommandArguments,
-        original_directory: str,
-        *,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-        nonblocking: bool,
-        incremental_style: IncrementalStyle,
-        no_start_server: bool,
-        no_watchman: bool,
-    ) -> None:
-        super(Incremental, self).__init__(
-            command_arguments, original_directory, configuration, analysis_directory
+        raise InvalidServerResponse(
+            f"Unexpected JSON response from server: {response_json}"
         )
-        self._nonblocking = nonblocking
-        self._incremental_style = incremental_style
-        self._no_start_server = no_start_server
-        self._no_watchman = no_watchman
+    except error.ErrorParsingFailure as parsing_error:
+        message = f"Unexpected error JSON from server: {parsing_error}"
+        raise InvalidServerResponse(message) from parsing_error
 
-    def _ensure_server_and_monitors_are_initialized(self) -> None:
-        LOG.info("Waiting for server...")
-        client_lock = os.path.join(self._configuration.log_directory, "client.lock")
 
-        # The client lock guards the critical section of initializing the
-        # configuration monitor, the analysis directory, the server, and the
-        # file monitor.
-        #
-        # * Otherwise, there may be a race where the server has started up but not yet
-        # finished initializing. That would mean the file monitor wouldn't be
-        # alive yet, which would lead to spurious "file monitor is down" failures.
-        # * Another race is where the analysis directory has been built by a
-        # background `pyre start` but the server has not yet been started up.
-        # That would make Incremental unnecessarily run Start again.
-        with filesystem.acquire_lock(client_lock, blocking=True):
-            if self._state() == State.DEAD:
-                if not self._no_start_server:
-                    LOG.info(
-                        "Starting server at `%s`.", self._analysis_directory.get_root()
-                    )
-                    exit_code = (
-                        Start(
-                            self._command_arguments,
-                            self._original_directory,
-                            configuration=self._configuration,
-                            analysis_directory=self._analysis_directory,
-                            terminal=False,
-                            store_type_check_resolution=False,
-                            use_watchman=not self._no_watchman,
-                            incremental_style=self._incremental_style,
-                        )
-                        .run()
-                        .exit_code()
-                    )
-                    if exit_code != ExitCode.SUCCESS:
-                        self._exit_code = ExitCode.FAILURE
-                        raise ClientInitializationError
-            else:
-                if not self._no_watchman and (
-                    not project_files_monitor.ProjectFilesMonitor.is_alive(
-                        self._configuration
-                    )
-                    or not configuration_monitor.ConfigurationMonitor.is_alive(
-                        self._configuration
-                    )
-                ):
-                    LOG.warning(
-                        "Pyre's file watching service is down."
-                        + " Results may be inconsistent with full checks."
-                        + " Please run `pyre restart` to bring Pyre server to a "
-                        + "consistent state again."
-                    )
-                    self._exit_code = ExitCode.INCONSISTENT_SERVER
-                    raise ClientInitializationError
+def parse_type_error_response(response: str) -> List[error.Error]:
+    try:
+        response_json = json.loads(response)
+        return parse_type_error_response_json(response_json)
+    except json.JSONDecodeError as decode_error:
+        message = f"Cannot parse response as JSON: {decode_error}"
+        raise InvalidServerResponse(message) from decode_error
 
-    def _run(self) -> None:
-        try:
-            self._ensure_server_and_monitors_are_initialized()
-        except ClientInitializationError:
-            return
 
-        with self._analysis_directory.acquire_shared_reader_lock():
-            request = json_rpc.Request(
-                method="displayTypeErrors",
-                parameters=json_rpc.ByNameParameters({"files": []}),
-            )
-            self._send_and_handle_socket_request(request, self._version_hash)
+def _read_type_errors(socket_path: Path) -> List[error.Error]:
+    with server_connection.connect_in_text_mode(socket_path) as (
+        input_channel,
+        output_channel,
+    ):
+        # The empty list argument means we want all type errors from the server.
+        output_channel.write('["DisplayTypeError", []]\n')
+        return parse_type_error_response(input_channel.readline())
 
-    def _socket_result_handler(self, result: Result) -> None:
-        errors = self._get_errors(result)
-        self._print(errors)
-        if errors:
-            self._exit_code = ExitCode.FOUND_ERRORS
 
-    def _flags(self) -> List[str]:
-        flags = super()._flags()
-        flags.extend(
-            [
-                "-expected-binary-version",
-                self._configuration.get_version_hash_respecting_override()
-                or "unversioned",
-            ]
+def compute_error_statistics_per_code(
+    type_errors: Sequence[error.Error],
+) -> Iterable[Dict[str, int]]:
+    errors_grouped_by_code: Dict[int, List[error.Error]] = {}
+    for type_error in type_errors:
+        errors_grouped_by_code.setdefault(type_error.code, []).append(type_error)
+
+    for code, errors in errors_grouped_by_code.items():
+        yield {"code": code, "count": len(errors)}
+
+
+def log_error_statistics(
+    remote_logging: Optional[backend_arguments.RemoteLogging],
+    type_errors: Sequence[error.Error],
+    command_name: str,
+) -> None:
+    if remote_logging is None:
+        return
+    logger = remote_logging.logger
+    if logger is None:
+        return
+    log_identifier = remote_logging.identifier
+    for integers in compute_error_statistics_per_code(type_errors):
+        statistics_logger.log(
+            category=statistics_logger.LoggerCategory.ERROR_STATISTICS,
+            logger=logger,
+            integers=integers,
+            normals={
+                "command": command_name,
+                **(
+                    {"identifier": log_identifier} if log_identifier is not None else {}
+                ),
+            },
         )
 
-        search_path = [
-            search_path.command_line_argument()
-            for search_path in (
-                self._configuration.expand_and_get_existent_search_paths()
-            )
-        ]
-        if search_path:
-            flags.extend(["-search-path", ",".join(search_path)])
 
-        excludes = self._configuration.excludes
-        for exclude in excludes:
-            flags.extend(["-exclude", exclude])
+def display_type_errors(errors: List[error.Error], output: str) -> None:
+    error.print_errors(
+        [error.relativize_path(against=Path.cwd()) for error in errors],
+        output=output,
+    )
 
-        extensions = [
-            extension.command_line_argument()
-            for extension in self._configuration.extensions
-        ]
-        for extension in extensions:
-            flags.extend(["-extension", extension])
 
-        if self._nonblocking:
-            flags.append("-nonblocking")
+def _show_progress_log_and_display_type_errors(
+    log_path: Path,
+    socket_path: Path,
+    output: str,
+    remote_logging: Optional[backend_arguments.RemoteLogging],
+) -> commands.ExitCode:
+    LOG.info("Waiting for server...")
+    with start.background_logging(log_path):
+        type_errors = _read_type_errors(socket_path)
+        log_error_statistics(
+            remote_logging=remote_logging,
+            type_errors=type_errors,
+            command_name=COMMAND_NAME,
+        )
+        display_type_errors(type_errors, output=output)
+        return (
+            commands.ExitCode.SUCCESS
+            if len(type_errors) == 0
+            else commands.ExitCode.FOUND_ERRORS
+        )
 
-        return flags
+
+def run_incremental(
+    configuration: configuration_module.Configuration,
+    incremental_arguments: command_arguments.IncrementalArguments,
+) -> remote_logging_module.ExitCodeWithAdditionalLogging:
+    socket_path = server_connection.get_default_socket_path(
+        project_root=Path(configuration.project_root),
+        relative_local_root=Path(configuration.relative_local_root)
+        if configuration.relative_local_root
+        else None,
+    )
+    # Need to be consistent with the log symlink location in start command
+    log_path = Path(configuration.log_directory) / "new_server" / "server.stderr"
+    output = incremental_arguments.output
+    remote_logging = backend_arguments.RemoteLogging.create(
+        configuration.logger,
+        incremental_arguments.start_arguments.log_identifier,
+    )
+    try:
+        exit_code = _show_progress_log_and_display_type_errors(
+            log_path, socket_path, output, remote_logging
+        )
+        return remote_logging_module.ExitCodeWithAdditionalLogging(
+            exit_code=exit_code,
+            additional_logging={
+                "connected_to": "already_running_server",
+            },
+        )
+    except server_connection.ConnectionFailure:
+        pass
+
+    if incremental_arguments.no_start:
+        raise commands.ClientException("Cannot find a running Pyre server.")
+
+    LOG.info("Cannot find a running Pyre server. Starting a new one...")
+    start_status = start.run_start(configuration, incremental_arguments.start_arguments)
+    if start_status != commands.ExitCode.SUCCESS:
+        raise commands.ClientException(
+            f"`pyre start` failed with non-zero exit code: {start_status}"
+        )
+    exit_code = _show_progress_log_and_display_type_errors(
+        log_path, socket_path, output, remote_logging
+    )
+    return remote_logging_module.ExitCodeWithAdditionalLogging(
+        exit_code=exit_code,
+        additional_logging={
+            "connected_to": "newly_started_server",
+        },
+    )
+
+
+def _exit_code_from_error_kind(error_kind: server_event.ErrorKind) -> commands.ExitCode:
+    if error_kind == server_event.ErrorKind.WATCHMAN:
+        return commands.ExitCode.WATCHMAN_ERROR
+    elif error_kind == server_event.ErrorKind.BUCK_INTERNAL:
+        return commands.ExitCode.BUCK_INTERNAL_ERROR
+    elif error_kind == server_event.ErrorKind.BUCK_USER:
+        return commands.ExitCode.BUCK_USER_ERROR
+    return commands.ExitCode.FAILURE
+
+
+@remote_logging_module.log_usage_with_additional_info(command_name=COMMAND_NAME)
+def run(
+    configuration: configuration_module.Configuration,
+    incremental_arguments: command_arguments.IncrementalArguments,
+) -> remote_logging_module.ExitCodeWithAdditionalLogging:
+    try:
+        return run_incremental(configuration, incremental_arguments)
+    except server_event.ServerStartException as error:
+        raise commands.ClientException(
+            f"{error}", exit_code=_exit_code_from_error_kind(error.kind)
+        )
+    except Exception as error:
+        raise commands.ClientException(f"{error}") from error

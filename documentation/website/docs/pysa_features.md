@@ -106,7 +106,25 @@ def django.http.response.HttpResponse.__setitem__(
 ```
 
 In cases where the argument is not a constant, the feature will appear as
-`via-value:<unknown>`. If the argument is not provided at the call site (e.g,
+`via-value:<unknown:ARGUMENT_TYPE>`, where `ARGUMENT_TYPE` indicates how the
+argument value is provided at the callsite. For a model such as this:
+
+```python
+def f (first, second, third) -> TaintSource[Test, ViaValueOf[second]]:...
+```
+
+The following function invocations will produce the features shown
+in the comments:
+
+```
+f(*args)            # Generates via-value:<unknown:args>
+f(**kwargs)         # Generates via-value:<unknown:kwargs>
+f(second=foo)       # Generates via-value:<unknown:named>
+f(foo, bar)         # Generates via-value:<unknown:positional>
+f(*args, **kwargs)  # Generates via-value:<unknown:args_or_kwargs>
+```
+
+If the argument is not provided at the call site (e.g,
 using the default value), the feature will appear as `via-value:<missing>`.
 
 You can also associate a tag with a `via-value` feature to ensure that different
@@ -133,7 +151,7 @@ such as `"via-type": "str"`, `"via-type": "typing.List[str]"`, or `"via-type":
 
 `ViaTypeOf` is useful for sinks such as `subprocess.run`, which accepts
 `Union[bytes, str, Sequence]` for it's `arg` parameter. The `via-type` feature
-can help identify which type the argument to `arg` actaully had. Knowing the
+can help identify which type the argument to `arg` actually had. Knowing the
 type of the argument can help assess the severity of a given issue (user
 controlled input in a `str` passed to `arg` is much easier to exploit for RCE
 than user controlled input in one element of a `Sequence` passed to `arg`).
@@ -158,6 +176,29 @@ def subprocess.run(
 ): ...
 ```
 
+`ViaTypeOf` can also be used on attribute or global models, although tags are not supported. For example:
+```python
+my_module.MyClass.source: TaintSource[Test, ViaTypeOf] = ...
+my_module.MyClass.sink: TaintSource[Test, ViaTypeOf] = ...
+```
+
+A standalone `ViaTypeOf` is also supported in this case, and is shorthand for `TaintInTaintOut[ViaTypeOf]`:
+```python
+my_module.MyClass.my_attribute: ViaTypeOf = ...
+```
+
+Note that `ViaTypeOf` on `Annotated` types will not include the annotations after the first type specified.
+This is because Pyre does not store annotations as part of the type information. Consider the following code:
+```python
+from typing import Annotated
+
+class Foo:
+  x: Annotated[int, "foo"]
+```
+
+If there is a `ViaTypeOf` on `Foo.x` here, the feature shown on traces will be `via-type-of:typing.Annotated[int]`,
+**not** `via-type-of:typing.Annotated[int, "foo"]`.
+
 ### Supporting Features Dynamically Using `ViaDynamicFeature[]`
 
 In general, Pysa requires you to specify the list of features that are allowed. This encourages features
@@ -180,12 +221,13 @@ def subprocess.run(
 ### `via` Feature
 
 In addition to the manually specified `via` features, Pysa automatically adds
-some `via` features with special meaning such as `via:obscure`,
-`via:format-string`, and `via:tito`. `via:obscure` means that the flow passed
+some `via` features with special meaning such as `via:obscure:model`, `via:obscure:unknown-callee`,
+`via:format-string`, and `via:tito`. `via:obscure:model` means that the flow passed
 through code that Pysa does not have access to analyze, and thus some taint flow
-assumptions were made. This can be a useful to filter out flows that may be more
-noisy. `via:format-string` means that a flow passed through a [python
-f-string](https://www.python.org/dev/peps/pep-0498/) (`f"Variable:
+assumptions were made. This can be a useful feature to filter out flows that may be more
+noisy. `via:obscure:unknown-callee` means that a call cannot be resolved as the callee is
+unknown (most likely because of missing type information). `via:format-string` means that
+a flow passed through a [python f-string](https://www.python.org/dev/peps/pep-0498/) (`f"Variable:
 {variable_name}"`) or a `str.format`. Tito stands for taint-in-taint-out which refers to taint
 flows that enter a function via a parameter and then exit it in some form via
 the return value. The `via:tito` feature is attached automatically to all such

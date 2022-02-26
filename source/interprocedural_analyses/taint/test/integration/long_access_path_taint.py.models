@@ -8,10 +8,10 @@
         "port": "formal(request)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[request]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[request]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -19,10 +19,10 @@
         "port": "formal(kind)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[kind]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[kind]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -30,17 +30,20 @@
         "port": "formal(params)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 1 },
-              { "kind": "LocalReturn", "name": "[app_id]", "depth": 1 }
+            "kinds": [
+              {
+                "return_paths": [ "[app_id]", "[timestamp]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [
+            "local_features": [
               { "has": "first-index" },
               { "first-index": "app_id" },
               { "first-index": "timestamp" },
               { "always-via": "tito" }
-            ]
+            ],
+            "decl": null
           }
         ]
       },
@@ -48,11 +51,14 @@
         "port": "formal(id)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
+            "kinds": [
+              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -60,8 +66,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -77,10 +83,10 @@
         "port": "formal(request)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[request]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[request]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -88,10 +94,10 @@
         "port": "formal(kind)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[kind]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[kind]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -99,17 +105,20 @@
         "port": "formal(params)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 1 },
-              { "kind": "LocalReturn", "name": "[app_id]", "depth": 1 }
+            "kinds": [
+              {
+                "return_paths": [ "[app_id]", "[timestamp]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [
+            "local_features": [
               { "has": "first-index" },
               { "first-index": "app_id" },
               { "first-index": "timestamp" },
               { "always-via": "tito" }
-            ]
+            ],
+            "decl": null
           }
         ]
       },
@@ -117,11 +126,14 @@
         "port": "formal(id)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
+            "kinds": [
+              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -129,8 +141,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -146,10 +158,10 @@
         "port": "formal(request)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[request]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[request]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -157,10 +169,10 @@
         "port": "formal(kind)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[kind]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[kind]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -168,21 +180,24 @@
         "port": "formal(params)",
         "taint": [
           {
-            "decl": null,
-            "tito": [
-              { "line": 15, "start": 25, "end": 31 },
-              { "line": 16, "start": 22, "end": 28 }
+            "kinds": [
+              {
+                "return_paths": [ "[app_id]", "[timestamp]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 1 },
-              { "kind": "LocalReturn", "name": "[app_id]", "depth": 1 }
-            ],
-            "features": [
+            "local_features": [
               { "has": "first-index" },
               { "first-index": "app_id" },
               { "first-index": "timestamp" },
               { "always-via": "tito" }
-            ]
+            ],
+            "tito": [
+              { "line": 15, "start": 25, "end": 31 },
+              { "line": 16, "start": 22, "end": 28 }
+            ],
+            "decl": null
           }
         ]
       },
@@ -190,11 +205,14 @@
         "port": "formal(id)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
+            "kinds": [
+              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
             ],
-            "features": [ { "always-type": "scalar" } ]
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -202,8 +220,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -219,12 +237,16 @@
         "port": "formal(request)",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 31, "start": 37, "end": 44 } ],
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[request]", "depth": 1 }
+            "kinds": [
+              {
+                "return_paths": [ "[request]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 31, "start": 37, "end": 44 } ],
+            "decl": null
           }
         ]
       },
@@ -232,7 +254,19 @@
         "port": "formal(params)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              {
+                "return_paths": [
+                  "[app_id]", "[kind]", "[request]", "[timestamp]"
+                ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
             "tito": [
               { "line": 24, "start": 19, "end": 25 },
               { "line": 29, "start": 30, "end": 36 },
@@ -240,13 +274,7 @@
               { "line": 31, "start": 31, "end": 35 },
               { "line": 31, "start": 37, "end": 44 }
             ],
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[timestamp]", "depth": 1 },
-              { "kind": "LocalReturn", "name": "[request]", "depth": 1 },
-              { "kind": "LocalReturn", "name": "[kind]", "depth": 1 },
-              { "kind": "LocalReturn", "name": "[app_id]", "depth": 1 }
-            ],
-            "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
+            "decl": null
           }
         ]
       },
@@ -254,26 +282,20 @@
         "port": "formal(id)",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 31, "start": 19, "end": 21 } ],
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[id]", "depth": 1 }
+            "kinds": [
+              {
+                "return_paths": [ "[id]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [
+            "local_features": [
+              { "always-type": "integer" },
               { "always-type": "scalar" },
               { "always-via": "tito" }
-            ]
-          }
-        ]
-      },
-      {
-        "port": "formal(cls)",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [ { "line": 31, "start": 15, "end": 18 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [ { "always-via": "tito" } ]
+            ],
+            "tito": [ { "line": 31, "start": 19, "end": 21 } ],
+            "decl": null
           }
         ]
       }

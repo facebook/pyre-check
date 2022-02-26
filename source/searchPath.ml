@@ -1,23 +1,26 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
 
 open Core
-module Path = PyrePath
 
 type t =
-  | Root of Path.t
+  | Root of PyrePath.t
   | Subdirectory of {
-      root: Path.t;
+      root: PyrePath.t;
       subdirectory: string;
+    }
+  | Submodule of {
+      root: PyrePath.t;
+      submodule: string;
     }
 [@@deriving sexp, compare, hash]
 
 type search_result = {
-  relative_path: Path.RelativePath.t;
+  relative_path: PyrePath.RelativePath.t;
   priority: int;
 }
 
@@ -26,37 +29,52 @@ let equal = [%compare.equal: t]
 let get_root path =
   match path with
   | Root root -> root
-  | Subdirectory { root; _ } -> root
+  | Subdirectory { root; _ }
+  | Submodule { root; _ } ->
+      root
 
 
 let to_path path =
   match path with
   | Root root -> root
-  | Subdirectory { root; subdirectory } -> Path.create_relative ~root ~relative:subdirectory
+  | Subdirectory { root; subdirectory = relative }
+  | Submodule { root; submodule = relative } ->
+      PyrePath.create_relative ~root ~relative
 
 
 let pp formatter = function
-  | Root root -> Path.pp formatter root
-  | Subdirectory { root; subdirectory } ->
-      Format.fprintf formatter "%a$%s" Path.pp root subdirectory
+  | Root root -> PyrePath.pp formatter root
+  | Subdirectory { root; subdirectory = relative }
+  | Submodule { root; submodule = relative } ->
+      Format.fprintf formatter "%a$%s" PyrePath.pp root relative
 
 
 let show path = Format.asprintf "%a" pp path
 
 let create serialized =
   match String.split serialized ~on:'$' with
-  | [root] -> Root (Path.create_absolute root)
-  | [root; subdirectory] -> Subdirectory { root = Path.create_absolute root; subdirectory }
+  | [root] -> Root (PyrePath.create_absolute root)
+  | [root; path] -> (
+      match String.split path ~on:'.' with
+      | [subdirectory] -> Subdirectory { root = PyrePath.create_absolute root; subdirectory }
+      | _ -> Submodule { root = PyrePath.create_absolute root; submodule = path })
   | _ -> failwith (Format.asprintf "Unable to create search path from %s" serialized)
 
 
 let normalize = function
-  | Root root -> Root (Path.create_absolute ~follow_symbolic_links:true (Path.absolute root))
+  | Root root ->
+      Root (PyrePath.create_absolute ~follow_symbolic_links:true (PyrePath.absolute root))
   | Subdirectory { root; subdirectory } ->
       Subdirectory
         {
-          root = Path.create_absolute ~follow_symbolic_links:true (Path.absolute root);
+          root = PyrePath.create_absolute ~follow_symbolic_links:true (PyrePath.absolute root);
           subdirectory;
+        }
+  | Submodule { root; submodule } ->
+      Submodule
+        {
+          root = PyrePath.create_absolute ~follow_symbolic_links:true (PyrePath.absolute root);
+          submodule;
         }
 
 
@@ -65,13 +83,18 @@ let create_normalized serialized = create serialized |> normalize
 let search_for_path ~search_paths path =
   let under_root search_path =
     let open Option in
-    if Path.directory_contains ~directory:(to_path search_path) path then
+    let found =
+      match search_path with
+      | Submodule _ -> PyrePath.equal (to_path search_path) path
+      | _ -> PyrePath.directory_contains ~directory:(to_path search_path) path
+    in
+    if found then
       let root = get_root search_path in
-      Path.get_relative_to_root ~root ~path
-      >>| (fun relative -> Path.create_relative ~root ~relative)
+      PyrePath.get_relative_to_root ~root ~path
+      >>| (fun relative -> PyrePath.create_relative ~root ~relative)
       >>= function
-      | Path.Absolute _ -> None
-      | Path.Relative relative -> Some relative
+      | PyrePath.Absolute _ -> None
+      | PyrePath.Relative relative -> Some relative
     else
       None
   in

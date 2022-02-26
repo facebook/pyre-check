@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,45 +10,175 @@ open Analysis
 open Ast
 open Expression
 
-type regular_targets = {
-  implicit_self: bool;
-  collapse_tito: bool;
-  targets: Target.t list;
-}
-[@@deriving eq, show]
+module CallTarget : sig
+  type t = {
+    target: Target.t;
+    (* True if the call has an implicit receiver.
+     * For instance, `x.foo()` should be treated as `C.foo(x)`. *)
+    implicit_self: bool;
+    (* True if this is an implicit call to the `__call__` method. *)
+    implicit_dunder_call: bool;
+    (* True if we should collapse the taint from arguments, cf. the taint analysis. *)
+    collapse_tito: bool;
+    (* The textual order index of the call in the function. *)
+    index: int;
+  }
+  [@@deriving eq, show]
 
-type raw_callees =
-  | ConstructorTargets of {
-      new_targets: Target.t list;
-      init_targets: Target.t list;
-    }
-  | RegularTargets of regular_targets
-  | HigherOrderTargets of {
-      higher_order_function: regular_targets;
-      callable_argument: int * regular_targets;
-    }
-[@@deriving eq, show]
+  val target : t -> Target.t
 
-type callees =
-  | Callees of raw_callees
-  | SyntheticCallees of raw_callees String.Map.Tree.t
-[@@deriving eq, show]
+  val create
+    :  ?implicit_self:bool ->
+    ?implicit_dunder_call:bool ->
+    ?collapse_tito:bool ->
+    ?index:int ->
+    Target.t ->
+    t
+end
 
-val pp_raw_callees_option : Format.formatter -> raw_callees option -> unit
+(* Information about an argument being a callable. *)
+module HigherOrderParameter : sig
+  type t = {
+    index: int;
+    call_targets: CallTarget.t list;
+    return_type: Type.t;
+  }
+  [@@deriving eq, show]
+end
+
+(* An aggregate of all possible callees at a call site. *)
+module CallCallees : sig
+  type t = {
+    (* Normal call targets. *)
+    call_targets: CallTarget.t list;
+    (* Call targets for calls to the `__new__` class method. *)
+    new_targets: CallTarget.t list;
+    (* Call targets for calls to the `__init__` instance method. *)
+    init_targets: CallTarget.t list;
+    (* The return type of the call. *)
+    return_type: Type.t;
+    (* Information about an argument being a callable, and possibly called. *)
+    higher_order_parameter: HigherOrderParameter.t option;
+    (* True if at least one callee could not be resolved.
+     * Usually indicates missing type information at the call site. *)
+    unresolved: bool;
+  }
+  [@@deriving eq, show]
+
+  val create
+    :  ?call_targets:CallTarget.t list ->
+    ?new_targets:CallTarget.t list ->
+    ?init_targets:CallTarget.t list ->
+    ?higher_order_parameter:HigherOrderParameter.t ->
+    ?unresolved:bool ->
+    return_type:Type.t ->
+    unit ->
+    t
+
+  val create_unresolved : Type.t -> t
+
+  val is_partially_resolved : t -> bool
+
+  val pp_option : Format.formatter -> t option -> unit
+end
+
+(* An aggregrate of all possible callees for a given attribute access. *)
+module AttributeAccessCallees : sig
+  type t = {
+    property_targets: CallTarget.t list;
+    global_targets: CallTarget.t list;
+    return_type: Type.t;
+    (* True if the attribute access should also be considered a regular attribute.
+     * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
+    is_attribute: bool;
+  }
+  [@@deriving eq, show]
+
+  val empty : t
+end
+
+(* An aggregate of all possible callees for a given identifier expression. *)
+module IdentifierCallees : sig
+  type t = { global_targets: CallTarget.t list } [@@deriving eq, show]
+end
+
+(* An aggregate of all implicit callees for any expression used in a f string *)
+module FormatStringCallees : sig
+  type t = { call_targets: CallTarget.t list } [@@deriving eq, show]
+end
+
+(* An aggregate of all possible callees for an arbitrary expression. *)
+module ExpressionCallees : sig
+  type t = {
+    call: CallCallees.t option;
+    attribute_access: AttributeAccessCallees.t option;
+    identifier: IdentifierCallees.t option;
+    format_string: FormatStringCallees.t option;
+  }
+  [@@deriving eq, show]
+
+  val from_call : CallCallees.t -> t
+
+  val from_call_with_empty_attribute : CallCallees.t -> t
+
+  val from_attribute_access : AttributeAccessCallees.t -> t
+
+  val from_identifier : IdentifierCallees.t -> t
+
+  val from_format_string : FormatStringCallees.t -> t
+end
+
+(* An aggregate of all possible callees for an arbitrary location.
+ * Note that multiple expressions might have the same location. *)
+module LocationCallees : sig
+  type t =
+    | Singleton of ExpressionCallees.t
+    | Compound of ExpressionCallees.t String.Map.Tree.t
+  [@@deriving eq, show]
+end
+
+module DefineCallGraph : sig
+  type t [@@deriving eq, show]
+
+  val empty : t
+
+  val add : t -> location:Ast.Location.t -> callees:LocationCallees.t -> t
+
+  val resolve_call
+    :  t ->
+    location:Ast.Location.t ->
+    call:Ast.Expression.Call.t ->
+    CallCallees.t option
+
+  val resolve_attribute_access
+    :  t ->
+    location:Ast.Location.t ->
+    attribute:string ->
+    AttributeAccessCallees.t option
+
+  val resolve_identifier
+    :  t ->
+    location:Ast.Location.t ->
+    identifier:string ->
+    IdentifierCallees.t option
+
+  val resolve_format_string : t -> location:Ast.Location.t -> FormatStringCallees.t option
+
+  (* For testing purpose only. *)
+  val equal_ignoring_types : t -> t -> bool
+end
 
 val call_graph_of_define
   :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   define:Ast.Statement.Define.t ->
-  callees Ast.Location.Map.t
-
-val call_name : Call.t -> string
+  DefineCallGraph.t
 
 val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
 
 val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
 
 module SharedMemory : sig
-  val add : callable:Target.callable_t -> callees:callees Location.Map.t -> unit
+  val add : callable:Target.callable_t -> call_graph:DefineCallGraph.t -> unit
 
   (* Attempts to read the call graph for the given callable from shared memory. If it doesn't exist,
      computes the call graph and writes to shard memory. *)
@@ -56,7 +186,7 @@ module SharedMemory : sig
     :  callable:Target.callable_t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     define:Ast.Statement.Define.t ->
-    callees Ast.Location.Map.t
+    DefineCallGraph.t
 
   val remove : Target.callable_t list -> unit
 end

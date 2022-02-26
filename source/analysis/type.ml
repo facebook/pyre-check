@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -157,10 +157,11 @@ module Record = struct
         | Broadcast of 'annotation record_broadcast
       [@@deriving compare, eq, sexp, show, hash]
 
-      (* No need for concrete against concrete case, since that should be normalized to Bottom or an
-         answer. Only need one concrete against concatenation case because `Broadcast` is a
-         commutative operator. *)
       and 'annotation record_broadcast =
+        | ConcreteAgainstConcrete of {
+            left: 'annotation list;
+            right: 'annotation list;
+          }
         | ConcreteAgainstConcatenation of {
             concrete: 'annotation list;
             concatenation: 'annotation t;
@@ -199,6 +200,13 @@ module Record = struct
         create_from_unpackable ?prefix ?suffix (UnboundedElements annotation)
 
 
+      let create_unpackable_from_concrete_against_concrete ~compare_t ~left ~right =
+        if List.compare compare_t left right < 0 then
+          Broadcast (ConcreteAgainstConcrete { left = right; right = left })
+        else
+          Broadcast (ConcreteAgainstConcrete { left; right })
+
+
       let create_unpackable_from_concrete_against_concatenation ~concrete ~concatenation =
         Broadcast (ConcreteAgainstConcatenation { concrete; concatenation })
 
@@ -217,6 +225,13 @@ module Record = struct
                  left_concatenation = right_concatenation;
                  right_concatenation = left_concatenation;
                })
+
+
+      let create_from_concrete_against_concrete ?prefix ?suffix ~compare_t ~left ~right =
+        create_from_unpackable
+          ?prefix
+          ?suffix
+          (create_unpackable_from_concrete_against_concrete ~compare_t ~left ~right)
 
 
       let create_from_concrete_against_concatenation ?prefix ?suffix ~concrete ~concatenation =
@@ -263,6 +278,12 @@ module Record = struct
 
 
       and pp_broadcast ~pp_type format = function
+        | ConcreteAgainstConcrete { left; right } ->
+            Format.fprintf
+              format
+              "typing.Tuple[%s], typing.Tuple[%s]"
+              (show_type_list left ~pp_type)
+              (show_type_list right ~pp_type)
         | ConcreteAgainstConcatenation { concrete; concatenation } ->
             Format.fprintf
               format
@@ -306,7 +327,10 @@ module Record = struct
               get_item_call
                 ~location
                 "typing.Tuple"
-                [expression annotation; Expression.Ellipsis |> Node.create ~location]
+                [
+                  expression annotation;
+                  Expression.Constant Constant.Ellipsis |> Node.create ~location;
+                ]
           | Broadcast broadcast ->
               let concatenation_to_expression { prefix; middle; suffix } =
                 List.map ~f:expression prefix
@@ -315,6 +339,16 @@ module Record = struct
                 |> get_item_call ~location "typing.Tuple"
               in
               let broadcast_to_expression = function
+                | ConcreteAgainstConcrete { left; right } ->
+                    get_item_call
+                      ~location
+                      "pyre_extensions.Broadcast"
+                      [
+                        get_item_call ~location "typing.Tuple" (List.map ~f:expression left)
+                        |> Node.create ~location;
+                        get_item_call ~location "typing.Tuple" (List.map ~f:expression right)
+                        |> Node.create ~location;
+                      ]
                 | ConcreteAgainstConcatenation { concrete; concatenation } ->
                     get_item_call
                       ~location
@@ -408,25 +442,216 @@ module Record = struct
           None
 
 
+    (** Pair matching elements of the prefixes and suffixes.
+
+        [left_prefix] <middle> [left_suffix]
+
+        [right_prefix] <middle> [right_suffix]
+
+        gets split into:
+
+        * prefix_pairs: 1-1 pairs between left_prefix and right_prefix. If the middle element is an
+        unbounded tuple Tuple[X, ...], then pad the prefix with X in order to match the other
+        prefix.
+
+        * suffix_pairs: 1-1 pairs between left_suffix and right_suffix. Pad unbounded elements if
+        needed, as above.
+
+        [left_prefix_unpaired] <middle> [left_suffix_unpaired]
+
+        [right_prefix_unpaired] <middle> [right_suffix_unpaired] *)
+    let pair_matching_elements
+        { Concatenation.prefix = left_prefix; middle = left_middle; suffix = left_suffix }
+        { Concatenation.prefix = right_prefix; middle = right_middle; suffix = right_suffix }
+      =
+      let ( left_prefix,
+            left_prefix_unpaired,
+            left_suffix_unpaired,
+            left_suffix,
+            right_prefix,
+            right_prefix_unpaired,
+            right_suffix_unpaired,
+            right_suffix )
+        =
+        let pad ~to_the_left ~element ~length list =
+          let padding = List.init (length - List.length list) ~f:(fun _ -> element) in
+          if to_the_left then
+            padding @ list
+          else
+            list @ padding
+        in
+        let pad_prefix = pad ~to_the_left:true in
+        let pad_suffix = pad ~to_the_left:false in
+        let prefix_length = Int.min (List.length left_prefix) (List.length right_prefix) in
+        let suffix_length = Int.min (List.length left_suffix) (List.length right_suffix) in
+        let left_prefix, left_prefix_unpaired = List.split_n left_prefix prefix_length in
+        let right_prefix, right_prefix_unpaired = List.split_n right_prefix prefix_length in
+        let left_suffix_unpaired, left_suffix =
+          List.split_n left_suffix (List.length left_suffix - suffix_length)
+        in
+        let right_suffix_unpaired, right_suffix =
+          List.split_n right_suffix (List.length right_suffix - suffix_length)
+        in
+        match left_middle, right_middle with
+        | UnboundedElements left_unbounded, UnboundedElements right_unbounded ->
+            let left_prefix, right_prefix =
+              match left_prefix_unpaired, right_prefix_unpaired with
+              | [], _ ->
+                  ( pad_suffix
+                      ~element:left_unbounded
+                      ~length:(List.length right_prefix + List.length right_prefix_unpaired)
+                      left_prefix,
+                    right_prefix @ right_prefix_unpaired )
+              | _, [] ->
+                  ( left_prefix @ left_prefix_unpaired,
+                    pad_suffix
+                      ~element:right_unbounded
+                      ~length:(List.length left_prefix + List.length left_prefix_unpaired)
+                      right_prefix )
+              | _, _ -> left_prefix, right_prefix
+            in
+            let left_suffix, right_suffix =
+              match left_suffix_unpaired, right_suffix_unpaired with
+              | [], _ ->
+                  ( pad_prefix
+                      ~element:left_unbounded
+                      ~length:(List.length right_suffix + List.length right_suffix_unpaired)
+                      left_suffix,
+                    right_suffix_unpaired @ right_suffix )
+              | _, [] ->
+                  ( left_suffix_unpaired @ left_suffix,
+                    pad_prefix
+                      ~element:right_unbounded
+                      ~length:(List.length left_suffix + List.length left_suffix_unpaired)
+                      right_suffix )
+              | _, _ -> left_suffix, right_suffix
+            in
+            (* There are no unpaired elements because we can always match two unbounded tuple
+               concatenations by padding. *)
+            left_prefix, [], [], left_suffix, right_prefix, [], [], right_suffix
+        | UnboundedElements left_unbounded, _ ->
+            let left_prefix, right_prefix, right_prefix_unpaired =
+              match left_prefix_unpaired with
+              | [] ->
+                  ( pad_suffix
+                      ~element:left_unbounded
+                      ~length:(List.length right_prefix + List.length right_prefix_unpaired)
+                      left_prefix,
+                    right_prefix @ right_prefix_unpaired,
+                    [] )
+              | _ -> left_prefix, right_prefix, right_prefix_unpaired
+            in
+            let left_suffix, right_suffix, right_suffix_unpaired =
+              match left_suffix_unpaired with
+              | [] ->
+                  ( pad_prefix
+                      ~element:left_unbounded
+                      ~length:(List.length right_suffix + List.length right_suffix_unpaired)
+                      left_suffix,
+                    right_suffix_unpaired @ right_suffix,
+                    [] )
+              | _ -> left_suffix, right_suffix, right_suffix_unpaired
+            in
+            ( left_prefix,
+              left_prefix_unpaired,
+              left_suffix_unpaired,
+              left_suffix,
+              right_prefix,
+              right_prefix_unpaired,
+              right_suffix_unpaired,
+              right_suffix )
+        | _, UnboundedElements right_unbounded ->
+            let right_prefix, left_prefix, left_prefix_unpaired =
+              match right_prefix_unpaired with
+              | [] ->
+                  ( pad_suffix
+                      ~element:right_unbounded
+                      ~length:(List.length left_prefix + List.length left_prefix_unpaired)
+                      right_prefix,
+                    left_prefix @ left_prefix_unpaired,
+                    [] )
+              | _ -> right_prefix, left_prefix, left_prefix_unpaired
+            in
+            let right_suffix, left_suffix, left_suffix_unpaired =
+              match right_suffix_unpaired with
+              | [] ->
+                  ( pad_prefix
+                      ~element:right_unbounded
+                      ~length:(List.length left_suffix + List.length left_suffix_unpaired)
+                      right_suffix,
+                    left_suffix_unpaired @ left_suffix,
+                    [] )
+              | _ -> right_suffix, left_suffix, left_suffix_unpaired
+            in
+            ( left_prefix,
+              left_prefix_unpaired,
+              left_suffix_unpaired,
+              left_suffix,
+              right_prefix,
+              right_prefix_unpaired,
+              right_suffix_unpaired,
+              right_suffix )
+        | _, _ ->
+            ( left_prefix,
+              left_prefix_unpaired,
+              left_suffix_unpaired,
+              left_suffix,
+              right_prefix,
+              right_prefix_unpaired,
+              right_suffix_unpaired,
+              right_suffix )
+      in
+      match List.zip left_prefix right_prefix, List.zip left_suffix right_suffix with
+      | Ok prefix_pairs, Ok suffix_pairs ->
+          Some
+            ( prefix_pairs,
+              left_prefix_unpaired,
+              right_prefix_unpaired,
+              suffix_pairs,
+              left_suffix_unpaired,
+              right_suffix_unpaired )
+      | _ -> None
+
+
     let split_matching_elements_by_length left right =
       let split_concrete_against_concatenation
           ~is_left_concrete
           ~concrete
           ~concatenation:{ Concatenation.prefix; middle; suffix }
         =
-        let concrete_prefix, concrete_rest = List.split_n concrete (List.length prefix) in
+        let prefix_length = List.length prefix in
+        let suffix_length = List.length suffix in
+        let concrete_prefix, concrete_rest = List.split_n concrete prefix_length in
         let concrete_middle, concrete_suffix =
-          List.split_n concrete_rest (List.length concrete_rest - List.length suffix)
+          List.split_n concrete_rest (List.length concrete_rest - suffix_length)
         in
         let prefix_pairs, middle_pair, suffix_pairs =
-          if is_left_concrete then
-            ( List.zip concrete_prefix prefix,
-              (Concrete concrete_middle, Concatenation { prefix = []; middle; suffix = [] }),
-              List.zip concrete_suffix suffix )
-          else
-            ( List.zip prefix concrete_prefix,
-              (Concatenation { prefix = []; middle; suffix = [] }, Concrete concrete_middle),
-              List.zip suffix concrete_suffix )
+          match middle, is_left_concrete with
+          | UnboundedElements unbounded, _ ->
+              let concrete_length = List.length concrete in
+              let middle =
+                if concrete_length > prefix_length + suffix_length then
+                  List.init
+                    (List.length concrete - List.length prefix - List.length suffix)
+                    ~f:(fun _ -> unbounded)
+                else
+                  []
+              in
+              let pairs =
+                if is_left_concrete then
+                  List.zip concrete (prefix @ middle @ suffix)
+                else
+                  List.zip (prefix @ middle @ suffix) concrete
+              in
+              pairs, (Concrete [], Concrete []), List.Or_unequal_lengths.Ok []
+          | _, true ->
+              ( List.zip concrete_prefix prefix,
+                (Concrete concrete_middle, Concatenation { prefix = []; middle; suffix = [] }),
+                List.zip concrete_suffix suffix )
+          | _, false ->
+              ( List.zip prefix concrete_prefix,
+                (Concatenation { prefix = []; middle; suffix = [] }, Concrete concrete_middle),
+                List.zip suffix concrete_suffix )
         in
         match prefix_pairs, middle_pair, suffix_pairs with
         | Ok prefix_pairs, middle_pair, Ok suffix_pairs ->
@@ -446,50 +671,78 @@ module Record = struct
             ~is_left_concrete:false
             ~concrete:right
             ~concatenation
-      | ( Concatenation { prefix = left_prefix; middle = left_middle; suffix = left_suffix },
-          Concatenation { prefix = right_prefix; middle = right_middle; suffix = right_suffix } )
-        -> (
-          let prefix_length = Int.min (List.length left_prefix) (List.length right_prefix) in
-          let suffix_length = Int.min (List.length left_suffix) (List.length right_suffix) in
-          let left_prefix, left_prefix_rest = List.split_n left_prefix prefix_length in
-          let right_prefix, right_prefix_rest = List.split_n right_prefix prefix_length in
-          let left_suffix_rest, left_suffix =
-            List.split_n left_suffix (List.length left_suffix - suffix_length)
-          in
-          let right_suffix_rest, right_suffix =
-            List.split_n right_suffix (List.length right_suffix - suffix_length)
-          in
-          match List.zip left_prefix right_prefix, List.zip left_suffix right_suffix with
-          | Ok prefix_pairs, Ok suffix_pairs -> (
-              match left_middle, right_middle, right_prefix_rest, right_suffix_rest with
-              | UnboundedElements left_unbounded, UnboundedElements right_unbounded, [], [] ->
-                  Some
+      | ( Concatenation ({ middle = left_middle; _ } as left_record),
+          Concatenation ({ middle = right_middle; _ } as right_record) ) -> (
+          pair_matching_elements left_record right_record
+          >>= fun ( prefix_pairs,
+                    left_prefix_unpaired,
+                    right_prefix_unpaired,
+                    suffix_pairs,
+                    left_suffix_unpaired,
+                    right_suffix_unpaired ) ->
+          match left_middle, right_middle, right_prefix_unpaired, right_suffix_unpaired with
+          | UnboundedElements left_unbounded, UnboundedElements right_unbounded, [], [] ->
+              Some
+                {
+                  prefix_pairs;
+                  middle_pair = Concrete [left_unbounded], Concrete [right_unbounded];
+                  suffix_pairs;
+                }
+          | _ ->
+              let middle_pair =
+                ( Concatenation
                     {
-                      prefix_pairs =
-                        prefix_pairs
-                        @ List.map left_prefix_rest ~f:(fun concrete -> concrete, right_unbounded);
-                      middle_pair = Concrete [left_unbounded], Concrete [right_unbounded];
-                      suffix_pairs =
-                        List.map left_suffix_rest ~f:(fun concrete -> concrete, right_unbounded)
-                        @ suffix_pairs;
-                    }
-              | _ ->
-                  let middle_pair =
-                    ( Concatenation
-                        {
-                          prefix = left_prefix_rest;
-                          middle = left_middle;
-                          suffix = left_suffix_rest;
-                        },
-                      Concatenation
-                        {
-                          prefix = right_prefix_rest;
-                          middle = right_middle;
-                          suffix = right_suffix_rest;
-                        } )
-                  in
-                  Some { prefix_pairs; middle_pair; suffix_pairs })
-          | _ -> None)
+                      prefix = left_prefix_unpaired;
+                      middle = left_middle;
+                      suffix = left_suffix_unpaired;
+                    },
+                  Concatenation
+                    {
+                      prefix = right_prefix_unpaired;
+                      middle = right_middle;
+                      suffix = right_suffix_unpaired;
+                    } )
+              in
+              Some { prefix_pairs; middle_pair; suffix_pairs })
+
+
+    let drop_prefix ~length = function
+      | Concrete elements ->
+          Concrete (List.drop elements length) |> Option.some_if (length <= List.length elements)
+      | Concatenation ({ prefix; middle = UnboundedElements _; _ } as concatenation) ->
+          (* We can drop indefinitely many elements after the concrete prefix because the middle
+             element is an unbounded tuple. *)
+          Concatenation { concatenation with prefix = List.drop prefix length } |> Option.some
+      | Concatenation ({ prefix; middle = Variadic _ | Broadcast _; _ } as concatenation) ->
+          (* Variadic or Broadcast middle element may be empty, so we cannot drop any elements past
+             the concrete prefix. *)
+          List.drop prefix length
+          |> Option.some_if (length <= List.length prefix)
+          >>| fun new_prefix -> Concatenation { concatenation with prefix = new_prefix }
+
+
+    let index ~python_index = function
+      | Concrete elements ->
+          let index =
+            if python_index < 0 then List.length elements + python_index else python_index
+          in
+          List.nth elements index
+      | Concatenation { prefix; middle; suffix } -> (
+          let result =
+            if python_index >= 0 then
+              List.nth prefix python_index
+            else
+              List.nth suffix (python_index + List.length suffix)
+          in
+          match middle with
+          | UnboundedElements unbounded ->
+              (* We can index indefinitely many elements in the unbounded tuple. *)
+              result |> Option.value ~default:unbounded |> Option.some
+          | Variadic _
+          | Broadcast _ ->
+              (* Variadic or Broadcast middle element may be empty, so we cannot index any elements
+                 past the concrete prefix. *)
+              result)
   end
 
   module Callable = struct
@@ -1617,17 +1870,6 @@ let is_ellipsis = function
   | _ -> false
 
 
-let is_final = function
-  | Parametric { name = "typing.Final" | "typing_extensions.Final"; _ } -> true
-  | Primitive ("typing.Final" | "typing_extensions.Final") -> true
-  | _ -> false
-
-
-let is_generator = function
-  | Parametric { name = "typing.Generator" | "typing.AsyncGenerator"; _ } -> true
-  | _ -> false
-
-
 let is_generic_primitive = function
   | Primitive "typing.Generic" -> true
   | _ -> false
@@ -1712,11 +1954,34 @@ let is_union = function
   | _ -> false
 
 
-let is_falsy = function
+let is_variable = function
+  | Variable _ -> true
+  | _ -> false
+
+
+let rec is_falsy = function
   | NoneType
   | Literal (Boolean false)
-  | Literal (Integer 0) ->
+  | Literal (Integer 0)
+  | Literal (String (LiteralValue ""))
+  | Literal (Bytes "") ->
       true
+  | Annotated annotated -> is_falsy annotated
+  | Union types -> List.for_all types ~f:is_falsy
+  | _ -> false
+
+
+let rec is_truthy = function
+  | Literal (Boolean true)
+  | Callable _ ->
+      true
+  | Literal (Integer i) when not (Int.equal i 0) -> true
+  | Literal (String (LiteralValue value))
+  | Literal (Bytes value)
+    when not (String.is_empty value) ->
+      true
+  | Annotated annotated -> is_truthy annotated
+  | Union types -> List.for_all types ~f:is_truthy
   | _ -> false
 
 
@@ -1724,6 +1989,7 @@ let reverse_substitute name =
   match name with
   | "collections.defaultdict" -> "typing.DefaultDict"
   | "dict" -> "typing.Dict"
+  | "frozenset" -> "typing.FrozenSet"
   | "list" -> "typing.List"
   | "set" -> "typing.Set"
   | "type" -> "typing.Type"
@@ -1811,7 +2077,7 @@ let rec pp format annotation =
   | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal (String (LiteralValue literal)) ->
       Format.fprintf format "typing_extensions.Literal['%s']" literal
-  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.Literal[str]"
+  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.LiteralString"
   | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
   | Literal (EnumerationMember { enumeration_type; member_name }) ->
       Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
@@ -1897,7 +2163,7 @@ and pp_concise format annotation =
   | Literal (Integer literal) -> Format.fprintf format "typing_extensions.Literal[%d]" literal
   | Literal (String (LiteralValue literal)) ->
       Format.fprintf format "typing_extensions.Literal['%s']" literal
-  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.Literal[str]"
+  | Literal (String AnyLiteral) -> Format.fprintf format "typing_extensions.LiteralString"
   | Literal (Bytes literal) -> Format.fprintf format "typing_extensions.Literal[b'%s']" literal
   | Literal (EnumerationMember { enumeration_type; member_name }) ->
       Format.fprintf format "typing_extensions.Literal[%s.%s]" (show enumeration_type) member_name
@@ -1986,15 +2252,20 @@ let float = Primitive "float"
 
 let number = Primitive "numbers.Number"
 
-let generator ?(async = false) parameter =
-  if async then
-    Parametric { name = "typing.AsyncGenerator"; parameters = [Single parameter; Single NoneType] }
-  else
-    Parametric
-      {
-        name = "typing.Generator";
-        parameters = [Single parameter; Single NoneType; Single NoneType];
-      }
+let generator ?(yield_type = Any) ?(send_type = Any) ?(return_type = Any) () =
+  Parametric
+    {
+      name = "typing.Generator";
+      parameters = [Single yield_type; Single send_type; Single return_type];
+    }
+
+
+let generator_expression yield_type =
+  generator ~yield_type ~send_type:NoneType ~return_type:NoneType ()
+
+
+let async_generator ?(yield_type = Any) ?(send_type = Any) () =
+  Parametric { name = "typing.AsyncGenerator"; parameters = [Single yield_type; Single send_type] }
 
 
 let generic_primitive = Primitive "typing.Generic"
@@ -2082,6 +2353,7 @@ let parametric_substitution_map =
     "typing.Type", "type";
     "typing_extensions.Protocol", "typing.Protocol";
     "pyre_extensions.Generic", "typing.Generic";
+    "pyre_extensions.generic.Generic", "typing.Generic";
   ]
   |> Identifier.Table.of_alist_exn
 
@@ -2154,7 +2426,7 @@ let rec expression annotation =
               |> Node.create ~location
         in
         Expression.List (List.map ~f:convert_parameter parameters) |> Node.create ~location
-    | Undefined -> Node.create ~location Expression.Ellipsis
+    | Undefined -> Node.create ~location (Expression.Constant Constant.Ellipsis)
     | ParameterVariadicTypeVariable variable ->
         parameter_variable_type_representation variable |> expression
   in
@@ -2250,20 +2522,21 @@ let rec expression annotation =
     | Literal literal ->
         let literal =
           match literal with
-          | Boolean true -> Expression.True
-          | Boolean false -> Expression.False
-          | Integer literal -> Expression.Integer literal
+          | Boolean true -> Expression.Constant Constant.True
+          | Boolean false -> Expression.Constant Constant.False
+          | Integer literal -> Expression.Constant (Constant.Integer literal)
           | String (LiteralValue literal) ->
-              Expression.String { value = literal; kind = StringLiteral.String }
+              Expression.Constant (Constant.String { value = literal; kind = StringLiteral.String })
           | String AnyLiteral -> create_name "str"
-          | Bytes literal -> Expression.String { value = literal; kind = StringLiteral.Bytes }
+          | Bytes literal ->
+              Expression.Constant (Constant.String { value = literal; kind = StringLiteral.Bytes })
           | EnumerationMember { enumeration_type; member_name } ->
               Expression.Name
                 (Attribute
                    { base = expression enumeration_type; attribute = member_name; special = false })
         in
         get_item_call "typing_extensions.Literal" [Node.create ~location literal]
-    | NoneType -> create_name "None"
+    | NoneType -> Expression.Constant Constant.NoneLiteral
     | Parametric { name; parameters } ->
         let parameters =
           let expression_of_parameter = function
@@ -2370,7 +2643,7 @@ let rec expression annotation =
   in
   let value =
     match annotation with
-    | Primitive "..." -> Expression.Ellipsis
+    | Primitive "..." -> Expression.Constant Constant.Ellipsis
     | _ -> convert_annotation annotation
   in
   Node.create_with_default_location value
@@ -2413,6 +2686,8 @@ module Transform = struct
               Record.OrderedTypes.Concrete (visit_all concretes)
           | Concatenation concatenation -> Concatenation (visit_concatenation concatenation)
         and visit_broadcast = function
+          | ConcreteAgainstConcrete { left; right } ->
+              ConcreteAgainstConcrete { left = visit_all left; right = visit_all right }
           | ConcreteAgainstConcatenation { concrete; concatenation } ->
               ConcreteAgainstConcatenation
                 { concrete = visit_all concrete; concatenation = visit_concatenation concatenation }
@@ -2924,7 +3199,6 @@ let primitive_substitution_map =
   [
     "$bottom", Bottom;
     "$unknown", Top;
-    "None", none;
     "function", Callable.create ~annotation:Any ();
     "typing.Any", Any;
     "typing.ChainMap", Primitive "collections.ChainMap";
@@ -2932,6 +3206,7 @@ let primitive_substitution_map =
     "typing.DefaultDict", Primitive "collections.defaultdict";
     "typing.Deque", Primitive "collections.deque";
     "typing.Dict", Primitive "dict";
+    "typing.FrozenSet", Primitive "frozenset";
     "typing.List", Primitive "list";
     "typing.OrderedDict", Primitive "collections.OrderedDict";
     "typing.Set", Primitive "set";
@@ -2944,6 +3219,8 @@ let primitive_substitution_map =
     "TSelf", variable "_PathLike";
     (* This inherits from Any, and is expected to act just like Any *)
     "_NotImplementedType", Any;
+    "typing_extensions.LiteralString", Literal (String AnyLiteral);
+    "typing.LiteralString", Literal (String AnyLiteral);
   ]
   |> Identifier.Table.of_alist_exn
 
@@ -2954,12 +3231,12 @@ let primitive_name = function
 
 
 let create_literal = function
-  | Expression.True -> Some (Literal (Boolean true))
-  | Expression.False -> Some (Literal (Boolean false))
-  | Expression.Integer literal -> Some (Literal (Integer literal))
-  | Expression.String { StringLiteral.kind = StringLiteral.String; value } ->
+  | Expression.Constant Constant.True -> Some (Literal (Boolean true))
+  | Expression.Constant Constant.False -> Some (Literal (Boolean false))
+  | Expression.Constant (Constant.Integer literal) -> Some (Literal (Integer literal))
+  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value }) ->
       Some (Literal (String (LiteralValue value)))
-  | Expression.String { StringLiteral.kind = StringLiteral.Bytes; value } ->
+  | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
       Some (Literal (Bytes value))
   | Expression.Name
       (Attribute { base = { Node.value = Expression.Name base_name; _ }; attribute; _ }) -> (
@@ -2973,7 +3250,7 @@ let create_literal = function
                     member_name = attribute;
                   }))
       | _ -> None)
-  | Expression.Name (Identifier "None") -> Some none
+  | Expression.Constant Constant.NoneLiteral -> Some none
   | Expression.Name (Identifier "str") -> Some (Literal (String AnyLiteral))
   | _ -> None
 
@@ -3062,6 +3339,8 @@ module OrderedTypes = struct
 
   let union_upper_bound = function
     | Concrete concretes -> union concretes
+    | Concatenation { prefix; middle = UnboundedElements unbounded; suffix } ->
+        union (unbounded :: (prefix @ suffix))
     | Concatenation _ -> object_primitive
 
 
@@ -3159,8 +3438,13 @@ module OrderedTypes = struct
     | _ -> None
 
 
+  type 'annotation broadcasted_dimension =
+    | Ok of 'annotation
+    | VariableDimension
+    | BroadcastMismatch
+
   let broadcast left_type right_type =
-    let match_broadcasted_dimensions left_dimensions right_dimensions =
+    let broadcast_concrete_dimensions left_dimensions right_dimensions =
       let pad_with_ones ~length list =
         List.init (max 0 (length - List.length list)) ~f:(fun _ -> Literal (Integer 1)) @ list
       in
@@ -3177,30 +3461,65 @@ module OrderedTypes = struct
         match simplify_type left_dimension, simplify_type right_dimension with
         | Bottom, _
         | _, Bottom ->
-            None
+            BroadcastMismatch
         | Any, _
         | _, Any ->
-            Some Any
+            Ok Any
         | Primitive "int", _
         | _, Primitive "int" ->
-            Some (Primitive "int")
-        | Literal (Integer 1), _ -> Some right_dimension
-        | _, Literal (Integer 1) -> Some left_dimension
-        | Literal (Integer i), Literal (Integer j) when i = j -> Some left_dimension
+            Ok (Primitive "int")
+        | Literal (Integer 1), _ -> Ok right_dimension
+        | _, Literal (Integer 1) -> Ok left_dimension
+        | Literal (Integer i), Literal (Integer j) when i = j -> Ok left_dimension
         | Variable left_variable, Variable right_variable
           when [%equal: type_t Record.Variable.RecordUnary.record] left_variable right_variable ->
-            Some (Variable left_variable)
-        | _ -> None
+            Ok (Variable left_variable)
+        | Variable _, _
+        | _, Variable _ ->
+            VariableDimension
+        | _ -> BroadcastMismatch
       in
       let length = max (List.length left_dimensions) (List.length right_dimensions) in
+      let broadcast_error () =
+        Parametric
+          {
+            name = "pyre_extensions.BroadcastError";
+            parameters =
+              (if [%compare: type_t] left_type right_type < 0 then
+                 [Parameter.Single left_type; Parameter.Single right_type]
+              else
+                [Parameter.Single right_type; Parameter.Single left_type]);
+          }
+      in
       match
         List.map2
           (pad_with_ones ~length left_dimensions)
           (pad_with_ones ~length right_dimensions)
           ~f:broadcast_concrete_dimensions
       with
-      | Ok result -> Option.all result
-      | Unequal_lengths -> None
+      | Ok result -> (
+          let partitioned =
+            List.partition3_map result ~f:(function
+                | Ok annotation -> `Fst annotation
+                | VariableDimension -> `Snd ()
+                | BroadcastMismatch -> `Trd ())
+          in
+          match partitioned with
+          | broadcasted, [], [] -> Tuple (Concrete broadcasted)
+          | _, _ :: _, [] ->
+              (* There is at least one dimension that contains a variable. Preserve the dimensions
+                 as they are. We will broadcast when instantiating the variable with concrete
+                 literals. *)
+              Tuple
+                (Concatenation
+                   (Concatenation.create_from_concrete_against_concrete
+                      ~prefix:[]
+                      ~suffix:[]
+                      ~compare_t:compare_type_t
+                      ~left:left_dimensions
+                      ~right:right_dimensions))
+          | _ -> broadcast_error ())
+      | Unequal_lengths -> broadcast_error ()
     in
     match left_type, right_type with
     | Any, _
@@ -3209,19 +3528,7 @@ module OrderedTypes = struct
     | Parametric { name = "pyre_extensions.BroadcastError"; _ }, _ -> left_type
     | _, Parametric { name = "pyre_extensions.BroadcastError"; _ } -> right_type
     | Tuple (Concrete left_dimensions), Tuple (Concrete right_dimensions) ->
-        match_broadcasted_dimensions left_dimensions right_dimensions
-        >>| (fun new_dimensions -> Tuple (Concrete new_dimensions))
-        |> Option.value
-             ~default:
-               (Parametric
-                  {
-                    name = "pyre_extensions.BroadcastError";
-                    parameters =
-                      (if [%compare: type_t] left_type right_type < 0 then
-                         [Parameter.Single left_type; Parameter.Single right_type]
-                      else
-                        [Parameter.Single right_type; Parameter.Single left_type]);
-                  })
+        broadcast_concrete_dimensions left_dimensions right_dimensions
     | ( Tuple (Concrete concrete),
         Tuple
           (Concatenation { prefix = []; middle = UnboundedElements (Primitive "int"); suffix = [] })
@@ -3275,6 +3582,50 @@ module OrderedTypes = struct
     | Concrete dimensions -> Tuple (Concrete (prefix @ dimensions @ suffix))
     | Concatenation { prefix = new_prefix; middle; suffix = new_suffix } ->
         Tuple (Concatenation { prefix = prefix @ new_prefix; middle; suffix = new_suffix @ suffix })
+
+
+  let coalesce_ordered_types ordered_types =
+    let concatenate_ordered_types = function
+      | [] -> Some (Concrete [])
+      | head :: tail ->
+          let concatenate sofar next = sofar >>= fun left -> concatenate ~left ~right:next in
+          List.fold tail ~f:concatenate ~init:(Some head)
+    in
+    let is_concrete = function
+      | Concrete _ -> true
+      | _ -> false
+    in
+    let separated_prefixes_and_suffixes =
+      List.concat_map ordered_types ~f:(function
+          | Concatenation { prefix; middle; suffix } ->
+              [Concrete prefix; Concatenation { prefix = []; middle; suffix = [] }; Concrete suffix]
+          | Concrete _ as concrete -> [concrete])
+    in
+    let concrete_tuples_prefix, rest =
+      List.split_while separated_prefixes_and_suffixes ~f:is_concrete
+    in
+    let concrete_tuples_suffix, middle_items =
+      List.rev rest |> List.split_while ~f:is_concrete |> fun (xs, ys) -> List.rev xs, List.rev ys
+    in
+    match middle_items with
+    | _ :: _ :: _ ->
+        (* There are multiple unpacked tuples. Coalesce them into a single tuple with a common
+           iterable type so that we can compare it to an expected tuple type. *)
+        let extract_common_type = function
+          | Concrete items -> Some (union items)
+          | Concatenation { middle = UnboundedElements item_type; prefix; suffix } ->
+              union (item_type :: (prefix @ suffix)) |> Option.some
+          | Concatenation { middle = Variadic _ | Broadcast _; _ } -> None
+        in
+        List.map middle_items ~f:extract_common_type
+        |> Option.all
+        >>| union
+        >>| (fun item_type ->
+              concrete_tuples_prefix
+              @ [Concatenation (Concatenation.create_from_unbounded_element item_type)]
+              @ concrete_tuples_suffix)
+        >>= concatenate_ordered_types
+    | _ -> concatenate_ordered_types ordered_types
 end
 
 module TypeOperation = struct
@@ -3552,7 +3903,10 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | Some
             ({
                Call.Argument.value =
-                 { Node.value = Expression.String { StringLiteral.value; _ }; _ };
+                 {
+                   Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ });
+                   _;
+                 };
                _;
              }
             :: _) ->
@@ -3646,7 +4000,11 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         {
           callee;
           arguments =
-            { Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }; _ }
+            {
+              Call.Argument.value =
+                { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
+              _;
+            }
             :: arguments;
         }
       when name_is ~name:"typing.TypeVar" callee ->
@@ -3678,13 +4036,13 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
           let variance_definition = function
             | {
                 Call.Argument.name = Some { Node.value = name; _ };
-                value = { Node.value = True; _ };
+                value = { Node.value = Constant Constant.True; _ };
               }
               when String.equal (Identifier.sanitized name) "covariant" ->
                 Some Record.Variable.Covariant
             | {
                 Call.Argument.name = Some { Node.value = name; _ };
-                value = { Node.value = True; _ };
+                value = { Node.value = Constant Constant.True; _ };
               }
               when String.equal (Identifier.sanitized name) "contravariant" ->
                 Some Contravariant
@@ -3698,7 +4056,13 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         {
           callee;
           arguments =
-            [{ Call.Argument.value = { Node.value = String { StringLiteral.value; _ }; _ }; _ }];
+            [
+              {
+                Call.Argument.value =
+                  { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
+                _;
+              };
+            ];
         }
       when name_is ~name:"typing_extensions.IntVar" callee ->
         variable value ~constraints:LiteralIntegers
@@ -3858,19 +4222,17 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             (* TODO(T84854853): Add back support for `Length` and `Product`. *)
             create_parametric ~base ~argument
         | _ -> Top)
+    | Constant Constant.NoneLiteral -> none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
-        if String.equal sanitized "None" then
-          none
-        else
-          Primitive sanitized |> resolve_aliases
+        Primitive sanitized |> resolve_aliases
     | Name (Name.Attribute { base; attribute; _ }) -> (
         let attribute = Identifier.sanitized attribute in
         match create_logic base with
         | Primitive primitive -> Primitive (primitive ^ "." ^ attribute) |> resolve_aliases
         | _ -> Primitive (Expression.show base ^ "." ^ attribute))
-    | Ellipsis -> Primitive "..."
-    | String { StringLiteral.value; _ } ->
+    | Constant Constant.Ellipsis -> Primitive "..."
+    | Constant (Constant.String { StringLiteral.value; _ }) ->
         let expression =
           try
             let parsed =
@@ -3978,7 +4340,24 @@ let contains_literal annotation =
   exists annotation ~predicate
 
 
-let contains_final annotation = exists annotation ~predicate:is_final
+let final_value = function
+  | Parametric
+      { name = "typing.Final" | "typing_extensions.Final"; parameters = [Single parameter] } ->
+      `Ok parameter
+  | Primitive ("typing.Final" | "typing_extensions.Final") -> `NoParameter
+  | _ -> `NotFinal
+
+
+let contains_final annotation =
+  let predicate annotation =
+    match final_value annotation with
+    | `Ok _
+    | `NoParameter ->
+        true
+    | `NotFinal -> false
+  in
+  exists annotation ~predicate
+
 
 let collect annotation ~predicate =
   let module CollectorTransform = Transform.Make (struct
@@ -4083,23 +4462,12 @@ let is_untyped = function
 
 let is_partially_typed annotation = exists annotation ~predicate:is_untyped
 
-let is_variable = function
-  | Variable _ -> true
-  | _ -> false
-
-
 let contains_variable = exists ~predicate:is_variable
 
 let optional_value = function
   | Union [NoneType; annotation]
   | Union [annotation; NoneType] ->
       Some annotation
-  | _ -> None
-
-
-let async_generator_value = function
-  | Parametric { name = "typing.AsyncGenerator"; parameters = [Single parameter; _] } ->
-      Some (generator parameter)
   | _ -> None
 
 
@@ -4159,6 +4527,17 @@ let weaken_literals annotation =
   instantiate ~constraints annotation
 
 
+(* Weaken specific literal to arbitrary literal before weakening to `str`. *)
+let weaken_to_arbitrary_literal_if_possible = function
+  | Literal (Integer _) -> integer
+  | Literal (String (LiteralValue _)) -> Literal (String AnyLiteral)
+  | Literal (String AnyLiteral) -> string
+  | Literal (Bytes _) -> bytes
+  | Literal (Boolean _) -> bool
+  | Literal (EnumerationMember { enumeration_type; _ }) -> enumeration_type
+  | annotation -> annotation
+
+
 let split annotation =
   let open Record.Parameter in
   match annotation with
@@ -4213,14 +4592,6 @@ let class_variable annotation = parametric "typing.ClassVar" [Single annotation]
 
 let class_variable_value = function
   | Parametric { name = "typing.ClassVar"; parameters = [Single parameter] } -> Some parameter
-  | _ -> None
-
-
-let final_value = function
-  | Parametric
-      { name = "typing.Final" | "typing_extensions.Final"; parameters = [Single parameter] } ->
-      Some parameter
-  | Primitive ("typing.Final" | "typing_extensions.Final") -> Some Top
   | _ -> None
 
 
@@ -4617,6 +4988,19 @@ end = struct
             polynomial
             ~replace_variable
             ~replace_recursive:(local_replace replacement)
+      | Tuple
+          (Concatenation
+            {
+              prefix;
+              middle =
+                OrderedTypes.Concatenation.Broadcast (ConcreteAgainstConcrete { left; right });
+              suffix;
+            }) -> (
+          match OrderedTypes.broadcast (Tuple (Concrete left)) (Tuple (Concrete right)) with
+          | Tuple (Concrete concrete) -> Some (Tuple (Concrete (prefix @ concrete @ suffix)))
+          | Parametric { name = "pyre_extensions.BroadcastError"; _ } as parametric ->
+              Some parametric
+          | _ -> None)
       | _ -> None
 
 
@@ -4733,7 +5117,8 @@ end = struct
                             });
                       _;
                     };
-                  arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
+                  arguments =
+                    [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
                 };
             _;
           }
@@ -4758,7 +5143,8 @@ end = struct
                             });
                       _;
                     };
-                  arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
+                  arguments =
+                    [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
                 };
             _;
           } ->
@@ -5085,7 +5471,8 @@ end = struct
                          });
                    _;
                  };
-               arguments = [{ Call.Argument.value = { Node.value = String _; _ }; _ }];
+               arguments =
+                 [{ Call.Argument.value = { Node.value = Constant (Constant.String _); _ }; _ }];
              };
          _;
         } ->
@@ -6010,9 +6397,7 @@ module TypedDictionary = struct
         {
           signature =
             {
-              name =
-                Reference.create_from_list [class_name ~total; name]
-                |> Node.create_with_default_location;
+              name = Reference.create_from_list [class_name ~total; name];
               parameters =
                 [
                   { ExpressionParameter.name = "self"; value = None; annotation = self_parameter }

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,7 +7,6 @@
 
 open Core
 open OUnit2
-module Path = Pyre.Path
 module BaseConfiguration = Commands.BaseConfiguration
 
 let dummy_base_json =
@@ -21,16 +20,17 @@ let dummy_base_json =
 let dummy_base_configuration =
   {
     BaseConfiguration.source_paths =
-      Configuration.SourcePaths.Simple [SearchPath.Root (Path.create_absolute "/source")];
+      Configuration.SourcePaths.Simple [SearchPath.Root (PyrePath.create_absolute "/source")];
     search_paths = [];
     excludes = [];
     checked_directory_allowlist = [];
     checked_directory_blocklist = [];
     extensions = [];
-    log_path = Path.create_absolute "/log";
-    global_root = Path.create_absolute "/project";
+    log_path = PyrePath.create_absolute "/log";
+    global_root = PyrePath.create_absolute "/project";
     local_root = None;
     debug = false;
+    enable_type_comments = true;
     python_version = Configuration.PythonVersion.default;
     parallel = false;
     number_of_workers = 1;
@@ -103,6 +103,7 @@ let test_json_parsing context =
             "targets": ["//my:target"],
             "mode": "@mode/opt",
             "isolation_prefix": "prefix",
+            "use_buck2": true,
             "source_root": "/buck/root",
             "artifact_root": "/build/root"
         },
@@ -118,8 +119,53 @@ let test_json_parsing context =
               Configuration.Buck.targets = ["//my:target"];
               mode = Some "@mode/opt";
               isolation_prefix = Some "prefix";
-              source_root = Path.create_absolute "/buck/root";
-              artifact_root = Path.create_absolute "/build/root";
+              use_buck2 = true;
+              source_root = PyrePath.create_absolute "/buck/root";
+              artifact_root = PyrePath.create_absolute "/build/root";
+            };
+      };
+  (* Test instagram source path *)
+  assert_parsed
+    {|
+      {
+        "log_path": "/log",
+        "source_paths": {
+            "kind": "with_unwatched_dependency",
+            "paths": ["/source"],
+            "unwatched_dependency": {
+                "change_indicator": {
+                    "root": "/",
+                    "relative": "derp.yaml"
+                },
+                "files": {
+                    "root": "/wheel",
+                    "checksum_path": "checksum.txt"
+                }
+            }
+        },
+        "global_root": "/project"
+      }
+    |}
+    ~expected:
+      {
+        dummy_base_configuration with
+        source_paths =
+          Configuration.SourcePaths.WithUnwatchedDependency
+            {
+              sources = [SearchPath.create "/source"];
+              unwatched_dependency =
+                {
+                  Configuration.UnwatchedDependency.change_indicator =
+                    {
+                      Configuration.ChangeIndicator.root = PyrePath.create_absolute "/";
+                      relative = "derp.yaml";
+                    };
+                  files =
+                    {
+                      Configuration.UnwatchedFiles.root = PyrePath.create_absolute "/wheel";
+                      checksum_path = "checksum.txt";
+                    };
+                };
             };
       };
 
@@ -139,10 +185,10 @@ let test_json_parsing context =
     ~expected:
       {
         dummy_base_configuration with
-        local_root = Some (Path.create_absolute "/project/local");
+        local_root = Some (PyrePath.create_absolute "/project/local");
         excludes = ["/excludes"];
-        checked_directory_allowlist = [Path.create_absolute "/allows"];
-        checked_directory_blocklist = [Path.create_absolute "/blocks"];
+        checked_directory_allowlist = [PyrePath.create_absolute "/allows"];
+        checked_directory_blocklist = [PyrePath.create_absolute "/blocks"];
         extensions =
           [
             { Configuration.Extension.suffix = ".typsy"; include_suffix_in_module_qualifier = false };
@@ -156,6 +202,7 @@ let test_json_parsing context =
             "source_paths": ["/source"],
             "global_root": "/project",
             "debug": true,
+            "enable_type_comments": false,
             "python_version": {
               "major": 3,
               "minor": 7,
@@ -167,6 +214,7 @@ let test_json_parsing context =
       {
         dummy_base_configuration with
         debug = true;
+        enable_type_comments = false;
         python_version = { Configuration.PythonVersion.major = 3; minor = 7; micro = 4 };
       };
 

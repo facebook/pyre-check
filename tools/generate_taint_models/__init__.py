@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -18,7 +18,7 @@ from typing import Dict, List, Optional, Set, Mapping, AbstractSet
 from typing_extensions import Final
 
 from ...api.connection import PyreConnection
-from ...client import statistics
+from ...client import statistics_logger
 from .annotated_function_generator import (  # noqa
     AnnotatedFunctionGenerator,
     FunctionVisitor,
@@ -66,6 +66,7 @@ class GenerationArguments:
     # Pyre arguments.
     no_saved_state: bool = False
     isolation_prefix: Optional[str] = None
+    stop_pyre_server: bool = False
 
 
 def _file_exists(path: str) -> str:
@@ -87,6 +88,9 @@ def _parse_arguments(
         "--isolation-prefix", type=str, help="Buck isolation prefix when running pyre"
     )
     parser.add_argument(
+        "--stop-pyre-server", action="store_true", help="Stop the pyre server once done"
+    )
+    parser.add_argument(
         "--output-directory", type=_file_exists, help="Directory to write models to"
     )
     arguments: argparse.Namespace = parser.parse_args()
@@ -96,6 +100,7 @@ def _parse_arguments(
         output_directory=arguments.output_directory,
         no_saved_state=arguments.no_saved_state,
         isolation_prefix=arguments.isolation_prefix,
+        stop_pyre_server=arguments.stop_pyre_server,
     )
 
 
@@ -151,18 +156,18 @@ def run_from_parsed_arguments(
     generated_models: Dict[str, Set[Model]] = {}
     for mode in modes:
         LOG.info("Computing models for `%s`", mode)
-        start = time.time()
-        if mode in generator_options.keys():
-            generated_models[mode] = set(generator_options[mode].generate_models())
-        else:
+        if mode not in generator_options.keys():
+            LOG.warning(f"Unknown mode `{mode}`, skipping.")
             continue
+        start = time.time()
+        generated_models[mode] = set(generator_options[mode].generate_models())
         elapsed_time_seconds = time.time() - start
         LOG.info(f"Computed models for `{mode}` in {elapsed_time_seconds:.3f} seconds.")
 
         if logger_executable is not None:
             elapsed_time_milliseconds = int(elapsed_time_seconds * 1000)
-            statistics.log(
-                statistics.LoggerCategory.PERFORMANCE,
+            statistics_logger.log(
+                statistics_logger.LoggerCategory.PERFORMANCE,
                 integers={"time": elapsed_time_milliseconds},
                 normals={
                     "name": "model generation",
@@ -171,7 +176,12 @@ def run_from_parsed_arguments(
                 },
                 logger=logger_executable,
             )
+
     _report_results(generated_models, arguments.output_directory)
+
+    if pyre_connection is not None and arguments.stop_pyre_server:
+        LOG.info("Stopping the pyre server.")
+        pyre_connection.stop_server(ignore_errors=True)
 
 
 def run_generators(

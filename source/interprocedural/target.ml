@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -101,7 +101,7 @@ let create_property_setter_override reference =
 
 let create { Node.value = define; _ } =
   let open Define in
-  let name = Node.value define.signature.name in
+  let name = define.signature.name in
   match define.signature.parent with
   | Some _ ->
       if Define.is_property_setter define then
@@ -163,11 +163,15 @@ module OverrideKey = struct
   let from_string = ident
 end
 
+module Map = Core.Map.Make (Key)
 module Set = Caml.Set.Make (Key)
+module CallableMap = Core.Map.Make (CallableKey)
 module CallableSet = Caml.Set.Make (CallableKey)
+module CallableHashSet = Core.Hash_set.Make (CallableKey)
 module OverrideSet = Caml.Set.Make (OverrideKey)
-module HashSet = Hash_set.Make (Key)
-module CallableHashSet = Hash_set.Make (CallableKey)
+module Hashable = Core.Hashable.Make (Key)
+module HashMap = Hashable.Table
+module HashSet = Hashable.Hash_set
 
 let get_module_and_definition ~resolution callable =
   let get_bodies { class_name; method_name } =
@@ -268,8 +272,16 @@ let external_target_name = function
 
 let class_name = function
   | `Method { class_name; _ } -> Some class_name
+  | `OverrideTarget { class_name; _ } -> Some class_name
   | `Function _
-  | `OverrideTarget _
+  | `Object _ ->
+      None
+
+
+let method_name = function
+  | `Method { method_name; _ } -> Some method_name
+  | `OverrideTarget { method_name; _ } -> Some method_name
+  | `Function _
   | `Object _ ->
       None
 
@@ -286,8 +298,3 @@ let compare target1 target2 =
   let target1 = (target1 :> t) in
   let target2 = (target2 :> t) in
   compare target1 target2
-
-
-module CallableMap = Map.Make (CallableKey)
-module Map = Map.Make (Key)
-module Hashable = Hashable.Make (Key)

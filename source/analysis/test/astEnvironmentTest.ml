@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -46,16 +46,16 @@ let test_basic context =
         assert_failure message
     | Some source_path ->
         let actual = SourcePath.full_path ~configuration source_path in
-        assert_equal ~cmp:Path.equal ~printer:Path.show expected actual
+        assert_equal ~cmp:PyrePath.equal ~printer:PyrePath.show expected actual
   in
   assert_source_path
     !&"a"
     ~ast_environment
-    ~expected:(Path.create_relative ~root:local_root ~relative:handle_a);
+    ~expected:(PyrePath.create_relative ~root:local_root ~relative:handle_a);
   assert_source_path
     !&"b"
     ~ast_environment
-    ~expected:(Path.create_relative ~root:local_root ~relative:handle_b);
+    ~expected:(PyrePath.create_relative ~root:local_root ~relative:handle_b);
   ()
 
 
@@ -96,7 +96,7 @@ let test_parse_stubs_modules_list context =
             _;
           }
         when Bool.equal (Statement.Define.is_stub define) is_stub ->
-          Node.value name
+          name
       | _ -> failwith "Could not get source."
     in
     assert_equal ~cmp:Reference.equal ~printer:Reference.show (Reference.create define) name
@@ -140,11 +140,7 @@ let test_parse_source context =
   assert_equal relative "x.py";
   match statements with
   | [{ Node.value = Define { Statement.Define.signature = { name; _ }; _ }; _ }] ->
-      assert_equal
-        ~cmp:Reference.equal
-        ~printer:Reference.show
-        (Node.value name)
-        (Reference.create "x.foo")
+      assert_equal ~cmp:Reference.equal ~printer:Reference.show name (Reference.create "x.foo")
   | _ -> assert_unreached ()
 
 
@@ -152,15 +148,15 @@ let test_parse_sources context =
   let scheduler = Test.mock_scheduler () in
   let content = "def foo() -> int: ..." in
   let source_handles, ast_environment =
-    let local_root = Path.create_absolute (bracket_tmpdir context) in
+    let local_root = PyrePath.create_absolute (bracket_tmpdir context) in
     let typeshed_root =
-      Path.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
+      PyrePath.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
     in
-    Sys_utils.mkdir_p (Path.absolute typeshed_root);
-    let module_root = Path.create_absolute (bracket_tmpdir context) in
-    let link_root = Path.create_absolute (bracket_tmpdir context) in
+    Sys_utils.mkdir_p (PyrePath.absolute typeshed_root);
+    let module_root = PyrePath.create_absolute (bracket_tmpdir context) in
+    let link_root = PyrePath.create_absolute (bracket_tmpdir context) in
     let write_file root relative =
-      File.create ~content (Path.create_relative ~root ~relative) |> File.write
+      File.create ~content (PyrePath.create_relative ~root ~relative) |> File.write
     in
     write_file local_root "a.pyi";
     write_file local_root "a.py";
@@ -171,16 +167,16 @@ let test_parse_sources context =
     write_file link_root "link.py";
     write_file link_root "seemingly_unrelated.pyi";
     Unix.symlink
-      ~target:(Path.absolute link_root ^/ "link.py")
-      ~link_name:(Path.absolute local_root ^/ "d.py");
+      ~target:(PyrePath.absolute link_root ^/ "link.py")
+      ~link_name:(PyrePath.absolute local_root ^/ "d.py");
     Unix.symlink
-      ~target:(Path.absolute link_root ^/ "seemingly_unrelated.pyi")
-      ~link_name:(Path.absolute local_root ^/ "d.pyi");
+      ~target:(PyrePath.absolute link_root ^/ "seemingly_unrelated.pyi")
+      ~link_name:(PyrePath.absolute local_root ^/ "d.pyi");
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[SearchPath.Root local_root]
-        ~search_path:[SearchPath.Root module_root; SearchPath.Root typeshed_root]
+        ~source_paths:[SearchPath.Root local_root]
+        ~search_paths:[SearchPath.Root module_root; SearchPath.Root typeshed_root]
         ~filter_directories:[local_root]
         ()
     in
@@ -215,19 +211,19 @@ let test_parse_sources context =
     ~printer:(String.concat ~sep:", ")
     ["a.pyi"; "b.pyi"; "c.py"; "d.pyi"; "foo.pyi"]
     source_handles;
-  let local_root = Path.create_absolute (bracket_tmpdir context) in
-  let stub_root = Path.create_relative ~root:local_root ~relative:"stubs" in
+  let local_root = PyrePath.create_absolute (bracket_tmpdir context) in
+  let stub_root = PyrePath.create_relative ~root:local_root ~relative:"stubs" in
   let source_handles =
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[SearchPath.Root local_root]
-        ~search_path:[SearchPath.Root stub_root]
+        ~source_paths:[SearchPath.Root local_root]
+        ~search_paths:[SearchPath.Root stub_root]
         ~filter_directories:[local_root]
         ()
     in
     let write_file root relative =
-      File.create ~content:"def foo() -> int: ..." (Path.create_relative ~root ~relative)
+      File.create ~content:"def foo() -> int: ..." (PyrePath.create_relative ~root ~relative)
       |> File.write
     in
     write_file local_root "a.py";
@@ -239,8 +235,8 @@ let test_parse_sources context =
         ~configuration
         ~paths:
           [
-            Path.create_relative ~root:local_root ~relative:"a.py";
-            Path.create_relative ~root:stub_root ~relative:"stub.pyi";
+            PyrePath.create_relative ~root:local_root ~relative:"a.py";
+            PyrePath.create_relative ~root:stub_root ~relative:"stub.pyi";
           ]
         module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
@@ -264,15 +260,7 @@ let test_parse_sources context =
       let right_handles = List.sort ~compare:String.compare right_handles in
       List.equal String.equal left_handles right_handles)
     source_handles
-    ["stub.pyi"; "a.py"];
-  match
-    Analysis.AstEnvironment.ReadOnly.get_processed_source
-      (AstEnvironment.read_only ast_environment)
-      (Reference.create "c")
-  with
-  | Some { metadata = { Source.Metadata.raw_hash; _ }; _ } ->
-      assert_equal raw_hash ([%hash: string list] (String.split ~on:'\n' content))
-  | None -> assert_unreached ()
+    ["stub.pyi"; "a.py"]
 
 
 let test_ast_change _ =
@@ -639,28 +627,29 @@ let test_parse_repository context =
     in
     let printer (handle, source) = Format.sprintf "%s: %s" handle (Ast.Source.show source) in
     let expected =
-      List.map expected ~f:(fun (handle, parsed_source) -> handle, Test.parse parsed_source)
+      List.map expected ~f:(fun (handle, parsed_source) ->
+          handle, Test.parse ~handle parsed_source |> Preprocessing.qualify)
     in
     assert_equal ~cmp:(List.equal equal) ~printer:(List.to_string ~f:printer) expected actual
   in
   assert_repository_parses_to
     ["a.py", "def foo() -> int: ..."]
-    ~expected:["a.py", "def a.foo() -> int: ..."];
+    ~expected:["a.py", "def foo() -> int: ..."];
   assert_repository_parses_to
     ["a.py", "def foo() -> int: ..."; "b.pyi", "from a import *"]
-    ~expected:["a.py", "def a.foo() -> int: ..."; "b.pyi", "from a import foo as foo"];
+    ~expected:["a.py", "def foo() -> int: ..."; "b.pyi", "from a import foo as foo"];
   assert_repository_parses_to
     ["a.py", "def foo() -> int: ..."; "b.pyi", "from a import *"; "c.py", "from b import *"]
     ~expected:
       [
-        "a.py", "def a.foo() -> int: ...";
+        "a.py", "def foo() -> int: ...";
         "b.pyi", "from a import foo as foo";
         "c.py", "from b import foo as foo";
       ];
   (* Unparsable source turns into getattr-any *)
   assert_repository_parses_to
     ["a.py", "def foo() -> int:"]
-    ~expected:["a.py", "import typing\ndef a.__getattr__($parameter$name: str) -> typing.Any: ..."];
+    ~expected:["a.py", "import typing\ndef __getattr__(name: str) -> typing.Any: ..."];
   ()
 
 
@@ -688,9 +677,9 @@ module IncrementalTest = struct
       List.filter_map setups ~f:(fun { handle; old_source; _ } ->
           old_source >>| fun source -> handle, source)
     in
-    let update_filesystem_state { Configuration.Analysis.local_root; search_path; _ } =
+    let update_filesystem_state { Configuration.Analysis.local_root; search_paths; _ } =
       let update_file ~root { handle; old_source; new_source } =
-        let path = Path.create_relative ~root ~relative:handle in
+        let path = PyrePath.create_relative ~root ~relative:handle in
         match old_source, new_source with
         | Some old_source, Some new_source
           when String.equal (trim_extra_indentation old_source) (trim_extra_indentation new_source)
@@ -703,13 +692,13 @@ module IncrementalTest = struct
             Some path
         | Some _, None ->
             (* A file is removed *)
-            Path.remove path;
+            PyrePath.remove path;
             Some path
         | _, _ -> None
       in
       let paths = List.filter_map setups ~f:(update_file ~root:local_root) in
       let external_paths =
-        let external_root = List.hd_exn search_path |> SearchPath.get_root in
+        let external_root = List.hd_exn search_paths |> SearchPath.get_root in
         List.filter_map external_setups ~f:(update_file ~root:external_root)
       in
       List.append external_paths paths
@@ -1014,35 +1003,69 @@ let test_ast_transformer context =
         AstEnvironment.UpdateResult.invalidated_modules ast_environment_update_result
         |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
       in
-      List.map sources ~f:(fun ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) ->
-          relative, source)
+      List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; statements; _ } ->
+          relative, statements)
       |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
              String.compare left_handle right_handle)
     in
-    let equal
-        (expected_handle, { Ast.Source.statements = expected_source; _ })
-        (handle, { Ast.Source.statements; _ })
-      =
+    let equal (expected_handle, expected_source) (handle, statements) =
       let equal left right = Statement.location_insensitive_compare left right = 0 in
       String.equal expected_handle handle && List.equal equal expected_source statements
     in
-    let printer (handle, source) = Format.sprintf "%s: %s" handle (Ast.Source.show source) in
-    let expected =
-      List.map expected ~f:(fun (handle, parsed_source) -> handle, Test.parse parsed_source)
+    let printer (handle, statements) =
+      Format.sprintf
+        "%s: %s"
+        handle
+        (List.map statements ~f:Statement.show |> String.concat ~sep:"; ")
     in
     assert_equal ~cmp:(List.equal equal) ~printer:(List.to_string ~f:printer) expected actual
   in
+  let open Statement in
+  let open Expression in
   assert_transformed
     ["a.py", "def foo() -> int: ..."]
     ~additional_preprocessing:None
-    ~expected:["a.py", "def a.foo() -> int: ..."];
+    ~expected:
+      [
+        ( "a.py",
+          [
+            +Statement.Define
+               {
+                 Define.signature =
+                   {
+                     Define.Signature.name = !&"a.foo";
+                     parameters = [];
+                     decorators = [];
+                     return_annotation = Some !"int";
+                     async = false;
+                     generator = false;
+                     parent = None;
+                     nesting_define = None;
+                   };
+                 captures = [];
+                 unbound_names = [];
+                 body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
+               };
+          ] );
+      ];
   let remove_first_statement ({ Source.statements; _ } as source) =
     { source with statements = List.tl_exn statements }
   in
   assert_transformed
-    ["a.py", "def a.foo() -> int: ...\na.bar: int = 1\n"]
+    ["a.py", "def foo() -> int: ...\nbar: int = 1\n"]
     ~additional_preprocessing:(Some remove_first_statement)
-    ~expected:["a.py", "a.bar: int = 1\n"];
+    ~expected:
+      [
+        ( "a.py",
+          [
+            +Statement.Assign
+               {
+                 Assign.target = !"$local_a$bar";
+                 value = +Expression.Constant (Constant.Integer 1);
+                 annotation = Some !"int";
+               };
+          ] );
+      ];
   ()
 
 

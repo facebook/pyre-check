@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -8,7 +8,6 @@
 import abc
 import dataclasses
 import glob
-import hashlib
 import json
 import logging
 import multiprocessing
@@ -24,6 +23,7 @@ from logging import Logger
 from pathlib import Path
 from typing import (
     Any,
+    ClassVar,
     Dict,
     Iterable,
     List,
@@ -190,15 +190,20 @@ class SubdirectorySearchPathElement(SearchPathElement):
 class SitePackageSearchPathElement(SearchPathElement):
     site_root: str
     package_name: str
+    is_toplevel_module: bool = False
+
+    def package_path(self) -> str:
+        module_suffix = ".py" if self.is_toplevel_module else ""
+        return self.package_name + module_suffix
 
     def path(self) -> str:
-        return os.path.join(self.site_root, self.package_name)
+        return os.path.join(self.site_root, self.package_path())
 
     def get_root(self) -> str:
         return self.site_root
 
     def command_line_argument(self) -> str:
-        return self.site_root + "$" + self.package_name
+        return self.site_root + "$" + self.package_path()
 
     def expand_global_root(self, global_root: str) -> SearchPathElement:
         # Site package does not participate in root expansion.
@@ -262,7 +267,7 @@ def get_site_roots() -> List[str]:
 
 
 def create_search_paths(
-    json: Union[str, Dict[str, str]], site_roots: Iterable[str]
+    json: Union[str, Dict[str, Union[str, bool]]], site_roots: Iterable[str]
 ) -> List[SearchPathElement]:
     if isinstance(json, str):
         return [SimpleSearchPathElement(json)]
@@ -270,19 +275,24 @@ def create_search_paths(
         if "root" in json and "subdirectory" in json:
             return [
                 SubdirectorySearchPathElement(
-                    root=json["root"], subdirectory=json["subdirectory"]
+                    root=str(json["root"]), subdirectory=str(json["subdirectory"])
                 )
             ]
         if "import_root" in json and "source" in json:
             return [
                 SubdirectorySearchPathElement(
-                    root=json["import_root"], subdirectory=json["source"]
+                    root=str(json["import_root"]), subdirectory=str(json["source"])
                 )
             ]
         elif "site-package" in json:
+            is_toplevel_module = (
+                "is_toplevel_module" in json and json["is_toplevel_module"]
+            )
             return [
                 SitePackageSearchPathElement(
-                    site_root=root, package_name=json["site-package"]
+                    site_root=root,
+                    package_name=str(json["site-package"]),
+                    is_toplevel_module=bool(is_toplevel_module),
                 )
                 for root in site_roots
             ]
@@ -379,17 +389,108 @@ class SharedMemory:
 
 
 @dataclass(frozen=True)
+class IdeFeatures:
+    hover_enabled: Optional[bool] = None
+    DEFAULT_HOVER_ENABLED: ClassVar[bool] = False
+
+    def to_json(self) -> Dict[str, int]:
+        return {
+            **(
+                {"hover_enabled": self.hover_enabled}
+                if self.hover_enabled is not None
+                else {}
+            ),
+        }
+
+    def is_hover_enabled(self) -> bool:
+        return (
+            self.hover_enabled
+            if self.hover_enabled is not None
+            else self.DEFAULT_HOVER_ENABLED
+        )
+
+
+@dataclass(frozen=True)
+class UnwatchedFiles:
+    root: str
+    checksum_path: str
+
+    @staticmethod
+    def from_json(json: Dict[str, object]) -> "UnwatchedFiles":
+        root = json.get("root", None)
+        if root is None:
+            raise InvalidConfiguration("Missing `root` field in UnwatchedFiles")
+        if not isinstance(root, str):
+            raise InvalidConfiguration(
+                "`root` field in UnwatchedFiles must be a string"
+            )
+
+        checksum_path = json.get("checksum_path", None)
+        if checksum_path is None:
+            raise InvalidConfiguration(
+                "Missing `checksum_path` field in UnwatchedFiles"
+            )
+        if not isinstance(checksum_path, str):
+            raise InvalidConfiguration(
+                "`checksum_path` field in UnwatchedFiles must be a string"
+            )
+
+        return UnwatchedFiles(root=root, checksum_path=checksum_path)
+
+    def to_json(self) -> Dict[str, str]:
+        return {
+            "root": self.root,
+            "checksum_path": self.checksum_path,
+        }
+
+
+@dataclass(frozen=True)
+class UnwatchedDependency:
+    change_indicator: str
+    files: UnwatchedFiles
+
+    @staticmethod
+    def from_json(json: Dict[str, object]) -> "UnwatchedDependency":
+        change_indicator = json.get("change_indicator", None)
+        if change_indicator is None:
+            raise InvalidConfiguration(
+                "Missing `change_indicator` field in UnwatchedDependency"
+            )
+        if not isinstance(change_indicator, str):
+            raise InvalidConfiguration(
+                "`change_indicator` field in UnwatchedDependency must be a string"
+            )
+
+        files_json = json.get("files", None)
+        if files_json is None:
+            raise InvalidConfiguration("Missing `files` field in UnwatchedDependency")
+        if not isinstance(files_json, dict):
+            raise InvalidConfiguration(
+                "`files` field in UnwatchedDependency must be a dict"
+            )
+
+        return UnwatchedDependency(
+            change_indicator=change_indicator,
+            files=UnwatchedFiles.from_json(files_json),
+        )
+
+    def to_json(self) -> Dict[str, object]:
+        return {
+            "change_indicator": str(self.change_indicator),
+            "files": self.files.to_json(),
+        }
+
+
+@dataclass(frozen=True)
 class PartialConfiguration:
-    autocomplete: Optional[bool] = None
     binary: Optional[str] = None
-    buck_builder_binary: Optional[str] = None
     buck_mode: Optional[str] = None
     disabled: Optional[bool] = None
-    do_not_ignore_all_errors_in: Sequence[str] = field(default_factory=list)
+    do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
     dot_pyre_directory: Optional[Path] = None
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
-    file_hash: Optional[str] = None
+    ide_features: Optional[IdeFeatures] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
@@ -397,6 +498,7 @@ class PartialConfiguration:
     number_of_workers: Optional[int] = None
     oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
+    pysa_version_hash: Optional[str] = None
     python_version: Optional[PythonVersion] = None
     shared_memory: SharedMemory = SharedMemory()
     search_path: Sequence[SearchPathElement] = field(default_factory=list)
@@ -405,9 +507,8 @@ class PartialConfiguration:
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
-    use_buck_builder: Optional[bool] = None
-    use_buck_source_database: Optional[bool] = None
-    use_command_v2: Optional[bool] = None
+    unwatched_dependency: Optional[UnwatchedDependency] = None
+    use_buck2: Optional[bool] = None
     version_hash: Optional[str] = None
 
     @staticmethod
@@ -436,24 +537,28 @@ class PartialConfiguration:
             arguments.targets if len(arguments.targets) > 0 else None
         )
         python_version_string = arguments.python_version
+        ide_features = (
+            IdeFeatures(hover_enabled=arguments.enable_hover)
+            if arguments.enable_hover is not None
+            else None
+        )
         return PartialConfiguration(
-            autocomplete=None,
             binary=arguments.binary,
-            buck_builder_binary=arguments.buck_builder_binary,
             buck_mode=arguments.buck_mode,
             disabled=None,
-            do_not_ignore_all_errors_in=[],
+            do_not_ignore_errors_in=arguments.do_not_ignore_errors_in,
             dot_pyre_directory=arguments.dot_pyre_directory,
             excludes=arguments.exclude,
             extensions=[],
-            file_hash=None,
+            ide_features=ide_features,
             ignore_all_errors=[],
             ignore_infer=[],
             isolation_prefix=arguments.isolation_prefix,
             logger=arguments.logger,
-            number_of_workers=None,
+            number_of_workers=arguments.number_of_workers,
             oncall=None,
             other_critical_files=[],
+            pysa_version_hash=None,
             python_version=(
                 PythonVersion.from_string(python_version_string)
                 if python_version_string is not None
@@ -472,9 +577,8 @@ class PartialConfiguration:
             taint_models_path=[],
             targets=targets,
             typeshed=arguments.typeshed,
-            use_buck_builder=arguments.use_buck_builder,
-            use_buck_source_database=arguments.use_buck_source_database,
-            use_command_v2=arguments.use_command_v2,
+            unwatched_dependency=None,
+            use_buck2=arguments.use_buck2,
             version_hash=None,
         )
 
@@ -534,11 +638,6 @@ class PartialConfiguration:
 
         try:
             configuration_json = json.loads(contents)
-
-            if configuration_json.pop("saved_state", None) is not None:
-                file_hash = hashlib.sha1(contents.encode("utf-8")).hexdigest()
-            else:
-                file_hash = None
 
             dot_pyre_directory = ensure_option_type(
                 configuration_json, "dot_pyre_directory", str
@@ -601,17 +700,35 @@ class PartialConfiguration:
             else:
                 source_directories = None
 
+            ide_features_json = ensure_option_type(
+                configuration_json, "ide_features", dict
+            )
+            if ide_features_json is None:
+                ide_features = None
+            else:
+                ide_features = IdeFeatures(
+                    hover_enabled=ensure_option_type(
+                        ide_features_json, "hover_enabled", bool
+                    ),
+                )
+                for unrecognized_key in ide_features_json:
+                    LOG.warning(f"Unrecognized configuration item: {unrecognized_key}")
+
+            unwatched_dependency_json = ensure_option_type(
+                configuration_json, "unwatched_dependency", dict
+            )
+            if unwatched_dependency_json is None:
+                unwatched_dependency = None
+            else:
+                unwatched_dependency = UnwatchedDependency.from_json(
+                    unwatched_dependency_json
+                )
+
             partial_configuration = PartialConfiguration(
-                autocomplete=ensure_option_type(
-                    configuration_json, "autocomplete", bool
-                ),
                 binary=ensure_option_type(configuration_json, "binary", str),
-                buck_builder_binary=ensure_option_type(
-                    configuration_json, "buck_builder_binary", str
-                ),
                 buck_mode=ensure_option_type(configuration_json, "buck_mode", str),
                 disabled=ensure_option_type(configuration_json, "disabled", bool),
-                do_not_ignore_all_errors_in=ensure_string_list(
+                do_not_ignore_errors_in=ensure_string_list(
                     configuration_json, "do_not_ignore_errors_in"
                 ),
                 dot_pyre_directory=Path(dot_pyre_directory)
@@ -624,7 +741,7 @@ class PartialConfiguration:
                     ExtensionElement.from_json(json)
                     for json in ensure_list(configuration_json, "extensions")
                 ],
-                file_hash=file_hash,
+                ide_features=ide_features,
                 ignore_all_errors=ensure_string_list(
                     configuration_json, "ignore_all_errors"
                 ),
@@ -640,6 +757,9 @@ class PartialConfiguration:
                 other_critical_files=ensure_string_list(
                     configuration_json, "critical_files"
                 ),
+                pysa_version_hash=ensure_option_type(
+                    configuration_json, "pysa_version", str
+                ),
                 python_version=python_version,
                 shared_memory=shared_memory,
                 search_path=search_path,
@@ -650,15 +770,8 @@ class PartialConfiguration:
                 ),
                 targets=ensure_optional_string_list(configuration_json, "targets"),
                 typeshed=ensure_option_type(configuration_json, "typeshed", str),
-                use_buck_builder=ensure_option_type(
-                    configuration_json, "use_buck_builder", bool
-                ),
-                use_buck_source_database=ensure_option_type(
-                    configuration_json, "use_buck_source_database", bool
-                ),
-                use_command_v2=ensure_option_type(
-                    configuration_json, "use_command_v2", bool
-                ),
+                unwatched_dependency=unwatched_dependency,
+                use_buck2=ensure_option_type(configuration_json, "use_buck2", bool),
                 version_hash=ensure_option_type(configuration_json, "version", str),
             )
 
@@ -694,9 +807,6 @@ class PartialConfiguration:
         binary = self.binary
         if binary is not None:
             binary = expand_relative_path(root, binary)
-        buck_builder_binary = self.buck_builder_binary
-        if buck_builder_binary is not None:
-            buck_builder_binary = expand_relative_path(root, buck_builder_binary)
         logger = self.logger
         if logger is not None:
             logger = expand_relative_path(root, logger)
@@ -708,20 +818,28 @@ class PartialConfiguration:
         typeshed = self.typeshed
         if typeshed is not None:
             typeshed = expand_relative_path(root, typeshed)
+        unwatched_dependency = self.unwatched_dependency
+        if unwatched_dependency is not None:
+            files = unwatched_dependency.files
+            unwatched_dependency = UnwatchedDependency(
+                change_indicator=unwatched_dependency.change_indicator,
+                files=UnwatchedFiles(
+                    root=expand_relative_path(root, files.root),
+                    checksum_path=files.checksum_path,
+                ),
+            )
         return PartialConfiguration(
-            autocomplete=self.autocomplete,
             binary=binary,
-            buck_builder_binary=buck_builder_binary,
             buck_mode=self.buck_mode,
             disabled=self.disabled,
-            do_not_ignore_all_errors_in=[
+            do_not_ignore_errors_in=[
                 expand_relative_path(root, path)
-                for path in self.do_not_ignore_all_errors_in
+                for path in self.do_not_ignore_errors_in
             ],
             dot_pyre_directory=self.dot_pyre_directory,
             excludes=self.excludes,
             extensions=self.extensions,
-            file_hash=self.file_hash,
+            ide_features=self.ide_features,
             ignore_all_errors=[
                 expand_relative_path(root, path) for path in self.ignore_all_errors
             ],
@@ -735,6 +853,7 @@ class PartialConfiguration:
             other_critical_files=[
                 expand_relative_path(root, path) for path in self.other_critical_files
             ],
+            pysa_version_hash=self.pysa_version_hash,
             python_version=self.python_version,
             shared_memory=self.shared_memory,
             search_path=[path.expand_relative_root(root) for path in self.search_path],
@@ -745,9 +864,8 @@ class PartialConfiguration:
             ],
             targets=self.targets,
             typeshed=typeshed,
-            use_buck_builder=self.use_buck_builder,
-            use_buck_source_database=self.use_buck_source_database,
-            use_command_v2=self.use_command_v2,
+            unwatched_dependency=unwatched_dependency,
+            use_buck2=self.use_buck2,
             version_hash=self.version_hash,
         )
 
@@ -757,6 +875,17 @@ def merge_partial_configurations(
 ) -> PartialConfiguration:
     def overwrite_base(base: Optional[T], override: Optional[T]) -> Optional[T]:
         return base if override is None else override
+
+    def overwrite_base_ide_features(
+        base: Optional[IdeFeatures], override: Optional[IdeFeatures]
+    ) -> Optional[IdeFeatures]:
+        if override is None:
+            return base
+        if base is None:
+            return override
+        return IdeFeatures(
+            hover_enabled=overwrite_base(base.hover_enabled, override.hover_enabled)
+        )
 
     def prepend_base(base: Sequence[T], override: Sequence[T]) -> Sequence[T]:
         return list(override) + list(base)
@@ -774,22 +903,20 @@ def merge_partial_configurations(
             )
 
     return PartialConfiguration(
-        autocomplete=overwrite_base(base.autocomplete, override.autocomplete),
         binary=overwrite_base(base.binary, override.binary),
-        buck_builder_binary=overwrite_base(
-            base.buck_builder_binary, override.buck_builder_binary
-        ),
         buck_mode=overwrite_base(base.buck_mode, override.buck_mode),
         disabled=overwrite_base(base.disabled, override.disabled),
-        do_not_ignore_all_errors_in=prepend_base(
-            base.do_not_ignore_all_errors_in, override.do_not_ignore_all_errors_in
+        do_not_ignore_errors_in=prepend_base(
+            base.do_not_ignore_errors_in, override.do_not_ignore_errors_in
         ),
         dot_pyre_directory=overwrite_base(
             base.dot_pyre_directory, override.dot_pyre_directory
         ),
         excludes=prepend_base(base.excludes, override.excludes),
         extensions=prepend_base(base.extensions, override.extensions),
-        file_hash=overwrite_base(base.file_hash, override.file_hash),
+        ide_features=overwrite_base_ide_features(
+            base.ide_features, override.ide_features
+        ),
         ignore_all_errors=prepend_base(
             base.ignore_all_errors, override.ignore_all_errors
         ),
@@ -804,6 +931,9 @@ def merge_partial_configurations(
         oncall=overwrite_base(base.oncall, override.oncall),
         other_critical_files=prepend_base(
             base.other_critical_files, override.other_critical_files
+        ),
+        pysa_version_hash=overwrite_base(
+            base.pysa_version_hash, override.pysa_version_hash
         ),
         python_version=overwrite_base(base.python_version, override.python_version),
         shared_memory=SharedMemory(
@@ -831,13 +961,10 @@ def merge_partial_configurations(
         ),
         targets=raise_when_overridden(base.targets, override.targets, name="targets"),
         typeshed=overwrite_base(base.typeshed, override.typeshed),
-        use_buck_builder=overwrite_base(
-            base.use_buck_builder, override.use_buck_builder
+        unwatched_dependency=overwrite_base(
+            base.unwatched_dependency, override.unwatched_dependency
         ),
-        use_buck_source_database=overwrite_base(
-            base.use_buck_source_database, override.use_buck_source_database
-        ),
-        use_command_v2=overwrite_base(base.use_command_v2, override.use_command_v2),
+        use_buck2=overwrite_base(base.use_buck2, override.use_buck2),
         version_hash=overwrite_base(base.version_hash, override.version_hash),
     )
 
@@ -847,15 +974,13 @@ class Configuration:
     project_root: str
     dot_pyre_directory: Path
 
-    autocomplete: bool = False
     binary: Optional[str] = None
-    buck_builder_binary: Optional[str] = None
     buck_mode: Optional[str] = None
     disabled: bool = False
-    do_not_ignore_all_errors_in: Sequence[str] = field(default_factory=list)
+    do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
-    file_hash: Optional[str] = None
+    ide_features: Optional[IdeFeatures] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
@@ -863,6 +988,7 @@ class Configuration:
     number_of_workers: Optional[int] = None
     oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
+    pysa_version_hash: Optional[str] = None
     python_version: Optional[PythonVersion] = None
     shared_memory: SharedMemory = SharedMemory()
     relative_local_root: Optional[str] = None
@@ -872,9 +998,8 @@ class Configuration:
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
-    use_buck_builder: bool = False
-    use_buck_source_database: bool = False
-    use_command_v2: bool = False
+    unwatched_dependency: Optional[UnwatchedDependency] = None
+    use_buck2: bool = False
     version_hash: Optional[str] = None
 
     @staticmethod
@@ -894,17 +1019,13 @@ class Configuration:
             dot_pyre_directory=_get_optional_value(
                 partial_configuration.dot_pyre_directory, project_root / LOG_DIRECTORY
             ),
-            autocomplete=_get_optional_value(
-                partial_configuration.autocomplete, default=False
-            ),
             binary=partial_configuration.binary,
-            buck_builder_binary=partial_configuration.buck_builder_binary,
             buck_mode=partial_configuration.buck_mode,
             disabled=_get_optional_value(partial_configuration.disabled, default=False),
-            do_not_ignore_all_errors_in=partial_configuration.do_not_ignore_all_errors_in,
+            do_not_ignore_errors_in=partial_configuration.do_not_ignore_errors_in,
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
-            file_hash=partial_configuration.file_hash,
+            ide_features=partial_configuration.ide_features,
             ignore_all_errors=partial_configuration.ignore_all_errors,
             ignore_infer=partial_configuration.ignore_infer,
             isolation_prefix=partial_configuration.isolation_prefix,
@@ -912,6 +1033,7 @@ class Configuration:
             number_of_workers=partial_configuration.number_of_workers,
             oncall=partial_configuration.oncall,
             other_critical_files=partial_configuration.other_critical_files,
+            pysa_version_hash=partial_configuration.pysa_version_hash,
             python_version=partial_configuration.python_version,
             shared_memory=partial_configuration.shared_memory,
             relative_local_root=relative_local_root,
@@ -923,14 +1045,9 @@ class Configuration:
             taint_models_path=partial_configuration.taint_models_path,
             targets=partial_configuration.targets,
             typeshed=partial_configuration.typeshed,
-            use_buck_builder=_get_optional_value(
-                partial_configuration.use_buck_builder, default=False
-            ),
-            use_buck_source_database=_get_optional_value(
-                partial_configuration.use_buck_source_database, default=False
-            ),
-            use_command_v2=_get_optional_value(
-                partial_configuration.use_command_v2, default=True
+            unwatched_dependency=partial_configuration.unwatched_dependency,
+            use_buck2=_get_optional_value(
+                partial_configuration.use_buck2, default=False
             ),
             version_hash=partial_configuration.version_hash,
         )
@@ -953,31 +1070,26 @@ class Configuration:
         to produce JSONs that can be de-serialized back into configurations.
         """
         binary = self.binary
-        buck_builder_binary = self.buck_builder_binary
         buck_mode = self.buck_mode
         isolation_prefix = self.isolation_prefix
         logger = self.logger
         number_of_workers = self.number_of_workers
         oncall = self.oncall
+        pysa_version_hash = self.pysa_version_hash
         python_version = self.python_version
         relative_local_root = self.relative_local_root
         source_directories = self.source_directories
         targets = self.targets
         typeshed = self.typeshed
+        unwatched_dependency = self.unwatched_dependency
         version_hash = self.version_hash
         return {
             "global_root": self.project_root,
             "dot_pyre_directory": str(self.dot_pyre_directory),
-            "autocomplete": self.autocomplete,
             **({"binary": binary} if binary is not None else {}),
-            **(
-                {"buck_builder_binary": buck_builder_binary}
-                if buck_builder_binary is not None
-                else {}
-            ),
             **({"buck_mode": buck_mode} if buck_mode is not None else {}),
             "disabled": self.disabled,
-            "do_not_ignore_all_errors_in": list(self.do_not_ignore_all_errors_in),
+            "do_not_ignore_errors_in": list(self.do_not_ignore_errors_in),
             "excludes": list(self.excludes),
             "extensions": list(self.extensions),
             "ignore_all_errors": list(self.ignore_all_errors),
@@ -991,6 +1103,11 @@ class Configuration:
             **({"oncall": oncall} if oncall is not None else {}),
             **({"workers": number_of_workers} if number_of_workers is not None else {}),
             "other_critical_files": list(self.other_critical_files),
+            **(
+                {"pysa_version_hash": pysa_version_hash}
+                if pysa_version_hash is not None
+                else {}
+            ),
             **(
                 {"python_version": python_version.to_string()}
                 if python_version is not None
@@ -1016,14 +1133,39 @@ class Configuration:
             "taint_models_path": list(self.taint_models_path),
             **({"targets": list(targets)} if targets is not None else {}),
             **({"typeshed": typeshed} if typeshed is not None else {}),
-            "use_buck_builder": self.use_buck_builder,
-            "use_buck_source_database": self.use_buck_source_database,
-            "use_command_v2": self.use_command_v2,
+            **(
+                {"unwatched_dependency": unwatched_dependency.to_json()}
+                if unwatched_dependency is not None
+                else {}
+            ),
+            "use_buck2": self.use_buck2,
             **({"version_hash": version_hash} if version_hash is not None else {}),
         }
 
     def get_source_directories(self) -> List[SearchPathElement]:
         return list(self.source_directories or [])
+
+    def get_existent_unwatched_dependency(
+        self,
+    ) -> Optional[UnwatchedDependency]:
+        unwatched_dependency = self.unwatched_dependency
+        if unwatched_dependency is None:
+            return None
+        unwatched_root = Path(unwatched_dependency.files.root)
+        if not unwatched_root.is_dir():
+            LOG.warning(
+                "Nonexistent directory passed in to `unwatched_dependency`: "
+                f"`{unwatched_root}`"
+            )
+            return None
+        checksum_path = unwatched_root / unwatched_dependency.files.checksum_path
+        if not checksum_path.is_file():
+            LOG.warning(
+                "Nonexistent file passed in to `unwatched_dependency`: "
+                f"`{checksum_path}`"
+            )
+            return None
+        return self.unwatched_dependency
 
     # Expansion and validation of search paths cannot happen at Configuration creation
     # because link trees need to be built first.
@@ -1053,15 +1195,13 @@ class Configuration:
         return Configuration(
             project_root=self.project_root,
             dot_pyre_directory=self.dot_pyre_directory,
-            autocomplete=self.autocomplete,
             binary=self.binary,
-            buck_builder_binary=self.buck_builder_binary,
             buck_mode=self.buck_mode,
             disabled=self.disabled,
-            do_not_ignore_all_errors_in=self.do_not_ignore_all_errors_in,
+            do_not_ignore_errors_in=self.do_not_ignore_errors_in,
             excludes=self.excludes,
             extensions=self.extensions,
-            file_hash=self.file_hash,
+            ide_features=self.ide_features,
             ignore_all_errors=self.ignore_all_errors,
             ignore_infer=self.ignore_infer,
             isolation_prefix=self.isolation_prefix,
@@ -1069,6 +1209,7 @@ class Configuration:
             number_of_workers=self.number_of_workers,
             oncall=self.oncall,
             other_critical_files=self.other_critical_files,
+            pysa_version_hash=self.pysa_version_hash,
             python_version=self.python_version,
             shared_memory=self.shared_memory,
             relative_local_root=self.relative_local_root,
@@ -1080,9 +1221,8 @@ class Configuration:
             taint_models_path=self.taint_models_path,
             targets=self.targets,
             typeshed=self.typeshed,
-            use_buck_builder=self.use_buck_builder,
-            use_buck_source_database=self.use_buck_source_database,
-            use_command_v2=self.use_command_v2,
+            unwatched_dependency=self.unwatched_dependency,
+            use_buck2=self.use_buck2,
             version_hash=self.version_hash,
         )
 
@@ -1103,7 +1243,7 @@ class Configuration:
         """
         ignore_paths = [
             _expand_global_root(path, global_root=self.project_root)
-            for path in self.do_not_ignore_all_errors_in
+            for path in self.do_not_ignore_errors_in
         ]
         paths = []
         for path in ignore_paths:
@@ -1191,6 +1331,11 @@ class Configuration:
         )
         return default_number_of_workers
 
+    def is_hover_enabled(self) -> bool:
+        if self.ide_features is None:
+            return IdeFeatures.DEFAULT_HOVER_ENABLED
+        return self.ide_features.is_hover_enabled()
+
     def get_valid_extension_suffixes(self) -> List[str]:
         vaild_extensions = []
         for extension in self.extensions:
@@ -1200,7 +1345,7 @@ class Configuration:
                     f"`{extension.suffix}`"
                 )
             else:
-                vaild_extensions.append(extension.suffix)
+                vaild_extensions.append(extension.command_line_argument())
         return vaild_extensions
 
     def get_isolation_prefix_respecting_override(self) -> Optional[str]:

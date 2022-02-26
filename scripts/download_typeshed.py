@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -206,7 +206,8 @@ def _patch_entry(
     new_filepath = temporary_path / "tempfile"
     new_filepath.write_bytes(entry.data)
 
-    result = subprocess.run(["patch", "-R", "-u", new_filepath, "-i", patch_path])
+    LOG.info(f"Applying patch {patch_path}")
+    result = subprocess.run(["patch", "-u", new_filepath, "-i", patch_path])
     if result.returncode != 0:
         return PatchResult(entry, True)
 

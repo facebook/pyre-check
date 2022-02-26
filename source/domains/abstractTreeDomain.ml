@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -1177,6 +1177,8 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     let fold = Base.fold
 
     let meet = Base.meet
+
+    let apply = Base.apply
   end
 
   let _ = Base.fold (* unused module warning work-around *)

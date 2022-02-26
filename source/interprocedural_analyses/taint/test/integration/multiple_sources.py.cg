@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+multiple_sources.$toplevel (fun) -> []
+multiple_sources.Node::$class_toplevel (method) -> []
 multiple_sources.Node::__init__ (method) -> []
 multiple_sources.Node::get (method) -> [multiple_sources.Node::__init__ (method) object::__new__ (method)]
 multiple_sources.a_source (fun) -> []

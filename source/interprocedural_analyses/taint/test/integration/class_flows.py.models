@@ -16,14 +16,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 46,
               "start": 42,
               "end": 56
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -31,24 +36,31 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{class_flows.C.__class__.tainted_class_attribute}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 46,
               "start": 4,
               "end": 39
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{class_flows.C.__class__.tainted_class_attribute}"
-              }
-            ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.tainted_class_attribute_through_double_underscore_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:b7f61664326b657c5227d14cc38865b0"
+    ]
   }
 }
 {
@@ -68,14 +80,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 53,
               "start": 47,
               "end": 61
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -83,24 +100,31 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{class_flows.C.__class__.tainted_class_attribute}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 53,
               "start": 8,
               "end": 44
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{class_flows.C.__class__.tainted_class_attribute}"
-              }
-            ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.tainted_class_attribute_through_optional_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:a139d3961b8e8b18bed9ef93c398cca6"
+    ]
   }
 }
 {
@@ -119,14 +143,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 57,
               "start": 32,
               "end": 46
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -134,24 +163,31 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{class_flows.C.__class__.tainted_class_attribute}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 57,
               "start": 4,
               "end": 29
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{class_flows.C.__class__.tainted_class_attribute}"
-              }
-            ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.global_class_attribute_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:3018a70369c9c80371f3853076f8a844"
+    ]
   }
 }
 {
@@ -170,14 +206,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 22,
               "start": 26,
               "end": 40
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -185,23 +226,28 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{class_flows.C.tainted_attribute}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 22,
               "start": 4,
               "end": 23
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{class_flows.C.tainted_attribute}"
-              }
-            ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.tainted_attribute_flow_issue:5002:0:Global|Obj{class_flows.C.tainted_attribute}|0:cba0e6980917c39855cb75c4ce3a3ebf"
+    ]
   }
 }
 {
@@ -220,14 +266,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 34,
               "start": 26,
               "end": 40
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -235,23 +286,28 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{class_flows.C.tainted_attribute}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 34,
               "start": 4,
               "end": 23
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{class_flows.C.tainted_attribute}"
-              }
-            ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.tainted_attribute_through_inheritance_issue:5002:0:Global|Obj{class_flows.C.tainted_attribute}|0:79778c5e234d08fb4b022de03cd0edd4"
+    ]
   }
 }
 {
@@ -270,14 +326,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 42,
               "start": 43,
               "end": 57
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -285,24 +346,31 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{class_flows.C.__class__.tainted_class_attribute}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 42,
               "start": 4,
               "end": 40
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{class_flows.C.__class__.tainted_class_attribute}"
-              }
-            ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "class_flows.tainted_class_attribute_through_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:2542e9e60455731d983e298f2875bfbf"
+    ]
   }
 }
 {
@@ -321,14 +389,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 79,
               "start": 63,
               "end": 77
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -336,6 +409,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "class_flows.py",
@@ -346,11 +427,8 @@
               "resolves_to": [
                 "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db"
               ],
-              "port": "formal(locale)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(locale)"
+            }
           }
         ]
       }
@@ -358,6 +436,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "class_flows.test:5002:0:Call|class_flows.HasClassmethods._async_results_for_non_empty_query_from_db|0|formal(locale):a529aa7033e6a0d9c907672d49c19426"
     ]
   }
 }
@@ -377,14 +458,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 90,
               "start": 36,
               "end": 50
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -392,6 +478,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "class_flows.py",
@@ -402,11 +496,8 @@
               "resolves_to": [
                 "class_flows.HasDecoratedClassmethod.to_sink"
               ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -414,6 +505,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "class_flows.test_decorated_classmethod:5002:0:Call|class_flows.HasDecoratedClassmethod.to_sink|0|formal(x):70aad8c4ef81c0c7ddff090277f2bbc8"
     ]
   }
 }
@@ -427,6 +521,14 @@
         "port": "formal(locale)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "class_flows.py",
@@ -437,11 +539,8 @@
               "resolves_to": [
                 "class_flows.HasClassmethods._get_multi_word_results"
               ],
-              "port": "formal(locale)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(locale)"
+            }
           }
         ]
       }
@@ -455,7 +554,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -467,7 +566,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -481,14 +580,19 @@
         "port": "formal(locale)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 70,
               "start": 19,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -504,14 +608,19 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_flows.py",
               "line": 86,
               "start": 19,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -526,7 +635,7 @@
       {
         "port": "formal(element)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
+          { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
         ]
       }
     ],

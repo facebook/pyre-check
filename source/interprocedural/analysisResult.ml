@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -72,28 +72,14 @@ type 'part pkg =
     }
       -> 'part pkg
 
-module InitializedModels = struct
-  type 'call_model initialize_result = {
-    initial_models: 'call_model Target.Map.t;
-    skip_overrides: Ast.Reference.Set.t;
-  }
+type 'call_model initialize_result = {
+  initial_models: 'call_model Target.Map.t;
+  skip_overrides: Ast.Reference.Set.t;
+}
 
-  type 'call_model t =
-    updated_environment:Analysis.TypeEnvironment.ReadOnly.t option -> 'call_model initialize_result
+let empty_initialize_result =
+  { initial_models = Target.Map.empty; skip_overrides = Ast.Reference.Set.empty }
 
-  let create f = f
-
-  let empty =
-    create (fun ~updated_environment:_ ->
-        { initial_models = Target.Map.empty; skip_overrides = Ast.Reference.Set.empty })
-
-
-  let get_models f = f ~updated_environment:None
-
-  (* Generate models from the initial models and an updated environment.
-   * For the taint analysis, this runs model queries. *)
-  let get_models_including_generated_models ~updated_environment f = f ~updated_environment
-end
 
 module type ANALYZER = sig
   type result
@@ -120,7 +106,7 @@ module type ANALYZER = sig
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     callables:Target.callable_t list ->
     stubs:Target.callable_t list ->
-    call_model InitializedModels.t
+    call_model initialize_result
 
   val report
     :  scheduler:Scheduler.t ->

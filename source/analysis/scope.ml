@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,6 +18,13 @@ module Binding = struct
       [@@deriving sexp, compare, hash]
     end
 
+    module Import = struct
+      type t =
+        | From of Reference.t
+        | Module
+      [@@deriving sexp, compare, hash]
+    end
+
     type t =
       | AssignTarget of Expression.t option
       | ClassName
@@ -25,7 +32,8 @@ module Binding = struct
       | DefineName of Statement.Define.Signature.t
       | ExceptTarget of Expression.t option
       | ForTarget
-      | ImportName
+      | ImportName of Import.t
+      | MatchTarget
       | ParameterName of {
           index: int;
           annotation: Expression.t option;
@@ -71,6 +79,7 @@ module Binding = struct
     | Expression.Starred (Starred.Once expression | Starred.Twice expression)
     | Expression.Yield (Some expression) ->
         of_expression sofar expression
+    | Expression.YieldFrom expression -> of_expression sofar expression
     | Expression.BooleanOperator { BooleanOperator.left; right; _ }
     | Expression.ComparisonOperator { ComparisonOperator.left; right; _ } ->
         let sofar = of_expression sofar left in
@@ -92,22 +101,21 @@ module Binding = struct
         of_comprehension sofar comprehension ~of_element:of_expression
     | Expression.List elements
     | Expression.Set elements
-    | Expression.String { StringLiteral.kind = StringLiteral.Format elements; _ }
     | Expression.Tuple elements ->
         List.fold elements ~init:sofar ~f:of_expression
     | Expression.Ternary { Ternary.target; test; alternative } ->
         let sofar = of_expression sofar target in
         let sofar = of_expression sofar test in
         of_expression sofar alternative
-    | Complex _
-    | Ellipsis
-    | False
-    | Float _
-    | Integer _
+    | Expression.FormatString substrings ->
+        let of_substring sofar = function
+          | Substring.(Literal _) -> sofar
+          | Substring.Format expression -> of_expression sofar expression
+        in
+        List.fold substrings ~init:sofar ~f:of_substring
+    | Constant _
     | Lambda _
     | Name (Name.Identifier _)
-    | String _
-    | True
     | Yield None ->
         sofar
 
@@ -132,7 +140,8 @@ module Binding = struct
 
 
   let rec of_statement sofar { Node.value = statement; location } =
-    let of_optional_expression sofar = Option.value_map ~default:sofar ~f:(of_expression sofar) in
+    let of_optional ~f sofar = Option.value_map ~default:sofar ~f:(f sofar) in
+    let of_optional_expression sofar = of_optional ~f:of_expression sofar in
     let open Statement in
     match statement with
     | Statement.Assert { test; message; _ } ->
@@ -151,10 +160,8 @@ module Binding = struct
     | Statement.Assign { Assign.target; value; _ } ->
         let sofar = of_expression sofar value in
         of_unannotated_target ~kind:(Kind.AssignTarget None) sofar target
-    | Statement.Class { Class.name = { Node.value = name; _ }; base_arguments; decorators; _ } ->
-        let sofar =
-          List.map decorators ~f:Decorator.to_expression |> List.fold ~init:sofar ~f:of_expression
-        in
+    | Statement.Class { Class.name; base_arguments; decorators; _ } ->
+        let sofar = List.fold ~init:sofar ~f:of_expression decorators in
         let sofar =
           List.fold
             base_arguments
@@ -162,15 +169,8 @@ module Binding = struct
             ~f:(fun sofar { Expression.Call.Argument.value; _ } -> of_expression sofar value)
         in
         { kind = Kind.ClassName; name = Reference.show name; location } :: sofar
-    | Statement.Define
-        {
-          Define.signature =
-            { name = { Node.value = name; _ }; decorators; parameters; _ } as signature;
-          _;
-        } ->
-        let sofar =
-          List.map decorators ~f:Decorator.to_expression |> List.fold ~init:sofar ~f:of_expression
-        in
+    | Statement.Define { Define.signature = { name; decorators; parameters; _ } as signature; _ } ->
+        let sofar = List.fold ~init:sofar ~f:of_expression decorators in
         let sofar =
           List.fold
             parameters
@@ -179,10 +179,7 @@ module Binding = struct
               of_optional_expression sofar value)
         in
         { kind = Kind.DefineName signature; name = Reference.show name; location } :: sofar
-    | Statement.Expression expression
-    | Statement.Yield expression
-    | Statement.YieldFrom expression ->
-        of_expression sofar expression
+    | Statement.Expression expression -> of_expression sofar expression
     | Statement.For { For.target; iterator; body; orelse; _ } ->
         let sofar = of_unannotated_target ~kind:Kind.ForTarget sofar target in
         let sofar = of_expression sofar iterator in
@@ -193,21 +190,58 @@ module Binding = struct
         let sofar = of_statements sofar body in
         of_statements sofar orelse
     | Statement.Import { Import.imports; from } ->
-        let binding_of_import sofar { Import.alias; name = { Node.value = name; location } } =
+        let binding_of_import sofar { Node.value = { Import.alias; name }; location } =
+          let import_status =
+            match from with
+            | Some from -> Kind.Import.From from
+            | None -> Kind.Import.Module
+          in
           match alias with
-          | Some { Node.value = alias; location } ->
-              { kind = Kind.ImportName; name = alias; location } :: sofar
+          | Some alias -> { kind = Kind.ImportName import_status; name = alias; location } :: sofar
           | None -> (
               match from with
               | Some _ ->
                   (* `name` must be a simple name *)
-                  { kind = Kind.ImportName; name = Reference.show name; location } :: sofar
+                  { kind = Kind.ImportName import_status; name = Reference.show name; location }
+                  :: sofar
               | None ->
                   (* `import a.b` actually binds name a *)
                   let name = Reference.as_list name |> List.hd_exn in
-                  { kind = Kind.ImportName; name; location } :: sofar)
+                  { kind = Kind.ImportName import_status; name; location } :: sofar)
         in
         List.fold imports ~init:sofar ~f:binding_of_import
+    | Match { Match.subject; cases } ->
+        let of_match_target sofar { Node.value = name; location } =
+          { name; kind = Kind.MatchTarget; location } :: sofar
+        in
+        let rec of_pattern sofar { Node.value = pattern; location } =
+          match pattern with
+          | Match.Pattern.MatchAs { pattern; name } ->
+              let sofar = of_optional ~f:of_pattern sofar pattern in
+              name |> Node.create ~location |> of_match_target sofar
+          | MatchClass { patterns; keyword_patterns; _ } ->
+              let sofar = List.fold ~init:sofar ~f:of_pattern patterns in
+              List.fold ~init:sofar ~f:of_pattern keyword_patterns
+          | MatchMapping { patterns; rest; _ } ->
+              let sofar = List.fold ~init:sofar ~f:of_pattern patterns in
+              rest >>| Node.create ~location |> of_optional ~f:of_match_target sofar
+          | MatchOr patterns
+          | MatchSequence patterns ->
+              List.fold ~init:sofar ~f:of_pattern patterns
+          | MatchStar maybe_name ->
+              maybe_name >>| Node.create ~location |> of_optional ~f:of_match_target sofar
+          | MatchValue value -> of_expression sofar value
+          | MatchSingleton _
+          | MatchWildcard ->
+              sofar
+        in
+        let of_case sofar { Match.Case.pattern; guard; body } =
+          let sofar = of_pattern sofar pattern in
+          let sofar = of_optional_expression sofar guard in
+          of_statements sofar body
+        in
+        let sofar = of_expression sofar subject in
+        List.fold ~init:sofar ~f:of_case cases
     | Statement.Raise { Raise.expression; from } ->
         let sofar = of_optional_expression sofar expression in
         of_optional_expression sofar from
@@ -288,6 +322,9 @@ let rec globals_of_statement sofar { Node.value; _ } =
   | While { While.body; orelse; _ } ->
       let sofar = globals_of_statements sofar body in
       globals_of_statements sofar orelse
+  | Match { Match.cases; _ } ->
+      List.fold cases ~init:sofar ~f:(fun sofar { Match.Case.body; _ } ->
+          globals_of_statements sofar body)
   | Try { Try.body; handlers; orelse; finally } ->
       let sofar = globals_of_statements sofar body in
       let sofar =
@@ -309,9 +346,7 @@ let rec globals_of_statement sofar { Node.value; _ } =
   | Nonlocal _
   | Pass
   | Raise _
-  | Return _
-  | Yield _
-  | YieldFrom _ ->
+  | Return _ ->
       sofar
 
 
@@ -328,6 +363,9 @@ let rec nonlocals_of_statement sofar { Node.value; _ } =
   | While { While.body; orelse; _ } ->
       let sofar = nonlocals_of_statements sofar body in
       nonlocals_of_statements sofar orelse
+  | Match { Match.cases; _ } ->
+      List.fold cases ~init:sofar ~f:(fun sofar { Match.Case.body; _ } ->
+          nonlocals_of_statements sofar body)
   | Try { Try.body; handlers; orelse; finally } ->
       let sofar = nonlocals_of_statements sofar body in
       let sofar =
@@ -349,9 +387,7 @@ let rec nonlocals_of_statement sofar { Node.value; _ } =
   | Import _
   | Pass
   | Raise _
-  | Return _
-  | Yield _
-  | YieldFrom _ ->
+  | Return _ ->
       sofar
 
 
@@ -418,7 +454,7 @@ module Scope = struct
           Format.asprintf
             "Cannot create a scope for define %a"
             Reference.pp
-            (Node.value (Statement.Define.name define))
+            (Statement.Define.name define)
         in
         failwith message
     | Some result -> result
@@ -609,6 +645,7 @@ module Builtins = struct
     | "__loader__"
     | "__name__"
     | "__package__"
+    | "__path__"
     | "__spec__"
     | "ArithmeticError"
     | "AssertionError"

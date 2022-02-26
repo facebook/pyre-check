@@ -38,5 +38,5 @@
     ppx_sexp_message ppx_deriving_yojson))
  (libraries core sexplib yojson ppx_deriving_yojson ppx_deriving pyrelib.ast
    pyrelib.memory pyrelib.dependencyTrackedMemory pyrelib.scheduler
-   pyrelib.pyreParser pyrelib.recognized pyrelib.statistics pyrelib.file type
-   preprocessing pyrelib.decorators))
+   pyrelib.pyreParser pyrelib.pyreNewParser pyrelib.recognized
+   pyrelib.statistics pyrelib.file type preprocessing pyrelib.decorators))

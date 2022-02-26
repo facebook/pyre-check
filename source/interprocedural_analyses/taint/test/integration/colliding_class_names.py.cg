@@ -1,4 +1,6 @@
 @generated
 Call dependencies
+colliding_class_names.$toplevel (fun) -> []
+colliding_class_names.C::$class_toplevel (method) -> []
 colliding_class_names.C::also_tainted_but_missing_from_analysis (method) -> [_test_source (fun)]
 colliding_class_names.C::foo (method) -> [_test_source (fun)]

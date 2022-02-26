@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -8,11 +8,13 @@ import unittest
 from typing import Dict
 
 import libcst as cst
-from libcst.metadata import MetadataWrapper
+from libcst.metadata import CodePosition, CodeRange, MetadataWrapper
 
 from ..statistics_collectors import (
+    AnnotationCollector,
     AnnotationCountCollector,
     FixmeCountCollector,
+    FunctionAnnotationKind,
     IgnoreCountCollector,
     StrictCountCollector,
 )
@@ -20,6 +22,38 @@ from ..statistics_collectors import (
 
 def parse_source(source: str) -> cst.Module:
     return cst.parse_module(textwrap.dedent(source.rstrip()))
+
+
+class AnnotationCollectorTest(unittest.TestCase):
+    def _build_and_visit_annotation_collector(self, source: str) -> AnnotationCollector:
+        source_module = MetadataWrapper(parse_source(source))
+        collector = AnnotationCollector()
+        source_module.visit(collector)
+        return collector
+
+    def test_return_code_range(self) -> None:
+        collector = self._build_and_visit_annotation_collector(
+            """
+            def foobar():
+                pass
+            """
+        )
+        returns = list(collector.returns())
+        self.assertEqual(len(returns), 1)
+        self.assertEqual(
+            returns[0].code_range,
+            CodeRange(CodePosition(2, 4), CodePosition(2, 10)),
+        )
+
+    def test_line_count(self) -> None:
+        source_module = MetadataWrapper(cst.parse_module("# No trailing newline"))
+        collector = AnnotationCollector()
+        source_module.visit(collector)
+        self.assertEqual(collector.line_count, 1)
+        source_module = MetadataWrapper(cst.parse_module("# With trailing newline\n"))
+        collector = AnnotationCollector()
+        source_module.visit(collector)
+        self.assertEqual(collector.line_count, 2)
 
 
 class AnnotationCountCollectorTest(unittest.TestCase):
@@ -44,9 +78,10 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 1,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
 
@@ -64,9 +99,10 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 2,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
 
@@ -84,9 +120,10 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 0,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
 
@@ -105,9 +142,10 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 0,
                 "attribute_count": 2,
                 "annotated_attribute_count": 2,
+                "function_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
-                "line_count": 5,
+                "line_count": 4,
             },
         )
 
@@ -126,9 +164,10 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 0,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 1,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
 
@@ -147,9 +186,10 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 1,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 2,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 1,
-                "line_count": 5,
+                "line_count": 4,
             },
         )
 
@@ -162,15 +202,16 @@ class AnnotationCountCollectorTest(unittest.TestCase):
             {
                 "annotated_return_count": 0,
                 "annotated_globals_count": 0,
-                "annotated_parameter_count": 2,
+                "annotated_parameter_count": 1,
                 "return_count": 1,
                 "globals_count": 0,
-                "parameter_count": 2,
+                "parameter_count": 1,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 5,
+                "line_count": 4,
             },
         )
 
@@ -183,15 +224,16 @@ class AnnotationCountCollectorTest(unittest.TestCase):
             {
                 "annotated_return_count": 1,
                 "annotated_globals_count": 0,
-                "annotated_parameter_count": 2,
+                "annotated_parameter_count": 1,
                 "return_count": 1,
                 "globals_count": 0,
-                "parameter_count": 2,
+                "parameter_count": 1,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 1,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 1,
-                "line_count": 5,
+                "line_count": 4,
             },
         )
 
@@ -205,15 +247,16 @@ class AnnotationCountCollectorTest(unittest.TestCase):
             {
                 "annotated_return_count": 0,
                 "annotated_globals_count": 0,
-                "annotated_parameter_count": 2,
+                "annotated_parameter_count": 1,
                 "return_count": 1,
                 "globals_count": 0,
-                "parameter_count": 2,
+                "parameter_count": 1,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 6,
+                "line_count": 5,
             },
         )
 
@@ -231,9 +274,10 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 2,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
 
@@ -253,35 +297,10 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "parameter_count": 2,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 1,
                 "partially_annotated_function_count": 1,
                 "fully_annotated_function_count": 0,
-                "line_count": 6,
-            },
-        )
-
-        self.assert_counts(
-            """
-            def foo(x):
-                def bar(x):
-                    return x
-                return bar
-
-            class A:
-                @foo(42)
-                def baz(self): ...
-            """,
-            {
-                "annotated_return_count": 0,
-                "annotated_globals_count": 0,
-                "annotated_parameter_count": 1,
-                "return_count": 3,
-                "globals_count": 0,
-                "parameter_count": 3,
-                "attribute_count": 0,
-                "annotated_attribute_count": 0,
-                "partially_annotated_function_count": 1,
-                "fully_annotated_function_count": 0,
-                "line_count": 10,
+                "line_count": 5,
             },
         )
 
@@ -299,9 +318,10 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_parameter_count": 1,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 1,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 1,
-                "line_count": 4,
+                "line_count": 3,
             },
         )
         self.assert_counts(
@@ -321,13 +341,14 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_return_count": 2,
                 "globals_count": 0,
                 "annotated_globals_count": 0,
-                "parameter_count": 4,
-                "annotated_parameter_count": 4,
+                "parameter_count": 2,
+                "annotated_parameter_count": 2,
                 "attribute_count": 0,
                 "annotated_attribute_count": 0,
+                "function_count": 2,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 2,
-                "line_count": 11,
+                "line_count": 10,
             },
         )
         # Ensure globals and attributes with literal values are considered annotated.
@@ -350,10 +371,202 @@ class AnnotationCountCollectorTest(unittest.TestCase):
                 "annotated_parameter_count": 0,
                 "attribute_count": 2,
                 "annotated_attribute_count": 2,
+                "function_count": 0,
                 "partially_annotated_function_count": 0,
                 "fully_annotated_function_count": 0,
-                "line_count": 9,
+                "line_count": 8,
             },
+        )
+
+    def test_count_annotations__partially_annotated_methods(self) -> None:
+        self.assert_counts(
+            """
+            class A:
+                def bar(self): ...
+            """,
+            {
+                "return_count": 1,
+                "annotated_return_count": 0,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 0,
+                "annotated_parameter_count": 0,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "function_count": 1,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
+                "line_count": 3,
+            },
+        )
+        self.assert_counts(
+            """
+            class A:
+                def bar(self) -> None: ...
+            """,
+            {
+                "return_count": 1,
+                "annotated_return_count": 1,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 0,
+                "annotated_parameter_count": 0,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "function_count": 1,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 1,
+                "line_count": 3,
+            },
+        )
+        self.assert_counts(
+            """
+            class A:
+                def baz(self, x): ...
+            """,
+            {
+                "return_count": 1,
+                "annotated_return_count": 0,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 1,
+                "annotated_parameter_count": 0,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "function_count": 1,
+                "partially_annotated_function_count": 0,
+                "fully_annotated_function_count": 0,
+                "line_count": 3,
+            },
+        )
+        self.assert_counts(
+            """
+            class A:
+                def baz(self, x) -> None: ...
+            """,
+            {
+                "return_count": 1,
+                "annotated_return_count": 1,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 1,
+                "annotated_parameter_count": 0,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "function_count": 1,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
+                "line_count": 3,
+            },
+        )
+        self.assert_counts(
+            """
+            class A:
+                def baz(self: Foo): ...
+            """,
+            {
+                "return_count": 1,
+                "annotated_return_count": 0,
+                "globals_count": 0,
+                "annotated_globals_count": 0,
+                "parameter_count": 0,
+                "annotated_parameter_count": 0,
+                "attribute_count": 0,
+                "annotated_attribute_count": 0,
+                "function_count": 1,
+                "partially_annotated_function_count": 1,
+                "fully_annotated_function_count": 0,
+                "line_count": 3,
+            },
+        )
+
+
+class FunctionAnnotationKindTest(unittest.TestCase):
+    def test_from_function_data(self) -> None:
+        three_parameters = [
+            cst.Param(name=cst.Name("x1"), annotation=None),
+            cst.Param(name=cst.Name("x2"), annotation=None),
+            cst.Param(name=cst.Name("x3"), annotation=None),
+        ]
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=True,
+                annotated_parameter_count=3,
+                is_method_or_classmethod=False,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.FULLY_ANNOTATED,
+        )
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=True,
+                annotated_parameter_count=0,
+                is_method_or_classmethod=False,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+        )
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=0,
+                is_method_or_classmethod=False,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.NOT_ANNOTATED,
+        )
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=1,
+                is_method_or_classmethod=False,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+        )
+        # An untyped `self` parameter of a method does not count for partial
+        # annotation. As per PEP 484, we need an explicitly annotated parameter.
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=1,
+                is_method_or_classmethod=True,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.NOT_ANNOTATED,
+        )
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=2,
+                is_method_or_classmethod=True,
+                parameters=three_parameters,
+            ),
+            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+        )
+        # An annotated `self` suffices to make Pyre typecheck the method.
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=1,
+                is_method_or_classmethod=True,
+                parameters=[
+                    cst.Param(
+                        name=cst.Name("self"),
+                        annotation=cst.Annotation(cst.Name("Foo")),
+                    )
+                ],
+            ),
+            FunctionAnnotationKind.PARTIALLY_ANNOTATED,
+        )
+        self.assertEqual(
+            FunctionAnnotationKind.from_function_data(
+                is_return_annotated=False,
+                annotated_parameter_count=0,
+                is_method_or_classmethod=True,
+                parameters=[],
+            ),
+            FunctionAnnotationKind.NOT_ANNOTATED,
         )
 
 

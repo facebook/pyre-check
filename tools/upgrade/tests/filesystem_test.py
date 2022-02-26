@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -6,11 +6,19 @@
 import ast
 import subprocess
 import unittest
+from pathlib import Path
 from textwrap import dedent
 from typing import List
-from unittest.mock import call, patch
+from unittest.mock import call, patch, MagicMock
 
-from ..filesystem import Target, TargetCollector, Filesystem, MercurialBackedFilesystem
+from ..filesystem import (
+    add_local_mode,
+    LocalMode,
+    Target,
+    TargetCollector,
+    Filesystem,
+    MercurialBackedFilesystem,
+)
 
 
 class FilesystemTest(unittest.TestCase):
@@ -317,3 +325,37 @@ class FilesystemTest(unittest.TestCase):
                     )
                 ]
             )
+
+    @patch.object(Path, "read_text")
+    def test_add_local_mode(self, read_text: MagicMock) -> None:
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "1\n2"
+            add_local_mode("local.py", LocalMode.UNSAFE)
+            path_write_text.assert_called_once_with("# pyre-unsafe\n1\n2")
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "# comment\n# comment\n1"
+            add_local_mode("local.py", LocalMode.UNSAFE)
+            path_write_text.assert_called_once_with(
+                "# comment\n# comment\n\n# pyre-unsafe\n1"
+            )
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "# comment\n# pyre-strict\n1"
+            add_local_mode("local.py", LocalMode.UNSAFE)
+            path_write_text.assert_not_called()
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "# comment\n# pyre-ignore-all-errors\n1"
+            add_local_mode("local.py", LocalMode.UNSAFE)
+            path_write_text.assert_not_called()
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "1\n2"
+            add_local_mode("local.py", LocalMode.STRICT)
+            path_write_text.assert_called_once_with("# pyre-strict\n1\n2")
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "1\n2"
+            add_local_mode("local.py", LocalMode.IGNORE)
+            path_write_text.assert_called_once_with("# pyre-ignore-all-errors\n1\n2")

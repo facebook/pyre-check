@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,7 +7,7 @@
 
 open Core
 
-type t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+type t [@@deriving compare, sexp, show, hash, to_yojson]
 
 val local_qualifier_pattern : Str.regexp
 
@@ -37,6 +37,8 @@ val sanitized : t -> t
 
 val sanitize_qualified : t -> t
 
+val equal : t -> t -> bool
+
 val equal_sanitized : t -> t -> bool
 
 val pp_sanitized : Format.formatter -> t -> unit
@@ -62,6 +64,8 @@ val drop_prefix : prefix:t -> t -> t
 val prefix : t -> t option
 
 val head : t -> t option
+
+val first : t -> Identifier.t
 
 val last : t -> Identifier.t
 

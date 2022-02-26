@@ -1,91 +1,89 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
 import dataclasses
-import json
+import logging
 import os
 from pathlib import Path
-from typing import Sequence, Dict, Any
+from typing import List, Dict
 
-from .. import command_arguments
-from ..analysis_directory import AnalysisDirectory
-from ..configuration import Configuration
-from ..error import ModelVerificationError, print_errors
-from .command import ClientException, Result
-from .query import Query
+from .. import configuration as configuration_module, error as error_module
+from . import commands, query, server_connection, remote_logging
 
 
-class ValidateModels(Query):
-    def __init__(
-        self,
-        command_arguments: command_arguments.CommandArguments,
-        *,
-        original_directory: str,
-        configuration: Configuration,
-    ) -> None:
-        super(ValidateModels, self).__init__(
-            command_arguments=command_arguments,
-            original_directory=original_directory,
-            configuration=configuration,
-            query="validate_taint_models()",
+LOG: logging.Logger = logging.getLogger(__name__)
+
+
+def _relativize_error_path(
+    error: error_module.ModelVerificationError,
+) -> error_module.ModelVerificationError:
+    if error.path is None:
+        return error
+
+    relativized_path = Path(os.path.relpath(error.path, Path.cwd()))
+    return dataclasses.replace(error, path=relativized_path)
+
+
+def parse_validation_errors(
+    payload: Dict[str, object],
+) -> List[error_module.ModelVerificationError]:
+    errors_payload = [] if "errors" not in payload else payload["errors"]
+    if not isinstance(errors_payload, list):
+        message = f"Invalid error payload for model validation: `{errors_payload}`."
+        raise query.InvalidQueryResponse(message)
+
+    return sorted(
+        (
+            _relativize_error_path(error_module.ModelVerificationError.from_json(item))
+            for item in errors_payload
+        ),
+        key=lambda error: (error.path or Path(), error.line, error.code),
+    )
+
+
+def parse_validation_errors_response(
+    payload: object,
+) -> List[error_module.ModelVerificationError]:
+    if not isinstance(payload, dict) or "response" not in payload:
+        message = f"Invalid payload for model validation: `{payload}`."
+        raise query.InvalidQueryResponse(message)
+
+    response_payload = payload["response"]
+    if not isinstance(response_payload, dict):
+        message = (
+            f"Invalid response payload for model validation: `{response_payload}`."
         )
+        raise query.InvalidQueryResponse(message)
 
-    @staticmethod
-    def _relativize_error(
-        configuration: Configuration,
-        relative_root: str,
-        error: ModelVerificationError,
-        original_directory: str,
-    ) -> ModelVerificationError:
-        if error.path is None:
-            return error
+    return parse_validation_errors(response_payload)
 
-        path = os.path.realpath(os.path.join(relative_root, error.path))
-        # If relative paths don't make sense, keep the absolute path around.
-        if not path.startswith(configuration.project_root) or not os.path.exists(path):
-            return error
 
-        # Relativize path to user's cwd.
-        relative_path = os.path.relpath(path, original_directory)
-        return dataclasses.replace(error, path=relative_path)
-
-    @staticmethod
-    def parse_errors(
-        json_result: Dict[str, Any],
-        configuration: Configuration,
-        analysis_directory: AnalysisDirectory,
-        original_directory: str,
-    ) -> Sequence[ModelVerificationError]:
-        if "errors" not in json_result:
-            return []
-        analysis_root = os.path.realpath(analysis_directory.get_root())
-        return sorted(
-            (
-                ValidateModels._relativize_error(
-                    configuration,
-                    analysis_root,
-                    ModelVerificationError.from_json(error_json),
-                    original_directory,
-                )
-                for error_json in json_result["errors"]
-            ),
-            key=lambda error: (error.path or Path(), error.line, error.code),
+@remote_logging.log_usage(command_name="validate-models")
+def run(
+    configuration: configuration_module.Configuration, output: str
+) -> commands.ExitCode:
+    socket_path = server_connection.get_default_socket_path(
+        project_root=Path(configuration.project_root),
+        relative_local_root=Path(configuration.relative_local_root)
+        if configuration.relative_local_root
+        else None,
+    )
+    try:
+        response = query.query_server(socket_path, "validate_taint_models()")
+        validation_errors = parse_validation_errors_response(response.payload)
+        error_module.print_errors(
+            validation_errors, output=output, error_kind="model verification"
         )
-
-    def _socket_result_handler(self, result: Result) -> None:
-        try:
-            json_result = json.loads(result.output)
-        except json.JSONDecodeError:
-            raise ClientException(f"Invalid JSON output: `{result.output}`.")
-
-        if "response" not in json_result:
-            raise ClientException(f"Invalid JSON output: `{json_result}`")
-        errors = ValidateModels.parse_errors(
-            json_result["response"],
-            self._configuration,
-            self._analysis_directory,
-            self._original_directory,
+        return commands.ExitCode.SUCCESS
+    except server_connection.ConnectionFailure:
+        LOG.warning(
+            "A running Pyre server is required for models to be validated. "
+            "Please run `pyre` first to set up a server."
         )
-        print_errors(errors, output=self._output, error_kind="model verification")
+        return commands.ExitCode.SERVER_NOT_FOUND
+    except Exception as error:
+        raise commands.ClientException(
+            f"Exception occurred during model validation: {error}"
+        ) from error

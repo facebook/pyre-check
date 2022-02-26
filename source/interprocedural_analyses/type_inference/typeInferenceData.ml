@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,7 +17,7 @@ let type_to_reference type_ = type_ |> type_to_string |> Reference.create
 let expression_to_json expression = `String (expression |> Expression.sanitized |> Expression.show)
 
 module SerializableReference = struct
-  type t = Reference.t [@@deriving compare, eq, sexp, hash, show]
+  type t = Reference.t [@@deriving compare, sexp, hash, show]
 
   let to_yojson reference = `String (Reference.show_sanitized reference)
 
@@ -25,18 +25,8 @@ module SerializableReference = struct
   module Set = Set.Make (Reference)
 end
 
-module SerializableDecorator = struct
-  type t = Statement.Decorator.t [@@deriving compare, eq, sexp, hash, show]
-
-  let to_yojson decorator =
-    Ast.Statement.Decorator.to_expression decorator
-    |> Expression.sanitized
-    |> Expression.show
-    |> fun shown -> `String shown
-end
-
 module DefaultValue = struct
-  type t = Expression.t option [@@deriving show, eq]
+  type t = Expression.t option [@@deriving show]
 
   let to_yojson value = value >>| expression_to_json |> Option.value ~default:`Null
 end
@@ -47,7 +37,7 @@ module AnnotationLocation = struct
     path: string;
     line: int;
   }
-  [@@deriving show, eq, compare, to_yojson]
+  [@@deriving show, compare, to_yojson]
 
   let create ~lookup ~qualifier ~line =
     { qualifier; path = lookup qualifier |> Option.value ~default:"*"; line }
@@ -65,7 +55,7 @@ module AnnotationLocation = struct
 end
 
 module SerializableType = struct
-  type t = Type.t [@@deriving show, eq]
+  type t = Type.t [@@deriving show]
 
   let to_yojson type_ = `String (type_to_string type_)
 end
@@ -75,7 +65,7 @@ module TypeAnnotation = struct
     | Inferred of SerializableType.t
     | Given of Expression.t
     | Missing
-  [@@deriving show, eq]
+  [@@deriving show]
 
   let is_inferred = function
     | Inferred _ -> true
@@ -110,14 +100,15 @@ module TypeAnnotation = struct
 
   let to_yojson = function
     | Inferred type_ -> SerializableType.to_yojson type_
-    | Given expression -> expression_to_json expression
-    | Missing -> `Null
+    | Given _
+    | Missing ->
+        `Null
 end
 
 module AnnotationsByName = struct
   module Base = struct
     module type S = sig
-      type t [@@deriving show, eq, compare, to_yojson]
+      type t [@@deriving show, compare, to_yojson]
 
       val identifying_name : t -> SerializableReference.t
     end
@@ -134,8 +125,6 @@ module AnnotationsByName = struct
       let show map =
         map |> data |> List.map ~f:Value.show |> String.concat ~sep:"," |> Format.asprintf "[%s]"
 
-
-      let equal = SerializableReference.Map.equal Value.equal
 
       let to_yojson map = `List (map |> data |> List.map ~f:Value.to_yojson)
 
@@ -211,7 +200,7 @@ module GlobalAnnotation = struct
       location: AnnotationLocation.t;
       annotation: SerializableType.t;
     }
-    [@@deriving show, eq, to_yojson]
+    [@@deriving show, to_yojson]
 
     let compare { location = left; _ } { location = right; _ } =
       AnnotationLocation.compare left right
@@ -244,7 +233,7 @@ module AttributeAnnotation = struct
       location: AnnotationLocation.t;
       annotation: SerializableType.t;
     }
-    [@@deriving show, eq, to_yojson]
+    [@@deriving show, to_yojson]
 
     let compare { location = left; _ } { location = right; _ } =
       AnnotationLocation.compare left right
@@ -278,7 +267,7 @@ module DefineAnnotation = struct
         value: DefaultValue.t;
         index: int;
       }
-      [@@deriving show, eq, to_yojson]
+      [@@deriving show, to_yojson]
 
       (* Assumption: we never have two parameters with the same index *)
       let compare { index = left; _ } { index = right; _ } = Int.compare left right
@@ -303,11 +292,10 @@ module DefineAnnotation = struct
     parent: SerializableReference.t option;
     return: TypeAnnotation.t; [@compare.ignore]
     parameters: Parameters.ByName.t; [@compare.ignore]
-    decorators: SerializableDecorator.t list;
     location: AnnotationLocation.t;
     async: bool;
   }
-  [@@deriving show, eq, compare, to_yojson]
+  [@@deriving show, compare, to_yojson]
 
   let is_inferred { return; parameters; _ } =
     TypeAnnotation.is_inferred return || Parameters.any_inferred parameters
@@ -395,16 +383,7 @@ module LocalResult = struct
       {
         Node.value =
           {
-            Statement.Define.signature =
-              {
-                name = { Node.value = define_name; _ };
-                parameters;
-                return_annotation;
-                decorators;
-                parent;
-                async;
-                _;
-              };
+            Statement.Define.signature = { name; parameters; return_annotation; parent; async; _ };
             _;
           };
         Node.location = define_location;
@@ -431,11 +410,10 @@ module LocalResult = struct
         |> List.fold ~init:Parameters.ByName.empty ~f:(Parameters.ByName.add ~global_resolution)
       in
       {
-        name = define_name;
+        name;
         parent;
         return;
         parameters;
-        decorators;
         location = define_location |> AnnotationLocation.from_location ~lookup ~qualifier;
         async;
       }
@@ -496,7 +474,7 @@ end
 module GlobalResult = struct
   module DefineAnnotationsByName = struct
     module Value = struct
-      type t = DefineAnnotation.t [@@deriving show, eq, compare, to_yojson]
+      type t = DefineAnnotation.t [@@deriving show, compare, to_yojson]
 
       let identifying_name { DefineAnnotation.name; _ } = name
     end
@@ -509,7 +487,7 @@ module GlobalResult = struct
     attributes: AttributeAnnotation.ByName.t;
     defines: DefineAnnotationsByName.t;
   }
-  [@@deriving show, eq, to_yojson]
+  [@@deriving show, to_yojson]
 
   let inference_count { globals; attributes; defines } =
     GlobalAnnotation.ByName.length globals

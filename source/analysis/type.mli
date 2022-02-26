@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -118,6 +118,14 @@ module Record : sig
         'annotation t ->
         'annotation record_unpackable
 
+      val create_from_concrete_against_concrete
+        :  ?prefix:'annotation list ->
+        ?suffix:'annotation list ->
+        compare_t:('annotation -> 'annotation -> int) ->
+        left:'annotation list ->
+        right:'annotation list ->
+        'annotation t
+
       val create_from_concrete_against_concatenation
         :  ?prefix:'annotation list ->
         ?suffix:'annotation list ->
@@ -158,6 +166,10 @@ module Record : sig
       :  'annotation record ->
       'annotation record ->
       'annotation ordered_type_split option
+
+    val drop_prefix : length:int -> 'annotation record -> 'annotation record option
+
+    val index : python_index:int -> 'annotation record -> 'annotation option
   end
 
   module Callable : sig
@@ -446,7 +458,11 @@ val enumeration : t
 
 val float : t
 
-val generator : ?async:bool -> t -> t
+val generator : ?yield_type:t -> ?send_type:t -> ?return_type:t -> unit -> t
+
+val async_generator : ?yield_type:t -> ?send_type:t -> unit -> t
+
+val generator_expression : t -> t
 
 val generic_primitive : t
 
@@ -667,10 +683,6 @@ val is_dictionary_or_mapping : t -> bool
 
 val is_ellipsis : t -> bool
 
-val is_final : t -> bool
-
-val is_generator : t -> bool
-
 val is_generic_primitive : t -> bool
 
 val is_iterable : t -> bool
@@ -705,6 +717,8 @@ val is_union : t -> bool
 
 val is_falsy : t -> bool
 
+val is_truthy : t -> bool
+
 val contains_any : t -> bool
 
 val contains_unknown : t -> bool
@@ -738,8 +752,6 @@ val contains_variable : t -> bool
 
 val optional_value : t -> t option
 
-val async_generator_value : t -> t option
-
 val awaitable_value : t -> t option
 
 val coroutine_value : t -> t option
@@ -760,6 +772,8 @@ val instantiate
   t
 
 val weaken_literals : t -> t
+
+val weaken_to_arbitrary_literal_if_possible : t -> t
 
 module OrderedTypes : sig
   include module type of struct
@@ -790,6 +804,8 @@ module OrderedTypes : sig
     type_t Concatenation.t option
 
   val broadcast : type_t -> type_t -> type_t
+
+  val coalesce_ordered_types : type_t record list -> type_t record option
 end
 
 val split : t -> t * Parameter.t list
@@ -800,7 +816,7 @@ val class_variable : t -> t
 
 val class_variable_value : t -> t option
 
-val final_value : t -> t option
+val final_value : t -> [> `NoParameter | `NotFinal | `Ok of t ]
 
 val assume_any : t -> t
 

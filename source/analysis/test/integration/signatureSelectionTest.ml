@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19,8 +19,8 @@ let test_check_callables context =
         callable(1)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st positional only parameter to anonymous call but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
+       expected `str` but got `int`.";
     ];
 
   (* Type variables & callables. *)
@@ -60,10 +60,8 @@ let test_check_callables context =
       foo(i2s)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Callable[[int], int]` for 1st positional only parameter to call `foo` \
-         but got "
-      ^ "`typing.Callable(i2s)[[Named(x, int)], str]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing.Callable[[int], int]` but got `typing.Callable(i2s)[[Named(x, int)], str]`.";
     ];
 
   (* Classes with __call__ are callables. *)
@@ -99,14 +97,10 @@ let test_check_callables context =
         particular_map(y, [])
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Callable[[int], str]` for 1st positional only parameter to call \
-         `particular_map` but got "
-      ^ "`CallMe`.";
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Callable[[int], str]` for 1st positional only parameter to call \
-         `particular_map` but got "
-      ^ "`CallMeToo`.";
+      "Incompatible parameter type [6]: In call `particular_map`, for 1st positional only \
+       parameter expected `typing.Callable[[int], str]` but got `CallMe`.";
+      "Incompatible parameter type [6]: In call `particular_map`, for 1st positional only \
+       parameter expected `typing.Callable[[int], str]` but got `CallMeToo`.";
     ];
 
   (* Sanity check: Callables do not subclass classes. *)
@@ -122,9 +116,8 @@ let test_check_callables context =
         particular_map(f, 1)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `CallMe` for 1st positional only parameter to call `particular_map` but got "
-      ^ "`typing.Callable[[int], str]`.";
+      "Incompatible parameter type [6]: In call `particular_map`, for 1st positional only \
+       parameter expected `CallMe` but got `typing.Callable[[int], str]`.";
     ];
 
   (* The annotation for callable gets expanded automatically. *)
@@ -139,10 +132,8 @@ let test_check_callables context =
       hof(1)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Callable[[int], int]` for 1st positional only parameter to call `hof` \
-         but got "
-      ^ "`int`.";
+      "Incompatible parameter type [6]: In call `hof`, for 1st positional only parameter expected \
+       `typing.Callable[[int], int]` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -178,9 +169,9 @@ let test_check_callables context =
     [
       "Missing parameter annotation [2]: Parameter `f` must have a type "
       ^ "that does not contain `Any`.";
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Callable[[typing.Any], int]` for 1st positional only parameter "
-      ^ "to call `takes_callable` but got `typing.Callable[[Named(y, typing.Any)], str]`.";
+      "Incompatible parameter type [6]: In call `takes_callable`, for 1st positional only \
+       parameter expected `typing.Callable[[typing.Any], int]` but got `typing.Callable[[Named(y, \
+       typing.Any)], str]`.";
     ];
   assert_default_type_errors
     {|
@@ -233,8 +224,8 @@ let test_check_function_parameters context =
       int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `int_to_int` but got `float`.";
+      "Incompatible parameter type [6]: In call `int_to_int`, for 1st positional only parameter \
+       expected `int` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -243,19 +234,19 @@ let test_check_function_parameters context =
         int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int_to_int` but got `float`.";
+      "Incompatible parameter type [6]: In call `int_to_int`, for 1st positional only parameter \
+       expected `int` but got `float`.";
     ];
   assert_type_errors
     {|
-      def preprocessed($renamed_i: str) -> None:
+      def preprocessed(i: str) -> None:
         pass
       def foo() -> None:
         preprocessed(1.0)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st positional only parameter to call `preprocessed` but got `float`.";
+      "Incompatible parameter type [6]: In call `preprocessed`, for 1st positional only parameter \
+       expected `str` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -264,8 +255,8 @@ let test_check_function_parameters context =
         return int_to_int(1.0)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int_to_int` but got `float`.";
+      "Incompatible parameter type [6]: In call `int_to_int`, for 1st positional only parameter \
+       expected `int` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -279,9 +270,8 @@ let test_check_function_parameters context =
   assert_type_errors
     "import hashlib; hashlib.md5(1.0)"
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Union[int, str]` for 1st positional only parameter to call `hashlib.md5` "
-      ^ "but got `float`.";
+      "Incompatible parameter type [6]: In call `hashlib.md5`, for 1st positional only parameter \
+       expected `Union[int, str]` but got `float`.";
     ];
   assert_type_errors {|
       def foo(i: int, *, j: int) -> None:
@@ -304,8 +294,8 @@ let test_check_function_parameters context =
           int_to_int(self.attribute)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter "
-      ^ "to call `int_to_int` but got `unknown`.";
+      "Incompatible parameter type [6]: In call `int_to_int`, for 1st positional only parameter \
+       expected `int` but got `unknown`.";
       "Undefined attribute [16]: `A` has no attribute `attribute`.";
     ];
   assert_type_errors
@@ -339,9 +329,8 @@ let test_check_function_parameters context =
         return to_int(a or int_to_str(a))
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int_to_str` but got "
-      ^ "`typing.Optional[int]`.";
+      "Incompatible parameter type [6]: In call `int_to_str`, for 1st positional only parameter \
+       expected `int` but got `Optional[int]`.";
     ];
   assert_type_errors
     {|
@@ -393,7 +382,7 @@ let test_check_function_parameters context =
   assert_type_errors
     {|
       import typing
-      def foo(a):  # type: (typing.Optional[int]) -> None
+      def foo(a: typing.Optional[int]) -> None:
         pass
       foo(None)
     |}
@@ -401,33 +390,18 @@ let test_check_function_parameters context =
   assert_type_errors
     {|
       import typing
-      def foo(a):  # type: (typing.Optional[int]) -> None
+      def foo(a: typing.Optional[int]) -> None:
         pass
       foo("hello")
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Optional[int]` for 1st positional only parameter to call `foo` but got \
-         `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `Optional[int]` but got `str`.";
     ];
   assert_type_errors
     {|
       import typing
-      def foo(a):
-        # type: (typing.Optional[int]) -> None
-        pass
-      foo("hello")
-    |}
-    [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Optional[int]` for 1st positional only parameter to call `foo` but got \
-         `str`.";
-    ];
-  assert_type_errors
-    {|
-      import typing
-      def foo(a, b):
-        # type: (typing.Optional[int], str) -> None
+      def foo(a: typing.Optional[int], b: str) -> None:
         pass
       foo(1, "hello")
     |}
@@ -435,14 +409,13 @@ let test_check_function_parameters context =
   assert_type_errors
     {|
       import typing
-      def foo(a, b):
-        # type: (typing.Optional[int], str) -> None
+      def foo(a: typing.Optional[int], b: str) -> None:
         pass
       foo(1, 1)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 2nd positional only parameter to call `foo` but got `int`.";
+      "Incompatible parameter type [6]: In call `foo`, for 2nd positional only parameter expected \
+       `str` but got `int`.";
     ];
   assert_default_type_errors
     {|
@@ -620,8 +593,8 @@ let test_check_function_parameter_errors context =
         str_float_to_int(input.attribute, input.undefined)
     |}
     [
-      "Incompatible parameter type [6]: Expected `float` for 2nd positional only parameter "
-      ^ "to call `str_float_to_int` but got `unknown`.";
+      "Incompatible parameter type [6]: In call `str_float_to_int`, for 2nd positional only \
+       parameter expected `float` but got `unknown`.";
       "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
     ];
   assert_type_errors
@@ -633,11 +606,11 @@ let test_check_function_parameter_errors context =
         str_float_to_int(input.undefined, input.undefined)
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to call "
-      ^ "`str_float_to_int` but got `unknown`.";
+      "Incompatible parameter type [6]: In call `str_float_to_int`, for 1st positional only \
+       parameter expected `str` but got `unknown`.";
       "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
-      "Incompatible parameter type [6]: Expected `float` for 2nd positional only parameter "
-      ^ "to call `str_float_to_int` but got `unknown`.";
+      "Incompatible parameter type [6]: In call `str_float_to_int`, for 2nd positional only \
+       parameter expected `float` but got `unknown`.";
     ];
   assert_type_errors
     {|
@@ -649,10 +622,8 @@ let test_check_function_parameter_errors context =
         optional_str_to_int(input and input.attribute)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Optional[str]` for 1st positional only parameter to call \
-         `optional_str_to_int` "
-      ^ "but got `typing.Optional[int]`.";
+      "Incompatible parameter type [6]: In call `optional_str_to_int`, for 1st positional only \
+       parameter expected `Optional[str]` but got `Union[None, Foo, int]`.";
     ];
   assert_type_errors
     {|
@@ -664,10 +635,8 @@ let test_check_function_parameter_errors context =
         optional_str_to_int(input and input.undefined)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Optional[str]` for 1st positional only parameter to call \
-         `optional_str_to_int` "
-      ^ "but got `unknown`.";
+      "Incompatible parameter type [6]: In call `optional_str_to_int`, for 1st positional only \
+       parameter expected `Optional[str]` but got `unknown`.";
       "Undefined attribute [16]: `Foo` has no attribute `undefined`.";
     ];
   assert_type_errors
@@ -891,8 +860,8 @@ let test_check_variable_arguments context =
         return f( *collection)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `f` but got `str`.";
+      "Incompatible parameter type [6]: In call `f`, for 1st positional only parameter expected \
+       `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -944,8 +913,8 @@ let test_check_variable_arguments context =
         return foo ( *b )
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `foo` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -956,10 +925,10 @@ let test_check_variable_arguments context =
         foo('asdf', *b)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `foo` but got `str`.";
-      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call "
-      ^ "`foo` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 2nd positional only parameter expected \
+       `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1006,10 +975,10 @@ let test_check_variable_arguments context =
         return foo('asdf', *b)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `foo` but got `str`.";
-      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call "
-      ^ "`foo` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 2nd positional only parameter expected \
+       `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1026,10 +995,27 @@ let test_check_variable_arguments context =
      def foo(a: typing.Tuple[int, str]) -> typing.Set[int]:
        return set(a)
    |}
+    ["Incompatible return type [7]: Expected `Set[int]` but got `Set[Union[int, str]]`."];
+  (* These two ways of annotating `*args` are equivalent. *)
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from pyre_extensions import Unpack
+
+      def simple_starred_args( *args: str) -> None: ...
+      def unbounded_tuple_starred_args( *args: Unpack[Tuple[str, ...]]) -> None: ...
+
+      def main() -> None:
+        simple_starred_args(1, "hello")
+        unbounded_tuple_starred_args(1, "hello")
+   |}
     [
-      "Incompatible return type [7]: "
-      ^ "Expected `typing.Set[int]` but got `typing.Set[typing.Union[int, str]]`.";
-    ]
+      "Incompatible parameter type [6]: In call `simple_starred_args`, for 1st positional only \
+       parameter expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `unbounded_tuple_starred_args`, for 1st positional \
+       only parameter expected `str` but got `int`.";
+    ];
+  ()
 
 
 let test_check_variable_restrictions context =
@@ -1055,8 +1041,8 @@ let test_check_variable_restrictions context =
          return variable_restricted_identity(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Variable[_VR <: [str, int]]` "
-      ^ "for 1st positional only parameter to call `variable_restricted_identity` but got `float`.";
+      "Incompatible parameter type [6]: In call `variable_restricted_identity`, for 1st positional \
+       only parameter expected `Variable[_VR <: [str, int]]` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -1080,7 +1066,7 @@ let test_check_variable_restrictions context =
       def foo(t: T) -> int:
         return t.baz()
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."]
+    ["Incompatible return type [7]: Expected `int` but got `Union[int, str]`."]
 
 
 let test_check_keyword_arguments context =
@@ -1097,8 +1083,8 @@ let test_check_keyword_arguments context =
         test = foo( **x )
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter "
-      ^ "to call `foo` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1148,8 +1134,8 @@ let test_check_keyword_arguments context =
         test = foo( **x )
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter "
-      ^ "to call `foo` but got `typing.Union[int, str]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `int` but got `Union[int, str]`.";
     ];
   assert_type_errors
     {|
@@ -1173,8 +1159,8 @@ let test_check_keyword_arguments context =
         test = foo( **x )
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `foo` but got `float`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `int` but got `float`.";
     ];
   ()
 
@@ -1222,10 +1208,10 @@ let test_check_named_arguments context =
         return str_float_to_int(f="No",i="Hi")
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st parameter `i` to call `str_float_to_int` but got `float`.";
-      "Incompatible parameter type [6]: "
-      ^ "Expected `float` for 1st parameter `f` to call `str_float_to_int` but got `str`.";
+      "Incompatible parameter type [6]: In call `str_float_to_int`, for 1st parameter `i` expected \
+       `str` but got `float`.";
+      "Incompatible parameter type [6]: In call `str_float_to_int`, for 1st parameter `f` expected \
+       `float` but got `str`.";
     ]
 
 
@@ -1260,10 +1246,10 @@ let test_check_literals context =
     [
       "Revealed type [-1]: Revealed type for `a` is `str`.";
       "Revealed type [-1]: Revealed type for `b` is `int`.";
-      "Incompatible parameter type [6]: Expected \
-       `typing.Union[typing_extensions.Literal['also_give_me_int'], \
-       typing_extensions.Literal['give_me_int']]` for 1st positional only parameter to call `foo` \
-       but got `typing_extensions.Literal['something_else']`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `Union[typing_extensions.Literal['also_give_me_int'], \
+       typing_extensions.Literal['give_me_int']]` but got \
+       `typing_extensions.Literal['something_else']`.";
       "Revealed type [-1]: Revealed type for `c` is `int`.";
       "Revealed type [-1]: Revealed type for `d` is `int`.";
     ];

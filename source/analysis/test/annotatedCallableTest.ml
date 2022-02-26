@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -29,7 +29,7 @@ let test_return_annotation context =
       in
       let signature =
         {
-          Define.Signature.name = + !&"derp";
+          Define.Signature.name = !&"derp";
           parameters = [];
           decorators = [];
           return_annotation;
@@ -59,10 +59,10 @@ let test_return_annotation context =
     ~generator:true
     Type.integer;
   assert_return_annotation
-    ~return_annotation:(Some (Type.expression (Type.generator ~async:true Type.integer)))
+    ~return_annotation:(Some (Type.expression (Type.async_generator ~yield_type:Type.integer ())))
     ~async:true
     ~generator:true
-    (Type.generator ~async:true Type.integer);
+    (Type.async_generator ~yield_type:Type.integer ());
   ()
 
 

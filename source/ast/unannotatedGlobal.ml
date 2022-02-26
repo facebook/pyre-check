@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -116,13 +116,13 @@ module Collector = struct
           in
           List.rev_append (Option.all valid |> Option.value ~default:[]) globals
       | Import { Import.from = None; imports } ->
-          let collect_module_import sofar { Import.name = { Node.value = target; _ }; alias } =
+          let collect_module_import sofar { Node.value = { Import.name = target; alias }; _ } =
             let implicit_alias, name =
               match alias with
               | None ->
                   (* `import a.b` will bind name `a` in the current module *)
                   true, Reference.as_list target |> List.hd_exn
-              | Some { Node.value = alias; _ } -> false, alias
+              | Some alias -> false, alias
             in
             {
               Result.name;
@@ -131,8 +131,8 @@ module Collector = struct
             :: sofar
           in
           List.fold imports ~init:globals ~f:collect_module_import
-      | Import { Import.from = Some { Node.value = from; _ }; imports } ->
-          let collect_name_import sofar { Import.name = { Node.value = target; _ }; alias } =
+      | Import { Import.from = Some from; imports } ->
+          let collect_name_import sofar { Node.value = { Import.name = target; alias }; _ } =
             (* `target` must be an unqualified identifier *)
             match Reference.show target with
             | "*" ->
@@ -142,7 +142,7 @@ module Collector = struct
                 let implicit_alias, name =
                   match alias with
                   | None -> true, target
-                  | Some { Node.value = alias; _ } -> false, alias
+                  | Some alias -> false, alias
                 in
                 {
                   Result.name;
@@ -152,10 +152,10 @@ module Collector = struct
           in
           List.fold imports ~init:globals ~f:collect_name_import
       | Class { Class.name; _ } ->
-          { Result.name = Node.value name |> Reference.last; unannotated_global = Class } :: globals
+          { Result.name = name |> Reference.last; unannotated_global = Class } :: globals
       | Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->
           {
-            Result.name = Node.value name |> Reference.last;
+            Result.name = name |> Reference.last;
             unannotated_global =
               Define [{ define = signature; location = Location.with_module ~qualifier location }];
           }

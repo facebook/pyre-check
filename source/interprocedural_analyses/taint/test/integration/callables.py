@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -51,7 +51,7 @@ def get_event_processors() -> List[ProcessorInfo[int, int]]:
     ...
 
 
-def async_execute_event_processor() -> None:
+async def async_execute_event_processor() -> None:
     for p_info in get_event_processors():
         processor = p_info.processor_type(_test_source(), "benign")
         await processor.async_run()

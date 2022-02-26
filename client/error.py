@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -9,7 +9,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, Sequence, Union, Optional
+from typing import Any, Dict, Sequence, Union, Optional, List
 
 import click
 
@@ -102,6 +102,37 @@ class Error:
         column = click.style(str(self.column), fg="yellow")
         return f"{path}:{line}:{column} {self.description}"
 
+    def to_sarif(self) -> Dict[str, Any]:
+        return {
+            "ruleId": "PYRE-ERROR-" + str(self.code),
+            "level": "error",
+            "message": {"text": self.description},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": str(self.path),
+                        },
+                        "region": {
+                            "startLine": self.line,
+                            "startColumn": self.column + 1,
+                            "endLine": self.stop_line,
+                            "endColumn": self.stop_column,
+                        },
+                    },
+                },
+            ],
+        }
+
+    def get_sarif_rule(self) -> Dict[str, Any]:
+        return {
+            "id": "PYRE-ERROR-" + str(self.code),
+            "name": self.name.title().replace(" ", ""),
+            "shortDescription": {"text": self.name},
+            "helpUri": "https://www.pyre-check.org",
+            "help": {"text": self.name},
+        }
+
 
 class LegacyError:
     error: Error
@@ -183,6 +214,90 @@ class LegacyError:
         column = click.style(str(self.error.column), fg="yellow")
         return f"{path}:{line}:{column} {self.error.description}"
 
+    def to_sarif(self) -> Dict[str, Any]:
+        return self.error.to_sarif()
+
+    def get_sarif_rule(self) -> Dict[str, Any]:
+        return self.error.get_sarif_rule()
+
+
+@dataclasses.dataclass(frozen=True)
+class TaintConfigurationError:
+    path: Optional[Path]
+    description: str
+    code: int
+
+    @staticmethod
+    def from_json(error_json: Dict[str, Any]) -> "TaintConfigurationError":
+        try:
+            return TaintConfigurationError(
+                path=Path(error_json["path"])
+                if error_json["path"] is not None
+                else None,
+                description=error_json["description"],
+                code=error_json["code"],
+            )
+        except KeyError as key_error:
+            message = f"Missing field from error json: {key_error}"
+            raise ErrorParsingFailure(message) from key_error
+        except TypeError as type_error:
+            message = f"Field type mismatch: {type_error}"
+            raise ErrorParsingFailure(message) from type_error
+
+    @staticmethod
+    def from_string(error_string: str) -> "TaintConfigurationError":
+        try:
+            return TaintConfigurationError.from_json(json.loads(error_string))
+        except json.JSONDecodeError as decode_error:
+            message = f"Cannot parse JSON: {decode_error}"
+            raise ErrorParsingFailure(message) from decode_error
+
+    def to_json(self) -> Dict[str, Any]:
+        return {
+            "path": str(self.path) if self.path is not None else None,
+            "description": self.description,
+            "code": self.code,
+        }
+
+    def to_text(self) -> str:
+        path = click.style(str(self.path or "?"), fg="red")
+        return f"{path} {self.description}"
+
+    def to_sarif(self) -> Dict[str, Any]:
+        return {
+            "ruleId": "PYRE-TAINT-CONFIGURATION-ERROR-" + str(self.code)
+            if self.code is not None
+            else "PYRE-TAINT-CONFIGURATION-ERROR-MDL",
+            "level": "error",
+            "message": {"text": self.description},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": str(self.path) if self.path is not None else None,
+                        },
+                        "region": {
+                            "startLine": 0,
+                            "startColumn": 0,
+                            "endLine": 0,
+                            "endColumn": 1,
+                        },
+                    },
+                },
+            ],
+        }
+
+    def get_sarif_rule(self) -> Dict[str, Any]:
+        return {
+            "id": "PYRE-TAINT-CONFIGURATION-ERROR-" + str(self.code)
+            if self.code is not None
+            else "PYRE-TAINT-CONFIGURATION-ERROR-MDL",
+            "name": "TaintConfigurationError",
+            "shortDescription": {"text": "Taint configuration error"},
+            "helpUri": "https://www.pyre-check.org",
+            "help": {"text": "Taint Configuration error"},
+        }
+
 
 @dataclasses.dataclass(frozen=True)
 class ModelVerificationError:
@@ -240,10 +355,78 @@ class ModelVerificationError:
         column = click.style(str(self.column), fg="yellow")
         return f"{path}:{line}:{column} {self.description}"
 
+    def to_sarif(self) -> Dict[str, Any]:
+        return {
+            "ruleId": "PYRE-MODEL-VERIFICATION-ERROR-" + str(self.code)
+            if self.code is not None
+            else "PYRE-MODEL-VERIFICATION-ERROR-MDL",
+            "level": "error",
+            "message": {"text": self.description},
+            "locations": [
+                {
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": str(self.path) if self.path is not None else None,
+                        },
+                        "region": {
+                            "startLine": self.line,
+                            "startColumn": self.column,
+                            "endLine": self.stop_line,
+                            "endColumn": self.stop_column + 1,
+                        },
+                    },
+                },
+            ],
+        }
+
+    def get_sarif_rule(self) -> Dict[str, Any]:
+        return {
+            "id": "PYRE-MODEL-VERIFICATION-ERROR-" + str(self.code)
+            if self.code is not None
+            else "PYRE-MODEL-VERIFICATION-ERROR-MDL",
+            "name": "ModelVerificationError",
+            "shortDescription": {"text": "Model verification error"},
+            "helpUri": "https://www.pyre-check.org",
+            "help": {"text": "Model Verification error"},
+        }
+
+
+def errors_to_sarif(
+    errors: Union[
+        Sequence[Error],
+        Sequence[LegacyError],
+        Sequence[TaintConfigurationError],
+        Sequence[ModelVerificationError],
+    ]
+) -> Dict[str, Any]:
+
+    results: List[Dict[str, Any]] = [error.to_sarif() for error in errors]
+    rules: List[Dict[str, Any]] = [error.get_sarif_rule() for error in errors]
+    return {
+        "version": "2.1.0",
+        "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+        "runs": [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "Pyre",
+                        "informationUri": "https://www.pyre-check.org",
+                        # Remove duplicate rules
+                        "rules": list({rule["id"]: rule for rule in rules}.values()),
+                    }
+                },
+                "results": results,
+            }
+        ],
+    }
+
 
 def print_errors(
     errors: Union[
-        Sequence[Error], Sequence[LegacyError], Sequence[ModelVerificationError]
+        Sequence[Error],
+        Sequence[LegacyError],
+        Sequence[TaintConfigurationError],
+        Sequence[ModelVerificationError],
     ],
     output: str,
     error_kind: str = "type",
@@ -257,5 +440,7 @@ def print_errors(
 
     if output == command_arguments.TEXT:
         log.stdout.write("\n".join([error.to_text() for error in errors]))
+    elif output == command_arguments.SARIF:
+        log.stdout.write(json.dumps(errors_to_sarif(errors)))
     else:
         log.stdout.write(json.dumps([error.to_json() for error in errors]))

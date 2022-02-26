@@ -1,783 +1,164 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
-import unittest
+import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from typing import Iterable, Tuple
 
-from ... import commands, find_directories, configuration as configuration_module
-from ...analysis_directory import AnalysisDirectory
-from .command_test import mock_arguments, mock_configuration
+import testslide
+
+from ... import configuration, command_arguments
+from ...tests import setup
+from .. import backend_arguments
+from ..analyze import Arguments, create_analyze_arguments
 
 
-class AnalyzeTest(unittest.TestCase):
-    @patch(
-        f"{find_directories.__name__}.find_global_and_local_root",
-        return_value=find_directories.FoundRoot(Path(".")),
-    )
-    @patch("subprocess.check_output")
-    @patch("os.path.realpath")
-    @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    def test_analyze(
-        self, directories_to_analyze, realpath, check_output, find_global_and_local_root
-    ) -> None:
-        realpath.side_effect = lambda x: x
-        arguments = mock_arguments()
+class ArgumentTest(testslide.TestCase):
+    def test_serialize_arguments(self) -> None:
+        def assert_serialized(
+            arguments: Arguments, items: Iterable[Tuple[str, object]]
+        ) -> None:
+            serialized = arguments.serialize()
+            for key, value in items:
+                if key not in serialized:
+                    self.fail(f"Cannot find key `{key}` in serialized arguments")
+                else:
+                    self.assertEqual(value, serialized[key])
 
-        configuration = mock_configuration()
-        configuration.taint_models_path = []
-
-        original_directory = "/original/directory"
-
-        result = MagicMock()
-        result.output = ""
-
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
+        assert_serialized(
+            Arguments(
+                base_arguments=backend_arguments.BaseArguments(
+                    log_path="/log",
+                    global_root="/project",
+                    source_paths=backend_arguments.SimpleSourcePath(
+                        [configuration.SimpleSearchPathElement("source")]
+                    ),
                 ),
-                analysis="taint",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to=None,
-                dump_call_graph=True,
-                repository_root=None,
-                rules=None,
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-dump-call-graph",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
-
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            configuration.taint_models_path = ["taint_models"]
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="taint",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to=None,
-                dump_call_graph=True,
-                repository_root=None,
-                rules=None,
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "taint_models",
-                    "-dump-call-graph",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
-
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            configuration.taint_models_path = ["taint_models_1", "taint_models_2"]
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="taint",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to=None,
-                dump_call_graph=True,
-                repository_root=None,
-                rules=None,
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "taint_models_1",
-                    "-taint-models",
-                    "taint_models_2",
-                    "-dump-call-graph",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
-
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            configuration.taint_models_path = {"taint_models"}
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="taint",
-                taint_models_path=["overriding_models"],
-                no_verify=False,
-                save_results_to=None,
-                dump_call_graph=True,
-                repository_root=None,
-                rules=None,
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "overriding_models",
-                    "-dump-call-graph",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
-
-        arguments = mock_arguments()
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            configuration.taint_models_path = {"taint_models"}
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="taint",
-                taint_models_path=["overriding_models"],
-                no_verify=True,
-                save_results_to=None,
-                dump_call_graph=True,
-                repository_root=None,
-                rules=None,
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "overriding_models",
-                    "-dump-call-graph",
-                    "-no-verify",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
-
-        # Test "." is a valid directory
-        arguments = mock_arguments()
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="taint",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to=".",
-                dump_call_graph=True,
-                repository_root=None,
-                rules=None,
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "taint_models",
-                    "-save-results-to",
-                    ".",
-                    "-dump-call-graph",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
-
-        arguments = mock_arguments()
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="taint",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to="/tmp/results.json",
-                dump_call_graph=True,
-                repository_root=None,
-                rules=None,
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "taint_models",
-                    "-save-results-to",
-                    "/tmp/results.json",
-                    "-dump-call-graph",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
-
-        arguments = mock_arguments()
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="taint",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to="/tmp/results.json",
-                dump_call_graph=True,
-                repository_root="/home/username/root",
-                rules=None,
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "taint_models",
-                    "-save-results-to",
-                    "/tmp/results.json",
-                    "-dump-call-graph",
-                    "-repository-root",
-                    "/home/username/root",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
-
-        arguments = mock_arguments()
-
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="taint",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to=None,
-                dump_call_graph=True,
-                repository_root=None,
-                rules=[5021, 5022],
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "taint_models",
-                    "-dump-call-graph",
-                    "-rules",
-                    "5021,5022",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
-
-        arguments = mock_arguments()
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="liveness",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to=None,
-                dump_call_graph=True,
-                repository_root=None,
-                rules=None,
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "liveness",
-                    "-taint-models",
-                    "taint_models",
-                    "-dump-call-graph",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
-
-        arguments = mock_arguments()
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="taint",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to=None,
-                dump_call_graph=True,
-                repository_root=None,
-                rules=None,
-                use_cache=True,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "taint_models",
-                    "-dump-call-graph",
-                    "-use-cache",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
-
-        arguments = mock_arguments()
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="taint",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to=None,
-                dump_call_graph=True,
-                repository_root=None,
-                rules=None,
-                use_cache=True,
+                dump_call_graph="/call-graph",
+                dump_model_query_results="/model-query",
+                find_missing_flows="obscure",
                 inline_decorators=True,
-                maximum_trace_length=None,
-                maximum_tito_depth=None,
-            )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "taint_models",
-                    "-dump-call-graph",
-                    "-use-cache",
-                    "-inline-decorators",
-                ],
-            )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
+                maximum_tito_depth=5,
+                maximum_trace_length=4,
+                no_verify=True,
+                repository_root="/root",
+                rule_filter=[1, 2],
+                save_results_to="/output/results.json",
+                strict=True,
+                taint_model_paths=["/taint/models"],
+                use_cache=True,
+            ),
+            [
+                ("log_path", "/log"),
+                ("global_root", "/project"),
+                ("source_paths", {"kind": "simple", "paths": ["source"]}),
+                ("dump_call_graph", "/call-graph"),
+                ("dump_model_query_results", "/model-query"),
+                ("find_missing_flows", "obscure"),
+                ("inline_decorators", True),
+                ("maximum_tito_depth", 5),
+                ("maximum_trace_length", 4),
+                ("no_verify", True),
+                ("repository_root", "/root"),
+                ("rule_filter", [1, 2]),
+                ("save_results_to", "/output/results.json"),
+                ("strict", True),
+                ("taint_model_paths", ["/taint/models"]),
+                ("use_cache", True),
+            ],
+        )
 
-        arguments = mock_arguments()
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
-                ),
-                analysis="taint",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to=None,
-                dump_call_graph=False,
-                repository_root=None,
-                rules=None,
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=2,
-                maximum_tito_depth=None,
+    def test_create_analyze_arguments(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(
+                root_path,
+                [".pyre", "blocks", "search", "taint_models", "local/src"],
             )
-            self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "taint_models",
-                    "-maximum-trace-length",
-                    "2",
-                ],
+            setup.write_configuration_file(
+                root_path,
+                {
+                    "ignore_all_errors": ["blocks", "nonexistent"],
+                    "exclude": ["exclude"],
+                    "extensions": [".ext"],
+                    "workers": 42,
+                    "search_path": ["search", "nonexistent"],
+                },
             )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)
+            setup.write_configuration_file(
+                root_path, {"source_directories": ["src"]}, relative="local"
+            )
 
-        arguments = mock_arguments()
-        with patch.object(
-            commands.Command, "_call_client", return_value=result
-        ) as call_client, patch("json.loads", return_value=[]):
-            command = commands.Analyze(
-                arguments,
-                original_directory,
-                configuration=configuration,
-                analysis_directory=AnalysisDirectory(
-                    configuration_module.SimpleSearchPathElement(".")
+            analyze_configuration = configuration.create_configuration(
+                command_arguments.CommandArguments(
+                    local_configuration="local",
+                    dot_pyre_directory=root_path / ".pyre",
+                    strict=True,
                 ),
-                analysis="taint",
-                taint_models_path=[],
-                no_verify=False,
-                save_results_to=None,
-                dump_call_graph=False,
-                repository_root=None,
-                rules=None,
-                use_cache=False,
-                inline_decorators=False,
-                maximum_trace_length=None,
-                maximum_tito_depth=3,
+                root_path,
             )
+
             self.assertEqual(
-                command._flags(),
-                [
-                    "-logging-sections",
-                    "-progress",
-                    "-project-root",
-                    "/root",
-                    "-log-directory",
-                    ".pyre",
-                    "-python-major-version",
-                    "3",
-                    "-python-minor-version",
-                    "6",
-                    "-python-micro-version",
-                    "0",
-                    "-shared-memory-heap-size",
-                    "1073741824",
-                    "-workers",
-                    "5",
-                    "-analysis",
-                    "taint",
-                    "-taint-models",
-                    "taint_models",
-                    "-maximum-tito-depth",
-                    "3",
-                ],
+                create_analyze_arguments(
+                    analyze_configuration,
+                    command_arguments.AnalyzeArguments(
+                        debug=True,
+                        dump_call_graph="/call-graph",
+                        dump_model_query_results="/model-query",
+                        find_missing_flows=command_arguments.MissingFlowsKind.TYPE,
+                        inline_decorators=True,
+                        maximum_tito_depth=5,
+                        maximum_trace_length=4,
+                        no_verify=True,
+                        repository_root="/root",
+                        rule=[1, 2],
+                        save_results_to="/result.json",
+                        taint_models_path=[str(root_path / "taint_models")],
+                        use_cache=True,
+                    ),
+                ),
+                Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        log_path=str(root_path / ".pyre/local"),
+                        global_root=str(root_path),
+                        checked_directory_allowlist=[
+                            str(root_path / "local/src"),
+                        ],
+                        checked_directory_blocklist=[str(root_path / "blocks")],
+                        debug=True,
+                        excludes=["exclude"],
+                        extensions=[".ext"],
+                        relative_local_root="local",
+                        number_of_workers=42,
+                        parallel=True,
+                        python_version=analyze_configuration.get_python_version(),
+                        search_paths=[
+                            configuration.SimpleSearchPathElement(
+                                str(root_path / "search")
+                            )
+                        ],
+                        source_paths=backend_arguments.SimpleSourcePath(
+                            [
+                                configuration.SimpleSearchPathElement(
+                                    str(root_path / "local/src")
+                                )
+                            ]
+                        ),
+                    ),
+                    dump_call_graph="/call-graph",
+                    dump_model_query_results="/model-query",
+                    find_missing_flows="type",
+                    inline_decorators=True,
+                    maximum_tito_depth=5,
+                    maximum_trace_length=4,
+                    no_verify=True,
+                    repository_root="/root",
+                    rule_filter=[1, 2],
+                    save_results_to="/result.json",
+                    strict=True,
+                    taint_model_paths=[str(root_path / "taint_models")],
+                    use_cache=True,
+                ),
             )
-            command.run()
-            call_client.assert_called_once_with(command=commands.Analyze.NAME)

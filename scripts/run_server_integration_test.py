@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -164,7 +164,7 @@ class Repository:
     def __iter__(self) -> "Repository":
         return self
 
-    def __next__(self):
+    def __next__(self) -> str:
         self._current_commit = self._commits_list.__next__()
         LOG.info("Moving to commit named: %s" % self._current_commit)
 

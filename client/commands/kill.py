@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -7,30 +7,18 @@ import logging
 import os
 import shutil
 import signal
-import subprocess
-import tempfile
-from itertools import chain
 from pathlib import Path
-from typing import Optional
 
 import psutil
 
 from .. import (
-    command_arguments,
-    configuration_monitor,
+    configuration as configuration_module,
+    find_directories,
     recently_used_configurations,
-    watchman,
 )
-from ..analysis_directory import BUCK_BUILDER_CACHE_PREFIX, AnalysisDirectory
-from ..configuration import Configuration, SimpleSearchPathElement
-from ..find_directories import BINARY_NAME, CLIENT_NAME
-from ..project_files_monitor import ProjectFilesMonitor
-from .command import Command
-from .rage import Rage
-
+from . import commands, remote_logging, servers, server_connection, stop
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
 
 PYRE_FIRE = """
                                                     ',
@@ -73,174 +61,91 @@ PYRE_FIRE = """
 """
 
 
-class Kill(Command):
-    NAME = "kill"
-
-    def __init__(
-        self,
-        command_arguments: command_arguments.CommandArguments,
-        *,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-        with_fire: bool,
-    ) -> None:
-        super(Kill, self).__init__(
-            command_arguments, original_directory, configuration, analysis_directory
-        )
-        self._with_fire = with_fire
-
-    def generate_analysis_directory(self) -> AnalysisDirectory:
-        return AnalysisDirectory(SimpleSearchPathElement("."))
-
-    @staticmethod
-    def _delete_linked_path(link_path: Path) -> None:
+def _kill_processes_by_name(name: str) -> None:
+    for process in psutil.process_iter(attrs=["name"]):
+        if process.name() != name:
+            continue
+        # Do not kill the `pyre kill` command itself.
+        pid_to_kill = process.pid
+        if pid_to_kill == os.getpgid(os.getpid()):
+            continue
         try:
-            actual_path = os.readlink(link_path)
-            os.remove(actual_path)
-        except OSError:
-            pass
-        try:
-            os.unlink(link_path)
-        except OSError:
-            pass
-
-    def _delete_caches(self) -> None:
-        # If a resource cache exists, delete it to remove corrupted artifacts.
-        try:
-            shutil.rmtree(
-                str(self._configuration.dot_pyre_directory / "resource_cache")
+            LOG.info(f"Killing process {name} with pid {pid_to_kill}.")
+            os.kill(pid_to_kill, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError) as exception:
+            LOG.debug(
+                f"Failed to kill process {name} with pid {pid_to_kill} "
+                + f"due to exception {exception}"
             )
-        except OSError:
-            pass
 
-        # If a buck builder cache exists, also remove it.
-        scratch_path = None
-        try:
-            scratch_path = (
-                subprocess.check_output(
-                    f"mkscratch path --subdir pyre {self._configuration.project_root}".split()  # noqa
-                )
-                .decode()
-                .strip()
-            )
-        except Exception as exception:
-            LOG.debug("Could not find scratch path because of exception: %s", exception)
-        if scratch_path is not None:
-            for buck_builder_cache_directory in Path(scratch_path).glob(
-                f"{BUCK_BUILDER_CACHE_PREFIX}*"
-            ):
-                try:
-                    LOG.debug(
-                        "Deleting buck builder cache at %s",
-                        buck_builder_cache_directory,
-                    )
-                    shutil.rmtree(buck_builder_cache_directory)
-                except OSError as exception:
-                    LOG.debug(
-                        "Failed to delete buck builder cache due to exception: %s.",
-                        exception,
-                    )
-        recently_used_configurations.Cache(
-            self._configuration.dot_pyre_directory
-        ).delete()
 
-    def _kill_processes_by_name(self, name: str) -> None:
-        for process in psutil.process_iter(attrs=["name"]):
-            if process.info["name"] != name:
-                continue
-            # Do not kill the `pyre kill` command itself.
-            pid_to_kill = process.pid
-            if pid_to_kill == os.getpgid(os.getpid()):
-                continue
-            try:
-                LOG.info(f"Killing process {name} with pid {pid_to_kill}.")
-                os.kill(pid_to_kill, signal.SIGKILL)
-            except (ProcessLookupError, PermissionError) as exception:
-                LOG.debug(
-                    f"Failed to kill process {name} "
-                    + f"with pid {pid_to_kill} due to exception {exception}"
-                )
+def _kill_binary_processes(configuration: configuration_module.Configuration) -> None:
+    LOG.warning("Force-killing all running pyre servers.")
+    LOG.warning(
+        "Use `pyre servers stop` if you want to gracefully stop all running servers."
+    )
+    binary = configuration.get_binary_respecting_override()
+    if binary is not None:
+        _kill_processes_by_name(binary)
 
-    def _kill_client_processes(self) -> None:
-        self._kill_processes_by_name(CLIENT_NAME)
-        watchman.stop_subscriptions(
-            ProjectFilesMonitor.base_path(self._configuration), ProjectFilesMonitor.NAME
-        )
-        watchman.stop_subscriptions(
-            configuration_monitor.ConfigurationMonitor.base_path(self._configuration),
-            configuration_monitor.ConfigurationMonitor.NAME,
-        )
 
-        try:
-            isolation_prefix = (
-                self._configuration.get_isolation_prefix_respecting_override()
-            )
-            command = ["buck", "kill"] + (
-                ["--isolation_prefix", isolation_prefix] if isolation_prefix else []
-            )
-            subprocess.run(command)
-            LOG.debug(f"Ran {command}")
-        except Exception as exception:
-            # pyre-fixme[61]: `command` may not be initialized here.
-            LOG.debug(f"Could not run `{command}`: {exception}")
+def _kill_client_processes(configuration: configuration_module.Configuration) -> None:
+    _kill_processes_by_name(find_directories.CLIENT_NAME)
+    # TODO (T85602687): Run `buck kill` once buck is supported by the server
 
-    def _kill_binary_processes(self) -> None:
-        # Kills all processes that have the same binary as the one specified
-        # in the configuration.
-        LOG.warning("Force-killing all running pyre servers.")
-        LOG.warning(
-            "Use `pyre servers stop` if you want to gracefully stop"
-            + " all running servers."
-        )
-        binary_name = _get_process_name("PYRE_BINARY", BINARY_NAME)
-        self._kill_processes_by_name(binary_name)
 
-    def _delete_server_files(self) -> None:
-        dot_pyre_directory = self._configuration.dot_pyre_directory
-        LOG.info("Deleting server files under %s", dot_pyre_directory)
-        socket_paths = dot_pyre_directory.glob("**/server.sock")
-        json_server_paths = dot_pyre_directory.glob("**/json_server.sock")
-        pid_paths = dot_pyre_directory.glob("**/server.pid")
-        for path in chain(socket_paths, json_server_paths, pid_paths):
-            self._delete_linked_path(path)
+def _delete_server_files(configuration: configuration_module.Configuration) -> None:
+    socket_root = server_connection.get_default_socket_root()
+    LOG.info(f"Deleting socket files and lock files under {socket_root}")
+    for socket_path in servers.get_pyre_socket_files(socket_root):
+        stop.remove_socket_if_exists(socket_path)
 
-    def _rage(self) -> None:
-        with tempfile.NamedTemporaryFile(
-            prefix="pyre-rage-", suffix=".log", delete=False
-        ) as output:
-            LOG.warning("Saving the output of `pyre rage` into `%s`", output.name)
-            Rage(
-                self._command_arguments,
-                original_directory=self._original_directory,
-                configuration=self._configuration,
-                analysis_directory=self._analysis_directory,
-                output_path=output.name,
-            ).run()
+    log_directory = Path(configuration.log_directory) / "new_server"
+    LOG.info(f"Deleting server logs under {log_directory}")
+    try:
+        shutil.rmtree(str(log_directory), ignore_errors=True)
+    except OSError:
+        pass
 
-    def _run(self) -> None:
-        explicit_local = self._configuration.local_root
-        if explicit_local:
+    # TODO(T92826668): Delete files under artifact root
+
+
+def _delete_caches(configuration: configuration_module.Configuration) -> None:
+    dot_pyre_directory = configuration.dot_pyre_directory
+    resource_cache_directory = dot_pyre_directory / "resource_cache"
+    LOG.info(
+        f"Deleting local binary and typeshed cache under {resource_cache_directory}"
+    )
+    try:
+        shutil.rmtree(str(resource_cache_directory), ignore_errors=True)
+        recently_used_configurations.Cache(dot_pyre_directory).delete()
+    except OSError:
+        pass
+    # TODO (T85602687): Try to remove buck builder cache as well once buck is
+    # supported by the server
+
+
+@remote_logging.log_usage(command_name="kill")
+def run(
+    configuration: configuration_module.Configuration, with_fire: bool
+) -> commands.ExitCode:
+    try:
+        _kill_binary_processes(configuration)
+        _kill_client_processes(configuration)
+        # TODO (T85602550): Store a rage log before this happens.
+        # TODO (T85614630): Delete client logs as well.
+        _delete_server_files(configuration)
+        _delete_caches(configuration)
+        if with_fire:
             LOG.warning(
-                "Pyre kill will terminate all running servers. "
-                + f"Specifying local path `{explicit_local}` is unnecessary."
+                (
+                    "Note that `--with-fire` adds emphasis to `pyre kill` but does"
+                    + f" not affect its behavior.\n{PYRE_FIRE}"
+                )
             )
-        self._rage()
-        self._kill_binary_processes()
-        self._delete_server_files()
-        self._delete_caches()
-        self._kill_client_processes()
-        if self._with_fire:
-            LOG.warning(
-                "Note that `--with-fire` adds emphasis to `pyre kill` "
-                + "but does not affect its behavior."
-                + f"\n{PYRE_FIRE}"
-            )
-
-
-def _get_process_name(environment_variable_name: str, default: str) -> str:
-    overridden = os.getenv(environment_variable_name)
-    if overridden is not None:
-        return os.path.basename(overridden)
-    else:
-        return default
+        LOG.info("Done\n")
+        return commands.ExitCode.SUCCESS
+    except Exception as error:
+        raise commands.ClientException(
+            f"Exception occurred during `pyre kill`: {error}"
+        ) from error

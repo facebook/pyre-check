@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,8 +7,6 @@
 
 open Ast
 open Analysis
-
-val is_local : Identifier.t -> bool
 
 (* Evaluates to the representation of literal strings, integers and enums. *)
 val extract_constant_name : Expression.t -> string option

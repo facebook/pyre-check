@@ -1,0 +1,871 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_annotated.test1_alarm1",
+    "callable_line": 25,
+    "code": 5002,
+    "line": 28,
+    "start": 15,
+    "end": 18,
+    "filename": "model_query_annotated.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test1_C.a}" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 28,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 28,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "model_query_annotated.test1_alarm1:5002:0:Call|_test_sink|0|formal(arg):d18d16b3ac087c81541bb98ad54eaa39"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_annotated.test1_alarm2",
+    "callable_line": 31,
+    "code": 5002,
+    "line": 34,
+    "start": 15,
+    "end": 18,
+    "filename": "model_query_annotated.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test1_C.b}" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 34,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 34,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "model_query_annotated.test1_alarm2:5002:0:Call|_test_sink|0|formal(arg):c6ed0280dd85d05f1393f0cb0972c470"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_annotated.test1_alarm3",
+    "callable_line": 37,
+    "code": 5002,
+    "line": 39,
+    "start": 15,
+    "end": 18,
+    "filename": "model_query_annotated.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test1_C.x}" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 39,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 39,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "model_query_annotated.test1_alarm3:5002:0:Call|_test_sink|0|formal(arg):c759ed3c804e9d78a0f981103e0e21dc"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_annotated.test1_alarm4",
+    "callable_line": 42,
+    "code": 5002,
+    "line": 44,
+    "start": 15,
+    "end": 18,
+    "filename": "model_query_annotated.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test1_C.y}" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 44,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 44,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "model_query_annotated.test1_alarm4:5002:0:Call|_test_sink|0|formal(arg):3c2f0013f846fd8b28d85ca246eae6dd"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_annotated.test2_alarm1",
+    "callable_line": 53,
+    "code": 5002,
+    "line": 55,
+    "start": 15,
+    "end": 18,
+    "filename": "model_query_annotated.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test2_C.a}" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 55,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 55,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "model_query_annotated.test2_alarm1:5002:0:Call|_test_sink|0|formal(arg):b8e24537537f3d32304c259208734d83"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_annotated.test2_alarm2",
+    "callable_line": 58,
+    "code": 5002,
+    "line": 60,
+    "start": 15,
+    "end": 18,
+    "filename": "model_query_annotated.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{model_query_annotated.Test2_C.x}" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              {
+                "always-via-type": "typing.Annotated[typing.Optional[float]]"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 60,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 60,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "model_query_annotated.test2_alarm2:5002:0:Call|_test_sink|0|formal(arg):8997edd700a2f9344b93da74dec2ee25"
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_annotated.Test1_C.a}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_annotated.Test1_C.b}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_annotated.Test1_C.x}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_annotated.Test1_C.y}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_annotated.Test2_C.a}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{model_query_annotated.Test2_C.x}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaTypeOf",
+                    "parameter":
+                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_annotated.test3_alarm1",
+    "sources": [
+      {
+        "port": "formal(c)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 79,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_annotated.test3_alarm1",
+    "callable_line": 76,
+    "code": 5002,
+    "line": 79,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_annotated.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "model_query_annotated.test3_alarm1" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 77,
+              "start": 4,
+              "end": 32
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 79,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query_annotated.test3_alarm1:5002:0:Call|_test_sink|0|formal(arg):dbfab590f77ae77afa60c7051afcaecf"
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_annotated.test3_alarm2",
+    "sources": [
+      {
+        "port": "formal(c)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(c)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 85,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_annotated.test3_alarm2",
+    "callable_line": 82,
+    "code": 5002,
+    "line": 85,
+    "start": 15,
+    "end": 16,
+    "filename": "model_query_annotated.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "model_query_annotated.test3_alarm2" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 83,
+              "start": 42,
+              "end": 78
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 85,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query_annotated.test3_alarm2:5002:0:Call|_test_sink|0|formal(arg):7ad3a5dd0d1814ffb9adc16f74cd5597"
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_annotated.test3_noalarm1",
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 69,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_annotated.test3_noalarm2",
+    "sinks": [
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 73,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_annotated.test3_noalarm3",
+    "sources": [
+      {
+        "port": "formal(c)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "model_query_annotated.py",
+              "line": 91,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

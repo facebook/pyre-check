@@ -15,14 +15,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 100,
               "start": 10,
               "end": 24
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -30,23 +35,28 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "model_query_transitive_extends.Test2_D.foo" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 100,
               "start": 10,
               "end": 24
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "model_query_transitive_extends.Test2_D.foo"
-              }
-            ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ]
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "model_query_transitive_extends.test2_alarm1:5002:0:Call|model_query_transitive_extends.Test2_D.foo|0|formal(attribute):6bcbf812a068cebc047cbcbff953ae6a"
+    ]
   }
 }
 {
@@ -59,8 +69,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -74,7 +84,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -86,7 +96,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -98,7 +108,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -110,7 +120,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -122,7 +132,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -134,7 +144,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -148,8 +158,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -165,8 +175,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -182,8 +192,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -199,8 +209,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -216,8 +226,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -233,8 +243,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -250,8 +260,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -267,8 +277,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -284,8 +294,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -299,7 +309,7 @@
     "sinks": [
       {
         "port": "formal(attribute)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -314,8 +324,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -331,14 +341,19 @@
         "port": "formal(c)[attribute]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 116,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -354,14 +369,19 @@
         "port": "formal(c)[instance]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 120,
               "start": 15,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -377,14 +397,19 @@
         "port": "formal(c)[attribute]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 68,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -407,24 +432,27 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C1.attribute}"
+                  },
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C.attribute}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 68,
               "start": 15,
               "end": 26
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C.attribute}"
-              },
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C1.attribute}"
-              }
-            ]
+            }
           }
         ]
       },
@@ -432,19 +460,27 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 68,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query_transitive_extends.test1_alarm1:5002:0:Call|_test_sink|0|formal(arg):d7076c5599d9346cb254702aca62ca8a"
+    ]
   }
 }
 {
@@ -456,14 +492,19 @@
         "port": "formal(c)[instance]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 72,
               "start": 15,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -486,24 +527,27 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C.instance}"
+                  },
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C1.instance}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 72,
               "start": 15,
               "end": 25
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C.instance}"
-              },
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C1.instance}"
-              }
-            ]
+            }
           }
         ]
       },
@@ -511,19 +555,27 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 72,
               "start": 15,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query_transitive_extends.test1_alarm2:5002:0:Call|_test_sink|0|formal(arg):0dba02726232ed3eb66caff54e15ece8"
+    ]
   }
 }
 {
@@ -535,14 +587,19 @@
         "port": "formal(c)[attribute]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 76,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -565,29 +622,31 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C2.attribute}"
+                  },
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C1.attribute}"
+                  },
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C.attribute}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 76,
               "start": 15,
               "end": 26
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C.attribute}"
-              },
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C1.attribute}"
-              },
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C2.attribute}"
-              }
-            ]
+            }
           }
         ]
       },
@@ -595,19 +654,27 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 76,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query_transitive_extends.test1_alarm3:5002:0:Call|_test_sink|0|formal(arg):79cf0abf6a62591d8d4547fb1a0a4f4b"
+    ]
   }
 }
 {
@@ -619,14 +686,19 @@
         "port": "formal(c)[instance]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 80,
               "start": 15,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -649,29 +721,31 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C.instance}"
+                  },
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C1.instance}"
+                  },
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C2.instance}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 80,
               "start": 15,
               "end": 25
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C.instance}"
-              },
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C1.instance}"
-              },
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C2.instance}"
-              }
-            ]
+            }
           }
         ]
       },
@@ -679,19 +753,27 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 80,
               "start": 15,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query_transitive_extends.test1_alarm4:5002:0:Call|_test_sink|0|formal(arg):4e1e9120bee89ad21dafd2b91c82331d"
+    ]
   }
 }
 {
@@ -703,14 +785,19 @@
         "port": "formal(c)[attribute]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 84,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -733,19 +820,23 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C.attribute}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 84,
               "start": 15,
               "end": 26
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C.attribute}"
-              }
-            ]
+            }
           }
         ]
       },
@@ -753,19 +844,27 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 84,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query_transitive_extends.test1_alarm5:5002:0:Call|_test_sink|0|formal(arg):35e29f46c439f3c7e95542f60de3cc0c"
+    ]
   }
 }
 {
@@ -777,14 +876,19 @@
         "port": "formal(c)[instance]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 88,
               "start": 15,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -807,19 +911,23 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C.instance}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 88,
               "start": 15,
               "end": 25
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name":
-                  "Obj{model_query_transitive_extends.Test1_C.instance}"
-              }
-            ]
+            }
           }
         ]
       },
@@ -827,19 +935,27 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 88,
               "start": 15,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "model_query_transitive_extends.test1_alarm6:5002:0:Call|_test_sink|0|formal(arg):8f20433d2d79bad30ba257a0ffc3dc2f"
+    ]
   }
 }
 {
@@ -851,14 +967,19 @@
         "port": "formal(c)[attribute]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 92,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -874,14 +995,19 @@
         "port": "formal(c)[instance]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "model_query_transitive_extends.py",
               "line": 96,
               "start": 15,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }

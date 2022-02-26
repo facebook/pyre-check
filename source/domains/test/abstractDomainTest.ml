@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -2684,6 +2684,61 @@ end
 
 module TestFlatString = TestAbstractDomain (FlatString)
 
+module TestProductAmbiguousPart = struct
+  module StringSet = AbstractSetDomain.Make (String)
+
+  module Slots = struct
+    type 'a slot =
+      | Left : StringSet.t slot
+      | Right : StringSet.t slot
+
+    let slots = 2
+
+    let slot_name (type a) (slot : a slot) =
+      match slot with
+      | Left -> "left"
+      | Right -> "right"
+
+
+    let slot_domain (type a) (slot : a slot) =
+      match slot with
+      | Left -> (module StringSet : AbstractDomain.S with type t = a)
+      | Right -> (module StringSet : AbstractDomain.S with type t = a)
+
+
+    let strict (type a) (_slot : a slot) = false
+  end
+
+  include AbstractProductDomain.Make (Slots)
+
+  let suite () =
+    let assert_raises_any f =
+      try
+        let _ = f () in
+        assert_failure "Expected an exception to be raised"
+      with
+      | _ -> ()
+    in
+    let test_create _ =
+      assert_raises_any (fun () -> create [Part (StringSet.Self, StringSet.bottom)])
+    in
+    let test_transform _ =
+      assert_raises_any (fun () -> transform StringSet.Self Map ~f:(StringSet.add "x") bottom)
+    in
+    let test_update_get _ =
+      let x = StringSet.singleton "x" in
+      assert_equal (bottom |> update Slots.Left x |> get Slots.Left) x;
+      assert_equal (bottom |> update Slots.Right x |> get Slots.Right) x;
+      assert_equal (bottom |> update Slots.Left x |> get Slots.Right) StringSet.bottom;
+      assert_equal (bottom |> update Slots.Right x |> get Slots.Left) StringSet.bottom
+    in
+    [
+      "test_create" >:: test_create;
+      "test_transform" >:: test_transform;
+      "test_update_get" >:: test_update_get;
+    ]
+end
+
 let () =
   "abstractDomainTest"
   >::: [
@@ -2701,5 +2756,6 @@ let () =
          "tree" >::: TestTreeDomain.suite ();
          "string_biset" >::: TestOverUnderStringSet.suite ();
          "flat_string" >::: TestFlatString.suite ();
+         "product_ambiguous_part" >::: TestProductAmbiguousPart.suite ();
        ]
   |> run_test_tt_main

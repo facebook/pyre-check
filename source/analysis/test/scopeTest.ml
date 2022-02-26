@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -118,6 +118,24 @@ let test_global _ =
            for j in range(20):
              global y
              print(x + y)
+    |}
+    ~expected:["x"; "y"];
+  assert_global
+    {|
+       def foo():
+         match subject:
+           case 1:
+             global x
+    |}
+    ~expected:["x"];
+  assert_global
+    {|
+       def foo():
+         match subject:
+           case 1:
+             global x
+           case 2:
+             global y
     |}
     ~expected:["x"; "y"];
 
@@ -259,6 +277,24 @@ let test_nonlocal _ =
              print(x + y)
     |}
     ~expected:["x"; "y"];
+  assert_nonlocal
+    {|
+       def foo():
+         match subject:
+           case 1:
+             nonlocal x
+    |}
+    ~expected:["x"];
+  assert_nonlocal
+    {|
+       def foo():
+         match subject:
+           case 1:
+             nonlocal x
+           case 2:
+             nonlocal y
+    |}
+    ~expected:["x"; "y"];
 
   (* Nonlocal discovery does not go beyond nesting *)
   assert_nonlocal
@@ -383,7 +419,7 @@ let test_define_local_bindings _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
-               (location (2, 8) (2, 9))) );
+               (location (2, 8) (2, 14))) );
       ];
   assert_bindings
     {|
@@ -398,14 +434,14 @@ let test_define_local_bindings _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
-               (location (2, 8) (2, 9))) );
+               (location (2, 8) (2, 14))) );
         ( "y",
           Some
             (ExpectBinding.create
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 1; annotation = Some (str_annotation (2, 19) (2, 22)) })
-               (location (2, 16) (2, 17))) );
+               (location (2, 16) (2, 22))) );
       ];
   assert_bindings
     {|
@@ -424,7 +460,7 @@ let test_define_local_bindings _ =
                      index = 0;
                      annotation = Some (int_annotation (2, 16) (2, 19));
                    })
-               (location (2, 9) (2, 14))) );
+               (location (2, 10) (2, 19))) );
       ];
   assert_bindings
     {|
@@ -443,7 +479,7 @@ let test_define_local_bindings _ =
                      index = 0;
                      annotation = Some (int_annotation (2, 19) (2, 22));
                    })
-               (location (2, 9) (2, 17))) );
+               (location (2, 11) (2, 22))) );
       ];
   assert_bindings
     {|
@@ -458,14 +494,14 @@ let test_define_local_bindings _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
-               (location (2, 8) (2, 9))) );
+               (location (2, 8) (2, 14))) );
         ( "y",
           Some
             (ExpectBinding.create
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 1; annotation = Some (str_annotation (2, 19) (2, 22)) })
-               (location (2, 16) (2, 17))) );
+               (location (2, 16) (2, 22))) );
       ];
   assert_bindings
     {|
@@ -534,8 +570,7 @@ let test_define_local_bindings _ =
         ( "bar",
           let signature =
             {
-              Statement.Define.Signature.name =
-                Node.create ~location:(location (3, 6) (3, 9)) !&"bar";
+              Statement.Define.Signature.name = !&"bar";
               parameters = [];
               decorators = [];
               return_annotation = None;
@@ -603,15 +638,27 @@ let test_define_local_bindings _ =
   |}
     ~expected:
       [
-        "bar", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 9) (3, 12)));
-        "_baz", Some (ExpectBinding.create Binding.Kind.ImportName (location (4, 9) (4, 13)));
+        ( "bar",
+          Some
+            (ExpectBinding.create Binding.Kind.(ImportName Import.Module) (location (3, 9) (3, 12)))
+        );
+        ( "_baz",
+          Some
+            (ExpectBinding.create Binding.Kind.(ImportName Import.Module) (location (4, 9) (4, 13)))
+        );
       ];
   assert_bindings
     {|
     def foo(flag: bool):
       import bar.baz
   |}
-    ~expected:["bar", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 9) (3, 16)))];
+    ~expected:
+      [
+        ( "bar",
+          Some
+            (ExpectBinding.create Binding.Kind.(ImportName Import.Module) (location (3, 9) (3, 16)))
+        );
+      ];
   assert_bindings
     {|
     def foo(flag: bool):
@@ -619,7 +666,10 @@ let test_define_local_bindings _ =
   |}
     ~expected:
       [
-        "b", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 16) (3, 17)));
+        ( "b",
+          Some
+            (ExpectBinding.create Binding.Kind.(ImportName Import.Module) (location (3, 9) (3, 17)))
+        );
         "bar", None;
       ];
   assert_bindings
@@ -630,8 +680,16 @@ let test_define_local_bindings _ =
   |}
     ~expected:
       [
-        "b", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 18) (3, 19)));
-        "_c", Some (ExpectBinding.create Binding.Kind.ImportName (location (4, 18) (4, 20)));
+        ( "b",
+          Some
+            (ExpectBinding.create
+               Binding.Kind.(ImportName (Import.From !&"bar"))
+               (location (3, 18) (3, 19))) );
+        ( "_c",
+          Some
+            (ExpectBinding.create
+               Binding.Kind.(ImportName (Import.From !&"bar"))
+               (location (4, 18) (4, 20))) );
         "bar", None;
       ];
   assert_bindings
@@ -643,7 +701,11 @@ let test_define_local_bindings _ =
       [
         "b", None;
         "bar", None;
-        "baz", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 23) (3, 26)));
+        ( "baz",
+          Some
+            (ExpectBinding.create
+               Binding.Kind.(ImportName (Import.From !&"bar"))
+               (location (3, 18) (3, 26))) );
       ];
   assert_bindings
     {|
@@ -652,9 +714,16 @@ let test_define_local_bindings _ =
   |}
     ~expected:
       [
-        "b", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 16) (3, 17)));
+        ( "b",
+          Some
+            (ExpectBinding.create Binding.Kind.(ImportName Import.Module) (location (3, 9) (3, 17)))
+        );
         "bar", None;
-        "baz", Some (ExpectBinding.create Binding.Kind.ImportName (location (3, 19) (3, 22)));
+        ( "baz",
+          Some
+            (ExpectBinding.create
+               Binding.Kind.(ImportName Import.Module)
+               (location (3, 19) (3, 22))) );
       ];
   assert_bindings
     {|
@@ -746,6 +815,91 @@ let test_define_local_bindings _ =
   |}
     ~expected:
       ["y", Some (ExpectBinding.create Binding.Kind.WalrusTarget (location (3, 29) (3, 30)))];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case 1:
+          x = 1
+  |}
+    ~expected:
+      ["x", Some (ExpectBinding.create Binding.Kind.(AssignTarget None) (location (5, 6) (5, 7)))];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case 1:
+          x = 1
+        case 2:
+          y = 1
+  |}
+    ~expected:
+      [
+        "x", Some (ExpectBinding.create Binding.Kind.(AssignTarget None) (location (5, 6) (5, 7)));
+        "y", Some (ExpectBinding.create Binding.Kind.(AssignTarget None) (location (7, 6) (7, 7)));
+      ];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case x:
+          pass
+  |}
+    ~expected:["x", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 9) (4, 10)))];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case [_, *x]:
+          pass
+  |}
+    ~expected:["x", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 13) (4, 15)))];
+  (* TODO(T107008455): Add location to MatchMapping's rest for better location. *)
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case {1:1, **x}:
+          pass
+  |}
+    ~expected:["x", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 9) (4, 19)))];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case Foo(a=x, b=y):
+          pass
+  |}
+    ~expected:
+      [
+        "x", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 15) (4, 16)));
+        "y", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 20) (4, 21)));
+      ];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case [x] | [_, x]:
+          pass
+  |}
+    ~expected:["x", Some (ExpectBinding.create Binding.Kind.MatchTarget (location (4, 10) (4, 11)))];
+  assert_bindings
+    {|
+    def foo():
+      match subject:
+        case _ if (x := subject):
+          pass
+  |}
+    ~expected:
+      ["x", Some (ExpectBinding.create Binding.Kind.WalrusTarget (location (4, 15) (4, 16)))];
+  assert_bindings
+    {|
+    def foo():
+      match (x := subject):
+        case _:
+          pass
+  |}
+    ~expected:["x", Some (ExpectBinding.create Binding.Kind.WalrusTarget (location (3, 9) (3, 10)))];
 
   (* Bindings in nested scope should not leak into the nesting scope (except for walrus operators) *)
   assert_bindings {|
@@ -843,12 +997,12 @@ let test_expression_local_bindings _ =
           Some
             (ExpectBinding.create
                Binding.Kind.(ParameterName { star = Some Star.Once; index = 0; annotation = None })
-               (location (1, 7) (1, 12))) );
+               (location (1, 8) (1, 12))) );
         ( "kwargs",
           Some
             (ExpectBinding.create
                Binding.Kind.(ParameterName { star = Some Star.Twice; index = 1; annotation = None })
-               (location (1, 14) (1, 22))) );
+               (location (1, 16) (1, 22))) );
       ];
   assert_bindings
     "lambda: (x := 1)"
@@ -953,7 +1107,7 @@ let test_scope_stack_lookup _ =
           let find_define name =
             match
               List.find all_defines ~f:(fun { Node.value; _ } ->
-                  Reference.equal name (Node.value (Statement.Define.name value)))
+                  Reference.equal name (Statement.Define.name value))
             with
             | None ->
                 let message =
@@ -1257,7 +1411,7 @@ let test_scope_stack_lookup _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (4, 13) (4, 16)) })
-               (location (4, 10) (4, 11))
+               (location (4, 10) (4, 16))
             |> ExpectAccess.create Access.Kind.CurrentScope) );
       ];
 
@@ -1278,7 +1432,7 @@ let test_scope_stack_lookup _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (2, 11) (2, 14)) })
-               (location (2, 8) (2, 9))
+               (location (2, 8) (2, 14))
             |> ExpectAccess.create Access.(Kind.OuterScope Locality.Local)) );
         ( "y",
           Some
@@ -1286,7 +1440,7 @@ let test_scope_stack_lookup _ =
                Binding.Kind.(
                  ParameterName
                    { star = None; index = 0; annotation = Some (int_annotation (3, 13) (3, 16)) })
-               (location (3, 10) (3, 11))
+               (location (3, 10) (3, 16))
             |> ExpectAccess.create Access.Kind.CurrentScope) );
       ];
 

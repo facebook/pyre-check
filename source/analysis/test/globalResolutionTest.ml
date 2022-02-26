@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -461,7 +461,7 @@ let test_is_protocol _ =
   let assert_is_protocol base_arguments expected =
     let is_protocol base_arguments =
       {
-        StatementClass.name = + !&"Derp";
+        StatementClass.name = !&"Derp";
         base_arguments;
         body = [];
         decorators = [];
@@ -947,7 +947,7 @@ let test_invalid_type_parameters context =
       expected_transformed_type
       actual_transformed_type;
     assert_equal
-      ~cmp:[%equal: type_parameters_mismatch list]
+      ~cmp:[%compare.equal: type_parameters_mismatch list]
       ~printer:[%show: type_parameters_mismatch list]
       expected_mismatches
       actual_mismatches
@@ -1076,10 +1076,10 @@ let test_invalid_type_parameters context =
     ~source:
       {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
-      class Foo(Generic[*Ts]): ...
+      class Foo(Generic[Unpack[Ts]]): ...
     |}
     ~given_type:"test.Foo[int, str]"
     ~expected_transformed_type:"test.Foo[int, str]"
@@ -1092,10 +1092,10 @@ let test_invalid_type_parameters context =
     ~source:
       {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
-      class Foo(Generic[*Ts]): ...
+      class Foo(Generic[Unpack[Ts]]): ...
     |}
     ~given_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
     ~expected_transformed_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
@@ -1104,10 +1104,10 @@ let test_invalid_type_parameters context =
     ~source:
       {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
-      class Foo(Generic[*Ts]): ...
+      class Foo(Generic[Unpack[Ts]]): ...
     |}
     ~given_type:
       (Type.parametric
@@ -1147,11 +1147,11 @@ let test_invalid_type_parameters context =
     ~source:
       {|
       from typing import Generic, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       T = TypeVar("T")
-      class Foo(Generic[T, *Ts]): ...
+      class Foo(Generic[T, Unpack[Ts]]): ...
     |}
     ~given_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
     ~expected_transformed_type:
@@ -1180,7 +1180,7 @@ let test_meet context =
       |> GlobalResolution.parse_annotation global_resolution
     in
     let actual = GlobalResolution.meet global_resolution (parse left) (parse right) in
-    assert_equal ~cmp:Type.equal ~printer:Type.show (parse expected) actual
+    assert_equal ~cmp:Type.equal ~printer:Type.show expected actual
   in
   assert_meet
     ~source:{|
@@ -1190,7 +1190,7 @@ let test_meet context =
     |}
     ~left:"typing.Type[test.C]"
     ~right:"typing.Callable[[int], test.C]"
-    "$bottom";
+    Type.Bottom;
   ()
 
 
@@ -2569,6 +2569,93 @@ let test_extract_type_parameter context =
   ()
 
 
+let test_type_of_iteration_value context =
+  let global_resolution =
+    ScratchProject.setup
+      ~context
+      [
+        ( "test.py",
+          {|
+         from typing import Iterable, Iterator, Generic, TypeVar
+         T = TypeVar('T')
+
+         class IntIterable(Iterable[int]): ...
+
+         class GenericIterator(Iterator[T], Generic[T]): ...
+       |}
+        );
+      ]
+    |> ScratchProject.build_global_resolution
+  in
+  let parse_annotation annotation =
+    annotation
+    |> parse_single_expression ~preprocess:true
+    |> GlobalResolution.parse_annotation global_resolution
+  in
+  let assert_type_of_iteration_value ~annotation ~expected =
+    let type_ = parse_annotation annotation in
+    let actual = GlobalResolution.type_of_iteration_value ~global_resolution type_ in
+    assert_equal
+      ~cmp:[%equal: Type.t option]
+      ~printer:(function
+        | Some type_ -> Type.show type_
+        | None -> "EXTRACTION FAILED")
+      expected
+      actual
+  in
+  assert_type_of_iteration_value ~annotation:"typing.Iterable[int]" ~expected:(Some Type.integer);
+  assert_type_of_iteration_value ~annotation:"typing.Iterator[str]" ~expected:(Some Type.string);
+  assert_type_of_iteration_value
+    ~annotation:"typing.Generator[int, str, None]"
+    ~expected:(Some Type.integer);
+  assert_type_of_iteration_value ~annotation:"test.IntIterable" ~expected:(Some Type.integer);
+  assert_type_of_iteration_value
+    ~annotation:"test.GenericIterator[str]"
+    ~expected:(Some Type.string);
+  ()
+
+
+let test_type_of_generator_send_and_return context =
+  let global_resolution =
+    ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
+  in
+  let parse_annotation annotation =
+    annotation
+    |> parse_single_expression ~preprocess:true
+    |> GlobalResolution.parse_annotation global_resolution
+  in
+  let assert_type_of_generator_send_and_return ~annotation ~expected_send ~expected_return =
+    let type_ = parse_annotation annotation in
+    let actual_send, actual_return =
+      GlobalResolution.type_of_generator_send_and_return ~global_resolution type_
+    in
+    assert_equal ~cmp:[%equal: Type.t] ~printer:Type.show expected_send actual_send;
+    assert_equal ~cmp:[%equal: Type.t] ~printer:Type.show expected_return actual_return;
+    ()
+  in
+  assert_type_of_generator_send_and_return
+    ~annotation:"typing.Iterator[int]"
+    ~expected_send:Type.none
+    ~expected_return:Type.none;
+  assert_type_of_generator_send_and_return
+    ~annotation:"typing.Iterable[int]"
+    ~expected_send:Type.none
+    ~expected_return:Type.none;
+  assert_type_of_generator_send_and_return
+    ~annotation:"typing.AsyncGenerator[int, str]"
+    ~expected_send:Type.string
+    ~expected_return:Type.none;
+  assert_type_of_generator_send_and_return
+    ~annotation:"typing.Generator[int, None, str]"
+    ~expected_send:Type.none
+    ~expected_return:Type.string;
+  assert_type_of_generator_send_and_return
+    ~annotation:"typing.Generator[int, str, None]"
+    ~expected_send:Type.string
+    ~expected_return:Type.none;
+  ()
+
+
 let test_define context =
   let assert_define ?expected_define_source ~define_name ~source =
     let expected_source =
@@ -2696,6 +2783,34 @@ let test_define context =
   ()
 
 
+let test_refine context =
+  let global_resolution =
+    ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
+  in
+  assert_equal
+    (GlobalResolution.refine
+       ~global_resolution
+       (Annotation.create_immutable Type.float)
+       Type.integer)
+    (Annotation.create_immutable ~original:(Some Type.float) Type.integer);
+  assert_equal
+    (GlobalResolution.refine
+       ~global_resolution
+       (Annotation.create_immutable Type.integer)
+       Type.float)
+    (Annotation.create_immutable Type.integer);
+  assert_equal
+    (GlobalResolution.refine
+       ~global_resolution
+       (Annotation.create_immutable Type.integer)
+       Type.Bottom)
+    (Annotation.create_immutable Type.integer);
+  assert_equal
+    (GlobalResolution.refine ~global_resolution (Annotation.create_immutable Type.integer) Type.Top)
+    (Annotation.create_immutable ~original:(Some Type.integer) Type.Top);
+  ()
+
+
 let () =
   "class"
   >::: [
@@ -2710,10 +2825,13 @@ let () =
          "superclasses" >:: test_superclasses;
          "overrides" >:: test_overrides;
          "extract_type_parameter" >:: test_extract_type_parameter;
+         "type_of_iteration_value" >:: test_type_of_iteration_value;
+         "type_of_generator_send_and_return" >:: test_type_of_generator_send_and_return;
          "test_attribute_from_annotation" >:: test_attribute_type;
          "test_invalid_type_parameters" >:: test_invalid_type_parameters;
          "test_meet" >:: test_meet;
          "test_join" >:: test_join;
          "define" >:: test_define;
+         "refine" >:: test_refine;
        ]
   |> Test.run

@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+model_query_any_decorator.$toplevel (fun) -> []
 model_query_any_decorator.test1_alarm1 (fun) -> []
 model_query_any_decorator.test1_d1 (fun) -> []
 model_query_any_decorator.test1_d2 (fun) -> []

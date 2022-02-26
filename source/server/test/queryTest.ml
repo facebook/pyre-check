@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,8 +9,7 @@ open OUnit2
 open Core
 open Ast
 open Server
-open Pyre
-open Test
+open ServerTest
 
 let test_parse_query context =
   let assert_parses serialized query =
@@ -24,14 +23,14 @@ let test_parse_query context =
       | Superclasses left, Superclasses right ->
           List.for_all2_exn ~f:(fun left right -> Reference.equal left right) left right
       | Type left, Type right -> expression_equal left right
-      | _ -> Query.Request.equal left right
+      | _ -> [%compare.equal: Query.Request.t] left right
     in
     match Query.parse_request serialized with
     | Result.Ok request ->
         assert_equal
           ~ctxt:context
           ~cmp:type_query_request_equal
-          ~printer:Query.Request.show
+          ~printer:(fun request -> Sexp.to_string_hum (Query.Request.sexp_of_t request))
           query
           request
     | Result.Error reason ->
@@ -53,6 +52,7 @@ let test_parse_query context =
         in
         assert_failure message
   in
+  let open Test in
   let ( ! ) name =
     let open Expression in
     Expression.Name (Name.Identifier name) |> Node.create_with_default_location
@@ -89,7 +89,7 @@ let test_parse_query context =
   assert_fails_to_parse "types('a.py', 1, 2)";
   assert_parses "attributes(C)" (Attributes !&"C");
   assert_fails_to_parse "attributes(C, D)";
-  assert_parses "save_server_state('state')" (SaveServerState (Path.create_absolute "state"));
+  assert_parses "save_server_state('state')" (SaveServerState (PyrePath.create_absolute "state"));
   assert_fails_to_parse "save_server_state(state)";
   assert_parses "path_of_module(a.b.c)" (PathOfModule !&"a.b.c");
   assert_fails_to_parse "path_of_module('a.b.c')";
@@ -115,65 +115,67 @@ let test_parse_query context =
   assert_fails_to_parse "inline_decorators(a.b.c, a.b.d)";
   assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=a.b.decorator1)";
   assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=[a.b.decorator1, 1 + 1])";
+  assert_parses "modules_of_path('/a.py')" (ModulesOfPath (PyrePath.create_absolute "/a.py"));
   ()
 
 
-let assert_query_response_equal ~context ~expected actual =
-  assert_equal
-    ~ctxt:context
-    ~cmp:[%compare.equal: Query.Response.t]
-    ~printer:(fun response -> Sexp.to_string_hum (Query.Response.sexp_of_t response))
-    expected
-    actual
+let assert_queries_with_local_root ?custom_source_root ~context ~sources queries_and_responses =
+  let test_handle_query client =
+    let handle_one_query (query, build_expected_response) =
+      let open Lwt.Infix in
+      Client.send_request client (Request.Query query)
+      >>= fun actual_response ->
+      let expected_response =
+        Client.get_server_properties client
+        (* NOTE: Relativizing against `local_root` in query response is discouraged. We should
+           migrate away from it at some point. *)
+        |> fun { ServerProperties.configuration = { Configuration.Analysis.local_root; _ }; _ } ->
+        build_expected_response local_root
+      in
+      assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected_response actual_response;
+      Lwt.return_unit
+    in
+    Lwt_list.iter_s handle_one_query queries_and_responses
+  in
+  ScratchProject.setup ?custom_source_root ~context ~include_helper_builtins:false sources
+  |> ScratchProject.test_server_with ~f:test_handle_query
 
 
 let test_handle_query_basic context =
   let open Query.Response in
-  let build_configuration_and_environment ~sources =
-    let project = ScratchProject.setup ~context ~include_helper_builtins:false sources in
-    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.build_type_environment project
-    in
-    ScratchProject.configuration_of project, type_environment
-  in
-  let assert_type_query_response ?(handle = "test.py") ~source ~query response =
-    let configuration, environment =
-      build_configuration_and_environment ~sources:[handle, source]
-    in
-    let actual_response =
-      Query.process_request
-        ~configuration
-        ~environment
-        (Query.parse_request query |> Result.ok_or_failwith)
-    in
-    assert_query_response_equal ~context ~expected:response actual_response
-  in
-  (* NOTE: Relativizing against `local_root` in query response is discouraged. We should migrate
-     away from it at some point. *)
   let assert_type_query_response_with_local_root
+      ?custom_source_root
       ?(handle = "test.py")
       ~source
       ~query
       build_expected_response
     =
-    let configuration, environment =
-      build_configuration_and_environment ~sources:[handle, source]
+    let build_expected_response local_root =
+      Response.Query (build_expected_response local_root)
+      |> Response.to_yojson
+      |> Yojson.Safe.to_string
     in
-    let actual_response =
-      Query.process_request
-        ~configuration
-        ~environment
-        (Query.parse_request query |> Result.ok_or_failwith)
-    in
-    let expected_response =
-      let { Configuration.Analysis.local_root; _ } = configuration in
-      build_expected_response local_root
-    in
-    assert_query_response_equal ~context ~expected:expected_response actual_response
+    assert_queries_with_local_root
+      ?custom_source_root
+      ~context
+      ~sources:[handle, source]
+      [query, build_expected_response]
+  in
+  let assert_type_query_response ?custom_source_root ?handle ~source ~query response =
+    assert_type_query_response_with_local_root ?custom_source_root ?handle ~source ~query (fun _ ->
+        response)
+  in
+  let assert_compatibility_response ~source ~query ~actual ~expected result =
+    assert_type_query_response
+      ~source
+      ~query
+      (Single (Base.Compatibility { actual; expected; result }))
   in
   let parse_annotation serialized =
     serialized
-    |> (fun literal -> Expression.Expression.String (Expression.StringLiteral.create literal))
+    |> (fun literal ->
+         Expression.Expression.Constant
+           (Expression.Constant.String (Expression.StringLiteral.create literal)))
     |> Node.create_with_default_location
     |> Type.create ~aliases:Type.empty_aliases
   in
@@ -188,25 +190,30 @@ let test_handle_query_basic context =
     in
     List.map ~f:convert
   in
+  let open Lwt.Infix in
+  let open Test in
   assert_type_query_response
     ~source:""
     ~query:"less_or_equal(int, str)"
-    (Single (Base.Boolean false));
+    (Single (Base.Boolean false))
+  >>= fun () ->
   assert_type_query_response
     ~source:{|
         A = int
       |}
     ~query:"less_or_equal(int, test.A)"
-    (Single (Base.Boolean true));
+    (Single (Base.Boolean true))
+  >>= fun () ->
   assert_type_query_response
     ~source:""
     ~query:"less_or_equal(int, Unknown)"
-    (Error "Type `Unknown` was not found in the type order.");
+    (Error "Type `Unknown` was not found in the type order.")
+  >>= fun () ->
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"less_or_equal(list[test.C], list[int])"
-    (Single (Base.Boolean false));
-
+    (Single (Base.Boolean false))
+  >>= fun () ->
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"superclasses(test.C)"
@@ -228,7 +235,8 @@ let test_handle_query_basic context =
                   !&"object";
                 ];
             };
-          ]));
+          ]))
+  >>= fun () ->
   assert_type_query_response
     ~source:{|
     class C: pass
@@ -240,28 +248,27 @@ let test_handle_query_basic context =
           [
             { Base.class_name = !&"test.C"; superclasses = [!&"object"] };
             { Base.class_name = !&"test.D"; superclasses = [!&"object"; !&"test.C"] };
-          ]));
-  assert_type_query_response ~source:"" ~query:"batch()" (Batch []);
+          ]))
+  >>= fun () ->
+  assert_type_query_response ~source:"" ~query:"batch()" (Batch [])
+  >>= fun () ->
   assert_type_query_response
     ~source:"class C(int): ..."
     ~query:"batch(less_or_equal(int, str), less_or_equal(int, int))"
-    (Batch [Single (Base.Boolean false); Single (Base.Boolean true)]);
+    (Batch [Single (Base.Boolean false); Single (Base.Boolean true)])
+  >>= fun () ->
   assert_type_query_response
     ~source:""
     ~query:"batch(less_or_equal(int, str), less_or_equal(int, Unknown))"
-    (Batch [Single (Base.Boolean false); Error "Type `Unknown` was not found in the type order."]);
-  let assert_compatibility_response ~source ~query ~actual ~expected result =
-    assert_type_query_response
-      ~source
-      ~query
-      (Single (Base.Compatibility { actual; expected; result }))
-  in
+    (Batch [Single (Base.Boolean false); Error "Type `Unknown` was not found in the type order."])
+  >>= fun () ->
   assert_compatibility_response
     ~source:""
     ~query:"is_compatible_with(int, str)"
     ~actual:Type.integer
     ~expected:Type.string
-    false;
+    false
+  >>= fun () ->
   assert_compatibility_response
     ~source:{|
         A = int
@@ -269,47 +276,55 @@ let test_handle_query_basic context =
     ~query:"is_compatible_with(int, test.A)"
     ~actual:Type.integer
     ~expected:Type.integer
-    true;
+    true
+  >>= fun () ->
   assert_type_query_response
     ~source:""
     ~query:"is_compatible_with(int, Unknown)"
-    (Error "Type `Unknown` was not found in the type order.");
+    (Error "Type `Unknown` was not found in the type order.")
+  >>= fun () ->
   assert_compatibility_response
     ~source:"class unknown: ..."
     ~query:"is_compatible_with(int, $unknown)"
     ~actual:Type.integer
     ~expected:Type.Top
-    true;
+    true
+  >>= fun () ->
   assert_compatibility_response
     ~source:"class unknown: ..."
     ~query:"is_compatible_with(typing.List[int], typing.List[unknown])"
     ~actual:(Type.list Type.integer)
     ~expected:(Type.list Type.Top)
-    true;
+    true
+  >>= fun () ->
   assert_compatibility_response
     ~source:"class unknown: ..."
     ~query:"is_compatible_with(int, typing.List[unknown])"
     ~actual:Type.integer
     ~expected:(Type.list Type.Top)
-    false;
+    false
+  >>= fun () ->
   assert_compatibility_response
     ~source:""
     ~query:"is_compatible_with(int, typing.Coroutine[typing.Any, typing.Any, int])"
     ~actual:Type.integer
     ~expected:Type.integer
-    true;
+    true
+  >>= fun () ->
   assert_compatibility_response
     ~source:""
     ~query:"is_compatible_with(int, typing.Coroutine[typing.Any, typing.Any, str])"
     ~actual:Type.integer
     ~expected:Type.string
-    false;
+    false
+  >>= fun () ->
   assert_compatibility_response
     ~source:"A = int"
     ~query:"is_compatible_with(test.A, typing.Coroutine[typing.Any, typing.Any, test.A])"
     ~actual:Type.integer
     ~expected:Type.integer
-    true;
+    true
+  >>= fun () ->
   assert_compatibility_response
     ~source:{|
          class A: ...
@@ -318,7 +333,8 @@ let test_handle_query_basic context =
     ~query:"is_compatible_with(test.B, typing.Coroutine[typing.Any, typing.Any, test.A])"
     ~actual:(Type.Primitive "test.B")
     ~expected:(Type.Primitive "test.A")
-    true;
+    true
+  >>= fun () ->
   assert_compatibility_response
     ~source:{|
          class A: ...
@@ -329,42 +345,48 @@ let test_handle_query_basic context =
       ^ "typing.Coroutine[typing.Any, typing.Any, typing.Type[test.A]])")
     ~actual:(Type.meta (Type.Primitive "test.B"))
     ~expected:(Type.meta (Type.Primitive "test.A"))
-    true;
+    true
+  >>= fun () ->
   assert_type_query_response
     ~source:""
     ~query:"superclasses(Unknown)"
-    (Single (Base.Superclasses []));
+    (Single (Base.Superclasses []))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~handle:"test.py"
     ~source:"a = 2"
     ~query:"path_of_module(test)"
     (fun local_root ->
       Single
-        (Base.FoundPath (Path.create_relative ~root:local_root ~relative:"test.py" |> Path.absolute)));
+        (Base.FoundPath
+           (PyrePath.create_relative ~root:local_root ~relative:"test.py" |> PyrePath.absolute)))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~handle:"test.pyi"
     ~source:"a = 2"
     ~query:"path_of_module(test)"
     (fun local_root ->
       Single
-        (Base.FoundPath (Path.create_relative ~root:local_root ~relative:"test.pyi" |> Path.absolute)));
+        (Base.FoundPath
+           (PyrePath.create_relative ~root:local_root ~relative:"test.pyi" |> PyrePath.absolute)))
+  >>= fun () ->
   assert_type_query_response
     ~source:"a = 2"
     ~query:"path_of_module(notexist)"
-    (Error "No path found for module `notexist`");
-
+    (Error "No path found for module `notexist`")
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:{|
       def foo(x: int = 10, y: str = "bar") -> None:
         a = 42
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -408,7 +430,8 @@ let test_handle_query_basic context =
                  ]
                  |> create_types_at_locations;
              };
-           ]));
+           ]))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:
       {|
@@ -418,12 +441,12 @@ let test_handle_query_basic context =
         return x
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -468,19 +491,20 @@ let test_handle_query_basic context =
                  ]
                  |> create_types_at_locations;
              };
-           ]));
+           ]))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:{|
         x = 4
         y = 3
      |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    2, 0, 2, 1, Type.integer;
@@ -490,7 +514,8 @@ let test_handle_query_basic context =
                  ]
                  |> create_types_at_locations;
              };
-           ]));
+           ]))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:{|
       def foo():
@@ -498,12 +523,12 @@ let test_handle_query_basic context =
          x = 1
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -527,7 +552,8 @@ let test_handle_query_basic context =
                  ]
                  |> create_types_at_locations;
              };
-           ]));
+           ]))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:{|
        def foo():
@@ -535,12 +561,12 @@ let test_handle_query_basic context =
           y = 1
      |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -566,7 +592,8 @@ let test_handle_query_basic context =
                  ]
                  |> create_types_at_locations;
              };
-           ]));
+           ]))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:
       {|
@@ -577,12 +604,12 @@ let test_handle_query_basic context =
             y = 2
       |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -608,19 +635,20 @@ let test_handle_query_basic context =
                  ]
                  |> create_types_at_locations;
              };
-           ]));
+           ]))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:{|
        with open() as x:
         y = 2
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    2, 5, 2, 11, Type.Any;
@@ -630,19 +658,20 @@ let test_handle_query_basic context =
                  ]
                  |> create_types_at_locations;
              };
-           ]));
+           ]))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:{|
       while x is True:
         y = 1
    |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    2, 6, 2, 15, Type.bool;
@@ -652,7 +681,8 @@ let test_handle_query_basic context =
                  ]
                  |> create_types_at_locations;
              };
-           ]));
+           ]))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:
       {|
@@ -662,12 +692,12 @@ let test_handle_query_basic context =
          return x
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -694,30 +724,30 @@ let test_handle_query_basic context =
                          overloads = [];
                        } );
                    2, 8, 2, 9, Type.integer;
-                   2, 11, 2, 14, parse_annotation "typing.Type[int]";
-                   2, 19, 2, 22, parse_annotation "typing.Type[str]";
+                   2, 11, 2, 14, Type.meta Type.integer;
+                   2, 19, 2, 22, Type.meta Type.string;
                    3, 10, 3, 11, Type.integer;
-                   3, 13, 3, 16, parse_annotation "typing.Type[int]";
-                   3, 21, 3, 24, parse_annotation "typing.Type[str]";
+                   3, 13, 3, 16, Type.meta Type.integer;
+                   3, 21, 3, 24, Type.meta Type.string;
                    4, 11, 4, 12, Type.integer;
                    5, 9, 5, 10, Type.integer;
                  ]
                  |> create_types_at_locations;
              };
-           ]));
-
+           ]))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:{|
        def foo(x: typing.List[int]) -> None:
         pass
     |}
     ~query:"types(path='test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    ( 2,
@@ -749,20 +779,20 @@ let test_handle_query_basic context =
                  ]
                  |> create_types_at_locations;
              };
-           ]));
-
+           ]))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:{|
        class Foo:
          x = 1
      |}
     ~query:"types('test.py')"
-    (fun local_root ->
+    (fun _ ->
       Single
         (Base.TypesByPath
            [
              {
-               Base.path = Path.create_relative ~root:local_root ~relative:"test.py";
+               Base.path = "test.py";
                types =
                  [
                    {
@@ -773,8 +803,8 @@ let test_handle_query_basic context =
                    { Base.location = create_location 3 6 3 7; annotation = Type.literal_integer 1 };
                  ];
              };
-           ]));
-
+           ]))
+  >>= fun () ->
   assert_type_query_response
     ~source:{|
       class C:
@@ -810,8 +840,8 @@ let test_handle_query_basic context =
             };
             { Base.name = "x"; annotation = Type.integer; kind = Base.Regular; final = false };
             { Base.name = "y"; annotation = Type.string; kind = Base.Regular; final = false };
-          ]));
-  ();
+          ]))
+  >>= fun () ->
   assert_type_query_response
     ~source:
       {|
@@ -823,26 +853,28 @@ let test_handle_query_basic context =
     ~query:"attributes(test.C)"
     (Single
        (Base.FoundAttributes
-          [{ Base.name = "foo"; annotation = Type.integer; kind = Base.Property; final = false }]));
-  ();
-
+          [{ Base.name = "foo"; annotation = Type.integer; kind = Base.Property; final = false }]))
+  >>= fun () ->
   assert_type_query_response
     ~source:{|
       foo: str = "bar"
     |}
     ~query:"type(test.foo)"
-    (Single (Base.Type Type.string));
+    (Single (Base.Type Type.string))
+  >>= fun () ->
   assert_type_query_response
     ~source:{|
       foo = 7
     |}
     ~query:"type(test.foo)"
-    (Single (Base.Type Type.integer));
+    (Single (Base.Type Type.integer))
+  >>= fun () ->
   assert_type_query_response
     ~source:{|
     |}
     ~query:"type(8)"
-    (Single (Base.Type (Type.literal_integer 8)));
+    (Single (Base.Type (Type.literal_integer 8)))
+  >>= fun () ->
   assert_type_query_response
     ~source:{|
       def foo(a: str) -> str:
@@ -850,7 +882,8 @@ let test_handle_query_basic context =
       bar: str = "baz"
     |}
     ~query:"type(test.foo(test.bar))"
-    (Single (Base.Type Type.string));
+    (Single (Base.Type Type.string))
+  >>= fun () ->
   (* TODO: Return some sort of error *)
   assert_type_query_response
     ~source:{|
@@ -859,285 +892,405 @@ let test_handle_query_basic context =
       bar: int = 7
     |}
     ~query:"type(test.foo(test.bar))"
-    (Single (Base.Type Type.string));
-
+    (Single (Base.Type Type.string))
+  >>= fun () ->
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let handle = "my_test_file.py" in
+  assert_type_query_response
+    ~custom_source_root
+    ~handle
+    ~source:""
+    ~query:
+      (Format.sprintf
+         "modules_of_path('%s')"
+         (PyrePath.append custom_source_root ~element:handle |> PyrePath.absolute))
+    (Single (Base.FoundModules [Reference.create "my_test_file"]))
+  >>= fun () ->
+  assert_type_query_response
+    ~source:""
+    ~query:"modules_of_path('/non_existent_file.py')"
+    (Single (Base.FoundModules []))
+  >>= fun () ->
   let temporary_directory = OUnit2.bracket_tmpdir context in
   assert_type_query_response
     ~source:""
     ~query:(Format.sprintf "save_server_state('%s/state')" temporary_directory)
-    (Single (Base.Success "Saved state."));
+    (Single (Base.Success "Saved state."))
+  >>= fun () ->
   assert_equal `Yes (Sys.is_file (temporary_directory ^/ "state"));
+  Lwt.return_unit
 
-  ()
+
+let test_handle_query_with_build_system context =
+  let custom_source_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let build_system_initializer =
+    let initialize () =
+      let lookup_artifact _ =
+        [PyrePath.create_relative ~root:custom_source_root ~relative:"redirected.py"]
+      in
+      Lwt.return (BuildSystem.create_for_testing ~lookup_artifact ())
+    in
+    let load () = failwith "saved state loading is not supported" in
+    let cleanup () = Lwt.return_unit in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ~cleanup ()
+  in
+  let test_query client =
+    let open Lwt.Infix in
+    Client.send_request client (Request.Query "types('original.py')")
+    >>= fun actual_response ->
+    let expected_response =
+      Response.Query
+        Query.Response.(Single (Base.TypesByPath [{ Base.path = "original.py"; types = [] }]))
+      |> Response.to_yojson
+      |> Yojson.Safe.to_string
+    in
+    assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected_response actual_response;
+    Client.send_request client (Request.Query "modules_of_path('original.py')")
+    >>= fun actual_response ->
+    let expected_response =
+      Response.Query Query.Response.(Single (Base.FoundModules [Reference.create "redirected"]))
+      |> Response.to_yojson
+      |> Yojson.Safe.to_string
+    in
+    assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected_response actual_response;
+    Lwt.return_unit
+  in
+  ScratchProject.setup
+    ~context
+    ~include_helper_builtins:false
+    ~build_system_initializer
+    ~custom_source_root
+    ["original.py", "x: int = 42"; "redirected.py", ""]
+  |> ScratchProject.test_server_with ~f:test_query
 
 
 let test_handle_query_pysa context =
-  let configuration, environment =
-    let project =
-      ScratchProject.setup
-        ~context
-        ~show_error_traces:true
-        ~include_helper_builtins:false
-        [
-          "test.py", {|
+  let queries_and_expected_responses =
+    [
+      ( "callees_with_location(wait.bar)",
+        {|
+        {
+            "response": {
+                "callees": [
+                    {
+                        "locations": [
+                            {
+                                "path":"wait.py",
+                                "start": {
+                                    "line": 4,
+                                    "column": 2
+                                },
+                                "stop": {
+                                    "line": 4,
+                                    "column": 10
+                                }
+                            }
+                        ],
+                        "kind": "function",
+                        "target": "wait.await_me"
+                    }
+                ]
+            }
+        }
+        |}
+      );
+      ( "dump_call_graph()",
+        {|
+        {
+            "response": {
+                "typing.Iterable.__iter__": [],
+                "pyre_extensions.generic.Generic.__class_getitem__": [],
+                "wait.bar": [
+                    {
+                        "locations": [
+                            {
+                                "path": "wait.py",
+                                "start": {
+                                    "line": 4,
+                                    "column": 2
+                                },
+                                "stop": {
+                                    "line": 4,
+                                    "column": 10
+                                }
+                            }
+                        ],
+                        "kind": "function",
+                        "target": "wait.await_me"
+                    }
+                ],
+                "contextlib.ContextManager.__enter__": [],
+                "dict.items": [],
+                "dict.add_both": [],
+                "dict.add_value": [],
+                "dict.add_key": [],
+                "str.substr": [],
+                "str.lower": [],
+                "str.format": [],
+                "test.foo": []
+            }
+        }
+        |}
+      );
+      ( "defines(test)",
+        {|
+        {
+        "response": [
+            {
+            "name": "test.foo",
+            "parameters": [
+                {
+                "name": "a",
+                "annotation": "int"
+                }
+            ],
+            "return_annotation": "int"
+            }
+        ]
+        }
+        |}
+      );
+      ( "defines(classy)",
+        {|
+        {
+        "response": [
+            {
+            "name": "classy.not_in_c",
+            "parameters": [],
+            "return_annotation":"int"
+            },
+            {
+            "name": "classy.C.foo",
+            "parameters": [
+                {
+                "name": "self",
+                "annotation": null
+                },
+                {
+                "name": "x",
+                "annotation": "T"
+                }
+            ],
+            "return_annotation": "None"
+            }
+        ]
+        }
+        |}
+      );
+      ( "defines(classy.C)",
+        {|
+        {
+        "response": [
+            {
+            "name": "classy.C.foo",
+            "parameters": [
+                {
+                "name": "self",
+                "annotation": null
+                },
+                {
+                "name": "x",
+                "annotation": "T"
+                }
+            ],
+            "return_annotation": "None"
+            }
+        ]
+        }
+        |}
+      );
+      ( "defines(define_test)",
+        {|
+        {
+        "response": [
+            {
+            "name": "define_test.with_kwargs",
+            "parameters": [
+                {
+                "name": "**kwargs",
+                "annotation": null
+                }
+            ],
+            "return_annotation": null
+            },
+            {
+            "name": "define_test.with_var",
+            "parameters": [
+                {
+                "name": "*args",
+                "annotation": null
+                }
+            ],
+            "return_annotation": null
+            }
+        ]
+        }
+        |}
+      );
+      "defines(nonexistent)", {|
+        {
+        "response": []
+        }
+        |};
+      ( "defines(test, classy)",
+        {|
+        {
+        "response": [
+            {
+            "name": "test.foo",
+            "parameters": [
+                {
+                "name": "a",
+                "annotation": "int"
+                }
+            ],
+            "return_annotation": "int"
+            },
+            {
+            "name": "classy.not_in_c",
+            "parameters": [],
+            "return_annotation":"int"
+            },
+            {
+            "name": "classy.C.foo",
+            "parameters": [
+                {
+                "name": "self",
+                "annotation": null
+                },
+                {
+                "name": "x",
+                "annotation": "T"
+                }
+            ],
+            "return_annotation": "None"
+            }
+        ]
+        }
+        |}
+      );
+    ]
+  in
+  assert_queries_with_local_root
+    ~context
+    ~sources:
+      [
+        "test.py", {|
               def foo(a: int) -> int:
                 return a
             |};
-          ( "await.py",
-            {|
+        ( "wait.py",
+          {|
                async def await_me() -> int: ...
                async def bar():
                  await_me()
             |}
-          );
-          ( "classy.py",
-            {|
+        );
+        ( "classy.py",
+          {|
                from typing import Generic, TypeVar
                T = TypeVar("T")
                class C(Generic[T]):
                  def foo(self, x: T) -> None: ...
                def not_in_c() -> int: ...
             |}
-          );
-          ( "define_test.py",
-            {|
+        );
+        ( "define_test.py",
+          {|
                def with_var( *args): ...
                def with_kwargs( **kwargs): ...
             |}
-          );
-        ]
-    in
-    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.build_type_environment project
-    in
-    ScratchProject.configuration_of project, type_environment
-  in
-  let assert_response request expected_response =
-    let actual_response =
-      Query.process_request ~environment ~configuration request
-      |> Query.Response.to_yojson
-      |> Yojson.Safe.to_string
-    in
-    let expected_response = expected_response |> Yojson.Safe.from_string |> Yojson.Safe.to_string in
-    assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
-  in
-  assert_response
-    (Query.Request.CalleesWithLocation (Reference.create "await.bar"))
-    {|
-    {
-        "response": {
-            "callees": [
-                {
-                    "locations": [
-                        {
-                            "path":"await.py",
-                            "start": {
-                                "line": 4,
-                                "column": 2
-                            },
-                            "stop": {
-                                "line": 4,
-                                "column": 10
-                            }
-                        }
-                    ],
-                    "kind": "function",
-                    "target": "await.await_me"
-                }
-            ]
-        }
-    }
-    |};
-  assert_response
-    Query.Request.DumpCallGraph
-    {|
-    {
-        "response": {
-            "typing.Iterable.__iter__": [],
-            "contextlib.ContextManager.__enter__": [],
-            "await.bar": [
-                {
-                    "locations": [
-                        {
-                            "path": "await.py",
-                            "start": {
-                                "line": 4,
-                                "column": 2
-                            },
-                            "stop": {
-                                "line": 4,
-                                "column": 10
-                            }
-                        }
-                    ],
-                    "kind": "function",
-                    "target": "await.await_me"
-                }
-            ],
-            "dict.items": [],
-            "dict.add_both": [],
-            "dict.add_value": [],
-            "dict.add_key": [],
-            "str.substr": [],
-            "str.lower": [],
-            "str.format": [],
-            "test.foo": []
-        }
-    }
-    |};
-  assert_response
-    (Query.Request.Defines [Reference.create "test"])
-    {|
-    {
-      "response": [
-        {
-          "name": "test.foo",
-          "parameters": [
-            {
-              "name": "a",
-              "annotation": "int"
-            }
-          ],
-          "return_annotation": "int"
-        }
+        );
       ]
-    }
-    |};
-  assert_response
-    (Query.Request.Defines [Reference.create "classy"])
-    {|
-    {
-      "response": [
-        {
-          "name": "classy.not_in_c",
-          "parameters": [],
-          "return_annotation":"int"
-        },
-        {
-          "name": "classy.C.foo",
-          "parameters": [
-            {
-              "name": "self",
-              "annotation": null
-            },
-            {
-              "name": "x",
-              "annotation": "T"
-            }
-          ],
-          "return_annotation": "None"
-        }
-      ]
-    }
-    |};
-  assert_response
-    (Query.Request.Defines [Reference.create "classy.C"])
-    {|
-    {
-      "response": [
-        {
-          "name": "classy.C.foo",
-          "parameters": [
-            {
-              "name": "self",
-              "annotation": null
-            },
-            {
-              "name": "x",
-              "annotation": "T"
-            }
-          ],
-          "return_annotation": "None"
-        }
-      ]
-    }
-    |};
-
-  assert_response
-    (Query.Request.Defines [Reference.create "define_test"])
-    {|
-    {
-      "response": [
-        {
-          "name": "define_test.with_kwargs",
-          "parameters": [
-            {
-              "name": "**kwargs",
-              "annotation": null
-            }
-          ],
-          "return_annotation": null
-        },
-        {
-          "name": "define_test.with_var",
-          "parameters": [
-            {
-              "name": "*args",
-              "annotation": null
-            }
-          ],
-          "return_annotation": null
-        }
-      ]
-    }
-    |};
-  assert_response
-    (Query.Request.Defines [Reference.create "nonexistent"])
-    {|
-    {
-      "response": []
-    }
-    |};
-  assert_response
-    (Query.Request.Defines [Reference.create "test"; Reference.create "classy"])
-    {|
-    {
-      "response": [
-        {
-          "name": "test.foo",
-          "parameters": [
-            {
-              "name": "a",
-              "annotation": "int"
-            }
-          ],
-          "return_annotation": "int"
-        },
-        {
-          "name": "classy.not_in_c",
-          "parameters": [],
-          "return_annotation":"int"
-        },
-        {
-          "name": "classy.C.foo",
-          "parameters": [
-            {
-              "name": "self",
-              "annotation": null
-            },
-            {
-              "name": "x",
-              "annotation": "T"
-            }
-          ],
-          "return_annotation": "None"
-        }
-      ]
-    }
-    |};
-  ()
+    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
+         ( query,
+           fun _ ->
+             response
+             |> Yojson.Safe.from_string
+             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
 let test_inline_decorators context =
-  let configuration, environment =
-    let project =
-      ScratchProject.setup
-        ~context
-        ~show_error_traces:true
-        ~include_helper_builtins:false
-        [
-          ( "test.py",
-            {|
+  let queries_and_expected_responses =
+    [
+      ( "inline_decorators(test.foo)",
+        {|
+      {
+      "response": {
+        "definition": "def test.foo(a: int) -> int:
+        def _original_function(a: int) -> int:
+          return a|}
+        ^ "\n        "
+        ^ {|
+        def _inlined_identity(a: int) -> int:
+          _args = (a)
+          _kwargs = { \"a\":a }
+          return _original_function(a)|}
+        ^ "\n        "
+        ^ {|
+        def _inlined_with_logging(a: int) -> int:
+          _args = (a)
+          _kwargs = { \"a\":a }
+          print(_args, _kwargs)
+          return _inlined_identity(a)|}
+        ^ "\n        "
+        ^ {|
+        return _inlined_with_logging(a)
+      "
+      }
+      }
+    |} );
+      ( "inline_decorators(test.non_existent)",
+        {|
+      {
+        "error": "Could not find function `test.non_existent`"
+      }
+        |}
+      );
+      ( "inline_decorators(test.not_decorated)",
+        {|
+      {
+        "response": {
+          "definition": "def test.not_decorated(a: int) -> int:
+        return a
+      "  }
+      }
+        |}
+      );
+      ( "inline_decorators(test.foo, decorators_to_skip=[decorators.identity, \
+         some.non_existent.decorator])",
+        {|
+      {
+        "response": {
+          "definition": "def test.foo(a: int) -> int:
+        def _original_function(a: int) -> int:
+          return a|}
+        ^ "\n        "
+        ^ {|
+        def _inlined_with_logging(a: int) -> int:
+          _args = (a)
+          _kwargs = { \"a\":a }
+          print(_args, _kwargs)
+          return _original_function(a)|}
+        ^ "\n        "
+        ^ {|
+        return _inlined_with_logging(a)
+      "
+        }
+      }
+        |} );
+    ]
+  in
+  assert_queries_with_local_root
+    ~context
+    ~sources:
+      [
+        ( "test.py",
+          {|
               from logging import with_logging
               from decorators import identity, not_inlinable
 
@@ -1150,9 +1303,9 @@ let test_inline_decorators context =
               def not_decorated(a: int) -> int:
                 return a
             |}
-          );
-          ( "logging.py",
-            {|
+        );
+        ( "logging.py",
+          {|
               def with_logging(f):
                 def inner( *args, **kwargs) -> int:
                   print(args, kwargs)
@@ -1160,9 +1313,9 @@ let test_inline_decorators context =
 
                 return inner
             |}
-          );
-          ( "decorators.py",
-            {|
+        );
+        ( "decorators.py",
+          {|
               def identity(f):
                 def inner( *args, **kwargs) -> int:
                   return f( *args, **kwargs)
@@ -1172,111 +1325,28 @@ let test_inline_decorators context =
               def not_inlinable(f):
                 return f
             |}
-          );
-        ]
-    in
-    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.build_type_environment project
-    in
-    ScratchProject.configuration_of project, type_environment
-  in
-  let assert_response request expected_response =
-    let actual_response =
-      Query.process_request ~environment ~configuration request
-      |> Query.Response.to_yojson
-      |> Yojson.Safe.to_string
-    in
-    let indentation = 6 in
-    let expected_response =
-      expected_response
-      |> String.split ~on:'\n'
-      |> List.map ~f:(fun s -> String.drop_prefix s indentation)
-      |> String.concat ~sep:"\n"
-      |> Yojson.Safe.from_string
-      |> Yojson.Safe.to_string
-    in
-    assert_equal ~cmp:String.equal ~printer:Fn.id expected_response actual_response
-  in
-  assert_response
-    (Query.Request.inline_decorators (Reference.create "test.foo"))
-    ({|
-      {
-      "response": {
-        "definition": "def test.foo(a: int) -> int:
-        def _original_function(a: int) -> int:
-          return a|}
-    ^ "\n        "
-    ^ {|
-        def _inlined_identity(a: int) -> int:
-          _args = (a)
-          _kwargs = { \"a\":a }
-          return _original_function(a)|}
-    ^ "\n        "
-    ^ {|
-        def _inlined_with_logging(a: int) -> int:
-          _args = (a)
-          _kwargs = { \"a\":a }
-          print(_args, _kwargs)
-          return _inlined_identity(a)|}
-    ^ "\n        "
-    ^ {|
-        return _inlined_with_logging(a)
-      "
-      }
-      }
-    |});
-  assert_response
-    (Query.Request.inline_decorators (Reference.create "test.non_existent"))
-    {|
-      {
-        "error": "Could not find function `test.non_existent`"
-      }
-|};
-  assert_response
-    (Query.Request.inline_decorators (Reference.create "test.not_decorated"))
-    {|
-      {
-        "response": {
-          "definition": "def test.not_decorated(a: int) -> int:
-        return a
-      "  }
-      }
-|};
-  assert_response
-    (Query.Request.InlineDecorators
-       {
-         function_reference = Reference.create "test.foo";
-         decorators_to_skip = [!&"decorators.identity"; !&"some.non_existent.decorator"];
-       })
-    ({|
-      {
-        "response": {
-          "definition": "def test.foo(a: int) -> int:
-        def _original_function(a: int) -> int:
-          return a|}
-    ^ "\n        "
-    ^ {|
-        def _inlined_with_logging(a: int) -> int:
-          _args = (a)
-          _kwargs = { \"a\":a }
-          print(_args, _kwargs)
-          return _original_function(a)|}
-    ^ "\n        "
-    ^ {|
-        return _inlined_with_logging(a)
-      "
-        }
-      }
-    |});
-  ()
+        );
+      ]
+    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
+         ( query,
+           fun _ ->
+             let indentation = 6 in
+             response
+             |> String.split ~on:'\n'
+             |> List.map ~f:(fun s -> String.drop_prefix s indentation)
+             |> String.concat ~sep:"\n"
+             |> Yojson.Safe.from_string
+             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
 let () =
   "query"
   >::: [
          "parse_query" >:: test_parse_query;
-         "handle_query_basic" >:: test_handle_query_basic;
-         "handle_query_pysa" >:: test_handle_query_pysa;
-         "inline_decorators" >:: test_inline_decorators;
+         "handle_query_basic" >:: OUnitLwt.lwt_wrapper test_handle_query_basic;
+         "handle_query_with_build_system"
+         >:: OUnitLwt.lwt_wrapper test_handle_query_with_build_system;
+         "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
+         "inline_decorators" >:: OUnitLwt.lwt_wrapper test_inline_decorators;
        ]
   |> Test.run

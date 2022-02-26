@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -29,11 +29,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
   type product = element array
 
-  module IntMap = Map.Make (struct
-    type t = int
-
-    let compare = compare
-  end)
+  module IntMap = Map.Make (Int)
 
   type abstract_slot = Slot : 'a Config.slot -> abstract_slot [@@unbox]
 
@@ -54,10 +50,14 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
 
   (* The route map indicates for each part under a product element which slot the element is in *)
-  let route_map : int IntMap.t =
+  let route_map : int list IntMap.t =
     let map = ref IntMap.empty in
     let gather (route : int) (type a) (part : a part) =
-      map := IntMap.add (part_id part) route !map
+      let add_route = function
+        | None -> Some [route]
+        | Some routes -> Some (route :: routes)
+      in
+      map := IntMap.update (part_id part) add_route !map
     in
     Array.iteri
       (fun route (Slot slot) ->
@@ -72,8 +72,19 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
 
   let get_route (type a) (part : a part) =
-    try IntMap.find (part_id part) route_map with
-    | Not_found -> Format.sprintf "No route to part %s" (part_name part) |> failwith
+    match IntMap.find_opt (part_id part) route_map with
+    | Some [slot_index] -> slot_index
+    | Some slot_indices ->
+        let name_from_slot_index index =
+          let (Slot slot) = slots.(index) in
+          Config.slot_name slot
+        in
+        Format.sprintf
+          "Part %s is present in multiple slots of a product: %s"
+          (part_name part)
+          (slot_indices |> List.map name_from_slot_index |> String.concat ", ")
+        |> failwith
+    | None -> Format.sprintf "No route to part %s" (part_name part) |> failwith
 
 
   let bottom =
@@ -410,6 +421,8 @@ module Make (Config : PRODUCT_CONFIG) = struct
 
 
     let fold = Base.fold
+
+    let apply = Base.apply
   end
 
   let _ = Base.fold (* unused module warning work-around *)

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,11 +12,6 @@ open Pyre
 open PyreParser
 open Statement
 
-type qualify_strings =
-  | Qualify
-  | OptionallyQualify
-  | DoNotQualify
-
 let expand_relative_imports
     ({ Source.source_path = { SourcePath.qualifier; _ } as source_path; _ } as source)
   =
@@ -27,8 +22,8 @@ let expand_relative_imports
       let value =
         match value with
         | Statement.Import { Import.from = Some from; imports }
-          when (not (String.equal (Reference.show (Node.value from)) "builtins"))
-               && not (String.equal (Reference.show (Node.value from)) "future.builtins") ->
+          when (not (String.equal (Reference.show from) "builtins"))
+               && not (String.equal (Reference.show from) "future.builtins") ->
             Statement.Import
               { Import.from = Some (SourcePath.expand_relative_import source_path ~from); imports }
         | _ -> value
@@ -92,7 +87,7 @@ let transform_string_annotation_expression ~relative =
               arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
             }
       | List elements -> List (List.map elements ~f:transform_expression)
-      | String { StringLiteral.value = string_value; _ } -> (
+      | Constant (Constant.String { StringLiteral.value = string_value; _ }) -> (
           (* Start at column + 1 since parsing begins after the opening quote of the string literal. *)
           match
             Parser.parse
@@ -178,8 +173,10 @@ let transform_annotations ~transform_annotation_expression source =
     let expression _ expression =
       let transform_arguments = function
         | [
-            ({ Call.Argument.name = None; value = { Node.value = String _; _ } as value } as
-            type_argument);
+            ({
+               Call.Argument.name = None;
+               value = { Node.value = Constant (Constant.String _); _ } as value;
+             } as type_argument);
             value_argument;
           ] ->
             let annotation = transform_annotation_expression value in
@@ -212,139 +209,50 @@ let expand_strings_in_annotation_expression =
   transform_string_annotation_expression ~relative:"$path_placeholder_for_alias_string_annotations"
 
 
-let expand_format_string ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) =
-  let module Transform = Transform.Make (struct
-    include Transform.Identity
-
-    type t = unit
-
-    type state =
-      | Literal
-      | Expression of int * int * string
-
-    let expression _ expression =
-      match expression with
-      | {
-       Node.location;
-       value = Expression.String { StringLiteral.value; kind = StringLiteral.Mixed substrings; _ };
-      } ->
-          let gather_fstring_expressions substrings =
-            let gather_expressions_in_substring
-                expressions
-                {
-                  Node.value = { Substring.kind; value };
-                  location = { Location.start = { Location.line; column; _ }; _ };
-                }
-              =
-              let value_length = String.length value in
-              let rec expand_fstring input_string ~line_offset ~column_offset ~index state : 'a list
-                =
-                if index = value_length then
-                  []
-                else
-                  let token = input_string.[index] in
-                  let expressions, next_state =
-                    match token, state with
-                    | '{', Literal -> [], Expression (line_offset, column_offset + 1, "")
-                    | '{', Expression (_, _, "") -> [], Literal
-                    | '}', Literal -> [], Literal
-                    (* NOTE: this does not account for nested expressions in e.g. format specifiers. *)
-                    | '}', Expression (fstring_start_line, fstring_start_column, string) ->
-                        [(fstring_start_line, fstring_start_column), string], Literal
-                    (* Ignore leading whitespace in expressions. *)
-                    | (' ' | '\t'), (Expression (_, _, "") as expression) -> [], expression
-                    | _, Literal -> [], Literal
-                    | _, Expression (line, column, string) ->
-                        [], Expression (line, column, string ^ Char.to_string token)
-                  in
-                  let line_offset, column_offset =
-                    match token with
-                    | '\n' -> line_offset + 1, 0
-                    | _ -> line_offset, column_offset + 1
-                  in
-                  let next_expressions =
-                    expand_fstring
-                      input_string
-                      ~line_offset
-                      ~column_offset
-                      ~index:(index + 1)
-                      next_state
-                  in
-                  expressions @ next_expressions
-              in
-              match kind with
-              | Substring.Literal -> expressions
-              | Substring.Format ->
-                  let fstring_expressions =
-                    expand_fstring value ~line_offset:line ~column_offset:column ~index:0 Literal
-                  in
-                  List.rev fstring_expressions @ expressions
-            in
-            List.fold substrings ~init:[] ~f:gather_expressions_in_substring |> List.rev
-          in
-          let parse ((start_line, start_column), input_string) =
-            let string = "(" ^ input_string ^ ")" ^ "\n" in
-            let start_column = start_column - 1 in
-            match Parser.parse [string ^ "\n"] ~start_line ~start_column ~relative with
-            | Ok [{ Node.value = Expression expression; _ }] -> [expression]
-            | Ok _
-            | Error _ ->
-                Log.debug
-                  "Pyre could not parse format string `%s` at %s:%a"
-                  input_string
-                  relative
-                  Location.pp
-                  location;
-                []
-          in
-          let expressions = substrings |> gather_fstring_expressions |> List.concat_map ~f:parse in
-          {
-            Node.location;
-            value = Expression.String { StringLiteral.kind = Format expressions; value };
-          }
-      | _ -> expression
-  end)
-  in
-  Transform.transform () source |> Transform.source
-
-
-type alias = {
-  name: Reference.t;
-  qualifier: Reference.t;
-  is_forward_reference: bool;
-}
-
-type scope = {
-  qualifier: Reference.t;
-  aliases: alias Reference.Map.t;
-  immutables: Reference.Set.t;
-  locals: Reference.Set.t;
-  use_forward_references: bool;
-  is_top_level: bool;
-  skip: Location.Set.t;
-  is_in_function: bool;
-  is_in_class: bool;
-}
-
 let qualify_local_identifier ~qualifier name =
   let qualifier = Reference.show qualifier |> String.substr_replace_all ~pattern:"." ~with_:"?" in
   Format.asprintf "$local_%s$%s" qualifier name
 
 
-let qualify
-    ({
-       Source.source_path = { SourcePath.relative; qualifier = source_qualifier; _ };
-       statements;
-       _;
-     } as source)
-  =
-  let is_qualified = String.is_prefix ~prefix:"$" in
+module type QualifyContext = sig
+  val source_relative : string
+
+  val source_qualifier : Reference.t
+end
+
+module Qualify (Context : QualifyContext) = struct
+  type alias = {
+    name: Reference.t;
+    qualifier: Reference.t;
+    is_forward_reference: bool;
+  }
+
+  type qualify_strings =
+    | Qualify
+    | OptionallyQualify
+    | DoNotQualify
+
+  type scope = {
+    qualifier: Reference.t;
+    aliases: alias Reference.Map.t;
+    immutables: Reference.Set.t;
+    locals: Reference.Set.t;
+    use_forward_references: bool;
+    is_top_level: bool;
+    skip: Location.Set.t;
+    is_in_function: bool;
+    is_in_class: bool;
+  }
+
+  let is_qualified = String.is_prefix ~prefix:"$"
+
   let qualify_if_needed ~qualifier name =
     if Reference.is_strict_prefix ~prefix:qualifier name then
       name
     else
       Reference.combine qualifier name
-  in
+
+
   let prefix_identifier ~scope:({ aliases; immutables; _ } as scope) ~prefix name =
     let stars, name = Identifier.split_star name in
     let renamed = Format.asprintf "$%s$%s" prefix name in
@@ -358,14 +266,15 @@ let qualify
             ~data:
               {
                 name = Reference.create renamed;
-                qualifier = source_qualifier;
+                qualifier = Context.source_qualifier;
                 is_forward_reference = false;
               };
         immutables = Set.add immutables reference;
       },
       stars,
       renamed )
-  in
+
+
   let rec explore_scope ~scope statements =
     let global_alias ~qualifier ~name =
       { name = Reference.combine qualifier name; qualifier; is_forward_reference = true }
@@ -384,13 +293,11 @@ let qualify
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
             skip = Set.add skip location;
           }
-      | Class { Class.name = { Node.value = name; _ }; _ } ->
+      | Class { Class.name; _ } ->
           { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
-      | Define { Define.signature = { name = { Node.value = name; _ }; _ }; _ } when is_in_function
-        ->
+      | Define { Define.signature = { name; _ }; _ } when is_in_function ->
           qualify_function_name ~scope name |> fst
-      | Define { Define.signature = { name = { Node.value = name; _ }; _ }; _ }
-        when not is_in_function ->
+      | Define { Define.signature = { name; _ }; _ } when not is_in_function ->
           { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
       | If { If.body; orelse; _ } ->
           let scope = explore_scope ~scope body in
@@ -421,6 +328,8 @@ let qualify
       | _ -> scope
     in
     List.fold statements ~init:scope ~f:explore_scope
+
+
   and qualify_function_name
       ~scope:({ aliases; locals; immutables; is_in_function; is_in_class; qualifier; _ } as scope)
       name
@@ -460,6 +369,8 @@ let qualify
           }
       in
       scope, qualify_reference ~suppress_synthetics:true ~scope name
+
+
   and qualify_parameters ~scope parameters =
     (* Rename parameters to prevent aliasing. *)
     let parameters =
@@ -503,6 +414,8 @@ let qualify
         ~f:rename_parameter
     in
     scope, List.rev parameters
+
+
   and qualify_statements ~scope statements =
     let scope = explore_scope ~scope statements in
     let scope, reversed_statements =
@@ -513,6 +426,8 @@ let qualify
       List.fold statements ~init:(scope, []) ~f:qualify
     in
     scope, List.rev reversed_statements
+
+
   and qualify_statement
       ~qualify_assign
       ~scope:({ qualifier; aliases; skip; is_top_level; _ } as scope)
@@ -520,9 +435,9 @@ let qualify
     =
     let scope, value =
       let local_alias ~qualifier ~name = { name; qualifier; is_forward_reference = false } in
-      let qualify_assign { Assign.target; annotation; value; parent } =
+      let qualify_assign { Assign.target; annotation; value } =
         let qualify_value ~qualify_potential_alias_strings ~scope = function
-          | { Node.value = Expression.String _; _ } ->
+          | { Node.value = Expression.Constant (Constant.String _); _ } ->
               (* String literal assignments might be type aliases. *)
               qualify_expression ~qualify_strings:qualify_potential_alias_strings value ~scope
           | {
@@ -607,11 +522,12 @@ let qualify
                         scope
                     in
                     ( scope,
-                      qualify_name
-                        ~qualify_strings:DoNotQualify
-                        ~location
-                        ~scope
-                        (Expression.Name (Name.Identifier name)) )
+                      Expression.Name
+                        (qualify_name
+                           ~qualify_strings:DoNotQualify
+                           ~location
+                           ~scope
+                           (Name.Identifier name)) )
                 | Name name ->
                     let name =
                       if qualify_assign then
@@ -619,12 +535,10 @@ let qualify
                         |> create_name_from_reference ~location
                         |> fun name -> Expression.Name name
                       else
-                        match
-                          qualify_name ~qualify_strings:DoNotQualify ~location ~scope (Name name)
-                        with
-                        | Name (Name.Identifier name) ->
+                        match qualify_name ~qualify_strings:DoNotQualify ~location ~scope name with
+                        | Name.Identifier name ->
                             Expression.Name (Name.Identifier (Identifier.sanitized name))
-                        | qualified -> qualified
+                        | qualified -> Name qualified
                     in
                     scope, name
                 | target -> scope, target
@@ -647,27 +561,13 @@ let qualify
           in
           qualify_value ~scope:target_scope ~qualify_potential_alias_strings value
         in
-        ( target_scope,
-          {
-            Assign.target;
-            annotation = qualified_annotation;
-            value = qualified_value;
-            parent = (parent >>| fun parent -> qualify_reference ~scope parent);
-          } )
+        target_scope, { Assign.target; annotation = qualified_annotation; value = qualified_value }
       in
       let qualify_define
           ({ qualifier; _ } as original_scope)
           ({
              Define.signature =
-               {
-                 name = { Node.value = name; location = name_location };
-                 parameters;
-                 decorators;
-                 return_annotation;
-                 parent;
-                 nesting_define;
-                 _;
-               };
+               { name; parameters; decorators; return_annotation; parent; nesting_define; _ };
              body;
              _;
            } as define)
@@ -684,7 +584,7 @@ let qualify
           List.map
             decorators
             ~f:
-              (qualify_decorator
+              (qualify_expression
                  ~qualify_strings:DoNotQualify
                  ~scope:{ scope with use_forward_references = true })
         in
@@ -699,7 +599,7 @@ let qualify
         let signature =
           {
             define.signature with
-            name = { Node.value = name; location = name_location };
+            name;
             parameters;
             decorators;
             return_annotation;
@@ -709,10 +609,7 @@ let qualify
         in
         original_scope_with_alias, { define with signature; body }
       in
-      let qualify_class
-          ({ Class.name = { Node.value = name; location }; base_arguments; body; decorators; _ } as
-          definition)
-        =
+      let qualify_class ({ Class.name; base_arguments; body; decorators; _ } as definition) =
         let scope = { scope with is_top_level = false } in
         let qualify_base ({ Call.Argument.value; _ } as argument) =
           {
@@ -721,7 +618,7 @@ let qualify
           }
         in
         let decorators =
-          List.map decorators ~f:(qualify_decorator ~qualify_strings:DoNotQualify ~scope)
+          List.map decorators ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope)
         in
         let body =
           let qualifier = qualify_if_needed ~qualifier name in
@@ -733,44 +630,38 @@ let qualify
             let scope, statement =
               match value with
               | Statement.Define
-                  ({
-                     signature =
-                       {
-                         name = { Node.value = name; location = name_location };
-                         parameters;
-                         return_annotation;
-                         decorators;
-                         _;
-                       };
-                     _;
-                   } as define) ->
+                  ({ signature = { name; parameters; return_annotation; decorators; _ }; _ } as
+                  define) ->
                   let _, define = qualify_define original_scope define in
                   let _, parameters = qualify_parameters ~scope parameters in
                   let return_annotation =
                     return_annotation >>| qualify_expression ~scope ~qualify_strings:Qualify
                   in
-                  let qualify_decorator
-                      ({ Decorator.name = { Node.value = name; _ }; _ } as decorator)
-                    =
-                    match name |> Reference.as_list |> List.rev with
-                    | ["staticmethod"]
-                    | ["classmethod"]
-                    | ["property"]
-                    | "getter" :: _
-                    | "setter" :: _
-                    | "deleter" :: _ ->
+                  let qualify_decorator decorator =
+                    let is_reserved name =
+                      match Reference.as_list name |> List.rev with
+                      | ["staticmethod"]
+                      | ["classmethod"]
+                      | ["property"]
+                      | "getter" :: _
+                      | "setter" :: _
+                      | "deleter" :: _ ->
+                          true
+                      | _ -> false
+                    in
+                    match Decorator.from_expression decorator with
+                    | Some { Decorator.name = { Node.value = name; _ }; _ } when is_reserved name ->
                         decorator
                     | _ ->
                         (* TODO (T41755857): Decorator qualification logic should be slightly more
                            involved than this. *)
-                        qualify_decorator ~qualify_strings:DoNotQualify ~scope decorator
+                        qualify_expression ~qualify_strings:DoNotQualify ~scope decorator
                   in
                   let decorators = List.map decorators ~f:qualify_decorator in
                   let signature =
                     {
                       define.signature with
-                      name =
-                        { Node.value = qualify_reference ~scope name; location = name_location };
+                      name = qualify_reference ~scope name;
                       parameters;
                       decorators;
                       return_annotation;
@@ -786,7 +677,7 @@ let qualify
         {
           definition with
           (* Ignore aliases, imports, etc. when declaring a class name. *)
-          Class.name = { Node.location; value = qualify_if_needed ~qualifier:scope.qualifier name };
+          Class.name = qualify_if_needed ~qualifier:scope.qualifier name;
           base_arguments = List.map base_arguments ~f:qualify_base;
           body;
           decorators;
@@ -816,7 +707,7 @@ let qualify
                 message;
                 origin;
               } )
-      | Class ({ name = { Node.value = name; _ }; _ } as definition) ->
+      | Class ({ name; _ } as definition) ->
           let scope =
             {
               scope with
@@ -831,8 +722,10 @@ let qualify
       | Define define ->
           let scope, define = qualify_define scope define in
           scope, Define define
-      | Delete expression ->
-          scope, Delete (qualify_expression ~qualify_strings:DoNotQualify ~scope expression)
+      | Delete expressions ->
+          ( scope,
+            Delete
+              (List.map expressions ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope)) )
       | Expression expression ->
           scope, Expression (qualify_expression ~qualify_strings:DoNotQualify ~scope expression)
       | For ({ For.target; iterator; body; orelse; _ } as block) ->
@@ -859,11 +752,11 @@ let qualify
                 body;
                 orelse;
               } )
-      | Import { Import.from = Some { Node.value = from; _ }; imports }
+      | Import { Import.from = Some from; imports }
         when not (String.equal (Reference.show from) "builtins") ->
-          let import aliases { Import.name = { Node.value = name; _ }; alias } =
+          let import aliases { Node.value = { Import.name; alias }; _ } =
             match alias with
-            | Some { Node.value = alias; _ } ->
+            | Some alias ->
                 (* Add `alias -> from.name`. *)
                 Map.set
                   aliases
@@ -878,14 +771,22 @@ let qualify
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }, value
       | Import { Import.from = None; imports } ->
-          let import aliases { Import.name = { Node.value = name; _ }; alias } =
+          let import aliases { Node.value = { Import.name; alias }; _ } =
             match alias with
-            | Some { Node.value = alias; _ } ->
+            | Some alias ->
                 (* Add `alias -> from.name`. *)
                 Map.set aliases ~key:(Reference.create alias) ~data:(local_alias ~qualifier ~name)
             | None -> aliases
           in
           { scope with aliases = List.fold imports ~init:aliases ~f:import }, value
+      | Match { Match.subject; cases } ->
+          let case_scopes, cases = List.map cases ~f:(qualify_match_case ~scope) |> List.unzip in
+          ( List.fold case_scopes ~init:scope ~f:join_scopes,
+            Match
+              {
+                Match.subject = qualify_expression ~qualify_strings:DoNotQualify ~scope subject;
+                cases;
+              } )
       | Nonlocal identifiers -> scope, Nonlocal identifiers
       | Raise { Raise.expression; from } ->
           ( scope,
@@ -958,13 +859,6 @@ let qualify
                 body;
                 orelse;
               } )
-      | Statement.Yield expression ->
-          ( scope,
-            Statement.Yield (qualify_expression ~qualify_strings:DoNotQualify ~scope expression) )
-      | Statement.YieldFrom expression ->
-          ( scope,
-            Statement.YieldFrom (qualify_expression ~qualify_strings:DoNotQualify ~scope expression)
-          )
       | Break
       | Continue
       | Import _
@@ -972,6 +866,77 @@ let qualify
           scope, value
     in
     scope, { statement with Node.value }
+
+
+  and qualify_match_case ~scope { Match.Case.pattern; guard; body } =
+    let body_scope, body = qualify_statements ~scope body in
+    ( body_scope,
+      {
+        Match.Case.pattern = qualify_pattern ~scope pattern;
+        guard = guard >>| qualify_expression ~qualify_strings:DoNotQualify ~scope;
+        body;
+      } )
+
+
+  and qualify_pattern ~scope { Node.value; location } =
+    let qualify_pattern = qualify_pattern ~scope in
+    let qualify_expression = qualify_expression ~qualify_strings:DoNotQualify ~scope in
+    let qualify_match_target name =
+      match
+        qualify_name
+          ~scope
+          ~qualify_strings:DoNotQualify
+          ~location:Location.any
+          (Name.Identifier name)
+      with
+      | Name.Identifier name -> name
+      | _ -> name
+    in
+    let value =
+      match value with
+      | Match.Pattern.MatchAs { pattern; name } ->
+          Match.Pattern.MatchAs
+            { pattern = pattern >>| qualify_pattern; name = qualify_match_target name }
+      | MatchClass
+          {
+            class_name = { Node.value = class_name; location };
+            patterns;
+            keyword_attributes;
+            keyword_patterns;
+          } ->
+          MatchClass
+            {
+              class_name =
+                Node.create
+                  ~location
+                  (qualify_name ~qualify_strings:DoNotQualify ~scope ~location class_name);
+              patterns = List.map patterns ~f:qualify_pattern;
+              keyword_attributes;
+              keyword_patterns = List.map keyword_patterns ~f:qualify_pattern;
+            }
+      | MatchMapping { keys; patterns; rest } ->
+          MatchMapping
+            {
+              keys = List.map keys ~f:qualify_expression;
+              patterns = List.map patterns ~f:qualify_pattern;
+              rest = rest >>| qualify_match_target;
+            }
+      | MatchOr patterns -> MatchOr (List.map patterns ~f:qualify_pattern)
+      | MatchSequence patterns -> MatchSequence (List.map patterns ~f:qualify_pattern)
+      | MatchSingleton constant -> (
+          let expression =
+            qualify_expression { Node.value = Expression.Constant constant; location }
+          in
+          match expression.value with
+          | Expression.Constant constant -> MatchSingleton constant
+          | _ -> MatchValue expression)
+      | MatchStar maybe_identifier -> MatchStar (maybe_identifier >>| qualify_match_target)
+      | MatchValue expression -> MatchValue (qualify_expression expression)
+      | _ -> value
+    in
+    { Node.value; location }
+
+
   and qualify_target ?(in_comprehension = false) ~scope target =
     let rec renamed_scope ({ locals; _ } as scope) target =
       let has_local name = (not in_comprehension) && Set.mem locals (Reference.create name) in
@@ -988,6 +953,8 @@ let qualify
     in
     let scope = renamed_scope scope target in
     scope, qualify_expression ~qualify_strings:DoNotQualify ~scope target
+
+
   and qualify_reference
       ?(suppress_synthetics = false)
       ~scope:{ aliases; use_forward_references; _ }
@@ -1004,34 +971,35 @@ let qualify
             else
               Reference.combine name (Reference.create_from_list tail)
         | _ -> reference)
+
+
   and qualify_name
       ?(suppress_synthetics = false)
       ~qualify_strings
       ~location
       ~scope:({ aliases; use_forward_references; _ } as scope)
     = function
-    | Name (Name.Identifier identifier) -> (
+    | Name.Identifier identifier -> (
         match Map.find aliases (Reference.create identifier) with
         | Some { name; is_forward_reference; qualifier }
           when (not is_forward_reference) || use_forward_references ->
             if Reference.show name |> is_qualified && suppress_synthetics then
-              Name
-                (Name.Attribute
-                   {
-                     base = from_reference ~location qualifier;
-                     attribute = identifier;
-                     special = false;
-                   })
+              Name.Attribute
+                {
+                  base = from_reference ~location qualifier;
+                  attribute = identifier;
+                  special = false;
+                }
             else
-              Node.value (from_reference ~location name)
-        | _ -> Name (Name.Identifier identifier))
-    | Name
-        (Name.Attribute
-          { base = { Node.value = Name (Name.Identifier "builtins"); _ }; attribute; _ }) ->
-        Name (Name.Identifier attribute)
-    | Name (Name.Attribute ({ base; _ } as name)) ->
-        Name (Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base })
-    | expression -> expression
+              create_name_from_reference ~location name
+        | _ -> Name.Identifier identifier)
+    | Name.Attribute { base = { Node.value = Name (Name.Identifier "builtins"); _ }; attribute; _ }
+      ->
+        Name.Identifier attribute
+    | Name.Attribute ({ base; _ } as name) ->
+        Name.Attribute { name with base = qualify_expression ~qualify_strings ~scope base }
+
+
   and qualify_expression ~qualify_strings ~scope ({ Node.location; value } as expression) =
     let value =
       let qualify_entry ~qualify_strings ~scope { Dictionary.Entry.key; value } =
@@ -1139,7 +1107,7 @@ let qualify
               Comprehension.element = qualify_expression ~qualify_strings ~scope element;
               generators;
             }
-      | Name _ -> qualify_name ~qualify_strings ~location ~scope value
+      | Name name -> Name (qualify_name ~qualify_strings ~location ~scope name)
       | Set elements -> Set (List.map elements ~f:(qualify_expression ~qualify_strings ~scope))
       | SetComprehension { Comprehension.element; generators } ->
           let scope, generators = qualify_generators ~qualify_strings ~scope generators in
@@ -1152,14 +1120,14 @@ let qualify
           Starred (Starred.Once (qualify_expression ~qualify_strings ~scope expression))
       | Starred (Starred.Twice expression) ->
           Starred (Starred.Twice (qualify_expression ~qualify_strings ~scope expression))
-      | String { StringLiteral.value; kind } -> (
-          let kind =
-            match kind with
-            | StringLiteral.Format expressions ->
-                StringLiteral.Format
-                  (List.map expressions ~f:(qualify_expression ~qualify_strings ~scope))
-            | _ -> kind
+      | FormatString substrings ->
+          let qualify_substring = function
+            | Substring.Literal _ as substring -> substring
+            | Substring.Format expression ->
+                Substring.Format (qualify_expression ~qualify_strings ~scope expression)
           in
+          FormatString (List.map substrings ~f:qualify_substring)
+      | Constant (Constant.String { StringLiteral.value; kind }) -> (
           let error_on_qualification_failure =
             match qualify_strings with
             | Qualify -> true
@@ -1168,23 +1136,24 @@ let qualify
           match qualify_strings with
           | Qualify
           | OptionallyQualify -> (
-              match Parser.parse [value ^ "\n"] ~relative with
+              match Parser.parse [value ^ "\n"] ~relative:Context.source_relative with
               | Ok [{ Node.value = Expression expression; _ }] ->
                   qualify_expression ~qualify_strings ~scope expression
                   |> Expression.show
-                  |> fun value -> Expression.String { StringLiteral.value; kind }
+                  |> fun value ->
+                  Expression.Constant (Constant.String { StringLiteral.value; kind })
               | Ok _
               | Error _
                 when error_on_qualification_failure ->
                   Log.debug
                     "Invalid string annotation `%s` at %s:%a"
                     value
-                    relative
+                    Context.source_relative
                     Location.pp
                     location;
-                  String { StringLiteral.value; kind }
-              | _ -> String { StringLiteral.value; kind })
-          | DoNotQualify -> String { StringLiteral.value; kind })
+                  Constant (Constant.String { StringLiteral.value; kind })
+              | _ -> Constant (Constant.String { StringLiteral.value; kind }))
+          | DoNotQualify -> Constant (Constant.String { StringLiteral.value; kind }))
       | Ternary { Ternary.target; test; alternative } ->
           Ternary
             {
@@ -1205,20 +1174,12 @@ let qualify
       | Yield (Some expression) ->
           Yield (Some (qualify_expression ~qualify_strings ~scope expression))
       | Yield None -> Yield None
-      | Complex _
-      | Ellipsis
-      | False
-      | Float _
-      | Integer _
-      | True ->
-          value
+      | YieldFrom expression -> YieldFrom (qualify_expression ~qualify_strings ~scope expression)
+      | Constant _ -> value
     in
     { expression with Node.value }
-  and qualify_decorator ~qualify_strings ~scope { Decorator.name; arguments } =
-    {
-      Decorator.name = Node.map name ~f:(qualify_reference ~scope);
-      arguments = arguments >>| List.map ~f:(qualify_argument ~qualify_strings ~scope);
-    }
+
+
   and qualify_argument { Call.Argument.name; value } ~qualify_strings ~scope =
     let name =
       let rename identifier =
@@ -1231,10 +1192,21 @@ let qualify
       name >>| Node.map ~f:rename
     in
     { Call.Argument.name; value = qualify_expression ~qualify_strings ~scope value }
+end
+
+let qualify
+    ({ Source.source_path = { SourcePath.relative; qualifier; _ }; statements; _ } as source)
+  =
+  let module Context = struct
+    let source_relative = relative
+
+    let source_qualifier = qualifier
+  end
   in
+  let module Qualify = Qualify (Context) in
   let scope =
     {
-      qualifier = source_qualifier;
+      Qualify.qualifier;
       aliases = Reference.Map.empty;
       locals = Reference.Set.empty;
       immutables = Reference.Set.empty;
@@ -1245,7 +1217,7 @@ let qualify
       is_in_class = false;
     }
   in
-  { source with Source.statements = qualify_statements ~scope statements |> snd }
+  { source with Source.statements = Qualify.qualify_statements ~scope statements |> snd }
 
 
 let replace_version_specific_code ~major_version ~minor_version ~micro_version source =
@@ -1410,8 +1382,11 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 match index, argument with
                 | None, _ -> true
                 | ( Some expected_index,
-                    { Call.Argument.value = { Node.value = Expression.Integer actual_index; _ }; _ }
-                  )
+                    {
+                      Call.Argument.value =
+                        { Node.value = Expression.Constant (Constant.Integer actual_index); _ };
+                      _;
+                    } )
                   when Int.equal expected_index actual_index ->
                     true
                 | _ -> false)
@@ -1425,9 +1400,20 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ }
-                      :: { Node.value = Expression.Integer given_minor_version; _ }
-                         :: { Node.value = Expression.Integer given_micro_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: {
+                           Node.value = Expression.Constant (Constant.Integer given_minor_version);
+                           _;
+                         }
+                         :: {
+                              Node.value =
+                                Expression.Constant (Constant.Integer given_micro_version);
+                              _;
+                            }
+                            :: _);
                   _;
                 } )
             when is_system_version_expression left ->
@@ -1442,8 +1428,15 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ }
-                      :: { Node.value = Expression.Integer given_minor_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: {
+                           Node.value = Expression.Constant (Constant.Integer given_minor_version);
+                           _;
+                         }
+                         :: _);
                   _;
                 } )
             when is_system_version_expression left ->
@@ -1458,27 +1451,49 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: _);
                   _;
                 } )
             when is_system_version_expression left ->
               evaluate_one_version ~operator major_version given_major_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_major_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_major_version); _ } )
             when is_system_version_tuple_access_expression ~index:0 left ->
               evaluate_one_version ~operator major_version given_major_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_minor_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_minor_version); _ } )
             when is_system_version_tuple_access_expression ~index:1 left ->
               evaluate_one_version ~operator minor_version given_minor_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_micro_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_micro_version); _ } )
             when is_system_version_tuple_access_expression ~index:2 left ->
               evaluate_one_version ~operator micro_version given_micro_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_major_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_major_version); _ } )
             when is_system_version_attribute_access_expression ~attribute:"major" left ->
               evaluate_one_version ~operator major_version given_major_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_minor_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_minor_version); _ } )
             when is_system_version_attribute_access_expression ~attribute:"minor" left ->
               evaluate_one_version ~operator minor_version given_minor_version |> do_replace
-          | Some (operator, left, { Node.value = Expression.Integer given_micro_version; _ })
+          | Some
+              ( operator,
+                left,
+                { Node.value = Expression.Constant (Constant.Integer given_micro_version); _ } )
             when is_system_version_attribute_access_expression ~attribute:"micro" left ->
               evaluate_one_version ~operator micro_version given_micro_version |> do_replace
           | Some
@@ -1486,9 +1501,20 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ }
-                      :: { Node.value = Expression.Integer given_minor_version; _ }
-                         :: { Node.value = Expression.Integer given_micro_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: {
+                           Node.value = Expression.Constant (Constant.Integer given_minor_version);
+                           _;
+                         }
+                         :: {
+                              Node.value =
+                                Expression.Constant (Constant.Integer given_micro_version);
+                              _;
+                            }
+                            :: _);
                   _;
                 },
                 right )
@@ -1503,8 +1529,15 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ }
-                      :: { Node.value = Expression.Integer given_minor_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: {
+                           Node.value = Expression.Constant (Constant.Integer given_minor_version);
+                           _;
+                         }
+                         :: _);
                   _;
                 },
                 right )
@@ -1519,7 +1552,11 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 {
                   Node.value =
                     Expression.Tuple
-                      ({ Node.value = Expression.Integer given_major_version; _ } :: _);
+                      ({
+                         Node.value = Expression.Constant (Constant.Integer given_major_version);
+                         _;
+                       }
+                      :: _);
                   _;
                 },
                 right )
@@ -1529,42 +1566,60 @@ let replace_version_specific_code ~major_version ~minor_version ~micro_version s
                 major_version
                 given_major_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_major_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_major_version); _ },
+                right )
             when is_system_version_tuple_access_expression ~index:0 right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 major_version
                 given_major_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_minor_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_minor_version); _ },
+                right )
             when is_system_version_tuple_access_expression ~index:1 right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 minor_version
                 given_minor_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_micro_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_micro_version); _ },
+                right )
             when is_system_version_tuple_access_expression ~index:2 right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 micro_version
                 given_micro_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_major_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_major_version); _ },
+                right )
             when is_system_version_attribute_access_expression ~attribute:"major" right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 major_version
                 given_major_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_minor_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_minor_version); _ },
+                right )
             when is_system_version_attribute_access_expression ~attribute:"minor" right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
                 minor_version
                 given_minor_version
               |> do_replace
-          | Some (operator, { Node.value = Expression.Integer given_micro_version; _ }, right)
+          | Some
+              ( operator,
+                { Node.value = Expression.Constant (Constant.Integer given_micro_version); _ },
+                right )
             when is_system_version_attribute_access_expression ~attribute:"micro" right ->
               evaluate_one_version
                 ~operator:(Comparison.inverse operator)
@@ -1596,7 +1651,7 @@ let replace_platform_specific_code source =
                 in
                 let is_win32 { Node.value; _ } =
                   match value with
-                  | String { StringLiteral.value = "win32"; _ } -> true
+                  | Constant (Constant.String { StringLiteral.value = "win32"; _ }) -> true
                   | _ -> false
                 in
                 (is_platform left && is_win32 right) or (is_platform right && is_win32 left)
@@ -1678,11 +1733,13 @@ let expand_implicit_returns source =
               let module Visit = Visit.Make (struct
                 type t = bool
 
-                let expression sofar _ = sofar
+                let expression sofar = function
+                  | { Node.value = Expression.Yield _; _ } -> true
+                  | { Node.value = Expression.YieldFrom _; _ } -> true
+                  | _ -> sofar
+
 
                 let statement sofar = function
-                  | { Node.value = Statement.Yield _; _ } -> true
-                  | { Node.value = Statement.YieldFrom _; _ } -> true
                   | _ -> sofar
               end)
               in
@@ -1698,7 +1755,13 @@ let expand_implicit_returns source =
             in
             let loops_forever =
               match List.last define.Define.body with
-              | Some { Node.value = While { While.test = { Node.value = True; _ }; _ }; _ } -> true
+              | Some
+                  {
+                    Node.value =
+                      While { While.test = { Node.value = Constant Constant.True; _ }; _ };
+                    _;
+                  } ->
+                  true
               | _ -> false
             in
             if has_yield || has_return_in_finally || loops_forever then
@@ -1837,18 +1900,18 @@ let dequalify_map ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as so
     let statement map ({ Node.value; _ } as statement) =
       match value with
       | Statement.Import { Import.from = None; imports } ->
-          let add_import map { Import.name = { Node.value = name; _ }; alias } =
+          let add_import map { Node.value = { Import.name; alias }; _ } =
             match alias with
-            | Some { Node.value = alias; _ } ->
+            | Some alias ->
                 (* Add `name -> alias`. *)
                 Map.set map ~key:name ~data:(Reference.create alias)
             | None -> map
           in
           List.fold_left imports ~f:add_import ~init:map, [statement]
-      | Import { Import.from = Some { Node.value = from; _ }; imports } ->
-          let add_import map { Import.name = { Node.value = name; _ }; alias } =
+      | Import { Import.from = Some from; imports } ->
+          let add_import map { Node.value = { Import.name; alias }; _ } =
             match alias with
-            | Some { Node.value = alias; _ } ->
+            | Some alias ->
                 (* Add `from.name -> alias`. *)
                 Map.set map ~key:(Reference.combine from name) ~data:(Reference.create alias)
             | None ->
@@ -1882,11 +1945,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
       match value with
       | Statement.Assign
           {
-            Assign.target =
-              {
-                Node.value = Expression.Name (Name.Identifier identifier);
-                location = identifier_location;
-              };
+            Assign.target = { Node.value = Expression.Name (Name.Identifier identifier); _ };
             value =
               {
                 Node.value =
@@ -1899,8 +1958,10 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                             Call.Argument.value =
                               {
                                 Node.value =
-                                  Expression.String { StringLiteral.kind = String; value = literal };
-                                location = literal_location;
+                                  Expression.Constant
+                                    (Constant.String
+                                      { StringLiteral.kind = String; value = literal });
+                                _;
                               };
                             _;
                           };
@@ -1919,12 +1980,12 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                   imports =
                     [
                       {
-                        Import.name =
-                          Reference.create literal |> Node.create ~location:literal_location;
-                        alias =
-                          Some
-                            (Identifier.sanitized identifier
-                            |> Node.create ~location:identifier_location);
+                        Node.value =
+                          {
+                            Import.name = Reference.create literal;
+                            alias = Some (Identifier.sanitized identifier);
+                          };
+                        location;
                       };
                     ];
                 }
@@ -1932,11 +1993,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
             ] )
       | Statement.Assign
           {
-            Assign.target =
-              {
-                Node.value = Expression.Name (Name.Identifier identifier);
-                location = identifier_location;
-              };
+            Assign.target = { Node.value = Expression.Name (Name.Identifier identifier); _ };
             value =
               {
                 Node.value =
@@ -1949,9 +2006,10 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                             Call.Argument.value =
                               {
                                 Node.value =
-                                  Expression.String
-                                    { StringLiteral.kind = String; value = from_literal };
-                                location = from_literal_location;
+                                  Expression.Constant
+                                    (Constant.String
+                                      { StringLiteral.kind = String; value = from_literal });
+                                _;
                               };
                             _;
                           };
@@ -1959,9 +2017,10 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
                             Call.Argument.value =
                               {
                                 Node.value =
-                                  Expression.String
-                                    { StringLiteral.kind = String; value = import_literal };
-                                location = import_literal_location;
+                                  Expression.Constant
+                                    (Constant.String
+                                      { StringLiteral.kind = String; value = import_literal });
+                                _;
                               };
                             _;
                           };
@@ -1976,19 +2035,16 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
             [
               Statement.Import
                 {
-                  from =
-                    Some
-                      (Reference.create from_literal |> Node.create ~location:from_literal_location);
+                  from = Some (Reference.create from_literal);
                   imports =
                     [
                       {
-                        Import.name =
-                          Reference.create import_literal
-                          |> Node.create ~location:import_literal_location;
-                        alias =
-                          Some
-                            (Identifier.sanitized identifier
-                            |> Node.create ~location:identifier_location);
+                        Node.value =
+                          {
+                            Import.name = Reference.create import_literal;
+                            alias = Some (Identifier.sanitized identifier);
+                          };
+                        location;
                       };
                     ];
                 }
@@ -2019,14 +2075,13 @@ let replace_mypy_extensions_stub
                          attribute = "_SpecialForm";
                          special = false;
                        })));
-          value = node Expression.Ellipsis;
-          parent = None;
+          value = node (Expression.Constant Constant.Ellipsis);
         }
       |> node
     in
     let replace_typed_dictionary_define = function
       | { Node.location; value = Statement.Define { signature = { name; _ }; _ } }
-        when String.equal (Reference.show (Node.value name)) "TypedDict" ->
+        when String.equal (Reference.show name) "TypedDict" ->
           typed_dictionary_stub ~location
       | statement -> statement
     in
@@ -2041,24 +2096,30 @@ let expand_typed_dictionary_declarations
   let expand_typed_dictionaries ({ Node.location; value } as statement) =
     let expanded_declaration =
       let string_literal identifier =
-        Expression.String { value = identifier; kind = StringLiteral.String }
+        Expression.Constant (Constant.String { value = identifier; kind = StringLiteral.String })
         |> Node.create ~location
       in
       let extract_string_literal literal_expression =
         match Node.value literal_expression with
-        | Expression.String { StringLiteral.value; kind = StringLiteral.String } -> Some value
+        | Expression.Constant (Constant.String { StringLiteral.value; kind = StringLiteral.String })
+          ->
+            Some value
         | _ -> None
       in
       let typed_dictionary_class_declaration ~name ~fields ~total =
         match name with
-        | { Node.value = Expression.String { value = class_name; kind = StringLiteral.String }; _ }
-          ->
+        | {
+         Node.value =
+           Expression.Constant (Constant.String { value = class_name; kind = StringLiteral.String });
+         _;
+        } ->
             let class_reference = Reference.create class_name in
             let assignments =
               let assignment (key, value) =
                 match Node.value key with
-                | Expression.String
-                    { StringLiteral.value = attribute_name; kind = StringLiteral.String } ->
+                | Expression.Constant
+                    (Constant.String
+                      { StringLiteral.value = attribute_name; kind = StringLiteral.String }) ->
                     Some
                       (Statement.Assign
                          {
@@ -2072,8 +2133,7 @@ let expand_typed_dictionary_declarations
                                   })
                              |> Node.create ~location;
                            annotation = Some value;
-                           value = Node.create ~location Expression.Ellipsis;
-                           parent = Some class_reference;
+                           value = Node.create ~location (Expression.Constant Constant.Ellipsis);
                          }
                       |> Node.create ~location)
                 | _ -> None
@@ -2103,7 +2163,7 @@ let expand_typed_dictionary_declarations
             Some
               (Statement.Class
                  {
-                   name = Node.create ~location class_reference;
+                   name = class_reference;
                    base_arguments =
                      ([
                         {
@@ -2130,13 +2190,13 @@ let expand_typed_dictionary_declarations
         match base with
         | {
          Call.Argument.name = Some { value = total; _ };
-         value = { Node.value = Expression.True; _ };
+         value = { Node.value = Expression.Constant Constant.True; _ };
         }
           when is_total ~total ->
             Some true
         | {
          Call.Argument.name = Some { value = total; _ };
-         value = { Node.value = Expression.False; _ };
+         value = { Node.value = Expression.Constant Constant.False; _ };
         }
           when is_total ~total ->
             Some false
@@ -2194,7 +2254,7 @@ let expand_typed_dictionary_declarations
           |> Option.value ~default:value
       | Class
           {
-            name = { Node.value = class_name; _ };
+            name = class_name;
             base_arguments =
               {
                 Call.Argument.name = None;
@@ -2327,7 +2387,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             | [
              _;
              {
-               Call.Argument.value = { value = String { StringLiteral.value = serialized; _ }; _ };
+               Call.Argument.value =
+                 { value = Constant (Constant.String { StringLiteral.value = serialized; _ }); _ };
                _;
              };
             ] ->
@@ -2337,10 +2398,16 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             | [_; { Call.Argument.value = { Node.value = Tuple arguments; _ }; _ }] ->
                 let get_name ({ Node.value; _ } as expression) =
                   match value with
-                  | Expression.String { StringLiteral.value = name; _ } ->
+                  | Expression.Constant (Constant.String { StringLiteral.value = name; _ }) ->
                       name, any_annotation, None
-                  | Tuple [{ Node.value = String { StringLiteral.value = name; _ }; _ }; annotation]
-                    ->
+                  | Tuple
+                      [
+                        {
+                          Node.value = Constant (Constant.String { StringLiteral.value = name; _ });
+                          _;
+                        };
+                        annotation;
+                      ] ->
                       name, annotation, None
                   | _ -> Expression.show expression, any_annotation, None
                 in
@@ -2360,7 +2427,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
       let node = Node.create ~location in
       let value =
         attributes
-        |> List.map ~f:(fun (name, _, _) -> Expression.String (StringLiteral.create name) |> node)
+        |> List.map ~f:(fun (name, _, _) ->
+               Expression.Constant (Constant.String (StringLiteral.create name)) |> node)
         |> (fun parameters -> Expression.Tuple parameters)
         |> node
       in
@@ -2381,7 +2449,6 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           Assign.target = Reference.create ~prefix:parent "_fields" |> from_reference ~location;
           annotation = Some annotation;
           value;
-          parent = Some parent;
         }
       |> Node.create ~location
     in
@@ -2418,8 +2485,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             {
               Assign.target;
               annotation = Some annotation;
-              value = Node.create Expression.Ellipsis ~location;
-              parent = Some parent;
+              value = Node.create (Expression.Constant Constant.Ellipsis) ~location;
             }
           |> Node.create ~location
         in
@@ -2435,7 +2501,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
         let to_parameter (name, annotation, value) =
           let value =
             match value with
-            | Some { Node.value = Expression.Ellipsis; _ } -> None
+            | Some { Node.value = Expression.Constant Constant.Ellipsis; _ } -> None
             | _ -> value
           in
           Parameter.create ?value ~location ~annotation ~name:("$parameter$" ^ name) ()
@@ -2458,7 +2524,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               Parameter.create ~location ~name:"$parameter$cls" () )
           else
             ( "__init__",
-              Node.create ~location (Expression.Name (Name.Identifier "None")),
+              Node.create ~location (Expression.Constant Constant.NoneLiteral),
               Parameter.create ~location ~name:"$parameter$self" () )
         in
         let assignments =
@@ -2466,7 +2532,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             [
               Node.create
                 ~location
-                (Statement.Expression (Node.create ~location Expression.Ellipsis));
+                (Statement.Expression
+                   (Node.create ~location (Expression.Constant Constant.Ellipsis)));
             ]
           else
             let to_assignment { Node.value = { Parameter.name; _ }; _ } =
@@ -2488,7 +2555,6 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                                }));
                      annotation = None;
                      value = Node.create (Expression.Name (Identifier name)) ~location;
-                     parent = None;
                    })
                 ~location
             in
@@ -2499,7 +2565,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
           {
             signature =
               {
-                name = Node.create ~location (Reference.create ~prefix:parent name);
+                name = Reference.create ~prefix:parent name;
                 parameters = self_parameter :: parameters;
                 decorators = [];
                 return_annotation = Some return_annotation;
@@ -2524,12 +2590,8 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
     in
     let value =
       match value with
-      | Statement.Assign
-          {
-            Assign.target = { Node.value = Name name; location = target_location };
-            value = expression;
-            _;
-          } -> (
+      | Statement.Assign { Assign.target = { Node.value = Name name; _ }; value = expression; _ }
+        -> (
           let name = name_to_reference name >>| Reference.delocalize in
           match extract_attributes expression, name with
           | Some attributes, Some name
@@ -2542,14 +2604,14 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
               in
               Statement.Class
                 {
-                  Class.name = Node.create ~location:target_location name;
+                  Class.name;
                   base_arguments = [tuple_base ~location];
                   body = constructors @ attributes;
                   decorators = [];
                   top_level_unbound_names = [];
                 }
           | _ -> value)
-      | Class ({ Class.name = { Node.value = name; _ }; base_arguments; body; _ } as original) ->
+      | Class ({ Class.name; base_arguments; body; _ } as original) ->
           let is_named_tuple_primitive = function
             | {
                 Call.Argument.value =
@@ -2608,7 +2670,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                             Statement.Define { Define.signature = { Define.Signature.name; _ }; _ };
                           _;
                         } ->
-                          String.equal (Reference.last (Node.value name)) generated_name
+                          String.equal (Reference.last name) generated_name
                       | _ -> false
                     in
                     if
@@ -2644,8 +2706,65 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
   { source with Source.statements = List.map ~f:expand_named_tuples statements }
 
 
-let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier; _ }; _ } as source)
-  =
+let expand_new_types ({ Source.statements; _ } as source) =
+  let imported_newtype_from_typing =
+    lazy
+      (let open Scope in
+      let scopes = ScopeStack.create source in
+      match ScopeStack.lookup scopes "NewType" with
+      | Some
+          {
+            Access.binding = { Binding.kind = Binding.Kind.(ImportName (Import.From source)); _ };
+            _;
+          }
+        when Reference.equal source (Reference.create "typing") ->
+          true
+      | _ -> false)
+  in
+  let create_class_for_newtype
+      ~location
+      ~base_argument:
+        ({
+           (* TODO (T44209017): Error on invalid annotation expression *)
+           Call.Argument.value = base;
+           _;
+         } as base_argument)
+      name
+    =
+    let constructor =
+      Statement.Define
+        {
+          signature =
+            {
+              name = Reference.create "__init__";
+              parameters =
+                [
+                  Parameter.create ~location ~name:"self" ();
+                  Parameter.create ~location ~annotation:base ~name:"input" ();
+                ];
+              decorators = [];
+              return_annotation =
+                Some (Node.create ~location (Expression.Constant Constant.NoneLiteral));
+              async = false;
+              generator = false;
+              parent = Some name;
+              nesting_define = None;
+            };
+          captures = [];
+          unbound_names = [];
+          body = [Node.create Statement.Pass ~location];
+        }
+      |> Node.create ~location
+    in
+    Statement.Class
+      {
+        Class.name;
+        base_arguments = [base_argument];
+        body = [constructor];
+        decorators = [];
+        top_level_unbound_names = [];
+      }
+  in
   let expand_new_type ({ Node.location; value } as statement) =
     let value =
       match value with
@@ -2673,56 +2792,48 @@ let expand_new_types ({ Source.statements; source_path = { SourcePath.qualifier;
                           {
                             Call.Argument.value =
                               {
-                                Node.value = String { StringLiteral.value = name; _ };
-                                location = name_location;
+                                Node.value =
+                                  Constant (Constant.String { StringLiteral.value = name; _ });
+                                _;
                               };
                             _;
                           };
-                          ({
-                             (* TODO (T44209017): Error on invalid annotation expression *)
-                             Call.Argument.value = base;
-                             _;
-                           } as base_argument);
+                          base_argument;
                         ];
                     };
                 _;
               };
             _;
           } ->
-          let name = Reference.create ~prefix:qualifier name in
-          let constructor =
-            Statement.Define
+          create_class_for_newtype ~location ~base_argument (Reference.create name)
+      | Statement.Assign
+          {
+            Assign.value =
               {
-                signature =
-                  {
-                    name = Node.create ~location (Reference.create ~prefix:name "__init__");
-                    parameters =
-                      [
-                        Parameter.create ~location ~name:"self" ();
-                        Parameter.create ~location ~annotation:base ~name:"input" ();
-                      ];
-                    decorators = [];
-                    return_annotation =
-                      Some (Node.create ~location (Expression.Name (Name.Identifier "None")));
-                    async = false;
-                    generator = false;
-                    parent = Some name;
-                    nesting_define = None;
-                  };
-                captures = [];
-                unbound_names = [];
-                body = [Node.create Statement.Pass ~location];
-              }
-            |> Node.create ~location
-          in
-          Statement.Class
-            {
-              Class.name = Node.create ~location:name_location name;
-              base_arguments = [base_argument];
-              body = [constructor];
-              decorators = [];
-              top_level_unbound_names = [];
-            }
+                Node.value =
+                  Call
+                    {
+                      callee = { Node.value = Name (Name.Identifier "NewType"); _ };
+                      arguments =
+                        [
+                          {
+                            Call.Argument.value =
+                              {
+                                Node.value =
+                                  Constant (Constant.String { StringLiteral.value = name; _ });
+                                _;
+                              };
+                            _;
+                          };
+                          base_argument;
+                        ];
+                    };
+                _;
+              };
+            _;
+          }
+        when Lazy.force imported_newtype_from_typing ->
+          create_class_for_newtype ~location ~base_argument (Reference.create name)
       | _ -> value
     in
     { statement with Node.value }
@@ -2748,7 +2859,7 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
         in
         Statement.Class
           {
-            name = Node.create ~location class_name_reference;
+            name = class_name_reference;
             base_arguments = [metaclass];
             decorators = [];
             body = [Node.create ~location Statement.Pass];
@@ -2768,8 +2879,6 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
           with
           | Some "sqlalchemy.ext.declarative.declarative_base", Some class_name_reference ->
               declarative_base_class_declaration ~base_module:"sqlalchemy" class_name_reference
-          | Some "sqlalchemy_1_4.ext.declarative.declarative_base", Some class_name_reference ->
-              declarative_base_class_declaration ~base_module:"sqlalchemy_1_4" class_name_reference
           | _ -> value)
       | _ -> value
     in
@@ -2787,7 +2896,7 @@ let populate_nesting_defines ({ Source.statements; _ } as source) =
      value =
        Define
          {
-           Define.signature = { Define.Signature.name = { Node.value = name; _ }; _ } as signature;
+           Define.signature = { Define.Signature.name; _ } as signature;
            captures;
            unbound_names;
            body;
@@ -2887,9 +2996,14 @@ module AccessCollector = struct
         from_comprehension from_expression collected comprehension
     | List expressions
     | Set expressions
-    | Tuple expressions
-    | String { kind = StringLiteral.Format expressions; _ } ->
+    | Tuple expressions ->
         List.fold expressions ~init:collected ~f:from_expression
+    | FormatString substrings ->
+        let from_substring sofar = function
+          | Substring.Literal _ -> sofar
+          | Substring.Format expression -> from_expression sofar expression
+        in
+        List.fold substrings ~init:collected ~f:from_substring
     | Starred (Starred.Once expression)
     | Starred (Starred.Twice expression) ->
         from_expression collected expression
@@ -2899,15 +3013,10 @@ module AccessCollector = struct
         from_expression collected alternative
     | UnaryOperator { UnaryOperator.operand; _ } -> from_expression collected operand
     | WalrusOperator { WalrusOperator.value; _ } -> from_expression collected value
-    | Yield yield -> Option.value_map yield ~default:collected ~f:(from_expression collected)
-    | String _
-    | Complex _
-    | Ellipsis
-    | False
-    | Float _
-    | Integer _
-    | True ->
-        collected
+    | Yield expression ->
+        Option.value_map expression ~default:collected ~f:(from_expression collected)
+    | YieldFrom expression -> from_expression collected expression
+    | Constant _ -> collected
 
 
   (* Generators are as special as lambdas -- they bind their own names, which we want to exclude *)
@@ -2919,29 +3028,35 @@ module AccessCollector = struct
         NameAccessSet.t
     =
    fun from_element collected { Comprehension.element; generators } ->
-    let bound_names =
-      List.fold
-        generators
-        ~init:Identifier.Set.empty
-        ~f:(fun sofar { Comprehension.Generator.target; _ } ->
+    let remove_bound_names ~bound_names =
+      Set.filter ~f:(fun { Define.NameAccess.name; _ } -> not (Identifier.Set.mem bound_names name))
+    in
+    let bound_names, collected =
+      let from_generator
+          (bound_names, accesses_sofar)
+          { Comprehension.Generator.target; iterator; conditions; _ }
+        =
+        let iterator_accesses =
+          from_expression NameAccessSet.empty iterator |> remove_bound_names ~bound_names
+        in
+        let bound_names =
+          let add_bound_name bound_names { Define.NameAccess.name; _ } = Set.add bound_names name in
           from_expression NameAccessSet.empty target
-          |> Set.fold ~init:sofar ~f:(fun sofar { Define.NameAccess.name; _ } -> Set.add sofar name))
+          |> NameAccessSet.fold ~init:bound_names ~f:add_bound_name
+        in
+        let condition_accesses =
+          List.fold conditions ~init:NameAccessSet.empty ~f:from_expression
+          |> remove_bound_names ~bound_names
+        in
+        ( bound_names,
+          NameAccessSet.union_list [accesses_sofar; iterator_accesses; condition_accesses] )
+      in
+      List.fold generators ~init:(Identifier.Set.empty, collected) ~f:from_generator
     in
-    let names =
-      from_element NameAccessSet.empty element
-      |> fun init ->
-      List.fold
-        generators
-        ~init
-        ~f:(fun sofar { Comprehension.Generator.iterator; conditions; _ } ->
-          let sofar = from_expression sofar iterator in
-          List.fold conditions ~init:sofar ~f:from_expression)
+    let element_accesses =
+      from_element NameAccessSet.empty element |> remove_bound_names ~bound_names
     in
-    let unbound_names =
-      Set.filter names ~f:(fun { Define.NameAccess.name; _ } ->
-          not (Identifier.Set.mem bound_names name))
-    in
-    Set.union unbound_names collected
+    NameAccessSet.union collected element_accesses
 
 
   and from_statement collected { Node.value; location = statement_location } =
@@ -2962,15 +3077,11 @@ module AccessCollector = struct
           List.fold base_arguments ~init:collected ~f:(fun sofar { Call.Argument.value; _ } ->
               from_expression sofar value)
         in
-        List.map decorators ~f:Decorator.to_expression
-        |> List.fold ~init:collected ~f:from_expression
+        List.fold ~init:collected ~f:from_expression decorators
     | Define
         { Define.signature = { Define.Signature.decorators; parameters; return_annotation; _ }; _ }
       ->
-        let collected =
-          List.map decorators ~f:Decorator.to_expression
-          |> List.fold ~init:collected ~f:from_expression
-        in
+        let collected = List.fold ~init:collected ~f:from_expression decorators in
         let collected =
           List.fold
             parameters
@@ -2980,16 +3091,47 @@ module AccessCollector = struct
               from_optional_expression sofar value)
         in
         from_optional_expression collected return_annotation
-    | Delete expression
-    | Expression expression
-    | Yield expression
-    | YieldFrom expression ->
-        from_expression collected expression
+    | Delete expressions -> List.fold expressions ~init:collected ~f:from_expression
+    | Expression expression -> from_expression collected expression
     | For { For.target; iterator; body; orelse; _ } ->
         let collected = from_expression collected target in
         let collected = from_expression collected iterator in
         let collected = from_statements collected body in
         from_statements collected orelse
+    | Match { Match.subject; cases } ->
+        let collected = from_expression collected subject in
+        let from_case collected { Match.Case.pattern; guard; body } =
+          let rec from_pattern collected { Node.value; _ } =
+            match value with
+            | Match.Pattern.MatchAs { pattern; _ } ->
+                Option.value_map ~default:collected ~f:(from_pattern collected) pattern
+            | MatchClass
+                {
+                  class_name = { Node.value = class_name; location };
+                  patterns;
+                  keyword_patterns;
+                  _;
+                } ->
+                let collected =
+                  from_expression collected (Node.create ~location (Expression.Name class_name))
+                in
+                let collected = List.fold ~f:from_pattern ~init:collected patterns in
+                List.fold ~f:from_pattern ~init:collected keyword_patterns
+            | MatchMapping { patterns; _ }
+            | MatchOr patterns
+            | MatchSequence patterns ->
+                List.fold ~f:from_pattern ~init:collected patterns
+            | MatchValue expression -> from_expression collected expression
+            | MatchSingleton _
+            | MatchStar _
+            | MatchWildcard ->
+                collected
+          in
+          let collected = from_pattern collected pattern in
+          let collected = from_optional_expression collected guard in
+          from_statements collected body
+        in
+        List.fold ~f:from_case ~init:collected cases
     | If { If.test; body; orelse }
     | While { While.test; body; orelse } ->
         let collected = from_expression collected test in
@@ -3062,7 +3204,7 @@ let populate_captures ({ Source.statements; _ } as source) =
                 None
             | Scope.Kind.Define ({ Define.Signature.parent; _ } as signature) -> (
                 match binding_kind with
-                | Binding.Kind.(ClassName | ImportName) ->
+                | Binding.Kind.(ClassName | ImportName _) ->
                     (* Judgement call: these bindings are (supposedly) not useful for type checking *)
                     None
                 | Binding.Kind.(ParameterName { star = Some Star.Twice; annotation; _ }) ->
@@ -3198,7 +3340,10 @@ let populate_captures ({ Source.statements; _ } as source) =
                                           Expression.Tuple
                                             [
                                               value_annotation;
-                                              { Node.location; value = Expression.Ellipsis };
+                                              {
+                                                Node.location;
+                                                value = Expression.Constant Constant.Ellipsis;
+                                              };
                                             ];
                                       };
                                   };
@@ -3256,7 +3401,8 @@ let populate_captures ({ Source.statements; _ } as source) =
                     Some { Define.Capture.name; kind = Annotation annotation }
                 | Binding.Kind.DefineName signature ->
                     Some { Define.Capture.name; kind = DefineSignature signature }
-                | Binding.Kind.(ComprehensionTarget | ForTarget | WalrusTarget | WithTarget) ->
+                | Binding.Kind.(
+                    ComprehensionTarget | ForTarget | MatchTarget | WalrusTarget | WithTarget) ->
                     Some { Define.Capture.name; kind = Annotation None })))
   in
   let rec transform_statement ~scopes statement =
@@ -3587,8 +3733,13 @@ let replace_union_shorthand source =
 
 
 let mangle_private_attributes source =
-  let module Transform = Transform.Make (struct
-    type t = Identifier.t list
+  let module PrivateAttributeTransformer = struct
+    type class_data = {
+      mangling_prefix: Identifier.t;
+      metadata: Ast.Statement.Class.t;
+    }
+
+    type t = class_data list
 
     let mangle_identifier class_name identifier = "_" ^ class_name ^ identifier
 
@@ -3617,74 +3768,65 @@ let mangle_private_attributes source =
 
     let transform_children state statement =
       match state, Node.value statement with
-      | _, Statement.Class { name; _ } ->
+      | _, Statement.Class ({ name; _ } as class_statement) ->
           let mangling_prefix =
-            Node.value name
+            name
             |> Reference.last
             |> String.lstrip ~drop:(fun character -> Char.equal character '_')
           in
-          mangling_prefix :: state, true
+          let class_data =
+            { mangling_prefix; metadata = { class_statement with Ast.Statement.Class.body = [] } }
+          in
+          class_data :: state, true
       | _, _ -> state, true
 
 
     let statement state ({ Node.value; _ } as statement) =
-      let state =
-        (* Ensure identifiers following class body are not mangled. *)
+      let state, statement =
         match state, value with
-        | _ :: tail, Statement.Class _ -> tail
-        | _, _ -> state
-      in
-      let statement =
-        let mangle_parent_name parent =
-          (* Update if the parent of this statement is a class that itself is private and will be
-             mangled. *)
-          match state with
-          | _ :: parent_prefix :: _ when should_mangle (Reference.last parent) ->
-              mangle_reference parent_prefix parent
-          | _ -> parent
-        in
-        match state, value with
-        | _, Statement.Assign ({ parent; _ } as assign) ->
-            {
-              statement with
-              Node.value = Statement.Assign { assign with parent = parent >>| mangle_parent_name };
-            }
-        | ( class_name :: _,
-            Statement.Class ({ name = { Node.value = name; _ } as name_node; _ } as class_value) )
+        | ( { metadata; _ } :: ({ mangling_prefix; _ } :: _ as tail),
+            Statement.Class { name; body; _ } )
           when should_mangle (Reference.last name) ->
-            {
-              statement with
-              value =
-                Statement.Class
-                  {
-                    class_value with
-                    name = { name_node with value = mangle_reference class_name name };
-                  };
-            }
-        | ( class_name :: _,
+            ( tail,
+              {
+                statement with
+                value =
+                  Statement.Class
+                    { metadata with name = mangle_reference mangling_prefix name; body };
+              } )
+        | { metadata; _ } :: tail, Statement.Class { body; _ } ->
+            (* Ensure identifiers following class body are not mangled. *)
+            tail, { statement with value = Statement.Class { metadata with body } }
+        | ( { mangling_prefix; _ } :: _,
             Statement.Define
-              ({
-                 Define.signature =
-                   { Define.Signature.name = { Node.value = name; _ } as name_node; parent; _ } as
-                   signature;
-                 _;
-               } as define) )
+              ({ Define.signature = { Define.Signature.name; parent; _ } as signature; _ } as
+              define) )
           when should_mangle (Reference.last name) ->
-            {
-              statement with
-              value =
-                Statement.Define
-                  {
-                    define with
-                    signature =
-                      {
-                        signature with
-                        name = { name_node with value = mangle_reference class_name name };
-                        parent = parent >>| mangle_parent_name;
-                      };
-                  };
-            }
-        | _ -> statement
+            let mangle_parent_name parent =
+              (* Update if the parent of this statement is a class that itself is private and will
+                 be mangled. *)
+              match state with
+              | _ :: { mangling_prefix = parent_prefix; _ } :: _
+                when should_mangle (Reference.last parent) ->
+                  mangle_reference parent_prefix parent
+              | _ -> parent
+            in
+            ( state,
+              {
+                statement with
+                value =
+                  Statement.Define
+                    {
+                      define with
+                      signature =
+                        {
+                          signature with
+                          name = mangle_reference mangling_prefix name;
+                          parent = parent >>| mangle_parent_name;
+                        };
+                    };
+              } )
+        | _ -> state, statement
       in
       state, [statement]
 
@@ -3693,16 +3835,19 @@ let mangle_private_attributes source =
       let open Expression in
       let transformed_expression =
         match state, value with
-        | class_name :: _, Name (Name.Identifier identifier) when should_mangle identifier ->
-            Name (Name.Identifier (mangle_identifier class_name identifier))
-        | class_name :: _, Name (Name.Attribute ({ attribute; _ } as name))
+        | { mangling_prefix; _ } :: _, Name (Name.Identifier identifier)
+          when should_mangle identifier ->
+            Name (Name.Identifier (mangle_identifier mangling_prefix identifier))
+        | { mangling_prefix; _ } :: _, Name (Name.Attribute ({ attribute; _ } as name))
           when should_mangle attribute ->
-            Name (Name.Attribute { name with attribute = mangle_identifier class_name attribute })
+            Name
+              (Name.Attribute { name with attribute = mangle_identifier mangling_prefix attribute })
         | _ -> value
       in
       { expression with Node.value = transformed_expression }
-  end)
+  end
   in
+  let module Transform = Transform.Make (PrivateAttributeTransformer) in
   Transform.transform [] source |> Transform.source
 
 
@@ -3712,11 +3857,15 @@ let inline_six_metaclass ({ Source.statements; _ } as source) =
       let transform_class
           ~class_statement:({ Class.base_arguments; decorators; _ } as class_statement)
         =
-        let is_six_add_metaclass_decorator { Decorator.name; _ } =
-          Identifier.equal (Node.value name |> Reference.show) "six.add_metaclass"
+        let is_six_add_metaclass_decorator expression =
+          match Decorator.from_expression expression with
+          | Some ({ Decorator.name = { Node.value = name; _ }; _ } as decorator)
+            when Reference.equal name (Reference.create_from_list ["six"; "add_metaclass"]) ->
+              Either.First decorator
+          | _ -> Either.Second expression
         in
         let six_add_metaclass_decorators, rest =
-          List.partition_tf decorators ~f:is_six_add_metaclass_decorator
+          List.partition_map decorators ~f:is_six_add_metaclass_decorator
         in
         match six_add_metaclass_decorators with
         | [
@@ -3754,130 +3903,6 @@ let inline_six_metaclass ({ Source.statements; _ } as source) =
   { source with Source.statements = List.map ~f:inline_six_metaclass statements }
 
 
-let rec expand_starred_variadic_in_annotation_expression ({ Node.value; _ } as expression) =
-  let transform_argument ({ Call.Argument.value; _ } as argument) =
-    { argument with Call.Argument.value = expand_starred_variadic_in_annotation_expression value }
-  in
-  let value =
-    match value with
-    | Call
-        {
-          callee =
-            {
-              Node.value =
-                Name
-                  (Name.Attribute
-                    {
-                      base =
-                        {
-                          Node.value =
-                            Name
-                              (Name.Attribute
-                                {
-                                  base =
-                                    {
-                                      Node.value =
-                                        Name
-                                          ( Name.Identifier "typing_extensions"
-                                          | Name.Identifier "typing" );
-                                      _;
-                                    };
-                                  attribute = "Literal";
-                                  _;
-                                });
-                          _;
-                        };
-                      attribute = "__getitem__";
-                      _;
-                    });
-              _;
-            };
-          _;
-        } ->
-        (* Don't transform arguments in Literals. *)
-        value
-    | Call
-        {
-          callee =
-            { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } as callee;
-          arguments;
-        } ->
-        Call { callee; arguments = List.map ~f:transform_argument arguments }
-    | Expression.Call { callee; arguments = variable_name :: remaining_arguments }
-      when name_is ~name:"typing.TypeVar" callee
-           || name_is ~name:"$local_typing$TypeVar" callee
-           || name_is ~name:"typing_extensions.IntVar" callee ->
-        Expression.Call
-          {
-            callee;
-            arguments = variable_name :: List.map ~f:transform_argument remaining_arguments;
-          }
-    | Starred
-        (Once
-          {
-            Node.value =
-              ( Name (Name.Identifier _)
-              | Call
-                  {
-                    callee =
-                      { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
-                    _;
-                  } ) as starred_value;
-            location;
-          }) ->
-        Expression.Call
-          {
-            callee =
-              {
-                Node.location;
-                value =
-                  Expression.Name
-                    (Attribute
-                       {
-                         base =
-                           {
-                             Node.location;
-                             value =
-                               Name
-                                 (Name.Attribute
-                                    {
-                                      base =
-                                        {
-                                          Node.location;
-                                          value = Name (Identifier "pyre_extensions");
-                                        };
-                                      attribute = "Unpack";
-                                      special = false;
-                                    });
-                           };
-                         attribute = "__getitem__";
-                         special = true;
-                       });
-              };
-            arguments =
-              [
-                {
-                  name = None;
-                  value =
-                    expand_starred_variadic_in_annotation_expression
-                      { Node.location; value = starred_value };
-                };
-              ];
-          }
-    | Tuple elements ->
-        Tuple (List.map elements ~f:expand_starred_variadic_in_annotation_expression)
-    | List elements -> List (List.map elements ~f:expand_starred_variadic_in_annotation_expression)
-    | _ -> value
-  in
-  { expression with Node.value }
-
-
-let expand_starred_type_variable_tuple source =
-  transform_annotations
-    ~transform_annotation_expression:expand_starred_variadic_in_annotation_expression
-    source
-
-
 (* Special syntax added to support configerator. *)
 let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer (struct
@@ -3897,7 +3922,11 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
                       [
                         {
                           Call.Argument.value =
-                            { Node.value = Expression.String { value = from_name; _ }; _ };
+                            {
+                              Node.value =
+                                Expression.Constant (Constant.String { value = from_name; _ });
+                              _;
+                            };
                           _;
                         };
                       ];
@@ -3910,14 +3939,14 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
                 imports =
                   [
                     {
-                      Import.alias = None;
-                      name =
+                      Node.value =
                         {
-                          Node.value =
+                          Import.alias = None;
+                          name =
                             Reference.create
                               (String.substr_replace_all ~pattern:"/" ~with_:"." from_name);
-                          location;
                         };
+                      location;
                     };
                   ];
               }
@@ -3931,33 +3960,33 @@ let expand_import_python_calls ({ Source.source_path = { SourcePath.qualifier; _
                     arguments =
                       {
                         Call.Argument.value =
-                          { Node.value = Expression.String { value = from_name; _ }; _ };
+                          {
+                            Node.value =
+                              Expression.Constant (Constant.String { value = from_name; _ });
+                            _;
+                          };
                         _;
                       }
                       :: imports;
                   };
-              location;
+              _;
             } ->
             let create_import from_name =
               let imports =
                 List.filter_map imports ~f:(fun { Call.Argument.value; _ } ->
                     match Node.value value with
-                    | Expression.String { value = name; _ } ->
+                    | Expression.Constant (Constant.String { value = name; _ }) ->
                         Some
                           {
-                            Import.alias = None;
-                            name =
-                              { Node.value = Reference.create name; location = Node.location value };
+                            Node.value = { Import.alias = None; name = Reference.create name };
+                            location = Node.location value;
                           }
                     | _ -> None)
               in
               let formatted_from_name =
                 String.substr_replace_all ~pattern:"/" ~with_:"." from_name
               in
-              {
-                Import.from = Some { Node.value = Reference.create formatted_from_name; location };
-                imports;
-              }
+              { Import.from = Some (Reference.create formatted_from_name); imports }
             in
             Statement.Import (create_import from_name)
         | _ -> value
@@ -3987,7 +4016,12 @@ let expand_pytorch_register_buffer source =
                   arguments =
                     {
                       name = None;
-                      value = { Node.value = String { value = attribute_name; kind = String }; _ };
+                      value =
+                        {
+                          Node.value =
+                            Constant (Constant.String { value = attribute_name; kind = String });
+                          _;
+                        };
                     }
                     :: { value = initial_value; _ }
                        :: ([] | [{ name = Some { Node.value = "$parameter$persistent"; _ }; _ }]);
@@ -3998,7 +4032,7 @@ let expand_pytorch_register_buffer source =
           let annotation =
             Reference.create "torch.Tensor"
             |> from_reference ~location
-            |> Option.some_if (not (name_is ~name:"None" initial_value))
+            |> Option.some_if (not (is_none initial_value))
           in
           ( (),
             [
@@ -4010,7 +4044,6 @@ let expand_pytorch_register_buffer source =
                     |> from_reference ~location;
                   annotation;
                   value = initial_value;
-                  parent = None;
                 }
               |> Node.create ~location:statement_location;
             ] )
@@ -4041,17 +4074,16 @@ let preprocess_phase0 source =
   |> expand_relative_imports
   |> replace_platform_specific_code
   |> expand_type_checking_imports
-  |> expand_format_string
   |> expand_implicit_returns
   |> expand_import_python_calls
 
 
 let preprocess_phase1 source =
   source
+  |> expand_new_types
   |> populate_unbound_names
   |> replace_union_shorthand
   |> mangle_private_attributes
-  |> expand_starred_type_variable_tuple
   |> qualify
   |> replace_lazy_import
   |> expand_string_annotations
@@ -4059,7 +4091,6 @@ let preprocess_phase1 source =
   |> expand_typed_dictionary_declarations
   |> expand_sqlalchemy_declarative_base
   |> expand_named_tuples
-  |> expand_new_types
   |> inline_six_metaclass
   |> expand_pytorch_register_buffer
   |> populate_nesting_defines

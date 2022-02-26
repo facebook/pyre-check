@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,14 +15,14 @@ type missing_annotation = {
   evidence_locations: Location.WithPath.t list;
   thrown_at_source: bool;
 }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type class_kind =
   | Class
   | Enumeration
   | Protocol of Reference.t
   | Abstract of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type invalid_class_instantiation =
   | AbstractClassInstantiation of {
@@ -30,16 +30,24 @@ type invalid_class_instantiation =
       abstract_methods: string list;
     }
   | ProtocolInstantiation of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type module_reference =
   | ExplicitModule of SourcePath.t
   | ImplicitModule of Reference.t
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
+
+type class_origin =
+  | ClassType of Type.t
+  | ClassInUnion of {
+      unions: Type.t list;
+      index: int;
+    }
+[@@deriving compare, sexp, show, hash]
 
 type origin =
   | Class of {
-      class_type: Type.t;
+      class_origin: class_origin;
       parent_source_path: SourcePath.t option;
     }
   | Module of module_reference
@@ -102,9 +110,9 @@ and invalid_argument =
       expression: Expression.t option;
       annotation: Type.t;
     }
-  | TupleVariadicVariable of {
+  | VariableArgumentsWithUnpackableType of {
       variable: Type.OrderedTypes.t;
-      mismatch: SignatureSelectionTypes.mismatch_with_tuple_variadic_type_variable;
+      mismatch: SignatureSelectionTypes.mismatch_with_unpackable_type;
     }
 
 and precondition_mismatch =
@@ -224,24 +232,37 @@ and illegal_annotation_target_kind =
 and tuple_concatenation_problem =
   | MultipleVariadics of { variadic_expressions: Expression.t list }
   | UnpackingNonIterable of { annotation: Type.t }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
-type invalid_decoration_reason =
-  | CouldNotResolve
-  | CouldNotResolveArgument of Expression.t
-  | NonCallableDecoratorFactory of Type.t
-  | NonCallableDecorator of Type.t
-  | DecoratorFactoryFailedToApply of kind option
-  | ApplicationFailed of kind option
+type invalid_decoration =
+  | CouldNotResolve of Expression.t
+  | CouldNotResolveArgument of {
+      name: Reference.t;
+      argument: Expression.t;
+    }
+  | NonCallableDecoratorFactory of {
+      name: Reference.t;
+      annotation: Type.t;
+    }
+  | NonCallableDecorator of {
+      name: Reference.t;
+      has_arguments: bool;
+      annotation: Type.t;
+    }
+  | DecoratorFactoryFailedToApply of {
+      name: Reference.t;
+      reason: kind option;
+    }
+  | ApplicationFailed of {
+      name: Reference.t;
+      has_arguments: bool;
+      reason: kind option;
+    }
   | SetterNameMismatch of {
+      name: Reference.t;
       actual: string;
       expected: string;
     }
-
-and invalid_decoration = {
-  decorator: Statement.Decorator.t;
-  reason: invalid_decoration_reason;
-}
 
 and kind =
   | AnalysisFailure of analysis_failure
@@ -411,17 +432,17 @@ and kind =
       left: Type.t;
       right: Type.t;
     }
-[@@deriving compare, eq, sexp, show, hash]
+[@@deriving compare, sexp, show, hash]
 
 type t = {
   location: Location.WithModule.t;
   kind: kind;
   signature: Statement.Define.Signature.t Node.t;
 }
-[@@deriving compare, eq, show, sexp, hash]
+[@@deriving compare, show, sexp, hash]
 
 module Instantiated : sig
-  type t [@@deriving sexp, compare, eq, show, hash, yojson { strict = false }]
+  type t [@@deriving sexp, compare, show, hash, yojson { strict = false }]
 
   val location : t -> Location.WithPath.t
 
@@ -441,8 +462,6 @@ include Hashable with type t := t
 val create : location:Location.WithModule.t -> kind:kind -> define:Statement.Define.t Node.t -> t
 
 val path : t -> Reference.t
-
-val key : t -> Location.WithModule.t
 
 val code : t -> int
 
@@ -484,3 +503,15 @@ val create_mismatch
   expected:Type.t ->
   covariant:bool ->
   mismatch
+
+module SimplificationMap : sig
+  type t = Reference.t Reference.Map.t
+
+  val pp : Format.formatter -> t -> unit
+
+  val show : t -> string
+
+  val create : Reference.t list -> t
+end
+
+val simplify_mismatch : mismatch -> mismatch

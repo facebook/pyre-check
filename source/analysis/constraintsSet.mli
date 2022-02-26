@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -32,7 +32,7 @@ type order = {
 
 val resolve_callable_protocol : assumption:Type.t -> order:order -> Type.t -> Type.t option
 
-type t = TypeConstraints.t list
+type t = TypeConstraints.t list [@@deriving show]
 
 val empty : t
 

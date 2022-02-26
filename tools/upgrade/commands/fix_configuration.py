@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -79,18 +79,27 @@ class FixConfiguration(ErrorSuppressingCommand):
             configuration.write()
 
     def _consolidate_nested(self) -> None:
-        parent_local_configuration = Configuration.find_parent_file(
+        parent_local_configuration_path = Configuration.find_parent_file(
             ".pyre_configuration.local", self._path.parent
         )
-        if not parent_local_configuration:
+        if not parent_local_configuration_path:
             return
-        LOG.info(f"Consolidating with configuration at: {parent_local_configuration}")
+        parent_local_configuration = Configuration(parent_local_configuration_path)
+        ignored_subdirectories = parent_local_configuration.ignore_all_errors or []
+        if (
+            str(self._path.relative_to(parent_local_configuration_path.parent))
+            in ignored_subdirectories
+        ):
+            return
+        LOG.info(
+            f"Consolidating with configuration at: {parent_local_configuration_path}"
+        )
         consolidate_nested(
             self._repository,
-            parent_local_configuration,
+            parent_local_configuration_path,
             [self._path / ".pyre_configuration.local"],
         )
-        self._configuration = Configuration(parent_local_configuration)
+        self._configuration = parent_local_configuration
 
     def _commit_changes(self) -> None:
         title = "Fix broken configuration for {}".format(str(self._path))
@@ -110,7 +119,7 @@ class FixConfiguration(ErrorSuppressingCommand):
         configuration = self._configuration
         if configuration:
             try:
-                self._suppress_errors(configuration)
+                self._get_and_suppress_errors(configuration)
             except UserError as error:
                 LOG.warning(
                     f"Configuration at {configuration.get_path()} still "

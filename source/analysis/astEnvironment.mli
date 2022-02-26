@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14,6 +14,7 @@ type t
 module ParserError : sig
   type t = {
     source_path: SourcePath.t;
+    location: Location.t;
     is_suppressed: bool;
     message: string;
   }
@@ -47,7 +48,7 @@ module ReadOnly : sig
     :  configuration:Configuration.Analysis.t ->
     t ->
     Reference.t ->
-    Pyre.Path.t option
+    PyrePath.t option
 
   val get_real_path_relative
     :  configuration:Configuration.Analysis.t ->

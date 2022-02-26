@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,20 +12,27 @@ open Pyre
 module type State = sig
   type t [@@deriving show]
 
+  val bottom : t
+
   val less_or_equal : left:t -> right:t -> bool
+
+  val join : t -> t -> t
 
   val widen : previous:t -> next:t -> iteration:int -> t
 
-  val forward : key:int -> t -> statement:Statement.t -> t
+  val forward : statement_key:int -> t -> statement:Statement.t -> t
 
-  val backward : key:int -> t -> statement:Statement.t -> t
+  val backward : statement_key:int -> t -> statement:Statement.t -> t
 end
 
 module type Fixpoint = sig
   type state
 
-  (* Mapping from node to preconditions. *)
-  type t = state Int.Table.t [@@deriving show]
+  type t = {
+    preconditions: state Int.Table.t;
+    postconditions: state Int.Table.t;
+  }
+  [@@deriving show]
 
   val entry : t -> state option
 
@@ -43,78 +50,122 @@ end
 module Make (State : State) = struct
   type state = State.t
 
-  type t = State.t Int.Table.t
+  type t = {
+    preconditions: State.t Int.Table.t;
+    postconditions: State.t Int.Table.t;
+  }
 
-  let equal ~f left right = Core.Hashtbl.equal f left right
+  let equal ~f left right =
+    Core.Hashtbl.equal f left.preconditions right.preconditions
+    && Core.Hashtbl.equal f left.postconditions right.postconditions
 
-  let pp format fixpoint =
-    let print_state ~key ~data = Format.fprintf format "%d -> %a\n" key State.pp data in
-    Hashtbl.iteri fixpoint ~f:print_state
+
+  let pp format { preconditions; postconditions } =
+    let print_state ~name ~key ~data =
+      Format.fprintf format "%s %d -> %a\n" name key State.pp data
+    in
+    Hashtbl.iteri preconditions ~f:(print_state ~name:"Precondition");
+    Hashtbl.iteri postconditions ~f:(print_state ~name:"Postcondition")
 
 
   let show fixpoint = Format.asprintf "%a" pp fixpoint
 
-  let entry fixpoint = Hashtbl.find fixpoint Cfg.entry_index
+  let entry { preconditions; _ } = Hashtbl.find preconditions Cfg.entry_index
 
-  let normal_exit fixpoint = Hashtbl.find fixpoint Cfg.normal_index
+  let normal_exit { postconditions; _ } = Hashtbl.find postconditions Cfg.normal_index
 
-  let exit fixpoint = Hashtbl.find fixpoint Cfg.exit_index
+  let exit { postconditions; _ } = Hashtbl.find postconditions Cfg.exit_index
 
-  let compute_fixpoint cfg ~initial_index ~initial ~successors ~transition =
-    let fixpoint = Int.Table.create () in
-    Hashtbl.set fixpoint ~key:initial_index ~data:initial;
-    let iterations = Int.Table.create () in
-    Hashtbl.set iterations ~key:initial_index ~data:0;
-    let worklist = Queue.create () in
-    Queue.enqueue worklist initial_index;
-    let rec iterate worklist =
-      match Queue.dequeue worklist with
-      | Some current_id ->
-          let current = Cfg.node cfg ~id:current_id in
-          (* Transfer state. *)
-          let precondition = Hashtbl.find_exn fixpoint current_id in
-          let postcondition = transition current_id precondition (Cfg.Node.statements current) in
-          (* Update successors. *)
-          let update_successor successor_id =
-            match Hashtbl.find fixpoint successor_id with
-            | Some successor_precondition ->
-                let iteration = Hashtbl.find_exn iterations successor_id in
-                let widened =
-                  State.widen ~previous:successor_precondition ~next:postcondition ~iteration
-                in
-                let converged = State.less_or_equal ~left:widened ~right:successor_precondition in
-                Log.log
-                  ~section:`Fixpoint
-                  "\n%a\n  { <= (result %b) (iteration = %d) }\n\n%a"
-                  State.pp
-                  widened
-                  converged
-                  iteration
-                  State.pp
-                  successor_precondition;
-                if not converged then (
-                  Hashtbl.set fixpoint ~key:successor_id ~data:widened;
-                  Hashtbl.set iterations ~key:successor_id ~data:(iteration + 1);
-                  Queue.enqueue worklist successor_id)
-            | None ->
-                Hashtbl.set fixpoint ~key:successor_id ~data:postcondition;
-                Hashtbl.set iterations ~key:successor_id ~data:0;
-                Queue.enqueue worklist successor_id
-          in
-          successors current |> Set.iter ~f:update_successor;
-          iterate worklist
-      | None -> ()
+  let compute_fixpoint cfg ~initial_index ~initial ~predecessors ~successors ~transition =
+    (*
+     * This is the implementation of a monotonically increasing chaotic fixpoint
+     * iteration sequence with widening over a control-flow graph (CFG) using the
+     * recursive iteration strategy induced by a weak topological ordering of the
+     * nodes in the control-flow graph. The recursive iteration strategy is
+     * described in Bourdoncle's paper on weak topological orderings:
+     *
+     *   F. Bourdoncle. Efficient chaotic iteration strategies with widenings.
+     *   In Formal Methods in Programming and Their Applications, pp 128-141.
+     *)
+    let components = WeakTopologicalOrder.create ~cfg ~entry_index:initial_index ~successors in
+
+    let preconditions = Int.Table.create () in
+    let postconditions = Int.Table.create () in
+
+    let join_with_predecessors_postconditions node state =
+      if Int.equal (Cfg.Node.id node) initial_index then
+        State.join state initial
+      else
+        predecessors node
+        |> Set.fold ~init:state ~f:(fun sofar predecessor_index ->
+               Hashtbl.find postconditions predecessor_index
+               |> Option.value ~default:State.bottom
+               |> State.join sofar)
     in
-    iterate worklist;
-    fixpoint
+    let analyze_node node =
+      let node_id = Cfg.Node.id node in
+      let precondition =
+        Hashtbl.find preconditions node_id
+        |> Option.value ~default:State.bottom
+        |> join_with_predecessors_postconditions node
+      in
+      Hashtbl.set preconditions ~key:node_id ~data:precondition;
+      let postcondition = transition node_id precondition (Cfg.Node.statements node) in
+      Hashtbl.set postconditions ~key:node_id ~data:postcondition
+    in
+    let rec analyze_component = function
+      | { WeakTopologicalOrder.Component.kind = Node node; _ } -> analyze_node node
+      | { kind = Cycle { head; components }; _ } ->
+          let head_id = Cfg.Node.id head in
+          let rec iterate local_iteration =
+            analyze_node head;
+            List.iter ~f:analyze_component components;
+            let current_head_precondition = Hashtbl.find_exn preconditions head_id in
+            let new_head_precondition =
+              join_with_predecessors_postconditions head current_head_precondition
+            in
+            let converged =
+              State.less_or_equal ~left:new_head_precondition ~right:current_head_precondition
+            in
+            Log.log
+              ~section:`Fixpoint
+              "\n%a\n  { <= (result %b) (iteration = %d) }\n\n%a"
+              State.pp
+              new_head_precondition
+              converged
+              local_iteration
+              State.pp
+              current_head_precondition;
+            if not converged then (
+              let precondition =
+                State.widen
+                  ~previous:current_head_precondition
+                  ~next:new_head_precondition
+                  ~iteration:local_iteration
+              in
+              Hashtbl.set preconditions ~key:head_id ~data:precondition;
+              iterate (local_iteration + 1))
+            else
+              (* At this point, we know we have a local fixpoint.
+               * Since operators are monotonic, `new_head_precondition` is also
+               * a post fixpoint. This is basically the argument for performing
+               * decreasing iteration sequence with a narrowing operator.
+               * Therefore, `new_head_precondition` might be more precise,
+               * let's use it at the result.
+               *)
+              Hashtbl.set preconditions ~key:head_id ~data:new_head_precondition
+          in
+          iterate 0
+    in
+    List.iter ~f:analyze_component components;
+    { preconditions; postconditions }
 
 
   let forward ~cfg ~initial =
     let transition node_id init statements =
       let forward statement_index before statement =
-        let after =
-          State.forward ~key:([%hash: int * int] (node_id, statement_index)) before ~statement
-        in
+        let statement_key = [%hash: int * int] (node_id, statement_index) in
+        let after = State.forward ~statement_key before ~statement in
         Log.log
           ~section:`Fixpoint
           "\n%a\n  {  %a  }\n\n%a"
@@ -132,6 +183,7 @@ module Make (State : State) = struct
       cfg
       ~initial_index:Cfg.entry_index
       ~initial
+      ~predecessors:Cfg.Node.predecessors
       ~successors:Cfg.Node.successors
       ~transition
 
@@ -141,7 +193,8 @@ module Make (State : State) = struct
       let statement_index = ref (List.length statements) in
       let backward statement =
         statement_index := !statement_index - 1;
-        State.backward ~key:([%hash: int * int] (node_id, !statement_index)) ~statement
+        let statement_key = [%hash: int * int] (node_id, !statement_index) in
+        State.backward ~statement_key ~statement
       in
       List.fold_right ~f:backward ~init statements
     in
@@ -149,6 +202,7 @@ module Make (State : State) = struct
       cfg
       ~initial_index:Cfg.exit_index
       ~initial
+      ~predecessors:Cfg.Node.successors
       ~successors:Cfg.Node.predecessors
       ~transition
 end

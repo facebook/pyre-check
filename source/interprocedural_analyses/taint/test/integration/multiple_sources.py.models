@@ -15,18 +15,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.permissive_context" }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
             "root": {
               "filename": "multiple_sources.py",
               "line": 29,
               "start": 9,
               "end": 29
-            },
-            "leaves": [
-              {
-                "kind": "PermissiveContext",
-                "name": "multiple_sources.permissive_context"
-              }
-            ]
+            }
           }
         ]
       },
@@ -34,20 +36,23 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              { "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]" }
+            ],
             "root": {
               "filename": "multiple_sources.py",
               "line": 30,
               "start": 22,
               "end": 24
-            },
-            "leaves": [
-              { "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]" }
-            ]
+            }
           }
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "multiple_sources.combine_tainted_user_and_dangerous_vc:4321:0:Call|multiple_sources.Node.send|0|formal(vc):4b283006a4044ae3eb3809f82c65d061"
+    ]
   }
 }
 {
@@ -66,18 +71,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.permissive_context" }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
             "root": {
               "filename": "multiple_sources.py",
               "line": 86,
               "start": 43,
               "end": 63
-            },
-            "leaves": [
-              {
-                "kind": "PermissiveContext",
-                "name": "multiple_sources.permissive_context"
-              }
-            ]
+            }
           }
         ]
       },
@@ -85,20 +92,23 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
+            ],
             "root": {
               "filename": "multiple_sources.py",
               "line": 86,
               "start": 43,
               "end": 63
-            },
-            "leaves": [
-              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
-            ]
+            }
           }
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|1|formal(vc):00952f5183650c224ff0c1236b161820"
+    ]
   }
 }
 {
@@ -117,18 +127,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.permissive_context" }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
             "root": {
               "filename": "multiple_sources.py",
               "line": 85,
               "start": 43,
               "end": 63
-            },
-            "leaves": [
-              {
-                "kind": "PermissiveContext",
-                "name": "multiple_sources.permissive_context"
-              }
-            ]
+            }
           }
         ]
       },
@@ -136,20 +148,23 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
+            ],
             "root": {
               "filename": "multiple_sources.py",
               "line": 85,
               "start": 43,
               "end": 63
-            },
-            "leaves": [
-              { "kind": "TriggeredPartialSink[ExpectsEitherTest[b]]" }
-            ]
+            }
           }
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "multiple_sources.issue_with_test_a_and_b:4322:0:Call|multiple_sources.combines_tests_and_context|0|formal(vc):2952b352e0a37aa627ef7429212a7ad1"
+    ]
   }
 }
 {
@@ -168,18 +183,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.permissive_context" }
+                ],
+                "kind": "PermissiveContext"
+              }
+            ],
             "root": {
               "filename": "multiple_sources.py",
               "line": 49,
               "start": 9,
               "end": 29
-            },
-            "leaves": [
-              {
-                "kind": "PermissiveContext",
-                "name": "multiple_sources.permissive_context"
-              }
-            ]
+            }
           }
         ]
       },
@@ -187,6 +204,13 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "length": 1,
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
@@ -197,20 +221,16 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_context"
               ],
-              "port": "formal(vc)",
-              "length": 1
-            },
-            "leaves": [
-              {
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
-                "name": "multiple_sources.Node.send"
-              }
-            ]
+              "port": "formal(vc)"
+            }
           }
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "multiple_sources.issue_with_triggered_context:4321:0:Call|multiple_sources.demonstrate_triggered_context|0|formal(vc):618ee3f551e51cbfdd4134288328fbfb"
+    ]
   }
 }
 {
@@ -229,18 +249,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "multiple_sources.user_controlled_input" }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
             "root": {
               "filename": "multiple_sources.py",
               "line": 44,
               "start": 9,
               "end": 32
-            },
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "multiple_sources.user_controlled_input"
-              }
-            ]
+            }
           }
         ]
       },
@@ -248,6 +270,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<unknown>" },
+                  { "always-via": "tito" }
+                ],
+                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "length": 1,
+                "kind": "TriggeredPartialSink[UserControlledAndVC[id]]"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "multiple_sources.py",
@@ -258,20 +292,8 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_input"
               ],
-              "port": "formal(id)",
-              "length": 1
-            },
-            "leaves": [
-              {
-                "kind": "TriggeredPartialSink[UserControlledAndVC[id]]",
-                "name": "multiple_sources.Node.send"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "always-via": "tito" }
-            ]
+              "port": "formal(id)"
+            }
           }
         ]
       }
@@ -280,6 +302,9 @@
       { "has": "first-index" },
       { "first-index": "<unknown>" },
       { "always-via": "tito" }
+    ],
+    "master_handles": [
+      "multiple_sources.issue_with_triggered_input:4321:0:Call|multiple_sources.demonstrate_triggered_input|0|formal(id):8a70cfef2676b9104e0817e743936160"
     ]
   }
 }
@@ -292,10 +317,10 @@
         "port": "formal(id)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -303,8 +328,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -320,10 +345,10 @@
         "port": "formal(id)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -331,8 +356,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -348,10 +373,10 @@
         "port": "formal(id)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -359,8 +384,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -376,23 +401,16 @@
         "port": "formal(id)",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 16, "start": 19, "end": 21 } ],
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[id]", "depth": 1 }
+            "kinds": [
+              {
+                "return_paths": [ "[id]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
-          }
-        ]
-      },
-      {
-        "port": "formal(cls)",
-        "taint": [
-          {
-            "decl": null,
-            "tito": [ { "line": 16, "start": 15, "end": 18 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [ { "always-via": "tito" } ]
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 16, "start": 19, "end": 21 } ],
+            "decl": null
           }
         ]
       }
@@ -408,8 +426,8 @@
         "port": "formal(vc)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ]
+            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ],
+            "decl": null
           }
         ]
       },
@@ -417,8 +435,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ]
+            "kinds": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ],
+            "decl": null
           }
         ]
       }
@@ -433,7 +451,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "TestA" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
       }
     ]
   }
@@ -445,7 +463,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "TestB" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "TestB" } ], "decl": null } ]
       }
     ]
   }
@@ -459,8 +477,8 @@
         "port": "formal(vc)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "PartialSink[ExpectsEitherTest[b]]" } ]
+            "kinds": [ { "kind": "PartialSink[ExpectsEitherTest[b]]" } ],
+            "decl": null
           }
         ]
       },
@@ -468,8 +486,8 @@
         "port": "formal(test)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "PartialSink[ExpectsEitherTest[a]]" } ]
+            "kinds": [ { "kind": "PartialSink[ExpectsEitherTest[a]]" } ],
+            "decl": null
           }
         ]
       }
@@ -485,18 +503,18 @@
         "port": "formal(vc)",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
+              }
+            ],
             "root": {
               "filename": "multiple_sources.py",
               "line": 35,
               "start": 22,
               "end": 24
-            },
-            "leaves": [
-              {
-                "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
-                "name": "multiple_sources.Node.send"
-              }
-            ]
+            }
           }
         ]
       }
@@ -512,24 +530,24 @@
         "port": "formal(id)",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "multiple_sources.Node.send" } ],
+                "kind": "TriggeredPartialSink[UserControlledAndVC[id]]"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 40, "start": 13, "end": 15 } ],
             "root": {
               "filename": "multiple_sources.py",
               "line": 40,
               "start": 4,
               "end": 16
-            },
-            "tito": [ { "line": 40, "start": 13, "end": 15 } ],
-            "leaves": [
-              {
-                "kind": "TriggeredPartialSink[UserControlledAndVC[id]]",
-                "name": "multiple_sources.Node.send"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "always-via": "tito" }
-            ]
+            }
           }
         ]
       }
@@ -544,7 +562,7 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "PermissiveContext" } ] }
+          { "kinds": [ { "kind": "PermissiveContext" } ], "decl": null }
         ]
       }
     ]
@@ -558,7 +576,7 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
+          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
         ]
       }
     ]

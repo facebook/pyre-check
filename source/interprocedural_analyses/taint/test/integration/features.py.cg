@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+features.$toplevel (fun) -> []
 features.async_issue_bools (fun) -> [_test_sink (fun) features.async_tuple_of_bools (fun)]
 features.async_tuple_of_bools (fun) -> [_test_source (fun)]
 features.dynamic_feature_tito (fun) -> []

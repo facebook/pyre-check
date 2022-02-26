@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,9 +18,8 @@ let test_check_assert context =
           pass
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `typing.Sized` for 1st positional only parameter to call `len` but got "
-      ^ "`typing.Optional[str]`.";
+      "Incompatible parameter type [6]: In call `len`, for 1st positional only parameter expected \
+       `Sized` but got `Optional[str]`.";
     ];
   assert_type_errors
     {|
@@ -38,7 +37,6 @@ let test_check_assert context =
           pass
     |}
     [];
-  (* TODO(T93984519): Uninitialized local should not throw an error in these. *)
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -49,7 +47,7 @@ let test_check_assert context =
           assert False
         return int_to_int(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
+    [];
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -60,7 +58,8 @@ let test_check_assert context =
           assert False, "unreachable, surely"
         return int_to_int(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
+    [];
+  (* TODO(T93984519): Uninitialized local should not throw an error in these. *)
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -71,7 +70,7 @@ let test_check_assert context =
           assert not True
         return int_to_int(x)
     |}
-    ["Uninitialized local [61]: Local variable `x` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -270,8 +269,8 @@ let test_check_all context =
           return ','.join(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Iterable[str]` for 1st positional only \
-       parameter to call `str.join` but got `typing.Iterable[typing.Optional[str]]`.";
+      "Incompatible parameter type [6]: In call `str.join`, for 1st positional only parameter \
+       expected `Iterable[typing_extensions.LiteralString]` but got `Iterable[Optional[str]]`.";
     ];
   assert_type_errors
     {|
@@ -301,8 +300,8 @@ let test_check_all context =
         return {}
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Dict[int, Variable[_T]]` but got \
-       `typing.Dict[typing.Optional[int], Variable[_T]]`.";
+      "Incompatible return type [7]: Expected `Dict[int, Variable[_T]]` but got \
+       `Dict[Optional[int], Variable[_T]]`.";
     ]
 
 

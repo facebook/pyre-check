@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,7 +10,6 @@ open OUnit2
 open Analysis
 open Ast
 open Pyre
-open PyreParser
 open Statement
 
 let initialize () =
@@ -88,40 +87,31 @@ let run tests =
   tests |> bracket |> run_test_tt_main
 
 
-let parse_untrimmed ?(handle = "") ?(silent = false) ?(coerce_special_methods = false) source =
-  let buffer = Lexing.from_string (source ^ "\n") in
-  buffer.Lexing.lex_curr_p <- { buffer.Lexing.lex_curr_p with Lexing.pos_fname = handle };
-  try
-    let source =
-      let state = Lexer.State.initial () in
-      let metadata =
-        let qualifier = SourcePath.qualifier_of_relative handle in
-        Source.Metadata.parse ~qualifier (String.split source ~on:'\n')
-      in
-      Source.create ~metadata ~relative:handle (Generator.parse (Lexer.read state) buffer)
-    in
-    let coerce_special_methods =
-      if coerce_special_methods then coerce_special_methods_source else Fn.id
-    in
-    source |> coerce_special_methods
-  with
-  | Pyre.ParserError _
-  | Generator.Error ->
-      let location =
-        Location.create ~start:buffer.Lexing.lex_curr_p ~stop:buffer.Lexing.lex_curr_p
-      in
-      let line = location.Location.start.Location.line - 1
-      and column = location.Location.start.Location.column in
-      let header = Format.asprintf "\nCould not parse test at %a" Location.pp location in
-      let indicator = if column > 0 then String.make (column - 1) ' ' ^ "^" else "^" in
-      let error =
-        match List.nth (String.split source ~on:'\n') line with
-        | Some line -> Format.asprintf "%s:\n  %s\n  %s" header line indicator
-        | None -> header ^ "."
-      in
-      if not silent then
-        Printf.printf "%s" error;
-      failwith "Could not parse test"
+let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
+  let do_parse context =
+    match PyreNewParser.parse_module ~context ~enable_type_comment:true source with
+    | Result.Ok statements ->
+        let metadata =
+          let qualifier = SourcePath.qualifier_of_relative handle in
+          Source.Metadata.parse ~qualifier (String.split source ~on:'\n')
+        in
+        let source = Source.create ~metadata ~relative:handle statements in
+        let coerce_special_methods =
+          if coerce_special_methods then coerce_special_methods_source else Fn.id
+        in
+        source |> coerce_special_methods
+    | Result.Error { PyreNewParser.Error.line; column; message; _ } ->
+        let error =
+          Format.asprintf
+            "Could not parse test source at line %d, column %d.\nReason: %s. Test input:\n%s"
+            line
+            column
+            message
+            source
+        in
+        failwith error
+  in
+  PyreNewParser.with_context do_parse
 
 
 let parse ?(handle = "") ?(coerce_special_methods = false) source =
@@ -218,11 +208,17 @@ let collect_nodes_as_strings source =
           Some
             (Transform.sanitize_expression expression |> Expression.show, Node.location expression)
       | Visit.Statement _ -> None
-      | Visit.Identifier { Node.value; location } -> Some (Identifier.sanitized value, location)
+      | Visit.Argument { Node.value; location } -> Some (Identifier.sanitized value, location)
       | Visit.Parameter { Node.value = { Expression.Parameter.name; _ }; location } ->
           Some (Identifier.sanitized name, location)
       | Visit.Reference { Node.value; location } -> Some (Reference.show value, location)
-      | Visit.Substring { Node.value; location } -> Some (Expression.Substring.show value, location)
+      | Visit.Substring substring ->
+          let location =
+            match substring with
+            | Expression.Substring.Literal { Node.location; _ } -> location
+            | Expression.Substring.Format expression -> Node.location expression
+          in
+          Some (Expression.Substring.show substring, location)
       | Visit.Generator _ -> None
   end)
   in
@@ -247,10 +243,14 @@ let assert_source_equal ?(location_insensitive = false) left right =
     if location_insensitive then
       fun left right -> Source.location_insensitive_compare left right = 0
     else
-      Source.equal
+      [%compare.equal: Source.t]
   in
   let print_difference format (left, right) =
-    if Source.equal { left with Source.statements = [] } { right with Source.statements = [] } then
+    if
+      [%compare.equal: Source.t]
+        { left with Source.statements = [] }
+        { right with Source.statements = [] }
+    then
       diff ~print:Source.pp format (left, right)
     else
       diff ~print:Source.pp_all format (left, right)
@@ -426,10 +426,13 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __call__(self) -> int: ...
         def to_callable_target(f: typing.Callable[..., Any]) -> TestCallableTarget: ...
         def _tito( *x: Any, **kw: Any) -> Any: ...
+        def _user_controlled() -> Any: ...
+        def _cookies() -> Any: ...
+        def _rce(argument: Any) -> None: ...
+        def _sql(argument: Any) -> None: ...
         _global_sink: Any
         def copy(obj: object) -> object: ...
         def pyre_dump() -> None: ...
-        def _user_controlled() -> Any: ...
         class ClassWithSinkAttribute():
           attribute: Any = ...
 
@@ -476,6 +479,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         _T = TypeVar('_T')
         _T_co = TypeVar('_T_co', covariant=True)
         _S = TypeVar('_S')
+        _KT = TypeVar('_KT')
+        _VT = TypeVar('_VT')
 
         class type:
           __name__: str = ...
@@ -653,10 +658,20 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def lower(self) -> str: pass
           def upper(self) -> str: ...
           def substr(self, index: int) -> str: pass
+
+          @overload
+          def join(self: Literal[str], iterable: Iterable[Literal[str]]) -> Literal[str]: ...
+          @overload
           def join(self, iterable: Iterable[str]) -> str: ...
+
           def __lt__(self, other: int) -> float: ...
           def __ne__(self, other) -> int: ...
+
+          @overload
+          def __add__(self: Literal[str], other: Literal[str]) -> Literal[str]: ...
+          @overload
           def __add__(self, other: str) -> str: ...
+
           def __pos__(self) -> float: ...
           def __repr__(self) -> float: ...
           def __str__(self) -> str: ...
@@ -681,31 +696,31 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           @overload
           def __getitem__(self, x: slice) -> Tuple[_T_co, ...]: ...
 
-        class dict(MutableMapping[_T, _S], Generic[_T, _S]):
+        class dict(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
           @overload
-          def __init__(self, **kwargs: _S) -> None: ...
+          def __init__(self, **kwargs: _VT) -> None: ...
           @overload
-          def __init__(self, map: Mapping[_T, _S], **kwargs: _S) -> None: ...
+          def __init__(self, map: Mapping[_KT, _VT], **kwargs: _VT) -> None: ...
           @overload
-          def __init__(self, iterable: Iterable[Tuple[_T, _S]], **kwargs: _S) -> None:
+          def __init__(self, iterable: Iterable[Tuple[_KT, _VT]], **kwargs: _VT) -> None:
             ...
-          def add_key(self, key: _T) -> None: pass
-          def add_value(self, value: _S) -> None: pass
-          def add_both(self, key: _T, value: _S) -> None: pass
-          def items(self) -> Iterable[Tuple[_T, _S]]: pass
-          def __delitem__(self, v: _T) -> None: ...
-          def __getitem__(self, k: _T) -> _S: ...
-          def __setitem__(self, k: _T, v: _S) -> None: ...
+          def add_key(self, key: _KT) -> None: pass
+          def add_value(self, value: _VT) -> None: pass
+          def add_both(self, key: _KT, value: _VT) -> None: pass
+          def items(self) -> Iterable[Tuple[_KT, _VT]]: pass
+          def __delitem__(self, __v: _KT) -> None: ...
+          def __getitem__(self, __k: _KT) -> _VT: ...
+          def __setitem__(self, __k: _KT, __v: _VT) -> None: ...
           @overload
-          def get(self, k: _T) -> Optional[_S]: ...
+          def get(self, __key: _KT) -> Optional[_VT]: ...
           @overload
-          def get(self, k: _T, default: _S) -> _S: ...
+          def get(self, __key: _KT, __default: Union[_VT, _T]) -> Union[_VT, _T]: ...
           @overload
-          def update(self, __m: Mapping[_T, _S], **kwargs: _S) -> None: ...
+          def update(self, __m: Mapping[_KT, _VT], **kwargs: _VT) -> None: ...
           @overload
-          def update(self, __m: Iterable[Tuple[_T, _S]], **kwargs: _S) -> None: ...
+          def update(self, __m: Iterable[Tuple[_KT, _VT]], **kwargs: _VT) -> None: ...
           @overload
-          def update(self, **kwargs: _S) -> None: ...
+          def update(self, **kwargs: _VT) -> None: ...
 
           def __len__(self) -> int: ...
 
@@ -716,6 +731,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           def __init__(self, iterable: Iterable[_T]) -> None: ...
 
           def __add__(self, x: list[_T]) -> list[_T]: ...
+          def __mul__(self, n: int) -> list[_T]: ...
           def __iter__(self) -> Iterator[_T]: ...
           def append(self, element: _T) -> None: ...
           @overload
@@ -918,33 +934,6 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |} );
     ]
   in
-  let sqlalchemy_1_4_stubs =
-    [
-      "sqlalchemy_1_4/__init__.pyi", {|
-      from ..sqlalchemy import *
-    |};
-      ( "sqlalchemy_1_4/ext/declarative/__init__.pyi",
-        {|
-            from .api import (
-                declarative_base as declarative_base,
-                DeclarativeMeta as DeclarativeMeta,
-            )
-          |}
-      );
-      ( "sqlalchemy_1_4/ext/declarative/api.pyi",
-        {|
-            def declarative_base(bind: Optional[Any] = ..., metadata: Optional[Any] = ...,
-                                 mapper: Optional[Any] = ..., cls: Any = ..., name: str = ...,
-                                 constructor: Any = ..., class_registry: Optional[Any] = ...,
-                                 metaclass: Any = ...): ...
-
-            class DeclarativeMeta(type):
-                def __init__(cls, classname, bases, dict_) -> None: ...
-                def __setattr__(cls, key, value): ...
-        |}
-      );
-    ]
-  in
   let torch_stubs =
     [
       ( "torch/__init__.pyi",
@@ -1093,23 +1082,27 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         class Mapping(_Collection[_KT], Generic[_KT, _VT_co]):
           @abstractmethod
-          def __getitem__(self, k: _KT) -> _VT_co:
+          def __getitem__(self, __k: _KT) -> _VT_co:
               ...
           # Mixin methods
           @overload
-          def get(self, k: _KT) -> Optional[_VT_co]: ...
+          def get(self, __key: _KT) -> Optional[_VT_co]: ...
           @overload
-          def get(self, k: _KT, default: Union[_VT_co, _T]) -> Union[_VT_co, _T]: ...
+          def get(self, __key: _KT, default: Union[_VT_co, _T]) -> Union[_VT_co, _T]: ...
           def items(self) -> AbstractSet[Tuple[_KT, _VT_co]]: ...
           def keys(self) -> AbstractSet[_KT]: ...
           def values(self) -> ValuesView[_VT_co]: ...
-          def __contains__(self, o: object) -> bool: ...
+          def __contains__(self, __o: object) -> bool: ...
 
         class MutableMapping(Mapping[_KT, _VT], Generic[_KT, _VT]):
           @abstractmethod
-          def __setitem__(self, k: _KT, v: _VT) -> None: ...
+          def __setitem__(self, __k: _KT, __v: _VT) -> None: ...
           @abstractmethod
-          def __delitem__(self, v: _KT) -> None: ...
+          def __delitem__(self, __v: _KT) -> None: ...
+          @overload
+          def pop(self, __key: _KT) -> _VT: ...
+          @overload
+          def pop(self, __key: _KT, __default: _VT | _T = ...) -> _VT | _T: ...
 
         class Awaitable(Protocol[_T_co]):
           def __await__(self) -> Generator[Any, None, _T_co]: ...
@@ -1148,6 +1141,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             args = object()
             kwargs = object()
             def __init__(self, *args: object, **kwargs: object) -> None: ...
+
+        LiteralString: _SpecialForm = ...
       |}
     );
     "asyncio/coroutines.pyi", {|
@@ -1285,7 +1280,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class Enum(metaclass=EnumMeta):
           def __new__(cls: typing.Type[_T], value: object) -> _T: ...
         class IntEnum(int, Enum):
-          value = ...  # type: int
+          value: int = ...
         if sys.version_info >= (3, 6):
           _auto_null: typing.Any
           class auto(IntFlag):
@@ -1304,6 +1299,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         from typing import Final as Final, ParamSpec as ParamSpec, _SpecialForm
         Literal: _SpecialForm = ...
+        LiteralString: _SpecialForm = ...
 
         TypeAlias: _SpecialForm = ...
 
@@ -1335,7 +1331,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
 
         class defaultdict(Dict[_KT, _VT], Generic[_KT, _VT]):
-            default_factory = ...  # type: Optional[Callable[[], _VT]]
+            default_factory: Optional[Callable[[], _VT]] = ...
 
             @overload
             def __init__(self, **kwargs: _VT) -> None:
@@ -1447,7 +1443,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     ( "pyre_extensions/__init__.pyi",
       {|
         from typing import List, Optional, Type, TypeVar
-        from typing import Generic as Generic
+        from .generic import Generic as Generic
         import type_variable_operators
 
         _T = TypeVar("_T")
@@ -1456,35 +1452,40 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         _T1 = TypeVar("_T1")
         _T2 = TypeVar("_T2")
 
+        class TypeVarTuple:
+          def __init__(
+              self,
+              name: str,
+              *constraints: Type[Any],
+              bound: Union[None, Type[Any], str] = ...,
+              covariant: bool = ...,
+              contravariant: bool = ...,
+          ) -> None: ...
 
         def none_throws(optional: Optional[_T]) -> _T: ...
         def safe_cast(new_type: Type[_T], value: Any) -> _T: ...
         def ParameterSpecification(__name: str) -> List[Type]: ...
-        def ListVariadic(__name: str) -> Type: ...
         def classproperty(f: Any) -> Any: ...
         class Add(Generic[_A, _B], int): pass
         class Multiply(Generic[_A, _B], int): pass
         class Subtract(Generic[_A, _B], int): pass
         class Divide(Generic[_A, _B], int): pass
-        _Ts = ListVariadic("_Ts")
+        _Ts = TypeVarTuple("_Ts")
         class Length(Generic[_Ts], int): pass
         class Product(Generic[_Ts], int): pass
 
-        class TypeVarTuple:
-            def __init__(
-                self,
-                name: str,
-                *constraints: Type[Any],
-                bound: Union[None, Type[Any], str] = ...,
-                covariant: bool = ...,
-                contravariant: bool = ...,
-            ) -> None: ...
-
-        _Rs = TypeVarTuple("_Rs")
         class Unpack(Generic[_T]): ...
         class Broadcast(Generic[_T1, _T2]): ...
         class BroadcastError(Generic[_T1, _T2]): ...
-        class Compose(Generic[_Rs]): ...
+        class Compose(Generic[_Ts]): ...
+        |}
+    );
+    ( "pyre_extensions/generic.pyi",
+      {|
+        from typing import Any
+        class Generic:
+            def __class_getitem__(cls, *args: object) -> Any:
+                return cls
         |}
     );
     ( "pyre_extensions/type_variable_operators.pyi",
@@ -2617,13 +2618,12 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         |};
   ]
   @ sqlalchemy_stubs
-  @ sqlalchemy_1_4_stubs
   @ torch_stubs
 
 
 let mock_signature =
   {
-    Define.Signature.name = Node.create_with_default_location (Reference.create "$empty");
+    Define.Signature.name = Reference.create "$empty";
     parameters = [];
     decorators = [];
     return_annotation = None;
@@ -2702,6 +2702,7 @@ module ScratchProject = struct
 
   let setup
       ?(incremental_style = Configuration.Analysis.FineGrained)
+      ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
       ~context
       ?(external_sources = [])
       ?(show_error_traces = false)
@@ -2711,25 +2712,25 @@ module ScratchProject = struct
     =
     let add_source ~root (relative, content) =
       let content = trim_extra_indentation content in
-      let file = File.create ~content (Path.create_relative ~root ~relative) in
+      let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
       File.write file
     in
     (* We assume that there's only one checked source directory that acts as the local root as well. *)
-    let local_root = bracket_tmpdir context |> Path.create_absolute in
+    let local_root = bracket_tmpdir context |> PyrePath.create_absolute in
     (* We assume that there's only one external source directory that acts as the local root as
        well. *)
-    let external_root = bracket_tmpdir context |> Path.create_absolute in
+    let external_root = bracket_tmpdir context |> PyrePath.create_absolute in
     let log_directory = bracket_tmpdir context in
     let configuration =
       Configuration.Analysis.create
         ~local_root
-        ~source_path:[SearchPath.Root local_root]
-        ~search_path:[SearchPath.Root external_root]
+        ~source_paths:[SearchPath.Root local_root]
+        ~search_paths:[SearchPath.Root external_root]
         ~log_directory
         ~filter_directories:[local_root]
         ~ignore_all_errors:[external_root]
         ~incremental_style
-        ~features:{ Configuration.Features.default with go_to_definition = true }
+        ~constraint_solving_style
         ~show_error_traces
         ~parallel:false
         ()
@@ -2749,24 +2750,24 @@ module ScratchProject = struct
   (* Incremental checks already call ModuleTracker.update, so we don't need to update the state
      here. *)
   let add_source
-      { configuration = { Configuration.Analysis.source_path; search_path; _ }; _ }
+      { configuration = { Configuration.Analysis.source_paths; search_paths; _ }; _ }
       ~is_external
       (relative, content)
     =
     let path =
       let root =
         if is_external then
-          match search_path with
+          match search_paths with
           | SearchPath.Root root :: _ -> root
           | _ ->
               failwith
                 "Scratch projects should have the external root at the start of their search path."
         else
-          match source_path with
+          match source_paths with
           | SearchPath.Root root :: _ -> root
           | _ -> failwith "Scratch projects should have only one source path."
       in
-      Path.create_relative ~root ~relative
+      PyrePath.create_relative ~root ~relative
     in
     let file = File.create ~content path in
     File.write file
@@ -2869,7 +2870,7 @@ type test_update_environment_with_t = {
   handle: string;
   source: string;
 }
-[@@deriving compare, eq, show]
+[@@deriving compare, show]
 
 let assert_errors
     ?(debug = true)
@@ -2879,6 +2880,7 @@ let assert_errors
     ?(handle = "test.py")
     ?(update_environment_with = [])
     ?(include_line_numbers = false)
+    ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
     ~context
     ~check
     source
@@ -2899,7 +2901,7 @@ let assert_errors
           let external_sources =
             List.map update_environment_with ~f:(fun { handle; source } -> handle, source)
           in
-          ScratchProject.setup ~context ~external_sources [handle, source]
+          ScratchProject.setup ~context ~constraint_solving_style ~external_sources [handle, source]
         in
         let { ScratchProject.BuiltGlobalEnvironment.sources; global_environment } =
           ScratchProject.build_global_environment project
@@ -2926,7 +2928,9 @@ let assert_errors
     let errors_with_any_location =
       List.filter_map errors ~f:(fun error ->
           let location = AnalysisError.Instantiated.location error in
-          Option.some_if (Location.WithPath.equal location Location.WithPath.any) location)
+          Option.some_if
+            ([%compare.equal: Location.WithPath.t] location Location.WithPath.any)
+            location)
     in
     let show_description ~concise error =
       if concise then
@@ -2984,7 +2988,7 @@ let assert_equivalent_attributes ~context source expected =
     in
     let get_name_if_class { Node.value; _ } =
       match value with
-      | Statement.Class { Class.name = { Node.value; _ }; _ } -> Some (Reference.show value)
+      | Statement.Class { Class.name; _ } -> Some (Reference.show name)
       | _ -> None
     in
     List.map ~f:Source.statements expected

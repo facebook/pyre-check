@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,9 +12,10 @@ open Statement
 type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
 
 val run
-  :  environment:TypeEnvironment.ReadOnly.t ->
+  :  ?profiler:TaintProfiler.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
   qualifier:Reference.t ->
   define:Define.t Node.t ->
-  call_graph_of_define:Interprocedural.CallGraph.callees Location.Map.t ->
-  existing_model:TaintResult.call_model ->
-  TaintResult.Forward.model * TaintResult.result * triggered_sinks
+  call_graph_of_define:Interprocedural.CallGraph.DefineCallGraph.t ->
+  existing_model:Model.t ->
+  Model.Forward.t * Issue.t list * triggered_sinks

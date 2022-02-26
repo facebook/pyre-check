@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -521,7 +521,7 @@ let test_connect_type_order context =
        class D(C):
          pass
        class CallMe:
-         def CallMe.__call__(self, x: int) -> str:
+         def __call__(self, x: int) -> str:
            ...
        B = D
        A = B
@@ -610,7 +610,7 @@ let test_populate context =
     in
     assert_equal
       ~printer:show_targets
-      ~cmp:(Option.equal (List.equal ClassHierarchy.Target.equal))
+      ~cmp:(Option.equal (List.equal [%compare.equal: ClassHierarchy.Target.t]))
       (Some (List.map superclasses ~f:to_target))
       targets
   in
@@ -663,7 +663,7 @@ let test_populate context =
       class int(): pass
       A: int = 0
       B = 0
-      C = ... # type: int
+      C: int = ...
 
       class Foo(): pass
       alias = Foo
@@ -692,7 +692,7 @@ let test_populate context =
       global_unknown = x
       global_function = function
       class Class():
-        def Class.__init__(self):
+        def __init__(self):
           pass
       def function():
         pass
@@ -776,7 +776,7 @@ let test_populate context =
         ( "test.py",
           {|
       class CallMe:
-        def CallMe.__call__(self, x: int) -> str:
+        def __call__(self, x: int) -> str:
           pass
       class AlsoCallable(CallMe):
         pass
@@ -1284,14 +1284,14 @@ let test_update_and_compute_dependencies context =
         ~relative
       =
       let content = trim_extra_indentation content in
-      let file = File.create ~content (Path.create_relative ~root:local_root ~relative) in
+      let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
       File.write file
     in
     let delete_file
         { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
         relative
       =
-      Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
+      PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
     in
     let dependents =
       delete_file project "source.py";
@@ -1300,7 +1300,7 @@ let test_update_and_compute_dependencies context =
       let _, update_result =
         let { ScratchProject.configuration; _ } = project in
         let { Configuration.Analysis.local_root; _ } = configuration in
-        let path = Path.create_relative ~root:local_root ~relative:"source.py" in
+        let path = PyrePath.create_relative ~root:local_root ~relative:"source.py" in
         let ast_environment = AnnotatedGlobalEnvironment.ast_environment environment in
         let module_tracker = AstEnvironment.module_tracker ast_environment in
         ModuleTracker.update ~configuration ~paths:[path] module_tracker

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -57,7 +57,6 @@ let test_get_module_and_definition context =
                   Statement.Assign.target = !"$parameter$self._foo";
                   annotation = None;
                   value = !"$parameter$value";
-                  parent = None;
                 };
              +Statement.Statement.Return { Statement.Return.is_implicit = true; expression = None };
            ] ))

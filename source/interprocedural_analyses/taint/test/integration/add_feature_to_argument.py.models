@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "add_feature_to_argument.test_add_feature_in_comprehension",
-    "callable_line": 38,
+    "callable_line": 44,
     "code": 5002,
-    "line": 41,
+    "line": 47,
     "start": 15,
     "end": 19,
     "filename": "add_feature_to_argument.py",
@@ -15,19 +15,24 @@
         "name": "forward",
         "roots": [
           {
-            "root": {
-              "filename": "add_feature_to_argument.py",
-              "line": 39,
-              "start": 15,
-              "end": 29
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_source" }
-            ]
+              { "always-via": "string_concat_lhs" }
+            ],
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 45,
+              "start": 15,
+              "end": 29
+            }
           }
         ]
       },
@@ -35,14 +40,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
-              "line": 41,
+              "line": 47,
               "start": 15,
               "end": 19
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -53,6 +63,9 @@
       { "always-via": "string_concat_lhs" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "add_feature_to_argument.test_add_feature_in_comprehension:5002:0:Call|_test_sink|0|formal(arg):e660dc46ee53a95cdb86c321f40be0a3"
     ]
   }
 }
@@ -66,32 +79,37 @@
         "port": "formal(parameter)",
         "taint": [
           {
-            "root": {
-              "filename": "add_feature_to_argument.py",
-              "line": 45,
-              "start": 54,
-              "end": 63
-            },
-            "leaves": [
+            "kinds": [
               {
-                "kind": "AddFeatureToArgument",
-                "name": "add_feature_to_argument.add_feature_to_first"
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  { "name": "add_feature_to_argument.add_feature_to_first" }
+                ],
+                "kind": "AddFeatureToArgument"
               }
             ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
-          },
-          {
             "root": {
               "filename": "add_feature_to_argument.py",
-              "line": 46,
+              "line": 51,
+              "start": 54,
+              "end": 63
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 52,
               "start": 15,
               "end": 24
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -107,9 +125,13 @@
         "port": "formal(first)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "AddFeatureToArgument" } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "AddFeatureToArgument"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -124,7 +146,21 @@
       {
         "port": "formal(first)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "AddFeatureToArgument" } ] }
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter":
+                      "PositionalParameter {position = 1; name = second; positional_only = false}"
+                  }
+                ],
+                "kind": "AddFeatureToArgument"
+              }
+            ],
+            "decl": null
+          }
         ]
       }
     ]
@@ -139,17 +175,49 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 14,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_source" }
-            ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_feature_to_argument.dict_test_add_via_value_of_second",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "via-value": "second" } ],
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 34,
+              "start": 8,
+              "end": 22
+            }
           }
         ]
       }
@@ -165,19 +233,21 @@
         "port": "formal(parameter)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  { "name": "add_feature_to_argument.add_feature_to_first" }
+                ],
+                "kind": "AddFeatureToArgument"
+              }
+            ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 20,
               "start": 32,
               "end": 41
-            },
-            "leaves": [
-              {
-                "kind": "AddFeatureToArgument",
-                "name": "add_feature_to_argument.add_feature_to_first"
-              }
-            ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            }
           }
         ]
       }
@@ -193,32 +263,37 @@
         "port": "formal(parameter)",
         "taint": [
           {
-            "root": {
-              "filename": "add_feature_to_argument.py",
-              "line": 34,
-              "start": 25,
-              "end": 34
-            },
-            "leaves": [
+            "kinds": [
               {
-                "kind": "AddFeatureToArgument",
-                "name": "add_feature_to_argument.add_feature_to_first"
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  { "name": "add_feature_to_argument.add_feature_to_first" }
+                ],
+                "kind": "AddFeatureToArgument"
               }
             ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
-          },
-          {
             "root": {
               "filename": "add_feature_to_argument.py",
-              "line": 35,
+              "line": 40,
+              "start": 25,
+              "end": 34
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 41,
               "start": 15,
               "end": 24
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -234,17 +309,20 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-value": "second" } ],
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 28,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via-value": "second" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }

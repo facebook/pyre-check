@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -239,7 +239,7 @@ let test_fixpoint context =
             outcome ~kind:`Function ~errors:[] "qualifier.getattr_obj_no_match";
             outcome
               ~kind:`Function
-              ~tito_parameters:["some_obj"]
+              ~tito_parameters:[{ name = "some_obj"; sinks = [Sinks.LocalReturn] }]
               ~errors:
                 [
                   {
@@ -248,7 +248,11 @@ let test_fixpoint context =
                   };
                 ]
               "qualifier.getattr_field_match";
-            outcome ~kind:`Function ~tito_parameters:["tito"] ~errors:[] "qualifier.deep_tito";
+            outcome
+              ~kind:`Function
+              ~tito_parameters:[{ name = "tito"; sinks = [Sinks.LocalReturn] }]
+              ~errors:[]
+              "qualifier.deep_tito";
             outcome ~kind:`Function ~errors:[] "qualifier.test_deep_tito_no_match";
             outcome
               ~kind:`Function
@@ -264,7 +268,10 @@ let test_fixpoint context =
               ~kind:`Function
               ~sink_parameters:[{ name = "input"; sinks = [Sinks.NamedSink "Test"] }]
               "qualifier.property_into_sink";
-            outcome ~kind:`Method ~tito_parameters:["self"] "qualifier.Class.property";
+            outcome
+              ~kind:`Method
+              ~tito_parameters:[{ name = "self"; sinks = [Sinks.LocalReturn] }]
+              "qualifier.Class.property";
             outcome
               ~kind:`Function
               ~tito_parameters:[]
@@ -272,7 +279,7 @@ let test_fixpoint context =
               "qualifier.uses_property";
             outcome
               ~kind:`Function
-              ~tito_parameters:["c"]
+              ~tito_parameters:[{ name = "c"; sinks = [Sinks.LocalReturn] }]
               ~returns:[]
               "qualifier.uses_property_but_no_taint";
           ];
@@ -304,7 +311,11 @@ let test_combined_analysis context =
                   { name = "x"; sinks = [Sinks.NamedSink "Test"] };
                   { name = "y"; sinks = [Sinks.NamedSink "Demo"] };
                 ]
-              ~tito_parameters:["x"; "z"]
+              ~tito_parameters:
+                [
+                  { name = "x"; sinks = [Sinks.LocalReturn] };
+                  { name = "z"; sinks = [Sinks.LocalReturn] };
+                ]
               "qualifier.combined_model";
           ];
         iterations = 2;
@@ -332,8 +343,8 @@ let test_skipped_analysis context =
             outcome
               ~kind:`Function
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "Demo"] }]
-              ~tito_parameters:["z"]
-              ~analysis_modes:(Taint.Result.ModeSet.singleton SkipAnalysis)
+              ~tito_parameters:[{ name = "z"; sinks = [Sinks.LocalReturn] }]
+              ~analysis_modes:(Model.ModeSet.singleton SkipAnalysis)
               "qualifier.skipped_model";
           ];
         iterations = 1;
@@ -341,7 +352,6 @@ let test_skipped_analysis context =
 
 
 let test_sanitized_analysis context =
-  let open Taint.Result in
   assert_fixpoint
     ~context
     ~models:
@@ -363,10 +373,14 @@ let test_sanitized_analysis context =
             outcome
               ~kind:`Function
               ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "Demo"] }]
-              ~tito_parameters:["z"]
+              ~tito_parameters:[{ name = "z"; sinks = [Sinks.LocalReturn] }]
               ~errors:[{ code = 5001; pattern = ".*" }]
-              ~sanitize:
-                { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+              ~global_sanitizer:
+                {
+                  Taint.Domains.Sanitize.sources = Some AllSources;
+                  sinks = Some AllSinks;
+                  tito = Some AllTito;
+                }
               "qualifier.sanitized_model";
           ];
         iterations = 1;
@@ -421,7 +435,7 @@ let test_primed_sink_analysis context =
               ~returns:[Sources.NamedSource "Test"]
               ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
               ~sink_parameters:[] (* No backward prop on return sinks *)
-              ~tito_parameters:["y"]
+              ~tito_parameters:[{ name = "y"; sinks = [Sinks.LocalReturn] }]
               ~errors:[{ code = 5002; pattern = ".*Test.*" }]
               "qualifier.primed_model";
           ];
@@ -475,7 +489,7 @@ let test_overrides context =
             outcome ~kind:`Override ~obscure:true "qualifier.Base.split";
             outcome
               ~kind:`Function
-              ~tito_parameters:["b"]
+              ~tito_parameters:[{ name = "b"; sinks = [Sinks.LocalReturn] }]
               ~errors:[]
               "qualifier.test_obscure_override";
             outcome

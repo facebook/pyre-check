@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -162,7 +162,7 @@ class FixmeAllTest(unittest.TestCase):
         configuration.get_path()
         ErrorSuppressingCommand(
             command.CommandArguments.from_arguments(arguments), repository=repository
-        )._suppress_errors(
+        )._get_and_suppress_errors(
             configuration,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
@@ -176,7 +176,7 @@ class FixmeAllTest(unittest.TestCase):
         arguments.lint = True
         ErrorSuppressingCommand(
             command.CommandArguments.from_arguments(arguments), repository=repository
-        )._suppress_errors(
+        )._get_and_suppress_errors(
             configuration,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,
@@ -197,7 +197,7 @@ class FixmeAllTest(unittest.TestCase):
         get_errors.return_value = pyre_errors
         ErrorSuppressingCommand(
             command.CommandArguments.from_arguments(arguments), repository=repository
-        )._suppress_errors(
+        )._get_and_suppress_errors(
             configuration,
             upgrade_version=arguments.upgrade_version,
             error_source=arguments.error_source,

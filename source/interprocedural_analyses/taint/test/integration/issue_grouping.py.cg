@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+issue_grouping.$toplevel (fun) -> []
 issue_grouping.issue (fun) -> [dict::__setitem__ (method) issue_grouping.multi_sink (fun) issue_grouping.source_a (fun) issue_grouping.source_b (fun)]
 issue_grouping.multi_sink (fun) -> [issue_grouping.sink_a (fun) issue_grouping.sink_b (fun)]
 issue_grouping.sink_a (fun) -> []

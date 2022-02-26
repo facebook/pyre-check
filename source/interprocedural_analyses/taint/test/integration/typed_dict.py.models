@@ -1,0 +1,212 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test1",
+    "callable_line": 20,
+    "code": 5002,
+    "line": 22,
+    "start": 15,
+    "end": 27,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "other" }
+            ],
+            "root": {
+              "filename": "typed_dict.py",
+              "line": 21,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "typed_dict.py",
+              "line": 22,
+              "start": 15,
+              "end": 27
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "other" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "typed_dict.test1:5002:0:Call|_test_sink|0|formal(arg):c875ea622fe903e7a600da63e42dfe95"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test2",
+    "callable_line": 25,
+    "code": 5002,
+    "line": 28,
+    "start": 15,
+    "end": 30,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" }
+            ],
+            "root": {
+              "filename": "typed_dict.py",
+              "line": 26,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "typed_dict.py",
+              "line": 28,
+              "start": 15,
+              "end": 30
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "typed_dict.test2:5002:0:Call|_test_sink|0|formal(arg):fda65c046f1bb37701b522b30322979c"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "typed_dict.test3",
+    "callable_line": 31,
+    "code": 5002,
+    "line": 33,
+    "start": 15,
+    "end": 30,
+    "filename": "typed_dict.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" }
+            ],
+            "root": {
+              "filename": "typed_dict.py",
+              "line": 32,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "typed_dict.py",
+              "line": 33,
+              "start": 15,
+              "end": 30
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "typed_dict.test3:5002:0:Call|_test_sink|0|formal(arg):17f48812cb8cde7605fe95ac1ce94a5b"
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{typed_dict.Foo.a}",
+    "global_sanitizer": { "sources": [ "Test" ] }
+  }
+}

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -182,14 +182,6 @@ let test_position_only_parameters context =
     [];
   assert_type_errors
     {|
-    def foo(a: int, b: int, /) -> None:
-        pass
-
-    foo(a=1, 2)
-    |}
-    ["Unexpected keyword [28]: Unexpected keyword argument `a` to call `foo`."];
-  assert_type_errors
-    {|
     def foo(a: int, b: int, /, c: str) -> None:
         pass
 
@@ -247,8 +239,8 @@ let test_bound_method context =
     |}
     [
       "Revealed type [-1]: Revealed type for `c` is `bool`.";
-      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to \
-       anonymous call but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
+       expected `str` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -263,8 +255,8 @@ let test_bound_method context =
     |}
     [
       "Revealed type [-1]: Revealed type for `c` is `Bar`.";
-      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to \
-       anonymous call but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
+       expected `str` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -277,10 +269,10 @@ let test_bound_method context =
         foo(unknown, b)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `foo` but got `unknown`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call \
-       `foo` but got `bool`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `int` but got `unknown`.";
+      "Incompatible parameter type [6]: In call `foo`, for 2nd positional only parameter expected \
+       `str` but got `bool`.";
     ];
   assert_type_errors
     {|
@@ -299,10 +291,10 @@ let test_bound_method context =
         foo(x, y, z)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 2nd positional only \
-       parameter to call `foo` but got `typing.Tuple[int, int]`.";
-      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 3rd positional only \
-       parameter to call `foo` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 2nd positional only parameter expected \
+       `typing.Tuple[*test.Ts]` but got `Tuple[int, int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 3rd positional only parameter expected \
+       `typing.Tuple[*test.Ts]` but got `str`.";
     ];
   ()
 

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16,9 +16,15 @@ open Test
 module DefaultContext = struct
   let qualifier = Reference.empty
 
+  let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
+
   let debug = false
 
   let define = +Test.mock_define
+
+  let resolution_fixpoint = None
+
+  let error_map = None
 
   module Builder = Callgraph.NullBuilder
 end
@@ -30,17 +36,16 @@ let create_annotation_store ?(immutables = []) annotations =
       let create annotation =
         match Map.find immutables name with
         | Some original ->
-            RefinementUnit.create
-              ~base:(Annotation.create_immutable ~original:(Some original) annotation)
-              ()
-        | _ -> RefinementUnit.create ~base:(Annotation.create annotation) ()
+            Refinement.Unit.create
+              (Annotation.create_immutable ~original:(Some original) annotation)
+        | _ -> Refinement.Unit.create (Annotation.create_mutable annotation)
       in
       create annotation
     in
     !&name, annotation
   in
   {
-    Resolution.annotations = List.map annotations ~f:annotify |> Reference.Map.of_alist_exn;
+    Refinement.Store.annotations = List.map annotations ~f:annotify |> Reference.Map.of_alist_exn;
     temporary_annotations = Reference.Map.empty;
   }
 
@@ -49,21 +54,21 @@ let assert_annotation_store ~expected actual =
   let actual = Resolution.annotation_store actual in
   let compare_annotation_store
       {
-        Resolution.annotations = left_annotations;
+        Refinement.Store.annotations = left_annotations;
         temporary_annotations = left_temporary_annotations;
       }
       {
-        Resolution.annotations = right_annotations;
+        Refinement.Store.annotations = right_annotations;
         temporary_annotations = right_temporary_annotations;
       }
     =
-    let equal_map = Reference.Map.equal [%equal: RefinementUnit.t] in
+    let equal_map = Reference.Map.equal [%equal: Refinement.Unit.t] in
     equal_map left_annotations right_annotations
     && equal_map left_temporary_annotations right_temporary_annotations
   in
-  let pp_annotation_store formatter { Resolution.annotations; temporary_annotations } =
+  let pp_annotation_store formatter { Refinement.Store.annotations; temporary_annotations } =
     let annotation_to_string (name, refinement_unit) =
-      Format.asprintf "%a -> %a" Reference.pp name RefinementUnit.pp refinement_unit
+      Format.asprintf "%a -> %a" Reference.pp name Refinement.Unit.pp refinement_unit
     in
     let printed_annotations =
       Map.to_alist annotations |> List.map ~f:annotation_to_string |> String.concat ~sep:"\n"
@@ -91,13 +96,13 @@ module Create (Context : TypeCheck.Context) = struct
   let create ?(bottom = false) ?(immutables = []) ~resolution annotations =
     let module State = State (Context) in
     if bottom then
-      State.create_unreachable ()
+      State.unreachable
     else
       let resolution =
         let annotation_store = create_annotation_store ~immutables annotations in
         Resolution.with_annotation_store resolution ~annotation_store
       in
-      State.create ~resolution ()
+      State.create ~resolution
 end
 
 let description ~resolution error =
@@ -123,9 +128,15 @@ let test_initial context =
     let module Context = struct
       let debug = false
 
+      let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
+
       let qualifier = Reference.empty
 
       let define = +define
+
+      let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+
+      let error_map = Some (LocalErrorMap.empty ())
 
       module Builder = Callgraph.NullBuilder
     end
@@ -216,20 +227,21 @@ let test_less_or_equal context =
     Create.create ~resolution
   in
   let module State = State (DefaultContext) in
-  (* <= *)
+  (* == *)
   assert_true (State.less_or_equal ~left:(create []) ~right:(create []));
-  assert_true (State.less_or_equal ~left:(create []) ~right:(create ["x", Type.integer]));
-  assert_true (State.less_or_equal ~left:(create []) ~right:(create ["x", Type.Top]));
+  assert_true
+    (State.less_or_equal ~left:(create ["x", Type.integer]) ~right:(create ["x", Type.integer]));
+  (* <= *)
+  assert_true (State.less_or_equal ~left:(create ["x", Type.integer]) ~right:(create []));
+  assert_true (State.less_or_equal ~left:(create ["x", Type.Top]) ~right:(create []));
   assert_true
     (State.less_or_equal
-       ~left:(create ["x", Type.integer])
-       ~right:(create ["x", Type.integer; "y", Type.integer]));
-
+       ~left:(create ["x", Type.integer; "y", Type.integer])
+       ~right:(create ["x", Type.integer]));
   (* > *)
-  assert_false (State.less_or_equal ~left:(create ["x", Type.integer]) ~right:(create []));
-  assert_false (State.less_or_equal ~left:(create ["x", Type.Top]) ~right:(create []));
-
-  (* partial order *)
+  assert_false (State.less_or_equal ~left:(create []) ~right:(create ["x", Type.integer]));
+  assert_false (State.less_or_equal ~left:(create []) ~right:(create ["x", Type.Top]));
+  (* not comparable *)
   assert_false
     (State.less_or_equal ~left:(create ["x", Type.integer]) ~right:(create ["x", Type.string]));
   assert_false
@@ -249,7 +261,7 @@ let test_widen context =
       ~printer:(Format.asprintf "%a" State.pp)
       ~pp_diff:(diff ~print:State.pp)
   in
-  let widening_threshold = 10 in
+  let widening_threshold = 3 in
   assert_state_equal
     (State.widen
        ~previous:(create ["x", Type.string])
@@ -343,11 +355,10 @@ let test_module_exports context =
   let assert_exports_resolved expression expected =
     let sources =
       [
-        ( "implementing.py",
-          {|
-        def implementing.function() -> int: ...
+        "implementing.py", {|
+        def function() -> int: ...
         constant: int = 1
-      |} );
+      |};
         ( "exporting.py",
           {|
         from implementing import function, constant
@@ -487,7 +498,6 @@ let test_forward_expression context =
       expression
       |> function
       | { Source.statements = [{ Node.value = Expression expression; _ }]; _ } -> expression
-      | { Source.statements = [{ Node.value = Yield expression; _ }]; _ } -> expression
       | _ -> failwith "Unable to extract expression"
     in
     let global_resolution =
@@ -510,10 +520,10 @@ let test_forward_expression context =
   assert_forward "await undefined" Type.Any;
 
   (* Boolean operator. *)
-  assert_forward "1 or 'string'" (Type.union [Type.integer; Type.string]);
-  assert_forward "1 and 'string'" (Type.union [Type.integer; Type.string]);
+  assert_forward "1 or 'string'" (Type.literal_integer 1);
+  assert_forward "1 and 'string'" (Type.literal_string "string");
   assert_forward "undefined or 1" Type.Top;
-  assert_forward "1 or undefined" Type.Top;
+  assert_forward "1 or undefined" (Type.literal_integer 1);
   assert_forward "undefined and undefined" Type.Top;
   assert_forward
     ~precondition:["y", Type.string]
@@ -530,6 +540,16 @@ let test_forward_expression context =
     ~postcondition:["y", Type.string]
     "None or y"
     Type.string;
+  assert_forward
+    ~precondition:["y", Type.integer]
+    ~postcondition:["y", Type.integer]
+    "'' or y"
+    Type.integer;
+  assert_forward
+    ~precondition:["y", Type.integer]
+    ~postcondition:["y", Type.integer]
+    "b'' or y"
+    Type.integer;
   assert_forward
     ~precondition:["x", Type.NoneType; "y", Type.integer]
     ~postcondition:["x", Type.NoneType; "y", Type.integer]
@@ -550,11 +570,42 @@ let test_forward_expression context =
     ~postcondition:["x", Type.union [Type.NoneType; Type.integer; Type.string]]
     "x or 1"
     (Type.Union [Type.integer; Type.string]);
+  assert_forward
+    ~precondition:["x", Type.union [Type.NoneType; Type.literal_integer 0]; "y", Type.string]
+    ~postcondition:["x", Type.union [Type.NoneType; Type.literal_integer 0]; "y", Type.string]
+    "x or y"
+    Type.string;
+  assert_forward
+    ~precondition:["y", Type.string]
+    ~postcondition:["y", Type.string]
+    "1 and y"
+    Type.string;
+  assert_forward
+    ~precondition:["y", Type.string]
+    ~postcondition:["y", Type.string]
+    "1 and y"
+    Type.string;
+  assert_forward
+    ~precondition:["y", Type.integer]
+    ~postcondition:["y", Type.integer]
+    "'foo' and y"
+    Type.integer;
+  assert_forward
+    ~precondition:["y", Type.integer]
+    ~postcondition:["y", Type.integer]
+    "b'foo' and y"
+    Type.integer;
+  assert_forward
+    ~precondition:
+      ["x", Type.union [Type.literal_integer 1; Type.literal_integer 2]; "y", Type.string]
+    ~postcondition:
+      ["x", Type.union [Type.literal_integer 1; Type.literal_integer 2]; "y", Type.string]
+    "x and y"
+    Type.string;
   let assert_optional_forward ?(postcondition = ["x", Type.optional Type.integer]) =
     assert_forward ~precondition:["x", Type.optional Type.integer] ~postcondition
   in
   assert_optional_forward "x or 1" Type.integer;
-  assert_optional_forward "1 or x" (Type.optional Type.integer);
   assert_optional_forward "x or x" (Type.optional Type.integer);
   assert_optional_forward "x and 1" (Type.optional Type.integer);
   assert_optional_forward "1 and x" (Type.optional Type.integer);
@@ -631,9 +682,9 @@ let test_forward_expression context =
     ~environment:
       {|
       class MetaFoo(type):
-        def MetaFoo.__contains__(self, x:int) -> bool: ...
+        def __contains__(self, x:int) -> bool: ...
       class Foo(metaclass=MetaFoo):
-        def Foo.foo(self) -> int:
+        def foo(self) -> int:
           return 9
     |}
     ~precondition:["Container", Type.meta (Type.Primitive "test.Foo")]
@@ -650,6 +701,26 @@ let test_forward_expression context =
     Type.bool;
   assert_forward "undefined < 1" Type.bool;
   assert_forward "undefined == undefined" Type.Any;
+  assert_forward
+    ~environment:{|
+        class Foo:
+          field: int
+      |}
+    ~precondition:
+      ["x", Type.Primitive "test.Foo"; "y", Type.Literal (String (LiteralValue "field"))]
+    ~postcondition:
+      ["x", Type.Primitive "test.Foo"; "y", Type.Literal (String (LiteralValue "field"))]
+    "getattr(x, y)"
+    Type.integer;
+  assert_forward
+    ~environment:{|
+        class Foo:
+          field: int
+      |}
+    ~precondition:["x", Type.Primitive "test.Foo"; "y", Type.string]
+    ~postcondition:["x", Type.Primitive "test.Foo"; "y", Type.string]
+    "getattr(x, y)"
+    Type.Any;
 
   (* Complex literal. *)
   assert_forward "1j" Type.complex;
@@ -692,15 +763,17 @@ let test_forward_expression context =
   (* Float literal. *)
   assert_forward "1.0" Type.float;
 
-  (* Generators. *)
-  assert_forward "(element for element in [1])" (Type.generator Type.integer);
-  assert_forward "(element for element in [])" (Type.generator Type.Any);
+  (* Generator expressions. *)
+  assert_forward "(element for element in [1])" (Type.generator_expression Type.integer);
+  assert_forward "(element for element in [])" (Type.generator_expression Type.Any);
   assert_forward
     "((element, independent) for element in [1] for independent in ['string'])"
-    (Type.generator (Type.tuple [Type.integer; Type.string]));
-  assert_forward "(nested for element in [[1]] for nested in element)" (Type.generator Type.integer);
-  assert_forward "(undefined for element in [1])" (Type.generator Type.Top);
-  assert_forward "(element for element in undefined)" (Type.generator Type.Any);
+    (Type.generator_expression (Type.tuple [Type.integer; Type.string]));
+  assert_forward
+    "(nested for element in [[1]] for nested in element)"
+    (Type.generator_expression Type.integer);
+  assert_forward "(undefined for element in [1])" (Type.generator_expression Type.Top);
+  assert_forward "(element for element in undefined)" (Type.generator_expression Type.Any);
 
   (* Lambda. *)
   let callable ~parameters ~annotation =
@@ -791,7 +864,6 @@ let test_forward_expression context =
 
   (* Starred expressions. *)
   assert_forward "*1" Type.Top;
-  assert_forward "**1" Type.Top;
   assert_forward "*undefined" Type.Top;
 
   (* String literals. *)
@@ -832,20 +904,15 @@ let test_forward_expression context =
   (* Unary expressions. *)
   assert_forward "not 1" Type.bool;
   assert_forward "not undefined" Type.bool;
-  assert_forward "-1" (Type.Literal (Integer (-1)));
-  assert_forward "+1" Type.integer;
+  assert_forward "+1" (Type.literal_integer 1);
   assert_forward "~1" Type.integer;
   assert_forward "-undefined" Type.Any;
 
   (* Walrus operator. *)
   assert_forward
-    "x := True"
+    "(x := True)"
     (Type.Literal (Boolean true))
     ~postcondition:["x", Type.Literal (Boolean true)];
-  (* Yield. *)
-  assert_forward "yield 1" (Type.generator (Type.literal_integer 1));
-  assert_forward "yield undefined" (Type.generator Type.Top);
-  assert_forward "yield" (Type.generator Type.none);
 
   (* Broadcasts *)
   assert_forward
@@ -881,11 +948,10 @@ let test_forward_expression context =
   (* Resolved annotation field. *)
   let assert_annotation ?(precondition = []) ?(environment = "") expression annotation =
     let expression =
-      let expression = parse expression |> Preprocessing.expand_format_string in
+      let expression = parse expression in
       expression
       |> function
       | { Source.statements = [{ Node.value = Expression expression; _ }]; _ } -> expression
-      | { Source.statements = [{ Node.value = Yield expression; _ }]; _ } -> expression
       | _ -> failwith "Unable to extract expression"
     in
     let resolution =
@@ -1157,7 +1223,11 @@ let test_forward_statement context =
     ["x", Type.list (Type.union [Type.none; Type.integer; Type.string])]
     "assert all(x)"
     ["x", Type.list (Type.union [Type.integer; Type.string])];
-  assert_forward
+  assert_forward (* no refimenent: Awaitable is not iterable *)
+    ["x", Type.awaitable (Type.union [Type.none; Type.integer])]
+    "assert all(x)"
+    ["x", Type.awaitable (Type.union [Type.none; Type.integer])];
+  assert_forward (* no refinement: dict is iterable, but with too many type parameters *)
     ["x", Type.dictionary ~key:(Type.optional Type.integer) ~value:Type.integer]
     "assert all(x)"
     ["x", Type.dictionary ~key:(Type.optional Type.integer) ~value:Type.integer];
@@ -1184,59 +1254,147 @@ let test_forward_statement context =
   assert_forward ~bottom:true ["x", Type.none] "assert x" ["x", Type.none];
   assert_forward ~bottom:true ["x", Type.none] "assert x is not None" ["x", Type.none];
 
-  (* Isinstance. *)
-  assert_forward ["x", Type.Any] "assert isinstance(x, int)" ["x", Type.integer];
-  assert_forward
-    ["x", Type.Any; "y", Type.Top]
-    "assert isinstance(y, str)"
-    ["x", Type.Any; "y", Type.string];
-  assert_forward
-    ["x", Type.Any]
-    "assert isinstance(x, (int, str))"
-    ["x", Type.union [Type.integer; Type.string]];
-  assert_forward ["x", Type.integer] "assert isinstance(x, (int, str))" ["x", Type.integer];
-  assert_forward ~bottom:true ["x", Type.integer] "assert isinstance(x, str)" ["x", Type.integer];
-  assert_forward ~bottom:false ["x", Type.Bottom] "assert isinstance(x, str)" ["x", Type.string];
-  assert_forward ~bottom:false ["x", Type.float] "assert isinstance(x, int)" ["x", Type.integer];
-  assert_forward ~bottom:false ["x", Type.integer] "assert isinstance(x, 1)" ["x", Type.integer];
-  assert_forward
+  (* isinstance, type(_) is _ *)
+  let assert_refinement_by_type_comparison
+      ?(bottom = false)
+      ~precondition
+      ?(negated = false)
+      ~variable
+      ~type_expression
+      ~postcondition
+      ()
+    =
+    let assert_forward_expression assertion_expression =
+      assert_forward
+        ~bottom
+        precondition
+        (Format.asprintf "assert %s" assertion_expression)
+        postcondition
+    in
+    Format.asprintf "%s isinstance(%s, %s)" (if negated then "not" else "") variable type_expression
+    |> assert_forward_expression;
+    Format.asprintf "type(%s) %s %s" variable (if negated then "is not" else "is") type_expression
+    |> assert_forward_expression;
+    Format.asprintf "type(%s) %s %s" variable (if negated then "!=" else "==") type_expression
+    |> assert_forward_expression
+  in
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.Any]
+    ~variable:"x"
+    ~type_expression:"int"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.Any; "y", Type.Top]
+    ~variable:"y"
+    ~type_expression:"str"
+    ~postcondition:["x", Type.Any; "y", Type.string]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.Any]
+    ~variable:"x"
+    ~type_expression:"(int, str)"
+    ~postcondition:["x", Type.union [Type.integer; Type.string]]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.integer]
+    ~variable:"x"
+    ~type_expression:"(int, str)"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
     ~bottom:true
-    ["x", Type.integer]
-    "assert not isinstance(x, int)"
-    ["x", Type.integer];
-  assert_forward
+    ~precondition:["x", Type.integer]
+    ~variable:"x"
+    ~type_expression:"str"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
+    ~bottom:false
+    ~precondition:["x", Type.Bottom]
+    ~variable:"x"
+    ~type_expression:"str"
+    ~postcondition:["x", Type.string]
+    ();
+  assert_refinement_by_type_comparison
+    ~bottom:false
+    ~precondition:["x", Type.float]
+    ~variable:"x"
+    ~type_expression:"int"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
+    ~bottom:false
+    ~precondition:["x", Type.integer]
+    ~variable:"x"
+    ~type_expression:"1"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
     ~bottom:true
-    ["x", Type.integer]
-    "assert not isinstance(x, float)"
-    ["x", Type.integer];
-  assert_forward ~bottom:false ["x", Type.float] "assert not isinstance(x, int)" ["x", Type.float];
-  assert_forward
-    ["x", Type.optional (Type.union [Type.integer; Type.string])]
-    "assert not isinstance(x, int)"
-    ["x", Type.optional Type.string];
-  assert_forward
-    ["x", Type.optional (Type.union [Type.integer; Type.string])]
-    "assert not isinstance(x, type(None))"
-    ["x", Type.union [Type.integer; Type.string]];
-  assert_forward
-    ["my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string]; "x", Type.Top]
-    "assert isinstance(x, my_type)"
-    [
-      "my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string];
-      "x", Type.union [Type.integer; Type.string];
-    ];
-  assert_forward
-    [
-      ( "my_type",
-        Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
-      "x", Type.Top;
-    ]
-    "assert isinstance(x, my_type)"
-    [
-      ( "my_type",
-        Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
-      "x", Type.integer;
-    ];
+    ~precondition:["x", Type.integer]
+    ~negated:true
+    ~variable:"x"
+    ~type_expression:"int"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
+    ~bottom:true
+    ~precondition:["x", Type.integer]
+    ~negated:true
+    ~variable:"x"
+    ~type_expression:"float"
+    ~postcondition:["x", Type.integer]
+    ();
+  assert_refinement_by_type_comparison
+    ~bottom:false
+    ~precondition:["x", Type.float]
+    ~negated:true
+    ~variable:"x"
+    ~type_expression:"int"
+    ~postcondition:["x", Type.float]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.optional (Type.union [Type.integer; Type.string])]
+    ~negated:true
+    ~variable:"x"
+    ~type_expression:"int"
+    ~postcondition:["x", Type.optional Type.string]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.optional (Type.union [Type.integer; Type.string])]
+    ~negated:true
+    ~variable:"x"
+    ~type_expression:"type(None)"
+    ~postcondition:["x", Type.union [Type.integer; Type.string]]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:
+      ["my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string]; "x", Type.Top]
+    ~variable:"x"
+    ~type_expression:"my_type"
+    ~postcondition:
+      [
+        "my_type", Type.tuple [Type.meta Type.integer; Type.meta Type.string];
+        "x", Type.union [Type.integer; Type.string];
+      ]
+    ();
+  assert_refinement_by_type_comparison
+    ~precondition:
+      [
+        ( "my_type",
+          Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
+        "x", Type.Top;
+      ]
+    ~variable:"x"
+    ~type_expression:"my_type"
+    ~postcondition:
+      [
+        ( "my_type",
+          Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation (Type.meta Type.integer)) );
+        "x", Type.integer;
+      ]
+    ();
 
   (* Works for general expressions. *)
   assert_forward
@@ -1246,6 +1404,15 @@ let test_forward_statement context =
     ["x", Type.integer];
   assert_forward ~bottom:false ["x", Type.Bottom] "assert not isinstance(x, int)" ["x", Type.Bottom];
   assert_forward ~bottom:true [] "assert False" [];
+  assert_forward ~bottom:true [] "assert None" [];
+  assert_forward ~bottom:true [] "assert 0" [];
+  assert_forward ~bottom:true [] "assert 0.0" [];
+  assert_forward ~bottom:true [] "assert 0.0j" [];
+  assert_forward ~bottom:true [] "assert ''" [];
+  assert_forward ~bottom:true [] "assert b''" [];
+  assert_forward ~bottom:true [] "assert []" [];
+  assert_forward ~bottom:true [] "assert ()" [];
+  assert_forward ~bottom:true [] "assert {}" [];
   assert_forward ~bottom:false [] "assert (not True)" [];
 
   (* Raise. *)
@@ -1290,7 +1457,7 @@ let test_forward context =
         | _ -> failwith "unable to parse test"
       in
       List.fold
-        ~f:(fun state statement -> State.forward ~key:Cfg.entry_index ~statement state)
+        ~f:(fun state statement -> State.forward ~statement_key:Cfg.entry_index ~statement state)
         ~init:(create ~bottom:precondition_bottom precondition)
         parsed
     in

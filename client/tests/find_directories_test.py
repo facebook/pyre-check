@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -6,15 +6,17 @@
 # pyre-unsafe
 
 import tempfile
-import unittest
 from pathlib import Path
 from typing import Iterable, Optional, Tuple, Union
+
+import testslide
 
 from ..find_directories import (
     FoundRoot,
     find_global_and_local_root,
     find_global_root,
     find_parent_directory_containing_directory,
+    find_outermost_directory_containing_file,
     find_parent_directory_containing_file,
     find_typeshed_search_paths,
     get_relative_local_root,
@@ -22,7 +24,7 @@ from ..find_directories import (
 from .setup import ensure_directories_exists, ensure_files_exist
 
 
-class RelativeLocalRootTest(unittest.TestCase):
+class RelativeLocalRootTest(testslide.TestCase):
     def assert_relative_local_root(
         self, global_root: str, local_root: Optional[str], expected: Optional[str]
     ) -> None:
@@ -58,17 +60,23 @@ class RelativeLocalRootTest(unittest.TestCase):
         )
 
 
-class FindParentDirectoryContainingFileTest(unittest.TestCase):
+class FindParentDirectoryContainingFileTest(testslide.TestCase):
     def assert_find_parent_directory_containing_file(
         self, files: Iterable[str], base: str, target: str, expected: Optional[str]
     ) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()
-            ensure_files_exist(root_path, files)
-            self.assertEqual(
-                find_parent_directory_containing_file(root_path / base, target),
-                (root_path / expected) if expected is not None else None,
-            )
+        depth = len(base.split("/"))
+        with tempfile.TemporaryDirectory() as outer_root:
+            with tempfile.TemporaryDirectory(dir=outer_root) as root:
+                root_path = Path(root).resolve()
+                ensure_files_exist(root_path, files)
+                self.assertEqual(
+                    find_parent_directory_containing_file(
+                        root_path / base,
+                        target,
+                        stop_search_after=depth,
+                    ),
+                    (root_path / expected) if expected is not None else None,
+                )
 
     def test_find_parent_directory_containing_file(self) -> None:
         self.assert_find_parent_directory_containing_file(
@@ -150,17 +158,121 @@ class FindParentDirectoryContainingFileTest(unittest.TestCase):
         )
 
 
-class FindParentDirectoryContainingDirectoryTest(unittest.TestCase):
+class FindOutermostDirectoryContainingFileTest(testslide.TestCase):
+    def assert_find_outermost_directory_containing_file(
+        self, files: Iterable[str], base: str, target: str, expected: Optional[str]
+    ) -> None:
+        depth = len(base.split("/"))
+        with tempfile.TemporaryDirectory() as outer_root:
+            with tempfile.TemporaryDirectory(dir=outer_root) as root:
+                root_path = Path(root).resolve()
+                ensure_files_exist(root_path, files)
+                self.assertEqual(
+                    find_outermost_directory_containing_file(
+                        root_path / base,
+                        target,
+                        stop_search_after=depth,
+                    ),
+                    (root_path / expected) if expected is not None else None,
+                )
+
+    def test_find_outermost_directory_containing_file(self) -> None:
+        self.assert_find_outermost_directory_containing_file(
+            files=[], base=".", target="a", expected=None
+        )
+
+        self.assert_find_outermost_directory_containing_file(
+            files=["a"], base=".", target="a", expected="."
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a"], base=".", target="b", expected=None
+        )
+
+        self.assert_find_outermost_directory_containing_file(
+            files=["a", "b/c"], base="b", target="a", expected="."
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a", "b/c"], base="b", target="b", expected=None
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a", "b/c"], base="b", target="c", expected="b"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a", "b/c"], base="b", target="d", expected=None
+        )
+
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/b", "a/c/d"], base="a", target="b", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/b", "a/c/d"], base="a", target="c", expected=None
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/b", "a/c/d"], base="a/c", target="b", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/b", "a/c/d"], base="a/c", target="d", expected="a/c"
+        )
+
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"], base=".", target="d", expected=None
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"], base="a", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"], base="a", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"], base="a/b", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"],
+            base="a/b/c",
+            target="d",
+            expected="a",
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/d", "a/b/c/d"],
+            base="a/b/c/d",
+            target="d",
+            expected="a",
+        )
+
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/e", "a/b/c/f"], base="a", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/e", "a/b/c/f"], base="a/b", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/e", "a/b/c/f"], base="a/b/c", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/e", "a/b/c/f"], base="a/b/e", target="d", expected="a"
+        )
+        self.assert_find_outermost_directory_containing_file(
+            files=["a/d", "a/b/e", "a/b/c/f"], base="a/b/c/f", target="d", expected="a"
+        )
+
+
+class FindParentDirectoryContainingDirectoryTest(testslide.TestCase):
     def assert_find_parent_directory_containing_directory(
         self, files: Iterable[str], base: str, target: str, expected: Optional[str]
     ) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()
-            ensure_files_exist(root_path, files)
-            self.assertEqual(
-                find_parent_directory_containing_directory(root_path / base, target),
-                (root_path / expected) if expected is not None else None,
-            )
+        depth = len(base.split("/"))
+        with tempfile.TemporaryDirectory() as outer_root:
+            with tempfile.TemporaryDirectory(dir=outer_root) as root:
+                root_path = Path(root).resolve()
+                ensure_files_exist(root_path, files)
+                self.assertEqual(
+                    find_parent_directory_containing_directory(
+                        root_path / base,
+                        target,
+                        stop_search_after=depth,
+                    ),
+                    (root_path / expected) if expected is not None else None,
+                )
 
     def test_find_parent_directory_containing_directory(self) -> None:
         self.assert_find_parent_directory_containing_directory(
@@ -269,7 +381,7 @@ class FindParentDirectoryContainingDirectoryTest(unittest.TestCase):
         )
 
 
-class FindGlobalRootTest(unittest.TestCase):
+class FindGlobalRootTest(testslide.TestCase):
     def assert_find_global_root(
         self, files: Iterable[str], base: str, expected: Optional[str]
     ) -> None:
@@ -290,7 +402,7 @@ class FindGlobalRootTest(unittest.TestCase):
         )
 
 
-class FindGlobalAndLocalRootTest(unittest.TestCase):
+class FindGlobalAndLocalRootTest(testslide.TestCase):
     @staticmethod
     def to_found_root(
         root_path: Path, expected: Union[None, str, Tuple[str, str]]
@@ -371,7 +483,7 @@ class FindGlobalAndLocalRootTest(unittest.TestCase):
         )
 
 
-class FindTypeshedTest(unittest.TestCase):
+class FindTypeshedTest(testslide.TestCase):
     def test_find_typeshed_search_paths__no_third_party(self) -> None:
         self.maxDiff = None
         with tempfile.TemporaryDirectory() as root:

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -28,7 +28,7 @@ let get_panda_type resolution = function
 let is_string_list list =
   let is_string element =
     match element.Node.value with
-    | Expression.String _ -> true
+    | Expression.Constant (Constant.String _) -> true
     | _ -> false
   in
   List.for_all ~f:is_string list
@@ -49,7 +49,8 @@ let analyze_dataFrame_getitem base_taint argument =
     ForwardState.Tree.collapse ~transform:Fn.id base_taint |> ForwardState.Tree.create_leaf
   in
   match argument.Node.value with
-  | Expression.String _ -> ForwardState.Tree.read [AccessPath.get_index argument] base_taint
+  | Expression.Constant (Constant.String _) ->
+      ForwardState.Tree.read [AccessPath.get_index argument] base_taint
   | List arguments when is_string_list arguments ->
       let fold_taint position taint_so_far arg =
         let label = [AccessPath.get_index arg] in
@@ -64,10 +65,10 @@ let analyze_dataFrame_getitem base_taint argument =
   | _ -> collapsed_taint
 
 
-let analyze_dataFrame_setitem resolution base taint index state =
-  let root_path = AccessPath.of_expression ~resolution base in
+let analyze_dataFrame_setitem base taint index state =
+  let root_path = AccessPath.of_expression base in
   match index.Node.value with
-  | Expression.String _ ->
+  | Expression.Constant (Constant.String _) ->
       let access_path = root_path >>| AccessPath.extend ~path:[AccessPath.get_index index] in
       store_taint_option access_path taint state
   | List arguments when is_string_list arguments ->
@@ -136,7 +137,7 @@ let analyze_dataFrame_apply analyze_expression_with_state base_taint func_argume
       },
       {
         Call.Argument.name = Some { Node.value = "$parameter$axis"; _ };
-        Call.Argument.value = { Node.value = Integer 1; _ };
+        Call.Argument.value = { Node.value = Constant (Constant.Integer 1); _ };
       } ) ->
       let fold_taint taint_so_far argument =
         get_argument_taint parameter.Node.value argument |> ForwardState.Tree.join taint_so_far
@@ -157,7 +158,7 @@ let analyze_dataFrame analyze_expression resolution callee arguments taint state
       match arguments with
       | [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] ->
           let taint, state = analyze_expression ~resolution ~state ~expression:value in
-          let state = analyze_dataFrame_setitem resolution base taint index state in
+          let state = analyze_dataFrame_setitem base taint index state in
           ForwardState.Tree.empty, state
       | _ -> taint, state)
   | { Node.value = Expression.Name (Name.Attribute { base; attribute = "apply"; _ }); _ } -> (

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -43,274 +43,301 @@ module InitialCallablesSharedMemory = Memory.Serializer (struct
   let deserialize = Fn.id
 end)
 
-module Cache : sig
-  val load_environment : configuration:Configuration.Analysis.t -> TypeEnvironment.t option
+module Cache = struct
+  type cached = { module_tracker: Analysis.ModuleTracker.t }
 
-  val save_environment
-    :  configuration:Configuration.Analysis.t ->
-    environment:TypeEnvironment.t ->
-    unit
+  type error =
+    | InvalidByCodeChange
+    | LoadError
+    | NotFound
+    | Disabled
 
-  val load_initial_callables : configuration:Configuration.Analysis.t -> initial_callables option
-
-  val save_initial_callables
-    :  configuration:Configuration.Analysis.t ->
-    initial_callables:initial_callables ->
-    unit
-
-  val load_overrides : configuration:Configuration.Analysis.t -> DependencyGraph.overrides option
-
-  val save_overrides
-    :  configuration:Configuration.Analysis.t ->
-    overrides:DependencyGraph.overrides ->
-    unit
-
-  val load_call_graph : configuration:Configuration.Analysis.t -> DependencyGraph.callgraph option
-
-  val save_call_graph
-    :  configuration:Configuration.Analysis.t ->
-    callgraph:DependencyGraph.callgraph ->
-    unit
-end = struct
-  let is_initialized = ref false
+  type t = {
+    cache: (cached, error) Result.t;
+    save_cache: bool;
+    scheduler: Scheduler.t;
+    configuration: Configuration.Analysis.t;
+  }
 
   let get_save_directory ~configuration =
-    Path.create_relative
+    PyrePath.create_relative
       ~root:(Configuration.Analysis.log_directory configuration)
       ~relative:".pysa_cache"
 
 
   let get_shared_memory_save_path ~configuration =
-    Path.append (get_save_directory ~configuration) ~element:"sharedmem"
+    PyrePath.append (get_save_directory ~configuration) ~element:"sharedmem"
 
 
   let get_overrides_save_path ~configuration =
-    Path.append (get_save_directory ~configuration) ~element:"overrides"
+    PyrePath.append (get_save_directory ~configuration) ~element:"overrides"
 
 
   let get_callgraph_save_path ~configuration =
-    Path.append (get_save_directory ~configuration) ~element:"callgraph"
+    PyrePath.append (get_save_directory ~configuration) ~element:"callgraph"
 
 
-  let invalidate_cache ~configuration =
-    let directory = get_save_directory ~configuration in
-    let remove_if_exists path =
-      match Sys.file_exists path with
-      | `Yes -> Core.Unix.remove path
-      | `No
-      | `Unknown ->
-          ()
+  let exception_to_error ~error ~message ~f =
+    try f () with
+    | exception_ ->
+        Log.error "Error %s:\n%s" message (Exn.to_string exception_);
+        Error error
+
+
+  let ignore_result (_ : ('a, 'b) result) = ()
+
+  let initialize_shared_memory ~configuration =
+    let path = get_shared_memory_save_path ~configuration in
+    if not (PyrePath.file_exists path) then (
+      Log.warning "Could not find a cached state.";
+      Error NotFound)
+    else
+      exception_to_error ~error:LoadError ~message:"loading cached state" ~f:(fun () ->
+          let _ = Memory.get_heap_handle configuration in
+          Memory.load_shared_memory ~path:(PyrePath.absolute path) ~configuration;
+          Log.warning
+            "Cached state successfully loaded from `%s`."
+            (PyrePath.absolute (get_save_directory ~configuration));
+          Ok ())
+
+
+  let load_module_tracker ~scheduler ~configuration =
+    let open Result in
+    Log.info "Determining if source files have changed since cache was created.";
+    exception_to_error ~error:LoadError ~message:"loading module tracker from cache" ~f:(fun () ->
+        Ok (Analysis.ModuleTracker.SharedMemory.load ()))
+    >>= fun old_module_tracker ->
+    let new_module_tracker = Analysis.ModuleTracker.create configuration in
+    let changed_paths =
+      let is_pysa_model path = String.is_suffix ~suffix:".pysa" (PyrePath.get_suffix_path path) in
+      let is_taint_config path = String.is_suffix ~suffix:"taint.config" (PyrePath.absolute path) in
+      ChangedPaths.compute_locally_changed_paths
+        ~scheduler
+        ~configuration
+        ~old_module_tracker
+        ~new_module_tracker
+      |> List.filter ~f:(fun path -> not (is_pysa_model path || is_taint_config path))
     in
-    Memory.reset_shared_memory ();
-    List.iter ~f:Path.remove (Path.list ~root:directory ());
-    remove_if_exists (Path.absolute directory)
+    match changed_paths with
+    | [] -> Ok new_module_tracker
+    | _ ->
+        Log.warning "Changes to source files detected, ignoring existing cache.";
+        Error InvalidByCodeChange
 
 
-  let is_pysa_model path = String.is_suffix ~suffix:".pysa" (Path.get_suffix_path path)
+  let load ~scheduler ~configuration ~enabled =
+    if not enabled then
+      { cache = Error Disabled; save_cache = false; scheduler; configuration }
+    else
+      let open Result in
+      let module_tracker =
+        initialize_shared_memory ~configuration
+        >>= fun () -> load_module_tracker ~scheduler ~configuration
+      in
+      let cache =
+        match module_tracker with
+        | Ok module_tracker -> Ok { module_tracker }
+        | Error error ->
+            Memory.reset_shared_memory ();
+            Error error
+      in
+      { cache; save_cache = true; scheduler; configuration }
 
-  let is_taint_config path = String.is_suffix ~suffix:"taint.config" (Path.absolute path)
+
+  let load_type_environment ~module_tracker =
+    exception_to_error ~error:LoadError ~message:"loading type environment from cache" ~f:(fun () ->
+        let ast_environment = AstEnvironment.load module_tracker in
+        let environment =
+          Analysis.AnnotatedGlobalEnvironment.create ast_environment |> TypeEnvironment.create
+        in
+        Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
+        Log.info "Loaded cached type environment.";
+        Ok environment)
+
+
+  let save_type_environment ~scheduler ~configuration ~environment =
+    exception_to_error ~error:() ~message:"saving type environment to cache" ~f:(fun () ->
+        Memory.SharedMemory.collect `aggressive;
+        let module_tracker = TypeEnvironment.module_tracker environment in
+        let ast_environment = TypeEnvironment.ast_environment environment in
+        ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;
+        Analysis.ModuleTracker.SharedMemory.store module_tracker;
+        AstEnvironment.store ast_environment;
+        Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
+        Log.info "Saved type environment to cache shared memory.";
+        Ok ())
+
+
+  let type_environment { cache; save_cache; scheduler; configuration } f =
+    let type_environment =
+      match cache with
+      | Ok { module_tracker } -> load_type_environment ~module_tracker |> Result.ok
+      | _ -> None
+    in
+    match type_environment with
+    | Some type_environment -> type_environment
+    | None ->
+        let environment = f () in
+        if save_cache then
+          save_type_environment ~scheduler ~configuration ~environment |> ignore_result;
+        environment
+
+
+  let load_initial_callables () =
+    exception_to_error
+      ~error:LoadError
+      ~message:"loading initial callables from cache"
+      ~f:(fun () ->
+        let initial_callables = InitialCallablesSharedMemory.load () in
+        Log.info "Loaded cached initial callables.";
+        Ok initial_callables)
+
 
   let ensure_save_directory_exists ~configuration =
-    let directory = Path.absolute (get_save_directory ~configuration) in
+    let directory = PyrePath.absolute (get_save_directory ~configuration) in
     try Core.Unix.mkdir directory with
     (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
     | Core.Unix.Unix_error ((EEXIST | EISDIR), _, _) -> ()
     | e -> raise e
 
 
-  let init_shared_memory ~configuration =
-    if not !is_initialized then (
-      let path = get_shared_memory_save_path ~configuration in
-      try
-        let _ = Memory.get_heap_handle configuration in
-        Memory.load_shared_memory ~path:(Path.absolute path) ~configuration;
-        is_initialized := true;
-        Log.warning
-          "Loaded cached state. Please try deleting the cache folder at %s and running Pysa again \
-           if unexpected results occur."
-          (Path.absolute (get_save_directory ~configuration))
-      with
-      | error ->
-          is_initialized := false;
-          raise error)
-
-
   let save_shared_memory ~configuration =
-    let path = get_shared_memory_save_path ~configuration in
-    try
-      Log.info "Saving shared memory state to cache file...";
-      ensure_save_directory_exists ~configuration;
-      Memory.save_shared_memory ~path:(Path.absolute path) ~configuration;
-      Log.info "Saved shared memory state to cache file: %s" (Path.absolute path)
-    with
-    | error when not (Path.file_exists path) ->
-        Log.error "Error saving cached state to file: %s" (Exn.to_string error)
-    | _ -> ()
-
-
-  let load_environment ~configuration =
-    let path = get_shared_memory_save_path ~configuration in
-    try
-      init_shared_memory ~configuration;
-      let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
-      let ast_environment = AstEnvironment.load module_tracker in
-      let environment =
-        Analysis.AnnotatedGlobalEnvironment.create ast_environment |> TypeEnvironment.create
-      in
-      let scheduler = Scheduler.create ~configuration () in
-      let changed_paths =
-        Log.info "Determining if source files have changed since cache was created.";
-        ChangedPaths.compute_locally_changed_paths
-          ~scheduler
-          ~configuration
-          ~module_tracker
-          ~ast_environment:(AstEnvironment.read_only ast_environment)
-        |> List.filter ~f:(fun path -> not (is_pysa_model path || is_taint_config path))
-      in
-      match changed_paths with
-      | [] ->
-          Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
-          Log.info "Loaded type environment from cache shared memory.";
-          Some environment
-      | _ ->
-          Log.info "Changes to source files detected, existing cache has been invalidated.";
-          invalidate_cache ~configuration;
-          None
-    with
-    | error when Path.file_exists path ->
-        Log.error
-          "Error loading cached type environment from shared memory: %s"
-          (Exn.to_string error);
-        (* Special case to deal with instances where the type environment doesn't load successfully
-           but the cached callables and overrides do, leading to odd behavior. If the type
-           environment doesn't load, we should invalidate the entire cache. *)
-        invalidate_cache ~configuration;
-        None
-    | _ -> None
-
-
-  let save_environment ~configuration ~environment =
-    let path = get_shared_memory_save_path ~configuration in
-    try
-      Memory.SharedMemory.collect `aggressive;
-      TypeEnvironment.module_tracker environment |> Analysis.ModuleTracker.SharedMemory.store;
-      TypeEnvironment.ast_environment environment |> AstEnvironment.store;
-      Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
-      Log.info "Saved type environment to cache shared memory."
-    with
-    | error when not (Path.file_exists path) ->
-        Log.error "Error saving type environment to cache shared memory: %s" (Exn.to_string error)
-    | _ -> ()
-
-
-  let load_initial_callables ~configuration =
-    let path = get_shared_memory_save_path ~configuration in
-    try
-      let initial_callables = InitialCallablesSharedMemory.load () in
-      Log.info "Loaded initial callables from cache shared memory.";
-      Some initial_callables
-    with
-    | error when Path.file_exists path ->
-        Log.error
-          "Error loading cached initial callables from shared memory: %s"
-          (Exn.to_string error);
-        None
-    | _ -> None
+    exception_to_error ~error:() ~message:"saving cached state to file" ~f:(fun () ->
+        let path = get_shared_memory_save_path ~configuration in
+        Log.info "Saving shared memory state to cache file...";
+        ensure_save_directory_exists ~configuration;
+        Memory.save_shared_memory ~path:(PyrePath.absolute path) ~configuration;
+        Log.info "Saved shared memory state to cache file: `%s`" (PyrePath.absolute path);
+        Ok ())
 
 
   let save_initial_callables ~configuration ~initial_callables =
-    let path = get_shared_memory_save_path ~configuration in
-    try
-      Memory.SharedMemory.collect `aggressive;
-      InitialCallablesSharedMemory.store initial_callables;
-      Log.info "Saved initial callables to cache shared memory.";
-      (* Shared memory is saved to file after caching the callables to shared memory. The remaining
-         overrides and callgraph to be cached don't use shared memory and are saved as serialized
-         sexps to separate files. *)
-      save_shared_memory ~configuration
-    with
-    | error when not (Path.file_exists path) ->
-        Log.error "Error saving initial callables to cache shared memory: %s" (Exn.to_string error)
-    | _ -> ()
+    exception_to_error ~error:() ~message:"saving initial callables to cache" ~f:(fun () ->
+        Memory.SharedMemory.collect `aggressive;
+        InitialCallablesSharedMemory.store initial_callables;
+        Log.info "Saved initial callables to cache shared memory.";
+        (* Shared memory is saved to file after caching the callables to shared memory. The
+           remaining overrides and callgraph to be cached don't use shared memory and are saved as
+           serialized sexps to separate files. *)
+        save_shared_memory ~configuration)
+
+
+  let initial_callables { cache; save_cache; configuration; _ } f =
+    let initial_callables =
+      match cache with
+      | Ok _ -> load_initial_callables () |> Result.ok
+      | _ -> None
+    in
+    match initial_callables with
+    | Some initial_callables -> initial_callables
+    | None ->
+        let callables = f () in
+        if save_cache then
+          save_initial_callables ~configuration ~initial_callables:callables |> ignore_result;
+        callables
 
 
   let load_overrides ~configuration =
-    let path = get_overrides_save_path ~configuration in
-    try
-      let sexp = Sexplib.Sexp.load_sexp (Path.absolute path) in
-      let overrides = Reference.Map.t_of_sexp (Core.List.t_of_sexp Reference.t_of_sexp) sexp in
-      Log.info "Loaded overrides from cache.";
-      Some overrides
-    with
-    | error when Path.file_exists path ->
-        Log.error "Error loading overrides from cache: %s" (Exn.to_string error);
-        None
-    | _ -> None
+    exception_to_error ~error:LoadError ~message:"loading overrides from cache" ~f:(fun () ->
+        let path = get_overrides_save_path ~configuration in
+        let sexp = Sexplib.Sexp.load_sexp (PyrePath.absolute path) in
+        let overrides = Reference.Map.t_of_sexp (Core.List.t_of_sexp Reference.t_of_sexp) sexp in
+        Log.info "Loaded overrides from cache.";
+        Ok overrides)
 
 
   let save_overrides ~configuration ~overrides =
-    let path = get_overrides_save_path ~configuration in
-    try
-      let data = Reference.Map.sexp_of_t (Core.List.sexp_of_t Reference.sexp_of_t) overrides in
-      ensure_save_directory_exists ~configuration;
-      Sexplib.Sexp.save (Path.absolute path) data;
-      Log.info "Saved overrides to cache file: %s" (Path.absolute path)
-    with
-    | error when not (Path.file_exists path) ->
-        Log.error "Error saving overrides to cache: %s" (Exn.to_string error)
-    | _ -> ()
+    exception_to_error ~error:() ~message:"saving overrides to cache" ~f:(fun () ->
+        let path = get_overrides_save_path ~configuration in
+        let data = Reference.Map.sexp_of_t (Core.List.sexp_of_t Reference.sexp_of_t) overrides in
+        ensure_save_directory_exists ~configuration;
+        Sexplib.Sexp.save (PyrePath.absolute path) data;
+        Log.info "Saved overrides to cache file: `%s`" (PyrePath.absolute path);
+        Ok ())
+
+
+  let overrides { cache; save_cache; configuration; _ } f =
+    let overrides =
+      match cache with
+      | Ok _ -> load_overrides ~configuration |> Result.ok
+      | _ -> None
+    in
+    match overrides with
+    | Some overrides -> overrides
+    | None ->
+        let overrides = f () in
+        if save_cache then save_overrides ~configuration ~overrides |> ignore_result;
+        overrides
 
 
   let load_call_graph ~configuration =
-    let path = get_callgraph_save_path ~configuration in
-    try
-      let sexp = Sexplib.Sexp.load_sexp (Path.absolute path) in
-      let callgraph = Target.CallableMap.t_of_sexp (Core.List.t_of_sexp Target.t_of_sexp) sexp in
-      Log.info "Loaded call graph from cache.";
-      Some callgraph
-    with
-    | error when Path.file_exists path ->
-        Log.error "Error loading call graph from cache: %s" (Exn.to_string error);
-        None
-    | _ -> None
+    exception_to_error ~error:LoadError ~message:"loading call graph from cache" ~f:(fun () ->
+        let path = get_callgraph_save_path ~configuration in
+        let sexp = Sexplib.Sexp.load_sexp (PyrePath.absolute path) in
+        let callgraph = Target.CallableMap.t_of_sexp (Core.List.t_of_sexp Target.t_of_sexp) sexp in
+        Log.info "Loaded call graph from cache.";
+        Ok callgraph)
 
 
-  let save_call_graph ~configuration ~callgraph =
-    let path = get_callgraph_save_path ~configuration in
-    try
-      let data = Target.CallableMap.sexp_of_t (Core.List.sexp_of_t Target.sexp_of_t) callgraph in
-      ensure_save_directory_exists ~configuration;
-      Sexplib.Sexp.save (Path.absolute path) data;
-      Log.info "Saved call graph to cache file: %s" (Path.absolute path)
-    with
-    | error when not (Path.file_exists path) ->
-        Log.error "Error saving call graph to cache: %s" (Exn.to_string error)
-    | _ -> ()
+  let save_call_graph ~configuration ~call_graph =
+    exception_to_error ~error:() ~message:"saving call graph to cache" ~f:(fun () ->
+        let path = get_callgraph_save_path ~configuration in
+        let data = Target.CallableMap.sexp_of_t (Core.List.sexp_of_t Target.sexp_of_t) call_graph in
+        ensure_save_directory_exists ~configuration;
+        Sexplib.Sexp.save (PyrePath.absolute path) data;
+        Log.info "Saved call graph to cache file: `%s`" (PyrePath.absolute path);
+        Ok ())
+
+
+  let call_graph { cache; save_cache; configuration; _ } f =
+    let call_graph =
+      match cache with
+      | Ok _ -> load_call_graph ~configuration |> Result.ok
+      | _ -> None
+    in
+    match call_graph with
+    | Some call_graph -> call_graph
+    | None ->
+        let call_graph = f () in
+        if save_cache then save_call_graph ~configuration ~call_graph |> ignore_result;
+        call_graph
 end
 
 (* Perform a full type check and build a type environment. *)
-let type_check ~scheduler ~configuration ~use_cache =
-  let cached_environment = if use_cache then Cache.load_environment ~configuration else None in
-  match cached_environment with
-  | Some loaded_environment ->
-      Log.warning "Using cached type environment.";
-      loaded_environment
-  | None ->
+let type_check ~scheduler ~configuration ~cache =
+  Cache.type_environment cache (fun () ->
       let configuration =
         (* In order to get an accurate call graph and type information, we need to ensure that we
            schedule a type check for external files. *)
-        { configuration with analyze_external_sources = true }
+        { configuration with Configuration.Analysis.analyze_external_sources = true }
       in
-      if use_cache then
-        Log.info "No cached type environment found.";
       Check.check
         ~scheduler
         ~configuration
         ~call_graph_builder:(module Analysis.Callgraph.NullBuilder)
-      |> fun { environment; _ } ->
-      if use_cache then
-        Cache.save_environment ~configuration ~environment;
-      environment
+      |> fun { environment; _ } -> environment)
+
+
+let parse_and_save_decorators_to_skip
+    ~inline_decorators
+    { Configuration.Analysis.taint_model_paths; _ }
+  =
+  Analysis.InlineDecorator.set_should_inline_decorators inline_decorators;
+  if inline_decorators then (
+    let timer = Timer.start () in
+    Log.info "Getting decorators to skip when inlining...";
+    let model_sources = Taint.ModelParser.get_model_sources ~paths:taint_model_paths in
+    let decorators_to_skip =
+      List.concat_map model_sources ~f:(fun (path, source) ->
+          Analysis.InlineDecorator.decorators_to_skip ~path source)
+    in
+    List.iter decorators_to_skip ~f:(fun decorator ->
+        Analysis.InlineDecorator.DecoratorsToSkip.add decorator decorator);
+    Statistics.performance
+      ~name:"Getting decorators to skip when inlining"
+      ~phase_name:"Getting decorators to skip when inlining"
+      ~timer
+      ())
 
 
 let record_and_merge_call_graph ~environment ~call_graph ~source =
@@ -438,51 +465,25 @@ let fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifier
 
 (* Traverse the AST to find all callables (functions and methods), filtering out callables from test
    files. *)
-let fetch_initial_callables ~scheduler ~configuration ~environment ~qualifiers ~use_cache =
-  let cached_initial_callables =
-    if use_cache then Cache.load_initial_callables ~configuration else None
-  in
-  match cached_initial_callables with
-  | Some initial_callables ->
-      Log.warning "Using cached results for initial callables to analyze.";
-      initial_callables
-  | _ ->
-      if use_cache then
-        Log.info "No cached initial callables found.";
-      Log.info "Fetching initial callables to analyze...";
+let fetch_initial_callables ~scheduler ~configuration ~cache ~environment ~qualifiers =
+  Cache.initial_callables cache (fun () ->
       let timer = Timer.start () in
       let initial_callables =
         fetch_callables_to_analyze ~scheduler ~environment ~configuration ~qualifiers
       in
-      if use_cache then
-        Cache.save_initial_callables ~configuration ~initial_callables;
       Statistics.performance
         ~name:"Fetched initial callables to analyze"
         ~phase_name:"Fetching initial callables to analyze"
         ~timer
         ();
-      initial_callables
+      initial_callables)
 
 
 (* Compute the override graph, which maps overide_targets (parent methods which are overridden) to
    all concrete methods overriding them, and save it to shared memory. *)
-let record_overrides_for_qualifiers
-    ~configuration
-    ~use_cache
-    ~scheduler
-    ~environment
-    ~skip_overrides
-    ~qualifiers
-  =
+let record_overrides_for_qualifiers ~scheduler ~cache ~environment ~skip_overrides ~qualifiers =
   let overrides =
-    let cached_overrides = if use_cache then Cache.load_overrides ~configuration else None in
-    match cached_overrides with
-    | Some overrides ->
-        Log.warning "Using cached overrides.";
-        overrides
-    | _ ->
-        if use_cache then
-          Log.info "No cached overrides found.";
+    Cache.overrides cache (fun () ->
         let combine ~key:_ left right = List.rev_append left right in
         let build_overrides overrides qualifier =
           try
@@ -504,19 +505,15 @@ let record_overrides_for_qualifiers
                 untracked_type;
               overrides
         in
-        let new_overrides =
-          Scheduler.map_reduce
-            scheduler
-            ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-            ~initial:DependencyGraph.empty_overrides
-            ~map:(fun _ qualifiers ->
-              List.fold qualifiers ~init:DependencyGraph.empty_overrides ~f:build_overrides)
-            ~reduce:(Map.merge_skewed ~combine)
-            ~inputs:qualifiers
-            ()
-        in
-        if use_cache then Cache.save_overrides ~configuration ~overrides:new_overrides;
-        new_overrides
+        Scheduler.map_reduce
+          scheduler
+          ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+          ~initial:DependencyGraph.empty_overrides
+          ~map:(fun _ qualifiers ->
+            List.fold qualifiers ~init:DependencyGraph.empty_overrides ~f:build_overrides)
+          ~reduce:(Map.merge_skewed ~combine)
+          ~inputs:qualifiers
+          ())
   in
   let {
     Taint.TaintConfiguration.analysis_model_constraints = { maximum_overrides_to_analyze; _ };
@@ -535,23 +532,9 @@ let record_overrides_for_qualifiers
 (* Build the callgraph, a map from caller to callees. The overrides must be computed first because
    we depend on a global shared memory graph to include overrides in the call graph. Without it,
    we'll underanalyze and have an inconsistent fixpoint. *)
-let build_call_graph
-    ~scheduler
-    ~static_analysis_configuration:
-      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as
-      static_analysis_configuration)
-    ~environment
-    ~qualifiers
-  =
-  let cached_call_graph = if use_cache then Cache.load_call_graph ~configuration else None in
-  match cached_call_graph with
-  | Some cached_call_graph ->
-      Log.warning "Using cached call graph.";
-      cached_call_graph
-  | _ ->
-      if use_cache then
-        Log.info "No cached call graph found.";
-      let new_call_graph =
+let build_call_graph ~scheduler ~static_analysis_configuration ~cache ~environment ~qualifiers =
+  let call_graph =
+    Cache.call_graph cache (fun () ->
         let build_call_graph call_graph qualifier =
           try
             get_source ~environment qualifier
@@ -574,13 +557,14 @@ let build_call_graph
             List.fold qualifiers ~init:Target.CallableMap.empty ~f:build_call_graph)
           ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
           ~inputs:qualifiers
-          ()
-      in
-      if use_cache then
-        Cache.save_call_graph ~configuration ~callgraph:new_call_graph;
-      if static_analysis_configuration.dump_call_graph then
-        DependencyGraph.from_callgraph new_call_graph |> DependencyGraph.dump ~configuration;
-      new_call_graph
+          ())
+  in
+  let () =
+    match static_analysis_configuration.Configuration.StaticAnalysis.dump_call_graph with
+    | Some path -> DependencyGraph.from_callgraph call_graph |> DependencyGraph.dump ~path
+    | None -> ()
+  in
+  call_graph
 
 
 (* Merge overrides and callgraph into a combined dependency graph, and prune anything not linked to
@@ -619,9 +603,8 @@ let build_dependency_graph ~callables_with_dependency_information ~callgraph ~ov
 let analyze
     ~scheduler
     ~analysis
-    ~static_analysis_configuration:
-      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as
-      static_analysis_configuration)
+    ~static_analysis_configuration
+    ~cache
     ~filename_lookup
     ~environment
     ~qualifiers
@@ -645,13 +628,7 @@ let analyze
   Log.info "Computing overrides...";
   let timer = Timer.start () in
   let { DependencyGraphSharedMemory.overrides; skipped_overrides } =
-    record_overrides_for_qualifiers
-      ~configuration
-      ~use_cache
-      ~scheduler
-      ~environment
-      ~skip_overrides
-      ~qualifiers
+    record_overrides_for_qualifiers ~scheduler ~cache ~environment ~skip_overrides ~qualifiers
   in
   let override_dependencies = DependencyGraph.from_overrides overrides in
   Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
@@ -659,7 +636,7 @@ let analyze
   Log.info "Building call graph...";
   let timer = Timer.start () in
   let callgraph =
-    build_call_graph ~scheduler ~static_analysis_configuration ~environment ~qualifiers
+    build_call_graph ~scheduler ~static_analysis_configuration ~cache ~environment ~qualifiers
   in
   Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
 

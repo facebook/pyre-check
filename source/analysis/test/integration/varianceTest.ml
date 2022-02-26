@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -23,7 +23,7 @@ let test_check_variance context =
       def foo(input: str) -> typing.List[int]:
         return typing.cast(typing.List[float], input)
     |}
-    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.List[float]`."];
+    ["Incompatible return type [7]: Expected `List[int]` but got `List[float]`."];
   assert_type_errors
     {|
       import typing
@@ -32,7 +32,7 @@ let test_check_variance context =
     |}
     [
       "Missing parameter annotation [2]: Parameter `input` has no type specified.";
-      "Incompatible return type [7]: Expected `typing.List[int]` but got `unknown`.";
+      "Incompatible return type [7]: Expected `List[int]` but got `unknown`.";
       "Unbound name [10]: Name `unknown` is used but not defined in the current scope.";
     ];
   assert_type_errors
@@ -170,8 +170,8 @@ let test_check_literal_variance context =
         return x
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `typing.List[float]` but is "
-      ^ "used as type `typing.List[int]`.";
+      "Incompatible variable type [9]: x is declared to have type `List[float]` but is "
+      ^ "used as type `List[int]`.";
     ];
   assert_type_errors
     {|
@@ -181,8 +181,8 @@ let test_check_literal_variance context =
       x = y
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `typing.List[float]` but is "
-      ^ "used as type `typing.List[int]`.";
+      "Incompatible variable type [9]: x is declared to have type `List[float]` but is "
+      ^ "used as type `List[int]`.";
     ];
   assert_type_errors
     {|
@@ -205,8 +205,8 @@ let test_check_literal_variance context =
       x = { "s": "" }
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `typing.Dict[str, float]` but "
-      ^ "is used as type `typing.Dict[str, str]`.";
+      "Incompatible variable type [9]: x is declared to have type `Dict[str, float]` but "
+      ^ "is used as type `Dict[str, str]`.";
     ];
   assert_type_errors
     {|
@@ -216,8 +216,23 @@ let test_check_literal_variance context =
       x = y
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `typing.Dict[str, float]` but "
-      ^ "is used as type `typing.Dict[str, int]`.";
+      "Incompatible variable type [9]: x is declared to have type `Dict[str, float]` but "
+      ^ "is used as type `Dict[str, int]`.";
+    ];
+
+  (* Attributes. *)
+  assert_type_errors
+    {|
+      import typing
+      class Foo():
+        x: typing.List[float] = []
+      y: typing.List[int] = [1]
+      z = Foo()
+      z.x = y
+    |}
+    [
+      "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type \
+       `List[float]` but is used as type `List[int]`.";
     ];
 
   (* Returns. *)
@@ -235,7 +250,7 @@ let test_check_literal_variance context =
         a = [1]
         return a
     |}
-    ["Incompatible return type [7]: Expected `typing.List[float]` but got `typing.List[int]`."];
+    ["Incompatible return type [7]: Expected `List[float]` but got `List[int]`."];
 
   assert_type_errors
     {|
@@ -251,10 +266,7 @@ let test_check_literal_variance context =
         a = {1: 1}
         return a
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Dict[float, float]` but got \
-       `typing.Dict[int, int]`.";
-    ];
+    ["Incompatible return type [7]: Expected `Dict[float, float]` but got `Dict[int, int]`."];
   assert_type_errors
     {|
       import typing
@@ -276,7 +288,7 @@ let test_check_literal_variance context =
         a = {1}
         return a
     |}
-    ["Incompatible return type [7]: Expected `typing.Set[float]` but got `typing.Set[int]`."];
+    ["Incompatible return type [7]: Expected `Set[float]` but got `Set[int]`."];
   assert_type_errors
     {|
       import typing
@@ -296,8 +308,8 @@ let test_check_literal_variance context =
         return foo(a)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.List[float]` "
-      ^ "for 1st positional only parameter to call `foo` but got `typing.List[int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `List[float]` but got `List[int]`.";
     ];
   assert_type_errors
     ~show_error_traces:true
@@ -310,11 +322,10 @@ let test_check_literal_variance context =
         return foo(a)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.List[float]` "
-      ^ "for 1st positional only parameter to call `foo` but got `typing.List[int]`. "
-      ^ "This call might modify the type of the parameter. See "
-      ^ "https://pyre-check.org/docs/errors#covariance-and-contravariance "
-      ^ "for mutable container errors.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `List[float]` but got `List[int]`. This call might modify the type of the parameter. See \
+       https://pyre-check.org/docs/errors#covariance-and-contravariance for mutable container \
+       errors.";
     ];
   assert_type_errors
     {|
@@ -335,8 +346,8 @@ let test_check_literal_variance context =
         return foo(a)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Dict[str, float]` for "
-      ^ "1st positional only parameter to call `foo` but got `typing.Dict[str, int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `Dict[str, float]` but got `Dict[str, int]`.";
     ]
 
 

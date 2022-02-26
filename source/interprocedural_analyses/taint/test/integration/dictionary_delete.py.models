@@ -1,0 +1,18 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary_delete.pop_key",
+    "tito": [
+      {
+        "port": "formal(my_dict)[key]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}

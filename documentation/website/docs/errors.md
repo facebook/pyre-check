@@ -44,7 +44,7 @@ my_list: List[int] = [1]
 my_list = to_seconds(my_list) # Type checks!
 ```
 
-`typing.Iterable` is an immutable variant for lists that allows accessing the list without modifying it. Most commonly used generic containers have immutable variants, and I would encourage you to use them for function parameters whenever you don't need to modify a container in your function.
+Most commonly used generic containers have immutable variants, and I would encourage you to use them for function parameters whenever you don't need to modify a container in your function.
 Here are some immutable variants for commonly used containers:
 
 ```python
@@ -901,7 +901,64 @@ def decorator(f: Callable[P, int]) -> Callable[P, None]:
 
 ### 30, 36: Terminating Analysis, Mutually Recursive Type Variables
 
-Either of these errors indicates a bug in Pyre. Please open an issue on [Github](https://github.com/facebook/pyre/issues).
+#### Overly-complex Functions
+
+In very rare cases where a function has a lot of `if` branches or `for`-loops, Pyre may raise an error saying that is unable to analyze the function fully. Analyzing extremely complex functions in depth can be costly, so Pyre only does so up to a limit. This means that it won't infer precise types for some variables and won't catch errors related to their usage. For example:
+
+```python
+def my_function() -> None:
+    u = 42
+
+    if foo():
+        x1 = bar()
+        if x1:
+            x2 = baz()
+            if x2:
+                # <more branches of code>
+        else:
+            # <more branches>
+
+        if foo2():
+            # <code>
+
+        if foo3():
+            # <even more branches>
+        # <and even more branches>
+
+$ pyre
+Analysis failure [30]: Pyre gave up inferring types for some variables because function `foo` was too complex.
+Please simplify the function by factoring out some if-statements or for-loops.
+```
+
+To remedy this, factor out some of the branching code into separate functions out that each function has a limited amount of branching logic:
+
+```python
+def do_stuff() -> None:
+    if foo():
+        # <code>
+
+    if foo():
+        # <even more branches>
+
+    # <and even more branches>
+
+def bar() -> None:
+    u = 42
+
+    if foo():
+        x1 = bar()
+        if x1:
+            x2 = baz()
+            if x2:
+                # <more branches of code>
+        else:
+            # <more branches>
+
+        do_stuff()
+```
+#### Other Analysis Failures
+
+These errors usually indicates a bug in Pyre. Please open an issue on [Github](https://github.com/facebook/pyre/issues).
 
 ### 31: Invalid Type
 
@@ -915,7 +972,7 @@ Some situations where you might run into this:
  ```
  You can fix this by using the `List` type:
  ```python
- x: list[str] = ["a string"]
+ x: List[str] = ["a string"]
  ```
 
 + Using a constructor call rather than a bare class name:

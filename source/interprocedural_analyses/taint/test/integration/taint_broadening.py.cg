@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+taint_broadening.$toplevel (fun) -> []
 taint_broadening.issue_collapse (fun) -> [_test_sink (fun) _test_source (fun)]
 taint_broadening.simplify_collapse_source (fun) -> [_test_source (fun) dict::__setitem__ (method)]
 taint_broadening.sink_a (fun) -> [_test_sink (fun)]

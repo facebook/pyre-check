@@ -6,6 +6,11 @@
     "vscode": "^1.15.0"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/facebook/pyre-check.git",
+    "directory": "tools/ide_plugins/pysa-vscode"
+  },
   "displayName": "pysa-vscode",
   "description": "VSCode extension for Pysa",
   "keywords": [
@@ -25,7 +30,8 @@
     "watch": "tsc -watch -p ./",
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "npm run compile && node ./node_modules/vscode/bin/test",
-    "lint": "tslint --force -p ."
+    "lint": "tslint --force -p .",
+    "package:test-version": "vsce package"
   },
   "dependencies": {
     "std-pour": "^1.1.0",
@@ -37,6 +43,7 @@
     "cson": "^4.1.0",
     "tslint": "^5.8.0",
     "typescript": "^3.5.1",
+    "vsce": "^1.99.0",
     "vscode": "^1.1.7"
   },
   "categories": [

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -29,8 +29,8 @@ let test_show_error_traces context =
       def foo() -> typing.List[str]: return 1
     |}
     [
-      "Incompatible return type [7]: Expected `typing.List[str]` but got `int`. Type "
-      ^ "`typing.List[str]` expected on line 3, specified on line 3.";
+      "Incompatible return type [7]: Expected `List[str]` but got `int`. Type `List[str]` expected \
+       on line 3, specified on line 3.";
     ];
   assert_type_errors
     {|
@@ -179,10 +179,9 @@ let test_show_error_traces context =
         a = b
     |}
     [
-      "Incompatible variable type [9]: a is declared to have type `typing.List[float]` but is used \
-       as type `typing.List[int]`. See \
-       https://pyre-check.org/docs/errors#covariance-and-contravariance for mutable container \
-       errors.";
+      "Incompatible variable type [9]: a is declared to have type `List[float]` but is used as \
+       type `List[int]`. See https://pyre-check.org/docs/errors#covariance-and-contravariance for \
+       mutable container errors.";
     ];
   assert_type_errors
     {|
@@ -192,8 +191,8 @@ let test_show_error_traces context =
         return l
     |}
     [
-      "Incompatible return type [7]: Expected `typing.List[float]` but got `typing.List[int]`. \
-       Type `typing.List[float]` expected on line 5, specified on line 3. See \
+      "Incompatible return type [7]: Expected `List[float]` but got `List[int]`. Type \
+       `List[float]` expected on line 5, specified on line 3. See \
        https://pyre-check.org/docs/errors#covariance-and-contravariance for mutable container \
        errors.";
     ];

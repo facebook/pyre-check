@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -24,13 +24,15 @@ module Node : sig
     | With of With.t
     | While of While.t
     | Yield
-  [@@deriving compare, eq, show, sexp]
+  [@@deriving compare, show, sexp]
 
-  type t [@@deriving compare, eq, sexp]
+  type t [@@deriving compare, sexp]
 
   val location_insensitive_equal : t -> t -> bool
 
   val create : int -> kind -> Int.Set.t -> Int.Set.t -> t
+
+  val id : t -> int
 
   val statements : t -> Statement.t list
 
@@ -41,7 +43,8 @@ module Node : sig
   val description : t -> string
 end
 
-type t = Node.t Int.Table.t [@@deriving eq, show]
+(* Control flow graph of a define body. *)
+type t = Node.t Int.Table.t [@@deriving show]
 
 val entry_index : int
 
@@ -59,3 +62,14 @@ val to_dot
 val create : Define.t -> t
 
 val node : t -> id:int -> Node.t
+
+(* Exposed for testing only *)
+val match_cases_refutable : Match.Case.t list -> bool
+
+module MatchTranslate : sig
+  open Expression
+
+  val to_condition : subject:Expression.t -> case:Match.Case.t -> Expression.t
+
+  val pattern_to_condition : subject:Expression.t -> Match.Pattern.t -> Expression.t
+end

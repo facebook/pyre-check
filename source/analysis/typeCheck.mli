@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,12 +9,28 @@ open Ast
 open Statement
 module Error = AnalysisError
 
+module LocalErrorMap : sig
+  type t
+
+  val empty : unit -> t
+
+  val all_errors : t -> Error.t list
+end
+
 module type Context = sig
   val qualifier : Reference.t
 
   val debug : bool
 
+  val constraint_solving_style : Configuration.Analysis.constraint_solving_style
+
   val define : Define.t Node.t
+
+  (* Where to store local annotations during the fixpoint. `None` discards them. *)
+  val resolution_fixpoint : LocalAnnotationMap.t option
+
+  (* Where to store errors found during the fixpoint. `None` discards them. *)
+  val error_map : LocalErrorMap.t option
 
   module Builder : Callgraph.Builder
 end
@@ -22,11 +38,9 @@ end
 module type Signature = sig
   type t [@@deriving eq]
 
-  val create : resolution:Resolution.t -> unit -> t
+  val create : resolution:Resolution.t -> t
 
-  val create_unreachable : unit -> t
-
-  val all_errors : t -> Error.t list
+  val unreachable : t
 
   val resolution : t -> Resolution.t option
 
@@ -46,7 +60,7 @@ val unpack_callable_and_self_argument
        (arguments:AttributeResolution.Argument.t list ->
        callable:Type.Callable.t ->
        self_argument:Type.t option ->
-       SignatureSelectionTypes.sig_t) ->
+       SignatureSelectionTypes.instantiated_return_annotation) ->
   global_resolution:GlobalResolution.t ->
   Type.t ->
   TypeOperation.callable_and_self_argument option
@@ -57,7 +71,7 @@ module DummyContext : Context
 
 val resolution
   :  GlobalResolution.t ->
-  ?annotation_store:Resolution.annotation_store ->
+  ?annotation_store:Refinement.Store.t ->
   (module Context) ->
   Resolution.t
 
@@ -70,7 +84,7 @@ val resolution_with_key
   :  global_resolution:GlobalResolution.t ->
   local_annotations:LocalAnnotationMap.ReadOnly.t option ->
   parent:Reference.t option ->
-  key:int ->
+  statement_key:int ->
   (module Context) ->
   Resolution.t
 

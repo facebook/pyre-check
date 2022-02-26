@@ -1,190 +1,501 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import contextlib
+import dataclasses
+import datetime
+import enum
 import logging
 import os
-from logging import Logger
-from typing import List, Optional
+import subprocess
+import tempfile
+from pathlib import Path
+from typing import (
+    TextIO,
+    Any,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from .. import (
     command_arguments,
-    configuration_monitor,
-    filesystem,
-    project_files_monitor,
+    configuration as configuration_module,
+    find_directories,
+    log,
 )
-from ..analysis_directory import AnalysisDirectory
-from ..configuration import Configuration
-from .command import IncrementalStyle
-from .reporting import Reporting
+from . import (
+    backend_arguments,
+    commands,
+    server_connection,
+    server_event,
+    stop,
+    remote_logging,
+)
 
 
-LOG: Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger(__name__)
+
+SERVER_LOG_FILE_FORMAT: str = "server.stderr.%Y_%m_%d_%H_%M_%S_%f"
 
 
-class Start(Reporting):
-    NAME = "start"
+class MatchPolicy(enum.Enum):
+    BASE_NAME = "base_name"
+    EXTENSION = "extension"
+    FULL_PATH = "full_path"
 
-    def __init__(
-        self,
-        command_arguments: command_arguments.CommandArguments,
-        original_directory: str,
-        *,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-        terminal: bool,
-        store_type_check_resolution: bool,
-        use_watchman: bool,
-        incremental_style: IncrementalStyle,
-    ) -> None:
-        super(Start, self).__init__(
-            command_arguments, original_directory, configuration, analysis_directory
+    def __str__(self) -> str:
+        return self.value
+
+
+@dataclasses.dataclass(frozen=True)
+class CriticalFile:
+    policy: MatchPolicy
+    path: str
+
+    def serialize(self) -> Dict[str, str]:
+        return {str(self.policy): self.path}
+
+
+@dataclasses.dataclass(frozen=True)
+class LoadSavedStateFromFile:
+    shared_memory_path: str
+    changed_files_path: Optional[str] = None
+
+    def serialize(self) -> Tuple[str, Dict[str, str]]:
+        return (
+            "load_from_file",
+            {
+                "shared_memory_path": self.shared_memory_path,
+                **(
+                    {}
+                    if self.changed_files_path is None
+                    else {"changed_files_path": self.changed_files_path}
+                ),
+            },
         )
-        self._terminal = terminal
-        self._store_type_check_resolution = store_type_check_resolution
-        self._use_watchman = use_watchman
-        self._incremental_style = incremental_style
 
-        self._enable_logging_section("environment")
 
-    def _start_configuration_monitor(self) -> None:
-        if self._use_watchman:
-            configuration_monitor.ConfigurationMonitor(
-                self._command_arguments,
-                self._configuration,
-                self._analysis_directory,
-                self._configuration.project_root,
-                self._original_directory,
-                self._configuration.local_root,
-                list(self._configuration.other_critical_files),
-            ).daemonize()
+@dataclasses.dataclass(frozen=True)
+class LoadSavedStateFromProject:
+    project_name: str
+    project_metadata: Optional[str] = None
 
-    def _run(self) -> None:
-        lock = os.path.join(self._configuration.log_directory, "client.lock")
-        LOG.info("Waiting on the pyre client lock.")
-        with filesystem.acquire_lock(lock, blocking=True):
-            self._start_configuration_monitor()
-            # This unsafe call is OK due to the client lock always
-            # being acquired before starting a server - no server can
-            # spawn in the interim which would cause a race.
-            try:
-                with filesystem.acquire_lock(
-                    os.path.join(
-                        self._configuration.log_directory, "server", "server.lock"
+    def serialize(self) -> Tuple[str, Dict[str, str]]:
+        return (
+            "load_from_project",
+            {
+                "project_name": self.project_name,
+                **(
+                    {}
+                    if self.project_metadata is None
+                    else {"project_metadata": self.project_metadata}
+                ),
+            },
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class StoreSavedStateToFile:
+    shared_memory_path: str
+
+    def serialize(self) -> Tuple[str, Dict[str, str]]:
+        return (
+            "save_to_file",
+            {
+                "shared_memory_path": self.shared_memory_path,
+            },
+        )
+
+
+SavedStateAction = Union[
+    LoadSavedStateFromFile, LoadSavedStateFromProject, StoreSavedStateToFile
+]
+
+
+@dataclasses.dataclass(frozen=True)
+class Arguments:
+    """
+    Data structure for configuration options the backend server can recognize.
+    Need to keep in sync with `source/command/serverCommand.ml`
+    """
+
+    base_arguments: backend_arguments.BaseArguments
+
+    strict: bool = False
+    show_error_traces: bool = False
+    additional_logging_sections: Sequence[str] = dataclasses.field(default_factory=list)
+    watchman_root: Optional[Path] = None
+    taint_models_path: Sequence[str] = dataclasses.field(default_factory=list)
+    store_type_check_resolution: bool = False
+    critical_files: Sequence[CriticalFile] = dataclasses.field(default_factory=list)
+    saved_state_action: Optional[SavedStateAction] = None
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            **self.base_arguments.serialize(),
+            "strict": self.strict,
+            "socket_path": str(
+                server_connection.get_default_socket_path(
+                    Path(self.base_arguments.global_root),
+                    Path(self.base_arguments.relative_local_root)
+                    if self.base_arguments.relative_local_root
+                    else None,
+                )
+            ),
+            "show_error_traces": self.show_error_traces,
+            "additional_logging_sections": self.additional_logging_sections,
+            **(
+                {}
+                if self.watchman_root is None
+                else {"watchman_root": str(self.watchman_root)}
+            ),
+            "taint_model_paths": self.taint_models_path,
+            "store_type_check_resolution": self.store_type_check_resolution,
+            "critical_files": [
+                critical_file.serialize() for critical_file in self.critical_files
+            ],
+            **(
+                {}
+                if self.saved_state_action is None
+                else {"saved_state_action": self.saved_state_action.serialize()}
+            ),
+        }
+
+
+def get_critical_files(
+    configuration: configuration_module.Configuration,
+) -> List[CriticalFile]:
+    def get_full_path(root: str, relative: str) -> str:
+        full_path = (Path(root) / relative).resolve(strict=False)
+        if not full_path.exists():
+            LOG.warning(f"Critical file does not exist: {full_path}")
+        return str(full_path)
+
+    local_root = configuration.local_root
+    return [
+        CriticalFile(
+            policy=MatchPolicy.FULL_PATH,
+            path=get_full_path(
+                root=configuration.project_root,
+                relative=find_directories.CONFIGURATION_FILE,
+            ),
+        ),
+        *(
+            []
+            if local_root is None
+            else [
+                CriticalFile(
+                    policy=MatchPolicy.FULL_PATH,
+                    path=get_full_path(
+                        root=local_root,
+                        relative=find_directories.LOCAL_CONFIGURATION_FILE,
                     ),
-                    blocking=False,
-                ):
-                    pass
-            except OSError:
-                LOG.warning(
-                    "Server at `%s` exists, skipping.",
-                    self._analysis_directory.get_root(),
                 )
-                return
-
-            self._analysis_directory.prepare()
-
-            self._call_client(command=self.NAME).check()
-
-            if self._use_watchman:
-                try:
-                    file_monitor = project_files_monitor.ProjectFilesMonitor(
-                        self._configuration,
-                        self._configuration.project_root,
-                        self._analysis_directory,
-                    )
-                    file_monitor.daemonize()
-                    LOG.debug("Initialized file monitor.")
-                except project_files_monitor.MonitorException as error:
-                    LOG.warning("Failed to initialize file monitor: %s", error)
-
-    def _flags(self) -> List[str]:
-        flags = super()._flags()
-        if self._taint_models_path:
-            for path in self._taint_models_path:
-                flags.extend(["-taint-models", path])
-        filter_directories = self._get_directories_to_analyze()
-        filter_directories.update(
-            set(self._configuration.get_existent_do_not_ignore_errors_in_paths())
-        )
-        if len(filter_directories):
-            flags.extend(["-filter-directories", ";".join(sorted(filter_directories))])
-
-        ignore_all_errors_paths = (
-            self._configuration.get_existent_ignore_all_errors_paths()
-        )
-        if len(ignore_all_errors_paths):
-            flags.extend(
-                ["-ignore-all-errors", ";".join(sorted(ignore_all_errors_paths))]
-            )
-        if self._terminal:
-            flags.append("-terminal")
-        if self._store_type_check_resolution:
-            flags.append("-store-type-check-resolution")
-        if not self._command_arguments.no_saved_state:
-            save_initial_state_to = self._command_arguments.save_initial_state_to
-            if save_initial_state_to and os.path.isdir(
-                os.path.dirname(save_initial_state_to)
-            ):
-                flags.extend(["-save-initial-state-to", save_initial_state_to])
-            saved_state_project = self._command_arguments.saved_state_project
-            if saved_state_project:
-                flags.extend(["-saved-state-project", saved_state_project])
-                relative_local_root = self._configuration.relative_local_root
-                if relative_local_root is not None:
-                    flags.extend(
-                        ["-saved-state-metadata", relative_local_root.replace("/", "$")]
-                    )
-            configuration_file_hash = self._configuration.file_hash
-            if configuration_file_hash:
-                flags.extend(["-configuration-file-hash", configuration_file_hash])
-            load_initial_state_from = self._command_arguments.load_initial_state_from
-            changed_files_path = self._command_arguments.changed_files_path
-            if load_initial_state_from is not None:
-                flags.extend(["-load-state-from", load_initial_state_from])
-                if changed_files_path is not None:
-                    flags.extend(["-changed-files-path", changed_files_path])
-            elif changed_files_path is not None:
-                LOG.error(
-                    "--load-initial-state-from must be set "
-                    + "if --changed-files-path is set."
-                )
-        flags.extend(
-            [
-                "-workers",
-                str(self._configuration.get_number_of_workers()),
-                "-expected-binary-version",
-                self._configuration.get_version_hash_respecting_override()
-                or "unversioned",
             ]
+        ),
+        *(
+            # TODO(T92070475): This is a temporary hack until generated code can be
+            # fully supported.
+            []
+            if configuration.targets is None
+            else [CriticalFile(policy=MatchPolicy.EXTENSION, path="thrift")]
+        ),
+        *(
+            [
+                CriticalFile(
+                    policy=MatchPolicy.FULL_PATH,
+                    path=get_full_path(root=path, relative=""),
+                )
+                for path in configuration.other_critical_files
+            ]
+        ),
+    ]
+
+
+def get_saved_state_action(
+    start_arguments: command_arguments.StartArguments,
+    relative_local_root: Optional[str] = None,
+) -> Optional[SavedStateAction]:
+    saved_state_output_path = start_arguments.save_initial_state_to
+    if saved_state_output_path is not None:
+        return StoreSavedStateToFile(shared_memory_path=saved_state_output_path)
+
+    saved_state_input_path = start_arguments.load_initial_state_from
+    if saved_state_input_path is not None:
+        return LoadSavedStateFromFile(
+            shared_memory_path=saved_state_input_path,
+            changed_files_path=start_arguments.changed_files_path,
         )
 
-        search_path = [
-            search_path.command_line_argument()
-            for search_path in (
-                self._configuration.expand_and_get_existent_search_paths()
+    saved_state_project = start_arguments.saved_state_project
+    if saved_state_project is not None:
+        return LoadSavedStateFromProject(
+            project_name=saved_state_project,
+            project_metadata=relative_local_root.replace("/", "$")
+            if relative_local_root is not None
+            else None,
+        )
+
+    return None
+
+
+def create_server_arguments(
+    configuration: configuration_module.Configuration,
+    start_arguments: command_arguments.StartArguments,
+) -> Arguments:
+    """
+    Translate client configurations and command-line flags to server
+    configurations.
+
+    This API is not pure since it needs to access filesystem to filter out
+    nonexistent directories. It is idempotent though, since it does not alter
+    any filesystem state.
+    """
+    source_paths = backend_arguments.get_source_path_for_server(configuration)
+
+    logging_sections = start_arguments.logging_sections
+    additional_logging_sections = (
+        [] if logging_sections is None else logging_sections.split(",")
+    )
+    if start_arguments.noninteractive:
+        additional_logging_sections.append("-progress")
+    # Server section is usually useful when Pyre server is involved
+    additional_logging_sections.append("server")
+
+    profiling_output = (
+        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        if start_arguments.enable_profiling
+        else None
+    )
+    memory_profiling_output = (
+        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        if start_arguments.enable_memory_profiling
+        else None
+    )
+
+    return Arguments(
+        base_arguments=backend_arguments.BaseArguments(
+            log_path=configuration.log_directory,
+            global_root=configuration.project_root,
+            checked_directory_allowlist=backend_arguments.get_checked_directory_allowlist(
+                configuration, source_paths
+            ),
+            checked_directory_blocklist=(
+                configuration.get_existent_ignore_all_errors_paths()
+            ),
+            debug=start_arguments.debug,
+            excludes=configuration.excludes,
+            extensions=configuration.get_valid_extension_suffixes(),
+            relative_local_root=configuration.relative_local_root,
+            memory_profiling_output=memory_profiling_output,
+            number_of_workers=configuration.get_number_of_workers(),
+            parallel=not start_arguments.sequential,
+            profiling_output=profiling_output,
+            python_version=configuration.get_python_version(),
+            shared_memory=configuration.shared_memory,
+            remote_logging=backend_arguments.RemoteLogging.create(
+                configuration.logger, start_arguments.log_identifier
+            ),
+            search_paths=configuration.expand_and_get_existent_search_paths(),
+            source_paths=source_paths,
+        ),
+        strict=configuration.strict,
+        show_error_traces=start_arguments.show_error_traces,
+        additional_logging_sections=additional_logging_sections,
+        watchman_root=None
+        if start_arguments.no_watchman
+        else backend_arguments.find_watchman_root(Path(configuration.project_root)),
+        taint_models_path=configuration.taint_models_path,
+        store_type_check_resolution=start_arguments.store_type_check_resolution,
+        critical_files=get_critical_files(configuration),
+        saved_state_action=None
+        if start_arguments.no_saved_state
+        else get_saved_state_action(
+            start_arguments, relative_local_root=configuration.relative_local_root
+        ),
+    )
+
+
+def get_server_identifier(configuration: configuration_module.Configuration) -> str:
+    global_identifier = Path(configuration.project_root).name
+    relative_local_root = configuration.relative_local_root
+    if relative_local_root is None:
+        return global_identifier
+    return f"{global_identifier}/{relative_local_root}"
+
+
+def _run_in_foreground(
+    command: Sequence[str], environment: Mapping[str, str]
+) -> commands.ExitCode:
+    # In foreground mode, we shell out to the backend server and block on it.
+    # Server stdout/stderr will be forwarded to the current terminal.
+    return_code = 0
+    try:
+        LOG.warning("Starting server in the foreground...")
+        result = subprocess.run(
+            command,
+            env=environment,
+            stdout=subprocess.DEVNULL,
+            stderr=None,
+            universal_newlines=True,
+        )
+        return_code = result.returncode
+    except KeyboardInterrupt:
+        # Backend server will exit cleanly when receiving SIGINT.
+        pass
+
+    if return_code == 0:
+        return commands.ExitCode.SUCCESS
+    else:
+        LOG.error(f"Server exited with non-zero return code: {return_code}")
+        return commands.ExitCode.FAILURE
+
+
+@contextlib.contextmanager
+def background_logging(log_file: Path) -> Iterator[None]:
+    with log.file_tailer(log_file) as log_stream:
+        with log.StreamLogger(log_stream) as logger:
+            yield
+    logger.join()
+
+
+def _create_symbolic_link(source: Path, target: Path) -> None:
+    try:
+        source.unlink()
+    except FileNotFoundError:
+        pass
+    source.symlink_to(target)
+
+
+@contextlib.contextmanager
+def background_server_log_file(log_directory: Path) -> Iterator[TextIO]:
+    new_server_log_directory = log_directory / "new_server"
+    new_server_log_directory.mkdir(parents=True, exist_ok=True)
+    log_file_path = new_server_log_directory / datetime.datetime.now().strftime(
+        SERVER_LOG_FILE_FORMAT
+    )
+    with open(str(log_file_path), "a") as log_file:
+        yield log_file
+    # Symlink the log file to a known location for subsequent `pyre incremental`
+    # to find.
+    _create_symbolic_link(new_server_log_directory / "server.stderr", log_file_path)
+
+
+def _run_in_background(
+    command: Sequence[str],
+    environment: Mapping[str, str],
+    log_directory: Path,
+    socket_path: Path,
+    event_waiter: server_event.Waiter,
+) -> commands.ExitCode:
+    # In background mode, we asynchronously start the server with `Popen` and
+    # detach it from the current process immediately with `start_new_session`.
+    # Do not call `wait()` on the Popen object to avoid blocking.
+    # Server stderr will be forwarded to dedicated log files.
+    # Server stdout will be used as additional communication channel for status
+    # updates.
+    with background_server_log_file(log_directory) as server_stderr:
+        log_file = Path(server_stderr.name)
+        server_process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=server_stderr,
+            env=environment,
+            start_new_session=True,
+            universal_newlines=True,
+        )
+
+    LOG.info("Server is starting in the background.\n")
+    server_stdout = server_process.stdout
+    if server_stdout is None:
+        raise RuntimeError("subprocess.Popen failed to set up a pipe for server stdout")
+
+    try:
+        # Block until an expected server event is obtained from stdout
+        with background_logging(log_file):
+            event_waiter.wait_on(server_stdout)
+            server_stdout.close()
+            return commands.ExitCode.SUCCESS
+    except KeyboardInterrupt:
+        LOG.info("SIGINT received. Terminating background server...")
+
+        # If a background server has spawned and the user hits Ctrl-C, bring down
+        # the spwaned server as well.
+        server_stdout.close()
+        server_process.terminate()
+        server_process.wait()
+
+        # Since we abruptly terminate the background server, it may not have the
+        # chance to clean up the socket file properly. Make sure the file is
+        # removed on our side.
+        stop.remove_socket_if_exists(socket_path)
+
+        raise commands.ClientException("Interrupted by user. No server is spawned.")
+
+
+def run_start(
+    configuration: configuration_module.Configuration,
+    start_arguments: command_arguments.StartArguments,
+) -> commands.ExitCode:
+    binary_location = configuration.get_binary_respecting_override()
+    if binary_location is None:
+        raise configuration_module.InvalidConfiguration(
+            "Cannot locate a Pyre binary to run."
+        )
+
+    log_directory = Path(configuration.log_directory)
+
+    server_arguments = create_server_arguments(configuration, start_arguments)
+    if not start_arguments.no_watchman and server_arguments.watchman_root is None:
+        LOG.warning(
+            "Cannot find a watchman root. Incremental check will not be functional"
+            " since no filesystem updates will be sent to the Pyre server."
+        )
+
+    LOG.info(f"Starting server at `{get_server_identifier(configuration)}`...")
+    with backend_arguments.temporary_argument_file(
+        server_arguments
+    ) as argument_file_path:
+        server_command = [binary_location, "newserver", str(argument_file_path)]
+        server_environment = {
+            **os.environ,
+            # This is to make sure that backend server shares the socket root
+            # directory with the client.
+            # TODO(T77556312): It might be cleaner to turn this into a
+            # configuration option instead.
+            "TMPDIR": tempfile.gettempdir(),
+        }
+        if start_arguments.terminal:
+            return _run_in_foreground(server_command, server_environment)
+        else:
+            socket_path = server_connection.get_default_socket_path(
+                Path(configuration.project_root),
+                Path(configuration.relative_local_root)
+                if configuration.relative_local_root
+                else None,
             )
-        ]
-        if search_path:
-            flags.extend(["-search-path", ",".join(search_path)])
+            return _run_in_background(
+                server_command,
+                server_environment,
+                log_directory,
+                socket_path,
+                server_event.Waiter(
+                    wait_on_initialization=start_arguments.wait_on_initialization
+                ),
+            )
 
-        excludes = self._configuration.excludes
-        for exclude in excludes:
-            flags.extend(["-exclude", exclude])
 
-        extensions = [
-            extension.command_line_argument()
-            for extension in self._configuration.extensions
-        ]
-        for extension in extensions:
-            flags.extend(["-extension", extension])
-
-        if self._incremental_style != IncrementalStyle.SHALLOW:
-            flags.append("-new-incremental-check")
-
-        if self._configuration.autocomplete:
-            flags.append("-autocomplete")
-        flags.extend(self._feature_flags())
-
-        return flags
+@remote_logging.log_usage(command_name="start")
+def run(
+    configuration: configuration_module.Configuration,
+    start_arguments: command_arguments.StartArguments,
+) -> commands.ExitCode:
+    return run_start(configuration, start_arguments)

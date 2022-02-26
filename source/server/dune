@@ -2,10 +2,9 @@
  (name server)
  (public_name pyrelib.server)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
-    ppx_sexp_message ppx_deriving_yojson))
- (libraries base64 core core.uuid sexplib ppxlib yojson ppx_deriving
-   ppx_deriving_yojson ppx_deriving_yojson.runtime pyrelib.ast
-   pyrelib.analysis pyrelib.configuration pyrelib.fetchSavedState
-   pyrelib.memory pyrelib.network pyrelib.languageServer pyrelib.service
-   pyrelib.version))
+  (pps ppx_hash ppx_compare ppx_sexp_conv ppx_sexp_message
+    ppx_deriving_yojson))
+ (libraries core ppx_deriving_yojson.runtime pyrelib.lwtsocketserver
+   pyrelib.lwtsubprocess pyrelib.service pyrelib.ast pyrelib.analysis
+   pyrelib.fetchSavedState pyrelib.pyre pyrelib.version pyrelib.buck
+   pyrelib.json_parsing))

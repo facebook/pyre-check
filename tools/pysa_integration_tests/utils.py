@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -10,7 +10,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import final, Sequence
+from typing import final, Sequence, Optional
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -142,6 +142,7 @@ def run_pysa_integration_test(
     passthrough_args: Sequence[str],
     skip_model_verification: bool,
     filter_issues: bool,
+    save_results_to: Optional[Path],
     run_from_source: bool = False,
 ) -> None:
     """
@@ -156,26 +157,26 @@ def run_pysa_integration_test(
         command = [
             "python",
             "-m" "pyre-check.client.pyre",
-            "--noninteractive",
-            "analyze",
         ]
     else:
-        command = [
-            "pyre",
-            "--noninteractive",
-            "analyze",
-        ]
+        command = ["pyre"]
+    command.extend(["--noninteractive", "analyze"])
+
+    if save_results_to is not None:
+        command.extend(["--save-results-to", str(save_results_to)])
 
     if skip_model_verification:
         command.append("--no-verify")
 
-    command += passthrough_args
+    command.extend(passthrough_args)
     LOG.debug(f"Using command: {command}")
     pysa_results: str
     try:
         pysa_results = subprocess.check_output(
             command, text=True, cwd=current_directory
         )
+        if save_results_to is not None:
+            pysa_results = (save_results_to / "errors.json").read_text()
     except subprocess.CalledProcessError as exception:
         friendly_exit(
             "Command failed with output:",

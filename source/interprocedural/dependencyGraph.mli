@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -43,7 +43,7 @@ val pp : Format.formatter -> t -> unit
 
 val pp_partitions : Format.formatter -> Target.t list list -> unit
 
-val dump : t -> configuration:Configuration.Analysis.t -> unit
+val dump : t -> path:PyrePath.t -> unit
 
 val from_overrides : overrides -> t
 

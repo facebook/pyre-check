@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+source_sink_flow.$toplevel (fun) -> []
 source_sink_flow.bad (fun) -> [source_sink_flow.qux (fun)]
 source_sink_flow.bar (fun) -> [_test_source (fun)]
 source_sink_flow.match_flows (fun) -> [source_sink_flow.bad (fun) source_sink_flow.some_source (fun)]

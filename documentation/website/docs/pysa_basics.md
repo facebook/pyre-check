@@ -281,6 +281,21 @@ def django.utils.html.escape(text: TaintInTaintOut): ...
 def module.sanitize_for_logging_and_sql(): ...
 ```
 
+Specific parameters can be marked as sanitized to remove all taint passing through them:
+
+```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_START end=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_END
+```
+
+Similarly, the return value can be marked as sanitized:
+
+```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_RETURN_SANITIZERS_START end=DOCUMENTATION_RETURN_SANITIZERS_END
+```
+
+All parameters can be marked as sanitized as well:
+
+```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETERS_SANITIZERS_START end=DOCUMENTATION_PARAMETERS_SANITIZERS_END
+```
+
 Attributes can also be marked as sanitizers to remove all taint passing through
 them:
 
@@ -317,27 +332,26 @@ It's recommended to sanitize specific sources and sinks over using the general
 
 ## Taint Propagation
 
-Sometimes the features discussed in the Taint Analysis section are not enough to
-detect all taint flows. In particular, Pysa relies on additional annotations to
-help it understand when an object is tainted via a function call or when a
-function call on a tainted object returns tainted data. Taint propagation is
-defined by adding `TaintInTaintOut` annotations to models in `.pysa` files.
-
-When a function call taints an object, such as when you update a dictionary with
-a tainted value, Pysa needs a `TaintInTaintOut` annotation that indicates
-`Updates[self]`:
+Sometimes, Pysa is unable to infer that tainted data provided as an argument to a function will be returned by that function. In such cases, Pysa models can be annotated with `TaintInTaintOut[LocalReturn]` to encode this information for using during the analysis. This annotation can be applied to any parameter, including `self`, and is useful in scenarios such as when retrieving a value from a collection containting tainted data:
 
 ```python
+# This tells Pysa that if a 'dict' contains tainted data, the result
+# of calling 'get' on that dict will also contain tainted data
+def dict.get(self: TaintInTaintOut[LocalReturn], key, default): ...
+```
+
+Note that `TaintInTaintOut` (ie. without square brackets) is also accepted and can be used as a short hand for `TaintInTaintOut[LocalReturn]`. `LocalReturn` is ony ever *required* when using the `Updates` syntax below and wanting to preserve the `LocalReturn` behaviour.
+
+For performance reasons, Pysa does not keep track of when functions place taint into their parameters, such as when a function adds a tainted entry to a list it received (with some notable exceptions for taint assigned to `self` in a constructor or property). The `TaintInTaintOut[Updates[PARAMETER]]` annotation can be used to work around Pysa's limitations by telling Pysa that taint will flow the the annotated parameter into the parameter named `PARAMETER`:
+
+```python
+# This tells Pysa that if 'dict.update' is called with tainted data,
+# then the 'self' object (ie. the dictionary itself) should then be
+# considered tainted.
 def dict.update(self, __m: TaintInTaintOut[Updates[self]]): ...
 ```
 
-When a function call on a tainted object returns taint, such as when you
-retrieve a value from a dictionary, Pysa needs a `TaintInTaintOut` annotation
-that indicates `LocalReturn`:
-
-```python
-def dict.get(self: TaintInTaintOut[LocalReturn], key, default): ...
-```
+Note that [feature annotations](pysa_features.md) may also be placed inside the `[]` blocks of `TaintInTaintOut[...]` annotations.
 
 ## Features
 
@@ -380,7 +394,7 @@ django.http.request.HttpRequest.GET: TaintSource[UserControlled]
 
 The signature of any modeled function needs to match the signature of the
 function, as seen by Pyre. Note that Pyre doesn't always see the definition of
-the of the functions directly. If [`.pyi` stub
+the functions directly. If [`.pyi` stub
 files](https://www.python.org/dev/peps/pep-0484/#stub-files) are present, Pyre
 will use the signatures from those files, rather than the actual signature from
 the function definition in your or your dependencies' code. See the [Gradual

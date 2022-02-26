@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,7 +9,7 @@ type 'node_type t = {
   location: Location.t;
   value: 'node_type;
 }
-[@@deriving compare, eq, sexp, show, hash, to_yojson]
+[@@deriving compare, sexp, show, hash, to_yojson]
 
 val create : location:Location.t -> 'node_value -> 'node_value t
 
@@ -32,3 +32,9 @@ val location_insensitive_compare
   'node_type t ->
   'node_type t ->
   int
+
+val location_insensitive_equal
+  :  ('node_type -> 'node_type -> bool) ->
+  'node_type t ->
+  'node_type t ->
+  bool

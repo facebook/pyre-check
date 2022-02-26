@@ -1,22 +1,5 @@
-(library
- (name commandTest)
- (public_name pyrelib.commandTest)
- (modules commandTest)
- (libraries oUnit pyrelib.commands pyrelib.languageServer pyrelib.server
-   pyrelib.test pyrelib.ast pyrelib.analysis))
-
 (tests
- (names baseConfigurationTest newAnalyzeTest newCheckTest newInferTest
-   newServerTest)
- (modules baseConfigurationTest newAnalyzeTest newCheckTest newInferTest
-   newServerTest)
+ (names baseConfigurationTest AnalyzeTest CheckTest InferTest ServerTest)
  (preprocess
   (pps ppx_compare ppx_sexp_conv))
  (libraries oUnit pyrelib.test pyrelib.commands))
-
-(tests
- (names languageServerTest persistentClientTest serverProtocolTest serverTest)
- (modules :standard \ commandTest baseConfigurationTest newAnalyzeTest
-   newCheckTest newInferTest newServerTest)
- (libraries oUnit pyrelib.test pyrelib.commandTest pyrelib.commands
-   pyrelib.languageServer pyrelib.network pyrelib.server pyrelib.ast))

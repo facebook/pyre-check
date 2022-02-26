@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -9,7 +9,7 @@ import dataclasses
 import json
 from enum import Enum
 from json.decoder import JSONDecodeError
-from typing import Any, BinaryIO, Dict, Optional, Union, Sequence, Mapping
+from typing import Any, Dict, Optional, Union, Sequence, Mapping
 
 
 JSON = Dict[str, Any]
@@ -305,77 +305,3 @@ class ErrorResponse(Response):
         # and that has to be fixed first.
         id = _parse_json_rpc_id(response_json)
         return ErrorResponse(id=id, code=code, message=message, data=data)
-
-
-def write_lsp_request(file: BinaryIO, request: Request) -> bool:
-    request_string = request.serialize()
-    length = len(request_string.encode("utf-8"))
-    payload = f"Content-Length: {length}\r\n\r\n{request_string}".encode("utf-8")
-    try:
-        file.write(payload)
-        file.flush()
-        return True
-    except (ValueError, OSError):
-        return False
-
-
-def _parse_content_length(line: bytes) -> Optional[int]:
-    if line.startswith(b"Content-Length:"):
-        length = line.split(b"Content-Length:")[1].strip()
-        try:
-            return int(length)
-        except ValueError:
-            return None
-    return None
-
-
-def _read_payload(file: BinaryIO) -> JSON:
-    try:
-        line = file.readline()
-        length = _parse_content_length(line)
-        if not length:
-            raise ParseError("Header reading failed")
-
-        # Read header lines until the empty line
-        while line.strip():
-            line = file.readline()
-
-        body = file.read(length)
-        return json.loads(body.decode("utf-8"))
-    except (ValueError, OSError, JSONDecodeError) as exception:
-        raise ParseError(f"Payload reading failed: {exception}")
-
-
-def read_lsp_request(file: BinaryIO) -> Request:
-    return Request.from_json(_read_payload(file))
-
-
-def read_lsp_response(file: BinaryIO) -> Response:
-    return Response.from_json(_read_payload(file))
-
-
-def perform_handshake(
-    input_file: BinaryIO, output_file: BinaryIO, client_version: str
-) -> None:
-    server_handshake = read_lsp_request(input_file)
-    if server_handshake.method == "handshake/server":
-        server_handshake_parameters = server_handshake.parameters
-        if isinstance(server_handshake_parameters, ByNameParameters):
-            server_version = server_handshake_parameters.values.get("version")
-            if server_version != client_version:
-                raise ValueError(
-                    f"Version mismatch. Server has version `{server_version}`, "
-                    + f"while client has version `{client_version}`."
-                )
-            client_handshake = Request(
-                method="handshake/client",
-                parameters=ByNameParameters({"send_confirmation": True}),
-            )
-            write_lsp_request(output_file, client_handshake)
-            request = read_lsp_request(input_file)
-            if not request.method == "handshake/socket_added":
-                raise ValueError("Handshake was not successful.")
-        else:
-            raise ValueError("Handshake parameters from server not found.")
-    else:
-        raise ValueError("Handshake from server was malformed.")

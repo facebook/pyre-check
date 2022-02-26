@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -21,11 +21,16 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def _find_parent_directory_containing(
-    base: Path, target: str, predicate: Callable[[Path], bool]
+    base: Path,
+    target: str,
+    predicate: Callable[[Path], bool],
+    stop_search_after: Optional[int],
 ) -> Optional[Path]:
-    resolved_base = base.resolve(strict=False)
+    resolved_base = base.resolve(strict=True)
     # Using `itertools.chain` to avoid expanding `resolve_base.parents` eagerly
-    for candidate_directory in itertools.chain([resolved_base], resolved_base.parents):
+    for i, candidate_directory in enumerate(
+        itertools.chain([resolved_base], resolved_base.parents)
+    ):
         candidate_path = candidate_directory / target
         try:
             if predicate(candidate_path):
@@ -34,20 +39,70 @@ def _find_parent_directory_containing(
             # We might not have sufficient permission to read the file/directory.
             # In that case, pretend the file doesn't exist.
             pass
+        if stop_search_after is not None:
+            if i >= stop_search_after:
+                return None
     return None
 
 
-def find_parent_directory_containing_file(base: Path, target: str) -> Optional[Path]:
+def find_parent_directory_containing_file(
+    base: Path,
+    target: str,
+    stop_search_after: Optional[int] = None,
+) -> Optional[Path]:
     """
     Walk directories upwards from `base`, until the root directory is
     reached. At each step, check if the `target` file exist, and return
-    it if found. Return None if the search is unsuccessful.
+    the closest such directory if found. Return None if the search is
+    unsuccessful.
+
+    We stop searching after checking `stop_search_after` parent
+    directories of `base` if provided; this is mainly for testing.
     """
 
     def is_file(path: Path) -> bool:
         return path.is_file()
 
-    return _find_parent_directory_containing(base, target, predicate=is_file)
+    return _find_parent_directory_containing(
+        base,
+        target,
+        predicate=is_file,
+        stop_search_after=stop_search_after,
+    )
+
+
+def find_outermost_directory_containing_file(
+    base: Path,
+    target: str,
+    stop_search_after: Optional[int],
+) -> Optional[Path]:
+    """
+    Walk directories upwards from `base`, until the root directory is
+    reached. At each step, check if the `target` file exist, and return
+    the farthest such directory if found. Return None if the search is
+    unsuccessful.
+
+    We stop searching after checking `stop_search_after` parent
+    directories of `base` if provided; this is mainly for testing.
+    """
+    result: Optional[Path] = None
+    resolved_base = base.resolve(strict=True)
+    # Using `itertools.chain` to avoid expanding `resolve_base.parents` eagerly
+    for i, candidate_directory in enumerate(
+        itertools.chain([resolved_base], resolved_base.parents)
+    ):
+        candidate_path = candidate_directory / target
+        try:
+            if candidate_path.is_file():
+                result = candidate_directory
+        except PermissionError:
+            # We might not have sufficient permission to read the file/directory.
+            # In that case, pretend the file doesn't exist.
+            pass
+        if stop_search_after is not None:
+            if i >= stop_search_after:
+                break
+    return result
 
 
 def find_global_root(base: Path) -> Optional[Path]:
@@ -101,18 +156,28 @@ def find_global_and_local_root(base: Path) -> Optional[FoundRoot]:
 
 
 def find_parent_directory_containing_directory(
-    base: Path, target: str
+    base: Path,
+    target: str,
+    stop_search_after: Optional[int] = None,
 ) -> Optional[Path]:
     """
     Walk directories upwards from base, until the root directory is
     reached. At each step, check if the target directory exist, and return
     it if found. Return None if the search is unsuccessful.
+
+    We stop searching after checking `stop_search_after` parent
+    directories of `base` if provided; this is mainly for testing.
     """
 
     def is_directory(path: Path) -> bool:
         return path.is_dir()
 
-    return _find_parent_directory_containing(base, target, predicate=is_directory)
+    return _find_parent_directory_containing(
+        base,
+        target,
+        predicate=is_directory,
+        stop_search_after=stop_search_after,
+    )
 
 
 def find_typeshed() -> Optional[Path]:

@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -45,15 +45,27 @@ def find_taint_stubs() -> List[Tuple[str, List[str]]]:
     taint_stubs = []
     for path in Path(os.path.join(os.getcwd(), "taint")).iterdir():
         if path.is_dir():
-            _, temporary_stubs = get_data_files(directory=str(path), extension_glob="*")
-            taint_stubs += temporary_stubs
-    _, third_party_taint_stubs = get_data_files(
+            relative_directory, temporary_stubs = get_data_files(
+                directory=str(path), extension_glob="*"
+            )
+            if temporary_stubs:
+                taint_stubs.append(
+                    (
+                        os.path.join("lib", "pyre_check", relative_directory),
+                        temporary_stubs,
+                    )
+                )
+    relative_directory, third_party_taint_stubs = get_data_files(
         directory=os.path.join(os.getcwd(), "third_party_taint"), extension_glob="*"
     )
-    taint_stubs += third_party_taint_stubs
-    if not taint_stubs:
-        return []
-    return [(os.path.join("lib", "pyre_check", "taint"), taint_stubs)]
+    if third_party_taint_stubs:
+        taint_stubs.append(
+            (
+                os.path.join("lib", "pyre_check", relative_directory),
+                third_party_taint_stubs,
+            )
+        )
+    return taint_stubs
 
 
 def run(
@@ -107,6 +119,24 @@ def run(
                 "pyre-upgrade = " + module_name + ".tools.upgrade.upgrade:main",
             ]
         ),
+        # pyre-fixme[6]: Expected `List[setuptools.extension.Extension]` for 20th
+        #  param but got `object`.
+        # pyre-fixme[6]: Expected `List[str]` for 20th param but got `object`.
+        # pyre-fixme[6]: Expected `Mapping[str, typing.Any]` for 20th param but got
+        #  `object`.
+        # pyre-fixme[6]: Expected `Mapping[str, List[str]]` for 20th param but got
+        #  `object`.
+        # pyre-fixme[6]: Expected `Mapping[str, typing.Mapping[str,
+        #  Tuple[typing.Any, typing.Any]]]` for 20th param but got `object`.
+        # pyre-fixme[6]: Expected `Mapping[str, typing.Type[setuptools.Command]]`
+        #  for 20th param but got `object`.
+        # pyre-fixme[6]: Expected `Mapping[str, str]` for 20th param but got `object`.
+        # pyre-fixme[6]: Expected `Type[setuptools.dist.Distribution]` for 20th
+        #  param but got `object`.
+        # pyre-fixme[6]: Expected `Union[List[str], str]` for 20th param but got
+        #  `object`.
+        # pyre-fixme[6]: Expected `bool` for 20th param but got `object`.
+        # pyre-fixme[6]: Expected `str` for 20th param but got `object`.
         **kwargs
     )
 
@@ -119,7 +149,7 @@ def main() -> None:
         package_name="{PACKAGE_NAME}",
         package_version="{PACKAGE_VERSION}",
         module_name="{MODULE_NAME}",
-        runtime_dependencies=json.loads("""{RUNTIME_DEPENDENCIES}"""),
+        runtime_dependencies=json.loads(r"""{RUNTIME_DEPENDENCIES}"""),
         long_description=long_description,
     )
 

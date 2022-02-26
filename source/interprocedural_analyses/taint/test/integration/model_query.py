@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -231,6 +231,14 @@ class ClassTest2_Alarm1:
 
 
 class ClassTest2_NoAlarm1(NoAlarmClass):
+    def method1():
+        return 0
+
+    def method2():
+        return 0
+
+
+class ClassTest3_Alarm1:
     def method1():
         return 0
 

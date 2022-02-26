@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -40,7 +40,7 @@ def foo_with_sink(x: int) -> None:
     print(x)
 
 
-def with_logging_async(
+async def with_logging_async(
     f: Callable[[str], Awaitable[None]]
 ) -> Callable[[str], Awaitable[None]]:
     async def inner(y: str) -> None:
@@ -199,7 +199,7 @@ class Foo:
         cls().sink_method(x)
 
 
-def main() -> None:
+async def main() -> None:
     foo(_test_source())
     foo_with_sink(_test_source())
     await foo_async(_test_source())

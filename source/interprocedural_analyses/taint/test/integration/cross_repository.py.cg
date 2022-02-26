@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+cross_repository.$toplevel (fun) -> []
 cross_repository.cross_repository_anchor_sink (fun) -> []
 cross_repository.cross_repository_source (fun) -> [_test_sink (fun)]
 cross_repository.returns_crtex_source (fun) -> []

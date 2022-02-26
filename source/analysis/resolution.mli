@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,11 +8,6 @@
 open Ast
 
 type t [@@deriving show]
-
-type annotation_store = {
-  annotations: RefinementUnit.t Reference.Map.t;
-  temporary_annotations: RefinementUnit.t Reference.Map.t;
-}
 
 type resolve_statement_result_t =
   | Unreachable
@@ -23,14 +18,12 @@ type resolve_statement_result_t =
 
 val create
   :  global_resolution:GlobalResolution.t ->
-  annotation_store:annotation_store ->
+  annotation_store:Refinement.Store.t ->
   resolve_expression:(resolution:t -> Expression.t -> t * Annotation.t) ->
   resolve_statement:(resolution:t -> Statement.t -> resolve_statement_result_t) ->
   ?parent:Reference.t ->
   unit ->
   t
-
-val empty_annotation_store : annotation_store
 
 val resolve_expression : t -> Expression.t -> t * Type.t
 
@@ -57,9 +50,20 @@ val resolve_attribute_access : t -> base_type:Type.t -> attribute:string -> Type
 
 val partition_name : t -> name:Expression.Name.t -> Reference.t * Reference.t * Annotation.t option
 
-val set_local : ?temporary:bool -> t -> reference:Reference.t -> annotation:Annotation.t -> t
+val has_nontemporary_annotation : reference:Reference.t -> t -> bool
 
-val set_local_with_attributes
+val new_local : ?temporary:bool -> t -> reference:Reference.t -> annotation:Annotation.t -> t
+
+val refine_local : ?temporary:bool -> t -> reference:Reference.t -> annotation:Annotation.t -> t
+
+val new_local_with_attributes
+  :  ?temporary:bool ->
+  t ->
+  name:Expression.Name.t ->
+  annotation:Annotation.t ->
+  t
+
+val refine_local_with_attributes
   :  ?temporary:bool ->
   t ->
   name:Expression.Name.t ->
@@ -86,13 +90,25 @@ val type_variable_exists : t -> variable:Type.Variable.t -> bool
 
 val all_type_variables_in_scope : t -> Type.Variable.t list
 
-val annotation_store : t -> annotation_store
+val annotation_store : t -> Refinement.Store.t
 
-val annotations : t -> RefinementUnit.t Reference.Map.t
+val refinements_equal : t -> t -> bool
 
-val temporary_annotations : t -> RefinementUnit.t Reference.Map.t
+val meet_refinements : t -> t -> t
 
-val with_annotation_store : t -> annotation_store:annotation_store -> t
+val outer_join_refinements : t -> t -> t
+
+val outer_widen_refinements : iteration:int -> widening_threshold:int -> t -> t -> t
+
+val update_existing_refinements : old_resolution:t -> new_resolution:t -> t
+
+val update_refinements_with_filter
+  :  old_resolution:t ->
+  new_resolution:t ->
+  filter:(Reference.t -> Annotation.t -> bool) ->
+  t
+
+val with_annotation_store : t -> annotation_store:Refinement.Store.t -> t
 
 val parent : t -> Reference.t option
 
@@ -105,6 +121,7 @@ val global_resolution : t -> GlobalResolution.t
 (* Attribute defined by `__getattr__`. *)
 val fallback_attribute
   :  ?accessed_through_class:bool ->
+  ?instantiated:Type.t option ->
   resolution:t ->
   name:Identifier.t ->
   Type.Primitive.t ->

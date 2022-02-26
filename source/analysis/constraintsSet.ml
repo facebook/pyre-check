@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -39,7 +39,7 @@ module Solution = struct
   include TypeConstraints.Solution
 end
 
-type t = TypeConstraints.t list
+type t = TypeConstraints.t list [@@deriving show]
 
 let empty = [TypeConstraints.empty]
 
@@ -108,7 +108,7 @@ let resolve_callable_protocol
 module type OrderedConstraintsType = TypeConstraints.OrderedConstraintsType with type order = order
 
 module Make (OrderedConstraints : OrderedConstraintsType) = struct
-  (* TODO(T40105833): merge this with actual signature select *)
+  (* TODO(T41127207): merge this with actual signature select *)
   let rec simulate_signature_select
       order
       ~callable:{ Type.Callable.implementation; overloads; _ }
@@ -866,20 +866,24 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       |> Option.value ~default:impossible
 
 
-  (* Find parameters to instantiate `protocol` such that `candidate <: protocol[parameters]`, where
-     `<:` is `solve_candidate_less_or_equal_protocol`.
+  (** Find parameters to instantiate `protocol` such that `candidate <: protocol[parameters]`, where
+      `<:` is `solve_candidate_less_or_equal_protocol`.
 
-     This can handle recursive instances of (candidate <: protocol). The first time it sees a
-     candidate-protocol pair, it stores an assumed set of parameters. The next time it sees the same
-     pair, it returns the assumed parameters. When the protocol is not generic, the solution if it
-     exists will be [].
+      NOTE: unlike several of the other methods defined by this `let rec` block, here an empty list
+      does not mean failure, it means a success with no constraints due to generics. A failure is
+      indicated by an output of None.
 
-     We need this because Python protocols can refer to themselves. So, the subtyping relation for
-     protocols is the one for equirecursive types. See section 21.9 of Types and Programming
-     Languages for the subtyping algorithm.
+      This can handle recursive instances of (candidate <: protocol). The first time it sees a
+      candidate-protocol pair, it stores an assumed set of parameters. The next time it sees the
+      same pair, it returns the assumed parameters. When the protocol is not generic, the solution
+      if it exists will be [].
 
-     Note that classes that refer to themselves don't suffer from this since subtyping for two
-     classes just follows from the class hierarchy. *)
+      We need this because Python protocols can refer to themselves. So, the subtyping relation for
+      protocols is the one for equirecursive types. See section 21.9 of Types and Programming
+      Languages for the subtyping algorithm.
+
+      Note that classes that refer to themselves don't suffer from this since subtyping for two
+      classes just follows from the class hierarchy. *)
   and instantiate_protocol_parameters_with_solve
       ({
          class_hierarchy = { variables; _ };
@@ -1017,6 +1021,9 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
             >>| instantiate_protocol_generics)
 
 
+  (** As with `instantiate_protocol_parameters_with_solve`, here `None` means a failure to match
+      `candidate` type with the protocol, whereas `Some []` means no generic constraints were
+      induced. *)
   and instantiate_protocol_parameters
       : order -> candidate:Type.t -> protocol:Ast.Identifier.t -> Type.Parameter.t list option
     =
@@ -1031,17 +1038,31 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         match constraints_set with
         | [] -> []
         | _ ->
-            let attribute_annotation attribute =
+            let attribute_type attribute =
               AnnotatedAttribute.annotation attribute |> Annotation.annotation
             in
-            attribute ~assumptions candidate ~name:(AnnotatedAttribute.name protocol_attribute)
-            >>| attribute_annotation
+            let attribute_type_with_getattr_fallback ~attribute_lookup ~name =
+              match attribute_lookup ~name with
+              | Some found -> Some (attribute_type found)
+              | None -> (
+                  match attribute_lookup ~name:"__getattr__" >>| attribute_type with
+                  | Some
+                      (Type.Parametric
+                        { name = "BoundMethod"; parameters = [Single (Type.Callable callable); _] })
+                  | Some (Type.Callable callable) ->
+                      Some callable.implementation.annotation
+                  | _ -> None)
+            in
+
+            attribute_type_with_getattr_fallback
+              ~attribute_lookup:(attribute ~assumptions candidate)
+              ~name:(AnnotatedAttribute.name protocol_attribute)
             >>| (fun left ->
                   let right =
-                    match attribute_annotation protocol_attribute with
+                    match attribute_type protocol_attribute with
                     | Type.Parametric { name = "BoundMethod"; _ } as bound_method ->
                         attribute ~assumptions bound_method ~name:"__call__"
-                        >>| attribute_annotation
+                        >>| attribute_type
                         |> Option.value ~default:Type.object_primitive
                     | annotation -> annotation
                   in

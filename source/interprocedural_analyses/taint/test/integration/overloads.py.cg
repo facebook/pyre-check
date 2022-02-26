@@ -1,4 +1,5 @@
 @generated
 Call dependencies
+overloads.$toplevel (fun) -> []
 overloads.call_me (fun) -> [_test_sink (fun)]
 overloads.f (fun) -> [overloads.call_me (fun)]

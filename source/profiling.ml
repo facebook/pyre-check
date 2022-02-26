@@ -1,12 +1,11 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
 
 open Core
-open Pyre
 module Worker = Hack_parallel.Std.Worker
 
 module GlobalState = struct
@@ -19,10 +18,10 @@ module GlobalState = struct
 
   let initialize ?profiling_output ?memory_profiling_output () =
     Option.iter profiling_output ~f:(fun output ->
-        Path.remove_if_exists (Path.create_absolute output);
+        PyrePath.remove_if_exists (PyrePath.create_absolute output);
         global_state.profiling_output <- Some output);
     Option.iter memory_profiling_output ~f:(fun output ->
-        Path.remove_if_exists (Path.create_absolute output);
+        PyrePath.remove_if_exists (PyrePath.create_absolute output);
         global_state.memory_profiling_output <- Some output);
     ()
 
@@ -51,11 +50,8 @@ module Event = struct
   [@@deriving yojson]
 
   let now_in_microseconds () =
-    Time_stamp_counter.now ()
-    |> Time_stamp_counter.to_time ~calibrator:Timer.calibrator
-    |> Time.to_span_since_epoch
-    |> Time.Span.to_us
-    |> Int.of_float
+    let now_in_nanoseconds = Mtime_clock.now () |> Mtime.to_uint64_ns |> Int.of_int64_trunc in
+    now_in_nanoseconds / 1000
 
 
   let create ?(timestamp = now_in_microseconds ()) ?(tags = []) ~event_type name =
@@ -66,7 +62,7 @@ module Event = struct
 end
 
 let log_to_path path ~event_creator =
-  let path = Path.create_absolute path in
+  let path = PyrePath.create_absolute path in
   let line = event_creator () |> Event.to_yojson |> Yojson.Safe.to_string in
   File.append ~lines:[line] path
 

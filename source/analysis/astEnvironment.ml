@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,6 +18,7 @@ type t = {
 module ParserError = struct
   type t = {
     source_path: SourcePath.t;
+    location: Location.t;
     is_suppressed: bool;
     message: string;
   }
@@ -54,7 +55,8 @@ let wildcard_exports_of ({ Source.source_path = { SourcePath.is_stub; _ }; _ } a
           SimpleAssign { value = { Node.value = Expression.(List names | Tuple names); _ }; _ };
       } ->
         let to_identifier = function
-          | { Node.value = Expression.String { value = name; _ }; _ } -> Some name
+          | { Node.value = Expression.Constant (Constant.String { value = name; _ }); _ } ->
+              Some name
           | _ -> None
         in
         Some (List.filter_map ~f:to_identifier names)
@@ -110,6 +112,7 @@ end
 type parse_result =
   | Success of Source.t
   | Error of {
+      location: Location.t;
       message: string;
       is_suppressed: bool;
     }
@@ -122,12 +125,16 @@ let create_source ~metadata ~source_path statements =
     statements
 
 
-let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source_path) =
-  let parse_lines lines =
-    let metadata = Source.Metadata.parse ~qualifier lines in
-    match Parser.parse ~relative lines with
+let parse_source
+    ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
+    ~context
+    ({ SourcePath.qualifier; _ } as source_path)
+  =
+  let parse content =
+    let metadata = Source.Metadata.parse ~qualifier (String.split content ~on:'\n') in
+    match PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context content with
     | Ok statements -> Success (create_source ~metadata ~source_path statements)
-    | Error error ->
+    | Error { PyreNewParser.Error.line; column; end_line; end_column; message } ->
         let is_suppressed =
           let { Source.Metadata.local_mode; ignore_codes; _ } = metadata in
           match Source.mode ~configuration ~local_mode with
@@ -136,43 +143,77 @@ let parse_source ~configuration ({ SourcePath.relative; qualifier; _ } as source
               (* NOTE: The number needs to be updated when the error code changes. *)
               List.exists ignore_codes ~f:(Int.equal 404)
         in
-        Error { message = Parser.Error.show error; is_suppressed }
+        let location =
+          (* CPython set line/column number to -1 in some exceptional cases. *)
+          let replace_invalid_position number = if number <= 0 then 1 else number in
+          let start =
+            {
+              Location.line = replace_invalid_position line;
+              column = replace_invalid_position column;
+            }
+          in
+          let stop =
+            (* Work around CPython bug where the end location sometimes precedes start location. *)
+            if [%compare: int * int] (line, column) (end_line, end_column) > 0 then
+              start
+            else
+              {
+                Location.line = replace_invalid_position end_line;
+                column = replace_invalid_position end_column;
+              }
+          in
+          { Location.start; stop }
+        in
+        Error { location; message; is_suppressed }
   in
   let path = SourcePath.full_path ~configuration source_path in
-  try File.lines_exn (File.create path) |> parse_lines with
+  try File.content_exn (File.create path) |> parse with
   | Sys_error error ->
-      let message = Format.asprintf "Cannot open file `%a` due to: %s" Path.pp path error in
-      Error { message; is_suppressed = false }
+      let message = Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.pp path error in
+      Error
+        {
+          location =
+            {
+              Location.start = { Location.line = 1; column = 1 };
+              stop = { Location.line = 1; column = 1 };
+            };
+          message;
+          is_suppressed = false;
+        }
 
 
 let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
   let parse_and_categorize result source_path =
-    match parse_source ~configuration source_path with
-    | Success ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) ->
-        let source =
-          let {
-            Configuration.Analysis.python_major_version;
-            python_minor_version;
-            python_micro_version;
-            _;
-          }
-            =
-            configuration
+    let do_parse context =
+      match parse_source ~configuration ~context source_path with
+      | Success ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) ->
+          let source =
+            let {
+              Configuration.Analysis.python_major_version;
+              python_minor_version;
+              python_micro_version;
+              _;
+            }
+              =
+              configuration
+            in
+            Preprocessing.replace_version_specific_code
+              ~major_version:python_major_version
+              ~minor_version:python_minor_version
+              ~micro_version:python_micro_version
+              source
+            |> Preprocessing.preprocess_phase0
           in
-          Preprocessing.replace_version_specific_code
-            ~major_version:python_major_version
-            ~minor_version:python_minor_version
-            ~micro_version:python_micro_version
-            source
-          |> Preprocessing.preprocess_phase0
-        in
-        Raw.add_parsed_source ast_environment source;
-        qualifier :: result
-    | Error { message; is_suppressed } ->
-        let { SourcePath.qualifier; _ } = source_path in
-        let message = String.split_lines message |> List.hd |> Option.value ~default:"" in
-        Raw.add_unparsed_source ast_environment { ParserError.source_path; message; is_suppressed };
-        qualifier :: result
+          Raw.add_parsed_source ast_environment source;
+          qualifier :: result
+      | Error { location; message; is_suppressed } ->
+          let { SourcePath.qualifier; _ } = source_path in
+          Raw.add_unparsed_source
+            ast_environment
+            { ParserError.source_path; location; message; is_suppressed };
+          qualifier :: result
+    in
+    PyreNewParser.with_context do_parse
   in
   Scheduler.map_reduce
     scheduler
@@ -205,9 +246,9 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
         let statement _ collected_imports { Node.value; _ } =
           match value with
           | Statement.Import { Import.from = Some from; imports }
-            when List.exists imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
+            when List.exists imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
                      String.equal (Reference.show name) "*") ->
-              Node.value from :: collected_imports
+              from :: collected_imports
           | _ -> collected_imports
       end)
       in
@@ -240,19 +281,19 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
       match value with
       | Statement.Import { Import.from = Some from; imports } -> (
           let starred_import =
-            List.find imports ~f:(fun { Import.name = { Node.value = name; _ }; _ } ->
+            List.find imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
                 String.equal (Reference.show name) "*")
           in
           match starred_import with
           | Some _ ->
               let expanded_import =
-                match get_transitive_exports (Node.value from) ~ast_environment ?dependency with
+                match get_transitive_exports from ~ast_environment ?dependency with
                 | [] -> []
                 | exports ->
                     List.map exports ~f:(fun name ->
                         {
-                          Import.name = Node.create ~location:Location.any (Reference.create name);
-                          alias = Some (Node.create ~location:Location.any name);
+                          Node.value = { Import.name = Reference.create name; alias = Some name };
+                          location = Location.any;
                         })
                     |> (fun expanded ->
                          Statement.Import { Import.from = Some from; imports = expanded })
@@ -281,7 +322,11 @@ let get_and_preprocess_source
      to explicitly record the dependency. *)
   Raw.get_source ast_environment qualifier ?dependency:None
   >>| function
-  | Result.Ok source -> expand_wildcard_imports ?dependency ~ast_environment source |> preprocessing
+  | Result.Ok source ->
+      expand_wildcard_imports ?dependency ~ast_environment source
+      |> preprocessing
+      |> InlineDecorator.inline_decorators ~get_source:(fun qualifier ->
+             Raw.get_source ?dependency ast_environment qualifier >>= Result.ok)
   | Result.Error
       { ParserError.source_path = { SourcePath.qualifier; relative; _ } as source_path; _ } ->
       (* Files that have parser errors fall back into getattr-any. *)

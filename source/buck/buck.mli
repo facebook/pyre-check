@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -51,7 +51,19 @@
     (which supports efficient bi-directional path lookup), and populate the artifact path on the
     Pyre side according to materialized layout info. Besides construction, we also need to maintain
     the build map and the artifact directory on each incremental update ourselves, as Buck itself
-    does not expose any easy-to-query incremental update functionalities. *)
+    does not expose any easy-to-query incremental update functionalities.
+
+    Overall, this library provides its downstream clients with 3 layers of abstraction:
+
+    - The lowest abstraction layer is {!module:Raw}, which handles the low-level details of how Pyre
+      communicates with Buck (e.g. how to shell out to the [buck] executable, how cli arguments are
+      passed, how subprocess stdout/stderr are handled, etc.).
+    - The middle abstraction layer is {!module:Interface}, which handles how one or more [buck]
+      invocations can be organized to perform higher-level tasks (e.g. normalize targets, load
+      source databases, etc.).
+    - The highest abstraction layer is {!module:Builder}, which coordinates one or more [buck] tasks
+      as well as Pyre's own link tree building tasks to offer push-button build state management.
+      (e.g. "build this project", "incrementally update my build", etc.).*)
 
 (** This module implements build map, which is the key data structure for solving the path
     translation problem for Buck. The build map represents a one-to-many association: there can be
@@ -282,7 +294,7 @@ module Target : sig
   val pp : Format.formatter -> t -> unit
 end
 
-(** This module contains the low-level interfaces for invoking `buck` as an external tool. *)
+(** This module contains the low-level interfaces for invoking [buck] as an external tool. *)
 module Raw : sig
   module ArgumentList : sig
     type t [@@deriving sexp_of]
@@ -290,6 +302,9 @@ module Raw : sig
 
     val to_buck_command : t -> string
     (** Reconstruct the shell command Pyre uses to invoke Buck from an {!ArgumentList.t}. *)
+
+    val length : t -> int
+    (** Number of arguments in the list*)
   end
 
   exception
@@ -297,15 +312,24 @@ module Raw : sig
       arguments: ArgumentList.t;
       description: string;
       exit_code: int option;
+      additional_logs: string list;
     }
   [@@deriving sexp_of]
   (** Raised when external invocation of `buck` returns an error. The [exit_code] field is set to
-      [None] if the external `buck` process gets stopped by a signal. *)
+      [None] if the external `buck` process gets stopped by a signal. The [additional_log] field
+      contains the last few lines of Buck's log that get dumped on its stderr. *)
 
   type t
 
-  val create : unit -> t
-  (** Create an instance of [Raw.t] based on system-installed Buck. *)
+  val create : ?additional_log_size:int -> unit -> t
+  (** Create an instance of [Raw.t] based on system-installed Buck. The [additional_log_size]
+      parameter controls how many lines of Buck log to preserve when an {!BuckError} is raised. By
+      default, the size is set to 0, which means no additional log will be kept. *)
+
+  val create_v2 : ?additional_log_size:int -> unit -> t
+  (** Create an instance of [Raw.t] based on system-installed Buck2. The [additional_log_size]
+      parameter controls how many lines of Buck2 log to preserve when an {!BuckError} is raised. By
+      default, the size is set to 0, which means no additional log will be kept. *)
 
   val create_for_testing
     :  query:(?isolation_prefix:string -> string list -> string Lwt.t) ->
@@ -330,28 +354,14 @@ module Raw : sig
       interpret it a bit differently from the rest of the arguments. *)
 end
 
-(** This module contains high-level interfaces for invoking `buck` as an external tool. *)
-module Builder : sig
+(** This module contains high-level interfaces for invoking [buck] as an external tool. It relies on
+    the {!module:Raw} module to provide the lower-level knowledge on how the [buck] executable
+    should be invoked. *)
+module Interface : sig
   type t
 
   exception JsonError of string
-  (** Raised when `buck` returns malformed JSONs *)
-
-  exception LinkTreeConstructionError of string
-  (** Raised when artifact building fails. See {!val:Artifacts.populate}. *)
-
-  (** {1 Creation} *)
-
-  val create
-    :  ?mode:string ->
-    ?isolation_prefix:string ->
-    source_root:PyrePath.t ->
-    artifact_root:PyrePath.t ->
-    Raw.t ->
-    t
-  (** Create an instance of [Builder.t] from an instance of {!Raw.t} and some buck options. *)
-
-  (** {1 Build} *)
+  (** Raised when [buck] returns malformed JSONs *)
 
   (** The return type for initial builds. It contains a build map as well as a list of buck targets
       that are successfully included in the build. *)
@@ -361,6 +371,65 @@ module Builder : sig
       targets: Target.t list;
     }
   end
+
+  val create : ?mode:string -> ?isolation_prefix:string -> Raw.t -> t
+  (** Create an instance of [Interface.t] from an instance of {!Raw.t} and some buck options.
+      Interfaces created this way is only compatible with Buck1. *)
+
+  val create_v2 : ?mode:string -> ?isolation_prefix:string -> Raw.t -> t
+  (** Create an instance of [Interface.t] from an instance of {!Raw.t} and some buck options.
+      Interfaces created this way is only compatible with Buck2.*)
+
+  val create_for_testing
+    :  normalize_targets:(string list -> Target.t list Lwt.t) ->
+    construct_build_map:(Target.t list -> BuildResult.t Lwt.t) ->
+    unit ->
+    t
+  (** Create an instance of [Interface.t] from custom [normalize_targets] and [construct_build_map]
+      behavior. Useful for unit testing. *)
+
+  val normalize_targets : t -> string list -> Target.t list Lwt.t
+  (** Given a list of buck target specifications (which may contain `...` or filter expression),
+      query [buck] and return the set of individual targets which will be built.
+
+      May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
+      succeeds but its output cannot be parsed. *)
+
+  val construct_build_map : t -> Target.t list -> BuildResult.t Lwt.t
+  (** Given a list of normalized Buck targets, invoke [buck] to construct the link tree as well as
+      source databases. It then loads all generated source databases, and merge all of them into a
+      single [BuildMap.t].
+
+      Source-db merging may not always succeed (see {!val:BuildMap.Partial.merge}). If it is deteced
+      that the source-db for one target cannot be merged into the build map due to confliction, a
+      warning will be printed and the target will be dropped. If a target is dropped, it will not
+      show up in the final target list returned from this API (alongside with the build map).
+
+      May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
+      succeeds but its output cannot be parsed. *)
+end
+
+(** This module contains highest-level interfaces for [buck]-related logic. It relies on
+    Buck-related logic from {!module:Interface} to obtain information about the source files, and on
+    filesystem-related logic from {!module:Artifacts} to create&maintain information about the
+    artifact files. *)
+module Builder : sig
+  type t
+
+  exception LinkTreeConstructionError of string
+  (** Raised when artifact building fails. See {!val:Artifacts.populate}. *)
+
+  (** {1 Creation} *)
+
+  val create : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.t -> t
+  (** Create an instance of [Builder.t] from an instance of {!Interface.t} and some buck options.
+      Builders created this way are only compatible with Buck1. *)
+
+  val create_v2 : source_root:PyrePath.t -> artifact_root:PyrePath.t -> Interface.t -> t
+  (** Create an instance of [Builder.t] from an instance of {!Interface.t} and some buck options.
+      Builders created with way are only compatible with Buck2. *)
+
+  (** {1 Build} *)
 
   (** The return type for incremental builds. It contains a build map, a list of buck targets that
       are successfully included in the build, and a list of artifact files whose contents may be
@@ -373,7 +442,7 @@ module Builder : sig
     }
   end
 
-  val build : targets:string list -> t -> BuildResult.t Lwt.t
+  val build : targets:string list -> t -> Interface.BuildResult.t Lwt.t
   (** Given a list of buck target specificaitons to build, construct a build map for the targets and
       create a Python link tree at the given artifact root according to the build map. Return the
       constructed build map along with a list of targets that are covered by the build map.
@@ -388,7 +457,7 @@ module Builder : sig
 
       The following exceptions may be raised by this API:
 
-      - {!exception: JsonError} if `buck` returns malformed or inconsistent JSON blobs.
+      - {!exception: Interface.JsonError} if `buck` returns malformed or inconsistent JSON blobs.
       - {!exception: Raw.BuckError} if `buck` quits in any unexpected ways when shelling out to it.
       - {!exception: LinkTreeConstructionError} if any error is encountered when constructing the
         link tree from the build map.
@@ -506,8 +575,8 @@ module Builder : sig
       API only understands relative paths, while this API operates on full paths and takes care of
       relativizing/expanding the input/output paths against artifact/source root.*)
 
-  (** {1 Cleanup} *)
+  (** {1 Misc} *)
 
-  val cleanup : t -> unit
-  (** Remove the artifact root along with all of its containing files from the filesystem. *)
+  val identifier_of : t -> string
+  (** Return an identifier of the builder (for logging purpose). *)
 end

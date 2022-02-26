@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -192,16 +192,14 @@ let test_check_isinstance context =
   assert_type_errors
     "isinstance(str, '')"
     [
-      "Incompatible parameter type [6]: Expected `typing.Union[typing.Type[typing.Any], \
-       typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd positional only parameter to call \
-       `isinstance` but got `str`.";
+      "Incompatible parameter type [6]: In call `isinstance`, for 2nd positional only parameter \
+       expected `Union[Type[typing.Any], typing.Tuple[Type[typing.Any], ...]]` but got `str`.";
     ];
   assert_type_errors
     "isinstance(1, (int, ('', str)))"
     [
-      "Incompatible parameter type [6]: Expected `typing.Union[typing.Type[typing.Any], \
-       typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd positional only parameter to call \
-       `isinstance` but got `str`.";
+      "Incompatible parameter type [6]: In call `isinstance`, for 2nd positional only parameter \
+       expected `Union[Type[typing.Any], typing.Tuple[Type[typing.Any], ...]]` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -230,9 +228,8 @@ let test_check_isinstance context =
         isinstance(x, y)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Union[typing.Type[typing.Any], \
-       typing.Tuple[typing.Type[typing.Any], ...]]` for 2nd positional only parameter to call \
-       `isinstance` but got `int`.";
+      "Incompatible parameter type [6]: In call `isinstance`, for 2nd positional only parameter \
+       expected `Union[Type[typing.Any], typing.Tuple[Type[typing.Any], ...]]` but got `int`.";
     ];
   assert_type_errors
     {|

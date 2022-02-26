@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -243,22 +243,20 @@ module ReadOnly = struct
     resolve_module_alias ~current_module:from ~names_to_resolve:(Reference.as_list reference) ()
 
 
-  let resolve_decorator_if_matches
-      read_only
-      ?dependency
-      ({ Ast.Statement.Decorator.name = { Node.value = name; location }; _ } as decorator)
-      ~target
-    =
-    let resolved_name =
-      match resolve_exports read_only ?dependency name with
-      | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
-          Reference.create_from_list (name :: remaining) |> Reference.combine from
-      | _ -> name
-    in
-    if String.equal (Reference.show resolved_name) target then
-      Some { decorator with name = { Node.value = resolved_name; location } }
-    else
-      None
+  let resolve_decorator_if_matches read_only ?dependency decorator ~target =
+    match Decorator.from_expression decorator with
+    | None -> None
+    | Some ({ Ast.Statement.Decorator.name = { Node.value = name; location }; _ } as decorator) ->
+        let resolved_name =
+          match resolve_exports read_only ?dependency name with
+          | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
+              Reference.create_from_list (name :: remaining) |> Reference.combine from
+          | _ -> name
+        in
+        if String.equal (Reference.show resolved_name) target then
+          Some { decorator with name = { Node.value = resolved_name; location } }
+        else
+          None
 
 
   let get_decorator
@@ -577,7 +575,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       }
     in
     {
-      Class.name = Node.create_with_default_location (Reference.create name);
+      Class.name = Reference.create name;
       base_arguments = List.map bases ~f:create_base @ List.map metaclasses ~f:create_metaclass;
       body;
       decorators = [];
@@ -598,10 +596,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
               (Expression.Name
                  (Ast.Expression.create_name ~location:Location.any "typing.Callable.__call__"));
           annotation = Some (Type.expression Type.object_primitive);
-          value =
-            Node.create_with_default_location
-              (Expression.Name (Ast.Expression.create_name ~location:Location.any "None"));
-          parent = Some (Reference.create "typing.Callable");
+          value = Node.create_with_default_location (Expression.Constant Constant.NoneLiteral);
         };
     ]
     |> List.map ~f:Node.create_with_default_location
@@ -612,9 +607,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
       {
         signature =
           {
-            name =
-              Node.create_with_default_location
-                (Reference.combine parent (Reference.create "__get__"));
+            name = Reference.combine parent (Reference.create "__get__");
             parameters =
               [
                 Node.create_with_default_location
@@ -631,8 +624,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
                     value =
                       Some
                         (Node.create_with_default_location
-                           (Expression.Name
-                              (Ast.Expression.create_name ~location:Location.any "None")));
+                           (Expression.Constant Constant.NoneLiteral));
                     annotation = Some (Type.expression host_type);
                   };
               ];
@@ -691,9 +683,7 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
         {
           signature =
             {
-              name =
-                Reference.create "typing.GenericMeta.__getitem__"
-                |> Node.create_with_default_location;
+              name = Reference.create "typing.GenericMeta.__getitem__";
               parameters =
                 [
                   { Parameter.name = "cls"; value = None; annotation = None }
@@ -795,7 +785,7 @@ let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _
     | _ -> classes
   in
   let register new_annotations { Node.location; value = { Class.name; _ } as definition } =
-    let primitive = Reference.show (Node.value name) in
+    let primitive = Reference.show name in
     let definition =
       match primitive with
       | "type" ->
@@ -824,11 +814,11 @@ let missing_builtin_globals =
           {
             explicit_annotation = Some (Type.expression annotation);
             target_location = Location.WithModule.any;
-            value = Node.create_with_default_location Expression.Ellipsis;
+            value = Node.create_with_default_location (Expression.Constant Constant.Ellipsis);
           };
     }
   in
-  [assign "None" Type.none; assign "..." Type.Any; assign "__debug__" Type.bool]
+  [assign "..." Type.Any; assign "__debug__" Type.bool]
 
 
 let collect_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =

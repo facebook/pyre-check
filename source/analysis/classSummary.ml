@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,13 +15,13 @@ module Attribute : sig
     self: Expression.t option;
     return: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type setter_property = {
     self: Expression.t option;
     value: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type property_kind =
     | ReadOnly of { getter: getter_property }
@@ -29,18 +29,18 @@ module Attribute : sig
         getter: getter_property;
         setter: setter_property;
       }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type origin =
     | Explicit
     | Implicit
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type value_and_origin = {
     value: Expression.t;
     origin: origin;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type simple = {
     annotation: Expression.t option;
@@ -51,35 +51,35 @@ module Attribute : sig
     implicit: bool;
     nested_class: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type method_ = {
     signatures: Define.Signature.t list;
     static: bool;
     final: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type property = {
     async: bool;
     class_property: bool;
     kind: property_kind;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type kind =
     | Simple of simple
     | Method of method_
     | Property of property
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type attribute = {
     kind: kind;
     name: Identifier.t;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
-  type t = attribute Node.t [@@deriving compare, eq, sexp, show, hash]
+  type t = attribute Node.t [@@deriving compare, sexp, show, hash]
 
   val create_simple
     :  location:Location.t ->
@@ -104,13 +104,13 @@ end = struct
     self: Expression.t option;
     return: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type setter_property = {
     self: Expression.t option;
     value: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type property_kind =
     | ReadOnly of { getter: getter_property }
@@ -118,18 +118,18 @@ end = struct
         getter: getter_property;
         setter: setter_property;
       }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type origin =
     | Explicit
     | Implicit
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type value_and_origin = {
     value: Expression.t;
     origin: origin;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type simple = {
     annotation: Expression.t option;
@@ -140,35 +140,35 @@ end = struct
     implicit: bool;
     nested_class: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type method_ = {
     signatures: Define.Signature.t list;
     static: bool;
     final: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type property = {
     async: bool;
     class_property: bool;
     kind: property_kind;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type kind =
     | Simple of simple
     | Method of method_
     | Property of property
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type attribute = {
     kind: kind;
     name: Identifier.t;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
-  type t = attribute Node.t [@@deriving compare, eq, sexp, show, hash]
+  type t = attribute Node.t [@@deriving compare, sexp, show, hash]
 
   let location_insensitive_compare_property_kind left right =
     match left, right with
@@ -305,7 +305,7 @@ end
 
 module ClassAttributes = struct
   type attribute_map = Attribute.attribute Node.t Identifier.SerializableMap.t
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type t = {
     explicitly_assigned_attributes: attribute_map;
@@ -313,7 +313,7 @@ module ClassAttributes = struct
     test_setup_attributes: attribute_map;
     additional_attributes: attribute_map;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   let assigned_by_define
       ({ Define.body; signature = { parameters; _ }; _ } as define)
@@ -393,7 +393,7 @@ module ClassAttributes = struct
                 let argument_value =
                   Node.create_with_default_location (Expression.Tuple (annotation :: annotations))
                 in
-                if List.for_all ~f:(Expression.equal annotation) annotations then
+                if List.for_all ~f:([%compare.equal: Expression.t] annotation) annotations then
                   Some annotation
                 else
                   Some
@@ -482,7 +482,7 @@ module ClassAttributes = struct
                       { signature = { name = callee; parent = Some parent; _ }; body; _ };
                   _;
                 }
-                when Reference.equal (Node.value callee) (Reference.create ~prefix:parent name) ->
+                when Reference.equal callee (Reference.create ~prefix:parent name) ->
                   Some body
               | _ -> None
             in
@@ -527,11 +527,7 @@ module ClassAttributes = struct
 
     let create
         ~location
-        ({
-           Define.signature =
-             { name = { Node.value = name; _ }; return_annotation; parameters; parent; _ };
-           _;
-         } as define)
+        ({ Define.signature = { name; return_annotation; parameters; parent; _ }; _ } as define)
       =
       let inspect_decorators name =
         let async = Define.is_async define in
@@ -590,7 +586,7 @@ module ClassAttributes = struct
     | _ -> right
 
 
-  let create ({ Class.name = { Node.value = parent_name; _ }; body; _ } as definition) =
+  let create ({ Class.name = parent_name; body; _ } as definition) =
     let explicitly_assigned_attributes =
       let assigned_attributes map { Node.location; value } =
         let open Expression in
@@ -627,7 +623,9 @@ module ClassAttributes = struct
               |> function
               | Some name ->
                   let value =
-                    let index = Node.create ~location (Expression.Integer index) in
+                    let index =
+                      Node.create ~location (Expression.Constant (Constant.Integer index))
+                    in
                     match value with
                     | { Node.value = Call _; _ }
                     | { Node.value = Name _; _ } ->
@@ -800,9 +798,8 @@ module ClassAttributes = struct
       let callable_attributes =
         let callable_attributes map { Node.location; value } =
           match value with
-          | Statement.Define
-              ({ Define.signature = { name = { Node.value = target; _ }; _ } as signature; _ } as
-              define) ->
+          | Statement.Define ({ Define.signature = { name = target; _ } as signature; _ } as define)
+            ->
               Attribute.name (Expression.from_reference ~location target) ~parent:parent_name
               >>| (fun name ->
                     let attribute =
@@ -841,7 +838,7 @@ module ClassAttributes = struct
       let class_attributes =
         let callable_attributes map { Node.location; value } =
           match value with
-          | Statement.Class { name = { Node.value = name; _ }; _ } ->
+          | Statement.Class { name; _ } ->
               let open Expression in
               let annotation =
                 let meta_annotation =
@@ -957,7 +954,7 @@ module ClassAttributes = struct
             when is_slots target_value ->
               let add_attribute map { Node.value; _ } =
                 match value with
-                | Expression.String { StringLiteral.value; _ } ->
+                | Expression.Constant (Constant.String { StringLiteral.value; _ }) ->
                     Attribute.create_simple ~location ~name:value ()
                     |> fun attribute ->
                     Identifier.SerializableMap.set map ~key:value ~data:attribute
@@ -1034,21 +1031,18 @@ module ClassSummary = struct
     metaclass: Expression.t option;
     init_subclass_arguments: Expression.Call.Argument.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   type t = {
     name: Reference.t;
     qualifier: Reference.t;
     bases: bases;
-    decorators: Decorator.t list;
+    decorators: Expression.t list;
     class_attributes: ClassAttributes.t;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
-  let create
-      ~qualifier
-      ({ Ast.Statement.Class.name = { Node.value = name; _ }; decorators; _ } as class_definition)
-    =
+  let create ~qualifier ({ Ast.Statement.Class.name; decorators; _ } as class_definition) =
     let bases =
       {
         base_classes = Ast.Statement.Class.base_classes class_definition;
@@ -1107,7 +1101,6 @@ module ClassSummary = struct
 
 
   let has_decorator { decorators; _ } decorator =
-    let decorators = List.map decorators ~f:Decorator.to_expression in
     Expression.exists_in_list ~expression_list:decorators decorator
 
 
@@ -1159,7 +1152,7 @@ module ClassSummary = struct
         let name = function
           | {
               Node.value =
-                Ast.Expression.Expression.String { Ast.Expression.StringLiteral.value; _ };
+                Ast.Expression.(Expression.Constant (Constant.String { StringLiteral.value; _ }));
               _;
             } ->
               Some value

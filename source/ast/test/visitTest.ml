@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -42,8 +42,8 @@ let test_collect _ =
       expressions, statements
     in
     let equal left right =
-      List.equal Expression.equal (fst left) (fst right)
-      && List.equal Statement.equal (snd left) (snd right)
+      List.equal [%compare.equal: Expression.t] (fst left) (fst right)
+      && List.equal [%compare.equal: Statement.t] (snd left) (snd right)
     in
     let printer (expressions, statements) =
       Format.asprintf
@@ -56,93 +56,139 @@ let test_collect _ =
     assert_equal ~cmp:equal ~printer expected collect
   in
   assert_collect
-    [+Statement.Expression (+Expression.Float 1.0); +Statement.Expression (+Expression.Float 2.0)]
-    ( [+Expression.Float 2.0; +Expression.Float 1.0],
-      [+Statement.Expression (+Expression.Float 2.0); +Statement.Expression (+Expression.Float 1.0)]
-    );
-  assert_collect
     [
-      +Statement.If
-         {
-           If.test = +Expression.Float 2.0;
-           body = [+Statement.Expression (+Expression.Float 3.0)];
-           orelse = [+Statement.Expression (+Expression.Float 4.0)];
-         };
+      +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
+      +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
     ]
-    ( [+Expression.Float 4.0; +Expression.Float 3.0; +Expression.Float 2.0],
+    ( [+Expression.Constant (Constant.Float 2.0); +Expression.Constant (Constant.Float 1.0)],
       [
-        +Statement.If
-           {
-             If.test = +Expression.Float 2.0;
-             body = [+Statement.Expression (+Expression.Float 3.0)];
-             orelse = [+Statement.Expression (+Expression.Float 4.0)];
-           };
-        +Statement.Expression (+Expression.Float 4.0);
-        +Statement.Expression (+Expression.Float 3.0);
+        +Statement.Expression (+Expression.Constant (Constant.Float 2.0));
+        +Statement.Expression (+Expression.Constant (Constant.Float 1.0));
       ] );
   assert_collect
     [
       +Statement.If
          {
-           If.test = +Expression.Float 1.0;
-           body =
-             [
-               +Statement.If
-                  {
-                    If.test = +Expression.Float 2.0;
-                    body = [+Statement.Expression (+Expression.Float 3.0)];
-                    orelse = [+Statement.Expression (+Expression.Float 4.0)];
-                  };
-             ];
-           orelse = [+Statement.Expression (+Expression.Float 5.0)];
+           If.test = +Expression.Constant (Constant.Float 2.0);
+           body = [+Statement.Expression (+Expression.Constant (Constant.Float 3.0))];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 4.0))];
          };
     ]
     ( [
-        +Expression.Float 5.0;
-        +Expression.Float 4.0;
-        +Expression.Float 3.0;
-        +Expression.Float 2.0;
-        +Expression.Float 1.0;
+        +Expression.Constant (Constant.Float 4.0);
+        +Expression.Constant (Constant.Float 3.0);
+        +Expression.Constant (Constant.Float 2.0);
       ],
       [
         +Statement.If
            {
-             If.test = +Expression.Float 1.0;
+             If.test = +Expression.Constant (Constant.Float 2.0);
+             body = [+Statement.Expression (+Expression.Constant (Constant.Float 3.0))];
+             orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 4.0))];
+           };
+        +Statement.Expression (+Expression.Constant (Constant.Float 4.0));
+        +Statement.Expression (+Expression.Constant (Constant.Float 3.0));
+      ] );
+  assert_collect
+    [
+      +Statement.If
+         {
+           If.test = +Expression.Constant (Constant.Float 1.0);
+           body =
+             [
+               +Statement.If
+                  {
+                    If.test = +Expression.Constant (Constant.Float 2.0);
+                    body = [+Statement.Expression (+Expression.Constant (Constant.Float 3.0))];
+                    orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 4.0))];
+                  };
+             ];
+           orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 5.0))];
+         };
+    ]
+    ( [
+        +Expression.Constant (Constant.Float 5.0);
+        +Expression.Constant (Constant.Float 4.0);
+        +Expression.Constant (Constant.Float 3.0);
+        +Expression.Constant (Constant.Float 2.0);
+        +Expression.Constant (Constant.Float 1.0);
+      ],
+      [
+        +Statement.If
+           {
+             If.test = +Expression.Constant (Constant.Float 1.0);
              body =
                [
                  +Statement.If
                     {
-                      If.test = +Expression.Float 2.0;
-                      body = [+Statement.Expression (+Expression.Float 3.0)];
-                      orelse = [+Statement.Expression (+Expression.Float 4.0)];
+                      If.test = +Expression.Constant (Constant.Float 2.0);
+                      body = [+Statement.Expression (+Expression.Constant (Constant.Float 3.0))];
+                      orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 4.0))];
                     };
                ];
-             orelse = [+Statement.Expression (+Expression.Float 5.0)];
+             orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 5.0))];
            };
-        +Statement.Expression (+Expression.Float 5.0);
+        +Statement.Expression (+Expression.Constant (Constant.Float 5.0));
         +Statement.If
            {
-             If.test = +Expression.Float 2.0;
-             body = [+Statement.Expression (+Expression.Float 3.0)];
-             orelse = [+Statement.Expression (+Expression.Float 4.0)];
+             If.test = +Expression.Constant (Constant.Float 2.0);
+             body = [+Statement.Expression (+Expression.Constant (Constant.Float 3.0))];
+             orelse = [+Statement.Expression (+Expression.Constant (Constant.Float 4.0))];
            };
-        +Statement.Expression (+Expression.Float 4.0);
-        +Statement.Expression (+Expression.Float 3.0);
+        +Statement.Expression (+Expression.Constant (Constant.Float 4.0));
+        +Statement.Expression (+Expression.Constant (Constant.Float 3.0));
+      ] );
+  assert_collect
+    [
+      +Statement.Match
+         {
+           Match.subject = +Expression.Constant (Constant.Integer 0);
+           cases =
+             [
+               {
+                 Match.Case.pattern = +Match.Pattern.MatchSingleton (Constant.Integer 2);
+                 guard = Some (+Expression.Constant (Constant.Integer 4));
+                 body = [];
+               };
+             ];
+         };
+    ]
+    ( [
+        +Expression.Constant (Constant.Integer 4);
+        +Expression.Constant (Constant.Integer 2);
+        +Expression.Constant (Constant.Integer 0);
+      ],
+      [
+        +Statement.Match
+           {
+             Match.subject = +Expression.Constant (Constant.Integer 0);
+             cases =
+               [
+                 {
+                   Match.Case.pattern = +Match.Pattern.MatchSingleton (Constant.Integer 2);
+                   guard = Some (+Expression.Constant (Constant.Integer 4));
+                   body = [];
+                 };
+               ];
+           };
       ] );
 
   assert_collect
     [
       +Statement.Expression
-         (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 });
+         (+Expression.WalrusOperator
+             { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
     ]
     ( [
-        +Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 };
-        +Expression.Integer 1;
+        +Expression.WalrusOperator
+           { target = !"a"; value = +Expression.Constant (Constant.Integer 1) };
+        +Expression.Constant (Constant.Integer 1);
         +Expression.Name (Identifier "a");
       ],
       [
         +Statement.Expression
-           (+Expression.WalrusOperator { target = !"a"; value = +Expression.Integer 1 });
+           (+Expression.WalrusOperator
+               { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
       ] )
 
 
@@ -219,7 +265,7 @@ let test_collect_format_strings_with_ignores _ =
              (List.map ~f:(fun { Ignore.codes; ignored_line; kind; _ } -> ignored_line, kind, codes))
     in
     assert_equal
-      ~cmp:[%equal: (int * Ignore.kind * int list) list list]
+      ~cmp:[%compare.equal: (int * Ignore.kind * int list) list list]
       ~printer:[%show: (int * Ignore.kind * int list) list list]
       expected
       format_strings_with_ignores
@@ -292,7 +338,7 @@ let test_node_visitor _ =
       | Visit.Statement _ ->
           increment state "statement";
           state
-      | Visit.Identifier _ ->
+      | Visit.Argument _ ->
           increment state "identifier";
           state
       | Visit.Parameter _ ->
@@ -310,6 +356,8 @@ let test_node_visitor _ =
 
 
     let visit_statement_children _ _ = true
+
+    let visit_format_string_children _ _ = true
   end
   in
   let module Visit = Visit.MakeNodeVisitor (Visitor) in
@@ -337,14 +385,19 @@ let test_node_visitor _ =
     ["expression", 9; "statement", 4; "parameter", 1; "identifier", 2; "reference", 1];
   let source = parse {|
         f"foo"
-        f'foo' 'bar'
+        f'foobar'
       |} in
-  assert_counts source ["expression", 2; "statement", 2; "substring", 3];
+  assert_counts source ["expression", 2; "statement", 2; "substring", 2];
+  let source = parse {|
+        f"foo {bar}"
+      |} in
+  assert_counts source ["expression", 2; "substring", 2];
   let source = parse {|
         class C:
           x = 1
       |} in
-  assert_counts source ["expression", 2; "reference", 1]
+  assert_counts source ["expression", 2; "reference", 1];
+  ()
 
 
 let test_statement_visitor _ =
@@ -365,6 +418,9 @@ let test_statement_visitor _ =
           visited
       | Import _ ->
           increment visited "import";
+          visited
+      | Match _ ->
+          increment visited "match";
           visited
       | Return _ ->
           increment visited "return";
@@ -390,9 +446,12 @@ let test_statement_visitor _ =
       if x < 3:
         import a
         c = 3
+      match x:
+        case _:
+          import b
   |}
   in
-  assert_counts source ["assign", 3; "return", 1; "import", 2];
+  assert_counts source ["assign", 3; "return", 1; "import", 3; "match", 1];
   ()
 
 

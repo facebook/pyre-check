@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+maximum_trace_length.$toplevel (fun) -> []
 maximum_trace_length.issue_source_one_sink_one (fun) -> [maximum_trace_length.sink_distance_one (fun) maximum_trace_length.source_distance_one (fun)]
 maximum_trace_length.issue_source_one_sink_two (fun) -> [maximum_trace_length.sink_distance_two (fun) maximum_trace_length.source_distance_one (fun)]
 maximum_trace_length.issue_source_one_sink_zero (fun) -> [maximum_trace_length.sink_distance_zero (fun) maximum_trace_length.source_distance_one (fun)]

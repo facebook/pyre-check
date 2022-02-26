@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -146,20 +146,17 @@ let annotation
     else
       annotation, original_annotation
   in
-  let mutability =
-    if defined then
-      let final =
-        match visibility with
-        | ReadOnly _ -> true
-        | ReadWrite -> false
-      in
-      Annotation.Immutable { original; final }
-    else
-      (* We need to distinguish between unannotated attributes and non-existent ones - ensure that
-         the annotation is viewed as mutable to distinguish from user-defined globals. *)
-      Annotation.Mutable
-  in
-  { Annotation.annotation; mutability }
+  if defined then
+    let final =
+      match visibility with
+      | ReadOnly _ -> true
+      | ReadWrite -> false
+    in
+    Annotation.create_immutable ~original:(Some original) ~final annotation
+  else
+    (* We need to distinguish between unannotated attributes and non-existent ones - ensure that the
+       annotation is viewed as mutable to distinguish from user-defined globals. *)
+    Annotation.create_mutable annotation
 
 
 let uninstantiated_annotation { payload; _ } = payload

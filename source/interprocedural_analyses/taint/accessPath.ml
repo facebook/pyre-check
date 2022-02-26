@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,9 +7,7 @@
 
 open Core
 open Ast
-open Analysis
 open Expression
-open Pyre
 
 (** Roots representing parameters, locals, and special return value in models. *)
 module Root = struct
@@ -24,7 +22,7 @@ module Root = struct
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
-  [@@deriving compare, eq, show { with_path = false }, hash]
+  [@@deriving compare, show { with_path = false }, hash]
 
   let chop_parameter_prefix name =
     match String.chop_prefix ~prefix:"$parameter$" name with
@@ -77,7 +75,7 @@ module Root = struct
           :: normalized )
     in
     List.foldi parameters ~f:normalize_parameters ~init:(false, [], [])
-    |> fun (_, _, parameters) -> parameters
+    |> fun (_, _, parameters) -> List.rev parameters
 
 
   let parameter_name = function
@@ -87,6 +85,15 @@ module Root = struct
     | StarParameter _ -> Some "*"
     | StarStarParameter _ -> Some "**"
     | _ -> None
+
+
+  let to_string = function
+    | LocalResult -> "result"
+    | PositionalParameter { position = _; name; _ } -> Format.sprintf "formal(%s)" name
+    | NamedParameter { name } -> Format.sprintf "formal(%s)" name
+    | StarParameter { position } -> Format.sprintf "formal(*rest%d)" position
+    | StarStarParameter _ -> "formal(**kw)"
+    | Variable name -> Format.sprintf "local(%s)" name
 end
 
 type argument_match = {
@@ -177,23 +184,23 @@ let match_actuals_to_formals arguments roots =
         Some { root = formal; actual_path = []; formal_path = [] }
     | (`Star _ | `Precise _ | `Approximate _), _ -> None
   in
-  let match_actual matched_names (position, matches) { Call.Argument.name; value } =
+  let match_actual matched_names (position, matches) ({ Call.Argument.name; value } as argument) =
     match name, value.Node.value with
     | None, Starred (Once _) ->
         let formals = List.filter_map roots ~f:(filter_to_positional (`Star position)) in
-        approximate position, (value, formals) :: matches
+        approximate position, (argument, formals) :: matches
     | None, Starred (Twice _) ->
         let formals = List.filter_map roots ~f:(filter_to_named matched_names `StarStar) in
-        position, (value, formals) :: matches
+        position, (argument, formals) :: matches
     | None, _ ->
         let formals = List.filter_map roots ~f:(filter_to_positional position) in
-        increment position, (value, formals) :: matches
+        increment position, (argument, formals) :: matches
     | Some { value = name; _ }, _ ->
         let normal_name = chop_parameter_prefix name in
         let formals =
           List.filter_map roots ~f:(filter_to_named matched_names (`Name normal_name))
         in
-        position, (value, formals) :: matches
+        position, (argument, formals) :: matches
   in
   let matched_names =
     let matched_named_arguments =
@@ -232,7 +239,7 @@ type t = {
   root: Root.t;
   path: Abstract.TreeDomain.Label.path;
 }
-[@@deriving eq]
+[@@deriving compare]
 
 let pp formatter { root; path } =
   Format.fprintf formatter "%a%a" Root.pp root Abstract.TreeDomain.Label.pp_path path
@@ -250,62 +257,40 @@ let get_index expression =
   | None -> Abstract.TreeDomain.Label.AnyIndex
 
 
-let to_json { root; path } =
-  let open Root in
-  let root_name = function
-    | LocalResult -> "result"
-    | PositionalParameter { position = _; name; _ } -> Format.sprintf "formal(%s)" name
-    | NamedParameter { name } -> Format.sprintf "formal(%s)" name
-    | StarParameter { position } -> Format.sprintf "formal(*rest%d)" position
-    | StarStarParameter _ -> "formal(**kw)"
-    | Variable name -> Format.sprintf "local(%s)" name
+let to_json { root; path } = `String (Root.to_string root ^ Abstract.TreeDomain.Label.show_path path)
+
+let of_expression expression =
+  let rec of_expression path = function
+    | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
+        Some { root = Root.Variable identifier; path }
+    | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
+        let path = Abstract.TreeDomain.Label.Index attribute :: path in
+        of_expression path base
+    | {
+        Node.value =
+          Call
+            {
+              Call.callee =
+                {
+                  Node.value =
+                    Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                  _;
+                };
+              arguments =
+                [
+                  {
+                    Call.Argument.name = None;
+                    value = { Node.value = Expression.Constant (Constant.String { value; _ }); _ };
+                  };
+                ];
+            };
+        _;
+      } ->
+        let path = Abstract.TreeDomain.Label.Index value :: path in
+        of_expression path base
+    | _ -> None
   in
-  `String (root_name root ^ Abstract.TreeDomain.Label.show_path path)
-
-
-let get_global ~resolution name =
-  match Node.value name with
-  | Expression.Name (Name.Identifier identifier)
-    when not (Interprocedural.CallResolution.is_local identifier) ->
-      Some (Reference.create identifier)
-  | Name (Name.Identifier identifier) ->
-      let reference = Reference.delocalize (Reference.create identifier) in
-      if Resolution.is_global resolution ~reference then
-        Some reference
-      else
-        None
-  | Name name -> (
-      name_to_reference name
-      >>= fun reference ->
-      GlobalResolution.resolve_exports (Resolution.global_resolution resolution) reference
-      >>= function
-      | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
-          { from; name; remaining = []; _ } ->
-          Some (Reference.combine from (Reference.create name))
-      | _ -> None)
-  | _ -> None
-
-
-let is_global ~resolution name = Option.is_some (get_global ~resolution name)
-
-let of_expression ~resolution = function
-  | { Node.value = Expression.Name _; _ } as expression ->
-      let expression =
-        if is_global ~resolution expression then
-          Ast.Expression.delocalize expression
-        else
-          expression
-      in
-      let rec of_expression path = function
-        | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
-            Some { root = Root.Variable identifier; path }
-        | { Node.value = Name (Name.Attribute { base; attribute; _ }); _ } ->
-            let path = Abstract.TreeDomain.Label.Index attribute :: path in
-            of_expression path base
-        | _ -> None
-      in
-      of_expression [] expression
-  | _ -> None
+  of_expression [] expression
 
 
 let dictionary_keys = Abstract.TreeDomain.Label.Field "**keys"

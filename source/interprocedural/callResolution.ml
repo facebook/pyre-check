@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,15 +11,13 @@ open Analysis
 open Expression
 open Pyre
 
-let is_local identifier = String.is_prefix ~prefix:"$" identifier
-
 let extract_constant_name { Node.value = expression; _ } =
   match expression with
-  | Expression.String literal -> Some literal.value
-  | Integer i -> Some (string_of_int i)
-  | False -> Some "False"
-  | True -> Some "True"
-  | Name name -> (
+  | Expression.Constant (Constant.String literal) -> Some literal.value
+  | Expression.Constant (Constant.Integer i) -> Some (string_of_int i)
+  | Expression.Constant Constant.False -> Some "False"
+  | Expression.Constant Constant.True -> Some "True"
+  | Expression.Name name -> (
       let name = name_to_reference name >>| Reference.delocalize >>| Reference.last in
       match name with
       (* Heuristic: All uppercase names tend to be enums, so only taint the field in those cases. *)
@@ -43,8 +41,7 @@ let is_super ~resolution ~define expression =
         | Type.Parametric { name = parent_name; _ }
         | Type.Primitive parent_name ->
             let class_name =
-              Reference.prefix define.Node.value.Statement.Define.signature.name.Node.value
-              >>| Reference.show
+              Reference.prefix define.Node.value.Statement.Define.signature.name >>| Reference.show
             in
             class_name
             >>| (fun class_name ->

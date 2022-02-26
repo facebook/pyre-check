@@ -15,18 +15,21 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 65, "start": 13, "end": 27 } ],
             "root": {
               "filename": "global_flows.py",
               "line": 65,
               "start": 13,
               "end": 27
-            },
-            "tito": [ { "line": 65, "start": 13, "end": 27 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -34,13 +37,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{global_flows.l}" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "global_flows.py",
               "line": 65,
               "start": 4,
               "end": 5
-            },
-            "leaves": [ { "kind": "Test", "name": "Obj{global_flows.l}" } ]
+            }
           }
         ]
       }
@@ -48,6 +56,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.append_directly:5002:0:Global|Obj{global_flows.l}|0:38ebc856813c45e0b032ff315d68b4d4"
     ]
   }
 }
@@ -67,14 +78,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "global_flows.py",
               "line": 73,
               "start": 20,
               "end": 34
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -82,6 +98,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "leaves": [ { "name": "Obj{global_flows.l}" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "global_flows.py",
@@ -90,11 +114,8 @@
                 "end": 34
               },
               "resolves_to": [ "global_flows.append_argument" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "Obj{global_flows.l}" } ],
-            "features": [ { "always-via": "tito" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -102,6 +123,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.append_indirectly:5002:0:Call|global_flows.append_argument|0|formal(arg):f8ce531d2c9184ac5b223413f1cc59fe"
     ]
   }
 }
@@ -121,18 +145,21 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 21, "start": 19, "end": 33 } ],
             "root": {
               "filename": "global_flows.py",
               "line": 21,
               "start": 19,
               "end": 33
-            },
-            "tito": [ { "line": 21, "start": 19, "end": 33 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -140,13 +167,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{global_flows.x}" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "global_flows.py",
               "line": 21,
               "start": 16,
               "end": 17
-            },
-            "leaves": [ { "kind": "Test", "name": "Obj{global_flows.x}" } ]
+            }
           }
         ]
       }
@@ -154,6 +186,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.update_x_at_arg1:5002:0:Global|Obj{global_flows.x}|0:ea658382ebbc54fd329b0c470e5a7788"
     ]
   }
 }
@@ -173,18 +208,21 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 29, "start": 16, "end": 30 } ],
             "root": {
               "filename": "global_flows.py",
               "line": 29,
               "start": 16,
               "end": 30
-            },
-            "tito": [ { "line": 29, "start": 16, "end": 30 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -192,13 +230,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{global_flows.x}" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "global_flows.py",
               "line": 29,
               "start": 32,
               "end": 33
-            },
-            "leaves": [ { "kind": "Test", "name": "Obj{global_flows.x}" } ]
+            }
           }
         ]
       }
@@ -206,6 +249,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.update_x_at_arg2:5002:0:Global|Obj{global_flows.x}|0:060743aff11df8cc3d83cd7fcc245e30"
     ]
   }
 }
@@ -225,14 +271,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "global_flows.py",
               "line": 41,
               "start": 29,
               "end": 43
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -240,6 +291,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "leaves": [ { "name": "Obj{global_flows.x}" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "global_flows.py",
@@ -248,11 +307,8 @@
                 "end": 43
               },
               "resolves_to": [ "global_flows.indirectly_update_x_arg1" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "Obj{global_flows.x}" } ],
-            "features": [ { "always-via": "tito" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -260,6 +316,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.x_tainted_indirectly_arg1:5002:0:Call|global_flows.indirectly_update_x_arg1|0|formal(arg):0169e118295abf5d783cfa0ea547596d"
     ]
   }
 }
@@ -279,14 +338,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "global_flows.py",
               "line": 53,
               "start": 29,
               "end": 43
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -294,6 +358,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "leaves": [ { "name": "Obj{global_flows.x}" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "global_flows.py",
@@ -302,11 +374,8 @@
                 "end": 43
               },
               "resolves_to": [ "global_flows.indirectly_update_x_arg2" ],
-              "port": "formal(arg)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "Obj{global_flows.x}" } ],
-            "features": [ { "always-via": "tito" } ]
+              "port": "formal(arg)"
+            }
           }
         ]
       }
@@ -314,6 +383,9 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "special_source" }
+    ],
+    "master_handles": [
+      "global_flows.x_tainted_indirectly_arg2:5002:0:Call|global_flows.indirectly_update_x_arg2|0|formal(arg):97bee74051e71b0311d3b024c7a7e618"
     ]
   }
 }
@@ -324,7 +396,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -336,7 +408,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -349,7 +421,7 @@
       {
         "port": "formal(item)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
+          { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
         ]
       }
     ],
@@ -365,15 +437,20 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{global_flows.l}" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 69, "start": 13, "end": 16 } ],
             "root": {
               "filename": "global_flows.py",
               "line": 69,
               "start": 4,
               "end": 5
-            },
-            "tito": [ { "line": 69, "start": 13, "end": 16 } ],
-            "leaves": [ { "kind": "Test", "name": "Obj{global_flows.l}" } ],
-            "features": [ { "always-via": "tito" } ]
+            }
           }
         ]
       }
@@ -389,15 +466,20 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{global_flows.x}" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 37, "start": 19, "end": 22 } ],
             "root": {
               "filename": "global_flows.py",
               "line": 37,
               "start": 16,
               "end": 17
-            },
-            "tito": [ { "line": 37, "start": 19, "end": 22 } ],
-            "leaves": [ { "kind": "Test", "name": "Obj{global_flows.x}" } ],
-            "features": [ { "always-via": "tito" } ]
+            }
           }
         ]
       }
@@ -413,15 +495,20 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{global_flows.x}" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 49, "start": 16, "end": 19 } ],
             "root": {
               "filename": "global_flows.py",
               "line": 49,
               "start": 21,
               "end": 22
-            },
-            "tito": [ { "line": 49, "start": 16, "end": 19 } ],
-            "leaves": [ { "kind": "Test", "name": "Obj{global_flows.x}" } ],
-            "features": [ { "always-via": "tito" } ]
+            }
           }
         ]
       }
@@ -436,7 +523,7 @@
       {
         "port": "formal(arg2)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
+          { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
         ]
       }
     ],
@@ -451,7 +538,7 @@
       {
         "port": "formal(arg1)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "ParameterUpdate1" } ] }
+          { "kinds": [ { "kind": "ParameterUpdate1" } ], "decl": null }
         ]
       }
     ],

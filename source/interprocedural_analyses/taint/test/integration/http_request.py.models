@@ -15,18 +15,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{django.http.request.HttpRequest.GET}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "http_request.py",
               "line": 24,
               "start": 15,
               "end": 26
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{django.http.request.HttpRequest.GET}"
-              }
-            ]
+            }
           }
         ]
       },
@@ -34,19 +36,27 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "http_request.py",
               "line": 24,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "http_request.request_get_flows_to_sink:5002:0:Call|_test_sink|0|formal(arg):499b8db0fa1708141d51a242d13cb6b4"
+    ]
   }
 }
 {
@@ -65,18 +75,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{django.http.request.HttpRequest.GET}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "http_request.py",
               "line": 20,
               "start": 15,
               "end": 26
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{django.http.request.HttpRequest.GET}"
-              }
-            ]
+            }
           }
         ]
       },
@@ -84,19 +96,27 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "http_request.py",
               "line": 20,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "http_request.test_trace_has_no_tito:5002:0:Call|_test_sink|0|formal(arg):e8be30e9fe310c91a3720a9b9f634b0d"
+    ]
   }
 }
 {
@@ -115,18 +135,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Obj{django.http.request.HttpRequest.GET}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "http_request.py",
               "line": 15,
               "start": 15,
               "end": 26
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Obj{django.http.request.HttpRequest.GET}"
-              }
-            ]
+            }
           }
         ]
       },
@@ -134,19 +156,27 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "http_request.py",
               "line": 15,
               "start": 15,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ]
+    "features": [ { "always-via": "special_sink" } ],
+    "master_handles": [
+      "http_request.test_untainted_assign:5002:0:Call|_test_sink|0|formal(arg):718f9623c390cf3eb0a30b8b19fff98e"
+    ]
   }
 }
 {
@@ -156,10 +186,10 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
-    "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
+    "global_sanitizer": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }
 {
@@ -169,9 +199,9 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
-    "sanitize": { "sources": "All", "sinks": "All", "tito": "All" }
+    "global_sanitizer": { "sources": "All", "sinks": "All", "tito": "All" }
   }
 }

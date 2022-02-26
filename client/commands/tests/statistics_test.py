@@ -1,202 +1,283 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-
+import tempfile
 import textwrap
-import unittest
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import MagicMock, patch
 
-from libcst import Module, parse_module
+import testslide
 
-from ... import configuration as configuration_module
-from ...analysis_directory import AnalysisDirectory
-from ..statistics import Statistics, _find_paths, parse_path_to_module
-from .command_test import mock_arguments, mock_configuration
+from ... import configuration, command_arguments
+from ...tests import setup
+from ..statistics import (
+    find_roots,
+    find_paths_to_parse,
+    parse_text_to_module,
+    parse_path_to_module,
+    collect_statistics,
+    aggregate_statistics,
+    AggregatedStatisticsData,
+)
 
 
-def mock_absolute(self: Path) -> Path:
-    return Path("example/path/client/" + self.name)
-
-
-class StatisticsTest(unittest.TestCase):
-    @patch.object(Path, "absolute", mock_absolute)
-    def test_find_paths(self) -> None:
-        self.assertEqual(
-            _find_paths("example/path/client", set()), [Path("example/path/client")]
+class StatisticsTest(testslide.TestCase):
+    def test_find_roots__filter_path_duplicate(self) -> None:
+        self.assertCountEqual(
+            find_roots(
+                configuration.Configuration(
+                    project_root="/root", dot_pyre_directory=Path("/irrelevant")
+                ),
+                command_arguments.StatisticsArguments(
+                    filter_paths=["/root/foo.py", "/root/bar.py", "/root/foo.py"]
+                ),
+            ),
+            [Path("/root/foo.py"), Path("/root/bar.py")],
         )
 
-        self.assertEqual(
-            _find_paths("example/path/client/.pyre_configuration.local", set()),
-            [Path("example/path/client")],
-        )
-
-        # Sorting the lists because the set argument leads to non-deterministic
-        # ordering.
-        self.assertEqual(
-            sorted(
-                _find_paths(
-                    "example/path/client/.pyre_configuration.local", {"a.py", "b.py"}
+    def test_find_roots__filter_path_expand(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
+            with setup.switch_working_directory(root_path):
+                self.assertCountEqual(
+                    find_roots(
+                        configuration.Configuration(
+                            project_root="/root", dot_pyre_directory=Path("/irrelevant")
+                        ),
+                        command_arguments.StatisticsArguments(
+                            filter_paths=["foo.py", "bar.py"]
+                        ),
+                    ),
+                    [root_path / "foo.py", root_path / "bar.py"],
                 )
+
+    def test_find_roots__local_root(self) -> None:
+        self.assertCountEqual(
+            find_roots(
+                configuration.Configuration(
+                    project_root="/root",
+                    dot_pyre_directory=Path("/irrelevant"),
+                    relative_local_root="local",
+                ),
+                command_arguments.StatisticsArguments(filter_paths=[]),
             ),
-            sorted(
-                [Path("example/path/client/a.py"), Path("example/path/client/b.py")]
-            ),
+            [Path("/root/local")],
         )
 
-    @patch.object(Statistics, "_find_paths", return_value=[])
-    @patch.object(Statistics, "_log_to_scuba")
-    def test_log_results(self, log: MagicMock, _find_paths: MagicMock) -> None:
-        arguments = mock_arguments(local_configuration="example/path/client")
-        configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(
-            configuration_module.SimpleSearchPathElement(".")
+    def test_find_roots__current_working_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
+            with setup.switch_working_directory(root_path):
+                self.assertCountEqual(
+                    find_roots(
+                        configuration.Configuration(
+                            project_root="/root", dot_pyre_directory=Path("/irrelevant")
+                        ),
+                        command_arguments.StatisticsArguments(filter_paths=[]),
+                    ),
+                    [root_path],
+                )
+
+    def test_find_paths_to_parse(self) -> None:
+        pyre_configuration = configuration.Configuration(
+            project_root="/root", dot_pyre_directory=Path("/irrelevant")
         )
-        original_directory = "/original/directory"
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            setup.ensure_files_exist(
+                root_path,
+                ["s0.py", "a/s1.py", "b/s2.py", "b/c/s3.py", "b/s4.txt", "b/__s5.py"],
+            )
+            setup.ensure_directories_exists(root_path, ["b/d"])
+            self.assertCountEqual(
+                find_paths_to_parse(
+                    pyre_configuration,
+                    [
+                        root_path / "a/s1.py",
+                        root_path / "b/s2.py",
+                        root_path / "b/s4.txt",
+                    ],
+                ),
+                [
+                    root_path / "a/s1.py",
+                    root_path / "b/s2.py",
+                ],
+            )
+            self.assertCountEqual(
+                find_paths_to_parse(pyre_configuration, [root_path]),
+                [
+                    root_path / "s0.py",
+                    root_path / "a/s1.py",
+                    root_path / "b/s2.py",
+                    root_path / "b/c/s3.py",
+                ],
+            )
 
-        Statistics(
-            arguments,
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            filter_paths=["a.py", "b.py"],
-            log_results=False,
-            aggregate=False,
-        )._run()
-        log.assert_not_called()
-
-        Statistics(
-            arguments,
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            filter_paths=["a.py", "b.py"],
-            log_results=True,
-            aggregate=False,
-        )._run()
-        log.assert_called()
-
-    def test_parse_module(self) -> None:
-        invalid_python = """
-            def foo -> int:
-                pass
-        """
-        valid_python = """
-        def foo() -> int:
-            pass
-        """
-        path = MagicMock()
-        path.read_text = MagicMock(
-            return_value=textwrap.dedent(invalid_python.rstrip())
+        pyre_configuration = configuration.Configuration(
+            project_root="/root",
+            dot_pyre_directory=Path("/irrelevant"),
+            excludes=[r".*2\.py"],
         )
-        self.assertEqual(parse_path_to_module(path), None)
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            setup.ensure_files_exist(
+                root_path,
+                ["s0.py", "a/s1.py", "b/s2.py", "b/c/s3.py", "b/s4.txt", "b/__s5.py"],
+            )
+            setup.ensure_directories_exists(root_path, ["b/d"])
+            self.assertCountEqual(
+                find_paths_to_parse(
+                    pyre_configuration,
+                    [
+                        root_path / "a/s1.py",
+                        root_path / "b/s2.py",
+                        root_path / "b/s4.txt",
+                    ],
+                ),
+                [
+                    root_path / "a/s1.py",
+                ],
+            )
+            self.assertCountEqual(
+                find_paths_to_parse(pyre_configuration, [root_path]),
+                [
+                    root_path / "s0.py",
+                    root_path / "a/s1.py",
+                    root_path / "b/c/s3.py",
+                ],
+            )
 
-        path.read_text = MagicMock(return_value=textwrap.dedent(valid_python.rstrip()))
-        self.assertIsNotNone(parse_path_to_module(path))
-
-    @patch.object(Path, "read_text", side_effect=FileNotFoundError)
-    def test_parse_module__file_not_found(self, read_text: MagicMock) -> None:
-        self.assertIsNone(parse_path_to_module(Path("foo.txt")))
-
-
-class AggregateStatisticsTest(unittest.TestCase):
-    @staticmethod
-    def format_files(source: str) -> Module:
-        return parse_module(textwrap.dedent(source.rstrip()))
-
-    def assert_aggregate_counts(
-        self, statistics: Statistics, sources: Dict[str, str], expected: Dict[str, Any]
-    ) -> None:
-        source_modules = {}
-        for path, source in sources.items():
-            source_modules[path] = self.format_files(source)
-        raw_data = statistics._collect_statistics(source_modules)
-        self.assertEqual(statistics._aggregate_data(raw_data), expected)
-
-    def test_aggregate_counts(self) -> None:
-        arguments = mock_arguments(local_configuration="example/path/client")
-        configuration = mock_configuration()
-        analysis_directory = AnalysisDirectory(
-            configuration_module.SimpleSearchPathElement(".")
+    def test_parse_text_to_module(self) -> None:
+        self.assertIsNotNone(
+            parse_text_to_module(
+                textwrap.dedent(
+                    """
+                    def foo() -> int:
+                        pass
+                    """
+                )
+            )
         )
-        original_directory = "/original/directory"
-        statistics = Statistics(
-            arguments,
-            original_directory,
-            configuration=configuration,
-            analysis_directory=analysis_directory,
-            filter_paths=["a.py", "b.py"],
-            log_results=False,
-            aggregate=True,
-        )
-
-        self.assert_aggregate_counts(
-            statistics,
-            {
-                "a.py": """
-            # pyre-unsafe
-
-            def foo():
-                return 1
-            """
-            },
-            {
-                "annotations": {
-                    "return_count": 1,
-                    "annotated_return_count": 0,
-                    "globals_count": 0,
-                    "annotated_globals_count": 0,
-                    "parameter_count": 0,
-                    "annotated_parameter_count": 0,
-                    "attribute_count": 0,
-                    "annotated_attribute_count": 0,
-                    "partially_annotated_function_count": 0,
-                    "fully_annotated_function_count": 0,
-                    "line_count": 6,
-                },
-                "fixmes": 0,
-                "ignores": 0,
-                "strict": 0,
-                "unsafe": 1,
-            },
+        self.assertIsNone(
+            parse_text_to_module(
+                textwrap.dedent(
+                    """
+                    def foo() ->
+                    """
+                )
+            )
         )
 
-        self.assert_aggregate_counts(
-            statistics,
-            {
-                "a.py": """
-            # pyre-unsafe
+    def test_parse_path_to_module(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            source_path = root_path / "source.py"
+            source_path.write_text("reveal_type(42)")
 
-            def foo():
-                return 1
-            """,
-                "b.py": """
-            # pyre-strict
+            self.assertIsNotNone(parse_path_to_module(source_path))
+            self.assertIsNone(parse_path_to_module(root_path / "nonexistent.py"))
 
-            def foo(x: int) -> int:
-                return 1
-            """,
-            },
-            {
-                "annotations": {
-                    "return_count": 2,
-                    "annotated_return_count": 1,
-                    "globals_count": 0,
-                    "annotated_globals_count": 0,
-                    "parameter_count": 1,
-                    "annotated_parameter_count": 1,
-                    "attribute_count": 0,
-                    "annotated_attribute_count": 0,
-                    "partially_annotated_function_count": 0,
-                    "fully_annotated_function_count": 1,
-                    "line_count": 12,
-                },
-                "fixmes": 0,
-                "ignores": 0,
-                "strict": 1,
-                "unsafe": 1,
-            },
-        )
+    def test_collect_statistics(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            setup.ensure_files_exist(root_path, ["foo.py", "bar.py"])
+            foo_path = root_path / "foo.py"
+            bar_path = root_path / "bar.py"
+
+            data = collect_statistics([foo_path, bar_path], strict_default=False)
+            self.assertIn(str(foo_path), data)
+            self.assertIn(str(bar_path), data)
+
+    def test_aggregate_statistics__single_file(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            a_path = root_path / "a.py"
+            a_path.write_text(
+                textwrap.dedent(
+                    """
+                    # pyre-unsafe
+
+                    def foo():
+                        return 1
+                    """.rstrip()
+                )
+            )
+
+            self.assertEqual(
+                aggregate_statistics(
+                    collect_statistics([a_path], strict_default=False)
+                ),
+                AggregatedStatisticsData(
+                    annotations={
+                        "return_count": 1,
+                        "annotated_return_count": 0,
+                        "globals_count": 0,
+                        "annotated_globals_count": 0,
+                        "parameter_count": 0,
+                        "annotated_parameter_count": 0,
+                        "attribute_count": 0,
+                        "annotated_attribute_count": 0,
+                        "function_count": 1,
+                        "partially_annotated_function_count": 0,
+                        "fully_annotated_function_count": 0,
+                        "line_count": 5,
+                    },
+                    fixmes=0,
+                    ignores=0,
+                    strict=0,
+                    unsafe=1,
+                ),
+            )
+
+    def test_aggregate_statistics__multiple_files(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            a_path = root_path / "a.py"
+            b_path = root_path / "b.py"
+            a_path.write_text(
+                textwrap.dedent(
+                    """
+                    # pyre-unsafe
+
+                    def foo():
+                        return 1
+                    """.rstrip()
+                )
+            )
+            b_path.write_text(
+                textwrap.dedent(
+                    """
+                    # pyre-strict
+
+                    def foo(x: int) -> int:
+                        return 1
+                    """.rstrip()
+                )
+            )
+
+            self.assertEqual(
+                aggregate_statistics(
+                    collect_statistics([a_path, b_path], strict_default=False)
+                ),
+                AggregatedStatisticsData(
+                    annotations={
+                        "return_count": 2,
+                        "annotated_return_count": 1,
+                        "globals_count": 0,
+                        "annotated_globals_count": 0,
+                        "parameter_count": 1,
+                        "annotated_parameter_count": 1,
+                        "attribute_count": 0,
+                        "annotated_attribute_count": 0,
+                        "function_count": 2,
+                        "partially_annotated_function_count": 0,
+                        "fully_annotated_function_count": 1,
+                        "line_count": 10,
+                    },
+                    fixmes=0,
+                    ignores=0,
+                    strict=1,
+                    unsafe=1,
+                ),
+            )

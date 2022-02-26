@@ -1,21 +1,20 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import dataclasses
+import json
 import logging
-import os
-import re
-from logging import Logger
-from typing import Dict, List, Optional
+from pathlib import Path
+from typing import TextIO
 
-from .. import command_arguments, json_rpc, log
-from ..analysis_directory import AnalysisDirectory
-from ..configuration import Configuration
-from .command import Command, ExitCode, Result, State
+from .. import configuration as configuration_module, log
+from . import commands, server_connection, remote_logging
 
 
-LOG: Logger = logging.getLogger(__name__)
+LOG: logging.Logger = logging.getLogger(__name__)
+
 
 HELP_MESSAGE: str = """
 Possible queries:
@@ -54,67 +53,84 @@ Possible queries:
 """
 
 
-class Query(Command):
-    NAME = "query"
+class InvalidQueryResponse(Exception):
+    pass
 
-    _result: Optional[Result] = None
 
-    def result(self) -> Optional[Result]:
-        return self._result
+@dataclasses.dataclass(frozen=True)
+class Response:
+    payload: object
 
-    def _rewrite_paths(self, query: str) -> str:
-        paths = re.findall(r"'[a-zA-Z_\-\.\/0-9]+\.py'", query)
-        symbolic_link_mapping: Optional[Dict[str, str]] = None
-        for path in paths:
-            # Lazily compute the symbolic link mapping, as it can add over a second of
-            # latency for large projects.
-            if symbolic_link_mapping is None:
-                symbolic_link_mapping = (
-                    self._analysis_directory.compute_symbolic_links()
-                )
-            path = path[1:-1]
-            absolute_path = os.path.abspath(path)
-            if absolute_path in symbolic_link_mapping:
-                query = query.replace(path, symbolic_link_mapping[absolute_path])
-        return query
 
-    def __init__(
-        self,
-        command_arguments: command_arguments.CommandArguments,
-        original_directory: str,
-        *,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-        query: str,
-    ) -> None:
-        super(Query, self).__init__(
-            command_arguments, original_directory, configuration, analysis_directory
+def _print_help_message() -> None:
+    log.stdout.write(HELP_MESSAGE)
+
+
+def parse_query_response_json(response_json: object) -> Response:
+    if (
+        isinstance(response_json, list)
+        and len(response_json) > 1
+        and response_json[0] == "Query"
+    ):
+        return Response(response_json[1])
+    raise InvalidQueryResponse(f"Unexpected JSON response from server: {response_json}")
+
+
+def parse_query_response(text: str) -> Response:
+    try:
+        response_json = json.loads(text)
+        return parse_query_response_json(response_json)
+    except json.JSONDecodeError as decode_error:
+        message = f"Cannot parse response as JSON: {decode_error}"
+        raise InvalidQueryResponse(message) from decode_error
+
+
+def _send_query_request(output_channel: TextIO, query_text: str) -> None:
+    query_message = json.dumps(["Query", query_text])
+    LOG.debug(f"Sending `{log.truncate(query_message, 400)}`")
+    output_channel.write(f"{query_message}\n")
+
+
+def _receive_query_response(input_channel: TextIO) -> Response:
+    query_message = input_channel.readline().strip()
+    LOG.debug(f"Received `{log.truncate(query_message, 400)}`")
+    return parse_query_response(query_message)
+
+
+def query_server(socket_path: Path, query_text: str) -> Response:
+    with server_connection.connect_in_text_mode(socket_path) as (
+        input_channel,
+        output_channel,
+    ):
+        _send_query_request(output_channel, query_text)
+        return _receive_query_response(input_channel)
+
+
+@remote_logging.log_usage(command_name="query")
+def run(
+    configuration: configuration_module.Configuration, query_text: str
+) -> commands.ExitCode:
+    socket_path = server_connection.get_default_socket_path(
+        project_root=Path(configuration.project_root),
+        relative_local_root=Path(configuration.relative_local_root)
+        if configuration.relative_local_root
+        else None,
+    )
+    try:
+        if query_text == "help":
+            _print_help_message()
+            return commands.ExitCode.SUCCESS
+
+        response = query_server(socket_path, query_text)
+        log.stdout.write(json.dumps(response.payload))
+        return commands.ExitCode.SUCCESS
+    except server_connection.ConnectionFailure:
+        LOG.warning(
+            "A running Pyre server is required for queries to be responded. "
+            "Please run `pyre` first to set up a server."
         )
-        self.query: str = self._rewrite_paths(query)
-
-    def _flags(self) -> List[str]:
-        flags = [self.query]
-        flags.extend(["-log-directory", self._configuration.log_directory])
-        return flags
-
-    def _run(self) -> None:
-        if self.query == "help":
-            log.stdout.write(HELP_MESSAGE)
-            return
-
-        if self._state() == State.DEAD:
-            LOG.error("No server running to query.")
-            self._exit_code = ExitCode.SERVER_NOT_FOUND
-            return
-        LOG.info("Waiting for server...")
-        with self._analysis_directory.acquire_shared_reader_lock():
-            request = json_rpc.Request(
-                method="typeQuery",
-                parameters=json_rpc.ByNameParameters({"query": self.query}),
-            )
-            self._send_and_handle_socket_request(request, self._version_hash)
-
-    def _socket_result_handler(self, result: Result) -> None:
-        self._result = result
-        LOG.log(log.SUCCESS, "Received response from server")
-        log.stdout.write(result.output)
+        return commands.ExitCode.SERVER_NOT_FOUND
+    except Exception as error:
+        raise commands.ClientException(
+            f"Exception occurred during pyre query: {error}"
+        ) from error

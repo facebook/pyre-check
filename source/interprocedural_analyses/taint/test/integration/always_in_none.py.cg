@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+always_in_none.$toplevel (fun) -> []
+always_in_none.ComplicatedService::$class_toplevel (method) -> []
 always_in_none.ComplicatedService::serve_tainted_request (method) -> []
 always_in_none.test (fun) -> [_test_sink (fun) always_in_none.ComplicatedService::serve_tainted_request (method)]
 always_in_none.test_none_clears_taint (fun) -> [_test_sink (fun) _test_source (fun)]

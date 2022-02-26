@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -30,7 +30,7 @@ let test_check_return context =
       def foo() -> typing.List[str]:
           return 1
     |}
-    ["Incompatible return type [7]: Expected `typing.List[str]` but got `int`."];
+    ["Incompatible return type [7]: Expected `List[str]` but got `int`."];
   assert_default_type_errors
     "def foo() -> int: return"
     ["Incompatible return type [7]: Expected `int` but got `None`."];
@@ -129,7 +129,7 @@ let test_check_return context =
       def derp()->typing.Set[int]:
         return {""}
     |}
-    ["Incompatible return type [7]: Expected `typing.Set[int]` but got `typing.Set[str]`."];
+    ["Incompatible return type [7]: Expected `Set[int]` but got `Set[str]`."];
   assert_type_errors
     {|
       from builtins import condition
@@ -153,7 +153,7 @@ let test_check_return context =
       def bar(x: list[int]) -> int:
         return foo(x)
     |}
-    ["Incompatible return type [7]: Expected `Variable[T]` but got `typing.List[Variable[T]]`."];
+    ["Incompatible return type [7]: Expected `Variable[T]` but got `List[Variable[T]]`."];
   assert_type_errors
     {|
       import typing
@@ -192,7 +192,7 @@ let test_check_return context =
         irrelevant = x and 16
         return x
     |}
-    ["Incompatible return type [7]: Expected `C` but got `typing.Optional[C]`."];
+    ["Incompatible return type [7]: Expected `C` but got `Optional[C]`."];
   assert_type_errors
     {|
       class A:
@@ -389,7 +389,7 @@ let test_check_return_control_flow context =
       def foo() -> typing.Optional[int]:
           return 1.0
     |}
-    ["Incompatible return type [7]: Expected `typing.Optional[int]` but got `float`."];
+    ["Incompatible return type [7]: Expected `Optional[int]` but got `float`."];
   assert_type_errors
     {|
       import typing
@@ -406,7 +406,7 @@ let test_check_return_control_flow context =
       def foo( **kwargs: int) -> None:
         return kwargs
     |}
-    ["Incompatible return type [7]: Expected `None` but got `typing.Dict[str, int]`."];
+    ["Incompatible return type [7]: Expected `None` but got `Dict[str, int]`."];
   assert_type_errors
     {|
       def f( *args: int) -> None:
@@ -438,6 +438,8 @@ let test_check_return_control_flow context =
         return ...
       def doc() -> str:
         return __doc__
+      def path() -> typing.Iterable[str]:
+        return __path__
     |}
     [];
   assert_type_errors
@@ -508,7 +510,7 @@ let test_check_return_control_flow context =
     |}
     [
       "Missing parameter annotation [2]: Parameter `x` has no type specified.";
-      "Incompatible return type [7]: Expected `None` but got `typing.Dict[str, typing.Any]`.";
+      "Incompatible return type [7]: Expected `None` but got `Dict[str, typing.Any]`.";
     ]
 
 
@@ -520,7 +522,7 @@ let test_check_collections context =
       def f(x: typing.List[int]) -> typing.Set[str]:
         return {1, *x}
     |}
-    ["Incompatible return type [7]: Expected `typing.Set[str]` but got `typing.Set[int]`."];
+    ["Incompatible return type [7]: Expected `Set[str]` but got `Set[int]`."];
   assert_type_errors
     {|
       import typing
@@ -565,7 +567,7 @@ let test_check_noreturn context =
       def no_return() -> typing.NoReturn:
         return 0
     |}
-    ["Incompatible return type [7]: Expected `typing.NoReturn` but got `int`."];
+    ["Incompatible return type [7]: Expected `NoReturn` but got `int`."];
   assert_type_errors
     {|
       import typing

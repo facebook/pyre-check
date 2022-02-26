@@ -1,6 +1,6 @@
 @generated
 Overrides
-object::__init__ (override) -> [object::__init__ (method) properties.Class::__init__ (override) properties.PropertySetterInConstructor::__init__ (override) properties.SetterMutatesValue::__init__ (override)]
+object::__init__ (override) -> [object::__init__ (method) properties.Class::__init__ (override) properties.PropertyCallable::__init__ (override) properties.PropertyCallableReturn::__init__ (override) properties.PropertySetterInConstructor::__init__ (override) properties.RegularAttribute::__init__ (override) properties.SetterMutatesValue::__init__ (override)]
 properties.Class::__init__ (override) -> [properties.Class::__init__ (method)]
 properties.Class::my_property (override) -> [properties.Class::my_property (method) properties.OtherDerived::my_property (override)]
 properties.Class::uses_property (override) -> [properties.Class::uses_property (method) properties.Derived::uses_property (override)]
@@ -13,7 +13,12 @@ properties.GrandDerived::my_property (override) -> [properties.GrandDerived::my_
 properties.GrandDerived::my_property$setter (override) -> [properties.GrandDerived::my_property$setter (method)]
 properties.OtherDerived::my_property (override) -> [properties.OtherDerived::my_property (method)]
 properties.OtherDerived::uses_property_but_no_tito_taint (override) -> [properties.OtherDerived::uses_property_but_no_tito_taint (method)]
+properties.PropertyCallable::__init__ (override) -> [properties.PropertyCallable::__init__ (method)]
+properties.PropertyCallableReturn::__call__ (override) -> [properties.PropertyCallableReturn::__call__ (method)]
+properties.PropertyCallableReturn::__init__ (override) -> [properties.PropertyCallableReturn::__init__ (method)]
 properties.PropertySetterInConstructor::__init__ (override) -> [properties.PropertySetterInConstructor::__init__ (method)]
+properties.RegularAttribute::__init__ (override) -> [properties.RegularAttribute::__init__ (method)]
 properties.SetterMutatesValue::__init__ (override) -> [properties.SetterMutatesValue::__init__ (method)]
 properties.TaintedGetterAndSetter::my_property (override) -> [properties.DerivedTaintedSetter::my_property (override) properties.TaintedGetterAndSetter::my_property (method)]
 properties.TaintedGetterAndSetter::my_property$setter (override) -> [properties.DerivedTaintedSetter::my_property$setter (override) properties.TaintedGetterAndSetter::my_property$setter (method)]
+type::__call__ (override) -> [properties.PropertyCallableReturn::__call__ (override) type::__call__ (method)]

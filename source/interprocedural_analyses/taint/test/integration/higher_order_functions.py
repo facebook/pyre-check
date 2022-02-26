@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -53,11 +53,16 @@ def test_higher_order_function_and_sink():
 
 
 def test_higher_order_tito(x):
+    # no tito because higher_order_function does not return.
     return higher_order_function(has_tito, x)
 
 
 def apply(f, x):
     return f(x)
+
+
+def test_apply_tito(x):
+    return apply(has_tito, x)
 
 
 def source_through_tito():

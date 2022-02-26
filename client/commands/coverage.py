@@ -1,130 +1,90 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
 
 import dataclasses
 import json
 import logging
 import os
 from pathlib import Path
-from typing import List, Mapping, Optional, Set
+from typing import Optional, Iterable, List
 
-import libcst as cst
-from libcst._exceptions import ParserSyntaxError
-from libcst.metadata import MetadataWrapper
-
-from .. import command_arguments
-from ..analysis_directory import AnalysisDirectory
-from ..configuration import Configuration
-from ..coverage_collector import CoverageCollector
-from .command import Command
+from .. import (
+    configuration as configuration_module,
+    coverage_collector as collector,
+    log,
+)
+from . import commands, remote_logging, statistics
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-def _get_paths(target_directory: Path) -> List[Path]:
-    return [
-        path
-        for path in target_directory.glob("**/*.py")
-        if not path.name.startswith("__") and not path.name.startswith(".")
-    ]
+def to_absolute_path(given: str, working_directory: Path) -> Path:
+    path = Path(given)
+    return path if path.is_absolute() else working_directory / path
 
 
-def parse_path_to_module(path: Path) -> Optional[cst.Module]:
-    try:
-        return cst.parse_module(path.read_text())
-    except (ParserSyntaxError, FileNotFoundError):
-        return None
+def find_root_path(
+    configuration: configuration_module.Configuration, working_directory: Path
+) -> Path:
+    local_root = configuration.local_root
+    if local_root is not None:
+        return Path(local_root)
+
+    return working_directory
 
 
-def parse_path_to_metadata_module(path: Path) -> Optional[MetadataWrapper]:
-    module = parse_path_to_module(path)
-    if module is not None:
-        return MetadataWrapper(module)
+def collect_coverage_for_path(
+    path: Path, working_directory: str, strict_default: bool
+) -> Optional[collector.FileCoverage]:
+    module = statistics.parse_path_to_module(path)
+    relative_path = os.path.relpath(str(path), working_directory)
+    return (
+        collector.collect_coverage_for_module(relative_path, module, strict_default)
+        if module is not None
+        else None
+    )
 
 
-def _parse_paths(paths: List[Path]) -> List[Path]:
-    parsed_paths = []
+def collect_coverage_for_paths(
+    paths: Iterable[Path], working_directory: str, strict_default: bool
+) -> List[collector.FileCoverage]:
+    result: List[collector.FileCoverage] = []
     for path in paths:
-        if path.is_dir():
-            parsed_directory_paths = _get_paths(path)
-            for path in parsed_directory_paths:
-                parsed_paths.append(path)
-        else:
-            parsed_paths.append(path)
-    return parsed_paths
+        coverage = collect_coverage_for_path(path, working_directory, strict_default)
+        if coverage is not None:
+            result.append(coverage)
+    return result
 
 
-def _pyre_configuration_directory(local_configuration: Optional[str]) -> Path:
-    if local_configuration:
-        return Path(local_configuration.replace(".pyre_configuration.local", ""))
-    return Path.cwd()
+def run_coverage(
+    configuration: configuration_module.Configuration,
+    working_directory: str,
+    roots: List[str],
+) -> commands.ExitCode:
+    working_directory_path = Path(working_directory)
+    if roots:
+        root_paths = [to_absolute_path(root, working_directory_path) for root in roots]
+    else:
+        root_paths = [find_root_path(configuration, working_directory_path)]
+    module_paths = statistics.find_paths_to_parse(configuration, root_paths)
+    data = collect_coverage_for_paths(
+        module_paths, working_directory, strict_default=configuration.strict
+    )
+    log.stdout.write(json.dumps([dataclasses.asdict(entry) for entry in data]))
+    return commands.ExitCode.SUCCESS
 
 
-def _find_paths(local_configuration: Optional[str], paths: Set[str]) -> List[Path]:
-    pyre_configuration_directory = _pyre_configuration_directory(local_configuration)
-    if paths:
-        return [Path(path).absolute() for path in paths]
-    return [pyre_configuration_directory]
-
-
-@dataclasses.dataclass(frozen=True)
-class FileCoverage:
-    filepath: str
-    covered_lines: List[int]
-    uncovered_lines: List[int]
-
-
-def _collect_coverage(modules: Mapping[str, cst.Module]) -> List[FileCoverage]:
-    coverage = []
-    for path, module in modules.items():
-        module_with_metadata = MetadataWrapper(module)
-        coverage_collector = CoverageCollector()
-        try:
-            module_with_metadata.visit(coverage_collector)
-        except RecursionError:
-            LOG.warning(f"LibCST encountered recursion error in `{path}`")
-        coverage.append(
-            FileCoverage(
-                filepath=str(path),
-                covered_lines=sorted(coverage_collector.covered_lines),
-                uncovered_lines=sorted(coverage_collector.uncovered_lines),
-            )
-        )
-    return coverage
-
-
-class Coverage(Command):
-    """Collect per-line type coverage."""
-
-    NAME = "coverage"
-
-    def __init__(
-        self,
-        command_arguments: command_arguments.CommandArguments,
-        original_directory: str,
-        *,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-        working_directory: Optional[str],
-    ) -> None:
-        super(Coverage, self).__init__(
-            command_arguments, original_directory, configuration, analysis_directory
-        )
-        self._working_directory: Optional[str] = working_directory
-
-    def _run(self) -> None:
-        paths = self._find_paths()
-        modules = {}
-        for path in _parse_paths(paths):
-            module = parse_path_to_module(path)
-            relative_path = os.path.relpath(path, self._working_directory)
-            if module is not None:
-                modules[relative_path] = module
-        coverage = _collect_coverage(modules)
-        print(json.dumps(list(map(dataclasses.asdict, coverage))))
-
-    def _find_paths(self) -> List[Path]:
-        return _find_paths(self._configuration.local_root, set())
+@remote_logging.log_usage(command_name="coverage")
+def run(
+    configuration: configuration_module.Configuration,
+    working_directory: str,
+    roots: List[str],
+) -> commands.ExitCode:
+    try:
+        return run_coverage(configuration, working_directory, roots)
+    except Exception as error:
+        raise commands.ClientException(
+            f"Exception occurred during pyre coverage: {error}"
+        ) from error

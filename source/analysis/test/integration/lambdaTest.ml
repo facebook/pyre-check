@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -17,9 +17,7 @@ let test_check_map_lambda context =
       def foo(l: typing.Iterator[int]) -> typing.Iterator[int]:
         return map(lambda x: str(x), l)
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Iterator[int]` but got `typing.Iterator[str]`.";
-    ];
+    ["Incompatible return type [7]: Expected `Iterator[int]` but got `Iterator[str]`."];
   assert_type_errors
     {|
       import typing
@@ -34,14 +32,14 @@ let test_check_map_lambda context =
       def foo(l: typing.List[int]) -> typing.List[int]:
         return map(lambda x: str(x), l)
     |}
-    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.Iterator[str]`."];
+    ["Incompatible return type [7]: Expected `List[int]` but got `Iterator[str]`."];
   assert_type_errors
     {|
       import typing
       def foo(l: typing.List[int]) -> typing.List[str]:
         return map(lambda x: str(x), l)
     |}
-    ["Incompatible return type [7]: Expected `typing.List[str]` but got `typing.Iterator[str]`."];
+    ["Incompatible return type [7]: Expected `List[str]` but got `Iterator[str]`."];
 
   assert_type_errors
     {|
@@ -49,14 +47,14 @@ let test_check_map_lambda context =
       def foo(l: typing.Iterator[int]) -> typing.Iterator[int]:
         return list(map(lambda x: str(x), l))
     |}
-    ["Incompatible return type [7]: Expected `typing.Iterator[int]` but got `typing.List[str]`."];
+    ["Incompatible return type [7]: Expected `Iterator[int]` but got `List[str]`."];
   assert_type_errors
     {|
       import typing
       def foo(l: typing.Iterator[int]) -> typing.Iterator[str]:
         return list(map(lambda x: str(x), l))
     |}
-    ["Incompatible return type [7]: Expected `typing.Iterator[str]` but got `typing.List[str]`."];
+    ["Incompatible return type [7]: Expected `Iterator[str]` but got `List[str]`."];
 
   assert_type_errors
     {|
@@ -71,7 +69,7 @@ let test_check_map_lambda context =
       def foo(l: typing.List[int]) -> typing.List[str]:
         return list(map(lambda x: x, l))
     |}
-    ["Incompatible return type [7]: Expected `typing.List[str]` but got `typing.List[int]`."];
+    ["Incompatible return type [7]: Expected `List[str]` but got `List[int]`."];
 
   assert_type_errors
     {|
@@ -79,10 +77,7 @@ let test_check_map_lambda context =
       def foo(l: typing.List[int]) -> typing.List[str]:
         return list(map(lambda x: str(x) if isinstance(x, int) else None, l))
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.List[str]` but got \
-       `typing.List[typing.Optional[str]]`.";
-    ]
+    ["Incompatible return type [7]: Expected `List[str]` but got `List[Optional[str]]`."]
 
 
 let test_check_filter_lambda context =
@@ -126,14 +121,14 @@ let test_check_filter_lambda context =
       def foo(l: typing.List[int]) -> typing.List[int]:
         return filter(lambda x: x * x == 10, l)
     |}
-    ["Incompatible return type [7]: Expected `typing.List[int]` but got `typing.Iterator[int]`."];
+    ["Incompatible return type [7]: Expected `List[int]` but got `Iterator[int]`."];
   assert_type_errors
     {|
       import typing
       def foo(l: typing.List[str]) -> typing.List[str]:
         return filter(lambda x: x * x == 10, l)
     |}
-    ["Incompatible return type [7]: Expected `typing.List[str]` but got `typing.Iterator[str]`."];
+    ["Incompatible return type [7]: Expected `List[str]` but got `Iterator[str]`."];
 
   assert_type_errors
     {|

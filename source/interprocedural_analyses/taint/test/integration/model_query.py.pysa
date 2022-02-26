@@ -124,6 +124,18 @@ ModelQuery(
   ]
 )
 
+ModelQuery(
+  find = "methods",
+  where = [
+    AllOf(
+      parent.matches(".*ClassTest3_Alarm1.*"),
+      name.matches(".*method1.*")
+    )
+  ],
+  model = [
+    Returns(TaintSource[SourceA]),
+  ]
+)
 
 ModelQuery(
   find = "functions",

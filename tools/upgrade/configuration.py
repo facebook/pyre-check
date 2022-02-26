@@ -1,9 +1,7 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
-
-from __future__ import annotations
 
 import json
 import logging
@@ -47,6 +45,9 @@ class Configuration:
             "use_buck_source_database"
         )
         self.use_command_v2: Optional[bool] = json_contents.get("use_command_v2")
+        self.ignore_all_errors: Optional[List[str]] = json_contents.get(
+            "ignore_all_errors"
+        )
 
     def get_contents(self) -> Dict[str, Any]:
         """Assumption: The field names in this class match the key names in
@@ -208,8 +209,8 @@ class Configuration:
         description: str,
         should_clean: bool,
         command_input: Optional[str],
-        stderr_flag: subprocess._FILE = subprocess.PIPE,
-    ) -> Optional[subprocess.CompletedProcess[str]]:
+        stderr_flag: "subprocess._FILE" = subprocess.PIPE,
+    ) -> Optional["subprocess.CompletedProcess[str]"]:
         if should_clean:
             try:
                 # If building targets, run clean or space may run out on device!

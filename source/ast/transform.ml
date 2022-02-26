@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -91,6 +91,11 @@ module Make (Transformer : Transformer) = struct
     let transform_entry { Dictionary.Entry.key; value } ~transform_expression =
       { Dictionary.Entry.key = transform_expression key; value = transform_expression value }
     in
+    let transform_substring substring ~transform_expression =
+      match substring with
+      | Substring.Format expression -> Substring.Format (transform_expression expression)
+      | Substring.Literal _ -> substring
+    in
     let rec transform_expression expression =
       let transform_children value =
         match value with
@@ -111,7 +116,7 @@ module Make (Transformer : Transformer) = struct
                 operator;
                 right = transform_expression right;
               }
-        | Complex _ -> value
+        | Constant _ -> value
         | Dictionary { Dictionary.entries; keywords } ->
             Dictionary
               {
@@ -126,9 +131,6 @@ module Make (Transformer : Transformer) = struct
                 generators =
                   transform_list generators ~f:(transform_generator ~transform_expression);
               }
-        | Ellipsis -> value
-        | False -> value
-        | Float _ -> value
         | Generator { Comprehension.element; generators } ->
             Generator
               {
@@ -136,7 +138,8 @@ module Make (Transformer : Transformer) = struct
                 generators =
                   transform_list generators ~f:(transform_generator ~transform_expression);
               }
-        | Integer _ -> value
+        | FormatString substrings ->
+            FormatString (transform_list substrings ~f:(transform_substring ~transform_expression))
         | Lambda { Lambda.parameters; body } ->
             Lambda
               {
@@ -170,7 +173,6 @@ module Make (Transformer : Transformer) = struct
               | Starred.Twice expression -> Starred.Twice (transform_expression expression)
             in
             Starred starred
-        | String _ -> value
         | Ternary { Ternary.target; test; alternative } ->
             Ternary
               {
@@ -178,7 +180,6 @@ module Make (Transformer : Transformer) = struct
                 test = transform_expression test;
                 alternative = transform_expression alternative;
               }
-        | True -> value
         | Tuple elements -> Tuple (transform_list elements ~f:transform_expression)
         | UnaryOperator { UnaryOperator.operator; operand } ->
             UnaryOperator { UnaryOperator.operator; operand = transform_expression operand }
@@ -186,6 +187,8 @@ module Make (Transformer : Transformer) = struct
             WalrusOperator
               { target = transform_expression target; value = transform_expression value }
         | Expression.Yield expression -> Expression.Yield (expression >>| transform_expression)
+        | Expression.YieldFrom expression ->
+            Expression.YieldFrom (expression |> transform_expression)
       in
       let initial_state = !state in
       let expression =
@@ -203,34 +206,15 @@ module Make (Transformer : Transformer) = struct
       in
       transform_list arguments ~f:transform_argument
     in
-    let transform_decorator { Decorator.name; arguments } =
-      (* Really we should be leaving this up to the client inside of `statement` since this isn't an
-         expression. However, it used to be one, so we do a best-effort transformation here *)
-      let name =
-        let { Node.location; value = name } = name in
-        from_reference name ~location
-        |> transform_expression
-        |> Node.value
-        |> (function
-             | Expression.Name name -> Some name
-             | _ -> None)
-        >>= name_to_reference
-        |> Option.value ~default:name
-        |> Node.create ~location
-      in
-      let arguments = arguments >>| transform_arguments in
-      { Decorator.name; arguments }
-    in
     let rec transform_statement statement =
       let transform_children value =
         match value with
-        | Statement.Assign { Assign.target; annotation; value; parent } ->
+        | Statement.Assign { Assign.target; annotation; value } ->
             Statement.Assign
               {
                 Assign.target = transform_expression target;
                 annotation = annotation >>| transform_expression;
                 value = transform_expression value;
-                parent;
               }
         | Assert { Assert.test; message; origin } ->
             Assert
@@ -247,7 +231,7 @@ module Make (Transformer : Transformer) = struct
                 base_arguments =
                   transform_list base_arguments ~f:(transform_argument ~transform_expression);
                 body = transform_list body ~f:transform_statement |> List.concat;
-                decorators = transform_list decorators ~f:transform_decorator;
+                decorators = transform_list decorators ~f:transform_expression;
                 top_level_unbound_names;
               }
         | Continue -> value
@@ -268,7 +252,7 @@ module Make (Transformer : Transformer) = struct
                 Define.Signature.name;
                 parameters =
                   transform_list parameters ~f:(transform_parameter ~transform_expression);
-                decorators = transform_list decorators ~f:transform_decorator;
+                decorators = transform_list decorators ~f:transform_expression;
                 return_annotation = return_annotation >>| transform_expression;
                 async;
                 parent;
@@ -295,7 +279,7 @@ module Make (Transformer : Transformer) = struct
                 unbound_names;
                 body = transform_list body ~f:transform_statement |> List.concat;
               }
-        | Delete expression -> Delete (transform_expression expression)
+        | Delete expressions -> Delete (List.map expressions ~f:transform_expression)
         | Expression expression -> Expression (transform_expression expression)
         | For { For.target; iterator; body; orelse; async } ->
             For
@@ -315,6 +299,55 @@ module Make (Transformer : Transformer) = struct
                 orelse = transform_list orelse ~f:transform_statement |> List.concat;
               }
         | Import _ -> value
+        | Match { Match.subject; cases } ->
+            let rec transform_pattern { Node.value; location } =
+              let value =
+                match value with
+                | Match.Pattern.MatchAs { pattern; name } ->
+                    Match.Pattern.MatchAs { pattern = pattern >>| transform_pattern; name }
+                | MatchClass { class_name; patterns; keyword_attributes; keyword_patterns } ->
+                    MatchClass
+                      {
+                        class_name;
+                        patterns = transform_list patterns ~f:transform_pattern;
+                        keyword_attributes;
+                        keyword_patterns = transform_list keyword_patterns ~f:transform_pattern;
+                      }
+                | MatchMapping { keys; patterns; rest } ->
+                    MatchMapping
+                      {
+                        keys = transform_list keys ~f:transform_expression;
+                        patterns = transform_list patterns ~f:transform_pattern;
+                        rest;
+                      }
+                | MatchOr patterns -> MatchOr (transform_list patterns ~f:transform_pattern)
+                | MatchSequence patterns ->
+                    MatchSequence (transform_list patterns ~f:transform_pattern)
+                | MatchSingleton constant -> (
+                    let expression =
+                      transform_expression { Node.value = Expression.Constant constant; location }
+                    in
+                    match expression.value with
+                    | Expression.Constant constant -> MatchSingleton constant
+                    | _ -> MatchValue expression)
+                | MatchStar maybe_identifier -> MatchStar maybe_identifier
+                | MatchValue expression -> MatchValue expression
+                | MatchWildcard -> MatchWildcard
+              in
+              { Node.value; location }
+            in
+            let transform_case { Match.Case.pattern; guard; body } =
+              {
+                Match.Case.pattern = transform_pattern pattern;
+                guard = guard >>| transform_expression;
+                body = transform_list body ~f:transform_statement |> List.concat;
+              }
+            in
+            Match
+              {
+                Match.subject = transform_expression subject;
+                cases = transform_list cases ~f:transform_case;
+              }
         | Nonlocal _ -> value
         | Pass -> value
         | Raise { Raise.expression; from } ->
@@ -356,8 +389,6 @@ module Make (Transformer : Transformer) = struct
                 body = transform_list body ~f:transform_statement |> List.concat;
                 orelse = transform_list orelse ~f:transform_statement |> List.concat;
               }
-        | Statement.Yield expression -> Statement.Yield (transform_expression expression)
-        | Statement.YieldFrom expression -> Statement.YieldFrom (transform_expression expression)
       in
       let statement =
         let parent_state, should_transform_children =
@@ -404,9 +435,7 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
         | Pass
         | Raise _
         | Return _
-        | Nonlocal _
-        | Yield _
-        | YieldFrom _ ->
+        | Nonlocal _ ->
             value
         | Class ({ Class.body; _ } as value) ->
             Class { value with Class.body = List.concat_map ~f:transform_statement body }
@@ -422,6 +451,11 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
             let body = List.concat_map ~f:transform_statement body in
             let orelse = List.concat_map ~f:transform_statement orelse in
             If { value with If.body; orelse }
+        | Match ({ Match.cases; _ } as value) ->
+            let transform_case ({ Match.Case.body; _ } as value) =
+              { value with Match.Case.body = List.concat_map ~f:transform_statement body }
+            in
+            Match { value with Match.cases = List.map ~f:transform_case cases }
         | While ({ While.body; orelse; _ } as value) ->
             let body = List.concat_map ~f:transform_statement body in
             let orelse = List.concat_map ~f:transform_statement orelse in
@@ -489,12 +523,8 @@ let sanitize_statement statement =
       | {
           Node.value =
             Statement.Define
-              ({
-                 Define.signature =
-                   { Define.Signature.name = { Node.value = name; _ } as name_node; parameters; _ }
-                   as signature;
-                 _;
-               } as define);
+              ({ Define.signature = { Define.Signature.name; parameters; _ } as signature; _ } as
+              define);
           _;
         } as statement ->
           let transform_parameter
@@ -514,7 +544,7 @@ let sanitize_statement statement =
                       signature =
                         {
                           signature with
-                          name = { name_node with value = Reference.sanitized name };
+                          name = Reference.sanitized name;
                           parameters = List.map parameters ~f:transform_parameter;
                         };
                     };

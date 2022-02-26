@@ -1,3 +1,4 @@
 @generated
 Call dependencies
+remote_code_execution.$toplevel (fun) -> []
 remote_code_execution.rce_problem (fun) -> [_user_controlled (fun) eval (fun)]

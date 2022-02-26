@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -363,8 +363,8 @@ let test_non_data_descriptors context =
       "Revealed type [-1]: Revealed type for `y` is `BoundMethod[typing.Callable[[Type[Host], int, \
        str], bool], Type[Host]]`.";
       "Revealed type [-1]: Revealed type for `z` is `bool`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to \
-       anonymous call but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 2nd positional only parameter \
+       expected `str` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -599,8 +599,8 @@ let test_data_descriptors context =
     [
       (* TODO(T65806273): This should be accepted, but we're currently ignoring descriptors when
          building dataclass constructors for perf reasons *)
-      "Incompatible parameter type [6]: Expected `Descriptor` for 1st positional only parameter to \
-       call `DC.__init__` but got `str`.";
+      "Incompatible parameter type [6]: In call `DC.__init__`, for 1st positional only parameter \
+       expected `Descriptor` but got `str`.";
     ];
   assert_type_errors
     {|

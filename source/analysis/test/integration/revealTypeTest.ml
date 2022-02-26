@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -148,28 +148,9 @@ let test_reveal_type context =
          Foo.attribute = 1
          reveal_type(Foo.attribute)
      |}
-    ["Revealed type [-1]: Revealed type for `test.Foo.attribute` is `typing.Optional[int]`."];
-  assert_type_errors
-    {|
-      def f( *args) -> None: # type: ( *str) -> None
-        reveal_type(args[0])
-    |}
-    ["Revealed type [-1]: Revealed type for `args[0]` is `str`."];
-  assert_type_errors
-    {|
-      def f( **kwargs) -> None: # type: ( **int) -> None
-        reveal_type(kwargs['key'])
-    |}
-    ["Revealed type [-1]: Revealed type for `kwargs[\"key\"]` is `int`."];
-  assert_type_errors
-    {|
-      def f( *args, **kwargs) -> None: # type: ( *str, **int) -> None
-        reveal_type(args[0])
-        reveal_type(kwargs['key'])
-    |}
     [
-      "Revealed type [-1]: Revealed type for `args[0]` is `str`.";
-      "Revealed type [-1]: Revealed type for `kwargs[\"key\"]` is `int`.";
+      "Revealed type [-1]: Revealed type for `test.Foo.attribute` is `typing.Optional[int]` \
+       (inferred: `typing_extensions.Literal[1]`).";
     ];
   assert_type_errors
     {|

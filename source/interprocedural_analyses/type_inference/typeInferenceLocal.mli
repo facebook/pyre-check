@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,6 +11,10 @@ module type Context = sig
   val qualifier : Ast.Reference.t
 
   val define : Ast.Statement.Define.t Ast.Node.t
+
+  val resolution_fixpoint : Analysis.LocalAnnotationMap.t option
+
+  val error_map : Analysis.TypeCheck.LocalErrorMap.t option
 end
 
 module type Signature = sig
@@ -23,6 +27,8 @@ module type Signature = sig
   val initial_forward : resolution:Analysis.Resolution.t -> t
 
   val initial_backward : forward:t -> t
+
+  val widen_resolution_with_snapshots : t -> t
 
   include Analysis.Fixpoint.State with type t := t
 end
@@ -38,15 +44,17 @@ val infer_for_define
   define:Ast.Statement.Define.t Ast.Node.t ->
   TypeInferenceData.LocalResult.t
 
-val empty_infer_for_define
-  :  global_resolution:Analysis.GlobalResolution.t ->
-  qualifier:Ast.Reference.t ->
-  define:Ast.Statement.Define.t Ast.Node.t ->
-  TypeInferenceData.LocalResult.t
-
 val infer_for_module
-  :  configuration:Configuration.Analysis.t ->
+  :  ?skip_annotated:bool ->
+  configuration:Configuration.Analysis.t ->
   global_resolution:Analysis.GlobalResolution.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
-  source:Ast.Source.t ->
+  Ast.Source.t ->
   TypeInferenceData.LocalResult.t list
+
+module Testing : sig
+  val define_names_to_analyze
+    :  global_resolution:Analysis.GlobalResolution.t ->
+    Ast.Source.t ->
+    Ast.Reference.t list
+end

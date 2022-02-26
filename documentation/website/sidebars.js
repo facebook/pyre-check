@@ -1,5 +1,5 @@
 /**
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -21,6 +21,7 @@ module.exports = {
     'errors',
     ...fbInternalOnly(['fb/open-source-setup']),
     'querying-pyre',
+    'features',
   ],
   pysa: [
     ...fbContent({
@@ -49,7 +50,10 @@ module.exports = {
       ],
       external: ['pysa-running'],
     }),
-    ...fbInternalOnly(['fb/pysa-shipping-rules-models-internal']),
+    ...fbContent({
+      internal: ['fb/pysa-shipping-rules-models-internal'],
+      external: ['pysa-shipping-rules-models'],
+    }),
     {
       'Scaling Beyond Individual Models': [
         'pysa-model-generators',
@@ -89,7 +93,6 @@ module.exports = {
             'fb/warning_codes/code-5027',
             'fb/warning_codes/code-5028',
             'fb/warning_codes/code-5029',
-            'fb/warning_codes/code-5030',
             'fb/warning_codes/code-5031',
             'fb/warning_codes/code-5032',
             'fb/warning_codes/code-5034',
@@ -109,6 +112,7 @@ module.exports = {
             'fb/warning_codes/code-5117',
             'fb/warning_codes/code-5120',
             'fb/warning_codes/code-5132',
+            'fb/warning_codes/code-6029',
             'fb/warning_codes/code-6064',
             'fb/warning_codes/code-6065',
             'fb/warning_codes/code-6066',
@@ -123,6 +127,7 @@ module.exports = {
             'fb/warning_codes/code-6445',
             'fb/warning_codes/code-6446',
             'fb/warning_codes/code-6449',
+            'fb/warning_codes/code-6458',
             'fb/warning_codes/code-6459',
             'fb/warning_codes/code-6460',
             'fb/warning_codes/code-6461',

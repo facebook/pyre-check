@@ -8,32 +8,42 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" }
+            ],
             "root": {
               "filename": "first_field.py",
               "line": 12,
               "start": 14,
               "end": 28
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "a" },
-              { "always-via": "special_source" }
-            ]
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" }
+            ],
             "root": {
               "filename": "first_field.py",
               "line": 12,
               "start": 35,
               "end": 49
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "b" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -56,32 +66,42 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "a" }
+            ],
             "root": {
               "filename": "first_field.py",
               "line": 12,
               "start": 14,
               "end": 28
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "a" },
-              { "always-via": "special_source" }
-            ]
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" }
+            ],
             "root": {
               "filename": "first_field.py",
               "line": 12,
               "start": 35,
               "end": 49
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "b" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -89,24 +109,118 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "first_field.py",
               "line": 17,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
     "features": [
       { "has": "first-index" },
-      { "first-index": "a" },
       { "first-index": "b" },
+      { "first-index": "a" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "first_field.alternate_fields:5002:0:Call|_test_sink|0|formal(arg):e344eba1a11b018a14afd4a5796566b9"
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "first_field.local_fields",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "b" },
+                  { "first-index": "a" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "c" },
+              { "first-index": "d" }
+            ],
+            "call": {
+              "position": {
+                "filename": "first_field.py",
+                "line": 22,
+                "start": 8,
+                "end": 26
+              },
+              "resolves_to": [ "first_field.alternate_fields" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "first_field.local_fields_hop",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "b" },
+                  { "first-index": "a" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "f" },
+              { "first-index": "e" }
+            ],
+            "call": {
+              "position": {
+                "filename": "first_field.py",
+                "line": 31,
+                "start": 8,
+                "end": 22
+              },
+              "resolves_to": [ "first_field.local_fields" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
     ]
   }
 }

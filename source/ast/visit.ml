@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -13,10 +13,10 @@ open Statement
 type node =
   | Expression of Expression.t
   | Statement of Statement.t
-  | Identifier of Identifier.t Node.t
+  | Argument of Identifier.t Node.t
   | Parameter of Parameter.t
   | Reference of Reference.t Node.t
-  | Substring of Substring.t Node.t
+  | Substring of Substring.t
   | Generator of Comprehension.Generator.t
 
 module type NodeVisitor = sig
@@ -25,6 +25,8 @@ module type NodeVisitor = sig
   val node : t -> node -> t
 
   val visit_statement_children : t -> Statement.t -> bool
+
+  val visit_format_string_children : t -> Expression.t -> bool
 end
 
 module MakeNodeVisitor (Visitor : NodeVisitor) = struct
@@ -69,7 +71,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Call { Call.callee; arguments } ->
           visit_expression callee;
           let visit_argument { Call.Argument.value; name } =
-            name >>| (fun name -> visit_node ~state ~visitor (Identifier name)) |> ignore;
+            name >>| (fun name -> visit_node ~state ~visitor (Argument name)) |> ignore;
             visit_expression value
           in
           List.iter arguments ~f:visit_argument
@@ -100,12 +102,16 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           | Starred.Once expression
           | Starred.Twice expression ->
               visit_expression expression)
-      | String { StringLiteral.kind = Format expressions; _ } ->
-          List.iter expressions ~f:visit_expression
-      | String { kind = Mixed substrings; _ } ->
+      | FormatString substrings ->
           List.iter
             ~f:(fun substring -> visit_node ~state ~visitor (Substring substring))
-            substrings
+            substrings;
+          if Visitor.visit_format_string_children !state expression then
+            let visit_children = function
+              | Substring.Format expression -> visit_expression expression
+              | _ -> ()
+            in
+            List.iter ~f:visit_children substrings
       | Ternary { Ternary.target; test; alternative } ->
           visit_expression target;
           visit_expression test;
@@ -116,20 +122,15 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression target;
           visit_expression value
       | Expression.Yield expression -> Option.iter ~f:visit_expression expression
-      | Complex _
-      | Ellipsis
-      | String _
-      | Integer _
-      | True
-      | False
-      | Float _ ->
-          ()
+      | Expression.YieldFrom expression -> visit_expression expression
+      | Constant _ -> ()
     in
     visit_children (Node.value expression);
     visit_node ~state ~visitor (Expression expression)
 
 
   let rec visit_statement ~state statement =
+    let location = Node.location statement in
     let visitor = Visitor.node in
     let visit_expression = visit_expression ~state in
     let visit_statement = visit_statement ~state in
@@ -142,17 +143,25 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Assert { Assert.test; message; _ } ->
           visit_expression test;
           Option.iter ~f:visit_expression message
-      | Class { Class.name; base_arguments; body; decorators; _ } ->
-          visit_node ~state ~visitor (Reference name);
+      | Class ({ Class.name; base_arguments; body; decorators; _ } as class_) ->
+          visit_node
+            ~state
+            ~visitor
+            (Reference
+               (Node.create ~location:(Class.name_location ~body_location:location class_) name));
           List.iter base_arguments ~f:(visit_argument ~visit_expression);
           List.iter body ~f:visit_statement;
-          List.map decorators ~f:Decorator.to_expression |> List.iter ~f:visit_expression
-      | Define { Define.signature; captures; body; unbound_names = _ } ->
+          List.iter ~f:visit_expression decorators
+      | Define ({ Define.signature; captures; body; unbound_names = _ } as define) ->
           let iter_signature { Define.Signature.name; parameters; decorators; return_annotation; _ }
             =
-            visit_node ~state ~visitor (Reference name);
+            visit_node
+              ~state
+              ~visitor
+              (Reference
+                 (Node.create ~location:(Define.name_location ~body_location:location define) name));
             List.iter parameters ~f:(visit_parameter ~state ~visitor ~visit_expression);
-            List.map decorators ~f:Decorator.to_expression |> List.iter ~f:visit_expression;
+            List.iter ~f:visit_expression decorators;
             Option.iter ~f:visit_expression return_annotation
           in
           let iter_capture { Define.Capture.kind; _ } =
@@ -165,9 +174,8 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           iter_signature signature;
           List.iter body ~f:visit_statement;
           List.iter captures ~f:iter_capture
-      | Delete expression
-      | Expression expression ->
-          visit_expression expression
+      | Delete expressions -> List.iter expressions ~f:visit_expression
+      | Expression expression -> visit_expression expression
       | For { For.target; iterator; body; orelse; _ } ->
           visit_expression target;
           visit_expression iterator;
@@ -177,13 +185,33 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression test;
           List.iter body ~f:visit_statement;
           List.iter orelse ~f:visit_statement
-      | Import { Import.from; imports } ->
-          let visit_import { Import.name; alias } =
-            visit_node ~state ~visitor (Reference name);
-            Option.iter ~f:(fun alias -> visit_node ~state ~visitor (Identifier alias)) alias
+      | Match { Match.subject; cases } ->
+          let rec visit_pattern { Node.value; location } =
+            match value with
+            | Match.Pattern.MatchAs { pattern; _ } -> Option.iter pattern ~f:visit_pattern
+            | MatchClass { patterns; keyword_patterns; _ } ->
+                List.iter patterns ~f:visit_pattern;
+                List.iter keyword_patterns ~f:visit_pattern
+            | MatchMapping { keys; patterns; _ } ->
+                List.iter keys ~f:visit_expression;
+                List.iter patterns ~f:visit_pattern
+            | MatchOr patterns
+            | MatchSequence patterns ->
+                List.iter patterns ~f:visit_pattern
+            | MatchSingleton constant ->
+                visit_expression { Node.value = Expression.Constant constant; location }
+            | MatchValue expression -> visit_expression expression
+            | MatchStar _
+            | MatchWildcard ->
+                ()
           in
-          Option.iter ~f:(fun from -> visit_node ~state ~visitor (Reference from)) from;
-          List.iter ~f:visit_import imports
+          let visit_case { Match.Case.pattern; guard; body } =
+            visit_pattern pattern;
+            Option.iter guard ~f:visit_expression;
+            List.iter body ~f:visit_statement
+          in
+          visit_expression subject;
+          List.iter cases ~f:visit_case
       | Raise { Raise.expression; from } ->
           Option.iter ~f:visit_expression expression;
           Option.iter ~f:visit_expression from
@@ -208,9 +236,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression test;
           List.iter body ~f:visit_statement;
           List.iter orelse ~f:visit_statement
-      | Statement.Yield expression
-      | Statement.YieldFrom expression ->
-          visit_expression expression
+      | Import _
       | Nonlocal _
       | Global _
       | Pass
@@ -249,6 +275,8 @@ module Make (Visitor : Visitor) = struct
 
 
       let visit_statement_children _ _ = true
+
+      let visit_format_string_children _ _ = false
     end)
     in
     NodeVisitor.visit
@@ -280,9 +308,7 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
         | Pass
         | Raise _
         | Return _
-        | Nonlocal _
-        | Yield _
-        | YieldFrom _ ->
+        | Nonlocal _ ->
             ()
         | Class { Class.body; _ }
         | Define { Define.body; _ }
@@ -293,6 +319,9 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
         | While { While.body; orelse; _ } ->
             List.iter ~f:visit_statement body;
             List.iter ~f:visit_statement orelse
+        | Match { Match.cases; _ } ->
+            let visit_case { Match.Case.body; _ } = List.iter ~f:visit_statement body in
+            List.iter ~f:visit_case cases
         | Try { Try.body; handlers; orelse; finally } ->
             let visit_handler { Try.Handler.body; _ } = List.iter ~f:visit_statement body in
             List.iter ~f:visit_statement body;
@@ -367,6 +396,8 @@ struct
 
 
       let visit_statement_children _ _ = true
+
+      let visit_format_string_children _ _ = false
     end
     in
     let module CollectingVisit = MakeNodeVisitor (CollectingVisitor) in
@@ -419,11 +450,13 @@ let collect_locations source =
         let predicate = function
           | Expression node -> Some (Node.location node)
           | Statement node -> Some (Node.location node)
-          | Identifier node -> Some (Node.location node)
+          | Argument node -> Some (Node.location node)
           | Parameter node -> Some (Node.location node)
           | Reference node -> Some (Node.location node)
-          | Substring node -> Some (Node.location node)
-          | Generator _ -> None
+          | Substring (Substring.Format node) -> Some (Node.location node)
+          | Substring _
+          | Generator _ ->
+              None
       end)
   in
   let { Collector.nodes; _ } = Collector.collect source in
@@ -510,8 +543,7 @@ let collect_format_strings_with_ignores ~ignore_line_map source =
     type t = Expression.t * Ignore.t list
 
     let predicate = function
-      | { Node.value = Expression.String { kind = Mixed _ | Format _; _ }; location } as expression
-        ->
+      | { Node.value = Expression.FormatString _; location } as expression ->
           Map.find ignore_line_map (Location.line location) >>| fun ignores -> expression, ignores
       | _ -> None
   end)

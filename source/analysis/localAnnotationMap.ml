@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,8 +11,8 @@ open Pyre
 
 module Annotations = struct
   type annotation_store = {
-    annotations: RefinementUnit.t Reference.Map.Tree.t;
-    temporary_annotations: RefinementUnit.t Reference.Map.Tree.t;
+    annotations: Refinement.Unit.t Reference.Map.Tree.t;
+    temporary_annotations: Refinement.Unit.t Reference.Map.Tree.t;
   }
   [@@deriving eq]
 
@@ -30,7 +30,7 @@ module Annotations = struct
         "\"%a\": \"%a\"%s, "
         Reference.pp
         key
-        RefinementUnit.pp
+        Refinement.Unit.pp
         data
         temporary_suffix
     in
@@ -74,13 +74,15 @@ let show map = Format.asprintf "%a" pp map
 
 let set
     ?(precondition =
-      { Resolution.annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
+      Refinement.Store.
+        { annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
     ?(postcondition =
-      { Resolution.annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
-    ~key
+      Refinement.Store.
+        { annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty })
+    ~statement_key
     local_annotations
   =
-  let convert_to_tree { Resolution.annotations; temporary_annotations } =
+  let convert_to_tree Refinement.Store.{ annotations; temporary_annotations } =
     {
       Annotations.annotations = Reference.Map.to_tree annotations;
       temporary_annotations = Reference.Map.to_tree temporary_annotations;
@@ -88,7 +90,7 @@ let set
   in
   Hashtbl.set
     local_annotations
-    ~key
+    ~key:statement_key
     ~data:
       {
         Annotations.precondition = convert_to_tree precondition;
@@ -100,19 +102,20 @@ module ReadOnly = struct
   type t = Annotations.t Int.Map.Tree.t
 
   let convert_to_map { Annotations.annotations; temporary_annotations } =
-    {
-      Resolution.annotations = Reference.Map.of_tree annotations;
-      temporary_annotations = Reference.Map.of_tree temporary_annotations;
-    }
+    Refinement.Store.
+      {
+        annotations = Reference.Map.of_tree annotations;
+        temporary_annotations = Reference.Map.of_tree temporary_annotations;
+      }
 
 
-  let get_precondition local_annotations key =
-    Int.Map.Tree.find local_annotations key
+  let get_precondition local_annotations ~statement_key =
+    Int.Map.Tree.find local_annotations statement_key
     >>| fun { Annotations.precondition; _ } -> convert_to_map precondition
 
 
-  let get_postcondition local_annotations key =
-    Int.Map.Tree.find local_annotations key
+  let get_postcondition local_annotations ~statement_key =
+    Int.Map.Tree.find local_annotations statement_key
     >>| fun { Annotations.postcondition; _ } -> convert_to_map postcondition
 end
 

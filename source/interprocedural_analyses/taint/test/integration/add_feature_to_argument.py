@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -27,6 +27,12 @@ def add_via_value_of(first, second):
 def test_add_via_value_of_second():
     x = _test_source()
     add_via_value_of(x, "second")
+    return x
+
+
+def dict_test_add_via_value_of_second():
+    x = _test_source()
+    add_via_value_of(x["foo"], "second")
     return x
 
 

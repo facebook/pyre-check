@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -26,8 +26,8 @@ let test_check_bounded_variables context =
         x("7")
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to anonymous call but got `str`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -147,9 +147,8 @@ let test_check_unbounded_variables context =
         expects_string(input)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st positional only parameter to call `expects_string` but got \
-         `Variable[T]`.";
+      "Incompatible parameter type [6]: In call `expects_string`, for 1st positional only \
+       parameter expected `str` but got `Variable[T]`.";
     ];
   assert_type_errors
     {|
@@ -204,9 +203,8 @@ let test_check_unbounded_variables context =
       "Revealed type [-1]: Revealed type for `test.Foo[float]` is `typing.Type[Foo[float]]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[float]()` is `Foo[float]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[str]()` is `Foo[str]`.";
-      "Incompatible parameter type [6]: Expected `typing.Type[Variable[X]]` for 1st positional \
-       only "
-      ^ "parameter to call `typing.GenericMeta.__getitem__` but got `str`.";
+      "Incompatible parameter type [6]: In call `typing.GenericMeta.__getitem__`, for 1st \
+       positional only parameter expected `Type[Variable[X]]` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -221,8 +219,8 @@ let test_check_unbounded_variables context =
         return Foo[int](1.2)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call "
-      ^ "`Foo.__init__` but got `float`.";
+      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional only parameter \
+       expected `int` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -258,8 +256,8 @@ let test_check_unbounded_variables context =
        is `Tuple[float, bool]`.";
       "Revealed type [-1]: Revealed type for `test.generic(test.overloaded, [\"1\"], [7])` is \
        `Tuple[str, int]`.";
-      "Incompatible parameter type [6]: Expected `List[Variable[T2]]` for 3rd positional only "
-      ^ "parameter to call `generic` but got `List[int]`.";
+      "Incompatible parameter type [6]: In call `generic`, for 3rd positional only parameter \
+       expected `List[Variable[T2]]` but got `List[int]`.";
     ];
   assert_type_errors
     {|
@@ -397,7 +395,7 @@ let test_check_unbounded_variables context =
     |}
     [
       "Incompatible variable type [9]: l is declared to have type `List[G[object]]` but is used as \
-       type `List[typing.Union[G[int], G[str]]]`.";
+       type `List[Union[G[int], G[str]]]`.";
     ];
   assert_type_errors
     {|
@@ -426,9 +424,8 @@ let test_check_variable_bindings context =
         str_to_int(t)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st positional only parameter to call `str_to_int` but got "
-      ^ "`Variable[T (bound to int)]`.";
+      "Incompatible parameter type [6]: In call `str_to_int`, for 1st positional only parameter \
+       expected `str` but got `Variable[T (bound to int)]`.";
     ];
   assert_type_errors
     {|
@@ -453,9 +450,8 @@ let test_check_variable_bindings context =
         foo(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Variable[T (bound to int)]` for 1st positional \
-       only "
-      ^ "parameter to call `foo` but got `str`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `Variable[T (bound to int)]` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -482,8 +478,8 @@ let test_check_variable_bindings context =
     |}
     [
       "Incompatible return type [7]: Expected `None` but got `int`.";
-      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
-       `f` but got `None`.";
+      "Incompatible parameter type [6]: In call `f`, for 2nd positional only parameter expected \
+       `int` but got `None`.";
     ];
   assert_type_errors
     {|
@@ -586,9 +582,8 @@ let test_check_variable_bindings context =
       "Revealed type [-1]: Revealed type for `test.Foo[test.C]` is `typing.Type[Foo[C]]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.C]()` is `Foo[C]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.D]()` is `Foo[D]`.";
-      "Incompatible parameter type [6]: Expected `typing.Type[Variable[X (bound to C)]]` for "
-      ^ "1st positional only parameter to call `typing.GenericMeta.__getitem__` but got \
-         `typing.Type[int]`.";
+      "Incompatible parameter type [6]: In call `typing.GenericMeta.__getitem__`, for 1st \
+       positional only parameter expected `Type[Variable[X (bound to C)]]` but got `Type[int]`.";
     ];
   assert_type_errors
     {|
@@ -611,9 +606,9 @@ let test_check_variable_bindings context =
       "Revealed type [-1]: Revealed type for `test.Foo[test.Animal]()` is `Foo[Animal]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.Mineral]()` is `Foo[Mineral]`.";
       "Revealed type [-1]: Revealed type for `test.Foo[test.Fish]()` is `Foo[Animal]`.";
-      "Incompatible parameter type [6]: Expected `typing.Type[Variable[X <: [Mineral, Animal]]]` "
-      ^ "for 1st positional only parameter to call `typing.GenericMeta.__getitem__` but got "
-      ^ "`typing.Type[int]`.";
+      "Incompatible parameter type [6]: In call `typing.GenericMeta.__getitem__`, for 1st \
+       positional only parameter expected `Type[Variable[X <: [Mineral, Animal]]]` but got \
+       `Type[int]`.";
     ];
   assert_type_errors
     {|
@@ -666,8 +661,8 @@ let test_check_variable_bindings context =
     [
       "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
       "Revealed type [-1]: Revealed type for `x.expect_self(y)` is `typing.Union[G[int], G[str]]`.";
-      "Incompatible parameter type [6]: Expected `Variable[TSelf (bound to G[typing.Any])]` for \
-       1st positional only parameter to call `G.expect_self` but got `bool`.";
+      "Incompatible parameter type [6]: In call `G.expect_self`, for 1st positional only parameter \
+       expected `Variable[TSelf (bound to G[typing.Any])]` but got `bool`.";
     ];
   (* Same test as above but without an explicit type for `self`. *)
   assert_type_errors
@@ -692,8 +687,8 @@ let test_check_variable_bindings context =
     [
       "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
       "Revealed type [-1]: Revealed type for `x.expect_self(y)` is `G[str]`.";
-      "Incompatible parameter type [6]: Expected `Variable[TSelf (bound to G[typing.Any])]` for \
-       1st positional only parameter to call `G.expect_self` but got `bool`.";
+      "Incompatible parameter type [6]: In call `G.expect_self`, for 1st positional only parameter \
+       expected `Variable[TSelf (bound to G[typing.Any])]` but got `bool`.";
     ];
   (* This actually requires the input to be of the same type as `self`. *)
   assert_type_errors
@@ -715,11 +710,11 @@ let test_check_variable_bindings context =
     |}
     [
       "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
-      "Incompatible parameter type [6]: Expected `G[int]` for 1st positional only parameter to \
-       call `G.expect_same_type` but got `G[str]`.";
+      "Incompatible parameter type [6]: In call `G.expect_same_type`, for 1st positional only \
+       parameter expected `G[int]` but got `G[str]`.";
       "Revealed type [-1]: Revealed type for `x.expect_same_type(y)` is `G[int]`.";
-      "Incompatible parameter type [6]: Expected `G[int]` for 1st positional only parameter to \
-       call `G.expect_same_type` but got `bool`.";
+      "Incompatible parameter type [6]: In call `G.expect_same_type`, for 1st positional only \
+       parameter expected `G[int]` but got `bool`.";
     ];
   (* Setting the bound as a parameter-less generic class `INode` replaces the parameters with Any.
      This is equivalent to writing `bound=INode[Any]`. *)
@@ -784,8 +779,8 @@ let test_unbound_variables context =
         x: int = []
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `int` but is used as "
-      ^ "type `typing.List[Variable[_T]]`.";
+      "Incompatible variable type [9]: x is declared to have type `int` but is used as type \
+       `List[Variable[_T]]`.";
     ];
   assert_type_errors
     {|
@@ -813,8 +808,8 @@ let test_unbound_variables context =
         x: typing.List[int] = {}
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `typing.List[int]` but is used \
-       as type `typing.Dict[Variable[_KT], Variable[_VT]]`.";
+      "Incompatible variable type [9]: x is declared to have type `List[int]` but is used as type \
+       `Dict[Variable[_KT], Variable[_VT]]`.";
     ];
   assert_type_errors
     {|
@@ -823,8 +818,8 @@ let test_unbound_variables context =
         x: typing.Dict[int, str] = []
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `typing.Dict[int, str]` but is \
-       used as type `typing.List[Variable[_T]]`.";
+      "Incompatible variable type [9]: x is declared to have type `Dict[int, str]` but is used as \
+       type `List[Variable[_T]]`.";
     ];
   assert_type_errors
     {|
@@ -833,9 +828,8 @@ let test_unbound_variables context =
         x: typing.Dict[int, typing.List[int]] = { "A" : [] }
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type "
-      ^ "`typing.Dict[int, typing.List[int]]` but is used as type "
-      ^ "`typing.Dict[str, typing.List[int]]`.";
+      "Incompatible variable type [9]: x is declared to have type `Dict[int, List[int]]` but is \
+       used as type `Dict[str, List[int]]`.";
     ];
   assert_type_errors
     {|
@@ -1017,9 +1011,8 @@ let test_unbound_variables context =
         x: typing.Dict[int, str] = collections.defaultdict(dict)
     |}
     [
-      "Incompatible variable type [9]: x is declared to have type `typing.Dict[int, str]` "
-      ^ "but is used as type `typing.DefaultDict[Variable[collections._KT], "
-      ^ "typing.Dict[Variable[_T], Variable[_S]]]`.";
+      "Incompatible variable type [9]: x is declared to have type `Dict[int, str]` but is used as \
+       type `DefaultDict[Variable[collections._KT], Dict[Variable[_KT], Variable[_VT]]]`.";
     ];
   assert_type_errors
     {|
@@ -1039,9 +1032,8 @@ let test_unbound_variables context =
           foo([])
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `foo` "
-      ^ "but got `typing.List[Variable[_T]]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `int` but got `List[Variable[_T]]`.";
     ];
   assert_type_errors
     {|
@@ -1104,9 +1096,8 @@ let test_distinguish context =
         return f(1)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Variable[_T1]` for 1st positional only parameter \
-       to "
-      ^ "anonymous call but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
+       expected `Variable[_T1]` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -1240,8 +1231,8 @@ let test_integer_variables context =
         baz(y)
     |}
     [
-      "Incompatible parameter type [6]: Expected `IntegerVariable[X]` for 1st positional only "
-      ^ "parameter to call `baz` but got `int`.";
+      "Incompatible parameter type [6]: In call `baz`, for 1st positional only parameter expected \
+       `IntegerVariable[X]` but got `int`.";
     ];
   ()
 
@@ -1352,10 +1343,10 @@ let test_callable_parameter_variadics context =
     [
       "Revealed type [-1]: Revealed type for `x` is `str`.";
       "Revealed type [-1]: Revealed type for `y` is `str`.";
-      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
-       `call_this_function` but got `str`.";
-      "Incompatible parameter type [6]: Expected `int` for 2nd parameter `i` to call \
-       `call_this_function` but got `str`.";
+      "Incompatible parameter type [6]: In call `call_this_function`, for 2nd positional only \
+       parameter expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `call_this_function`, for 2nd parameter `i` \
+       expected `int` but got `str`.";
     ];
   (* Interaction with overloads *)
   assert_type_errors
@@ -1387,8 +1378,8 @@ let test_callable_parameter_variadics context =
     [
       "Revealed type [-1]: Revealed type for `x` is `str`.";
       "Revealed type [-1]: Revealed type for `y` is `int`.";
-      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
-       `call_this_function` but got `float`.";
+      "Incompatible parameter type [6]: In call `call_this_function`, for 2nd positional only \
+       parameter expected `int` but got `float`.";
     ];
   (* Example from PEP *)
   assert_type_errors
@@ -1409,16 +1400,15 @@ let test_callable_parameter_variadics context =
       def invalid(x: int, y: str) -> int: ...
       def foo() -> None:
         call_n_times(valid, 75, 1, "A")
-        call_n_times(valid, 75, y="A", 1)
         # invalid first argument
         call_n_times(invalid, 75, 1, "A")
         # missing second argument
         call_n_times(valid, y="A", x=1)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Callable[test.TParams, None]` for 1st \
-       positional only parameter to call `call_n_times` but got \
-       `typing.Callable(invalid)[[Named(x, int), Named(y, str)], int]`.";
+      "Incompatible parameter type [6]: In call `call_n_times`, for 1st positional only parameter \
+       expected `typing.Callable[test.TParams, None]` but got `typing.Callable(invalid)[[Named(x, \
+       int), Named(y, str)], int]`.";
       "Missing argument [20]: Call `call_n_times` expects argument in position 1.";
     ];
   (* Decorator to supply an argument to a method. *)
@@ -1462,10 +1452,10 @@ let test_callable_parameter_variadics context =
        test.P], Variable[R]]]`.";
       "Revealed type [-1]: Revealed type for `x.takes_int_str` is \
        `BoundMethod[typing.Callable[[Foo, Named(x, int), Named(y, str)], int], Foo]`.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to \
-       anonymous call but got `str`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to \
-       anonymous call but got `int`.";
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional only parameter \
+       expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In anonymous call, for 2nd positional only parameter \
+       expected `str` but got `int`.";
     ];
   (* PyTorch style delegation pattern *)
   assert_type_errors
@@ -1511,8 +1501,8 @@ let test_callable_parameter_variadics context =
     [
       "Revealed type [-1]: Revealed type for `x` is `bool`.";
       "Revealed type [-1]: Revealed type for `y` is `bool`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call \
-       `Model.__call__` but got `int`.";
+      "Incompatible parameter type [6]: In call `Model.__call__`, for 2nd positional only \
+       parameter expected `str` but got `int`.";
       "Revealed type [-1]: Revealed type for `z` is `str`.";
     ];
   assert_type_errors
@@ -1537,10 +1527,10 @@ let test_callable_parameter_variadics context =
     [
       "Revealed type [-1]: Revealed type for `x.f.__call__` is `typing.Callable[[int, str], int]`.";
       "Missing argument [20]: Call `H.f` expects argument in position 1.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `H.f` but got `str`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call \
-       `H.f` but got `int`.";
+      "Incompatible parameter type [6]: In call `H.f`, for 1st positional only parameter expected \
+       `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `H.f`, for 2nd positional only parameter expected \
+       `str` but got `int`.";
     ];
 
   assert_type_errors
@@ -1617,10 +1607,10 @@ let test_callable_parameter_variadics context =
         return foo
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `does_care_positional` but got `object`.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `does_care_keywords` but got `object`.";
+      "Incompatible parameter type [6]: In call `does_care_positional`, for 1st positional only \
+       parameter expected `int` but got `object`.";
+      "Incompatible parameter type [6]: In call `does_care_keywords`, for 1st positional only \
+       parameter expected `int` but got `object`.";
     ];
   ()
 
@@ -2030,10 +2020,10 @@ let test_generic_aliases context =
     [
       "Incompatible variable type [9]: z is declared to have type `MyList[int]` but is used as \
        type `MyList[str]`.";
-      "Incompatible variable type [9]: z2 is declared to have type `typing.Iterable[int]` but is \
-       used as type `typing.Iterable[str]`.";
-      "Incompatible variable type [9]: z3 is declared to have type `foo.SomeGenericClass[int]` but \
-       is used as type `MyList[str]`.";
+      "Incompatible variable type [9]: z2 is declared to have type `Iterable[int]` but is used as \
+       type `Iterable[str]`.";
+      "Incompatible variable type [9]: z3 is declared to have type `SomeGenericClass[int]` but is \
+       used as type `MyList[str]`.";
     ];
   (* We should correctly resolve nested generic aliases like `baz.Dict`. *)
   assert_type_errors
@@ -2351,8 +2341,8 @@ let test_recursive_aliases context =
     |}
     [
       "Incompatible variable type [9]: contains_int is declared to have type `test.StringDict \
-       (resolves to Union[Mapping[str, StringDict], str])` but is used as type `typing.Dict[str, \
-       typing.Dict[str, int]]`.";
+       (resolves to Union[Mapping[str, StringDict], str])` but is used as type `Dict[str, \
+       Dict[str, int]]`.";
     ];
   assert_type_errors
     {|
@@ -2771,11 +2761,11 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def foo(x: Tuple[int, *Ts]) -> Tuple[bool, *Ts]: ...
+      def foo(x: Tuple[int, Unpack[Ts]]) -> Tuple[bool, Unpack[Ts]]: ...
 
       def bar() -> None:
         x: Tuple[int, str, bool]
@@ -2793,32 +2783,32 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def foo(x: Tuple[int, *Ts, str]) -> Tuple[bool, *Ts]: ...
+      def foo(x: Tuple[int, Unpack[Ts], str]) -> Tuple[bool, Unpack[Ts]]: ...
 
       def bar() -> None:
         x: Tuple[int]
         foo(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Tuple[int, *test.Ts, str]` for 1st \
-       positional only parameter to call `foo` but got `Tuple[int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing.Tuple[int, *test.Ts, str]` but got `Tuple[int]`.";
     ];
   (* We should be able to typecheck the body of a generic variadic function. *)
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def add_int(xs: Tuple[*Ts]) -> Tuple[int, *Ts]: ...
-      def remove_int(xs: Tuple[int, *Ts]) -> Tuple[*Ts]: ...
+      def add_int(xs: Tuple[Unpack[Ts]]) -> Tuple[int, Unpack[Ts]]: ...
+      def remove_int(xs: Tuple[int, Unpack[Ts]]) -> Tuple[Unpack[Ts]]: ...
 
-      def generic_function(xs: Tuple[*Ts]) -> None:
+      def generic_function(xs: Tuple[Unpack[Ts]]) -> None:
         y = remove_int(add_int(xs))
         reveal_type(y)
 
@@ -2826,19 +2816,19 @@ let test_variadic_tuples context =
      |}
     [
       "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[*test.Ts]`.";
-      "Incompatible parameter type [6]: Expected `typing.Tuple[int, *test.Ts]` for 1st positional \
-       only parameter to call `remove_int` but got `typing.Tuple[*test.Ts]`.";
+      "Incompatible parameter type [6]: In call `remove_int`, for 1st positional only parameter \
+       expected `typing.Tuple[int, *test.Ts]` but got `typing.Tuple[*test.Ts]`.";
     ];
   (* We should not infer Tuple[int|bool, str|bool] for Ts. That would surprise most users who would
      expect that the Ts was bound to at least one of the concrete types they specified. *)
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def expects_same_tuples(x: Tuple[*Ts], y: Tuple[*Ts]) -> Tuple[*Ts]: ...
+      def expects_same_tuples(x: Tuple[Unpack[Ts]], y: Tuple[Unpack[Ts]]) -> Tuple[Unpack[Ts]]: ...
 
       def bar() -> None:
         tuple1: Tuple[int, str]
@@ -2846,18 +2836,18 @@ let test_variadic_tuples context =
         expects_same_tuples(tuple1, tuple2)
      |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 2nd positional only \
-       parameter to call `expects_same_tuples` but got `Tuple[bool, bool]`.";
+      "Incompatible parameter type [6]: In call `expects_same_tuples`, for 2nd positional only \
+       parameter expected `typing.Tuple[*test.Ts]` but got `Tuple[bool, bool]`.";
     ];
   (* Length mismatch. *)
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def expects_same_tuples(x: Tuple[*Ts], y: Tuple[*Ts]) -> Tuple[*Ts]: ...
+      def expects_same_tuples(x: Tuple[Unpack[Ts]], y: Tuple[Unpack[Ts]]) -> Tuple[Unpack[Ts]]: ...
 
       def bar() -> None:
         tuple1: Tuple[int, str]
@@ -2865,17 +2855,17 @@ let test_variadic_tuples context =
         expects_same_tuples(tuple1, shorter_tuple)
      |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 2nd positional only \
-       parameter to call `expects_same_tuples` but got `Tuple[bool]`.";
+      "Incompatible parameter type [6]: In call `expects_same_tuples`, for 2nd positional only \
+       parameter expected `typing.Tuple[*test.Ts]` but got `Tuple[bool]`.";
     ];
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def expects_same_tuples(x: Tuple[*Ts], y: Tuple[*Ts]) -> Tuple[*Ts]: ...
+      def expects_same_tuples(x: Tuple[Unpack[Ts]], y: Tuple[Unpack[Ts]]) -> Tuple[Unpack[Ts]]: ...
 
       def bar() -> None:
         tuple1: Tuple[int, str]
@@ -2883,17 +2873,17 @@ let test_variadic_tuples context =
         expects_same_tuples(tuple1, shorter_tuple)
      |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Tuple[*test.Ts]` for 2nd positional only \
-       parameter to call `expects_same_tuples` but got `Tuple[bool]`.";
+      "Incompatible parameter type [6]: In call `expects_same_tuples`, for 2nd positional only \
+       parameter expected `typing.Tuple[*test.Ts]` but got `Tuple[bool]`.";
     ];
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def add_int(xs: Tuple[*Tuple[str, ...]]) -> Tuple[int, *Tuple[str, ...]]: ...
+      def add_int(xs: Tuple[Unpack[Tuple[str, ...]]]) -> Tuple[int, Unpack[Tuple[str, ...]]]: ...
 
       def foo() -> None:
         xs: Tuple[str, str]
@@ -2905,17 +2895,17 @@ let test_variadic_tuples context =
      |}
     [
       "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, *Tuple[str, ...]]`.";
-      "Incompatible parameter type [6]: Expected `typing.Tuple[str, ...]` for 1st positional only \
-       parameter to call `add_int` but got `Tuple[int, str]`.";
+      "Incompatible parameter type [6]: In call `add_int`, for 1st positional only parameter \
+       expected `typing.Tuple[str, ...]` but got `Tuple[int, str]`.";
     ];
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def foo(xs: Tuple[*Ts]) -> Tuple[*Ts]: ...
+      def foo(xs: Tuple[Unpack[Ts]]) -> Tuple[Unpack[Ts]]: ...
 
       def baz() -> None:
        	unbounded_tuple: Tuple[int, ...]
@@ -2926,12 +2916,12 @@ let test_variadic_tuples context =
   assert_type_errors
     {|
       from typing import Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      def foo(xs: Tuple[T, *Tuple[str, ...]]) -> T: ...
+      def foo(xs: Tuple[T, Unpack[Tuple[str, ...]]]) -> T: ...
 
       def baz() -> None:
        	some_tuple: Tuple[int, str, str]
@@ -2943,8 +2933,77 @@ let test_variadic_tuples context =
      |}
     [
       "Revealed type [-1]: Revealed type for `y` is `int`.";
-      "Incompatible parameter type [6]: Expected `typing.Tuple[Variable[T], *Tuple[str, ...]]` for \
-       1st positional only parameter to call `foo` but got `Tuple[int, str, int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing.Tuple[Variable[T], *Tuple[str, ...]]` but got `Tuple[int, str, int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Any, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple, Unpack
+
+      Ts = TypeVarTuple("Ts")
+      N = TypeVar("N", bound=int)
+
+      def foo(x: Tuple[N, Unpack[Ts]]) -> Tuple[Unpack[Ts], N]: ...
+
+      def bar() -> None:
+        x: Tuple[Any, ...]
+        y = foo(x)
+        reveal_type(y)
+
+        x2: Tuple[int, ...]
+        y2 = foo(x2)
+        reveal_type(y2)
+    |}
+    [
+      "Prohibited any [33]: Explicit annotation for `x` cannot contain `Any`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Tuple[*Tuple[typing.Any, ...], \
+       typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `y2` is `typing.Tuple[*Tuple[int, ...], int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Any, Tuple, TypeVar
+      from pyre_extensions import TypeVarTuple, Unpack
+
+      Ts = TypeVarTuple("Ts")
+      N = TypeVar("N", bound=int)
+
+      def foo(x: Tuple[N, Unpack[Ts]]) -> Tuple[Unpack[Ts], N]: ...
+
+      def bar() -> None:
+        x_error: Tuple[str, ...]
+        y_error = foo(x_error)
+        reveal_type(y_error)
+    |}
+    [
+      "Incomplete type [37]: Type `typing.Tuple[*test.Ts, Variable[N (bound to int)]]` inferred \
+       for `y_error` is incomplete, add an explicit annotation.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing.Tuple[Variable[N (bound to int)], *test.Ts]` but got `typing.Tuple[str, ...]`.";
+      "Revealed type [-1]: Revealed type for `y_error` is `typing.Tuple[*Tuple[typing.Any, ...], \
+       typing.Any]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Any, Tuple, TypeVar
+
+      N = TypeVar("N", bound=int)
+
+      def foo(x: Tuple[N]) -> Tuple[N]: ...
+
+      def bar() -> None:
+        x: Tuple[int, ...]
+        y = foo(x)
+        reveal_type(y)
+
+        x_error: Tuple[str, ...]
+        foo(x_error)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `Tuple[int]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `Tuple[Variable[N (bound to int)]]` but got `typing.Tuple[str, ...]`.";
     ];
   ()
 
@@ -2954,13 +3013,13 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[*Ts]): ...
+      class Tensor(Generic[Unpack[Ts]]): ...
 
-      def add_bool(x: Tensor[int, *Ts, str]) -> Tensor[bool, *Ts]: ...
+      def add_bool(x: Tensor[int, Unpack[Ts], str]) -> Tensor[bool, Unpack[Ts]]: ...
 
       def foo() -> None:
         x: Tensor[int, bool, str]
@@ -2973,13 +3032,13 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[*Ts]): ...
+      class Tensor(Generic[Unpack[Ts]]): ...
 
-      def expects_same_tensors(x: Tensor[*Ts], y: Tensor[*Ts]) -> Tensor[*Ts]: ...
+      def expects_same_tensors(x: Tensor[Unpack[Ts]], y: Tensor[Unpack[Ts]]) -> Tensor[Unpack[Ts]]: ...
 
       def bar() -> None:
         tensor: Tensor[int, str]
@@ -2988,21 +3047,21 @@ let test_variadic_classes context =
         reveal_type(y)
      |}
     [
-      "Incompatible parameter type [6]: Expected `Tensor[*test.Ts]` for 2nd positional only \
-       parameter to call `expects_same_tensors` but got `Tensor[bool, bool]`.";
+      "Incompatible parameter type [6]: In call `expects_same_tensors`, for 2nd positional only \
+       parameter expected `Tensor[*test.Ts]` but got `Tensor[bool, bool]`.";
       "Revealed type [-1]: Revealed type for `y` is `Tensor[int, str]`.";
     ];
   (* Length mismatch. *)
   assert_type_errors
     {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[*Ts]): ...
+      class Tensor(Generic[Unpack[Ts]]): ...
 
-      def expects_same_length(xs: Tensor[*Ts], ys: Tensor[*Ts]) -> Tensor[*Ts]: ...
+      def expects_same_length(xs: Tensor[Unpack[Ts]], ys: Tensor[Unpack[Ts]]) -> Tensor[Unpack[Ts]]: ...
 
       def bar() -> None:
         xs: Tensor[int, str]
@@ -3010,20 +3069,20 @@ let test_variadic_classes context =
         expects_same_length(xs, ys)
      |}
     [
-      "Incompatible parameter type [6]: Expected `Tensor[*test.Ts]` for 2nd positional only \
-       parameter to call `expects_same_length` but got `Tensor[bool]`.";
+      "Incompatible parameter type [6]: In call `expects_same_length`, for 2nd positional only \
+       parameter expected `Tensor[*test.Ts]` but got `Tensor[bool]`.";
     ];
   (* Tensor is covariant in its shape, since the shape is immutable. However, it is invariant in the
      unary datatype. *)
   assert_type_errors
     {|
       from typing import Generic, List, Protocol, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
       class Base: ...
       class Child(Base): ...
@@ -3038,13 +3097,13 @@ let test_variadic_classes context =
         foo(int_tensor)
      |}
     [
-      "Incompatible parameter type [6]: Expected `Tensor[float, Base, Base]` for 1st positional \
-       only parameter to call `foo` but got `Tensor[int, Base, Base]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `Tensor[float, Base, Base]` but got `Tensor[int, Base, Base]`.";
     ];
   assert_type_errors
     {|
       from typing import Generic, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       Ts = TypeVarTuple("Ts")
@@ -3052,7 +3111,7 @@ let test_variadic_classes context =
       Tin = TypeVar("Tin")
       Tout = TypeVar("Tout")
 
-      class Tensor(Generic[*Ts]): ...
+      class Tensor(Generic[Unpack[Ts]]): ...
 
       class Linear(Generic[Tin, Tout]):
         """Transform the last dimension from Tin to Tout."""
@@ -3061,7 +3120,7 @@ let test_variadic_classes context =
           self.in_dimension = in_dimension
           self.out_dimension = out_dimension
 
-        def __call__(self, x: Tensor[*Ts, Tin]) -> Tensor[*Ts, Tout]: ...
+        def __call__(self, x: Tensor[Unpack[Ts], Tin]) -> Tensor[Unpack[Ts], Tout]: ...
 
       def bar() -> None:
         x: Tensor[L[10], L[20]]
@@ -3077,19 +3136,19 @@ let test_variadic_classes context =
     [
       "Revealed type [-1]: Revealed type for `y` is `Tensor[typing_extensions.Literal[10], \
        typing_extensions.Literal[50]]`.";
-      "Incompatible parameter type [6]: Expected `Tensor[*test.Ts, typing_extensions.Literal[20]]` \
-       for 1st positional only parameter to call `Linear.__call__` but got \
-       `typing.Tuple[typing_extensions.Literal[10], typing_extensions.Literal[21]]`.";
+      "Incompatible parameter type [6]: In call `Linear.__call__`, for 1st positional only \
+       parameter expected `Tensor[*test.Ts, typing_extensions.Literal[20]]` but got \
+       `Tuple[typing_extensions.Literal[10], typing_extensions.Literal[21]]`.";
     ];
   assert_type_errors
     {|
       from typing import Generic
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[*Ts]):
-        def some_method(self, x: Tensor[*Ts]) -> None: ...
+      class Tensor(Generic[Unpack[Ts]]):
+        def some_method(self, x: Tensor[Unpack[Ts]]) -> None: ...
 
       def bar() -> None:
         xs: Tensor[int, str]
@@ -3099,12 +3158,12 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
       def bar() -> None:
         x = Tensor.__getitem__
@@ -3119,21 +3178,21 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, List, Protocol, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class VariadicProtocol(Protocol[T, *Ts]):
-        def foo(self, x: Tuple[T, *Ts]) -> None: ...
+      class VariadicProtocol(Protocol[T, Unpack[Ts]]):
+        def foo(self, x: Tuple[T, Unpack[Ts]]) -> None: ...
 
-      class Tensor(Generic[*Ts]):
-        """This implements VariadicProtocol with T = List[int] and Ts = Tuple[*Ts]."""
+      class Tensor(Generic[Unpack[Ts]]):
+        """This implements VariadicProtocol with T = List[int] and Ts = Tuple[Unpack[Ts]]."""
 
-        def foo(self, x: Tuple[List[int], *Ts]) -> None:...
+        def foo(self, x: Tuple[List[int], Unpack[Ts]]) -> None:...
 
 
-      def accepts_variadic_protocol(x: VariadicProtocol[T, *Ts]) -> VariadicProtocol[T, *Ts]: ...
+      def accepts_variadic_protocol(x: VariadicProtocol[T, Unpack[Ts]]) -> VariadicProtocol[T, Unpack[Ts]]: ...
 
       def bar() -> None:
         x: Tensor[int, str]
@@ -3146,13 +3205,13 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]):
-        def __init__(self, default: T, shape: Tuple[*Ts]) -> None: ...
+      class Tensor(Generic[T, Unpack[Ts]]):
+        def __init__(self, default: T, shape: Tuple[Unpack[Ts]]) -> None: ...
 
       class Base: ...
       class Child(Base): ...
@@ -3163,21 +3222,21 @@ let test_variadic_classes context =
         expects_base(Tensor(1, (Child(), Child())))
      |}
     [
-      "Incompatible parameter type [6]: Expected `Tensor[int, Base, Base]` for 1st positional only \
-       parameter to call `expects_base` but got `Tensor[int, Child, Child]`.";
+      "Incompatible parameter type [6]: In call `expects_base`, for 1st positional only parameter \
+       expected `Tensor[int, Base, Base]` but got `Tensor[int, Child, Child]`.";
     ];
   assert_type_errors
     {|
       from typing import Generic, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
-      FloatTensor = Tensor[float, *Ts]
+      FloatTensor = Tensor[float, Unpack[Ts]]
 
       def bar() -> None:
         x: FloatTensor[L[10], L[20]]
@@ -3194,15 +3253,15 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
-      def get_last_type(t: Tensor[float, *Tuple[int, ...], T]) -> T: ...
+      def get_last_type(t: Tensor[float, Unpack[Tuple[int, ...]], T]) -> T: ...
 
       def bar() -> None:
         x: Tensor[float, L[10], L[20]]
@@ -3213,13 +3272,13 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
       # pyre-ignore[24]: Generic type `Tensor` expects at least 1 type parameter.
       def accept_arbitrary_tensor(t: Tensor) -> Tensor: ...
@@ -3237,15 +3296,15 @@ let test_variadic_classes context =
   assert_type_errors
     {|
       from typing import Generic, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[T, *Ts]): ...
+      class Tensor(Generic[T, Unpack[Ts]]): ...
 
-      def strip_last(x: Tensor[int, *Ts, int]) -> Tensor[int, *Ts]: ...
+      def strip_last(x: Tensor[int, Unpack[Ts], int]) -> Tensor[int, Unpack[Ts]]: ...
 
       def bar() -> None:
         invalid: Tensor[int, L[10], str]
@@ -3255,22 +3314,22 @@ let test_variadic_classes context =
     [
       "Incomplete type [37]: Type `Tensor[int, *test.Ts]` inferred for `y` is incomplete, add an \
        explicit annotation.";
-      "Incompatible parameter type [6]: Expected `Tensor[int, *test.Ts, int]` for 1st positional \
-       only parameter to call `strip_last` but got `Tensor[int, int, str]`.";
+      "Incompatible parameter type [6]: In call `strip_last`, for 1st positional only parameter \
+       expected `Tensor[int, *test.Ts, int]` but got `Tensor[int, int, str]`.";
       "Revealed type [-1]: Revealed type for `y` is `Tensor[int, *Tuple[typing.Any, ...]]`.";
     ];
   assert_type_errors
     {|
       from typing import Callable, Generic, Tuple, TypeVar
-      from pyre_extensions import ParameterSpecification, TypeVarTuple
+      from pyre_extensions import ParameterSpecification, TypeVarTuple, Unpack
       from typing_extensions import Literal as L
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
       TParams = ParameterSpecification("TParams")
 
-      class Tensor(Generic[T, TParams, *Ts]):
-        def __init__(self, f: Callable[TParams, T], shape: Tuple[*Ts]) -> None:
+      class Tensor(Generic[T, TParams, Unpack[Ts]]):
+        def __init__(self, f: Callable[TParams, T], shape: Tuple[Unpack[Ts]]) -> None:
           self.f = f
           self.shape = shape
 
@@ -3294,11 +3353,11 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def make_tuple(leave_this_out: int, *args: *Ts, message: str) -> Tuple[*Ts, bool]: ...
+      def make_tuple(leave_this_out: int, *args: Unpack[Ts], message: str) -> Tuple[Unpack[Ts], bool]: ...
 
       def foo() -> None:
         y = make_tuple(1, 2, 3, message="hello")
@@ -3315,11 +3374,11 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def make_tuple(leave_this_out: int, *args: *Tuple[int, *Ts, str], message: str) -> Tuple[int, *Ts, str]:
+      def make_tuple(leave_this_out: int, *args: Unpack[Tuple[int, Unpack[Ts], str]], message: str) -> Tuple[int, Unpack[Ts], str]:
         return args
 
       def foo() -> None:
@@ -3333,33 +3392,35 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def make_tuple( *args: *Tuple[int, *Ts, str]) -> None: ...
+      def make_tuple( *args: Unpack[Tuple[int, Unpack[Ts], str]]) -> None: ...
 
-      def foo(x: Tuple[*Ts]) -> None:
+      def foo(x: Tuple[Unpack[Ts]]) -> None:
         unbounded_tuple: Tuple[int, ...]
         make_tuple(1, *unbounded_tuple, "foo")
 
-        # Not ok because the unbounded tuple may be empty.
         make_tuple( *unbounded_tuple, "foo")
+
+        unbounded_str_tuple: Tuple[str, ...]
+        make_tuple( *unbounded_str_tuple, "foo")
      |}
     [
-      "Invalid argument [32]: Argument types `*Tuple[int, ...], typing_extensions.Literal['foo']` \
+      "Invalid argument [32]: Argument types `*Tuple[str, ...], typing_extensions.Literal['foo']` \
        are not compatible with expected variadic elements `int, *test.Ts, str`.";
     ];
   assert_type_errors
     {|
       from typing import Callable, Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def make_tuple( *args: *Tuple[int, *Ts, str]) -> None: ...
+      def make_tuple( *args: Unpack[Tuple[int, Unpack[Ts], str]]) -> None: ...
 
-      def foo(x: Tuple[*Ts]) -> None:
+      def foo(x: Tuple[Unpack[Ts]]) -> None:
         make_tuple(1, 2)
         make_tuple(1, *x, *x, "foo")
      |}
@@ -3375,11 +3436,11 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def strip_int_parameter(f: Callable[[int, *Ts], None]) -> Callable[[*Ts], None]: ...
+      def strip_int_parameter(f: Callable[[int, Unpack[Ts]], None]) -> Callable[[Unpack[Ts]], None]: ...
 
       def foo(x: int, y: str, z: bool) -> None: ...
 
@@ -3400,11 +3461,11 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def strip_int_parameter(f: Callable[[int, *Ts], None]) -> Callable[[*Ts], None]: ...
+      def strip_int_parameter(f: Callable[[int, Unpack[Ts]], None]) -> Callable[[Unpack[Ts]], None]: ...
 
       def no_leading_int(y: str, z: bool) -> None: ...
 
@@ -3412,20 +3473,20 @@ let test_variadic_callables context =
        	strip_int_parameter(no_leading_int)
      |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Callable[[Variable(int, *test.Ts)], \
-       None]` for 1st positional only parameter to call `strip_int_parameter` but got \
+      "Incompatible parameter type [6]: In call `strip_int_parameter`, for 1st positional only \
+       parameter expected `typing.Callable[[Variable(int, *test.Ts)], None]` but got \
        `typing.Callable(no_leading_int)[[Named(y, str), Named(z, bool)], None]`.";
     ];
   assert_type_errors
     {|
       from typing import Callable, Generic, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       T = TypeVar("T")
       Ts = TypeVarTuple("Ts")
 
-      class Tensor(Generic[*Ts]):
-        def some_method(self, *args: *Ts) -> Tuple[*Ts]: ...
+      class Tensor(Generic[Unpack[Ts]]):
+        def some_method(self, *args: Unpack[Ts]) -> Tuple[Unpack[Ts]]: ...
 
       def bar() -> None:
         x: Tensor[int, str]
@@ -3441,12 +3502,12 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       T = TypeVar("T")
 
-      def apply(f: Callable[[*Ts], T], *args: *Ts) -> T: ...
+      def apply(f: Callable[[Unpack[Ts]], T], *args: Unpack[Ts]) -> T: ...
 
       def foo(x: int, y: str, z: bool) -> str: ...
 
@@ -3465,12 +3526,12 @@ let test_variadic_callables context =
   assert_type_errors
     {|
       from typing import Callable, Tuple, TypeVar
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       T = TypeVar("T")
 
-      def apply(f: Callable[[*Ts], T], *args: *Ts) -> T: ...
+      def apply(f: Callable[[Unpack[Ts]], T], *args: Unpack[Ts]) -> T: ...
 
       class Base: ...
       class Child(Base): ...

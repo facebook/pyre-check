@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -69,9 +69,14 @@ module AccessCollector = struct
         from_comprehension from_expression collected comprehension
     | List expressions
     | Set expressions
-    | Tuple expressions
-    | String { kind = StringLiteral.Format expressions; _ } ->
+    | Tuple expressions ->
         List.fold expressions ~init:collected ~f:from_expression
+    | FormatString substrings ->
+        let from_substring sofar = function
+          | Substring.Literal _ -> sofar
+          | Substring.Format expression -> from_expression sofar expression
+        in
+        List.fold substrings ~init:collected ~f:from_substring
     | Starred (Starred.Once expression)
     | Starred (Starred.Twice expression) ->
         from_expression collected expression
@@ -82,14 +87,8 @@ module AccessCollector = struct
     | UnaryOperator { UnaryOperator.operand; _ } -> from_expression collected operand
     | WalrusOperator { WalrusOperator.value; _ } -> from_expression collected value
     | Yield yield -> Option.value_map yield ~default:collected ~f:(from_expression collected)
-    | String _
-    | Complex _
-    | Ellipsis
-    | False
-    | Float _
-    | Integer _
-    | True ->
-        collected
+    | YieldFrom yield -> from_expression collected yield
+    | Constant _ -> collected
 
 
   (* Generators are as special as lambdas -- they bind their own names, which we want to exclude *)
@@ -101,29 +100,35 @@ module AccessCollector = struct
         NameAccessSet.t
     =
    fun from_element collected { Comprehension.element; generators } ->
-    let bound_names =
-      List.fold
-        generators
-        ~init:Identifier.Set.empty
-        ~f:(fun sofar { Comprehension.Generator.target; _ } ->
+    let remove_bound_names ~bound_names =
+      Set.filter ~f:(fun { Define.NameAccess.name; _ } -> not (Identifier.Set.mem bound_names name))
+    in
+    let bound_names, collected =
+      let from_generator
+          (bound_names, accesses_sofar)
+          { Comprehension.Generator.target; iterator; conditions; _ }
+        =
+        let iterator_accesses =
+          from_expression NameAccessSet.empty iterator |> remove_bound_names ~bound_names
+        in
+        let bound_names =
+          let add_bound_name bound_names { Define.NameAccess.name; _ } = Set.add bound_names name in
           from_expression NameAccessSet.empty target
-          |> Set.fold ~init:sofar ~f:(fun sofar { Define.NameAccess.name; _ } -> Set.add sofar name))
+          |> NameAccessSet.fold ~init:bound_names ~f:add_bound_name
+        in
+        let condition_accesses =
+          List.fold conditions ~init:NameAccessSet.empty ~f:from_expression
+          |> remove_bound_names ~bound_names
+        in
+        ( bound_names,
+          NameAccessSet.union_list [accesses_sofar; iterator_accesses; condition_accesses] )
+      in
+      List.fold generators ~init:(Identifier.Set.empty, collected) ~f:from_generator
     in
-    let names =
-      from_element NameAccessSet.empty element
-      |> fun init ->
-      List.fold
-        generators
-        ~init
-        ~f:(fun sofar { Comprehension.Generator.iterator; conditions; _ } ->
-          let sofar = from_expression sofar iterator in
-          List.fold conditions ~init:sofar ~f:from_expression)
+    let element_accesses =
+      from_element NameAccessSet.empty element |> remove_bound_names ~bound_names
     in
-    let unbound_names =
-      Set.filter names ~f:(fun { Define.NameAccess.name; _ } ->
-          not (Identifier.Set.mem bound_names name))
-    in
-    Set.union unbound_names collected
+    NameAccessSet.union collected element_accesses
 end
 
 let extract_reads_expression expression =
@@ -139,13 +144,11 @@ let extract_reads_statement { Node.value; _ } =
   let expressions =
     match value with
     | Statement.Assign { Assign.value = expression; _ }
-    | Delete expression
     | Expression expression
-    | Yield expression
-    | YieldFrom expression
     | If { If.test = expression; _ }
     | While { While.test = expression; _ } ->
         [expression]
+    | Delete expressions -> expressions
     | Assert { Assert.test; message; _ } -> [test] @ Option.to_list message
     | For { For.target; iterator; _ } -> [target; iterator]
     | Raise { Raise.expression; from } -> Option.to_list expression @ Option.to_list from
@@ -157,6 +160,8 @@ let extract_reads_statement { Node.value; _ } =
     | Define _
     | Global _
     | Import _
+    (* TODO(T107105911): Handle access for match statement. *)
+    | Match _
     | Nonlocal _
     | Pass
     | Try _ ->
@@ -172,11 +177,17 @@ module type Context = sig
 end
 
 module State (Context : Context) = struct
-  type t = InitializedVariables.t
+  type t =
+    | Bottom
+    | Value of InitializedVariables.t
 
-  let show state =
-    InitializedVariables.elements state |> String.concat ~sep:", " |> Format.sprintf "[%s]"
+  let show = function
+    | Bottom -> "[]"
+    | Value state ->
+        state |> InitializedVariables.elements |> String.concat ~sep:", " |> Format.sprintf "[%s]"
 
+
+  let bottom = Bottom
 
   let pp format state = Format.fprintf format "%s" (show state)
 
@@ -186,6 +197,7 @@ module State (Context : Context) = struct
     |> List.map ~f:Scope.Binding.name
     |> List.map ~f:Identifier.sanitized
     |> InitializedVariables.of_list
+    |> fun value -> Value value
 
 
   let errors ~qualifier ~define _ =
@@ -226,25 +238,40 @@ module State (Context : Context) = struct
     |> List.map ~f:emit_error
 
 
-  let less_or_equal ~left ~right = InitializedVariables.is_subset right ~of_:left
+  let less_or_equal ~left ~right =
+    match left, right with
+    | Value left, Value right -> InitializedVariables.is_subset right ~of_:left
+    | Value _, Bottom -> false
+    | Bottom, Value _ -> true
+    | Bottom, Bottom -> true
 
-  let join left right = InitializedVariables.inter left right
+
+  let join left right =
+    match left, right with
+    | Value left, Value right -> Value (InitializedVariables.inter left right)
+    | Value left, Bottom -> Value left
+    | Bottom, Value right -> Value right
+    | Bottom, Bottom -> Bottom
+
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
-  let forward ~key state ~statement =
-    let new_state =
-      Scope.Binding.of_statement [] statement
-      |> List.map ~f:Scope.Binding.name
-      |> List.map ~f:Identifier.sanitized
-      |> InitializedVariables.of_list
-      |> InitializedVariables.union state
-    in
-    Hashtbl.set Context.fixpoint_post_statement ~key ~data:(statement, new_state);
-    new_state
+  let forward ~statement_key state ~statement =
+    match state with
+    | Bottom -> Bottom
+    | Value state ->
+        let new_state =
+          Scope.Binding.of_statement [] statement
+          |> List.map ~f:Scope.Binding.name
+          |> List.map ~f:Identifier.sanitized
+          |> InitializedVariables.of_list
+          |> InitializedVariables.union state
+        in
+        Hashtbl.set Context.fixpoint_post_statement ~key:statement_key ~data:(statement, new_state);
+        Value new_state
 
 
-  let backward ~key:_ _ ~statement:_ = failwith "Not implemented"
+  let backward ~statement_key:_ _ ~statement:_ = failwith "Not implemented"
 end
 
 let run_on_define ~qualifier define =

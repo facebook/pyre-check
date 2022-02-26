@@ -1,126 +1,229 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import sys
-from typing import IO, List, Optional
+import dataclasses
+import datetime
+import itertools
+import json
+import logging
+import shutil
+import subprocess
+from pathlib import Path
+from typing import Optional, TextIO, Sequence, List, Tuple
 
-from typing_extensions import Final
+from .. import (
+    command_arguments,
+    configuration as configuration_module,
+    log,
+    version,
+)
+from . import commands, start, remote_logging
 
-from .. import command_arguments, recently_used_configurations
-from ..analysis_directory import AnalysisDirectory
-from ..configuration import Configuration, SimpleSearchPathElement
-from ..version import __version__
-from .command import Command, State
-from .servers import Servers
-
-
-RAGE_DELIMITER: Final[str] = "=" * 50
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class Rage(Command):
-    NAME = "rage"
+@dataclasses.dataclass(frozen=True)
+class Section:
+    name: str
+    content: str
 
-    def __init__(
-        self,
-        command_arguments: command_arguments.CommandArguments,
-        *,
-        original_directory: str,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-        output_path: Optional[str],
-    ) -> None:
-        super(Rage, self).__init__(
-            command_arguments, original_directory, configuration, analysis_directory
-        )
-        self._log_directory_for_binary: str = self._configuration.log_directory
-        self._output_path: Final[Optional[str]] = output_path
 
-    def _flags(self) -> List[str]:
-        return ["-log-directory", self._log_directory_for_binary]
+def _print_section(section: Section, output: TextIO) -> None:
+    print(f"{section.name}", file=output)
+    separator = "=" * len(section.name)
+    print(f"{separator}", file=output)
+    print(section.content, file=output)
+    print("", file=output, flush=True)
 
-    def _run(self) -> None:
-        output_path = self._output_path
-        if output_path:
-            with open(output_path, "w") as output_file:
-                self._rage(output_file)
-        else:
-            self._rage(sys.stdout)
 
-    def _call_client_for_root_project(self, output_file: IO[str]) -> None:
-        servers = Servers(
-            self._command_arguments,
-            self._original_directory,
-            configuration=self._configuration,
-            analysis_directory=self._analysis_directory,
-            subcommand="list",
-        )
-        recent_local_roots = recently_used_configurations.Cache(
-            self._configuration.dot_pyre_directory
-        ).get_all_items()
-        if servers.is_root_server_running() or recent_local_roots == []:
-            self._call_client(
-                command=self.NAME, capture_output=False, stdout=output_file
-            ).check()
-        else:
-            # We need to pass in an analysis directory because the default
-            # analysis directory for a project root without a server is an
-            # invalid link tree, which means `_call_client` will fail.
-            self._analysis_directory = AnalysisDirectory(SimpleSearchPathElement("."))
-            print(
-                f"No server running for {self._original_directory}."
-                + " Printing rage for all recently-used servers.",
-                file=output_file,
-                flush=True,
-            )
-            print(f"\n{RAGE_DELIMITER}\n", file=output_file, flush=True)
-            for local_root in recent_local_roots:
-                print(
-                    f"\nRage for configuration at `{local_root}`:\n",
-                    file=output_file,
-                    flush=True,
+def _version_section(configuration: configuration_module.Configuration) -> Section:
+    client_version_line = f"Client version: {version.__version__}"
+    try:
+        binary_version = configuration.get_binary_version()
+        binary_version_line = f"Binary version: {binary_version}"
+    except Exception as error:
+        binary_version_line = f"Could not determine binary version: {error}"
+    return Section(
+        name="Versions", content="\n".join([client_version_line, binary_version_line])
+    )
+
+
+def _configuration_section(
+    configuration: configuration_module.Configuration,
+) -> Section:
+    return Section(
+        name="Configuration", content=json.dumps(configuration.to_json(), indent=2)
+    )
+
+
+def _get_subprocess_stdout(command: Sequence[str]) -> Optional[str]:
+    result = subprocess.run(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout
+
+
+def _get_file_content(path: Path) -> Optional[str]:
+    try:
+        return path.read_text()
+    except Exception:
+        return None
+
+
+def _mercurial_section(
+    mercurial: str, name: str, additional_flags: Optional[Sequence[str]] = None
+) -> Optional[Section]:
+    output = _get_subprocess_stdout(
+        [mercurial, name] + ([] if additional_flags is None else list(additional_flags))
+    )
+    return (
+        None
+        if output is None
+        else Section(name=f"Mercurial {name.capitalize()}", content=output)
+    )
+
+
+def _watchman_section(watchman: str, name: str) -> Optional[Section]:
+    output = _get_subprocess_stdout([watchman, name])
+    return (
+        None
+        if output is None
+        else Section(name=f"Watchman {name.capitalize()}", content=output)
+    )
+
+
+def _parse_log_file_name(name: str) -> Optional[datetime.datetime]:
+    try:
+        return datetime.datetime.strptime(name, start.SERVER_LOG_FILE_FORMAT)
+    except ValueError:
+        return None
+
+
+def _get_server_log_timestamp_and_paths(
+    log_directory: Path,
+) -> List[Tuple[datetime.datetime, Path]]:
+    try:
+        return sorted(
+            (
+                (timestamp, path)
+                for timestamp, path in (
+                    (_parse_log_file_name(path.name), path)
+                    for path in (log_directory / "new_server").iterdir()
+                    if path.is_file()
                 )
-                self._log_directory_for_binary = str(
-                    self._configuration.dot_pyre_directory / local_root
-                )
-                self._call_rage(output_file)
-                print(f"\n{RAGE_DELIMITER}\n", file=output_file, flush=True)
+                if timestamp is not None
+            ),
+            key=lambda pair: pair[0],
+            reverse=True,
+        )
+    except Exception:
+        return []
 
-    def _rage(self, output_file: IO[str]) -> None:
-        # Do not use logging. Logging goes to stderr.
-        print("Client version:", __version__, file=output_file, flush=True)
-        print(
-            "Binary path:",
-            self._configuration.get_binary_respecting_override(),
-            file=output_file,
-            flush=True,
-        )
-        print(
-            "Configured binary version:",
-            self._configuration.get_binary_version()
-            or "Cannot get version from binary",
-            file=output_file,
-            flush=True,
-        )
-        if self._configuration.local_root is not None:
-            self._call_rage(output_file)
+
+def _server_log_sections(
+    log_directory: Path, limit: Optional[int] = None
+) -> List[Section]:
+    # Log files are sorted according to server start time: recently started servers
+    # will come first.
+    timestamp_and_paths = _get_server_log_timestamp_and_paths(log_directory)
+
+    sections: List[Section] = []
+    for timestamp, path in timestamp_and_paths:
+        if limit is not None and len(sections) >= limit:
+            break
+        content = _get_file_content(path)
+        if content is None:
+            continue
+        sections.append(Section(name=f"Server Log ({timestamp})", content=content))
+    return sections
+
+
+def _client_log_section(log_directory: Path) -> Optional[Section]:
+    content = _get_file_content(log_directory / "pyre.stderr")
+    if content is None:
+        return None
+    return Section(name="Client Log", content=content)
+
+
+def _print_configuration_sections(
+    configuration: configuration_module.Configuration, output: TextIO
+) -> None:
+    LOG.info("Collecting information about Pyre configurations...")
+    _print_section(_version_section(configuration), output)
+    _print_section(_configuration_section(configuration), output)
+
+
+def _print_mercurial_sections(output: TextIO) -> None:
+    LOG.info("Collecting information about mercurial...")
+    mercurial = shutil.which("hg")
+    if mercurial is not None:
+        for section in [
+            _mercurial_section(mercurial, "id"),
+            _mercurial_section(mercurial, "status"),
+            _mercurial_section(mercurial, "diff"),
+            _mercurial_section(
+                mercurial, "reflog", additional_flags=["--limit", "100"]
+            ),
+        ]:
+            if section is not None:
+                _print_section(section, output)
+
+
+def _print_watchman_sections(output: TextIO) -> None:
+    LOG.info("Collecting information about watchman...")
+    watchman = shutil.which("watchman")
+    if watchman is not None:
+        for section in [_watchman_section(watchman, "watch-list")]:
+            if section is not None:
+                _print_section(section, output)
+
+
+def _print_log_file_sections(
+    log_directory: Path, server_log_count: Optional[int], output: TextIO
+) -> None:
+    LOG.info("Collecting information from Pyre's log files...")
+    for section in itertools.chain(
+        _server_log_sections(log_directory, limit=server_log_count),
+        [
+            _client_log_section(log_directory),
+        ],
+    ):
+        if section is not None:
+            _print_section(section, output)
+
+
+def run_rage(
+    configuration: configuration_module.Configuration,
+    arguments: command_arguments.RageArguments,
+    output: TextIO,
+) -> None:
+    _print_configuration_sections(configuration, output)
+    _print_mercurial_sections(output)
+    _print_watchman_sections(output)
+    _print_log_file_sections(
+        Path(configuration.log_directory), arguments.server_log_count, output
+    )
+    LOG.info("Done\n")
+
+
+@remote_logging.log_usage(command_name="rage")
+def run(
+    configuration: configuration_module.Configuration,
+    arguments: command_arguments.RageArguments,
+) -> commands.ExitCode:
+    try:
+        output_path = arguments.output
+        if output_path is None:
+            run_rage(configuration, arguments, log.stdout)
         else:
-            self._call_client_for_root_project(output_file)
-
-    def _call_rage(
-        self,
-        output_file: IO[str],
-    ) -> None:
-        if self._state() != State.RUNNING:
-            print(
-                f"{RAGE_DELIMITER}\nNo server running!\n{RAGE_DELIMITER}\n",
-                file=output_file,
-                flush=True,
-            )
-        self._call_client(
-            command=self.NAME,
-            capture_output=False,
-            stdout=output_file,
-            check_analysis_directory=False,
-        ).check()
+            with open(output_path) as output:
+                run_rage(configuration, arguments, output)
+        return commands.ExitCode.SUCCESS
+    except Exception as error:
+        raise commands.ClientException(
+            f"Exception occurred during rage generation: {error}"
+        ) from error

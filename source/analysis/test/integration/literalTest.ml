@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -26,8 +26,8 @@ let test_boolean_literal context =
         foo(False)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[True]` for 1st \
-       positional only parameter to call `foo` but got `typing_extensions.Literal[False]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing_extensions.Literal[True]` but got `typing_extensions.Literal[False]`.";
     ];
   assert_type_errors
     {|
@@ -37,8 +37,8 @@ let test_boolean_literal context =
         foo(b)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[True]` for 1st \
-       positional only parameter to call `foo` but got `bool`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing_extensions.Literal[True]` but got `bool`.";
     ]
 
 
@@ -118,8 +118,9 @@ let test_enumeration_literal context =
       foo(MyEnum.WORLD)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[MyEnum.HELLO]` for 1st \
-       positional only parameter to call `foo` but got `typing_extensions.Literal[MyEnum.WORLD]`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `typing_extensions.Literal[MyEnum.HELLO]` but got \
+       `typing_extensions.Literal[MyEnum.WORLD]`.";
     ];
   assert_type_errors
     {|
@@ -145,8 +146,8 @@ let test_enumeration_literal context =
       expects_string(A.ONE)
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter to call \
-       `expects_string` but got `A`.";
+      "Incompatible parameter type [6]: In call `expects_string`, for 1st positional only \
+       parameter expected `str` but got `A`.";
     ];
   assert_type_errors
     {|
@@ -358,10 +359,10 @@ let test_string_literal context =
         expect_literal_string(1)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[str]` for 1st \
-       positional only parameter to call `expect_literal_string` but got `str`.";
-      "Incompatible parameter type [6]: Expected `typing_extensions.Literal[str]` for 1st \
-       positional only parameter to call `expect_literal_string` but got \
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.LiteralString` but got `str`.";
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.LiteralString` but got \
        `typing_extensions.Literal[1]`.";
     ];
   assert_type_errors
@@ -382,7 +383,7 @@ let test_string_literal context =
     |}
     [
       "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal['hello']`.";
-      "Revealed type [-1]: Revealed type for `y2` is `typing_extensions.Literal[str]`.";
+      "Revealed type [-1]: Revealed type for `y2` is `typing_extensions.LiteralString`.";
     ];
   assert_type_errors
     {|
@@ -397,9 +398,9 @@ let test_string_literal context =
         return_literal_string(s)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Variable[TLiteral (bound to \
-       typing_extensions.Literal[str])]` for 1st positional only parameter to call \
-       `return_literal_string` but got `str`.";
+      "Incompatible parameter type [6]: In call `return_literal_string`, for 1st positional only \
+       parameter expected `Variable[TLiteral (bound to typing_extensions.LiteralString)]` but got \
+       `str`.";
     ];
   assert_type_errors
     {|
@@ -424,8 +425,8 @@ let test_string_literal context =
         reveal_type(x)
     |}
     [
-      (* TODO(T48477564): We don't join literals in general. *)
-      "Revealed type [-1]: Revealed type for `x` is `str`.";
+      (* TODO(T48477564): We don't join literals to be their unions because it is too expensive. *)
+      "Revealed type [-1]: Revealed type for `x` is `typing_extensions.LiteralString`.";
     ];
   assert_type_errors
     {|
@@ -437,7 +438,136 @@ let test_string_literal context =
         x = "hello" if some_bool else literal_string
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[str]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.LiteralString`."];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def bar(some_bool: bool) -> Literal[str]:
+        x = "foo"
+        if some_bool:
+          x = "bar"
+
+        return x
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def connection_query(sql: Literal[str], value: str) -> None: ...
+
+      def my_query(value: str, limit: bool) -> None:
+        SQL = "SELECT * FROM table WHERE col = %s"
+
+        if limit:
+          SQL = SQL + "LIMIT 1"
+
+        connection_query(SQL, value)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def connection_query(sql: Literal[str], value: str) -> None: ...
+
+      def my_query(value: str, limit: bool) -> None:
+        SQL = "SELECT * FROM table WHERE col = %s"
+        if limit:
+          SQL = SQL + "LIMIT 1"
+
+        connection_query(SQL + value, value)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `connection_query`, for 1st positional only \
+       parameter expected `typing_extensions.LiteralString` but got `str`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def connection_query(sql: Literal[str], value: str) -> None: ...
+
+      def my_query(value: str, limit: bool) -> None:
+        SQL = "SELECT * FROM table WHERE col = %s"
+
+        if limit:
+          SQL += "LIMIT 1"
+
+        connection_query(SQL, value)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import Literal
+
+      def foo(s: str, literal_string: Literal[str]) -> None:
+        y = ", ".join(["a", "b", "c"])
+        reveal_type(y)
+
+        y2 = ", ".join(["a", "b", s])
+        reveal_type(y2)
+
+        xs: list[Literal[str]]
+        y3 = ", ".join(xs)
+        reveal_type(y3)
+
+        xs: list[Literal[str]]
+        y4 = s.join(xs)
+        reveal_type(y4)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `typing_extensions.LiteralString`.";
+      "Revealed type [-1]: Revealed type for `y2` is `str`.";
+      "Revealed type [-1]: Revealed type for `y3` is `typing_extensions.LiteralString`.";
+      "Revealed type [-1]: Revealed type for `y4` is `str`.";
+    ];
+  ()
+
+
+let test_pep_675 context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import LiteralString
+
+      def expect_literal_string(s: LiteralString) -> None: ...
+
+      def bar() -> None:
+        expect_literal_string("hello")
+
+        s: str
+        expect_literal_string(s)
+        expect_literal_string(1)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.LiteralString` but got `str`.";
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.LiteralString` but got \
+       `typing_extensions.Literal[1]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing_extensions import LiteralString
+
+      def expect_literal_string(s: LiteralString) -> None: ...
+
+      def bar() -> None:
+        expect_literal_string("hello")
+
+        s: str
+        expect_literal_string(s)
+        expect_literal_string(1)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.LiteralString` but got `str`.";
+      "Incompatible parameter type [6]: In call `expect_literal_string`, for 1st positional only \
+       parameter expected `typing_extensions.LiteralString` but got \
+       `typing_extensions.Literal[1]`.";
+    ];
   ()
 
 
@@ -451,5 +581,6 @@ let () =
          "literal_none" >:: test_literal_none;
          "literal_alias" >:: test_literal_alias;
          "string_literal" >:: test_string_literal;
+         "pep_675" >:: test_pep_675;
        ]
   |> Test.run

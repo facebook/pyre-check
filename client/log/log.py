@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -285,7 +285,7 @@ class StreamLogger:
     _current_section: Optional[str]
 
     _server_log_pattern: Pattern[str] = re.compile(
-        r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+) (.*)"
+        r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} (\w+)(.*)"
     )
 
     def __init__(self, stream: Iterable[str]) -> None:

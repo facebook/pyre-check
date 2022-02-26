@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14,8 +14,6 @@ val expand_import_python_calls : Source.t -> Source.t
 val expand_string_annotations : Source.t -> Source.t
 
 val expand_strings_in_annotation_expression : Expression.t -> Expression.t
-
-val expand_format_string : Source.t -> Source.t
 
 val qualify_local_identifier : qualifier:Reference.t -> Identifier.t -> Identifier.t
 
@@ -62,10 +60,6 @@ val mangle_private_attributes : Source.t -> Source.t
 
 val inline_six_metaclass : Source.t -> Source.t
 
-val expand_starred_type_variable_tuple : Source.t -> Source.t
-
-val expand_starred_variadic_in_annotation_expression : Expression.t -> Expression.t
-
 val expand_pytorch_register_buffer : Source.t -> Source.t
 
 (* List of function definitions in a source. include_toplevels copies all definitions into a
@@ -96,3 +90,37 @@ val preprocess_phase1 : Source.t -> Source.t
 
 (* Phase0 followed by Phase1 *)
 val preprocess : Source.t -> Source.t
+
+(* Following are exposed for testing only *)
+
+module type QualifyContext = sig
+  val source_relative : string
+
+  val source_qualifier : Reference.t
+end
+
+module Qualify (Context : QualifyContext) : sig
+  type alias = {
+    name: Reference.t;
+    qualifier: Reference.t;
+    is_forward_reference: bool;
+  }
+
+  type scope = {
+    qualifier: Reference.t;
+    aliases: alias Reference.Map.t;
+    immutables: Reference.Set.t;
+    locals: Reference.Set.t;
+    use_forward_references: bool;
+    is_top_level: bool;
+    skip: Location.Set.t;
+    is_in_function: bool;
+    is_in_class: bool;
+  }
+
+  val qualify_statement : qualify_assign:bool -> scope:scope -> Statement.t -> scope * Statement.t
+
+  val qualify_match_case : scope:scope -> Statement.Match.Case.t -> scope * Statement.Match.Case.t
+
+  val qualify_pattern : scope:scope -> Statement.Match.Pattern.t -> Statement.Match.Pattern.t
+end

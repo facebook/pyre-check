@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,276 +7,181 @@
 
 open Core
 open Pyre
-open Service
 
-let argument_to_paths argument =
-  argument
-  >>| String.split_on_chars ~on:[';']
-  >>| List.map ~f:String.strip
-  >>| List.map ~f:(Path.create_absolute ~follow_symbolic_links:true)
+(* Infer command uses the same exit code scheme as check command. *)
+module ExitStatus = CheckCommand.ExitStatus
+
+module InferConfiguration = struct
+  type path_list = PyrePath.t list [@@deriving sexp, compare, hash]
+
+  let path_list_of_raw raw_paths = List.map raw_paths ~f:PyrePath.create_absolute
+
+  type t = {
+    base: CommandStartup.BaseConfiguration.t;
+    paths_to_modify: path_list option;
+  }
+  [@@deriving sexp, compare, hash]
+
+  let of_yojson json =
+    let open Yojson.Safe.Util in
+    (* Parsing logic *)
+    try
+      match CommandStartup.BaseConfiguration.of_yojson json with
+      | Result.Error _ as error -> error
+      | Result.Ok base ->
+          let paths_to_modify =
+            json
+            |> member "paths_to_modify"
+            |> [%of_yojson: string list option]
+            |> Result.ok_or_failwith
+            >>| path_list_of_raw
+          in
+          Result.Ok { base; paths_to_modify }
+    with
+    | Type_error (message, _)
+    | Undefined (message, _) ->
+        Result.Error message
+    | other_exception -> Result.Error (Exn.to_string other_exception)
 
 
-let run_infer_interprocedural
-    _ignore_infer
-    _verbose
-    expected_version
-    sections
-    debug
-    strict
-    show_error_traces
-    sequential
-    filter_directories
-    ignore_all_errors
-    number_of_workers
-    log_identifier
-    logger
-    profiling_output
-    memory_profiling_output
-    project_root
-    source_path
-    search_path
-    _taint_models_directory
-    excludes
-    extensions
-    log_directory
-    python_major_version
-    python_minor_version
-    python_micro_version
-    shared_memory_heap_size
-    shared_memory_dependency_table_power
-    shared_memory_hash_table_power
-    local_root
-    ()
-  =
-  try
-    let source_path = Option.value source_path ~default:[local_root] in
-    let local_root = SearchPath.create local_root |> SearchPath.get_root in
-    Log.GlobalState.initialize ~debug ~sections;
-    Statistics.GlobalState.initialize
-      ~log_identifier
-      ?logger
-      ~project_name:(Path.last local_root)
-      ~project_root
-      ();
-    Profiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ();
-    let filter_directories = argument_to_paths filter_directories in
-    let ignore_all_errors = argument_to_paths ignore_all_errors in
-    let configuration =
-      Configuration.Analysis.create
-        ?expected_version
-        ~debug
-        ~strict
-        ~show_error_traces
-        ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
-        ~parallel:(not sequential)
-        ?filter_directories
-        ?ignore_all_errors
-        ~number_of_workers
-        ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
-        ~excludes
-        ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
-        ?log_directory
-        ?python_major_version
-        ?python_minor_version
-        ?python_micro_version
-        ?shared_memory_heap_size
-        ?shared_memory_dependency_table_power
-        ?shared_memory_hash_table_power
-        ~local_root
-        ~source_path:(List.map source_path ~f:SearchPath.create_normalized)
-        ()
-    in
-    let static_analysis_configuration =
+  let analysis_configuration_of
       {
-        Configuration.StaticAnalysis.configuration;
-        result_json_path = None;
-        dump_call_graph = false;
-        verify_models = false;
-        rule_filter = None;
-        find_missing_flows = None;
-        dump_model_query_results = false;
-        use_cache = false;
-        maximum_trace_length = None;
-        maximum_tito_depth = None;
+        base =
+          {
+            CommandStartup.BaseConfiguration.source_paths;
+            search_paths;
+            excludes;
+            checked_directory_allowlist;
+            checked_directory_blocklist;
+            extensions;
+            log_path;
+            global_root;
+            local_root;
+            debug;
+            enable_type_comments;
+            python_version = { Configuration.PythonVersion.major; minor; micro };
+            parallel;
+            number_of_workers;
+            shared_memory =
+              { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
+            remote_logging = _;
+            profiling_output = _;
+            memory_profiling_output = _;
+          };
+        _;
       }
-    in
-    let analysis_kind = TypeInference.Analysis.abstract_kind in
-    (fun () ->
-      let timer = Timer.start () in
-      Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-          Interprocedural.FixpointAnalysis.initialize_configuration
-            ~static_analysis_configuration
-            analysis_kind;
-          let environment = StaticAnalysis.type_check ~scheduler ~configuration ~use_cache:false in
-          let qualifiers =
-            Analysis.TypeEnvironment.module_tracker environment
-            |> Analysis.ModuleTracker.tracked_explicit_modules
+    =
+    Configuration.Analysis.create
+      ~parallel
+      ~analyze_external_sources:false
+      ~filter_directories:checked_directory_allowlist
+      ~ignore_all_errors:checked_directory_blocklist
+      ~number_of_workers
+      ~local_root:(Option.value local_root ~default:global_root)
+      ~project_root:global_root
+      ~search_paths:(List.map search_paths ~f:SearchPath.normalize)
+      ~strict:false
+      ~debug
+      ~show_error_traces:false
+      ~excludes
+      ~extensions
+      ~incremental_style:Configuration.Analysis.Shallow
+      ~log_directory:(PyrePath.absolute log_path)
+      ~python_major_version:major
+      ~python_minor_version:minor
+      ~python_micro_version:micro
+      ~shared_memory_heap_size:heap_size
+      ~shared_memory_dependency_table_power:dependency_table_power
+      ~shared_memory_hash_table_power:hash_table_power
+      ~enable_type_comments
+      ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
+      ()
+end
+
+let run_infer_local ~configuration ~build_system ~paths_to_modify () =
+  let result =
+    Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
+        let ({ Service.Infer.global_environment; _ } as environment_data) =
+          Service.Infer.build_environment_data ~configuration ~scheduler ()
+        in
+        let filename_lookup qualifier =
+          let ast_environment =
+            Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
           in
-          let environment = Analysis.TypeEnvironment.read_only environment in
-          let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
-          let initial_callables =
-            StaticAnalysis.fetch_initial_callables
-              ~scheduler
-              ~configuration
-              ~environment
-              ~qualifiers
-              ~use_cache:false
-          in
-          let filename_lookup path_reference =
-            Analysis.AstEnvironment.ReadOnly.get_real_path_relative
-              ~configuration
-              ast_environment
-              path_reference
-          in
-          StaticAnalysis.analyze
-            ~scheduler
-            ~analysis:analysis_kind
-            ~static_analysis_configuration
-            ~filename_lookup
-            ~environment
-            ~qualifiers
-            ~initial_callables
-            ~initial_models:Interprocedural.Target.Map.empty
-            ~skip_overrides:Ast.Reference.Set.empty
-            ();
-          let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
-          Statistics.performance
-            ~name:"analyze"
-            ~timer
-            ~integers:
-              [
-                "gc_minor_collections", minor_collections;
-                "gc_major_collections", major_collections;
-                "gc_compactions", compactions;
-              ]
-            ()))
-    |> Scheduler.run_process
-  with
-  | error ->
-      Log.log_exception error;
-      raise error
+          Server.RequestHandler.instantiate_path
+            ~build_system
+            ~configuration
+            ~ast_environment
+            qualifier
+        in
+        Service.Infer.run_infer
+          ~configuration
+          ~scheduler
+          ~filename_lookup
+          ~paths_to_modify
+          environment_data)
+  in
+  if configuration.debug then
+    Memory.report_statistics ();
+  Yojson.Safe.pretty_to_string (`List [TypeInference.Data.GlobalResult.to_yojson result])
+  |> Log.print "%s";
+  Lwt.return ExitStatus.Ok
 
 
-let run_infer_local
-    _ignore_infer
-    _verbose
-    expected_version
-    sections
-    debug
-    strict
-    show_error_traces
-    sequential
-    filter_directories
-    ignore_all_errors
-    number_of_workers
-    log_identifier
-    logger
-    profiling_output
-    memory_profiling_output
-    project_root
-    source_path
-    search_path
-    _taint_models_directory
-    excludes
-    extensions
-    log_directory
-    python_major_version
-    python_minor_version
-    python_micro_version
-    shared_memory_heap_size
-    shared_memory_dependency_table_power
-    shared_memory_hash_table_power
-    local_root
-    ()
-  =
-  try
-    let source_path = Option.value source_path ~default:[local_root] in
-    let local_root = SearchPath.create local_root |> SearchPath.get_root in
-    Log.GlobalState.initialize ~debug ~sections;
-    Statistics.GlobalState.initialize
-      ~log_identifier
-      ?logger
-      ~project_name:(Path.last local_root)
-      ~project_root
-      ();
-    Profiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ();
-    let filter_directories = argument_to_paths filter_directories in
-    let ignore_all_errors = argument_to_paths ignore_all_errors in
-    let configuration =
-      Configuration.Analysis.create
-        ?expected_version
-        ~debug
-        ~strict
-        ~show_error_traces
-        ~project_root:(Path.create_absolute ~follow_symbolic_links:true project_root)
-        ~parallel:(not sequential)
-        ?filter_directories
-        ?ignore_all_errors
-        ~number_of_workers
-        ~search_path:(List.map search_path ~f:SearchPath.create_normalized)
-        ~excludes
-        ~extensions:(List.map ~f:Configuration.Extension.create_extension extensions)
-        ?log_directory
-        ?python_major_version
-        ?python_minor_version
-        ?python_micro_version
-        ?shared_memory_heap_size
-        ?shared_memory_dependency_table_power
-        ?shared_memory_hash_table_power
-        ~local_root
-        ~source_path:(List.map source_path ~f:SearchPath.create_normalized)
-        ()
-    in
-    (fun () ->
-      let result =
-        Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-            let ({ Service.Infer.global_environment; _ } as environment_data) =
-              Service.Infer.build_environment_data ~configuration ~scheduler ()
-            in
-            let filename_lookup qualifier =
-              let ast_environment =
-                Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
-              in
-              Analysis.AstEnvironment.ReadOnly.get_real_path_relative
-                ~configuration
-                ast_environment
-                qualifier
-            in
-            Infer.run_infer
-              ~configuration
-              ~scheduler
-              ~filename_lookup
-              ~paths_to_modify:None
-              environment_data)
-      in
-      if debug then
-        Memory.report_statistics ();
-
-      (* Print results. *)
-      Yojson.Safe.pretty_to_string (`List [TypeInference.Data.GlobalResult.to_yojson result])
-      |> Log.print "%s")
-    |> Scheduler.run_process
-  with
-  | error ->
-      Log.log_exception error;
-      raise error
+let run_infer infer_configuration =
+  let {
+    InferConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ };
+    paths_to_modify;
+  }
+    =
+    infer_configuration
+  in
+  Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
+      let configuration = InferConfiguration.analysis_configuration_of infer_configuration in
+      run_infer_local ~configuration ~build_system ~paths_to_modify ())
 
 
-let run_infer infer_mode =
-  match infer_mode with
-  | None
-  | Some "local" ->
-      run_infer_local
-  | Some "interprocedural" -> run_infer_interprocedural
-  | Some unknown_mode -> failwith (Format.asprintf "Unknown infer mode \"%s\"" unknown_mode)
+let run_infer configuration_file =
+  let exit_status =
+    match CommandStartup.read_and_parse_json configuration_file ~f:InferConfiguration.of_yojson with
+    | Result.Error message ->
+        Log.error "%s" message;
+        ExitStatus.PyreError
+    | Result.Ok
+        ({
+           InferConfiguration.base =
+             {
+               CommandStartup.BaseConfiguration.global_root;
+               local_root;
+               debug;
+               remote_logging;
+               profiling_output;
+               memory_profiling_output;
+               _;
+             };
+           _;
+         } as infer_configuration) ->
+        CommandStartup.setup_global_states
+          ~global_root
+          ~local_root
+          ~debug
+          ~additional_logging_sections:[]
+          ~remote_logging
+          ~profiling_output
+          ~memory_profiling_output
+          ();
+
+        Lwt_main.run
+          (Lwt.catch
+             (fun () -> run_infer infer_configuration)
+             (fun exn -> Lwt.return (CheckCommand.on_exception exn)))
+  in
+  Statistics.flush ();
+  exit (ExitStatus.exit_code exit_status)
 
 
-let infer_command =
-  Command.basic_spec
-    ~summary:"Runs type inference."
-    Command.Spec.(
-      empty
-      +> flag "-infer-mode" (optional string) ~doc:"Mode to use for type inference."
-      +> flag "-ignore-infer" (optional string) ~doc:"Will not infer the listed files."
-      ++ Specification.base_command_line_arguments)
-    run_infer
+let command =
+  let filename_argument = Command.Param.(anon ("filename" %: Filename.arg_type)) in
+  Command.basic
+    ~summary:"Runs type inference"
+    (Command.Param.map filename_argument ~f:(fun filename () -> run_infer filename))

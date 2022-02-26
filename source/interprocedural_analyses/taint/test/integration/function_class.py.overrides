@@ -1,0 +1,4 @@
+@generated
+Overrides
+function_class.test.A::__init__ (override) -> [function_class.test.A::__init__ (method)]
+object::__init__ (override) -> [function_class.test.A::__init__ (override) object::__init__ (method)]

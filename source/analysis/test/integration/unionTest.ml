@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -70,7 +70,7 @@ let test_check_union context =
       def foo() -> typing.Union[str, int]:
         return 1.0
     |}
-    ["Incompatible return type [7]: Expected `typing.Union[int, str]` but got `float`."];
+    ["Incompatible return type [7]: Expected `Union[int, str]` but got `float`."];
   assert_type_errors
     {|
       from builtins import condition
@@ -104,7 +104,7 @@ let test_check_union context =
         else:
           return a
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[float, str]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Union[float, str]`."];
   assert_type_errors
     {|
       import typing
@@ -147,7 +147,8 @@ let test_check_union context =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
+      "Undefined attribute [16]: Item `Attributes` of `typing.Union[Attributes, OtherAttributes]` \
+       has no attribute `str_attribute`.";
     ];
   assert_type_errors
     {|
@@ -158,7 +159,8 @@ let test_check_union context =
     |}
     [
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-      "Undefined attribute [16]: `Attributes` has no attribute `str_attribute`.";
+      "Undefined attribute [16]: Item `Attributes` of `typing.Union[Attributes, OtherAttributes]` \
+       has no attribute `str_attribute`.";
     ];
   assert_type_errors
     {|
@@ -181,7 +183,7 @@ let test_check_union context =
       def baz(x: typing.Union[Foo, Bar]) -> int:
         return x.derp()
     |}
-    ["Undefined attribute [16]: `Bar` has no attribute `derp`."];
+    ["Undefined attribute [16]: Item `Bar` of `typing.Union[Bar, Foo]` has no attribute `derp`."];
 
   (* We require that all elements in a union have the same method for `in`. *)
   assert_type_errors
@@ -285,8 +287,8 @@ let test_check_union context =
       f(x)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.Union[typing.Tuple[int, int], int, str]` \
-       for 1st positional only parameter to call `f` but got `typing.Union[None, int, str]`.";
+      "Incompatible parameter type [6]: In call `f`, for 1st positional only parameter expected \
+       `Union[Tuple[int, int], int, str]` but got `Union[None, int, str]`.";
     ];
   assert_type_errors
     {|
@@ -301,7 +303,7 @@ let test_check_union context =
         return x(8)
 
     |}
-    ["Incompatible return type [7]: Expected `None` but got `typing.Union[bool, str]`."];
+    ["Incompatible return type [7]: Expected `None` but got `Union[bool, str]`."];
   ()
 
 

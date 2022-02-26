@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19,7 +19,7 @@ let test_is_method _ =
     {
       Define.signature =
         {
-          name = + !&name;
+          name = !&name;
           parameters = [];
           decorators = [];
           return_annotation = None;
@@ -44,7 +44,7 @@ let test_is_classmethod _ =
     {
       Define.signature =
         {
-          name = + !&name;
+          name = !&name;
           parameters = [];
           decorators;
           return_annotation = None;
@@ -60,7 +60,7 @@ let test_is_classmethod _ =
   in
   assert_false (Define.is_class_method (define "foo" []));
   assert_false (Define.is_class_method (define "__init__" []));
-  assert_true (Define.is_class_method (define "foo" [decorator "classmethod"]));
+  assert_true (Define.is_class_method (define "foo" [!"classmethod"]));
   assert_true (Define.is_class_method (define "__init_subclass__" []));
   assert_true (Define.is_class_method (define "__new__" []));
   assert_true (Define.is_class_method (define "__class_getitem__" []))
@@ -71,7 +71,7 @@ let test_is_class_property _ =
     {
       Define.signature =
         {
-          name = + !&name;
+          name = !&name;
           parameters = [];
           decorators;
           return_annotation = None;
@@ -87,7 +87,7 @@ let test_is_class_property _ =
   in
   assert_false (Define.is_class_property (define "foo" []));
   assert_false (Define.is_class_property (define "__init__" []));
-  assert_true (Define.is_class_property (define "foo" [decorator "pyre_extensions.classproperty"]));
+  assert_true (Define.is_class_property (define "foo" [!"pyre_extensions.classproperty"]));
   assert_false (Define.is_class_property (define "__new__" []))
 
 
@@ -96,9 +96,9 @@ let test_decorator _ =
     {
       Define.signature =
         {
-          name = + !&"foo";
+          name = !&"foo";
           parameters = [];
-          decorators;
+          decorators = List.map decorators ~f:Decorator.to_expression;
           return_annotation = None;
           async = false;
           generator = false;
@@ -134,7 +134,7 @@ let test_is_constructor _ =
       {
         Define.signature =
           {
-            name = + !&name;
+            name = !&name;
             parameters = [];
             decorators = [];
             return_annotation = None;
@@ -226,16 +226,13 @@ let test_defines _ =
     let method_id = method_name in
     match Class.find_define definition ~method_name:method_id with
     | Some define when exists ->
-        assert_equal
-          (Node.value define.Node.value.Define.signature.name)
-          !&method_id
-          ~printer:Reference.show
+        assert_equal define.Node.value.Define.signature.name !&method_id ~printer:Reference.show
     | None when not exists -> ()
     | Some { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
         Format.asprintf
           "method %a found when not expected (looking for %s)"
           Reference.pp
-          (Node.value name)
+          name
           method_name
         |> assert_failure
     | None -> Format.sprintf "method %s not found when expected" method_name |> assert_failure
@@ -329,7 +326,6 @@ let test_preamble _ =
       preambles
       (List.map handlers ~f:Try.preamble)
   in
-  assert_preamble "try: pass" [];
   assert_preamble
     {|
       try:
@@ -371,9 +367,13 @@ let test_preamble _ =
 
 let test_assume _ =
   assert_equal
-    (Statement.assume (+Expression.True))
+    (Statement.assume (+Expression.Constant Constant.True))
     (+Statement.Assert
-        { Assert.test = +Expression.True; message = None; origin = Assert.Origin.Assertion })
+        {
+          Assert.test = +Expression.Constant Constant.True;
+          message = None;
+          origin = Assert.Origin.Assertion;
+        })
 
 
 let test_pp _ =
@@ -594,7 +594,7 @@ let test_is_generator context =
   in
 
   assert_is_generator "yield" ~expected:true;
-  assert_is_generator "yield from" ~expected:true;
+  assert_is_generator "yield from []" ~expected:true;
   assert_is_generator "x = 2" ~expected:false;
   assert_is_generator "x = yield 2" ~expected:true;
   assert_is_generator "assert (yield True)" ~expected:true;
@@ -666,6 +666,49 @@ let test_is_generator context =
   ()
 
 
+let test_decorator_from_expression context =
+  let assert_decorator ~expected expression =
+    let actual = Decorator.from_expression expression in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Decorator.t option]
+      ~printer:(fun decorator ->
+        Format.asprintf "%a" Sexp.pp_hum ([%sexp_of: Decorator.t option] decorator))
+      expected
+      actual
+  in
+
+  assert_decorator !"a" ~expected:(Some (decorator "a"));
+  assert_decorator !"a.b" ~expected:(Some (decorator "a.b"));
+  assert_decorator
+    (+Expression.Call { callee = !"a"; arguments = [] })
+    ~expected:(Some (decorator "a" ~arguments:[]));
+  assert_decorator
+    (+Expression.Call { callee = !"a.b"; arguments = [] })
+    ~expected:(Some (decorator "a.b" ~arguments:[]));
+  assert_decorator
+    (+Expression.Call { callee = !"a"; arguments = [{ Call.Argument.name = None; value = !"b" }] })
+    ~expected:(Some (decorator "a" ~arguments:[{ Call.Argument.name = None; value = !"b" }]));
+
+  assert_decorator (+Expression.Tuple []) ~expected:None;
+  assert_decorator
+    (+Expression.UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = !"a" })
+    ~expected:None;
+  assert_decorator
+    (+Expression.ComparisonOperator
+        { ComparisonOperator.left = !"a"; operator = ComparisonOperator.LessThan; right = !"b" })
+    ~expected:None;
+  assert_decorator
+    (+Expression.Name
+        (Name.Attribute
+           { Name.Attribute.base = +Expression.List []; attribute = "b"; special = false }))
+    ~expected:None;
+  assert_decorator
+    (+Expression.Call { callee = +Expression.List [!"a"]; arguments = [] })
+    ~expected:None;
+  ()
+
+
 let () =
   "define"
   >::: [
@@ -685,5 +728,6 @@ let () =
          "preamble" >:: test_preamble;
          "pp" >:: test_pp;
          "is_generator" >:: test_is_generator;
+         "decorator_from_expression" >:: test_decorator_from_expression;
        ]
   |> Test.run

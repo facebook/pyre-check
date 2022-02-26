@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,10 +10,10 @@ open Pyre
 
 module T = struct
   type t = {
-    path: Path.t;
+    path: PyrePath.t;
     content: string option;
   }
-  [@@deriving compare, eq, show, sexp, hash]
+  [@@deriving compare, show, sexp, hash]
 
   let create ?content path = { path; content }
 
@@ -23,14 +23,14 @@ module T = struct
     match content with
     | Some content -> Some content
     | None -> (
-        try Some (In_channel.read_all (Path.absolute path)) with
+        try Some (In_channel.read_all (PyrePath.absolute path)) with
         | Sys_error _ -> None)
 
 
   let content_exn { path; content } =
     match content with
     | Some content -> content
-    | None -> In_channel.read_all (Path.absolute path)
+    | None -> In_channel.read_all (PyrePath.absolute path)
 
 
   let lines file = content file >>| String.split ~on:'\n'
@@ -42,7 +42,7 @@ module T = struct
   let existing_directories = String.Table.create ()
 
   let write { path; content } =
-    let path = Path.absolute path in
+    let path = PyrePath.absolute path in
     let make_directories () =
       let directory = Filename.dirname path in
       if not (Hashtbl.mem existing_directories directory) then
@@ -63,7 +63,11 @@ module T = struct
 
   let append ~lines path =
     let append_lines out_channel = Out_channel.output_lines out_channel lines in
-    Out_channel.with_file ~append:true ~fail_if_exists:false ~f:append_lines (Path.absolute path)
+    Out_channel.with_file
+      ~append:true
+      ~fail_if_exists:false
+      ~f:append_lines
+      (PyrePath.absolute path)
 end
 
 include T

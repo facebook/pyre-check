@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -8,8 +8,7 @@ import logging
 from pathlib import Path
 
 from ..configuration import Configuration
-from ..errors import Errors
-from ..filesystem import LocalMode, add_local_mode, path_exists
+from ..filesystem import path_exists
 from ..repository import Repository
 from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
 
@@ -73,7 +72,7 @@ class FixmeSingle(ErrorSuppressingCommand):
         parser.add_argument(
             "--fixme-threshold",
             type=int,
-            default=0,
+            default=None,
             help="Ignore all errors if fixme count exceeds threshold.",
         )
 
@@ -81,28 +80,12 @@ class FixmeSingle(ErrorSuppressingCommand):
         project_configuration = Configuration.find_project_configuration()
         configuration_path = self._path / ".pyre_configuration.local"
         configuration = Configuration(configuration_path)
-        if self._fixme_threshold == 0:
-            self._suppress_errors(
-                configuration=configuration,
-                error_source=self._error_source,
-                upgrade_version=self._upgrade_version,
-            )
-        else:
-            all_errors = configuration.get_errors()
-            error_threshold = self._fixme_threshold
-
-            for path, errors in all_errors.paths_to_errors.items():
-                errors = list(errors)
-                error_count = len(errors)
-                if error_threshold and error_count > error_threshold:
-                    LOG.info(
-                        "%d errors found in `%s`. Adding file-level ignore.",
-                        error_count,
-                        path,
-                    )
-                    add_local_mode(path, LocalMode.IGNORE)
-                else:
-                    self._apply_suppressions(Errors(errors))
+        self._get_and_suppress_errors(
+            configuration=configuration,
+            error_source=self._error_source,
+            upgrade_version=self._upgrade_version,
+            fixme_threshold=self._fixme_threshold,
+        )
 
         local_root = configuration.get_directory().resolve()
         title = "{} for {}".format(

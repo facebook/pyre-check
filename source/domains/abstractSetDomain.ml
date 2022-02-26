@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -13,6 +13,48 @@ module type ELEMENT = sig
   val name : string
 
   val compare : t -> t -> int
+end
+
+module type SET = sig
+  type t
+
+  type element
+
+  val empty : t
+
+  val is_empty : t -> bool
+
+  val singleton : element -> t
+
+  val add : element -> t -> t
+
+  val remove : element -> t -> t
+
+  val mem : element -> t -> bool
+
+  val union : t -> t -> t
+
+  val inter : t -> t -> t
+
+  val subset : t -> t -> bool
+
+  val diff : t -> t -> t
+
+  val map : (element -> element) -> t -> t
+
+  val filter : (element -> bool) -> t -> t
+
+  val fold : (element -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val exists : (element -> bool) -> t -> bool
+
+  val of_list : element list -> t
+
+  val elements : t -> element list
+
+  val show_element : element -> string
+
+  val element_name : string
 end
 
 module type S = sig
@@ -35,17 +77,15 @@ module type S = sig
   val of_list : element list -> t
 end
 
-module Make (Element : ELEMENT) = struct
-  module Set = Set.Make (Element)
-
+module MakeWithSet (Set : SET) = struct
   module rec Base : (BASE with type t := Set.t) = MakeBase (Domain)
 
-  and Domain : (S with type t = Set.t and type element = Set.elt) = struct
+  and Domain : (S with type t = Set.t and type element = Set.element) = struct
     include Set
 
-    type element = Element.t
+    type element = Set.element
 
-    type _ part += Self : t part | Element : Element.t part
+    type _ part += Self : t part | Element : Set.element part
 
     let bottom = Set.empty
 
@@ -89,7 +129,7 @@ module Make (Element : ELEMENT) = struct
 
     let show set =
       Set.elements set
-      |> ListLabels.map ~f:Element.show
+      |> ListLabels.map ~f:Set.show_element
       |> String.concat ", "
       |> Format.sprintf "[%s]"
 
@@ -145,11 +185,11 @@ module Make (Element : ELEMENT) = struct
       | GetParts f ->
           f#report Self;
           f#report Element
-      | Structure -> [Format.sprintf "Set(%s)" Element.name]
+      | Structure -> [Format.sprintf "Set(%s)" Set.element_name]
       | Name part -> (
           match part with
-          | Element -> Format.sprintf "Set(%s).Element" Element.name
-          | Self -> Format.sprintf "Set(%s).Self" Element.name
+          | Element -> Format.sprintf "Set(%s).Element" Set.element_name
+          | Self -> Format.sprintf "Set(%s).Self" Set.element_name
           | _ -> Base.introspect op)
 
 
@@ -163,9 +203,25 @@ module Make (Element : ELEMENT) = struct
 
 
     let fold = Base.fold
+
+    let apply = Base.apply
   end
 
   let _ = Base.fold (* unused module warning work-around *)
 
   include Domain
+end
+
+module Make (Element : ELEMENT) = struct
+  module Set = struct
+    include Set.Make (Element)
+
+    type element = Element.t
+
+    let show_element = Element.show
+
+    let element_name = Element.name
+  end
+
+  include MakeWithSet (Set)
 end

@@ -1,23 +1,20 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import dataclasses
 import json
 import logging
-import os
 import subprocess
 from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Tuple, Any, Optional, Sequence
 
 from typing_extensions import Final
 
-from .. import command_arguments
-from ..analysis_directory import AnalysisDirectory
-from ..configuration import Configuration
-from .command import Command, ProfileOutput
+from .. import command_arguments, configuration as configuration_module
+from . import commands, remote_logging, backend_arguments
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -26,7 +23,7 @@ PHASE_NAME: str = "phase_name"
 TRIGGERED_DEPENDENCIES: str = "number_of_triggered_dependencies"
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class EventMetadata:
     name: str
     worker_id: int
@@ -35,7 +32,7 @@ class EventMetadata:
     tags: Dict[str, str]
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 # pyre-fixme[13]: Attribute `metadata` is never initialized.
 class Event:
     metadata: EventMetadata
@@ -44,7 +41,7 @@ class Event:
         raise NotImplementedError
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class DurationEvent(Event):
     duration: int
 
@@ -59,7 +56,7 @@ class DurationEvent(Event):
                 )
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class CounterEvent(Event):
     description: Final[Optional[str]]
 
@@ -104,6 +101,121 @@ def parse_events(input_string: str) -> List[Event]:
         except Exception:
             raise RuntimeError(f"Malformed log entry detected on line {index + 1}")
     return output
+
+
+class StatisticsOverTime:
+    _data: List[Tuple[str, int]] = []
+
+    def add(self, line: str) -> None:
+        dividers = [
+            " MEMORY Shared memory size (size: ",
+            " MEMORY Shared memory size post-typecheck (size: ",
+        ]
+        for divider in dividers:
+            if divider in line:
+                time, size_component = line.split(divider)
+                size_in_megabytes = int(size_component[:-2])
+                size_in_bytes = size_in_megabytes * (10 ** 6)
+                self._data.append((time, size_in_bytes))
+
+    def graph_total_shared_memory_size_over_time(self) -> None:
+        try:
+            gnuplot = subprocess.Popen(["gnuplot"], stdin=subprocess.PIPE)
+            # pyre-fixme[16]: `Optional` has no attribute `write`.
+            gnuplot.stdin.write(b"set term dumb 140 25\n")
+            gnuplot.stdin.write(b"plot '-' using 1:2 title '' with linespoints \n")
+            for (i, (_time, size)) in enumerate(self._data):
+                # This is graphing size against # of updates, not time
+                gnuplot.stdin.write(b"%f %f\n" % (i, size))
+            gnuplot.stdin.write(b"e\n")
+            # pyre-fixme[16]: `Optional` has no attribute `flush`.
+            gnuplot.stdin.flush()
+        except FileNotFoundError:
+            LOG.error("gnuplot is not installed")
+
+    def to_json(self) -> str:
+        return json.dumps(self._data)
+
+
+class TableStatistics:
+    # category -> aggregation -> table name -> value
+    # pyre-ignore: T62493941
+    _data: Dict[str, Dict[str, Dict[str, str]]] = defaultdict(lambda: defaultdict(dict))
+    _shared_heap_category: Final = "bytes serialized into shared heap"
+
+    @staticmethod
+    def sort_by_value(items: List[Tuple[str, str]]) -> None:
+        def parse(number: str) -> float:
+            if number[-1] == "G":
+                return float(number[:-1]) * (10 ** 9)
+            if number[-1] == "M":
+                return float(number[:-1]) * (10 ** 6)
+            if number[-1] == "K":
+                return float(number[:-1]) * (10 ** 3)
+            return float(number)
+
+        items.sort(key=lambda x: parse(x[1]), reverse=True)
+
+    def add(self, line: str) -> None:
+        divider = "stats -- "
+        if divider in line:
+            header, data = line.split(divider)
+            cells = data[:-2].split(", ")
+            collected = [cell.split(": ") for cell in cells]
+            tag_and_category = header[:-2].split(" (")
+            if len(tag_and_category) == 2:
+                tag, category = tag_and_category
+            elif header[:3] == "ALL":
+                tag = "ALL"
+                category = header[4:-1]
+            elif header[:4] == "(ALL":
+                tag = "ALL"
+                category = header[5:-2]
+            else:
+                return
+            if len(tag) > 0:
+                for key, value in collected:
+                    self._data[category][key][tag] = value
+
+    def is_empty(self) -> bool:
+        return len(self._data) == 0
+
+    def get_totals(self) -> List[Tuple[str, str]]:
+        totals = list(self._data[self._shared_heap_category]["total"].items())
+        TableStatistics.sort_by_value(totals)
+        return totals
+
+    def get_counts(self) -> List[Tuple[str, str]]:
+        counts = list(self._data[self._shared_heap_category]["samples"].items())
+        TableStatistics.sort_by_value(counts)
+        return counts
+
+
+def _get_server_log(log_directory: Path) -> Path:
+    server_stderr_path = log_directory / "new_server" / "server.stderr"
+    if not server_stderr_path.is_file():
+        raise RuntimeError(f"Cannot find server output at `{server_stderr_path}`.")
+    return server_stderr_path
+
+
+def _collect_memory_statistics_over_time(log_directory: Path) -> StatisticsOverTime:
+    server_log = _get_server_log(log_directory)
+    extracted = StatisticsOverTime()
+    with open(server_log) as server_log_file:
+        for line in server_log_file.readlines():
+            extracted.add(line)
+    return extracted
+
+
+def _read_profiling_events(log_directory: Path) -> List[Event]:
+    profiling_output = backend_arguments.get_profiling_log_path(log_directory)
+    if not profiling_output.is_file():
+        raise RuntimeError(
+            f"Cannot find profiling output at `{profiling_output}`. "
+            + "Please run Pyre with `--enable-profiling` or "
+            + "`--enable-memory-profiling` option first."
+        )
+    return parse_events(profiling_output.read_text())
 
 
 def to_traceevents(events: Sequence[Event]) -> List[Dict[str, Any]]:
@@ -211,181 +323,111 @@ def to_taint(events: Sequence[Event]) -> Dict[str, int]:
     return result
 
 
-class TableStatistics:
-    # category -> aggregation -> table name -> value
-    # pyre-ignore: T62493941
-    _data: Dict[str, Dict[str, Dict[str, str]]] = defaultdict(lambda: defaultdict(dict))
-    _shared_heap_category: Final = "bytes serialized into shared heap"
-
-    @staticmethod
-    def sort_by_value(items: List[Tuple[str, str]]) -> None:
-        def parse(number: str) -> float:
-            if number[-1] == "G":
-                return float(number[:-1]) * (10 ** 9)
-            if number[-1] == "M":
-                return float(number[:-1]) * (10 ** 6)
-            if number[-1] == "K":
-                return float(number[:-1]) * (10 ** 3)
-            return float(number)
-
-        items.sort(key=lambda x: parse(x[1]), reverse=True)
-
-    def add(self, line: str) -> None:
-        divider = "stats -- "
-        if divider in line:
-            header, data = line.split(divider)
-            cells = data[:-2].split(", ")
-            collected = [cell.split(": ") for cell in cells]
-            tag_and_category = header[:-2].split(" (")
-            if len(tag_and_category) == 2:
-                tag, category = tag_and_category
-            elif header[:3] == "ALL":
-                tag = "ALL"
-                category = header[4:-1]
-            elif header[:4] == "(ALL":
-                tag = "ALL"
-                category = header[5:-2]
-            else:
-                return
-            if len(tag) > 0:
-                for key, value in collected:
-                    self._data[category][key][tag] = value
-
-    def is_empty(self) -> bool:
-        return len(self._data) == 0
-
-    def get_totals(self) -> List[Tuple[str, str]]:
-        totals = list(self._data[self._shared_heap_category]["total"].items())
-        TableStatistics.sort_by_value(totals)
-        return totals
-
-    def get_counts(self) -> List[Tuple[str, str]]:
-        counts = list(self._data[self._shared_heap_category]["samples"].items())
-        TableStatistics.sort_by_value(counts)
-        return counts
-
-
-class StatisticsOverTime:
-    _data: List[Tuple[str, int]] = []
-
-    def add(self, line: str) -> None:
-        dividers = [
-            " MEMORY Shared memory size (size: ",
-            " MEMORY Shared memory size post-typecheck (size: ",
-        ]
-        for divider in dividers:
-            if divider in line:
-                time, size_component = line.split(divider)
-                size_in_megabytes = int(size_component[:-2])
-                size_in_bytes = size_in_megabytes * (10 ** 6)
-                self._data.append((time, size_in_bytes))
-
-    def graph_total_shared_memory_size_over_time(self) -> None:
-        try:
-            gnuplot = subprocess.Popen(["gnuplot"], stdin=subprocess.PIPE)
-            # pyre-fixme[16]: `Optional` has no attribute `write`.
-            gnuplot.stdin.write(b"set term dumb 140 25\n")
-            gnuplot.stdin.write(b"plot '-' using 1:2 title '' with linespoints \n")
-            for (i, (_time, size)) in enumerate(self._data):
-                # This is graphing size against # of updates, not time
-                gnuplot.stdin.write(b"%f %f\n" % (i, size))
-            gnuplot.stdin.write(b"e\n")
-            # pyre-fixme[16]: `Optional` has no attribute `flush`.
-            gnuplot.stdin.flush()
-        except FileNotFoundError:
-            LOG.error("gnuplot is not installed")
-
-    def to_json(self) -> str:
-        return json.dumps(self._data)
-
-
-class Profile(Command):
-    NAME = "profile"
-    HIDDEN = True
-
-    def __init__(
-        self,
-        command_arguments: command_arguments.CommandArguments,
-        original_directory: str,
-        *,
-        configuration: Configuration,
-        analysis_directory: Optional[AnalysisDirectory] = None,
-        profile_output: ProfileOutput,
-    ) -> None:
-        super(Profile, self).__init__(
-            command_arguments, original_directory, configuration, analysis_directory
+def print_individual_table_sizes(
+    configuration: configuration_module.Configuration,
+) -> None:
+    server_log = _get_server_log(Path(configuration.log_directory))
+    extracted = TableStatistics()
+    with open(str(server_log)) as server_log_file:
+        for line in server_log_file.readlines():
+            extracted.add(line)
+    if extracted.is_empty():
+        raise RuntimeError(
+            "Cannot find table size data in "
+            + f"`{server_log.as_posix()}`. "
+            + "Please run Pyre with `--debug` option first."
         )
-        self._profile_output: ProfileOutput = profile_output
+    sizes = json.dumps(extracted.get_totals())
+    counts = json.dumps(extracted.get_counts())
+    # I manually put together this json in order to be
+    # simultaneously machine and human readable
+    combined = (
+        "{\n"
+        + f'  "total_table_sizes": {sizes},\n'
+        + f'  "table_key_counts": {counts}\n'
+        + "}"
+    )
+    print(combined)
 
-    def get_stdout(self) -> Path:
-        server_stdout_path = os.path.join(
-            self._configuration.log_directory, "server/server.stdout"
-        )
-        server_stdout = Path(server_stdout_path)
-        if not server_stdout.is_file():
-            raise RuntimeError(f"Cannot find server output at `{server_stdout_path}`.")
-        return server_stdout
 
-    def collect_memory_statistics_over_time(self) -> StatisticsOverTime:
-        server_stdout = self.get_stdout()
-        extracted = StatisticsOverTime()
-        with open(server_stdout) as server_stdout_file:
-            for line in server_stdout_file.readlines():
-                extracted.add(line)
-        return extracted
+def print_total_shared_memory_size_over_time(
+    configuration: configuration_module.Configuration,
+) -> None:
+    memory_over_time = _collect_memory_statistics_over_time(
+        Path(configuration.log_directory)
+    ).to_json()
+    print(memory_over_time)
 
-    def _run(self) -> None:
-        output = self._profile_output
-        if output == ProfileOutput.INDIVIDUAL_TABLE_SIZES:
-            server_stdout = self.get_stdout()
-            extracted = TableStatistics()
-            with open(server_stdout) as server_stdout_file:
-                for line in server_stdout_file.readlines():
-                    extracted.add(line)
-            if extracted.is_empty():
-                raise RuntimeError(
-                    "Cannot find table size data in "
-                    + f"`{server_stdout.as_posix()}`. "
-                    + "Please run Pyre with `--debug` option first."
-                )
-            sizes = json.dumps(extracted.get_totals())
-            counts = json.dumps(extracted.get_counts())
-            # I manually put together this json in order to be
-            # simultaneously machine and human readable
-            combined = (
-                "{\n"
-                + f'  "total_table_sizes": {sizes},\n'
-                + f'  "table_key_counts": {counts}\n'
-                + "}"
-            )
-            print(combined)
-        elif output == ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME:
-            memory_over_time = self.collect_memory_statistics_over_time().to_json()
-            print(memory_over_time)
-        elif output == ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME_GRAPH:
-            statistics = self.collect_memory_statistics_over_time()
-            statistics.graph_total_shared_memory_size_over_time()
-        else:
-            try:
-                profiling_output = Path(self.profiling_log_path())
-                if not profiling_output.is_file():
-                    raise RuntimeError(
-                        f"Cannot find profiling output at `{profiling_output}`. "
-                        + "Please run Pyre with `--enable-profiling` or "
-                        + "`--enable-memory-profiling` option first."
-                    )
-                events = parse_events(profiling_output.read_text())
-                if output == ProfileOutput.TRACE_EVENT:
-                    print(json.dumps(to_traceevents(events)))
-                elif output == ProfileOutput.COLD_START_PHASES:
-                    print(json.dumps(to_cold_start_phases(events), indent=2))
-                elif output == ProfileOutput.INCREMENTAL_UPDATES:
-                    print(json.dumps(to_incremental_updates(events), indent=2))
-                elif output == ProfileOutput.TAINT:
-                    print(json.dumps(to_taint(events), indent=2))
-                else:
-                    raise RuntimeError(f"Unrecognized output format: {output}")
 
-            except Exception as e:
-                LOG.error(f"Failed to inspect profiling log: {e}")
-                raise e
+def print_total_shared_memory_size_over_time_graph(
+    configuration: configuration_module.Configuration,
+) -> None:
+    statistics = _collect_memory_statistics_over_time(Path(configuration.log_directory))
+    statistics.graph_total_shared_memory_size_over_time()
+
+
+def print_trace_event(
+    configuration: configuration_module.Configuration,
+) -> None:
+    events = _read_profiling_events(Path(configuration.log_directory))
+    print(json.dumps(to_traceevents(events)))
+
+
+def print_cold_start_phases(
+    configuration: configuration_module.Configuration,
+) -> None:
+    events = _read_profiling_events(Path(configuration.log_directory))
+    print(json.dumps(to_cold_start_phases(events), indent=2))
+
+
+def print_incremental_updates(
+    configuration: configuration_module.Configuration,
+) -> None:
+    events = _read_profiling_events(Path(configuration.log_directory))
+    print(json.dumps(to_incremental_updates(events), indent=2))
+
+
+def print_taint(
+    configuration: configuration_module.Configuration,
+) -> None:
+    events = _read_profiling_events(Path(configuration.log_directory))
+    print(json.dumps(to_taint(events), indent=2))
+
+
+def run_profile(
+    configuration: configuration_module.Configuration,
+    output: command_arguments.ProfileOutput,
+) -> commands.ExitCode:
+    if output == command_arguments.ProfileOutput.INDIVIDUAL_TABLE_SIZES:
+        print_individual_table_sizes(configuration)
+    elif output == command_arguments.ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME:
+        print_total_shared_memory_size_over_time(configuration)
+    elif (
+        output
+        == command_arguments.ProfileOutput.TOTAL_SHARED_MEMORY_SIZE_OVER_TIME_GRAPH
+    ):
+        print_total_shared_memory_size_over_time_graph(configuration)
+    elif output == command_arguments.ProfileOutput.TRACE_EVENT:
+        print_trace_event(configuration)
+    elif output == command_arguments.ProfileOutput.COLD_START_PHASES:
+        print_cold_start_phases(configuration)
+    elif output == command_arguments.ProfileOutput.INCREMENTAL_UPDATES:
+        print_incremental_updates(configuration)
+    elif output == command_arguments.ProfileOutput.TAINT:
+        print_taint(configuration)
+    else:
+        raise RuntimeError(f"Unrecognized output format: {output}")
+    return commands.ExitCode.SUCCESS
+
+
+@remote_logging.log_usage(command_name="profile")
+def run(
+    configuration: configuration_module.Configuration,
+    output: command_arguments.ProfileOutput,
+) -> commands.ExitCode:
+    try:
+        return run_profile(configuration, output)
+    except Exception as error:
+        raise commands.ClientException(
+            f"Exception occurred during profile: {error}"
+        ) from error

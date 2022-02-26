@@ -1,0 +1,138 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_discard_flows.a_sink",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_discard_flows.a_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "TestA" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_discard_flows.b_sink",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "kinds": [ { "kind": "TestB" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_discard_flows.sanitize_a_sink_tito",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": [ "" ],
+                "kind": "NotSink[TestA]@LocalReturn"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "global_sanitizer": { "tito_sources": [], "tito_sinks": [ "TestA" ] }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_discard_flows.sanitize_a_source_tito",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": [ "" ],
+                "kind": "NotSource[TestA]@LocalReturn"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "global_sanitizer": { "tito_sources": [ "TestA" ], "tito_sinks": [] }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_discard_flows.sanitize_b_sink_tito",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": [ "" ],
+                "kind": "NotSink[TestB]@LocalReturn"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "global_sanitizer": { "tito_sources": [], "tito_sinks": [ "TestB" ] }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_discard_flows.test_source_a_sanitize_a_kept",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize_discard_flows.a_source" } ],
+                "kind": "NotSink[TestA]@TestA"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 34, "start": 32, "end": 42 } ],
+            "root": {
+              "filename": "sanitize_discard_flows.py",
+              "line": 34,
+              "start": 32,
+              "end": 42
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

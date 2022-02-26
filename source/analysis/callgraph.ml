@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -110,7 +110,7 @@ module type Builder = sig
   val add_callee
     :  global_resolution:GlobalResolution.t ->
     target:Type.t option ->
-    callables:Type.Callable.t list option ->
+    callables:Type.Callable.t list ->
     arguments:Call.Argument.t list ->
     dynamic:bool ->
     qualifier:Reference.t ->
@@ -177,7 +177,7 @@ module DefaultBuilder : Builder = struct
             ]
         | _ -> []
       in
-      let callable_kinds = callables >>| List.map ~f:(fun { Type.Callable.kind; _ } -> kind) in
+      let callable_kinds = List.map callables ~f:(fun { Type.Callable.kind; _ } -> kind) in
       let extract_callables ~annotation instantiated_attribute =
         instantiated_attribute
         |> AnnotatedAttribute.annotation
@@ -189,10 +189,12 @@ module DefaultBuilder : Builder = struct
         | Some list -> list
       in
       match target, callable_kinds with
-      | Some (Type.Union elements), Some callables when List.length elements = List.length callables
-        ->
-          List.map2_exn elements callables ~f:method_callee |> List.concat
-      | Some annotation, Some callables -> List.concat_map callables ~f:(method_callee annotation)
+      | Some (Type.Union elements), callables when List.length elements = List.length callables -> (
+          match List.map2 elements callables ~f:method_callee with
+          | Ok callees_list -> List.concat callees_list
+          | Unequal_lengths -> [])
+      | Some annotation, (_ :: _ as callables) ->
+          List.concat_map callables ~f:(method_callee annotation)
       | Some (Type.Union ([Type.NoneType; annotation] | [annotation; Type.NoneType])), _ -> (
           match Node.value callee with
           | Expression.Name (Name.Attribute { attribute; _ }) ->
@@ -203,7 +205,7 @@ module DefaultBuilder : Builder = struct
               >>| extract_callables ~annotation
               |> Option.value ~default:[]
           | _ -> [])
-      | None, Some defines ->
+      | None, defines ->
           List.map defines ~f:(function
               | Named define -> Some (Function define)
               | _ -> None)

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -81,31 +81,12 @@ type model_t = {
 
 type result_t = result_pkg Kind.Map.t [@@deriving show]
 
-module InitializedModels : sig
-  type 'call_model t
+type 'call_model initialize_result = {
+  initial_models: 'call_model Target.Map.t;
+  skip_overrides: Ast.Reference.Set.t;
+}
 
-  type 'call_model initialize_result = {
-    initial_models: 'call_model Target.Map.t;
-    skip_overrides: Ast.Reference.Set.t;
-  }
-
-  val create
-    :  (updated_environment:Analysis.TypeEnvironment.ReadOnly.t option ->
-       'call_model initialize_result) ->
-    'call_model t
-
-  val empty : 'call_model t
-
-  (* Return all initially-created models. *)
-  val get_models : 'call_model t -> 'call_model initialize_result
-
-  (* Return initially-created models along with any models generated from functions, say, by using
-     model queries. *)
-  val get_models_including_generated_models
-    :  updated_environment:Analysis.TypeEnvironment.ReadOnly.t option ->
-    'call_model t ->
-    'call_model initialize_result
-end
+val empty_initialize_result : 'call_model initialize_result
 
 module type ANALYZER = sig
   type result
@@ -132,7 +113,7 @@ module type ANALYZER = sig
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     callables:Target.callable_t list ->
     stubs:Target.callable_t list ->
-    call_model InitializedModels.t
+    call_model initialize_result
 
   val report
     :  scheduler:Scheduler.t ->

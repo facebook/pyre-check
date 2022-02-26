@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -22,14 +22,6 @@ let test_check_scoping context =
           return foo
     |}
     [];
-
-  (* TODO (T78261323): should be no error *)
-  assert_type_errors
-    {|
-    f'{"".join(f"{}{metric}" for metric in [])}'
-    |}
-    ["Unbound name [10]: Name `metric` is used but not defined in the current scope."];
-
   ()
 
 
@@ -42,7 +34,7 @@ let test_uninitialized context =
           x = y
           y = 5
     |}
-    ["Uninitialized local [61]: Local variable `y` may not be initialized here."];
+    ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
 
   assert_type_errors
     {|
@@ -58,7 +50,7 @@ let test_uninitialized context =
           _ = z    # Refers to nonlocal `z`, error as not defined in outer scope
     |}
     [
-      "Uninitialized local [61]: Local variable `x` may not be initialized here.";
+      "Uninitialized local [61]: Local variable `x` is undefined, or not always defined.";
       "Unbound name [10]: Name `z` is used but not defined in the current scope.";
     ];
 
@@ -89,7 +81,10 @@ let test_uninitialized context =
                       harness_config = task.harness_config
                   foo(harness_config)
       |}
-    ["Uninitialized local [61]: Local variable `harness_config` may not be initialized here."];
+    [
+      "Uninitialized local [61]: Local variable `harness_config` is undefined, or not always \
+       defined.";
+    ];
 
   ()
 

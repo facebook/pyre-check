@@ -8,21 +8,44 @@
         "port": "formal(obj)",
         "taint": [
           {
+            "kinds": [
+              { "leaves": [ { "name": "getattr" } ], "kind": "GetAttr" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito": [ { "line": 41, "start": 24, "end": 27 } ],
             "root": {
               "filename": "model_simplification.py",
               "line": 42,
               "start": 47,
               "end": 53
-            },
-            "tito": [ { "line": 41, "start": 24, "end": 27 } ],
-            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "obscure" }
-            ]
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "leaves": [ { "name": "getattr" } ],
+                "length": 1,
+                "kind": "GetAttr"
+              }
+            ],
+            "local_features": [
+              { "always-via": "object" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 42, "start": 42, "end": 45 } ],
             "call": {
               "position": {
                 "filename": "model_simplification.py",
@@ -31,20 +54,25 @@
                 "end": 54
               },
               "resolves_to": [ "model_simplification._asdict_inner" ],
-              "port": "formal(obj)",
-              "length": 1
-            },
-            "tito": [ { "line": 42, "start": 42, "end": 45 } ],
-            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "tito" },
-              { "always-via": "object" },
-              { "always-via": "obscure" }
-            ]
+              "port": "formal(obj)"
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "leaves": [ { "name": "getattr" } ],
+                "length": 1,
+                "kind": "GetAttr"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "model_simplification.py",
@@ -53,19 +81,30 @@
                 "end": 57
               },
               "resolves_to": [ "model_simplification._asdict_inner" ],
-              "port": "formal(obj)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "broadening" },
-              { "via": "tito" },
-              { "via": "object" },
-              { "always-via": "obscure" }
-            ]
+              "port": "formal(obj)"
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "leaves": [ { "name": "getattr" } ],
+                "length": 1,
+                "kind": "GetAttr"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
             "call": {
               "position": {
                 "filename": "model_simplification.py",
@@ -74,19 +113,25 @@
                 "end": 35
               },
               "resolves_to": [ "model_simplification._asdict_inner" ],
-              "port": "formal(obj)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "broadening" },
-              { "via": "tito" },
-              { "via": "object" },
-              { "always-via": "obscure" }
-            ]
+              "port": "formal(obj)"
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "leaves": [ { "name": "getattr" } ],
+                "length": 1,
+                "kind": "GetAttr"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "model_simplification.py",
@@ -95,17 +140,8 @@
                 "end": 35
               },
               "resolves_to": [ "model_simplification._asdict_inner" ],
-              "port": "formal(obj)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "broadening" },
-              { "via": "tito" },
-              { "via": "object" },
-              { "always-via": "obscure" }
-            ]
+              "port": "formal(obj)"
+            }
           }
         ]
       }
@@ -115,14 +151,18 @@
         "port": "formal(dict_factory)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
             "tito": [
               { "line": 49, "start": 25, "end": 87 },
-              { "line": 49, "start": 42, "end": 85 },
+              { "line": 49, "start": 41, "end": 86 },
               { "line": 49, "start": 59, "end": 71 }
             ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" }, { "always-via": "obscure" } ]
+            "decl": null
           }
         ]
       },
@@ -130,16 +170,17 @@
         "port": "formal(obj)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "via": "tito" }
+            ],
             "tito": [
-              { "line": 49, "start": 15, "end": 24 },
-              { "line": 49, "start": 20, "end": 23 },
               { "line": 49, "start": 25, "end": 87 },
-              { "line": 49, "start": 42, "end": 85 },
+              { "line": 49, "start": 41, "end": 86 },
               { "line": 49, "start": 56, "end": 57 }
             ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" }, { "via": "obscure" } ]
+            "decl": null
           }
         ]
       }
@@ -155,6 +196,21 @@
         "port": "formal(obj)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "leaves": [ { "name": "getattr" } ],
+                "length": 1,
+                "kind": "GetAttr"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "model_simplification.py",
@@ -163,17 +219,8 @@
                 "end": 28
               },
               "resolves_to": [ "model_simplification._asdict_inner" ],
-              "port": "formal(obj)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "broadening" },
-              { "via": "tito" },
-              { "via": "object" },
-              { "always-via": "obscure" }
-            ]
+              "port": "formal(obj)"
+            }
           }
         ]
       }
@@ -183,13 +230,16 @@
         "port": "formal(dict_factory)",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 34, "start": 30, "end": 42 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
               { "always-via": "tito" },
-              { "always-via": "obscure" }
-            ]
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito": [ { "line": 34, "start": 30, "end": 42 } ],
+            "decl": null
           }
         ]
       },
@@ -197,10 +247,15 @@
         "port": "formal(obj)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 34, "start": 25, "end": 28 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
+            "decl": null
           }
         ]
       }
@@ -216,6 +271,21 @@
         "port": "formal(obj)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "via": "object" },
+                  { "always-via": "obscure:model" },
+                  { "always-via": "tito-broadening" },
+                  { "always-via": "tito" },
+                  { "always-via": "broadening" },
+                  { "via": "obscure:unknown-callee" }
+                ],
+                "leaves": [ { "name": "getattr" } ],
+                "length": 2,
+                "kind": "GetAttr"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "model_simplification.py",
@@ -224,17 +294,8 @@
                 "end": 21
               },
               "resolves_to": [ "model_simplification.asdict" ],
-              "port": "formal(obj)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "GetAttr", "name": "getattr" } ],
-            "features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "broadening" },
-              { "via": "tito" },
-              { "via": "object" },
-              { "always-via": "obscure" }
-            ]
+              "port": "formal(obj)"
+            }
           }
         ]
       }
@@ -244,10 +305,15 @@
         "port": "formal(obj)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 75, "start": 18, "end": 21 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 2 } ],
-            "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
+            "decl": null
           }
         ]
       }
@@ -263,18 +329,21 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": [ { "line": 79, "start": 21, "end": 35 } ],
             "root": {
               "filename": "model_simplification.py",
               "line": 79,
               "start": 21,
               "end": 35
-            },
-            "tito": [ { "line": 79, "start": 21, "end": 35 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "special_source" },
-              { "always-via": "obscure" }
-            ]
+            }
           }
         ]
       }
@@ -284,10 +353,19 @@
         "port": "formal(obj)",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 79, "start": 16, "end": 19 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "obscure" } ]
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito": [
+              { "line": 79, "start": 11, "end": 20 },
+              { "line": 79, "start": 16, "end": 19 }
+            ],
+            "decl": null
           }
         ]
       }

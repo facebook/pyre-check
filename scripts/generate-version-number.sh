@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -52,4 +52,10 @@ let log_version_banner () =
   Log.info "Running as pid: %d" (Pid.to_int (Unix.getpid ()));
   Log.info "Version: %s" (version ());
   Log.info "Build info: %s" (build_info ())
+EOF
+
+
+cat > "${SCRIPTS_DIRECTORY}/../source/hack_parallel/hack_parallel/utils/get_build_id.c" <<EOF
+const char* const BuildInfo_kRevision = "${VERSION}";
+const unsigned long BuildInfo_kRevisionCommitTimeUnix = 0ul;
 EOF

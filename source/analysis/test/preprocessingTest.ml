@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,6 +12,29 @@ open Analysis
 open Expression
 open Statement
 open Test
+
+(* This function is here for backward compatibility reason only. Please avoid using it and prefer
+   `Test.parse` instead. *)
+let legacy_parse ~handle source =
+  let open PyreParser in
+  let lines = String.split (Test.trim_extra_indentation source) ~on:'\n' in
+  match Parser.parse ~relative:handle lines with
+  | Result.Ok statements ->
+      let metadata =
+        let qualifier = SourcePath.qualifier_of_relative handle in
+        Source.Metadata.parse ~qualifier lines
+      in
+      Source.create ~metadata ~relative:handle statements
+  | Result.Error { Parser.Error.location = { Location.start = { Location.line; column }; _ }; _ } ->
+      let error =
+        Format.asprintf
+          "Could not parse test source at line %d, column %d. Test input:\n%s"
+          line
+          column
+          source
+      in
+      failwith error
+
 
 let test_expand_relative_imports _ =
   let assert_expand ~handle source expected =
@@ -176,7 +199,7 @@ let test_expand_string_annotations _ =
   assert_expand
     {|
       def foo(
-        x,  # type: int
+        x: "int",
       ):
         return x
     |}
@@ -187,7 +210,7 @@ let test_expand_string_annotations _ =
   assert_expand
     {|
       def foo(
-        x,  # type: int,
+        x: "int,"
       ):
         return x
     |}
@@ -312,191 +335,17 @@ let test_expand_type_alias_body _ =
     {|
       typing.TypeVar("T", int, A)
     |};
-  (* Type variables for builtins like `Mapping` are locally qualified in `typing`. *)
-  assert_expand
-    {|
-      $local_typing$TypeVar("_KT")
-    |}
-    {|
-      $local_typing$TypeVar("_KT")
-    |};
   ()
 
 
-let test_expand_format_string _ =
-  let assert_format_string source value expressions =
-    let handle = "test.py" in
-    assert_source_equal
-      ~location_insensitive:true
-      (Source.create
-         ~relative:handle
-         [+Statement.Expression (+Expression.String (StringLiteral.create ~expressions value))])
-      (Preprocessing.expand_format_string (parse_untrimmed ~handle source))
-  in
-  assert_format_string "f'foo'" "foo" [];
-  assert_format_string "f'{1}'" "{1}" [+Expression.Integer 1];
-  assert_format_string "f'foo{1}'" "foo{1}" [+Expression.Integer 1];
-  assert_format_string "f'foo{1}' 'foo{2}'" "foo{1}foo{2}" [+Expression.Integer 1];
-  assert_format_string "'foo{1}' f'foo{2}'" "foo{1}foo{2}" [+Expression.Integer 2];
-  assert_format_string
-    "f'foo{1}' f'foo{2}'"
-    "foo{1}foo{2}"
-    [+Expression.Integer 1; +Expression.Integer 2];
-  assert_format_string
-    "f'foo{1}{2}foo'"
-    "foo{1}{2}foo"
-    [+Expression.Integer 1; +Expression.Integer 2];
-  assert_format_string "f'foo{{1}}'" "foo{{1}}" [];
-  assert_format_string "f'foo{{ {1} }}'" "foo{{ {1} }}" [+Expression.Integer 1];
-  assert_format_string "f'foo{{{1} }}'" "foo{{{1} }}" [+Expression.Integer 1];
-  assert_format_string "f'foo{{ {1}}}'" "foo{{ {1}}}" [+Expression.Integer 1];
-  assert_format_string "f'foo{{{1}}}'" "foo{{{1}}}" [+Expression.Integer 1];
-  assert_format_string "f'foo{{'" "foo{{" [];
-  assert_format_string "f'foo}}'" "foo}}" [];
-  assert_format_string
-    "f'foo{1+2}'"
-    "foo{1+2}"
-    [
-      +Expression.Call
-         {
-           callee =
-             +Expression.Name
-                (Name.Attribute
-                   { base = +Expression.Integer 1; attribute = "__add__"; special = true });
-           arguments = [{ Call.Argument.name = None; value = +Expression.Integer 2 }];
-         };
-    ];
-
-  assert_format_string
-    "f'{x for x in []}'"
-    "{x for x in []}"
-    [
-      +Expression.Generator
-         {
-           Comprehension.element = +Expression.Name (Name.Identifier "x");
-           generators =
-             [
-               {
-                 Comprehension.Generator.target = +Expression.Name (Name.Identifier "x");
-                 iterator = +Expression.List [];
-                 conditions = [];
-                 async = false;
-               };
-             ];
-         };
-    ];
-
-  (* Ensure we fix up locations. *)
-  let assert_locations source statements =
-    let parsed_source = parse source |> Preprocessing.expand_format_string in
-    let expected_source = { parsed_source with Source.statements } in
-    assert_source_equal_with_locations expected_source parsed_source
-  in
-  assert_locations
-    "f'foo{1}'"
-    [
-      node
-        ~start:(1, 0)
-        ~stop:(1, 9)
-        (Statement.Expression
-           (node
-              ~start:(1, 0)
-              ~stop:(1, 9)
-              (Expression.String
-                 {
-                   StringLiteral.kind =
-                     StringLiteral.Format [node ~start:(1, 6) ~stop:(1, 7) (Expression.Integer 1)];
-                   value = "foo{1}";
-                 })));
-    ];
-  assert_locations
-    "f'foo{123}a{456}'"
-    [
-      node
-        ~start:(1, 0)
-        ~stop:(1, 17)
-        (Statement.Expression
-           (node
-              ~start:(1, 0)
-              ~stop:(1, 17)
-              (Expression.String
-                 {
-                   StringLiteral.kind =
-                     StringLiteral.Format
-                       [
-                         node ~start:(1, 6) ~stop:(1, 9) (Expression.Integer 123);
-                         node ~start:(1, 12) ~stop:(1, 15) (Expression.Integer 456);
-                       ];
-                   value = "foo{123}a{456}";
-                 })));
-    ];
-  assert_locations
-    "return f'foo{123}a{456}'"
-    [
-      node
-        ~start:(1, 0)
-        ~stop:(1, 24)
-        (Statement.Return
-           {
-             is_implicit = false;
-             expression =
-               Some
-                 (node
-                    ~start:(1, 7)
-                    ~stop:(1, 24)
-                    (Expression.String
-                       {
-                         StringLiteral.kind =
-                           StringLiteral.Format
-                             [
-                               node ~start:(1, 13) ~stop:(1, 16) (Expression.Integer 123);
-                               node ~start:(1, 19) ~stop:(1, 22) (Expression.Integer 456);
-                             ];
-                         value = "foo{123}a{456}";
-                       }));
-           });
-    ];
-  assert_locations
-    {|
-       f'''
-       foo{123}a{456}
-       b{789}
-       '''
-     |}
-    [
-      node
-        ~start:(2, 0)
-        ~stop:(5, 3)
-        (Statement.Expression
-           (node
-              ~start:(2, 0)
-              ~stop:(5, 3)
-              (Expression.String
-                 {
-                   StringLiteral.kind =
-                     StringLiteral.Format
-                       [
-                         node ~start:(3, 4) ~stop:(3, 7) (Expression.Integer 123);
-                         node ~start:(3, 10) ~stop:(3, 13) (Expression.Integer 456);
-                         node ~start:(4, 2) ~stop:(4, 5) (Expression.Integer 789);
-                       ];
-                   value = "\nfoo{123}a{456}\nb{789}\n";
-                 })));
-    ]
-
-
-let test_qualify _ =
+let test_qualify_source _ =
   let assert_qualify ?(handle = "qualifier.py") source expected =
-    let parse = parse ~handle in
-    assert_source_equal
-      ~location_insensitive:true
-      (parse expected)
-      (Preprocessing.qualify (parse source));
+    let parsed = parse ~handle source in
+    let processed = Preprocessing.qualify parsed in
+    let expected = legacy_parse ~handle expected in
+    assert_source_equal ~location_insensitive:true expected processed;
     (* Qualifying twice should not change the source. *)
-    assert_source_equal
-      ~location_insensitive:true
-      (parse expected)
-      (Preprocessing.qualify (Preprocessing.qualify (parse source)))
+    assert_source_equal ~location_insensitive:true expected (Preprocessing.qualify processed)
   in
   (* Base cases for aliasing. *)
   assert_qualify "from a import b; b" "from a import b; a.b";
@@ -534,7 +383,6 @@ let test_qualify _ =
   assert_qualify_statement "{b, b}" "{a, a}";
   assert_qualify_statement "{b for b in b}" "{$target$b for $target$b in a}";
   assert_qualify_statement "*b" "*a";
-  assert_qualify_statement "**b" "**a";
   assert_qualify_statement "b if b else b" "a if a else a";
   assert_qualify_statement "(b, b)" "(a, a)";
   assert_qualify_statement "-b" "-a";
@@ -623,11 +471,11 @@ let test_qualify _ =
   assert_qualify
     {|
       from module import constant
-      a := constant
+      (a := constant)
     |}
     {|
       from module import constant
-      a := module.constant
+      (a := module.constant)
     |};
 
   (* Qualify classes. *)
@@ -1772,14 +1620,6 @@ let test_qualify _ =
       $local_qualifier$Tree = typing.Union[int, \
         typing.Tuple["$local_qualifier$Tree", "$local_qualifier$Tree"]]
     |};
-  (* Don't qualify a parameter that is already qualified. *)
-  assert_qualify
-    {|
-      def foo($parameter$x: int): ...
-    |}
-    {|
-      def qualifier.foo($parameter$x: int): ...
-    |};
   assert_qualify
     {|
       def foo( *args, **kwargs): ...
@@ -1793,6 +1633,248 @@ let test_qualify _ =
     |} {|
       class qualifier.qualifier: ...
     |};
+  ()
+
+
+let test_qualify_ast _ =
+  let module Context = struct
+    let source_relative = "relative"
+
+    let source_qualifier = Reference.create "source_qualifier"
+  end
+  in
+  let module Qualify = Preprocessing.Qualify (Context) in
+  let scope =
+    {
+      Qualify.qualifier = Reference.create "qualifier";
+      aliases =
+        Reference.Map.singleton
+          (Reference.create "a")
+          {
+            Qualify.name = Reference.create "b";
+            qualifier = Reference.empty;
+            is_forward_reference = false;
+          };
+      locals = Reference.Set.empty;
+      immutables = Reference.Set.empty;
+      use_forward_references = true;
+      is_top_level = true;
+      skip = Location.Set.empty;
+      is_in_function = false;
+      is_in_class = false;
+    }
+  in
+  let assert_qualify_statement statement expected =
+    let qualify = Qualify.qualify_statement ~qualify_assign:false ~scope in
+    let _, processed = qualify statement in
+    assert_equal
+      ~cmp:(fun left right -> Statement.location_insensitive_compare left right = 0)
+      ~printer:Statement.show
+      expected
+      processed;
+    (* Qualifying twice should not change the source. *)
+    assert_equal
+      ~cmp:(fun left right -> Statement.location_insensitive_compare left right = 0)
+      ~printer:Statement.show
+      expected
+      (qualify processed |> snd)
+  in
+  assert_qualify_statement (+Statement.Pass) (+Statement.Pass);
+  assert_qualify_statement
+    (+Statement.Class
+        {
+          Class.name = Reference.create "a";
+          base_arguments = [];
+          top_level_unbound_names = [];
+          body = [];
+          decorators = [];
+        })
+    (+Statement.Class
+        {
+          Class.name = Reference.create "qualifier.a";
+          base_arguments = [];
+          top_level_unbound_names = [];
+          body = [];
+          decorators = [];
+        });
+  assert_qualify_statement
+    (+Statement.Match { subject = +Expression.Name (Name.Identifier "a"); cases = [] })
+    (+Statement.Match { subject = +Expression.Name (Name.Identifier "b"); cases = [] });
+
+  let assert_qualify_match_case match_case expected =
+    let qualify = Qualify.qualify_match_case ~scope in
+    let _, processed = qualify match_case in
+    assert_equal
+      ~cmp:(fun left right -> Match.Case.location_insensitive_compare left right = 0)
+      ~printer:Match.Case.show
+      expected
+      processed;
+    (* Qualifying twice should not change the source. *)
+    assert_equal
+      ~cmp:(fun left right -> Match.Case.location_insensitive_compare left right = 0)
+      ~printer:Match.Case.show
+      expected
+      (qualify processed |> snd)
+  in
+  assert_qualify_match_case
+    {
+      Match.Case.guard = Some (+Expression.Name (Name.Identifier "a"));
+      pattern = +Match.Pattern.MatchWildcard;
+      body = [];
+    }
+    {
+      Match.Case.guard = Some (+Expression.Name (Name.Identifier "b"));
+      pattern = +Match.Pattern.MatchWildcard;
+      body = [];
+    };
+  assert_qualify_match_case
+    {
+      Match.Case.guard = None;
+      pattern = +Match.Pattern.MatchWildcard;
+      body = [+Statement.Expression !"a"];
+    }
+    {
+      Match.Case.guard = None;
+      pattern = +Match.Pattern.MatchWildcard;
+      body = [+Statement.Expression !"b"];
+    };
+
+  let assert_qualify_pattern pattern expected =
+    let qualify = Qualify.qualify_pattern ~scope in
+    let processed = qualify pattern in
+    assert_equal
+      ~cmp:(fun left right -> Match.Pattern.location_insensitive_compare left right = 0)
+      ~printer:Match.Pattern.show
+      expected
+      processed;
+    (* Qualifying twice should not change the source. *)
+    assert_equal
+      ~cmp:(fun left right -> Match.Pattern.location_insensitive_compare left right = 0)
+      ~printer:Match.Pattern.show
+      expected
+      (qualify processed)
+  in
+  assert_qualify_pattern
+    (+Match.Pattern.MatchAs { pattern = None; name = "a" })
+    (+Match.Pattern.MatchAs { pattern = None; name = "b" });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchAs
+        { pattern = Some (+Match.Pattern.MatchAs { pattern = None; name = "a" }); name = "x" })
+    (+Match.Pattern.MatchAs
+        { pattern = Some (+Match.Pattern.MatchAs { pattern = None; name = "b" }); name = "x" });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchClass
+        {
+          class_name = +Ast.Expression.create_name ~location:Location.any "a";
+          patterns = [];
+          keyword_attributes = [];
+          keyword_patterns = [];
+        })
+    (+Match.Pattern.MatchClass
+        {
+          class_name = +Ast.Expression.create_name ~location:Location.any "b";
+          patterns = [];
+          keyword_attributes = [];
+          keyword_patterns = [];
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchClass
+        {
+          class_name = +Ast.Expression.create_name ~location:Location.any "x";
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "a" }];
+          keyword_attributes = [];
+          keyword_patterns = [];
+        })
+    (+Match.Pattern.MatchClass
+        {
+          class_name = +Ast.Expression.create_name ~location:Location.any "x";
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "b" }];
+          keyword_attributes = [];
+          keyword_patterns = [];
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchClass
+        {
+          class_name = +Ast.Expression.create_name ~location:Location.any "x";
+          patterns = [];
+          keyword_attributes = ["a"];
+          keyword_patterns = [+Match.Pattern.MatchAs { pattern = None; name = "a" }];
+        })
+    (+Match.Pattern.MatchClass
+        {
+          class_name = +Ast.Expression.create_name ~location:Location.any "x";
+          patterns = [];
+          keyword_attributes = ["a"];
+          keyword_patterns = [+Match.Pattern.MatchAs { pattern = None; name = "b" }];
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"a"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "x" }];
+          rest = None;
+        })
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"b"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "x" }];
+          rest = None;
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"x"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "a" }];
+          rest = None;
+        })
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"x"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "b" }];
+          rest = None;
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"x"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "x" }];
+          rest = Some "a";
+        })
+    (+Match.Pattern.MatchMapping
+        {
+          keys = [!"x"];
+          patterns = [+Match.Pattern.MatchAs { pattern = None; name = "x" }];
+          rest = Some "b";
+        });
+  assert_qualify_pattern
+    (+Match.Pattern.MatchOr
+        [
+          +Match.Pattern.MatchAs { pattern = None; name = "x" };
+          +Match.Pattern.MatchAs { pattern = None; name = "a" };
+        ])
+    (+Match.Pattern.MatchOr
+        [
+          +Match.Pattern.MatchAs { pattern = None; name = "x" };
+          +Match.Pattern.MatchAs { pattern = None; name = "b" };
+        ]);
+  assert_qualify_pattern
+    (+Match.Pattern.MatchSequence
+        [
+          +Match.Pattern.MatchAs { pattern = None; name = "x" };
+          +Match.Pattern.MatchAs { pattern = None; name = "a" };
+        ])
+    (+Match.Pattern.MatchSequence
+        [
+          +Match.Pattern.MatchAs { pattern = None; name = "x" };
+          +Match.Pattern.MatchAs { pattern = None; name = "b" };
+        ]);
+  assert_qualify_pattern
+    (+Match.Pattern.MatchSingleton Ast.Expression.Constant.NoneLiteral)
+    (+Match.Pattern.MatchSingleton Ast.Expression.Constant.NoneLiteral);
+  assert_qualify_pattern (+Match.Pattern.MatchStar None) (+Match.Pattern.MatchStar None);
+  assert_qualify_pattern (+Match.Pattern.MatchStar (Some "a")) (+Match.Pattern.MatchStar (Some "b"));
+  assert_qualify_pattern (+Match.Pattern.MatchValue !"a") (+Match.Pattern.MatchValue !"b");
+
   ()
 
 
@@ -2624,7 +2706,7 @@ let test_expand_implicit_returns _ =
               {
                 signature =
                   {
-                    name = + !&"foo";
+                    name = !&"foo";
                     parameters = [];
                     decorators = [];
                     return_annotation = None;
@@ -2736,7 +2818,7 @@ let test_expand_implicit_returns _ =
            if x:
              y = 5/0
          except ZeroDivisionError:
-           print "tried to divide by 0"
+           print ("tried to divide by 0")
          else:
            pass
        |}
@@ -2751,7 +2833,7 @@ let test_expand_implicit_returns _ =
            if x:
              y = 5/0
          except ZeroDivisionError:
-           print "tried to divide by 0"
+           print ("tried to divide by 0")
          else:
            return 2
          finally:
@@ -2787,7 +2869,7 @@ let test_defines _ =
     let printer defines = List.map defines ~f:Define.show |> String.concat ~sep:"\n" in
     let source = Source.create statements in
     assert_equal
-      ~cmp:(List.equal Define.equal)
+      ~cmp:(List.equal [%compare.equal: Define.t])
       ~printer
       defines
       (Preprocessing.defines ~include_toplevels:true source |> List.map ~f:Node.value);
@@ -2802,7 +2884,7 @@ let test_defines _ =
     {
       Define.signature =
         {
-          name = + !&name;
+          name = !&name;
           parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
           decorators = [];
           return_annotation = None;
@@ -2813,14 +2895,14 @@ let test_defines _ =
         };
       captures = [];
       unbound_names = [];
-      body = [+Statement.Expression (+Expression.Float 1.0)];
+      body = [+Statement.Expression (+Expression.Constant (Constant.Float 1.0))];
     }
   in
   let create_toplevel body =
     {
       Define.signature =
         {
-          name = + !&"$toplevel";
+          name = !&"$toplevel";
           parameters = [];
           decorators = [];
           return_annotation = None;
@@ -2838,7 +2920,7 @@ let test_defines _ =
     {
       Define.signature =
         {
-          name = + !&(parent ^ ".$class_toplevel");
+          name = !&(parent ^ ".$class_toplevel");
           parameters = [];
           decorators = [];
           return_annotation = None;
@@ -2858,7 +2940,7 @@ let test_defines _ =
     {
       Define.signature =
         {
-          name = + !&"foo";
+          name = !&"foo";
           parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
           decorators = [];
           return_annotation = None;
@@ -2869,14 +2951,14 @@ let test_defines _ =
         };
       captures = [];
       unbound_names = [];
-      body = [+Statement.Expression (+Expression.Float 1.0)];
+      body = [+Statement.Expression (+Expression.Constant (Constant.Float 1.0))];
     }
   in
   let define =
     {
       Define.signature =
         {
-          name = + !&"foo";
+          name = !&"foo";
           parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
           decorators = [];
           return_annotation = None;
@@ -2887,12 +2969,17 @@ let test_defines _ =
         };
       captures = [];
       unbound_names = [];
-      body = [+Statement.Expression (+Expression.Float 1.0); +Statement.Define inner];
+      body =
+        [+Statement.Expression (+Expression.Constant (Constant.Float 1.0)); +Statement.Define inner];
     }
   in
   assert_defines [+Statement.Define define] [create_toplevel [+Statement.Define define]; define];
   let if_define =
-    { If.test = +Expression.Ellipsis; body = [+Statement.Define define]; orelse = [] }
+    {
+      If.test = +Expression.Constant Constant.Ellipsis;
+      body = [+Statement.Define define];
+      orelse = [];
+    }
   in
   assert_defines [+Statement.If if_define] [create_toplevel [+Statement.If if_define]];
 
@@ -2902,7 +2989,7 @@ let test_defines _ =
   let body = [+Statement.Define define_foo; +Statement.Define define_bar] in
   let parent =
     {
-      Class.name = + !&"Foo";
+      Class.name = !&"Foo";
       base_arguments = [];
       body;
       decorators = [];
@@ -2922,13 +3009,13 @@ let test_defines _ =
 let test_classes _ =
   let assert_classes statements class_defines =
     assert_equal
-      ~cmp:(List.equal Class.equal)
+      ~cmp:(List.equal [%compare.equal: Class.t])
       (Preprocessing.classes (Source.create statements) |> List.map ~f:Node.value)
       class_defines
   in
   let class_define =
     {
-      Class.name = + !&"foo";
+      Class.name = !&"foo";
       base_arguments = [];
       body =
         [
@@ -2936,7 +3023,7 @@ let test_classes _ =
              {
                signature =
                  {
-                   name = + !&"bar";
+                   name = !&"bar";
                    parameters = [];
                    decorators = [];
                    return_annotation = None;
@@ -2957,7 +3044,7 @@ let test_classes _ =
   assert_classes [+Statement.Class class_define] [class_define];
   let inner =
     {
-      Class.name = + !&"bar";
+      Class.name = !&"bar";
       base_arguments = [];
       body = [+Statement.Pass];
       decorators = [];
@@ -2966,7 +3053,7 @@ let test_classes _ =
   in
   let class_define =
     {
-      Class.name = + !&"foo";
+      Class.name = !&"foo";
       base_arguments = [];
       body = [+Statement.Class inner];
       decorators = [];
@@ -3380,14 +3467,6 @@ let test_sqlalchemy_declarative_base _ =
       class Base(metaclass=sqlalchemy.ext.declarative.DeclarativeMeta):
         pass
     |};
-  assert_expand
-    {|
-      Base = sqlalchemy_1_4.ext.declarative.declarative_base()
-    |}
-    {|
-      class Base(metaclass=sqlalchemy_1_4.ext.declarative.DeclarativeMeta):
-        pass
-    |};
   ()
 
 
@@ -3628,7 +3707,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = + !&"foo";
+               name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -3645,7 +3724,7 @@ let test_populate_nesting_define _ =
                   {
                     signature =
                       {
-                        name = + !&"bar";
+                        name = !&"bar";
                         parameters = [];
                         decorators = [];
                         return_annotation = None;
@@ -3658,13 +3737,13 @@ let test_populate_nesting_define _ =
                     unbound_names = [];
                     body =
                       [
-                        +Statement.Expression (+Expression.Integer 1);
-                        +Statement.Expression (+Expression.Integer 2);
+                        +Statement.Expression (+Expression.Constant (Constant.Integer 1));
+                        +Statement.Expression (+Expression.Constant (Constant.Integer 2));
                       ];
                   };
              ];
          };
-      +Statement.Expression (+Expression.Integer 3);
+      +Statement.Expression (+Expression.Constant (Constant.Integer 3));
     ];
 
   assert_populated
@@ -3680,7 +3759,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = + !&"foo";
+               name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -3697,7 +3776,7 @@ let test_populate_nesting_define _ =
                   {
                     signature =
                       {
-                        name = + !&"bar";
+                        name = !&"bar";
                         parameters = [];
                         decorators = [];
                         return_annotation = None;
@@ -3714,7 +3793,7 @@ let test_populate_nesting_define _ =
                   {
                     signature =
                       {
-                        name = + !&"baz";
+                        name = !&"baz";
                         parameters = [];
                         decorators = [];
                         return_annotation = None;
@@ -3742,7 +3821,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = + !&"foo";
+               name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -3759,7 +3838,7 @@ let test_populate_nesting_define _ =
                   {
                     signature =
                       {
-                        name = + !&"bar";
+                        name = !&"bar";
                         parameters = [];
                         decorators = [];
                         return_annotation = None;
@@ -3776,7 +3855,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = + !&"baz";
+                                 name = !&"baz";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -3809,7 +3888,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = + !&"foo";
+               name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -3824,14 +3903,14 @@ let test_populate_nesting_define _ =
              [
                +Statement.If
                   {
-                    If.test = +Expression.True;
+                    If.test = +Expression.Constant Constant.True;
                     body =
                       [
                         +Statement.Define
                            {
                              signature =
                                {
-                                 name = + !&"bar";
+                                 name = !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -3851,7 +3930,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = + !&"baz";
+                                 name = !&"baz";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -3884,7 +3963,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = + !&"foo";
+               name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -3899,14 +3978,14 @@ let test_populate_nesting_define _ =
              [
                +Statement.While
                   {
-                    While.test = +Expression.True;
+                    While.test = +Expression.Constant Constant.True;
                     body =
                       [
                         +Statement.Define
                            {
                              signature =
                                {
-                                 name = + !&"bar";
+                                 name = !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -3926,7 +4005,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = + !&"baz";
+                                 name = !&"baz";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -3956,7 +4035,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = + !&"foo";
+               name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -3971,7 +4050,7 @@ let test_populate_nesting_define _ =
              [
                +Statement.With
                   {
-                    With.items = [+Expression.True, None];
+                    With.items = [+Expression.Constant Constant.True, None];
                     async = false;
                     body =
                       [
@@ -3979,7 +4058,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = + !&"bar";
+                                 name = !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -4015,7 +4094,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = + !&"foo";
+               name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -4036,7 +4115,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = + !&"bar";
+                                 name = !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -4062,7 +4141,7 @@ let test_populate_nesting_define _ =
                                  {
                                    signature =
                                      {
-                                       name = + !&"baz";
+                                       name = !&"baz";
                                        parameters = [];
                                        decorators = [];
                                        return_annotation = None;
@@ -4084,7 +4163,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = + !&"qux";
+                                 name = !&"qux";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -4112,7 +4191,7 @@ let test_populate_nesting_define _ =
     [
       +Statement.Class
          {
-           Class.name = + !&"C";
+           Class.name = !&"C";
            base_arguments = [];
            decorators = [];
            body =
@@ -4121,7 +4200,7 @@ let test_populate_nesting_define _ =
                   {
                     signature =
                       {
-                        name = + !&"bar";
+                        name = !&"bar";
                         parameters = [];
                         decorators = [];
                         return_annotation = None;
@@ -4138,7 +4217,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = + !&"baz";
+                                 name = !&"baz";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -4170,7 +4249,7 @@ let test_populate_nesting_define _ =
          {
            signature =
              {
-               name = + !&"foo";
+               name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -4185,7 +4264,7 @@ let test_populate_nesting_define _ =
              [
                +Statement.Class
                   {
-                    Class.name = + !&"C";
+                    Class.name = !&"C";
                     base_arguments = [];
                     decorators = [];
                     body =
@@ -4194,7 +4273,7 @@ let test_populate_nesting_define _ =
                            {
                              signature =
                                {
-                                 name = + !&"bar";
+                                 name = !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -4211,7 +4290,7 @@ let test_populate_nesting_define _ =
                                     {
                                       signature =
                                         {
-                                          name = + !&"baz";
+                                          name = !&"baz";
                                           parameters = [];
                                           decorators = [];
                                           return_annotation = None;
@@ -4244,11 +4323,7 @@ let location (start_line, start_column) (stop_line, stop_column) =
 
 let test_populate_captures _ =
   let assert_captures ~expected source_text =
-    let source =
-      Test.parse ~handle:"test.py" source_text
-      |> Preprocessing.expand_format_string
-      |> Preprocessing.populate_captures
-    in
+    let source = Test.parse ~handle:"test.py" source_text |> Preprocessing.populate_captures in
     let defines =
       Preprocessing.defines
         ~include_toplevels:true
@@ -4261,7 +4336,7 @@ let test_populate_captures _ =
           sofar
           { Node.value = { Define.signature = { Define.Signature.name; _ }; captures; _ }; _ }
         =
-        Reference.Map.set sofar ~key:(Node.value name) ~data:captures
+        Reference.Map.set sofar ~key:name ~data:captures
       in
       List.fold defines ~init:Reference.Map.empty ~f:build_capture_map
     in
@@ -4304,7 +4379,9 @@ let test_populate_captures _ =
                      (Expression.Tuple
                         [
                           value_annotation;
-                          Node.create ~location:(location start stop) Expression.Ellipsis;
+                          Node.create
+                            ~location:(location start stop)
+                            (Expression.Constant Constant.Ellipsis);
                         ]);
                };
              ];
@@ -4410,7 +4487,7 @@ let test_populate_captures _ =
             ( "bar",
               DefineSignature
                 {
-                  Define.Signature.name = Node.create ~location:(location (3, 6) (3, 9)) !&"bar";
+                  Define.Signature.name = !&"bar";
                   parameters =
                     [
                       Node.create
@@ -4419,7 +4496,7 @@ let test_populate_captures _ =
                           value = None;
                           annotation = Some (int_annotation (3, 13) (3, 16));
                         }
-                        ~location:(location (3, 10) (3, 11));
+                        ~location:(location (3, 10) (3, 16));
                     ];
                   decorators = [];
                   return_annotation = Some (int_annotation (3, 21) (3, 24));
@@ -4728,7 +4805,7 @@ let test_populate_captures _ =
        def bar():
          return args[0]
   |}
-    ~expected:[!&"bar", ["args", Annotation (Some (tuple_any_annotation (2, 9) (2, 14)))]];
+    ~expected:[!&"bar", ["args", Annotation (Some (tuple_any_annotation (2, 10) (2, 14)))]];
   assert_captures
     {|
      def foo( *args: int):
@@ -4738,7 +4815,7 @@ let test_populate_captures _ =
     ~expected:
       [
         ( !&"bar",
-          ["args", Annotation (Some (tuple_int_annotation ((2, 9), (2, 14)) ((2, 16), (2, 19))))] );
+          ["args", Annotation (Some (tuple_int_annotation ((2, 10), (2, 19)) ((2, 16), (2, 19))))] );
       ];
   assert_captures
     {|
@@ -4749,7 +4826,7 @@ let test_populate_captures _ =
     ~expected:
       [
         ( !&"bar",
-          ["derp", Annotation (Some (tuple_int_annotation ((2, 9), (2, 14)) ((2, 16), (2, 19))))] );
+          ["derp", Annotation (Some (tuple_int_annotation ((2, 10), (2, 19)) ((2, 16), (2, 19))))] );
       ];
   assert_captures
     {|
@@ -4766,7 +4843,7 @@ let test_populate_captures _ =
        def bar():
          return kwargs["derp"]
   |}
-    ~expected:[!&"bar", ["kwargs", Annotation (Some (dict_any_annotation ((2, 9), (2, 17))))]];
+    ~expected:[!&"bar", ["kwargs", Annotation (Some (dict_any_annotation ((2, 11), (2, 17))))]];
   assert_captures
     {|
      def foo( **kwargs: int):
@@ -4776,7 +4853,8 @@ let test_populate_captures _ =
     ~expected:
       [
         ( !&"bar",
-          ["kwargs", Annotation (Some (dict_int_annotation ((2, 9), (2, 17)) ((2, 19), (2, 22))))] );
+          ["kwargs", Annotation (Some (dict_int_annotation ((2, 11), (2, 22)) ((2, 19), (2, 22))))]
+        );
       ];
   assert_captures
     {|
@@ -4784,7 +4862,7 @@ let test_populate_captures _ =
        def bar():
          return durp["derp"]
   |}
-    ~expected:[!&"bar", ["durp", Annotation (Some (dict_any_annotation ((2, 9), (2, 15))))]];
+    ~expected:[!&"bar", ["durp", Annotation (Some (dict_any_annotation ((2, 11), (2, 15))))]];
   assert_captures
     {|
      def foo( **kwargs: int):
@@ -5014,8 +5092,7 @@ let test_populate_captures _ =
             ( "decorator",
               DefineSignature
                 {
-                  Define.Signature.name =
-                    Node.create ~location:(location (3, 6) (3, 15)) !&"decorator";
+                  Define.Signature.name = !&"decorator";
                   parameters =
                     [
                       Node.create
@@ -5038,11 +5115,7 @@ let test_populate_captures _ =
 
 let test_populate_unbound_names _ =
   let assert_unbound_names ~expected source_text =
-    let source =
-      Test.parse ~handle:"test.py" source_text
-      |> Preprocessing.expand_format_string
-      |> Preprocessing.populate_unbound_names
-    in
+    let source = Test.parse ~handle:"test.py" source_text |> Preprocessing.populate_unbound_names in
     let defines =
       Preprocessing.defines
         ~include_toplevels:true
@@ -5055,7 +5128,7 @@ let test_populate_unbound_names _ =
           sofar
           { Node.value = { Define.signature = { Define.Signature.name; _ }; unbound_names; _ }; _ }
         =
-        Reference.Map.set sofar ~key:(Node.value name) ~data:unbound_names
+        Reference.Map.set sofar ~key:name ~data:unbound_names
       in
       List.fold defines ~init:Reference.Map.empty ~f:build_unbound_map
     in
@@ -5204,9 +5277,69 @@ let test_populate_unbound_names _ =
   assert_unbound_names
     {|
       def foo():
+        return [y for x in range(42)]
+    |}
+    ~expected:[!&"foo", ["y", location (3, 10) (3, 11)]];
+  assert_unbound_names
+    {|
+      def foo():
+        return [y for x, y in range(42)]
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      def foo():
         return [y for x in range(42) for y in x]
     |}
     ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      def foo():
+        return [y for x in range(42) if y > 0 for y in x]
+    |}
+    ~expected:[!&"foo", ["y", location (3, 34) (3, 35)]];
+  assert_unbound_names
+    {|
+      def foo():
+        return [y for x in range(42) if x > 0 for y in x if x > 0 and y > 0]
+    |}
+    ~expected:[!&"foo", []];
+  assert_unbound_names
+    {|
+      def foo():
+        return [x for x in x]
+    |}
+    ~expected:[!&"foo", ["x", location (3, 21) (3, 22)]];
+  assert_unbound_names
+    {|
+      def foo():
+        return [y for x in x for y in x]
+    |}
+    ~expected:[!&"foo", ["x", location (3, 21) (3, 22)]];
+  assert_unbound_names
+    {|
+      def foo():
+        return [y for x in y for y in x]
+    |}
+    ~expected:[!&"foo", ["y", location (3, 21) (3, 22)]];
+  assert_unbound_names
+    {|
+      def foo():
+        match x:
+            case base.attribute | Derp() if y:
+                return z
+    |}
+    ~expected:
+      [
+        ( !&"foo",
+          [
+            "Derp", location (4, 28) (4, 32);
+            "base", location (4, 11) (4, 15);
+            "x", location (3, 8) (3, 9);
+            "y", location (4, 38) (4, 39);
+            "z", location (5, 17) (5, 18);
+          ] );
+      ];
   assert_unbound_names
     {|
       def bar() -> None: ...
@@ -5305,6 +5438,15 @@ let test_populate_unbound_names _ =
         derp
     |}
     ~expected:[!&"foo", ["derp", location (4, 2) (4, 6)]];
+
+  assert_unbound_names
+    {|
+      #!/usr/bin/env python2
+      def foo(): # type: (...) -> List[derp]
+        pass
+    |}
+    ~expected:[toplevel_name, ["List", location (3, 0) (4, 2); "derp", location (3, 0) (4, 2)]];
+
   (* TODO(T80454071): This should raise an error about `nonexistent_inside_quotes`. *)
   assert_unbound_names
     {|
@@ -5316,6 +5458,7 @@ let test_populate_unbound_names _ =
       ) -> None: ...
     |}
     ~expected:[toplevel_name, ["nonexistent_outside_quotes", location (6, 12) (6, 38)]];
+
   (* Recursive alias reference should not be considered unbound. *)
   assert_unbound_names
     {|
@@ -5323,6 +5466,13 @@ let test_populate_unbound_names _ =
        Tree = Union[int, Tuple["Tree", "Tree"]]
     |}
     ~expected:[];
+
+  assert_unbound_names
+    {|
+      def foo() -> str:
+        return __path__
+    |}
+    ~expected:[!&"foo", []];
   ()
 
 
@@ -5579,6 +5729,36 @@ let test_mangle_private_attributes _ =
           def _C__bar(self):
             pass
     |};
+  assert_replace
+    {|
+      class Foo:
+        x = 1
+        __y = 1
+        def test(self) -> str:
+          return f"{self.x}" + f"{self.__y}" + "{self.__y}"
+    |}
+    {|
+      class Foo:
+        x = 1
+        _Foo__y = 1
+        def test(self) -> str:
+          return f"{self.x}" + f"{self._Foo__y}" + "{self.__y}"
+    |};
+  assert_replace
+    {|
+      class __A:
+        pass
+      class __B(__A):
+        def __bar(self):
+          pass
+    |}
+    {|
+      class __A:
+        pass
+      class __B(__A):
+        def _B__bar(self):
+          pass
+    |};
   ()
 
 
@@ -5663,128 +5843,6 @@ let test_six_metaclass_decorator _ =
     @six.add_metaclass(foo())
     class Make(Base1, Base2):
       existent: int = 1
-  |};
-  ()
-
-
-let test_expand_starred_type_variable_tuples _ =
-  let assert_expand ?(handle = "test.py") source expected =
-    let expected = parse ~handle ~coerce_special_methods:true expected in
-    let actual = parse ~handle source |> Preprocessing.expand_starred_type_variable_tuple in
-    assert_source_equal ~location_insensitive:true expected actual
-  in
-  assert_expand
-    {|
-    def foo( *args: *Ts) -> Ts: ...
-  |}
-    {|
-    def foo( *args: pyre_extensions.Unpack[Ts]) -> Ts: ...
-  |};
-  assert_expand
-    {|
-    class Tensor(Generic[*Ts]): ...
-  |}
-    {|
-    class Tensor(Generic[pyre_extensions.Unpack[Ts]]): ...
-  |};
-  assert_expand
-    {|
-    def foo( *args: *Ts) -> Tensor[int, *Ts]: ...
-  |}
-    {|
-    def foo( *args: pyre_extensions.Unpack[Ts]) -> Tensor[int, pyre_extensions.Unpack[Ts]]: ...
-  |};
-  assert_expand
-    {|
-    def foo(x: List[Tuple[*Ts]]) -> None: ...
-  |}
-    {|
-    def foo(x: List[Tuple[pyre_extensions.Unpack[Ts]]]) -> None: ...
-  |};
-  assert_expand
-    {|
-    class A:
-      class B(Generic[*Ts]): ...
-
-      def some_method(self, x: Tuple[*Ts]) -> None: ...
-  |}
-    {|
-    class A:
-      class B(Generic[pyre_extensions.Unpack[Ts]]): ...
-
-      def some_method(self, x: Tuple[pyre_extensions.Unpack[Ts]]) -> None: ...
-  |};
-  assert_expand
-    {|
-    class A(Generic[*Ts]):
-      def __init__(self, x: Tensor[*Ts]) -> None:
-        self.x: Tensor[*Ts] = x
-  |}
-    {|
-    class A(Generic[pyre_extensions.Unpack[Ts]]):
-      def __init__(self, x: Tensor[pyre_extensions.Unpack[Ts]]) -> None:
-        self.x: Tensor[pyre_extensions.Unpack[Ts]] = x
-  |};
-  assert_expand
-    {|
-    def foo() -> None:
-      def bar() -> Tuple[*Ts]: ...
-  |}
-    {|
-    def foo() -> None:
-      def bar() -> Tuple[pyre_extensions.Unpack[Ts]]: ...
-  |};
-  (* We don't know if an assignment value is a value or a type, so we don't transform it here. *)
-  assert_expand {|
-    SomeAlias = Tuple[*Ts]
-  |} {|
-    SomeAlias = Tuple[*Ts]
-  |};
-  assert_expand
-    {|
-    def foo() -> Tuple[int, *Tuple[str, bool]]: ...
-  |}
-    {|
-    def foo() -> Tuple[int, pyre_extensions.Unpack[Tuple[str, bool]]]: ...
-  |};
-  assert_expand
-    {|
-    def foo() -> Tuple[int, *Tuple[*Ts, *Ts]]: ...
-  |}
-    {|
-    def foo() -> Tuple[
-      int,
-      pyre_extensions.Unpack[Tuple[pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts]]]
-    ]: ...
-  |};
-  assert_expand
-    {|
-    f: typing.Callable[[int, *Ts, str], Tuple[int, *Ts, str]]
-  |}
-    {|
-    f: typing.Callable[
-        [int, pyre_extensions.Unpack[Ts], str], Tuple[int, pyre_extensions.Unpack[Ts], str]
-    ]
-  |};
-  assert_expand
-    {|
-    f: typing.Callable[
-        [typing.Callable[[int, *Ts, str], Tuple[int, *Ts, str]]],
-        typing.Callable[[int, *Ts, *Ts2], bool],
-    ]
-  |}
-    {|
-    f: typing.Callable[
-        [
-            typing.Callable[
-                [int, pyre_extensions.Unpack[Ts], str],
-                Tuple[int, pyre_extensions.Unpack[Ts], str],
-            ]
-        ],
-        typing.Callable[
-            [int, pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts2]], bool
-        ],
-    ]
   |};
   ()
 
@@ -5929,8 +5987,8 @@ let () =
          "expand_relative_imports" >:: test_expand_relative_imports;
          "expand_string_annotations" >:: test_expand_string_annotations;
          "expand_type_alias_body" >:: test_expand_type_alias_body;
-         "expand_format_string" >:: test_expand_format_string;
-         "qualify" >:: test_qualify;
+         "qualify_source" >:: test_qualify_source;
+         "quality_ast" >:: test_qualify_ast;
          "replace_version_specific_code" >:: test_replace_version_specific_code;
          "replace_platform_specific_code" >:: test_replace_platform_specific_code;
          "expand_type_checking_imports" >:: test_expand_type_checking_imports;
@@ -5949,7 +6007,6 @@ let () =
          "union_shorthand" >:: test_union_shorthand;
          "mangle_private_attributes" >:: test_mangle_private_attributes;
          "six_metaclass_decorator" >:: test_six_metaclass_decorator;
-         "expand_starred_type_variable_tuples" >:: test_expand_starred_type_variable_tuples;
          "expand_import_python_calls" >:: test_expand_import_python_calls;
          "expand_pytorch_register_buffer" >:: test_expand_pytorch_register_buffer;
        ]

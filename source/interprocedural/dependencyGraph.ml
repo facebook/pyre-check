@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -61,7 +61,7 @@ let empty_overrides = Reference.Map.empty
 
 (* Returns forest of nodes in reverse finish time order. *)
 let depth_first_search edges nodes =
-  let visited = Target.Hashable.Table.create ~size:(2 * List.length nodes) () in
+  let visited = Target.HashMap.create ~size:(2 * List.length nodes) () in
   let rec visit accumulator node =
     if Hashtbl.mem visited node then
       accumulator
@@ -79,13 +79,12 @@ let depth_first_search edges nodes =
 
 
 let reverse_edges edges =
-  let reverse_edges = Target.Hashable.Table.create () in
+  let reverse_edges = Target.HashMap.create () in
   let walk_reverse_edges ~key:caller ~data:callees =
     let walk_callees callee =
-      match Target.Hashable.Table.find reverse_edges callee with
-      | None -> Target.Hashable.Table.add_exn reverse_edges ~key:callee ~data:[caller]
-      | Some callers ->
-          Target.Hashable.Table.set reverse_edges ~key:callee ~data:(caller :: callers)
+      match Target.HashMap.find reverse_edges callee with
+      | None -> Target.HashMap.add_exn reverse_edges ~key:callee ~data:[caller]
+      | Some callers -> Target.HashMap.set reverse_edges ~key:callee ~data:(caller :: callers)
     in
     List.iter callees ~f:walk_callees
   in
@@ -93,7 +92,7 @@ let reverse_edges edges =
   let accumulate ~key ~data map =
     Target.Map.set map ~key ~data:(List.dedup_and_sort ~compare:Target.compare data)
   in
-  Target.Hashable.Table.fold reverse_edges ~init:Target.Map.empty ~f:accumulate
+  Target.HashMap.fold reverse_edges ~init:Target.Map.empty ~f:accumulate
 
 
 let reverse call_graph =
@@ -135,7 +134,7 @@ let pp formatter edges =
   Target.Map.to_alist edges |> List.sort ~compare |> List.iter ~f:pp_edge
 
 
-let dump call_graph ~configuration =
+let dump call_graph ~path =
   let module Buffer = Caml.Buffer in
   let buffer = Buffer.create 1024 in
   Buffer.add_string buffer "{\n";
@@ -159,12 +158,7 @@ let dump call_graph ~configuration =
   Buffer.add_string buffer "}";
 
   (* Write to file. *)
-  let path =
-    Path.create_relative
-      ~root:(Configuration.Analysis.log_directory configuration)
-      ~relative:"call_graph.json"
-  in
-  Log.warning "Emitting the contents of the call graph to `%s`" (Path.absolute path);
+  Log.warning "Emitting the contents of the call graph to `%s`" (PyrePath.absolute path);
   path |> File.create ~content:(Buffer.contents buffer) |> File.write
 
 
@@ -221,21 +215,15 @@ let from_overrides overrides =
 
 
 let create_overrides ~environment ~source =
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let resolution =
-    TypeCheck.resolution
-      global_resolution
-      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-      (module TypeCheck.DummyContext)
-  in
-  let resolution = Resolution.global_resolution resolution in
+  let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   if GlobalResolution.source_is_unit_test resolution ~source then
     Reference.Map.empty
   else
-    let class_method_overrides { Node.value = { Class.body; name; _ }; _ } =
-      let get_method_overrides class_ child_method =
+    let timer = Timer.start () in
+    let class_method_overrides { Node.value = { Class.body; name = class_name; _ }; _ } =
+      let get_method_overrides child_method =
         let method_name = Define.unqualified_name child_method in
-        GlobalResolution.overrides (Reference.show class_) ~name:method_name ~resolution
+        GlobalResolution.overrides (Reference.show class_name) ~name:method_name ~resolution
         >>= fun ancestor ->
         let parent_annotation = Annotated.Attribute.parent ancestor in
         let ancestor_parent =
@@ -244,7 +232,7 @@ let create_overrides ~environment ~source =
         (* This special case exists only for `type`. Our override lookup for a class C first looks
            at the regular MRO. If that fails, it looks for Type[C]'s MRO. However, when C is type,
            this causes a cycle to get registered. *)
-        if Reference.equal ancestor_parent class_ then
+        if Reference.equal ancestor_parent class_name then
           None
         else
           let method_name =
@@ -253,15 +241,24 @@ let create_overrides ~environment ~source =
             else
               method_name
           in
-          Some (Reference.create ~prefix:ancestor_parent method_name, class_)
+          Some (Reference.create ~prefix:ancestor_parent method_name, class_name)
       in
       let extract_define = function
         | { Node.value = Statement.Define define; _ } -> Some define
         | _ -> None
       in
-      let methods = List.filter_map ~f:extract_define body in
-      let class_name = Node.value name in
-      List.filter_map methods ~f:(get_method_overrides class_name)
+      let overrides =
+        body |> List.filter_map ~f:extract_define |> List.filter_map ~f:get_method_overrides
+      in
+      Statistics.performance
+        ~randomly_log_every:1000
+        ~always_log_time_threshold:1.0 (* Seconds *)
+        ~name:"Overrides built"
+        ~section:`DependencyGraph
+        ~normals:["class", Reference.show class_name]
+        ~timer
+        ();
+      overrides
     in
     let record_overrides map (ancestor_method, overriding_type) =
       let update_types = function

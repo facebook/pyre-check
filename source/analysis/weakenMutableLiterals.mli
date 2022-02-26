@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -22,13 +22,13 @@ type typed_dictionary_mismatch =
       field_name: Identifier.t;
       class_name: Identifier.t;
     }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, show, sexp]
 
 type weakened_type = {
   resolved: Type.t;
   typed_dictionary_errors: typed_dictionary_mismatch Node.t list;
 }
-[@@deriving eq, show]
+[@@deriving compare, show]
 
 val make_weakened_type
   :  ?typed_dictionary_errors:typed_dictionary_mismatch Node.t list ->

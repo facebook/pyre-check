@@ -6,7 +6,7 @@
     "sinks": [
       {
         "port": "formal(tainted_parameter)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -20,7 +20,7 @@
       {
         "port": "formal(parameter)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
+          { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
         ]
       }
     ],
@@ -34,7 +34,7 @@
     "sinks": [
       {
         "port": "formal(tainted_parameter)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -48,7 +48,7 @@
       {
         "port": "formal(parameter)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "ParameterUpdate0" } ] }
+          { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
         ]
       }
     ],
@@ -64,18 +64,24 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 33, "start": 20, "end": 34 } ],
             "root": {
               "filename": "obscure_tito.py",
               "line": 33,
               "start": 20,
               "end": 34
-            },
-            "tito": [ { "line": 33, "start": 20, "end": 34 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "special_source" },
-              { "always-via": "obscure" }
-            ]
+            }
           }
         ]
       }
@@ -91,18 +97,20 @@
         "port": "formal(parameter)",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "Ovr{obscure_tito.C::taint_parameter}" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "obscure_tito.py",
               "line": 38,
               "start": 22,
               "end": 31
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "Ovr{obscure_tito.C::taint_parameter}"
-              }
-            ]
+            }
           }
         ]
       }
@@ -118,18 +126,21 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 27, "start": 13, "end": 27 } ],
             "root": {
               "filename": "obscure_tito.py",
               "line": 27,
               "start": 13,
               "end": 27
-            },
-            "tito": [ { "line": 27, "start": 13, "end": 27 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }

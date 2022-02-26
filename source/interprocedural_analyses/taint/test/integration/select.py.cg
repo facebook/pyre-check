@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+select.$toplevel (fun) -> []
 select.first_index (fun) -> [_test_source (fun)]
 select.first_index_numeric (fun) -> [_test_source (fun)]
 select.first_index_unknown (fun) -> [_test_source (fun)]

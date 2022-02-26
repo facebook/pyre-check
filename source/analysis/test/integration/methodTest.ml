@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,6 +8,32 @@
 open Test
 open OUnit2
 open IntegrationTest
+
+let assert_type_errors
+    ?include_line_numbers
+    ?update_environment_with
+    ?show_error_traces
+    ~context
+    source
+    expected_errors
+  =
+  assert_type_errors
+    ~context
+    ~constraint_solving_style:Configuration.Analysis.ExpressionLevel
+    ?include_line_numbers
+    ?update_environment_with
+    ?show_error_traces
+    source
+    expected_errors;
+  assert_type_errors
+    ~context
+    ~constraint_solving_style:Configuration.Analysis.FunctionCallLevel
+    ?include_line_numbers
+    ?update_environment_with
+    ?show_error_traces
+    source
+    expected_errors
+
 
 let test_check_method_returns context =
   assert_type_errors
@@ -269,11 +295,10 @@ let test_check_inverse_operator context =
       x < optional_x
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `int.__lt__` but got `Optional[int]`.";
+      "Incompatible parameter type [6]: In call `int.__lt__`, for 1st positional only parameter \
+       expected `int` but got `Optional[int]`.";
       "Unsupported operand [58]: `<` is not supported for operand types `int` and `Optional[int]`.";
     ];
-  (* TODO(T69286342): Inferred literal types give the incompatible parameter type error. *)
   assert_type_errors
     ~context
     {|
@@ -284,8 +309,9 @@ let test_check_inverse_operator context =
     |}
     [
       "Revealed type [-1]: Revealed type for `y` is `typing_extensions.Literal[1]`.";
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `int.__add__` but got `str`.";
+      "Incomplete type [37]: Type `pyre_extensions.IntExpression[1 + N2]` inferred for `y` is \
+       incomplete, add an explicit annotation.";
+      "Unsupported operand [58]: `+` is not supported for operand types `int` and `str`.";
     ];
   assert_type_errors
     ~context
@@ -504,6 +530,45 @@ let test_check_inverse_operator context =
       z: F = F() >> E()
     |}
     [];
+  (* When an operator doesn't exist on either side, raise an undefined attribute error. *)
+  assert_type_errors
+    ~context
+    {|
+      class D: ...
+
+      y1: D
+      y1.__radd__(D())
+
+      # Wrong number of arguments.
+      y2: D
+      y2.__add__(1, 2)
+
+      my_union: str | D
+      my_union.__radd__(D())
+    |}
+    [
+      "Undefined attribute [16]: `D` has no attribute `__radd__`.";
+      "Undefined attribute [16]: `D` has no attribute `__add__`.";
+      "Undefined attribute [16]: `typing.Union` has no attribute `__radd__`.";
+    ];
+  (* When an object has type `Any`, we should not use the inverse operator since the `Any` object
+     might have the original operator. Just treat it as an unknown callable. *)
+  assert_type_errors
+    ~context
+    {|
+      from typing import Any
+
+      class D:
+        def __radd__(self, other: D) -> D: ...
+
+        def __call__(self, other: int) -> bool: ...
+
+      # pyre-ignore[2]: Deliberate use of `Any`.
+      def main(x: Any) -> None:
+        y = x.__add__(D())
+        reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Any`."];
   ()
 
 
@@ -521,8 +586,8 @@ let test_check_method_parameters context =
         input.substr('asdf')
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `str.substr` but got `str`.";
+      "Incompatible parameter type [6]: In call `str.substr`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -532,10 +597,10 @@ let test_check_method_parameters context =
         foo(1, 2)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st positional only parameter to call `foo` but got `int`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call "
-      ^ "`foo` but got `int`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `foo`, for 2nd positional only parameter expected \
+       `str` but got `int`.";
     ];
   assert_type_errors
     {|
@@ -546,8 +611,8 @@ let test_check_method_parameters context =
         baz(bar("derp"), x if x else 0)
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `bar` but got `str`.";
+      "Incompatible parameter type [6]: In call `bar`, for 1st positional only parameter expected \
+       `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -555,8 +620,8 @@ let test_check_method_parameters context =
         return input.substr('asdf')
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `str.substr` but got `str`.";
+      "Incompatible parameter type [6]: In call `str.substr`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -564,10 +629,10 @@ let test_check_method_parameters context =
         input.substr('asdf').substr('asdf')
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `str.substr` but got `str`.";
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `str.substr` but got `str`.";
+      "Incompatible parameter type [6]: In call `str.substr`, for 1st positional only parameter \
+       expected `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `str.substr`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -589,10 +654,10 @@ let test_check_method_parameters context =
       foo(b, a)
     |}
     [
-      "Incompatible parameter type [6]: Expected `str` for 1st positional only parameter "
-      ^ "to call `foo` but got `int`.";
-      "Incompatible parameter type [6]: Expected `str` for 2nd positional only parameter to call \
-       `foo` but got `int`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `foo`, for 2nd positional only parameter expected \
+       `str` but got `int`.";
     ];
 
   (* Special Methods *)
@@ -625,9 +690,9 @@ let test_check_method_parameters context =
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `x` has no type specified.";
-      "Incompatible parameter type [6]: Expected `typing.Tuple[typing.Type[Variable[typing._KT]], \
-       typing.Type[Variable[typing._VT_co](covariant)]]` for 1st positional only parameter to call \
-       `typing.GenericMeta.__getitem__` but got `typing.Type[int]`.";
+      "Incompatible parameter type [6]: In call `typing.GenericMeta.__getitem__`, for 1st \
+       positional only parameter expected `Tuple[Type[Variable[_KT]], \
+       Type[Variable[_VT_co](covariant)]]` but got `Type[int]`.";
     ];
   assert_strict_type_errors
     {|
@@ -876,8 +941,8 @@ let test_check_method_parameters context =
       foo( *xs )
     |}
     [
-      "4: Incompatible parameter type [6]: Expected `str` for 3rd positional only parameter to \
-       call `foo` but got `int`.";
+      "4: Incompatible parameter type [6]: In call `foo`, for 3rd positional only parameter \
+       expected `str` but got `int`.";
     ];
   ()
 
@@ -1599,6 +1664,31 @@ let test_check_method_resolution context =
         reveal_type(input[42])
     |}
     ["Revealed type [-1]: Revealed type for `input[42]` is `typing.Type[typing.Protocol[]]`."];
+  assert_type_errors
+    ~context
+    {|
+      from typing import overload, Generic, TypeVar
+
+      T = TypeVar("T")
+
+      class Foo(Generic[T]):
+        def __add__(self, other: Foo[T]) -> Foo[int]: ...
+
+      def main() -> None:
+        x: Foo[int]
+        good: Foo[int]
+        x += good
+
+        reveal_type(x.__iadd__)
+        bad: Foo[str]
+        x += bad
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x.__iadd__` is \
+       `BoundMethod[typing.Callable(Foo.__add__)[[Named(self, Foo[int]), Named(other, Foo[int])], \
+       Foo[int]], Foo[int]]`.";
+      "Unsupported operand [58]: `+` is not supported for operand types `Foo[int]` and `Foo[str]`.";
+    ];
   ()
 
 
@@ -1859,8 +1949,8 @@ let test_check_callable_protocols context =
     |}
     [
       "Incompatible return type [7]: Expected `None` but got "
-      ^ "`BoundMethod[typing.Callable(Foo.bar)[[Named(self, typing.Type[Foo]), Named(x, int)], \
-         str], typing.Type[Foo]]`.";
+      ^ "`BoundMethod[typing.Callable(Foo.bar)[[Named(self, Type[Foo]), Named(x, int)], str], \
+         Type[Foo]]`.";
     ];
   assert_type_errors
     {|
@@ -1870,8 +1960,8 @@ let test_check_callable_protocols context =
         return call("")
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `Call.__call__` but got `str`.";
+      "Incompatible parameter type [6]: In call `Call.__call__`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
 
   (* TODO(T54644856): Allow generator to initialize tuple so that this test does not expect any
@@ -1883,9 +1973,8 @@ let test_check_callable_protocols context =
         type(obj)(v for v in obj)
     |}
     [
-      "Incompatible parameter type [6]: Expected `typing.List[Variable[_T_co](covariant)]` for 1st \
-       positional only parameter to call `tuple.__init__` but got `typing.Generator[int, None, \
-       None]`.";
+      "Incompatible parameter type [6]: In call `tuple.__init__`, for 1st positional only \
+       parameter expected `List[Variable[_T_co](covariant)]` but got `Generator[int, None, None]`.";
     ];
 
   (* TODO(T54644856): Allow generator to initialize tuple so that this test does not expect any
@@ -1896,10 +1985,8 @@ let test_check_callable_protocols context =
         tuple(v for v in (1, 2, 3))
     |}
     [
-      "Incompatible parameter type [6]: Expected "
-      ^ "`typing.List[Variable[_T_co](covariant)]` for 1st "
-      ^ "positional only parameter to call `tuple.__init__` but got "
-      ^ "`typing.Generator[int, None, None]`.";
+      "Incompatible parameter type [6]: In call `tuple.__init__`, for 1st positional only \
+       parameter expected `List[Variable[_T_co](covariant)]` but got `Generator[int, None, None]`.";
     ];
   assert_type_errors
     {|
@@ -1978,7 +2065,7 @@ let test_check_callable_protocols context =
     |}
     [
       "Incompatible variable type [9]: f is declared to have type `typing.Callable[[int], C]` but \
-       is used as type `typing.Type[C]`.";
+       is used as type `Type[C]`.";
     ];
   assert_default_type_errors
     {|
@@ -2034,8 +2121,8 @@ let test_check_explicit_method_call context =
       Class.method(object(), 1)
     |}
     [
-      "Incompatible parameter type [6]: Expected `Class` for 1st positional only parameter to call \
-       `Class.method` but got `object`.";
+      "Incompatible parameter type [6]: In call `Class.method`, for 1st positional only parameter \
+       expected `Class` but got `object`.";
     ]
 
 
@@ -2342,8 +2429,8 @@ let test_check_static context =
         Foo.foo('asdf')
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `Foo.foo` but got `str`.";
+      "Incompatible parameter type [6]: In call `Foo.foo`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -2357,8 +2444,8 @@ let test_check_static context =
 
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `Foo.foo` but got `str`.";
+      "Incompatible parameter type [6]: In call `Foo.foo`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
 
   (* Static methods throw override errors *)
@@ -2391,8 +2478,8 @@ let test_check_static context =
         Foo.foo('asdf')
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 1st positional only parameter to call \
-       `Foo.foo` but got `str`.";
+      "Incompatible parameter type [6]: In call `Foo.foo`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -2411,8 +2498,8 @@ let test_check_static context =
           cls.classmethod('1234')
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `Foo.classmethod` but got `str`.";
+      "Incompatible parameter type [6]: In call `Foo.classmethod`, for 1st positional only \
+       parameter expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -2425,8 +2512,8 @@ let test_check_static context =
           cls.staticmethod('1234')
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `Foo.staticmethod` but got `str`.";
+      "Incompatible parameter type [6]: In call `Foo.staticmethod`, for 1st positional only \
+       parameter expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -2438,8 +2525,8 @@ let test_check_static context =
           cls.instancemethod(Foo(), '1234')
     |}
     [
-      "Incompatible parameter type [6]: Expected `int` for 2nd positional only parameter to call \
-       `Foo.instancemethod` but got `str`.";
+      "Incompatible parameter type [6]: In call `Foo.instancemethod`, for 2nd positional only \
+       parameter expected `int` but got `str`.";
     ];
 
   (* Special classmethods are treated properly without a decorator. *)
@@ -2477,8 +2564,8 @@ let test_check_setitem context =
         x["foo"] = "bar"
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 2nd positional only parameter to call `dict.__setitem__` but got `str`.";
+      "Incompatible parameter type [6]: In call `dict.__setitem__`, for 2nd positional only \
+       parameter expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -2490,8 +2577,8 @@ let test_check_setitem context =
     |}
     [
       "Undefined attribute [16]: `A` has no attribute `__setitem__`.";
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 2nd positional only parameter to call `dict.__setitem__` but got `str`.";
+      "Incompatible parameter type [6]: In call `dict.__setitem__`, for 2nd positional only \
+       parameter expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -2500,8 +2587,8 @@ let test_check_setitem context =
         x["foo"]["bar"] = "baz"
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 2nd positional only parameter to call `dict.__setitem__` but got `str`.";
+      "Incompatible parameter type [6]: In call `dict.__setitem__`, for 2nd positional only \
+       parameter expected `int` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -2510,8 +2597,8 @@ let test_check_setitem context =
         x[7] = 7
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st positional only parameter to call `dict.__setitem__` but got `int`.";
+      "Incompatible parameter type [6]: In call `dict.__setitem__`, for 1st positional only \
+       parameter expected `str` but got `int`.";
     ]
 
 
@@ -2664,8 +2751,8 @@ let test_check_enter context =
 
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `str` for 1st positional only parameter to call `expect_string` but got `int`.";
+      "Incompatible parameter type [6]: In call `expect_string`, for 1st positional only parameter \
+       expected `str` but got `int`.";
     ]
 
 
@@ -2779,6 +2866,9 @@ let test_check_private_member_access context =
         z = child.__private
     |}
     [
+      "Undefined attribute [16]: Item `Base` of `typing.Union[Base, Child]` has no attribute \
+       `__private`. `__private` looks like a private attribute, which is not accessible from \
+       outside its parent class.";
       "Undefined attribute [16]: `Base` has no attribute `__private`. `__private` looks like a \
        private attribute, which is not accessible from outside its parent class.";
       "Undefined attribute [16]: `Child` has no attribute `__private`. `__private` looks like a \
@@ -2971,83 +3061,30 @@ let test_fixpoint_threshold context =
       def foo() -> bool: ...
 
       def bar() -> None:
-          u = 42
-
-          if foo():
-              x1 = foo()
-              if x1:
-                  x2 = foo()
-                  if x2:
-                      pass
-              else:
-                  pass
-
-              if foo():
-                  pass
-
-              if foo():
-                  x3 = foo()
-                  if x3:
-                      x4 = foo()
-                      if foo():
-                          pass
-                  if foo():
-                      pass
-              pass
-
-          if foo():
-              if foo():
-                  x5 = foo()
-              else:
-                  x6 = foo()
-                  if foo():
-                      pass
-                  else:
-                      pass
-
-          reveal_type(u)
-
-          if foo():
-              if foo():
-                  x7 = foo()
-              pass
-              if foo():
-                  pass
-
-          reveal_type(u)
-
-          if foo():
-              x8 = foo()
-              if x8:
-                  x9 = foo()
-                  if foo():
-                      pass
-                  pass
-              pass
-
-
-          reveal_type(u)
-
-          if foo():
-              x10 = await foo()
-
-              if x10 is not None:
-                  if foo():
-                      pass
-                  elif foo():
-                      pass
-
-          final_type = u
-          reveal_type(final_type)
+          l = [(0, 1)]
+          for x in range(1000000):
+              l = [(0, l*x)]
+          reveal_type(l)
     |}
     [
       "Analysis failure [30]: Pyre gave up inferring types for some variables because function \
        `test.bar` was too complex.";
-      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
-      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
-      "Revealed type [-1]: Revealed type for `u` is `typing_extensions.Literal[42]`.";
-      "Incompatible awaitable type [12]: Expected an awaitable but got `bool`.";
-      "Revealed type [-1]: Revealed type for `final_type` is `unknown`.";
+      "Unsupported operand [58]: `*` is not supported for operand types `unknown` and `int`.";
+      "Revealed type [-1]: Revealed type for `l` is `unknown`.";
+    ];
+  assert_type_errors
+    ~context
+    {|
+      from typing import Set
+      def foo() -> None:
+        for _ in range(10000):
+          s: "Set[Missing]" = set()
+          reveal_type(s)
+    |}
+    [
+      "Undefined import [21]: Could not find a name `Set` defined in module `typing`.";
+      "Undefined or invalid type [11]: Annotation `Missing` is not defined as a type.";
+      "Revealed type [-1]: Revealed type for `s` is `Set[Variable[_T]]`.";
     ];
   ()
 

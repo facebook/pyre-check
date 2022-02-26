@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -60,7 +60,7 @@ module type Builder = sig
   val add_callee
     :  global_resolution:GlobalResolution.t ->
     target:Type.t option ->
-    callables:Type.Callable.t list option ->
+    callables:Type.Callable.t list ->
     arguments:Expression.Call.Argument.t list ->
     dynamic:bool ->
     qualifier:Reference.t ->

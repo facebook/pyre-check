@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -42,6 +42,8 @@ module ConstraintsSet : sig
 
   val solve : ConstraintsSet.t -> global_resolution:t -> ConstraintsSet.Solution.t option
 
+  type order = ConstraintsSet.order
+
   module Solution : sig
     type t = ConstraintsSet.Solution.t
   end
@@ -61,12 +63,6 @@ val check_invalid_type_parameters
   AttributeResolution.type_parameters_mismatch list * Type.t
 
 val parse_reference : ?allow_untracked:bool -> t -> Reference.t -> Type.t
-
-val join : t -> Type.t -> Type.t -> Type.t
-
-val meet : t -> Type.t -> Type.t -> Type.t
-
-val widen : t -> widening_threshold:int -> previous:Type.t -> next:Type.t -> iteration:int -> Type.t
 
 val legacy_resolve_exports : t -> reference:Reference.t -> Reference.t
 
@@ -110,7 +106,17 @@ val function_definitions : t -> Reference.t -> Define.t Node.t list option
 
 val is_suppressed_module : t -> Reference.t -> bool
 
+val full_order : t -> ConstraintsSet.order
+
 val less_or_equal : t -> left:Type.t -> right:Type.t -> bool
+
+val join : t -> Type.t -> Type.t -> Type.t
+
+val meet : t -> Type.t -> Type.t -> Type.t
+
+val widen : t -> widening_threshold:int -> previous:Type.t -> next:Type.t -> iteration:int -> Type.t
+
+val types_are_orderable : t -> Type.t -> Type.t -> bool
 
 (* Only for use in monkey check. *)
 val is_compatible_with : t -> left:Type.t -> right:Type.t -> bool
@@ -221,7 +227,7 @@ val signature_select
   arguments:AttributeResolution.Argument.t list ->
   callable:Type.Callable.t ->
   self_argument:Type.t option ->
-  SignatureSelectionTypes.sig_t
+  SignatureSelectionTypes.instantiated_return_annotation
 
 val resolve_define
   :  resolution:t ->
@@ -251,4 +257,10 @@ val overrides
 (* If the given type is a subtype of generic type `AsName[X]`, return X *)
 val extract_type_parameters : t -> source:Type.t -> target:string -> Type.t list option
 
+val type_of_iteration_value : global_resolution:t -> Type.t -> Type.t option
+
+val type_of_generator_send_and_return : global_resolution:t -> Type.t -> Type.t * Type.t
+
 val define : t -> Reference.t -> Define.t option
+
+val refine : global_resolution:t -> Annotation.t -> Type.t -> Annotation.t

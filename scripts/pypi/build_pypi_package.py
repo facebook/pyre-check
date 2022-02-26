@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Sequence
 
 # just validate that it's available, but we don't invoke it directly
 import wheel as _wheel  # noqa
@@ -22,18 +22,6 @@ from .setup import run as run_setup
 
 
 MODULE_NAME = "pyre_check"
-RUNTIME_DEPENDENCIES = [
-    "async-generator",
-    "click",
-    "dataclasses;python_version=='3.6'",
-    "dataclasses-json",
-    "libcst>=0.3.6",
-    "psutil",
-    "pyre-extensions",
-    "pywatchman",
-    "tabulate",
-    "typing-extensions",
-]
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -67,7 +55,7 @@ def _mkdir_and_init(module_path: Path, version: Optional[str] = None) -> None:
     else:
         init_path.write_text(
             f"""\
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -208,16 +196,19 @@ def _create_setup_configuration(build_root: Path) -> None:
 
 
 def _create_setup_py(
-    pyre_directory: Path, version: str, build_root: Path, nightly: bool
+    pyre_directory: Path,
+    version: str,
+    build_root: Path,
+    dependencies: Sequence[str],
+    nightly: bool,
 ) -> None:
     path = pyre_directory / "scripts/pypi/setup.py"
     setup_template = path.read_text()
-    runtime_dependencies = json.dumps(RUNTIME_DEPENDENCIES)
     setup_contents = setup_template.format(
         PACKAGE_NAME="pyre-check-nightly" if nightly else "pyre-check",
         PACKAGE_VERSION=version,
         MODULE_NAME=MODULE_NAME,
-        RUNTIME_DEPENDENCIES=runtime_dependencies,
+        RUNTIME_DEPENDENCIES=json.dumps(dependencies),
     )
 
     (build_root / "setup.py").write_text(setup_contents)
@@ -226,6 +217,7 @@ def _create_setup_py(
 def _run_setup_command(
     pyre_directory: Path,
     build_root: Path,
+    dependencies: Sequence[str],
     version: str,
     command: str,
     nightly: bool,
@@ -238,7 +230,8 @@ def _run_setup_command(
         package_name="pyre-check-nightly" if nightly else "pyre-check",
         package_version=version,
         module_name=MODULE_NAME,
-        runtime_dependencies=RUNTIME_DEPENDENCIES,
+        # pyre-fixme[6]: Expected `List[str]` for 4th param but got `Sequence[str]`.
+        runtime_dependencies=dependencies,
         long_description=long_description,
         script_name="setup.py",
         script_args=[command],
@@ -289,10 +282,15 @@ def build_pypi_package(
             Have you run 'make' in the toplevel directory?"
         )
 
+    dependencies = [
+        line.strip()
+        for line in (pyre_directory / "requirements.txt").read_text().split("\n")
+        if len(line) > 0
+    ]
     with tempfile.TemporaryDirectory() as build_root:
         build_path = Path(build_root)
         _add_init_files(build_path, version)
-        _create_setup_py(pyre_directory, version, build_path, nightly)
+        _create_setup_py(pyre_directory, version, build_path, dependencies, nightly)
 
         _sync_python_files(pyre_directory, build_path)
         _sync_pysa_stubs(pyre_directory, build_path)
@@ -305,14 +303,28 @@ def build_pypi_package(
 
         _patch_version(version, build_path)
 
-        # pyre-fixme[6]: Expected `Path` for 2nd param but got `str`.
-        _run_setup_command(pyre_directory, build_root, version, "sdist", nightly)
+        _run_setup_command(
+            pyre_directory,
+            # pyre-fixme[6]: Expected `Path` for 2nd param but got `str`.
+            build_root,
+            dependencies,
+            version,
+            "sdist",
+            nightly,
+        )
         _create_dist_directory(pyre_directory)
         _create_setup_configuration(build_path)
         twine_check([path.as_posix() for path in (build_path / "dist").iterdir()])
 
-        # pyre-fixme[6]: Expected `Path` for 2nd param but got `str`.
-        _run_setup_command(pyre_directory, build_root, version, "bdist_wheel", nightly)
+        _run_setup_command(
+            pyre_directory,
+            # pyre-fixme[6]: Expected `Path` for 2nd param but got `str`.
+            build_root,
+            dependencies,
+            version,
+            "bdist_wheel",
+            nightly,
+        )
         wheel_destination, distribution_destination = _rename_and_move_artifacts(
             pyre_directory, build_path
         )

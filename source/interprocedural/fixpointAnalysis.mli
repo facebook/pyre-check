@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19,7 +19,7 @@ val initialize_models
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   callables:Target.callable_t list ->
   stubs:Target.callable_t list ->
-  AnalysisResult.model_t AnalysisResult.InitializedModels.t
+  AnalysisResult.model_t AnalysisResult.initialize_result
 
 module Testing : sig
   val record_initial_models

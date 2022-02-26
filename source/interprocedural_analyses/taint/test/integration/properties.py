@@ -1,10 +1,10 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-from typing import Optional, TypeVar
+from typing import Optional, TypeVar, Union
 
 from pyre_extensions import classproperty
 
@@ -69,7 +69,6 @@ class TaintedGetterAndSetter:
     def uses_property(self):
         return self.my_property
 
-    # TODO(T52657355): Handle the property write here.
     def writes_to_property(self):
         self.my_property = _test_source()
 
@@ -161,3 +160,55 @@ def property_setter_in_constructor():
     obj = PropertySetterInConstructor(_test_source())
     _test_sink(obj.x)
     _test_sink(obj.underlying)
+
+
+class PropertyCallableReturn:
+    def __init__(self, x: str) -> None:
+        self.x = x
+
+    def __call__(self, y):
+        _test_sink(self.x)
+        _test_sink(y)
+        return x
+
+
+class PropertyCallable:
+    def __init__(self, z: str) -> None:
+        self.z = z
+
+    @property
+    def attribute(self) -> PropertyCallableReturn:
+        _test_sink(self.z)
+        return PropertyCallableReturn(_test_source())
+
+
+def test_property_callable():
+    obj = PropertyCallable(_test_source())
+    return obj.attribute(_test_source())
+
+
+class RegularAttribute:
+    def __init__(self, my_property: str) -> None:
+        self.my_property = my_property
+
+
+def test_union_property_attribute_source():
+    obj: Union[TaintedGetterAndSetter, RegularAttribute]
+    if 1 > 2:
+        obj = TaintedGetterAndSetter()
+    else:
+        obj = RegularAttribute(_test_source())
+    return obj.my_property
+
+
+def test_union_property_attribute_sink(x):
+    obj: Union[TaintedGetterAndSetter, RegularAttribute]
+    if 1 > 2:
+        obj = TaintedGetterAndSetter()
+    else:
+        obj = RegularAttribute(x)
+    _test_sink(obj.my_property)
+
+
+def test_getattr_on_property(x: TaintedGetterAndSetter):
+    _test_sink(getattr(x, "my_property", ""))

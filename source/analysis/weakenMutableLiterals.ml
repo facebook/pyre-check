@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -24,13 +24,13 @@ type typed_dictionary_mismatch =
       field_name: Identifier.t;
       class_name: Identifier.t;
     }
-[@@deriving compare, eq, show, sexp]
+[@@deriving compare, show, sexp]
 
 type weakened_type = {
   resolved: Type.t;
   typed_dictionary_errors: typed_dictionary_mismatch Node.t list;
 }
-[@@deriving eq, show]
+[@@deriving compare, show]
 
 let typed_dictionary_errors { typed_dictionary_errors; _ } = typed_dictionary_errors
 
@@ -447,15 +447,17 @@ let rec weaken_mutable_literals
   | ( Some
         {
           Node.value =
-            Expression.String { StringLiteral.kind = StringLiteral.String; value = _ } as expression;
+            Expression.Constant
+              (Constant.String { StringLiteral.kind = StringLiteral.String; value = _ }) as
+            expression;
           _;
         },
       Type.Primitive "str",
       Type.Literal (Type.String _) )
-  | ( Some { Node.value = Expression.Integer _ as expression; _ },
+  | ( Some { Node.value = Expression.Constant (Constant.Integer _) as expression; _ },
       Type.Primitive "int",
       Type.Literal (Type.Integer _) )
-  | ( Some { Node.value = (Expression.True | Expression.False) as expression; _ },
+  | ( Some { Node.value = Expression.Constant Constant.(True | False) as expression; _ },
       Type.Primitive "bool",
       Type.Literal (Type.Boolean _) )
   | ( Some { Node.value = Expression.Name (Attribute _) as expression; _ },

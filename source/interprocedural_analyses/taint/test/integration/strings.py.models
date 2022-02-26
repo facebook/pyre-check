@@ -15,19 +15,24 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 18, "start": 24, "end": 38 } ],
             "root": {
               "filename": "strings.py",
               "line": 18,
               "start": 24,
               "end": 38
-            },
-            "tito": [ { "line": 18, "start": 24, "end": 38 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -35,23 +40,31 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "strings.py",
               "line": 19,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
     "features": [
-      { "always-via": "tito" },
       { "always-via": "string_concat_lhs" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.bad_1:5002:0:Call|_test_sink|0|formal(arg):9374fc8a8cb1be75930cf176292d491b"
     ]
   }
 }
@@ -71,19 +84,24 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 23, "start": 24, "end": 38 } ],
             "root": {
               "filename": "strings.py",
               "line": 23,
               "start": 24,
               "end": 38
-            },
-            "tito": [ { "line": 23, "start": 24, "end": 38 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -91,23 +109,31 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "strings.py",
               "line": 24,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
     "features": [
-      { "always-via": "tito" },
       { "always-via": "string_concat_rhs" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.bad_2:5002:0:Call|_test_sink|0|formal(arg):8a88866aec2c37a9b55000f2781ba890"
     ]
   }
 }
@@ -127,34 +153,44 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 29, "start": 28, "end": 42 } ],
             "root": {
               "filename": "strings.py",
               "line": 29,
               "start": 28,
               "end": 42
-            },
-            "tito": [ { "line": 29, "start": 28, "end": 42 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_source" }
-            ]
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 31, "start": 28, "end": 42 } ],
             "root": {
               "filename": "strings.py",
               "line": 31,
               "start": 28,
               "end": 42
-            },
-            "tito": [ { "line": 31, "start": 28, "end": 42 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -162,24 +198,32 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "strings.py",
               "line": 32,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
     "features": [
-      { "always-via": "tito" },
       { "via": "string_concat_rhs" },
       { "via": "string_concat_lhs" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.either:5002:0:Call|_test_sink|0|formal(arg):66d28ba04f85ddfe00f2392ff53ff9a5"
     ]
   }
 }
@@ -199,29 +243,39 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 37, "start": 28, "end": 42 } ],
             "root": {
               "filename": "strings.py",
               "line": 37,
               "start": 28,
               "end": 42
-            },
-            "tito": [ { "line": 37, "start": 28, "end": 42 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_source" }
-            ]
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "strings.py",
               "line": 39,
               "start": 12,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -229,23 +283,31 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "strings.py",
               "line": 40,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
     "features": [
-      { "via": "tito" },
       { "via": "string_concat_lhs" },
+      { "via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.maybe_lhs:5002:0:Call|_test_sink|0|formal(arg):3407bb568c3164f7884d70dd2c73f63d"
     ]
   }
 }
@@ -265,29 +327,39 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "strings.py",
               "line": 45,
               "start": 12,
               "end": 26
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           },
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 47, "start": 28, "end": 42 } ],
             "root": {
               "filename": "strings.py",
               "line": 47,
               "start": 28,
               "end": 42
-            },
-            "tito": [ { "line": 47, "start": 28, "end": 42 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -295,23 +367,31 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "strings.py",
               "line": 48,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
     "features": [
-      { "via": "tito" },
       { "via": "string_concat_rhs" },
+      { "via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.maybe_rhs:5002:0:Call|_test_sink|0|formal(arg):a49a7406fb24e2fd499b036831901f9d"
     ]
   }
 }
@@ -331,19 +411,24 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 54, "start": 9, "end": 10 } ],
             "root": {
               "filename": "strings.py",
               "line": 52,
               "start": 8,
               "end": 22
-            },
-            "tito": [ { "line": 54, "start": 9, "end": 10 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -351,23 +436,31 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "strings.py",
               "line": 55,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
     "features": [
-      { "always-via": "tito" },
       { "always-via": "string_concat_rhs" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "strings.through_iadd:5002:0:Call|_test_sink|0|formal(arg):2e73aa579eafd32fe25063c5c69e1bb6"
     ]
   }
 }
@@ -380,9 +473,14 @@
         "port": "formal(other)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "string_concat_rhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_rhs" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       },
@@ -390,9 +488,14 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -408,13 +511,15 @@
         "port": "formal(source)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 10, "start": 11, "end": 17 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" }
-            ]
+            "decl": null
           }
         ]
       }
@@ -430,13 +535,15 @@
         "port": "formal(source)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 14, "start": 17, "end": 23 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" }
-            ]
+            "decl": null
           }
         ]
       }
@@ -452,19 +559,25 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 68, "start": 22, "end": 23 } ],
             "root": {
               "filename": "strings.py",
               "line": 69,
               "start": 15,
               "end": 16
-            },
-            "tito": [ { "line": 68, "start": 22, "end": 23 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "special_sink" },
-              { "always-via": "obscure" },
-              { "always-via": "format-string" }
-            ]
+            }
           }
         ]
       }
@@ -480,19 +593,25 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 64, "start": 25, "end": 26 } ],
             "root": {
               "filename": "strings.py",
               "line": 63,
               "start": 8,
               "end": 22
-            },
-            "tito": [ { "line": 64, "start": 25, "end": 26 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "special_source" },
-              { "always-via": "obscure" },
-              { "always-via": "format-string" }
-            ]
+            }
           }
         ]
       }
@@ -508,13 +627,16 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 59, "start": 25, "end": 26 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [
-              { "always-via": "obscure" },
-              { "always-via": "format-string" }
-            ]
+            "decl": null
           }
         ]
       }

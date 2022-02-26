@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -63,10 +63,12 @@ def test_new_thing():
 
 class BothNewAndInit:
     def __new__(cls):
-        pass
+        obj = super(BothNewAndInit, cls).__new__()
+        obj.foo = _test_source()
+        return obj
 
     def __init__(self):
-        return
+        _test_sink(self.foo)
 
 
 def test_both_new_and_init_callgraph():

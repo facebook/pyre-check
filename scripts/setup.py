@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -28,14 +28,15 @@ DEPENDENCIES = [
     "base64.3.5.0",
     "core.v0.14.1",
     "re2.v0.14.0",
-    "dune.2.8.2",
+    "dune.2.9.1",
     "yojson.1.7.0",
     "ppx_deriving_yojson.3.6.1",
     "ounit.2.2.4",
-    "menhir.20201216",
-    "lwt.5.4.0",
+    "menhir.20211230",
+    "lwt.5.5.0",
     "ounit2-lwt.2.2.4",
-    "pyre-ast.0.1.3",
+    "pyre-ast.0.1.8",
+    "mtime.1.3.0",
 ]
 
 
@@ -152,11 +153,15 @@ class Setup(NamedTuple):
             ]
         )
         opam_environment_variables: Dict[str, str] = {}
+        # `opam env` produces lines of two forms:
+        # - comments like ": this comment, starts with a colon;"
+        # - lines defining and exporting env vars like "ENV_VAR=value; export ENV_VAR;"
         for line in opam_env_result.split("\n"):
-            environment_variable, quoted_value = line.split(";")[0].split("=")
-            value = quoted_value[1:-1]
-            LOG.info(f'{environment_variable}="{value}"')
-            opam_environment_variables[environment_variable] = value
+            if not line.startswith(":"):
+                environment_variable, quoted_value = line.split(";")[0].split("=")
+                value = quoted_value[1:-1]
+                LOG.info(f'{environment_variable}="{value}"')
+                opam_environment_variables[environment_variable] = value
         return opam_environment_variables
 
     def initialize_opam_switch(self) -> Mapping[str, str]:

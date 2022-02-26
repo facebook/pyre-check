@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,10 +11,7 @@ open Pyre
 open Expression
 module PreviousEnvironment = EmptyStubEnvironment
 
-let preprocess_alias_value value =
-  Preprocessing.expand_strings_in_annotation_expression value
-  |> Preprocessing.expand_starred_variadic_in_annotation_expression
-
+let preprocess_alias_value value = Preprocessing.expand_strings_in_annotation_expression value
 
 module AliasValue = struct
   type t = Type.alias option
@@ -207,8 +204,7 @@ let extract_alias unannotated_global_environment name ~dependency =
               Some (TypeAlias { target = name; value })
             else
               None
-        | Name (Name.Identifier "None"), _ -> None
-        | ( (Call _ | Name _ | String _),
+        | ( (Call _ | Name _ | Constant (Constant.String _)),
             Some
               {
                 Node.value =

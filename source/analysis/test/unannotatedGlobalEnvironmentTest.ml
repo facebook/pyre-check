@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -312,7 +312,11 @@ let test_simple_global_registration context =
        (SimpleAssign
           {
             explicit_annotation = None;
-            value = create_with_location (Expression.Expression.Integer 8) (3, 8) (3, 9);
+            value =
+              create_with_location
+                (Expression.Expression.Constant (Expression.Constant.Integer 8))
+                (3, 8)
+                (3, 9);
             target_location =
               { Location.start = { line = 3; column = 2 }; stop = { line = 3; column = 5 } }
               |> Location.with_module ~qualifier:(Reference.create "test");
@@ -462,21 +466,21 @@ let test_updates context =
         ~relative
       =
       let content = trim_extra_indentation content in
-      let file = File.create ~content (Path.create_relative ~root:local_root ~relative) in
+      let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
       File.write file
     in
     let delete_file
         { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
         relative
       =
-      Path.create_relative ~root:local_root ~relative |> Path.absolute |> Core.Unix.remove
+      PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
     in
     if Option.is_some original_source then
       delete_file project "test.py";
     new_source >>| add_file project ~relative:"test.py" |> Option.value ~default:();
     let { ScratchProject.module_tracker; _ } = project in
     let { Configuration.Analysis.local_root; _ } = configuration in
-    let path = Path.create_relative ~root:local_root ~relative:"test.py" in
+    let path = PyrePath.create_relative ~root:local_root ~relative:"test.py" in
     let update_result =
       ModuleTracker.update ~configuration ~paths:[path] module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
@@ -979,12 +983,12 @@ let test_updates context =
                    create_simple_signature
                      ~start:(2, 0)
                      ~stop:(3, 17)
-                     (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                     !&"test.foo"
                      (Some
                         (node
                            ~start:(2, 13)
                            ~stop:(2, 17)
-                           (Expression.Name (Name.Identifier "None"))));
+                           (Expression.Constant Constant.NoneLiteral)));
                  ]) );
       ]
     ~expected_triggers:[]
@@ -999,12 +1003,12 @@ let test_updates context =
                    create_simple_signature
                      ~start:(2, 0)
                      ~stop:(3, 17)
-                     (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                     !&"test.foo"
                      (Some
                         (node
                            ~start:(2, 13)
                            ~stop:(2, 17)
-                           (Expression.Name (Name.Identifier "None"))));
+                           (Expression.Constant Constant.NoneLiteral)));
                  ]) );
       ]
     ();
@@ -1059,12 +1063,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ~expected_triggers:[]
@@ -1077,12 +1081,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ();
@@ -1106,12 +1110,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1124,12 +1128,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 2));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 2)));
                  ]) );
       ]
     ();
@@ -1154,12 +1158,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1173,12 +1177,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(4, 0)
                  ~stop:(5, 10)
-                 (node ~start:(4, 4) ~stop:(4, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(5, 2)
                      ~stop:(5, 10)
-                     (node ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 3));
+                     (node ~start:(5, 9) ~stop:(5, 10) (Expression.Constant (Constant.Integer 3)));
                  ]) );
       ]
     ();
@@ -1203,12 +1207,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(4, 0)
                  ~stop:(5, 10)
-                 (node ~start:(4, 4) ~stop:(4, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(5, 2)
                      ~stop:(5, 10)
-                     (node ~start:(5, 9) ~stop:(5, 10) (Expression.Integer 2));
+                     (node ~start:(5, 9) ~stop:(5, 10) (Expression.Constant (Constant.Integer 2)));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1221,12 +1225,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 3));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 3)));
                  ]) );
       ]
     ();
@@ -1261,8 +1265,7 @@ let test_updates context =
              {
                Define.signature =
                  {
-                   Define.Signature.name =
-                     Node.create ~location:(location (7, 4) (7, 7)) !&"test.foo";
+                   Define.Signature.name = !&"test.foo";
                    parameters =
                      [
                        node
@@ -1303,8 +1306,7 @@ let test_updates context =
              {
                Define.signature =
                  {
-                   Define.Signature.name =
-                     Node.create ~location:(location (5, 4) (5, 7)) !&"test.foo";
+                   Define.Signature.name = !&"test.foo";
                    parameters =
                      [
                        node
@@ -1344,7 +1346,7 @@ let test_updates context =
         {
           Define.signature =
             {
-              Define.Signature.name = Node.create ~location:(location (5, 4) (5, 7)) !&"test.foo";
+              Define.Signature.name = !&"test.foo";
               parameters =
                 [
                   node
@@ -1380,12 +1382,12 @@ let test_updates context =
         {
           Define.signature =
             {
-              Define.Signature.name = Node.create ~location:(location (4, 4) (4, 7)) !&"test.foo";
+              Define.Signature.name = !&"test.foo";
               parameters =
                 [
                   node
                     ~start:(4, 8)
-                    ~stop:(4, 9)
+                    ~stop:(4, 14)
                     {
                       Parameter.name = "$parameter$x";
                       value = None;
@@ -1398,7 +1400,22 @@ let test_updates context =
                     };
                 ];
               decorators =
-                [{ name = node ~start:(3, 1) ~stop:(3, 9) !&"typing.overload"; arguments = None }];
+                [
+                  node
+                    ~start:(3, 1)
+                    ~stop:(3, 9)
+                    (Expression.Name
+                       (Name.Attribute
+                          {
+                            Name.Attribute.base =
+                              node
+                                ~start:(3, 1)
+                                ~stop:(3, 9)
+                                (Expression.Name (Name.Identifier "typing"));
+                            attribute = "overload";
+                            special = false;
+                          }));
+                ];
               return_annotation =
                 Some (node ~start:(4, 19) ~stop:(4, 22) (Expression.Name (Name.Identifier "int")));
               async = false;
@@ -1413,7 +1430,8 @@ let test_updates context =
               node
                 ~start:(4, 24)
                 ~stop:(4, 27)
-                (Statement.Expression (node ~start:(4, 24) ~stop:(4, 27) Expression.Ellipsis));
+                (Statement.Expression
+                   (node ~start:(4, 24) ~stop:(4, 27) (Expression.Constant Constant.Ellipsis)));
             ];
         }
     in
@@ -1424,12 +1442,12 @@ let test_updates context =
         {
           Define.signature =
             {
-              Define.Signature.name = Node.create ~location:(location (8, 4) (8, 7)) !&"test.foo";
+              Define.Signature.name = !&"test.foo";
               parameters =
                 [
                   node
                     ~start:(8, 8)
-                    ~stop:(8, 9)
+                    ~stop:(8, 14)
                     {
                       Parameter.name = "$parameter$x";
                       value = None;
@@ -1442,7 +1460,22 @@ let test_updates context =
                     };
                 ];
               decorators =
-                [{ name = node ~start:(7, 1) ~stop:(7, 9) !&"typing.overload"; arguments = None }];
+                [
+                  node
+                    ~start:(7, 1)
+                    ~stop:(7, 9)
+                    (Expression.Name
+                       (Name.Attribute
+                          {
+                            Name.Attribute.base =
+                              node
+                                ~start:(7, 1)
+                                ~stop:(7, 9)
+                                (Expression.Name (Name.Identifier "typing"));
+                            attribute = "overload";
+                            special = false;
+                          }));
+                ];
               return_annotation =
                 Some (node ~start:(8, 19) ~stop:(8, 22) (Expression.Name (Name.Identifier "str")));
               async = false;
@@ -1457,7 +1490,8 @@ let test_updates context =
               node
                 ~start:(8, 24)
                 ~stop:(8, 27)
-                (Statement.Expression (node ~start:(8, 24) ~stop:(8, 27) Expression.Ellipsis));
+                (Statement.Expression
+                   (node ~start:(8, 24) ~stop:(8, 27) (Expression.Constant Constant.Ellipsis)));
             ];
         }
     in
@@ -1527,7 +1561,10 @@ let test_updates context =
         (let definition =
            let open FunctionDefinition in
            let create_elipsis ~start ~stop () =
-             node ~start ~stop (Statement.Expression (node ~start ~stop Expression.Ellipsis))
+             node
+               ~start
+               ~stop
+               (Statement.Expression (node ~start ~stop (Expression.Constant Constant.Ellipsis)))
            in
            let body =
              node
@@ -1536,8 +1573,7 @@ let test_updates context =
                {
                  Define.signature =
                    {
-                     Define.Signature.name =
-                       Node.create ~location:(location (4, 6) (4, 9)) !&"test.A.foo";
+                     Define.Signature.name = !&"test.A.foo";
                      parameters =
                        [
                          node
@@ -1546,7 +1582,12 @@ let test_updates context =
                            { Parameter.name = "$parameter$self"; value = None; annotation = None };
                        ];
                      decorators =
-                       [{ name = node ~start:(3, 3) ~stop:(3, 11) !&"property"; arguments = None }];
+                       [
+                         node
+                           ~start:(3, 3)
+                           ~stop:(3, 11)
+                           (Expression.Name (Name.Identifier "property"));
+                       ];
                      return_annotation =
                        Some
                          (node
@@ -1572,8 +1613,7 @@ let test_updates context =
                     {
                       Define.signature =
                         {
-                          Define.Signature.name =
-                            Node.create ~location:(location (6, 6) (6, 9)) !&"test.A.foo";
+                          Define.Signature.name = !&"test.A.foo";
                           parameters =
                             [
                               node
@@ -1586,7 +1626,7 @@ let test_updates context =
                                 };
                               node
                                 ~start:(6, 16)
-                                ~stop:(6, 21)
+                                ~stop:(6, 26)
                                 {
                                   Parameter.name = "$parameter$value";
                                   value = None;
@@ -1600,17 +1640,27 @@ let test_updates context =
                             ];
                           decorators =
                             [
-                              {
-                                name = node ~start:(5, 3) ~stop:(5, 13) !&"foo.setter";
-                                arguments = None;
-                              };
+                              node
+                                ~start:(5, 3)
+                                ~stop:(5, 13)
+                                (Expression.Name
+                                   (Name.Attribute
+                                      {
+                                        Name.Attribute.base =
+                                          node
+                                            ~start:(5, 3)
+                                            ~stop:(5, 6)
+                                            (Expression.Name (Name.Identifier "foo"));
+                                        attribute = "setter";
+                                        special = false;
+                                      }));
                             ];
                           return_annotation =
                             Some
                               (node
                                  ~start:(6, 31)
                                  ~stop:(6, 35)
-                                 (Expression.Name (Name.Identifier "None")));
+                                 (Expression.Constant Constant.NoneLiteral));
                           async = false;
                           generator = false;
                           parent = Some !&"test.A";
@@ -1651,12 +1701,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -1669,12 +1719,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(3, 0)
                  ~stop:(4, 12)
-                 (node ~start:(3, 4) ~stop:(3, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(4, 4)
                      ~stop:(4, 12)
-                     (node ~start:(4, 11) ~stop:(4, 12) (Expression.Integer 1));
+                     (node ~start:(4, 11) ~stop:(4, 12) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ();
@@ -1698,12 +1748,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 2));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 2)));
                  ]) );
       ]
     ();
@@ -1725,12 +1775,12 @@ let test_updates context =
               (create_simple_define
                  ~start:(2, 0)
                  ~stop:(3, 10)
-                 (node ~start:(2, 4) ~stop:(2, 7) !&"test.foo")
+                 !&"test.foo"
                  [
                    create_simple_return
                      ~start:(3, 2)
                      ~stop:(3, 10)
-                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Integer 1));
+                     (node ~start:(3, 9) ~stop:(3, 10) (Expression.Constant (Constant.Integer 1)));
                  ]) );
       ]
     ~expected_triggers:[dependency]
@@ -2073,12 +2123,6 @@ let test_resolve_exports context =
     ~reference:!&"foo"
     ~expected:(Some (resolved_attribute !&"qualifier.a" "foo" ~export:Export.Name.GlobalVariable));
 
-  assert_resolved
-    ~include_typeshed:true
-    ~expected:(Some (resolved_attribute !&"" "None" ~export:GlobalVariable))
-    ~reference:!&"None"
-    [];
-
   (* Special attribute tests. *)
   assert_resolved
     ["foo.py", ""]
@@ -2096,6 +2140,12 @@ let test_resolve_exports context =
     ["foo.py", ""]
     ~reference:!&"foo.__package__"
     ~expected:(Some (resolved_attribute !&"foo" "__package__" ~export:GlobalVariable));
+  (* FIXME(grievejia): This is not 100% correct. `__path__` only exists if the containing module is
+     `__init__`. *)
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__path__"
+    ~expected:(Some (resolved_attribute !&"foo" "__path__" ~export:GlobalVariable));
   assert_resolved
     ["foo.py", ""]
     ~reference:!&"foo.__dict__"

@@ -6,11 +6,11 @@
     "sinks": [
       {
         "port": "formal(argument)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       },
       {
         "port": "formal(self)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -22,7 +22,7 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -36,15 +36,18 @@
         "port": "formal(class_sink)",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "class_level_taint.ClassSink.sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_level_taint.py",
               "line": 18,
               "start": 4,
               "end": 14
-            },
-            "leaves": [
-              { "kind": "Test", "name": "class_level_taint.ClassSink.sink" }
-            ]
+            }
           }
         ]
       }
@@ -67,18 +70,20 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_level_taint.ClassSource.source" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_level_taint.py",
               "line": 18,
               "start": 20,
               "end": 41
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "class_level_taint.ClassSource.source"
-              }
-            ]
+            }
           }
         ]
       },
@@ -86,19 +91,25 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "class_level_taint.ClassSink.sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "class_level_taint.py",
               "line": 18,
               "start": 20,
               "end": 41
-            },
-            "leaves": [
-              { "kind": "Test", "name": "class_level_taint.ClassSink.sink" }
-            ]
+            }
           }
         ]
       }
     ],
-    "features": []
+    "features": [],
+    "master_handles": [
+      "class_level_taint.test:5002:0:Call|class_level_taint.ClassSink.sink|0|formal(argument):aff1e23735efdd1f0f4a23851bda22e0"
+    ]
   }
 }

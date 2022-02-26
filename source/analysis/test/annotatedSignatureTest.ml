@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -29,9 +29,9 @@ let variable_r, escaped_variable_r =
   make_normal_and_escaped_variable ~constraints:(Explicit [Type.integer; Type.float]) "_R"
 
 
-let compare_sig_t left right =
+let compare_instantiated_return_annotation left right =
   let open SignatureSelectionTypes in
-  let default = equal_sig_t left right in
+  let default = [%compare.equal: instantiated_return_annotation] left right in
   match left, right with
   | ( NotFound { reason = Some left_reason; closest_return_annotation = left_closest },
       NotFound { reason = Some right_reason; closest_return_annotation = right_closest } )
@@ -47,8 +47,8 @@ let compare_sig_t left right =
       | Mismatches left, Mismatches right ->
           let equal_single_mismatch left right =
             match left, right with
-            | Mismatch left, Mismatch right -> equal_mismatch left.value right.value
-            | _, _ -> equal_mismatch_reason left right
+            | Mismatch left, Mismatch right -> [%compare.equal: mismatch] left.value right.value
+            | _, _ -> [%compare.equal: mismatch_reason] left right
           in
           List.equal equal_single_mismatch left right
       | _ -> default)
@@ -92,7 +92,7 @@ let test_unresolved_select context =
                   int_to_int_dictionary: typing.Dict[int, int] = ...
                   union_list: typing.Union[typing.List[int], typing.List[str]] = ...
 
-                  unknown: $unknown = ...
+                  unknown: Unknown = ...
                   g: typing.Callable[[int], bool]
                   f: typing.Callable[[int], typing.List[bool]]
                   Tparams = pyre_extensions.ParameterSpecification("Tparams")
@@ -113,9 +113,9 @@ let test_unresolved_select context =
       in
       let resolution =
         TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
-        |> Resolution.set_local
+        |> Resolution.new_local
              ~reference:(Reference.create "optional")
-             ~annotation:(Annotation.create (Type.optional Type.integer))
+             ~annotation:(Annotation.create_mutable (Type.optional Type.integer))
       in
       let enforce_callable = function
         | Type.Callable ({ Type.Callable.implementation; overloads; _ } as callable) ->
@@ -259,7 +259,11 @@ let test_unresolved_select context =
       | `NotFound (closest, reason) ->
           NotFound { closest_return_annotation = parse_return closest; reason }
     in
-    assert_equal ~printer:SignatureSelectionTypes.show_sig_t ~cmp:compare_sig_t expected signature
+    assert_equal
+      ~printer:SignatureSelectionTypes.show_instantiated_return_annotation
+      ~cmp:compare_instantiated_return_annotation
+      expected
+      signature
   in
   let assert_select_direct ~arguments ~callable expected =
     Type.Variable.Namespace.reset ();
@@ -283,8 +287,10 @@ let test_unresolved_select context =
         ~self_argument:None
         ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
     in
-    let printer x = SignatureSelectionTypes.sexp_of_sig_t x |> Sexp.to_string_hum in
-    assert_equal ~cmp:compare_sig_t ~printer expected signature
+    let printer x =
+      SignatureSelectionTypes.sexp_of_instantiated_return_annotation x |> Sexp.to_string_hum
+    in
+    assert_equal ~cmp:compare_instantiated_return_annotation ~printer expected signature
   in
   (* Undefined callables always match. *)
   assert_select ~allow_undefined:true "[..., int]" "()" (`Found "int");
@@ -651,40 +657,40 @@ let test_unresolved_select context =
   (* Ranking. *)
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[int, int, str], int][[int, str, str], int]]"
+    "[..., Unknown][[[int, int, str], int][[int, str, str], int]]"
     "(0)"
     (* Ambiguous, pick the first one. *)
     (`NotFoundMissingAnonymousArgumentWithClosest ("int", 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[str], str][[int, str], int]]"
+    "[..., Unknown][[[str], str][[int, str], int]]"
     "(1)"
     (* Ambiguous, prefer the one with the closer arity over the type match. *)
     (`NotFoundMismatchWithClosest ("str", Type.literal_integer 1, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[int, Keywords()], int][[int, str], int]]"
+    "[..., Unknown][[[int, Keywords()], int][[int, str], int]]"
     "(1, 1)" (* Prefer anonymous unmatched parameters over keywords. *)
     (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 2));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[str], str][[], str]]"
+    "[..., Unknown][[[str], str][[], str]]"
     "(1)"
     (`NotFoundMismatchWithClosest ("str", Type.literal_integer 1, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[str, Keywords()], int][[Keywords()], int]]"
+    "[..., Unknown][[[str, Keywords()], int][[Keywords()], int]]"
     "(1)" (* Prefer arity matches. *)
     (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[int, int, str], int][[int, str, str], int]]"
+    "[..., Unknown][[[int, int, str], int][[int, str, str], int]]"
     "(0, 'string')"
     (* Clear winner. *)
     (`NotFoundMissingAnonymousArgumentWithClosest ("int", 2));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[int, str, str, str], int][[int, str, bool], int]]"
+    "[..., Unknown][[[int, str, str, str], int][[int, str, bool], int]]"
     "(0, 'string')"
     (`NotFoundMissingAnonymousArgumentWithClosest ("int", 2));
 
@@ -695,19 +701,19 @@ let test_unresolved_select context =
     (`NotFoundMismatchWithClosest ("str", Type.Top, Type.string, None, 1));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[Named(a, int), Named(b, int)], int][[Named(c, int), Named(d, int)], int]]"
+    "[..., Unknown][[[Named(a, int), Named(b, int)], int][[Named(c, int), Named(d, int)], int]]"
     "(i=1, d=2)"
     (`NotFoundUnexpectedKeywordWithClosest ("int", "i"));
 
   (* Prefer the overload where the mismatch comes latest *)
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[int, str], int][[str, int], str]]"
+    "[..., Unknown][[[int, str], int][[str, int], str]]"
     "(1, 1)"
     (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 2));
   assert_select
     ~allow_undefined:true
-    "[..., $unknown][[[str, int], str][[int, str], int]]"
+    "[..., Unknown][[[str, int], str][[int, str], int]]"
     "(1, 1)"
     (`NotFoundMismatchWithClosest ("int", Type.literal_integer 1, Type.string, None, 2));
 
@@ -813,8 +819,10 @@ let test_resolved_select context =
         ~self_argument:None
         ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
     in
-    let printer x = SignatureSelectionTypes.sexp_of_sig_t x |> Sexp.to_string_hum in
-    assert_equal ~cmp:compare_sig_t ~printer expected signature
+    let printer x =
+      SignatureSelectionTypes.sexp_of_instantiated_return_annotation x |> Sexp.to_string_hum
+    in
+    assert_equal ~cmp:compare_instantiated_return_annotation ~printer expected signature
   in
   assert_select
     ~arguments:[{ expression = None; kind = Positional; resolved = Type.string }]

@@ -15,14 +15,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 99,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -30,6 +35,17 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "string_concat_lhs" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "taint_in_taint_out.py",
@@ -40,14 +56,8 @@
               "resolves_to": [
                 "taint_in_taint_out.adds_tito_with_indirect_sink"
               ],
-              "port": "formal(src)[add_tito]",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(src)[add_tito]"
+            }
           }
         ]
       }
@@ -56,6 +66,9 @@
       { "always-via": "string_concat_lhs" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "taint_in_taint_out.issue_with_indirect_sink_tito:5002:0:Call|taint_in_taint_out.adds_tito_with_indirect_sink|0|formal(src):2fbce496fb3c6d2b1ac7eb34c04a80c1"
     ]
   }
 }
@@ -75,19 +88,24 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "string_concat_rhs" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 178, "start": 33, "end": 47 } ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 178,
               "start": 33,
               "end": 47
-            },
-            "tito": [ { "line": 178, "start": 33, "end": 47 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -95,23 +113,31 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 178,
               "start": 15,
               "end": 48
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
     "features": [
+      { "via": "string_concat_rhs" },
       { "always-via": "tito" },
-      { "always-via": "string_concat_rhs" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "taint_in_taint_out.test_always_via_feature:5002:0:Call|_test_sink|0|formal(arg):5f5be39770a875ee131d712a9575c6ec"
     ]
   }
 }
@@ -131,21 +157,26 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito": [ { "line": 224, "start": 47, "end": 61 } ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 224,
               "start": 47,
               "end": 61
-            },
-            "tito": [ { "line": 224, "start": 47, "end": 61 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "tito" },
-              { "always-via": "special_source" },
-              { "always-via": "obscure" }
-            ]
+            }
           }
         ]
       },
@@ -153,25 +184,33 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 224,
               "start": 15,
               "end": 62
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
     ],
     "features": [
       { "always-via": "tito-broadening" },
-      { "always-via": "broadening" },
       { "always-via": "tito" },
+      { "always-via": "broadening" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure" }
+      { "always-via": "obscure:unknown-callee" },
+      { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "taint_in_taint_out.test_complex_evaluator:5002:0:Call|_test_sink|0|formal(arg):ab8fd57412bae9ae7f76b9d9e5b62315"
     ]
   }
 }
@@ -191,20 +230,25 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "arg" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 195, "start": 19, "end": 33 } ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 195,
               "start": 19,
               "end": 33
-            },
-            "tito": [ { "line": 195, "start": 19, "end": 33 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-field" },
-              { "first-field": "arg" },
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -212,14 +256,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 196,
               "start": 15,
               "end": 23
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -230,6 +279,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "taint_in_taint_out.test_explicit_call_to_superclass:5002:0:Call|_test_sink|0|formal(arg):542fa2512fcbd87d221e85e3ff59321e"
     ]
   }
 }
@@ -249,18 +301,21 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 204, "start": 29, "end": 43 } ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 204,
               "start": 29,
               "end": 43
-            },
-            "tito": [ { "line": 204, "start": 29, "end": 43 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -268,14 +323,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 204,
               "start": 15,
               "end": 44
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -284,6 +344,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "taint_in_taint_out.test_simplified_evaluator:5002:0:Call|_test_sink|0|formal(arg):4ea1dfcb4011b7d278405c93836ee5d8"
     ]
   }
 }
@@ -297,18 +360,20 @@
         "port": "formal(field)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
             "tito": [
               { "line": 217, "start": 50, "end": 55 },
               { "line": 218, "start": 44, "end": 49 }
             ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
-              { "via": "tito-broadening" },
-              { "via": "broadening" },
-              { "always-via": "tito" },
-              { "via": "obscure" }
-            ]
+            "decl": null
           }
         ]
       }
@@ -325,12 +390,12 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [
-              { "always-via": "widen-broadening" },
-              { "always-via": "broadening" }
-            ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
+            ],
+            "decl": null
           }
         ]
       }
@@ -347,14 +412,12 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[a]", "depth": 0 }
+            "kinds": [ { "return_paths": [ "[a]" ], "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
-            "features": [
-              { "always-via": "widen-broadening" },
-              { "always-via": "broadening" }
-            ]
+            "decl": null
           }
         ]
       }
@@ -368,7 +431,7 @@
     "sinks": [
       {
         "port": "formal($global)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ],
     "tito": [
@@ -376,9 +439,14 @@
         "port": "formal($global)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
           }
         ]
       }
@@ -394,10 +462,8 @@
         "port": "formal(b)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[b]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[b]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -405,32 +471,24 @@
         "port": "formal(select)[*][*][0][target]",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
+            "kinds": [
               {
-                "kind": "LocalReturn",
-                "name": "[related][related][related]",
-                "depth": 0
-              },
-              {
-                "kind": "LocalReturn",
-                "name": "[related][related][init_list]",
-                "depth": 0
-              },
-              {
-                "kind": "LocalReturn",
-                "name": "[related][init_list]",
-                "depth": 0
-              },
-              { "kind": "LocalReturn", "name": "[init_list]", "depth": 0 }
+                "return_paths": [
+                  "[init_list]", "[related][init_list]",
+                  "[related][related][init_list]",
+                  "[related][related][related]"
+                ],
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [
+            "local_features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
-              { "via": "issue-broadening" },
+              { "via": "tito" },
               { "via": "broadening" },
-              { "via": "tito" }
-            ]
+              { "via": "issue-broadening" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -438,11 +496,11 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[arg]", "depth": 0 }
+            "kinds": [
+              { "return_paths": [ "[arg]" ], "kind": "LocalReturn" }
             ],
-            "features": [ { "via": "tito" } ]
+            "local_features": [ { "via": "tito" } ],
+            "decl": null
           }
         ]
       },
@@ -450,10 +508,8 @@
         "port": "formal(a)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[a]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[a]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -461,9 +517,9 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "via": "tito" } ],
+            "decl": null
           }
         ]
       }
@@ -479,10 +535,8 @@
         "port": "formal(b)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[b]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[b]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -490,10 +544,8 @@
         "port": "formal(a)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[a]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[a]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -501,8 +553,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -518,11 +570,11 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[arg]", "depth": 0 }
+            "kinds": [
+              { "return_paths": [ "[arg]" ], "kind": "LocalReturn" }
             ],
-            "features": [ { "via": "tito" } ]
+            "local_features": [ { "via": "tito" } ],
+            "decl": null
           }
         ]
       },
@@ -530,9 +582,9 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "via": "tito" } ],
+            "decl": null
           }
         ]
       }
@@ -548,11 +600,15 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[arg]", "depth": 1 }
+            "kinds": [
+              {
+                "return_paths": [ "[arg]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "local_features": [ { "always-via": "tito" } ],
+            "decl": null
           }
         ]
       },
@@ -560,9 +616,9 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "via": "tito" } ],
+            "decl": null
           }
         ]
       }
@@ -578,32 +634,24 @@
         "port": "formal(select)[*][*][0][target]",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
+            "kinds": [
               {
-                "kind": "LocalReturn",
-                "name": "[related][related][related]",
-                "depth": 0
-              },
-              {
-                "kind": "LocalReturn",
-                "name": "[related][related][init_list]",
-                "depth": 0
-              },
-              {
-                "kind": "LocalReturn",
-                "name": "[related][init_list]",
-                "depth": 0
-              },
-              { "kind": "LocalReturn", "name": "[init_list]", "depth": 0 }
+                "return_paths": [
+                  "[init_list]", "[related][init_list]",
+                  "[related][related][init_list]",
+                  "[related][related][related]"
+                ],
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [
+            "local_features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
-              { "via": "issue-broadening" },
+              { "via": "tito" },
               { "via": "broadening" },
-              { "via": "tito" }
-            ]
+              { "via": "issue-broadening" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -611,8 +659,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -628,9 +676,9 @@
         "port": "formal(field)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "obscure" } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "via": "obscure:unknown-callee" } ],
+            "decl": null
           }
         ]
       }
@@ -646,15 +694,15 @@
         "port": "formal(payload)[items]",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 220, "start": 31, "end": 36 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [
               { "always-via": "tito-broadening" },
-              { "always-via": "broadening" },
               { "via": "tito" },
-              { "always-via": "obscure" }
-            ]
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito": [ { "line": 220, "start": 31, "end": 36 } ],
+            "decl": null
           }
         ]
       }
@@ -670,10 +718,8 @@
         "port": "formal(b)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[b]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[b]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -681,10 +727,8 @@
         "port": "formal(a)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[a]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[a]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -692,8 +736,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -709,10 +753,10 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[arg]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[arg]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -720,8 +764,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -737,12 +781,16 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 191, "start": 32, "end": 35 } ],
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[arg]", "depth": 1 }
+            "kinds": [
+              {
+                "return_paths": [ "[arg]" ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [ { "always-via": "tito" } ]
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 191, "start": 32, "end": 35 } ],
+            "decl": null
           }
         ]
       },
@@ -750,10 +798,10 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "via": "tito" } ],
             "tito": [ { "line": 191, "start": 26, "end": 30 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "via": "tito" } ]
+            "decl": null
           }
         ]
       }
@@ -769,33 +817,25 @@
         "port": "formal(select)[*][*][0][target]",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 67, "start": 35, "end": 41 } ],
-            "leaves": [
+            "kinds": [
               {
-                "kind": "LocalReturn",
-                "name": "[related][related][related]",
-                "depth": 0
-              },
-              {
-                "kind": "LocalReturn",
-                "name": "[related][related][init_list]",
-                "depth": 0
-              },
-              {
-                "kind": "LocalReturn",
-                "name": "[related][init_list]",
-                "depth": 0
-              },
-              { "kind": "LocalReturn", "name": "[init_list]", "depth": 0 }
+                "return_paths": [
+                  "[init_list]", "[related][init_list]",
+                  "[related][related][init_list]",
+                  "[related][related][related]"
+                ],
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [
+            "local_features": [
               { "has": "first-index" },
               { "first-index": "<numeric>" },
-              { "via": "issue-broadening" },
+              { "via": "tito" },
               { "via": "broadening" },
-              { "via": "tito" }
-            ]
+              { "via": "issue-broadening" }
+            ],
+            "tito": [ { "line": 67, "start": 35, "end": 41 } ],
+            "decl": null
           }
         ]
       },
@@ -803,8 +843,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -820,14 +860,15 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "always-via": "string_concat_rhs" } ]
-          },
-          {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "string_concat_rhs" } ]
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_rhs" } ],
+                "kind": "Attach"
+              },
+              { "return_paths": [ "" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [ { "via": "string_concat_rhs" } ],
+            "decl": null
           }
         ]
       }
@@ -841,27 +882,31 @@
     "sources": [
       {
         "port": "formal(x)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       },
       {
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "taint_in_taint_out.adds_tito" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "add_tito" },
+              { "always-type": "integer" },
+              { "always-via": "string_concat_lhs" },
+              { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 78,
               "start": 14,
-              "end": 15
-            },
-            "leaves": [
-              { "kind": "Test", "name": "taint_in_taint_out.adds_tito" }
-            ],
-            "features": [
-              { "has": "first-field" },
-              { "first-field": "add_tito" },
-              { "always-type": "scalar" },
-              { "always-via": "string_concat_lhs" }
-            ]
+              "end": 28
+            }
           }
         ]
       }
@@ -871,9 +916,9 @@
         "port": "formal(x)[add_tito]",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "decl": null
           }
         ]
       }
@@ -887,30 +932,33 @@
     "sources": [
       {
         "port": "formal(x)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       },
       {
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "taint_in_taint_out.adds_tito_inherited" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "add_tito" },
+              { "always-type": "integer" },
+              { "always-via": "string_concat_lhs" },
+              { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 86,
               "start": 24,
-              "end": 25
-            },
-            "leaves": [
-              {
-                "kind": "Test",
-                "name": "taint_in_taint_out.adds_tito_inherited"
-              }
-            ],
-            "features": [
-              { "has": "first-field" },
-              { "first-field": "add_tito" },
-              { "always-type": "scalar" },
-              { "always-via": "string_concat_lhs" }
-            ]
+              "end": 43
+            }
           }
         ]
       }
@@ -920,9 +968,9 @@
         "port": "formal(x)[add_tito]",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [ { "always-via": "string_concat_lhs" } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "decl": null
           }
         ]
       }
@@ -938,6 +986,17 @@
         "port": "formal(src)[add_tito]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "string_concat_lhs" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "taint_in_taint_out.py",
@@ -946,14 +1005,8 @@
                 "end": 21
               },
               "resolves_to": [ "taint_in_taint_out.indirect_sink" ],
-              "port": "formal(x)[add_tito]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(x)[add_tito]"
+            }
           }
         ]
       }
@@ -969,12 +1022,12 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [
-              { "always-via": "widen-broadening" },
-              { "always-via": "broadening" }
-            ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
+            ],
+            "decl": null
           }
         ]
       }
@@ -990,8 +1043,8 @@
         "port": "formal(payload)[*]",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -999,10 +1052,10 @@
         "port": "formal(payload).**keys",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": ".**keys", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ ".**keys" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       }
@@ -1018,11 +1071,10 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[name]", "depth": 0 },
-              { "kind": "LocalReturn", "name": "[id]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[id]", "[name]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       }
@@ -1038,31 +1090,24 @@
         "port": "formal(select)[*][*][0][target]",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 71, "start": 21, "end": 27 } ],
-            "leaves": [
+            "kinds": [
               {
-                "kind": "LocalReturn",
-                "name": "[related][related][related]",
-                "depth": 1
-              },
-              {
-                "kind": "LocalReturn",
-                "name": "[related][related][init_list]",
-                "depth": 1
-              },
-              {
-                "kind": "LocalReturn",
-                "name": "[related][init_list]",
-                "depth": 1
-              },
-              { "kind": "LocalReturn", "name": "[init_list]", "depth": 1 }
+                "return_paths": [
+                  "[init_list]", "[related][init_list]",
+                  "[related][related][init_list]",
+                  "[related][related][related]"
+                ],
+                "length": 1,
+                "kind": "LocalReturn"
+              }
             ],
-            "features": [
-              { "via": "issue-broadening" },
+            "local_features": [
+              { "always-via": "tito" },
               { "via": "broadening" },
-              { "always-via": "tito" }
-            ]
+              { "via": "issue-broadening" }
+            ],
+            "tito": [ { "line": 71, "start": 21, "end": 27 } ],
+            "decl": null
           }
         ]
       }
@@ -1078,17 +1123,20 @@
         "port": "formal(x)[add_tito]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 95,
               "start": 15,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -1104,7 +1152,13 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
             "tito": [
               { "line": 33, "start": 20, "end": 21 },
               { "line": 36, "start": 30, "end": 38 },
@@ -1114,8 +1168,7 @@
               { "line": 41, "start": 72, "end": 82 },
               { "line": 43, "start": 26, "end": 38 }
             ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
+            "decl": null
           }
         ]
       }
@@ -1131,10 +1184,15 @@
         "port": "formal(x)",
         "taint": [
           {
-            "decl": null,
+            "kinds": [
+              { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
             "tito": [ { "line": 51, "start": 24, "end": 25 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 2 } ],
-            "features": [ { "always-via": "tito" }, { "via": "obscure" } ]
+            "decl": null
           }
         ]
       }
@@ -1150,10 +1208,8 @@
         "port": "formal(b2)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[2]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[2]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -1161,10 +1217,8 @@
         "port": "formal(b1)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[1]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[1]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -1172,10 +1226,8 @@
         "port": "formal(tainted)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[0]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[0]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -1191,10 +1243,8 @@
         "port": "formal(b)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[2]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[2]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -1202,10 +1252,8 @@
         "port": "formal(a)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[1]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[1]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -1213,10 +1261,8 @@
         "port": "formal(tainted)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[0]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "[0]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -1232,19 +1278,24 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
             "root": {
               "filename": "taint_in_taint_out.py",
               "line": 55,
               "start": 32,
               "end": 46
-            },
-            "tito": [ { "line": 55, "start": 32, "end": 46 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" },
-              { "via": "obscure" }
-            ]
+            }
           }
         ]
       }
@@ -1260,18 +1311,19 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "Attach" } ],
-            "features": [ { "always-via": "string_concat_rhs" } ]
-          },
-          {
-            "decl": null,
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_rhs" } ],
+                "kind": "Attach"
+              },
+              { "return_paths": [ "" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "via": "string_concat_rhs" },
+              { "via": "tito" }
+            ],
             "tito": [ { "line": 174, "start": 27, "end": 30 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ],
-            "features": [
-              { "via": "tito" },
-              { "always-via": "string_concat_rhs" }
-            ]
+            "decl": null
           }
         ]
       }
@@ -1287,8 +1339,8 @@
         "port": "formal(y)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       },
@@ -1296,8 +1348,8 @@
         "port": "formal(x)[foo]",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }

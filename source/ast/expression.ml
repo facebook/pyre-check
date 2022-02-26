@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -9,34 +9,106 @@ open Core
 open Sexplib.Std
 open Pyre
 
-module Substring = struct
+module StringLiteral = struct
   type kind =
-    | Literal
-    | Format
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    | String
+    | Bytes
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   type t = {
     value: string;
     kind: kind;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
-  let is_all_literal =
-    List.for_all ~f:(fun { Node.value = { kind; _ }; _ } -> equal_kind kind Literal)
+  let create ?(bytes = false) value =
+    let kind =
+      if bytes then
+        Bytes
+      else
+        String
+    in
+    { value; kind }
+
+
+  let location_insensitive_compare_kind left right =
+    match left, right with
+    | String, String
+    | Bytes, Bytes ->
+        0
+    | String, _ -> -1
+    | Bytes, _ -> 1
+
+
+  let location_insensitive_compare left right =
+    match String.compare left.value right.value with
+    | x when not (Int.equal x 0) -> x
+    | _ -> location_insensitive_compare_kind left.kind right.kind
+end
+
+module Constant = struct
+  type t =
+    | NoneLiteral
+    | Ellipsis
+    | False
+    | True
+    | Integer of int
+    | Float of float
+    | Complex of float
+    | String of StringLiteral.t
+  [@@deriving compare, sexp, show, hash, to_yojson]
+
+  let location_insensitive_compare left right =
+    match left, right with
+    | NoneLiteral, NoneLiteral
+    | Ellipsis, Ellipsis
+    | False, False
+    | True, True ->
+        0
+    | Integer left, Integer right -> Int.compare left right
+    | Float left, Float right
+    | Complex left, Complex right ->
+        Float.compare left right
+    | String left, String right -> StringLiteral.compare left right
+    | NoneLiteral, _ -> -1
+    | Ellipsis, _ -> -1
+    | False, _ -> -1
+    | True, _ -> -1
+    | Integer _, _ -> -1
+    | Float _, _ -> -1
+    | Complex _, _ -> -1
+    | String _, _ -> 1
+
+
+  let pp formatter = function
+    | String { StringLiteral.value; kind } ->
+        let bytes =
+          match kind with
+          | StringLiteral.Bytes -> "b"
+          | _ -> ""
+        in
+        Format.fprintf formatter "%s\"%s\"" bytes value
+    | Ellipsis -> Format.fprintf formatter "..."
+    | Float float_value -> Format.fprintf formatter "%f" float_value
+    | Complex float_value -> Format.fprintf formatter "%fj" float_value
+    | False -> Format.fprintf formatter "%s" "False"
+    | Integer integer -> Format.fprintf formatter "%d" integer
+    | NoneLiteral -> Format.fprintf formatter "None"
+    | True -> Format.fprintf formatter "%s" "True"
 end
 
 module rec BooleanOperator : sig
   type operator =
     | And
     | Or
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   type t = {
     left: Expression.t;
     operator: operator;
     right: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val pp_boolean_operator : Format.formatter -> operator -> unit
 
@@ -47,14 +119,14 @@ end = struct
   type operator =
     | And
     | Or
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   type t = {
     left: Expression.t;
     operator: operator;
     right: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let pp_boolean_operator formatter operator =
     Format.fprintf
@@ -82,16 +154,19 @@ end
 and Call : sig
   module Argument : sig
     type t = {
+      (* NOTE(grievejia): Location here refers to the location of the entire argument, not the
+         location of the argument name itself. *)
       name: Identifier.t Node.t option;
       value: Expression.t;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     type kind =
       | SingleStar
       | DoubleStar
       | Named of string Node.t
       | Positional
+    [@@deriving compare, show]
 
     val location_insensitive_compare : t -> t -> int
 
@@ -102,7 +177,7 @@ and Call : sig
     callee: Expression.t;
     arguments: Argument.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -111,13 +186,14 @@ end = struct
       name: Identifier.t Node.t option;
       value: Expression.t;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     type kind =
       | SingleStar
       | DoubleStar
       | Named of string Node.t
       | Positional
+    [@@deriving compare, show]
 
     let location_insensitive_compare left right =
       match
@@ -143,7 +219,7 @@ end = struct
     callee: Expression.t;
     arguments: Argument.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.callee right.callee with
@@ -163,14 +239,14 @@ and ComparisonOperator : sig
     | LessThanOrEquals
     | NotEquals
     | NotIn
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   type t = {
     left: Expression.t;
     operator: operator;
     right: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val inverse : operator -> operator
 
@@ -191,14 +267,14 @@ end = struct
     | LessThanOrEquals
     | NotEquals
     | NotIn
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   type t = {
     left: Expression.t;
     operator: operator;
     right: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let inverse = function
     | Equals -> NotEquals
@@ -282,7 +358,7 @@ and Comprehension : sig
       conditions: Expression.t list;
       async: bool;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
   end
@@ -291,7 +367,7 @@ and Comprehension : sig
     element: 'element;
     generators: Generator.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare
     :  ('element -> 'element -> int) ->
@@ -306,7 +382,7 @@ end = struct
       conditions: Expression.t list;
       async: bool;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right =
       match Expression.location_insensitive_compare left.target right.target with
@@ -329,7 +405,7 @@ end = struct
     element: 'element;
     generators: Generator.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare compare_element left right =
     match compare_element left.element right.element with
@@ -343,7 +419,7 @@ and Dictionary : sig
       key: Expression.t;
       value: Expression.t;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
   end
@@ -352,16 +428,18 @@ and Dictionary : sig
     entries: Entry.t list;
     keywords: Expression.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
+
+  val string_literal_keys : Entry.t list -> (string * Expression.t) list option
 end = struct
   module Entry = struct
     type t = {
       key: Expression.t;
       value: Expression.t;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right =
       match Expression.location_insensitive_compare left.key right.key with
@@ -373,12 +451,31 @@ end = struct
     entries: Entry.t list;
     keywords: Expression.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match List.compare Entry.location_insensitive_compare left.entries right.entries with
     | x when not (Int.equal x 0) -> x
     | _ -> List.compare Expression.location_insensitive_compare left.keywords right.keywords
+
+
+  let string_literal_keys entries =
+    let rec match_literal_key entries accumulated_result =
+      match entries with
+      | {
+          Dictionary.Entry.key =
+            {
+              Node.value = Expression.Constant (Constant.String { StringLiteral.value = key; _ });
+              _;
+            };
+          value;
+        }
+        :: tail ->
+          match_literal_key tail ((key, value) :: accumulated_result)
+      | [] -> Some (List.rev accumulated_result)
+      | _ -> None
+    in
+    match_literal_key entries []
 end
 
 and Lambda : sig
@@ -386,7 +483,7 @@ and Lambda : sig
     parameters: Parameter.t list;
     body: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -394,7 +491,7 @@ end = struct
     parameters: Parameter.t list;
     body: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match List.compare Parameter.location_insensitive_compare left.parameters right.parameters with
@@ -409,7 +506,7 @@ and Name : sig
       attribute: Identifier.t;
       special: bool;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
   end
@@ -417,7 +514,7 @@ and Name : sig
   type t =
     | Attribute of Attribute.t
     | Identifier of Identifier.t
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
@@ -429,7 +526,7 @@ end = struct
       attribute: Identifier.t;
       special: bool;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right =
       match Expression.location_insensitive_compare left.base right.base with
@@ -443,7 +540,7 @@ end = struct
   type t =
     | Attribute of Attribute.t
     | Identifier of Identifier.t
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match left, right with
@@ -464,9 +561,9 @@ and Parameter : sig
     value: Expression.t option;
     annotation: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
-  type t = parameter Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  type t = parameter Node.t [@@deriving compare, sexp, show, hash, to_yojson]
 
   val create
     :  location:Location.t ->
@@ -485,9 +582,9 @@ end = struct
     value: Expression.t option;
     annotation: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
-  type t = parameter Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  type t = parameter Node.t [@@deriving compare, sexp, show, hash, to_yojson]
 
   let create ~location ?value ?annotation ~name () =
     { Node.location; value = { name; value; annotation } }
@@ -513,14 +610,14 @@ and Starred : sig
   type t =
     | Once of Expression.t
     | Twice of Expression.t
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
   type t =
     | Once of Expression.t
     | Twice of Expression.t
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match left, right with
@@ -531,86 +628,25 @@ end = struct
     | Twice _, Once _ -> 1
 end
 
-and StringLiteral : sig
-  type kind =
-    | String
-    | Bytes
-    | Format of Expression.t list
-    | Mixed of Substring.t Node.t list
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  type t = {
-    value: string;
-    kind: kind;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  val create : ?bytes:bool -> ?expressions:Expression.t list -> string -> t
-
-  val create_mixed : Substring.t Node.t list -> t
+and Substring : sig
+  type t =
+    | Literal of string Node.t
+    | Format of Expression.t
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
-  type kind =
-    | String
-    | Bytes
-    | Format of Expression.t list
-    | Mixed of Substring.t Node.t list
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  type t = {
-    value: string;
-    kind: kind;
-  }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
-
-  let create ?(bytes = false) ?expressions value =
-    let kind =
-      if bytes then
-        Bytes
-      else
-        match expressions with
-        | Some expressions -> Format expressions
-        | _ -> String
-    in
-    { value; kind }
-
-
-  let create_mixed pieces =
-    (* Default to literal string so subsequent pre-processing logic can be simplier. *)
-    match pieces with
-    | [] -> { value = ""; kind = String }
-    | [{ Node.value = { Substring.kind = Literal; value }; _ }] -> { value; kind = String }
-    | _ ->
-        let value =
-          pieces
-          |> List.map ~f:(fun { Node.value = { Substring.value; _ }; _ } -> value)
-          |> String.concat ~sep:""
-        in
-        if Substring.is_all_literal pieces then
-          { value; kind = String }
-        else
-          { value; kind = Mixed pieces }
-
-
-  let location_insensitive_compare_kind left right =
-    match left, right with
-    | String, String
-    | Bytes, Bytes ->
-        0
-    | Format left, Format right -> List.compare Expression.location_insensitive_compare left right
-    | Mixed left, Mixed right ->
-        List.compare (Node.location_insensitive_compare Substring.compare) left right
-    | String, _ -> -1
-    | Bytes, _ -> -1
-    | Format _, _ -> -1
-    | Mixed _, _ -> 1
-
+  type t =
+    | Literal of string Node.t
+    | Format of Expression.t
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
-    match String.compare left.value right.value with
-    | x when not (Int.equal x 0) -> x
-    | _ -> location_insensitive_compare_kind left.kind right.kind
+    match left, right with
+    | Literal left, Literal right -> Node.location_insensitive_compare String.compare left right
+    | Format left, Format right -> Expression.location_insensitive_compare left right
+    | Literal _, _ -> -1
+    | Format _, _ -> 1
 end
 
 and Ternary : sig
@@ -619,7 +655,7 @@ and Ternary : sig
     test: Expression.t;
     alternative: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -628,7 +664,7 @@ end = struct
     test: Expression.t;
     alternative: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.target right.target with
@@ -645,13 +681,13 @@ and UnaryOperator : sig
     | Negative
     | Not
     | Positive
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   type t = {
     operator: operator;
     operand: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val pp_unary_operator : Format.formatter -> operator -> unit
 
@@ -664,13 +700,13 @@ end = struct
     | Negative
     | Not
     | Positive
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   type t = {
     operator: operator;
     operand: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let pp_unary_operator formatter operator =
     Format.fprintf
@@ -713,7 +749,7 @@ and WalrusOperator : sig
     target: Expression.t;
     value: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -721,7 +757,7 @@ end = struct
     target: Expression.t;
     value: Expression.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.target right.target with
@@ -735,14 +771,11 @@ and Expression : sig
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
-    | Complex of float
+    | Constant of Constant.t
     | Dictionary of Dictionary.t
     | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
-    | Ellipsis
-    | False
-    | Float of float
     | Generator of t Comprehension.t
-    | Integer of int
+    | FormatString of Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
@@ -750,15 +783,14 @@ and Expression : sig
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
-    | String of StringLiteral.t
     | Ternary of Ternary.t
-    | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t
     | Yield of t option
+    | YieldFrom of t
 
-  and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  and t = expression Node.t [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
@@ -773,14 +805,11 @@ end = struct
     | BooleanOperator of BooleanOperator.t
     | Call of Call.t
     | ComparisonOperator of ComparisonOperator.t
-    | Complex of float
+    | Constant of Constant.t
     | Dictionary of Dictionary.t
     | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
-    | Ellipsis
-    | False
-    | Float of float
     | Generator of t Comprehension.t
-    | Integer of int
+    | FormatString of Substring.t list
     | Lambda of Lambda.t
     | List of t list
     | ListComprehension of t Comprehension.t
@@ -788,15 +817,14 @@ end = struct
     | Set of t list
     | SetComprehension of t Comprehension.t
     | Starred of Starred.t
-    | String of StringLiteral.t
     | Ternary of Ternary.t
-    | True
     | Tuple of t list
     | UnaryOperator of UnaryOperator.t
     | WalrusOperator of WalrusOperator.t
     | Yield of t option
+    | YieldFrom of t
 
-  and t = expression Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  and t = expression Node.t [@@deriving compare, sexp, show, hash, to_yojson]
 
   let _ = show (* shadowed below *)
 
@@ -808,19 +836,17 @@ end = struct
     | Call left, Call right -> Call.location_insensitive_compare left right
     | ComparisonOperator left, ComparisonOperator right ->
         ComparisonOperator.location_insensitive_compare left right
-    | Complex left, Complex right -> Float.compare left right
+    | Constant left, Constant right -> Constant.compare left right
     | Dictionary left, Dictionary right -> Dictionary.location_insensitive_compare left right
     | DictionaryComprehension left, DictionaryComprehension right ->
         Comprehension.location_insensitive_compare
           Dictionary.Entry.location_insensitive_compare
           left
           right
-    | Ellipsis, Ellipsis -> 0
-    | False, False -> 0
-    | Float left, Float right -> Float.compare left right
     | Generator left, Generator right ->
         Comprehension.location_insensitive_compare location_insensitive_compare left right
-    | Integer left, Integer right -> Int.compare left right
+    | FormatString left, FormatString right ->
+        List.compare Substring.location_insensitive_compare left right
     | Lambda left, Lambda right -> Lambda.location_insensitive_compare left right
     | List left, List right -> List.compare location_insensitive_compare left right
     | ListComprehension left, ListComprehension right ->
@@ -830,27 +856,23 @@ end = struct
     | SetComprehension left, SetComprehension right ->
         Comprehension.location_insensitive_compare location_insensitive_compare left right
     | Starred left, Starred right -> Starred.location_insensitive_compare left right
-    | String left, String right -> StringLiteral.location_insensitive_compare left right
     | Ternary left, Ternary right -> Ternary.location_insensitive_compare left right
-    | True, True -> 0
     | Tuple left, Tuple right -> List.compare location_insensitive_compare left right
     | UnaryOperator left, UnaryOperator right ->
         UnaryOperator.location_insensitive_compare left right
     | WalrusOperator left, WalrusOperator right ->
         WalrusOperator.location_insensitive_compare left right
     | Yield left, Yield right -> Option.compare location_insensitive_compare left right
+    | YieldFrom left, YieldFrom right -> location_insensitive_compare left right
     | Await _, _ -> -1
     | BooleanOperator _, _ -> -1
     | Call _, _ -> -1
     | ComparisonOperator _, _ -> -1
-    | Complex _, _ -> -1
+    | Constant _, _ -> -1
     | Dictionary _, _ -> -1
     | DictionaryComprehension _, _ -> -1
-    | Ellipsis, _ -> -1
-    | False, _ -> -1
-    | Float _, _ -> -1
     | Generator _, _ -> -1
-    | Integer _, _ -> -1
+    | FormatString _, _ -> -1
     | Lambda _, _ -> -1
     | List _, _ -> -1
     | ListComprehension _, _ -> -1
@@ -858,13 +880,12 @@ end = struct
     | Set _, _ -> -1
     | SetComprehension _, _ -> -1
     | Starred _, _ -> -1
-    | String _, _ -> -1
     | Ternary _, _ -> -1
-    | True, _ -> -1
     | Tuple _, _ -> -1
     | UnaryOperator _, _ -> -1
     | WalrusOperator _, _ -> -1
     | Yield _, _ -> 1
+    | YieldFrom _, _ -> 1
 
 
   and location_insensitive_compare left right =
@@ -1021,16 +1042,13 @@ end = struct
               Format.fprintf formatter "%a[%a]" pp_expression_t base pp_argument_list arguments
           | _ -> Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments
           )
-      | String { StringLiteral.value; kind } -> (
-          let bytes =
-            match kind with
-            | StringLiteral.Bytes -> "b"
-            | _ -> ""
+      | FormatString substrings ->
+          let pp_substring formatter = function
+            | Substring.Literal { Node.value; _ } -> Format.fprintf formatter "\"%s\"" value
+            | Substring.Format expression ->
+                Format.fprintf formatter "f\"{%a}\"" pp_expression_t expression
           in
-          match kind with
-          | StringLiteral.Format expressions ->
-              Format.fprintf formatter "f\"%s\"(%a)" value pp_expression_list expressions
-          | _ -> Format.fprintf formatter "%s\"%s\"" bytes value)
+          List.iter substrings ~f:(pp_substring formatter)
       | ComparisonOperator { ComparisonOperator.left; operator; right } ->
           Format.fprintf
             formatter
@@ -1041,17 +1059,12 @@ end = struct
             operator
             pp_expression_t
             right
-      | Ellipsis -> Format.fprintf formatter "..."
-      | Float float_value
-      | Complex float_value ->
-          Format.fprintf formatter "%f" float_value
+      | Constant constant -> Format.fprintf formatter "%a" Constant.pp constant
       | Dictionary { Dictionary.entries; keywords } ->
           Format.fprintf formatter "{ %a%a }" pp_dictionary entries pp_keywords keywords
       | DictionaryComprehension { Comprehension.element; generators } ->
           Format.fprintf formatter "{ %a: %a }" pp_dictionary_entry element pp_generators generators
-      | False -> Format.fprintf formatter "%s" "False"
       | Generator generator -> Format.fprintf formatter "%a" pp_basic_comprehension generator
-      | Integer integer -> Format.fprintf formatter "%d" integer
       | Lambda { Lambda.parameters; body } ->
           Format.fprintf
             formatter
@@ -1071,7 +1084,6 @@ end = struct
           Format.fprintf formatter "set(%a)" pp_basic_comprehension set_comprehension
       | Starred starred -> Format.fprintf formatter "%a" pp_starred starred
       | Ternary ternary -> Format.fprintf formatter "%a" pp_ternary ternary
-      | True -> Format.fprintf formatter "%s" "True"
       | Tuple tuple -> Format.fprintf formatter "(%a)" pp_expression_list tuple
       | UnaryOperator { UnaryOperator.operator; operand } ->
           Format.fprintf
@@ -1085,8 +1097,9 @@ end = struct
           Format.fprintf formatter "%a := %a" pp_expression_t target pp_expression_t value
       | Yield yield -> (
           match yield with
-          | Some yield -> Format.fprintf formatter "%a" pp_expression_t yield
-          | None -> Format.fprintf formatter "None")
+          | Some yield -> Format.fprintf formatter "(yield %a)" pp_expression_t yield
+          | None -> Format.fprintf formatter "(yield)")
+      | YieldFrom yield -> Format.fprintf formatter "(yield from %a)" pp_expression_t yield
 
 
     let pp = pp_expression_t
@@ -1106,6 +1119,1030 @@ end = struct
 
   let pp_expression_parameter_list formatter expression_parameter_list =
     Format.fprintf formatter "%a" PrettyPrinter.pp_parameter_list expression_parameter_list
+end
+
+module Mapper = struct
+  type 'a t = {
+    map_await: mapper:'a t -> location:Location.t -> Expression.t -> 'a;
+    map_boolean_operator: mapper:'a t -> location:Location.t -> BooleanOperator.t -> 'a;
+    map_call: mapper:'a t -> location:Location.t -> Call.t -> 'a;
+    map_comparison_operator: mapper:'a t -> location:Location.t -> ComparisonOperator.t -> 'a;
+    map_constant: mapper:'a t -> location:Location.t -> Constant.t -> 'a;
+    map_dictionary: mapper:'a t -> location:Location.t -> Dictionary.t -> 'a;
+    map_dictionary_comprehension:
+      mapper:'a t -> location:Location.t -> Dictionary.Entry.t Comprehension.t -> 'a;
+    map_generator: mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    map_format_string: mapper:'a t -> location:Location.t -> Substring.t list -> 'a;
+    map_lambda: mapper:'a t -> location:Location.t -> Lambda.t -> 'a;
+    map_list: mapper:'a t -> location:Location.t -> Expression.t list -> 'a;
+    map_list_comprehension:
+      mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    map_name: mapper:'a t -> location:Location.t -> Name.t -> 'a;
+    map_set: mapper:'a t -> location:Location.t -> Expression.t list -> 'a;
+    map_set_comprehension: mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    map_starred: mapper:'a t -> location:Location.t -> Starred.t -> 'a;
+    map_ternary: mapper:'a t -> location:Location.t -> Ternary.t -> 'a;
+    map_tuple: mapper:'a t -> location:Location.t -> Expression.t list -> 'a;
+    map_unary_operator: mapper:'a t -> location:Location.t -> UnaryOperator.t -> 'a;
+    map_walrus_operator: mapper:'a t -> location:Location.t -> WalrusOperator.t -> 'a;
+    map_yield: mapper:'a t -> location:Location.t -> Expression.t option -> 'a;
+    map_yield_from: mapper:'a t -> location:Location.t -> Expression.t -> 'a;
+  }
+
+  let map
+      ~mapper:
+        ({
+           map_await;
+           map_boolean_operator;
+           map_call;
+           map_comparison_operator;
+           map_constant;
+           map_dictionary;
+           map_dictionary_comprehension;
+           map_generator;
+           map_format_string;
+           map_lambda;
+           map_list;
+           map_list_comprehension;
+           map_name;
+           map_set;
+           map_set_comprehension;
+           map_starred;
+           map_ternary;
+           map_tuple;
+           map_unary_operator;
+           map_walrus_operator;
+           map_yield;
+           map_yield_from;
+         } as mapper)
+      { Node.value; location }
+    =
+    match value with
+    | Expression.Await expression -> map_await ~mapper ~location expression
+    | Expression.BooleanOperator boolean_operator ->
+        map_boolean_operator ~mapper ~location boolean_operator
+    | Expression.Call call -> map_call ~mapper ~location call
+    | Expression.FormatString substrings -> map_format_string ~mapper ~location substrings
+    | Expression.ComparisonOperator comparison_operator ->
+        map_comparison_operator ~mapper ~location comparison_operator
+    | Expression.Constant constant -> map_constant ~mapper ~location constant
+    | Expression.Dictionary dictionary -> map_dictionary ~mapper ~location dictionary
+    | Expression.DictionaryComprehension dictionary_comprehension ->
+        map_dictionary_comprehension ~mapper ~location dictionary_comprehension
+    | Expression.Generator generator -> map_generator ~mapper ~location generator
+    | Expression.Lambda lambda -> map_lambda ~mapper ~location lambda
+    | Expression.List expression_list -> map_list ~mapper ~location expression_list
+    | Expression.ListComprehension list_comprehension ->
+        map_list_comprehension ~mapper ~location list_comprehension
+    | Expression.Name name -> map_name ~mapper ~location name
+    | Expression.Set set -> map_set ~mapper ~location set
+    | Expression.SetComprehension set_comprehension ->
+        map_set_comprehension ~mapper ~location set_comprehension
+    | Expression.Starred starred -> map_starred ~mapper ~location starred
+    | Expression.Ternary ternary -> map_ternary ~mapper ~location ternary
+    | Expression.Tuple tuple -> map_tuple ~mapper ~location tuple
+    | Expression.UnaryOperator unary_operator -> map_unary_operator ~mapper ~location unary_operator
+    | Expression.WalrusOperator walrus_operator ->
+        map_walrus_operator ~mapper ~location walrus_operator
+    | Expression.Yield yield -> map_yield ~mapper ~location yield
+    | Expression.YieldFrom yield_from -> map_yield_from ~mapper ~location yield_from
+
+
+  let create_list_mapper f ~mapper items = List.map items ~f:(f ~mapper)
+
+  let map_list ~mapper items = (create_list_mapper map) ~mapper items
+
+  let map_option ~mapper = Option.map ~f:(map ~mapper)
+
+  let default_map_dictionary_entry ~mapper { Dictionary.Entry.key; value } =
+    { Dictionary.Entry.key = map ~mapper key; value = map ~mapper value }
+
+
+  let default_map_dictionary_entries ~mapper entries =
+    (create_list_mapper default_map_dictionary_entry) ~mapper entries
+
+
+  let default_map_argument ~mapper { Call.Argument.name; value } =
+    { Call.Argument.name; value = map ~mapper value }
+
+
+  let default_map_arguments ~mapper arguments =
+    (create_list_mapper default_map_argument) ~mapper arguments
+
+
+  let default_map_parameter_with_location
+      ~mapper
+      ~map_location
+      { Node.value = { Parameter.name; value; annotation }; location }
+    =
+    {
+      Node.value =
+        {
+          Parameter.name;
+          value = map_option ~mapper value;
+          annotation = map_option ~mapper annotation;
+        };
+      location = map_location location;
+    }
+
+
+  let default_map_parameters_with_location ~mapper ~map_location parameters =
+    (create_list_mapper (default_map_parameter_with_location ~map_location)) ~mapper parameters
+
+
+  let default_map_parameters ~mapper parameters =
+    default_map_parameters_with_location ~mapper ~map_location:Fn.id parameters
+
+
+  let default_map_comprehension_generator
+      ~mapper
+      { Comprehension.Generator.target; iterator; conditions; async }
+    =
+    {
+      Comprehension.Generator.target = map ~mapper target;
+      iterator = map ~mapper iterator;
+      conditions = map_list ~mapper conditions;
+      async;
+    }
+
+
+  let default_map_comprehension_generators ~mapper generators =
+    (create_list_mapper default_map_comprehension_generator) ~mapper generators
+
+
+  let default_map_comprehension ~map_element ~mapper { Comprehension.element; generators } =
+    {
+      Comprehension.element = map_element ~mapper element;
+      generators = default_map_comprehension_generators ~mapper generators;
+    }
+
+
+  let default_map_substring_with_location ~mapper ~map_location = function
+    | Substring.Literal { Node.value; location } ->
+        Substring.Literal { Node.value; location = map_location location }
+    | Substring.Format expression -> Substring.Format (map ~mapper expression)
+
+
+  let default_map_substrings_with_location ~mapper ~map_location substrings =
+    (create_list_mapper (default_map_substring_with_location ~map_location)) ~mapper substrings
+
+
+  let default_map_substrings ~mapper substrings =
+    default_map_substrings_with_location ~mapper ~map_location:Fn.id substrings
+
+
+  let default_map_await ~mapper awaited = map ~mapper awaited
+
+  let default_map_await_node ~mapper ~location awaited =
+    Node.create ~location (Expression.Await (default_map_await ~mapper awaited))
+
+
+  let default_map_boolean_operator ~mapper { BooleanOperator.left; operator; right } =
+    { BooleanOperator.left = map ~mapper left; operator; right = map ~mapper right }
+
+
+  let default_map_boolean_operator_node ~mapper ~location boolean_operator =
+    Node.create
+      ~location
+      (Expression.BooleanOperator (default_map_boolean_operator ~mapper boolean_operator))
+
+
+  let default_map_call ~mapper { Call.callee; arguments } =
+    { Call.callee = map ~mapper callee; arguments = default_map_arguments ~mapper arguments }
+
+
+  let default_map_call_node ~mapper ~location call =
+    Node.create ~location (Expression.Call (default_map_call ~mapper call))
+
+
+  let default_map_comparison_operator ~mapper { ComparisonOperator.left; operator; right } =
+    { ComparisonOperator.left = map ~mapper left; operator; right = map ~mapper right }
+
+
+  let default_map_comparison_operator_node ~mapper ~location comparison_operator =
+    Node.create
+      ~location
+      (Expression.ComparisonOperator (default_map_comparison_operator ~mapper comparison_operator))
+
+
+  let default_map_constant ~mapper:_ constant = constant
+
+  let default_map_constant_node ~mapper ~location constant =
+    Node.create ~location (Expression.Constant (default_map_constant ~mapper constant))
+
+
+  let default_map_dictionary ~mapper { Dictionary.entries; keywords } =
+    {
+      Dictionary.entries = default_map_dictionary_entries ~mapper entries;
+      keywords = map_list ~mapper keywords;
+    }
+
+
+  let default_map_dictionary_node ~mapper ~location dictionary =
+    Node.create ~location (Expression.Dictionary (default_map_dictionary ~mapper dictionary))
+
+
+  let default_map_dictionary_comprehension ~mapper comprehension =
+    default_map_comprehension ~map_element:default_map_dictionary_entry ~mapper comprehension
+
+
+  let default_map_dictionary_comprehension_node ~mapper ~location comprehension =
+    Node.create
+      ~location
+      (Expression.DictionaryComprehension
+         (default_map_dictionary_comprehension ~mapper comprehension))
+
+
+  let default_map_format_string ~mapper substrings = default_map_substrings ~mapper substrings
+
+  let default_map_format_string_node ~mapper ~location format_string =
+    Node.create
+      ~location
+      (Expression.FormatString (default_map_format_string ~mapper format_string))
+
+
+  let default_map_generator ~mapper comprehension =
+    default_map_comprehension ~map_element:map ~mapper comprehension
+
+
+  let default_map_generator_node ~mapper ~location generator =
+    Node.create ~location (Expression.Generator (default_map_generator ~mapper generator))
+
+
+  let default_map_lambda ~mapper { Lambda.parameters; body } =
+    { Lambda.parameters = default_map_parameters ~mapper parameters; body = map ~mapper body }
+
+
+  let default_map_lambda_node ~mapper ~location lambda =
+    Node.create ~location (Expression.Lambda (default_map_lambda ~mapper lambda))
+
+
+  let default_map_list ~mapper expression_list = map_list ~mapper expression_list
+
+  let default_map_list_node ~mapper ~location expression_list =
+    Node.create ~location (Expression.List (default_map_list ~mapper expression_list))
+
+
+  let default_map_list_comprehension ~mapper comprehension =
+    default_map_comprehension ~map_element:map ~mapper comprehension
+
+
+  let default_map_list_comprehension_node ~mapper ~location comprehension =
+    Node.create
+      ~location
+      (Expression.ListComprehension (default_map_list_comprehension ~mapper comprehension))
+
+
+  let default_map_name ~mapper = function
+    | Name.Identifier _ as identifier -> identifier
+    | Name.Attribute { base; attribute; special } ->
+        Name.Attribute { base = map ~mapper base; attribute; special }
+
+
+  let default_map_name_node ~mapper ~location name =
+    Node.create ~location (Expression.Name (default_map_name ~mapper name))
+
+
+  let default_map_set ~mapper expression_list = map_list ~mapper expression_list
+
+  let default_map_set_node ~mapper ~location expression_list =
+    Node.create ~location (Expression.Set (default_map_set ~mapper expression_list))
+
+
+  let default_map_set_comprehension ~mapper comprehension =
+    default_map_comprehension ~map_element:map ~mapper comprehension
+
+
+  let default_map_set_comprehension_node ~mapper ~location comprehension =
+    Node.create
+      ~location
+      (Expression.SetComprehension (default_map_set_comprehension ~mapper comprehension))
+
+
+  let default_map_starred ~mapper = function
+    | Starred.Once expression -> Starred.Once (map ~mapper expression)
+    | Starred.Twice expression -> Starred.Twice (map ~mapper expression)
+
+
+  let default_map_starred_node ~mapper ~location starred =
+    Node.create ~location (Expression.Starred (default_map_starred ~mapper starred))
+
+
+  let default_map_ternary ~mapper { Ternary.target; test; alternative } =
+    {
+      Ternary.target = map ~mapper target;
+      test = map ~mapper test;
+      alternative = map ~mapper alternative;
+    }
+
+
+  let default_map_ternary_node ~mapper ~location ternary =
+    Node.create ~location (Expression.Ternary (default_map_ternary ~mapper ternary))
+
+
+  let default_map_tuple ~mapper expression_list = map_list ~mapper expression_list
+
+  let default_map_tuple_node ~mapper ~location expression_list =
+    Node.create ~location (Expression.Tuple (default_map_tuple ~mapper expression_list))
+
+
+  let default_map_unary_operator ~mapper { UnaryOperator.operator; operand } =
+    { UnaryOperator.operator; operand = map ~mapper operand }
+
+
+  let default_map_unary_operator_node ~mapper ~location unary_operator =
+    Node.create
+      ~location
+      (Expression.UnaryOperator (default_map_unary_operator ~mapper unary_operator))
+
+
+  let default_map_walrus_operator ~mapper { WalrusOperator.target; value } =
+    { WalrusOperator.target = map ~mapper target; value = map ~mapper value }
+
+
+  let default_map_walrus_operator_node ~mapper ~location walrus_operator =
+    Node.create
+      ~location
+      (Expression.WalrusOperator (default_map_walrus_operator ~mapper walrus_operator))
+
+
+  let default_map_yield ~mapper yield = map_option ~mapper yield
+
+  let default_map_yield_node ~mapper ~location yield =
+    Node.create ~location (Expression.Yield (default_map_yield ~mapper yield))
+
+
+  let default_map_yield_from ~mapper yield_from = map ~mapper yield_from
+
+  let default_map_yield_from_node ~mapper ~location yield_from =
+    Node.create ~location (Expression.YieldFrom (default_map_yield_from ~mapper yield_from))
+
+
+  let create
+      ~map_await
+      ~map_boolean_operator
+      ~map_call
+      ~map_comparison_operator
+      ~map_constant
+      ~map_dictionary
+      ~map_dictionary_comprehension
+      ~map_generator
+      ~map_format_string
+      ~map_lambda
+      ~map_list
+      ~map_list_comprehension
+      ~map_name
+      ~map_set
+      ~map_set_comprehension
+      ~map_starred
+      ~map_ternary
+      ~map_tuple
+      ~map_unary_operator
+      ~map_walrus_operator
+      ~map_yield
+      ~map_yield_from
+      ()
+    =
+    {
+      map_await;
+      map_boolean_operator;
+      map_call;
+      map_comparison_operator;
+      map_constant;
+      map_dictionary;
+      map_dictionary_comprehension;
+      map_generator;
+      map_format_string;
+      map_lambda;
+      map_list;
+      map_list_comprehension;
+      map_name;
+      map_set;
+      map_set_comprehension;
+      map_starred;
+      map_ternary;
+      map_tuple;
+      map_unary_operator;
+      map_walrus_operator;
+      map_yield;
+      map_yield_from;
+    }
+
+
+  let create_default
+      ?(map_await = default_map_await_node)
+      ?(map_boolean_operator = default_map_boolean_operator_node)
+      ?(map_call = default_map_call_node)
+      ?(map_comparison_operator = default_map_comparison_operator_node)
+      ?(map_constant = default_map_constant_node)
+      ?(map_dictionary = default_map_dictionary_node)
+      ?(map_dictionary_comprehension = default_map_dictionary_comprehension_node)
+      ?(map_generator = default_map_generator_node)
+      ?(map_format_string = default_map_format_string_node)
+      ?(map_lambda = default_map_lambda_node)
+      ?(map_list = default_map_list_node)
+      ?(map_list_comprehension = default_map_list_comprehension_node)
+      ?(map_name = default_map_name_node)
+      ?(map_set = default_map_set_node)
+      ?(map_set_comprehension = default_map_set_comprehension_node)
+      ?(map_starred = default_map_starred_node)
+      ?(map_ternary = default_map_ternary_node)
+      ?(map_tuple = default_map_tuple_node)
+      ?(map_unary_operator = default_map_unary_operator_node)
+      ?(map_walrus_operator = default_map_walrus_operator_node)
+      ?(map_yield = default_map_yield_node)
+      ?(map_yield_from = default_map_yield_from_node)
+      ()
+    =
+    {
+      map_await;
+      map_boolean_operator;
+      map_call;
+      map_comparison_operator;
+      map_constant;
+      map_dictionary;
+      map_dictionary_comprehension;
+      map_generator;
+      map_format_string;
+      map_lambda;
+      map_list;
+      map_list_comprehension;
+      map_name;
+      map_set;
+      map_set_comprehension;
+      map_starred;
+      map_ternary;
+      map_tuple;
+      map_unary_operator;
+      map_walrus_operator;
+      map_yield;
+      map_yield_from;
+    }
+
+
+  let create_transformer
+      ?(map_await = default_map_await)
+      ?(map_boolean_operator = default_map_boolean_operator)
+      ?(map_call = default_map_call)
+      ?(map_comparison_operator = default_map_comparison_operator)
+      ?(map_constant = default_map_constant)
+      ?(map_dictionary = default_map_dictionary)
+      ?(map_dictionary_comprehension = default_map_dictionary_comprehension)
+      ?(map_generator = default_map_generator)
+      ?map_format_string
+      ?map_lambda
+      ?(map_list = default_map_list)
+      ?(map_list_comprehension = default_map_list_comprehension)
+      ?(map_name = default_map_name)
+      ?(map_set = default_map_set)
+      ?(map_set_comprehension = default_map_set_comprehension)
+      ?(map_starred = default_map_starred)
+      ?(map_ternary = default_map_ternary)
+      ?(map_tuple = default_map_tuple)
+      ?(map_unary_operator = default_map_unary_operator)
+      ?(map_walrus_operator = default_map_walrus_operator)
+      ?(map_yield = default_map_yield)
+      ?(map_yield_from = default_map_yield_from)
+      ?(map_location = Fn.id)
+      ()
+    =
+    let map_await ~mapper ~location awaited =
+      Node.create ~location:(map_location location) (Expression.Await (map_await ~mapper awaited))
+    in
+    let map_boolean_operator ~mapper ~location boolean_operator =
+      Node.create
+        ~location:(map_location location)
+        (Expression.BooleanOperator (map_boolean_operator ~mapper boolean_operator))
+    in
+    let map_call ~mapper ~location call =
+      Node.create ~location:(map_location location) (Expression.Call (map_call ~mapper call))
+    in
+    let map_comparison_operator ~mapper ~location comparison_operator =
+      Node.create
+        ~location:(map_location location)
+        (Expression.ComparisonOperator (map_comparison_operator ~mapper comparison_operator))
+    in
+    let map_constant ~mapper ~location constant =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Constant (map_constant ~mapper constant))
+    in
+    let map_dictionary ~mapper ~location dictionary =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Dictionary (map_dictionary ~mapper dictionary))
+    in
+    let map_dictionary_comprehension ~mapper ~location comprehension =
+      Node.create
+        ~location:(map_location location)
+        (Expression.DictionaryComprehension (map_dictionary_comprehension ~mapper comprehension))
+    in
+    let map_format_string ~mapper ~location format_string =
+      let map_format_string =
+        match map_format_string with
+        | Some map_format_string -> map_format_string
+        | None ->
+            fun ~mapper substrings ->
+              default_map_substrings_with_location ~mapper ~map_location substrings
+      in
+      Node.create
+        ~location:(map_location location)
+        (Expression.FormatString (map_format_string ~mapper format_string))
+    in
+    let map_generator ~mapper ~location generator =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Generator (map_generator ~mapper generator))
+    in
+    let map_lambda ~mapper ~location lambda =
+      let map_lambda =
+        match map_lambda with
+        | Some map_lambda -> map_lambda
+        | None ->
+            fun ~mapper { Lambda.parameters; body } ->
+              {
+                Lambda.parameters =
+                  default_map_parameters_with_location ~mapper ~map_location parameters;
+                body = map ~mapper body;
+              }
+      in
+      Node.create ~location:(map_location location) (Expression.Lambda (map_lambda ~mapper lambda))
+    in
+    let map_list ~mapper ~location expression_list =
+      Node.create
+        ~location:(map_location location)
+        (Expression.List (map_list ~mapper expression_list))
+    in
+    let map_list_comprehension ~mapper ~location comprehension =
+      Node.create
+        ~location:(map_location location)
+        (Expression.ListComprehension (map_list_comprehension ~mapper comprehension))
+    in
+    let map_name ~mapper ~location name =
+      Node.create ~location:(map_location location) (Expression.Name (map_name ~mapper name))
+    in
+    let map_set ~mapper ~location expression_list =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Set (map_set ~mapper expression_list))
+    in
+    let map_set_comprehension ~mapper ~location comprehension =
+      Node.create
+        ~location:(map_location location)
+        (Expression.SetComprehension (map_set_comprehension ~mapper comprehension))
+    in
+    let map_starred ~mapper ~location starred =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Starred (map_starred ~mapper starred))
+    in
+    let map_ternary ~mapper ~location ternary =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Ternary (map_ternary ~mapper ternary))
+    in
+    let map_tuple ~mapper ~location expression_list =
+      Node.create
+        ~location:(map_location location)
+        (Expression.Tuple (map_tuple ~mapper expression_list))
+    in
+    let map_unary_operator ~mapper ~location unary_operator =
+      Node.create
+        ~location:(map_location location)
+        (Expression.UnaryOperator (map_unary_operator ~mapper unary_operator))
+    in
+    let map_walrus_operator ~mapper ~location walrus_operator =
+      Node.create
+        ~location:(map_location location)
+        (Expression.WalrusOperator (map_walrus_operator ~mapper walrus_operator))
+    in
+    let map_yield ~mapper ~location yield =
+      Node.create ~location:(map_location location) (Expression.Yield (map_yield ~mapper yield))
+    in
+    let map_yield_from ~mapper ~location yield_from =
+      Node.create
+        ~location:(map_location location)
+        (Expression.YieldFrom (map_yield_from ~mapper yield_from))
+    in
+    create_default
+      ~map_await
+      ~map_boolean_operator
+      ~map_call
+      ~map_comparison_operator
+      ~map_constant
+      ~map_dictionary
+      ~map_dictionary_comprehension
+      ~map_generator
+      ~map_format_string
+      ~map_lambda
+      ~map_list
+      ~map_list_comprehension
+      ~map_name
+      ~map_set
+      ~map_set_comprehension
+      ~map_starred
+      ~map_ternary
+      ~map_tuple
+      ~map_unary_operator
+      ~map_walrus_operator
+      ~map_yield
+      ~map_yield_from
+      ()
+end
+
+module Folder = struct
+  type 'a t = {
+    fold_await: folder:'a t -> state:'a -> location:Location.t -> Expression.t -> 'a;
+    fold_boolean_operator:
+      folder:'a t -> state:'a -> location:Location.t -> BooleanOperator.t -> 'a;
+    fold_call: folder:'a t -> state:'a -> location:Location.t -> Call.t -> 'a;
+    fold_comparison_operator:
+      folder:'a t -> state:'a -> location:Location.t -> ComparisonOperator.t -> 'a;
+    fold_constant: folder:'a t -> state:'a -> location:Location.t -> Constant.t -> 'a;
+    fold_dictionary: folder:'a t -> state:'a -> location:Location.t -> Dictionary.t -> 'a;
+    fold_dictionary_comprehension:
+      folder:'a t -> state:'a -> location:Location.t -> Dictionary.Entry.t Comprehension.t -> 'a;
+    fold_generator:
+      folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    fold_format_string: folder:'a t -> state:'a -> location:Location.t -> Substring.t list -> 'a;
+    fold_lambda: folder:'a t -> state:'a -> location:Location.t -> Lambda.t -> 'a;
+    fold_list: folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a;
+    fold_list_comprehension:
+      folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    fold_name: folder:'a t -> state:'a -> location:Location.t -> Name.t -> 'a;
+    fold_set: folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a;
+    fold_set_comprehension:
+      folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a;
+    fold_starred: folder:'a t -> state:'a -> location:Location.t -> Starred.t -> 'a;
+    fold_ternary: folder:'a t -> state:'a -> location:Location.t -> Ternary.t -> 'a;
+    fold_tuple: folder:'a t -> state:'a -> location:Location.t -> Expression.t list -> 'a;
+    fold_unary_operator: folder:'a t -> state:'a -> location:Location.t -> UnaryOperator.t -> 'a;
+    fold_walrus_operator: folder:'a t -> state:'a -> location:Location.t -> WalrusOperator.t -> 'a;
+    fold_yield: folder:'a t -> state:'a -> location:Location.t -> Expression.t option -> 'a;
+    fold_yield_from: folder:'a t -> state:'a -> location:Location.t -> Expression.t -> 'a;
+  }
+
+  let fold
+      ~folder:
+        ({
+           fold_await;
+           fold_boolean_operator;
+           fold_call;
+           fold_comparison_operator;
+           fold_constant;
+           fold_dictionary;
+           fold_dictionary_comprehension;
+           fold_generator;
+           fold_format_string;
+           fold_lambda;
+           fold_list;
+           fold_list_comprehension;
+           fold_name;
+           fold_set;
+           fold_set_comprehension;
+           fold_starred;
+           fold_ternary;
+           fold_tuple;
+           fold_unary_operator;
+           fold_walrus_operator;
+           fold_yield;
+           fold_yield_from;
+         } as folder)
+      ~state
+      { Node.value; location }
+    =
+    match value with
+    | Expression.Await expression -> fold_await ~folder ~state ~location expression
+    | Expression.BooleanOperator boolean_operator ->
+        fold_boolean_operator ~folder ~state ~location boolean_operator
+    | Expression.Call call -> fold_call ~folder ~state ~location call
+    | Expression.FormatString substrings -> fold_format_string ~folder ~state ~location substrings
+    | Expression.ComparisonOperator comparison_operator ->
+        fold_comparison_operator ~folder ~state ~location comparison_operator
+    | Expression.Constant constant -> fold_constant ~folder ~state ~location constant
+    | Expression.Dictionary dictionary -> fold_dictionary ~folder ~state ~location dictionary
+    | Expression.DictionaryComprehension dictionary_comprehension ->
+        fold_dictionary_comprehension ~folder ~state ~location dictionary_comprehension
+    | Expression.Generator generator -> fold_generator ~folder ~state ~location generator
+    | Expression.Lambda lambda -> fold_lambda ~folder ~state ~location lambda
+    | Expression.List expression_list -> fold_list ~folder ~state ~location expression_list
+    | Expression.ListComprehension list_comprehension ->
+        fold_list_comprehension ~folder ~state ~location list_comprehension
+    | Expression.Name name -> fold_name ~folder ~state ~location name
+    | Expression.Set set -> fold_set ~folder ~state ~location set
+    | Expression.SetComprehension set_comprehension ->
+        fold_set_comprehension ~folder ~state ~location set_comprehension
+    | Expression.Starred starred -> fold_starred ~folder ~state ~location starred
+    | Expression.Ternary ternary -> fold_ternary ~folder ~state ~location ternary
+    | Expression.Tuple tuple -> fold_tuple ~folder ~state ~location tuple
+    | Expression.UnaryOperator unary_operator ->
+        fold_unary_operator ~folder ~state ~location unary_operator
+    | Expression.WalrusOperator walrus_operator ->
+        fold_walrus_operator ~folder ~state ~location walrus_operator
+    | Expression.Yield yield -> fold_yield ~folder ~state ~location yield
+    | Expression.YieldFrom yield_from -> fold_yield_from ~folder ~state ~location yield_from
+
+
+  let create_list_folder f ~folder ~state items =
+    List.fold items ~init:state ~f:(fun state item -> f ~folder ~state item)
+
+
+  let fold_list ~folder ~state items = (create_list_folder fold) ~folder ~state items
+
+  let fold_option ~folder ~state =
+    Option.fold ~init:state ~f:(fun state item -> fold ~folder ~state item)
+
+
+  let default_fold_dictionary_entry ~folder ~state { Dictionary.Entry.key; value } =
+    let state = fold ~folder ~state key in
+    fold ~folder ~state value
+
+
+  let default_fold_dictionary_entries ~folder ~state entries =
+    (create_list_folder default_fold_dictionary_entry) ~folder ~state entries
+
+
+  let default_fold_argument ~folder ~state { Call.Argument.name = _; value } =
+    fold ~folder ~state value
+
+
+  let default_fold_arguments ~folder ~state arguments =
+    (create_list_folder default_fold_argument) ~folder ~state arguments
+
+
+  let default_fold_location ~state _ = state
+
+  let default_fold_parameter_with_location
+      ~folder
+      ~state
+      ~fold_location
+      { Node.value = { Parameter.name = _; value; annotation }; location }
+    =
+    let state = fold_location ~state location in
+    let state = fold_option ~folder ~state value in
+    fold_option ~folder ~state annotation
+
+
+  let default_fold_parameters_with_location ~folder ~state ~fold_location parameters =
+    (create_list_folder (default_fold_parameter_with_location ~fold_location))
+      ~folder
+      ~state
+      parameters
+
+
+  let default_fold_parameters ~folder ~state parameters =
+    default_fold_parameters_with_location
+      ~folder
+      ~state
+      ~fold_location:default_fold_location
+      parameters
+
+
+  let default_fold_comprehension_generator
+      ~folder
+      ~state
+      { Comprehension.Generator.target; iterator; conditions; async = _ }
+    =
+    let state = fold ~folder ~state target in
+    let state = fold ~folder ~state iterator in
+    fold_list ~folder ~state conditions
+
+
+  let default_fold_comprehension_generators ~folder ~state generators =
+    (create_list_folder default_fold_comprehension_generator) ~folder ~state generators
+
+
+  let default_fold_comprehension ~fold_element ~folder ~state { Comprehension.element; generators } =
+    let state = fold_element ~folder ~state element in
+    default_fold_comprehension_generators ~folder ~state generators
+
+
+  let default_fold_substring_with_location ~folder ~state ~fold_location = function
+    | Substring.Literal { Node.value = _; location } -> fold_location ~state location
+    | Substring.Format expression -> fold ~folder ~state expression
+
+
+  let default_fold_substrings_with_location ~folder ~state ~fold_location substrings =
+    (create_list_folder (default_fold_substring_with_location ~fold_location))
+      ~folder
+      ~state
+      substrings
+
+
+  let default_fold_substrings ~folder ~state substrings =
+    default_fold_substrings_with_location
+      ~folder
+      ~state
+      ~fold_location:default_fold_location
+      substrings
+
+
+  let default_fold_await ~folder ~state awaited = fold ~folder ~state awaited
+
+  let default_fold_boolean_operator ~folder ~state { BooleanOperator.left; operator = _; right } =
+    let state = fold ~folder ~state left in
+    fold ~folder ~state right
+
+
+  let default_fold_call ~folder ~state { Call.callee; arguments } =
+    let state = fold ~folder ~state callee in
+    default_fold_arguments ~folder ~state arguments
+
+
+  let default_fold_comparison_operator
+      ~folder
+      ~state
+      { ComparisonOperator.left; operator = _; right }
+    =
+    let state = fold ~folder ~state left in
+    fold ~folder ~state right
+
+
+  let default_fold_constant ~folder:_ ~state _ = state
+
+  let default_fold_dictionary ~folder ~state { Dictionary.entries; keywords } =
+    let state = default_fold_dictionary_entries ~folder ~state entries in
+    fold_list ~folder ~state keywords
+
+
+  let default_fold_dictionary_comprehension ~folder ~state comprehension =
+    default_fold_comprehension
+      ~fold_element:default_fold_dictionary_entry
+      ~folder
+      ~state
+      comprehension
+
+
+  let default_fold_format_string ~folder ~state substrings =
+    default_fold_substrings ~folder ~state substrings
+
+
+  let default_fold_generator ~folder ~state comprehension =
+    default_fold_comprehension ~fold_element:fold ~folder ~state comprehension
+
+
+  let default_fold_lambda ~folder ~state { Lambda.parameters; body } =
+    let state = default_fold_parameters ~folder ~state parameters in
+    fold ~folder ~state body
+
+
+  let default_fold_list ~folder ~state expression_list = fold_list ~folder ~state expression_list
+
+  let default_fold_name ~folder ~state = function
+    | Name.Identifier _ -> state
+    | Name.Attribute { base; attribute = _; special = _ } -> fold ~folder ~state base
+
+
+  let default_fold_starred ~folder ~state = function
+    | Starred.Once expression
+    | Starred.Twice expression ->
+        fold ~folder ~state expression
+
+
+  let default_fold_ternary ~folder ~state { Ternary.target; test; alternative } =
+    let state = fold ~folder ~state target in
+    let state = fold ~folder ~state test in
+    fold ~folder ~state alternative
+
+
+  let default_fold_unary_operator ~folder ~state { UnaryOperator.operator = _; operand } =
+    fold ~folder ~state operand
+
+
+  let default_fold_walrus_operator ~folder ~state { WalrusOperator.target; value } =
+    let state = fold ~folder ~state target in
+    fold ~folder ~state value
+
+
+  let default_fold_yield ~folder ~state yield = fold_option ~folder ~state yield
+
+  let default_fold_yield_from ~folder ~state yield_from = fold ~folder ~state yield_from
+
+  let fold_ignoring_location f ~folder ~state ~location:_ value = f ~folder ~state value
+
+  let create
+      ?(fold_await = fold_ignoring_location default_fold_await)
+      ?(fold_boolean_operator = fold_ignoring_location default_fold_boolean_operator)
+      ?(fold_call = fold_ignoring_location default_fold_call)
+      ?(fold_comparison_operator = fold_ignoring_location default_fold_comparison_operator)
+      ?(fold_constant = fold_ignoring_location default_fold_constant)
+      ?(fold_dictionary = fold_ignoring_location default_fold_dictionary)
+      ?(fold_dictionary_comprehension =
+        fold_ignoring_location default_fold_dictionary_comprehension)
+      ?(fold_generator = fold_ignoring_location default_fold_generator)
+      ?(fold_format_string = fold_ignoring_location default_fold_format_string)
+      ?(fold_lambda = fold_ignoring_location default_fold_lambda)
+      ?(fold_list = fold_ignoring_location default_fold_list)
+      ?(fold_list_comprehension = fold_ignoring_location default_fold_generator)
+      ?(fold_name = fold_ignoring_location default_fold_name)
+      ?(fold_set = fold_ignoring_location default_fold_list)
+      ?(fold_set_comprehension = fold_ignoring_location default_fold_generator)
+      ?(fold_starred = fold_ignoring_location default_fold_starred)
+      ?(fold_ternary = fold_ignoring_location default_fold_ternary)
+      ?(fold_tuple = fold_ignoring_location default_fold_list)
+      ?(fold_unary_operator = fold_ignoring_location default_fold_unary_operator)
+      ?(fold_walrus_operator = fold_ignoring_location default_fold_walrus_operator)
+      ?(fold_yield = fold_ignoring_location default_fold_yield)
+      ?(fold_yield_from = fold_ignoring_location default_fold_yield_from)
+      ()
+    =
+    {
+      fold_await;
+      fold_boolean_operator;
+      fold_call;
+      fold_comparison_operator;
+      fold_constant;
+      fold_dictionary;
+      fold_dictionary_comprehension;
+      fold_generator;
+      fold_format_string;
+      fold_lambda;
+      fold_list;
+      fold_list_comprehension;
+      fold_name;
+      fold_set;
+      fold_set_comprehension;
+      fold_starred;
+      fold_ternary;
+      fold_tuple;
+      fold_unary_operator;
+      fold_walrus_operator;
+      fold_yield;
+      fold_yield_from;
+    }
+
+
+  let create_with_uniform_location_fold
+      ?(fold_await = default_fold_await)
+      ?(fold_boolean_operator = default_fold_boolean_operator)
+      ?(fold_call = default_fold_call)
+      ?(fold_comparison_operator = default_fold_comparison_operator)
+      ?(fold_constant = default_fold_constant)
+      ?(fold_dictionary = default_fold_dictionary)
+      ?(fold_dictionary_comprehension = default_fold_dictionary_comprehension)
+      ?(fold_generator = default_fold_generator)
+      ?fold_format_string
+      ?fold_lambda
+      ?(fold_list = default_fold_list)
+      ?(fold_list_comprehension = default_fold_generator)
+      ?(fold_name = default_fold_name)
+      ?(fold_set = default_fold_list)
+      ?(fold_set_comprehension = default_fold_generator)
+      ?(fold_starred = default_fold_starred)
+      ?(fold_ternary = default_fold_ternary)
+      ?(fold_tuple = default_fold_list)
+      ?(fold_unary_operator = default_fold_unary_operator)
+      ?(fold_walrus_operator = default_fold_walrus_operator)
+      ?(fold_yield = default_fold_yield)
+      ?(fold_yield_from = default_fold_yield_from)
+      ?(fold_location = default_fold_location)
+      ()
+    =
+    let fold_lambda =
+      match fold_lambda with
+      | Some fold_lambda -> fold_lambda
+      | None ->
+          fun ~folder ~state { Lambda.parameters; body } ->
+            let state =
+              default_fold_parameters_with_location ~folder ~state ~fold_location parameters
+            in
+            fold ~folder ~state body
+    in
+    let fold_format_string =
+      match fold_format_string with
+      | Some fold_format_string -> fold_format_string
+      | None ->
+          fun ~folder ~state substrings ->
+            default_fold_substrings_with_location ~folder ~state ~fold_location substrings
+    in
+    let fold_with_location f ~folder ~state ~location item =
+      let state = fold_location ~state location in
+      f ~folder ~state item
+    in
+    {
+      fold_await = fold_with_location fold_await;
+      fold_boolean_operator = fold_with_location fold_boolean_operator;
+      fold_call = fold_with_location fold_call;
+      fold_comparison_operator = fold_with_location fold_comparison_operator;
+      fold_constant = fold_with_location fold_constant;
+      fold_dictionary = fold_with_location fold_dictionary;
+      fold_dictionary_comprehension = fold_with_location fold_dictionary_comprehension;
+      fold_generator = fold_with_location fold_generator;
+      fold_format_string = fold_with_location fold_format_string;
+      fold_lambda = fold_with_location fold_lambda;
+      fold_list = fold_with_location fold_list;
+      fold_list_comprehension = fold_with_location fold_list_comprehension;
+      fold_name = fold_with_location fold_name;
+      fold_set = fold_with_location fold_set;
+      fold_set_comprehension = fold_with_location fold_set_comprehension;
+      fold_starred = fold_with_location fold_starred;
+      fold_ternary = fold_with_location fold_ternary;
+      fold_tuple = fold_with_location fold_tuple;
+      fold_unary_operator = fold_with_location fold_unary_operator;
+      fold_walrus_operator = fold_with_location fold_walrus_operator;
+      fold_yield = fold_with_location fold_yield;
+      fold_yield_from = fold_with_location fold_yield_from;
+    }
 end
 
 include Expression
@@ -1144,8 +2181,8 @@ let rec normalize { Node.location; value } =
         | ComparisonOperator { ComparisonOperator.left; operator; right } ->
             ComparisonOperator
               { ComparisonOperator.left; operator = ComparisonOperator.inverse operator; right }
-        | False -> True
-        | True -> False
+        | Constant Constant.False -> Constant Constant.True
+        | Constant Constant.True -> Constant Constant.False
         | UnaryOperator { UnaryOperator.operator = UnaryOperator.Not; operand = { Node.value; _ } }
           ->
             value
@@ -1160,6 +2197,18 @@ let rec normalize { Node.location; value } =
     | _ -> value
   in
   { Node.location; value = normalized }
+
+
+let is_false { Node.value; _ } =
+  match value with
+  | Constant Constant.False -> true
+  | _ -> false
+
+
+let is_none { Node.value; _ } =
+  match value with
+  | Constant Constant.NoneLiteral -> true
+  | _ -> false
 
 
 let create_name_from_identifiers identifiers =

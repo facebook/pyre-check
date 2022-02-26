@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -16,18 +16,18 @@ val pp : Format.formatter -> t -> unit
 val show : t -> string
 
 val set
-  :  ?precondition:Resolution.annotation_store ->
-  ?postcondition:Resolution.annotation_store ->
-  key:int ->
+  :  ?precondition:Refinement.Store.t ->
+  ?postcondition:Refinement.Store.t ->
+  statement_key:int ->
   t ->
   unit
 
 module ReadOnly : sig
   type t
 
-  val get_precondition : t -> int -> Resolution.annotation_store option
+  val get_precondition : t -> statement_key:int -> Refinement.Store.t option
 
-  val get_postcondition : t -> int -> Resolution.annotation_store option
+  val get_postcondition : t -> statement_key:int -> Refinement.Store.t option
 end
 
 val read_only : t -> ReadOnly.t

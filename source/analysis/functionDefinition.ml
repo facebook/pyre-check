@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -42,7 +42,7 @@ let collect_typecheck_units { Source.statements; _ } =
   (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
   let rec collect_from_statement ~ignore_class sofar { Node.value; location } =
     match value with
-    | Statement.Class ({ Class.name = { Node.value = name; _ }; body; _ } as class_) ->
+    | Statement.Class ({ Class.name; body; _ } as class_) ->
         if ignore_class then (
           Log.debug
             "Dropping the body of class %a as it is nested inside a function"
@@ -58,6 +58,11 @@ let collect_typecheck_units { Source.statements; _ } =
     | Define ({ Define.body; _ } as define) ->
         let sofar = { Node.location; Node.value = define } :: sofar in
         List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class:true)
+    | Match { Match.cases; _ } ->
+        let from_case sofar { Match.Case.body; _ } =
+          List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class)
+        in
+        List.fold cases ~init:sofar ~f:from_case
     | For { For.body; orelse; _ }
     | If { If.body; orelse; _ }
     | While { While.body; orelse; _ } ->
@@ -83,9 +88,7 @@ let collect_typecheck_units { Source.statements; _ } =
     | Nonlocal _
     | Pass
     | Raise _
-    | Return _
-    | Yield _
-    | YieldFrom _ ->
+    | Return _ ->
         sofar
   in
   let drop_nested_body { Node.value = { Define.body; _ } as define; location } =
@@ -100,6 +103,14 @@ let collect_typecheck_units { Source.statements; _ } =
                 for_statement with
                 body = drop_nested_body_in_statements body;
                 orelse = drop_nested_body_in_statements orelse;
+              }
+        | Match ({ Match.cases; _ } as match_statement) ->
+            Statement.Match
+              {
+                match_statement with
+                cases =
+                  List.map cases ~f:(fun ({ Match.Case.body; _ } as case) ->
+                      { case with Match.Case.body = drop_nested_body_in_statements body });
               }
         | If ({ If.body; orelse; _ } as if_statement) ->
             Statement.If
@@ -143,7 +154,7 @@ let collect_defines ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as 
   let all_defines = collect_typecheck_units source in
   let table = Reference.Table.create () in
   let process_define ({ Node.value = define; _ } as define_node) =
-    let define_name = Define.name define |> Node.value in
+    let define_name = Define.name define in
     let sibling =
       let open Sibling in
       if Define.is_overloaded_function define then

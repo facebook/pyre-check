@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -20,8 +20,8 @@ let test_check_data_class context =
           b = Foo('a')
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `Foo.__init__` but got `str`.";
+      "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional only parameter \
+       expected `int` but got `str`.";
     ];
   assert_type_errors
     {|

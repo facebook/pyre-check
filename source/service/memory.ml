@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -174,22 +174,21 @@ let report_statistics () =
 exception TarError of string
 
 type tar_structure = {
-  directory: Pyre.Path.t;
-  table_path: Pyre.Path.t;
-  dependencies_path: Pyre.Path.t;
+  directory: PyrePath.t;
+  table_path: PyrePath.t;
+  dependencies_path: PyrePath.t;
 }
 
 let prepare_saved_state_directory { Configuration.Analysis.log_directory; _ } =
-  let open Pyre in
-  let root = Path.create_relative ~root:log_directory ~relative:"saved_state" in
-  let table_path = Path.create_relative ~root ~relative:"table" in
-  let dependencies_path = Path.create_relative ~root ~relative:"deps" in
+  let root = PyrePath.create_relative ~root:log_directory ~relative:"saved_state" in
+  let table_path = PyrePath.create_relative ~root ~relative:"table" in
+  let dependencies_path = PyrePath.create_relative ~root ~relative:"deps" in
   let () =
-    try Core.Unix.mkdir (Path.absolute root) with
+    try Core.Unix.mkdir (PyrePath.absolute root) with
     (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
     | Core.Unix.Unix_error ((EEXIST | EISDIR), _, _) ->
-        Path.remove_if_exists table_path;
-        Path.remove_if_exists dependencies_path
+        PyrePath.remove_if_exists table_path;
+        PyrePath.remove_if_exists dependencies_path
     | e -> raise e
   in
   { directory = root; table_path; dependencies_path }
@@ -207,24 +206,22 @@ let run_tar arguments =
 exception SavedStateLoadingFailure of string
 
 let save_shared_memory ~path ~configuration =
-  let open Pyre in
   SharedMemory.collect `aggressive;
   let { directory; table_path; dependencies_path } = prepare_saved_state_directory configuration in
-  SharedMem.save_table (Path.absolute table_path);
+  SharedMem.save_table (PyrePath.absolute table_path);
   let _edges_count : bytes =
-    SharedMem.save_dep_table_sqlite (Path.absolute dependencies_path) "0.0.0"
+    SharedMem.save_dep_table_sqlite (PyrePath.absolute dependencies_path) "0.0.0"
   in
-  run_tar ["cf"; path; "-C"; Path.absolute directory; "."]
+  run_tar ["cf"; path; "-C"; PyrePath.absolute directory; "."]
 
 
 let load_shared_memory ~path ~configuration =
-  let open Pyre in
   let { directory; table_path; dependencies_path } = prepare_saved_state_directory configuration in
-  run_tar ["xf"; path; "-C"; Path.absolute directory];
+  run_tar ["xf"; path; "-C"; PyrePath.absolute directory];
   try
-    SharedMem.load_table (Path.absolute table_path);
+    SharedMem.load_table (PyrePath.absolute table_path);
     let _edges_count : bytes =
-      SharedMem.load_dep_table_sqlite (Path.absolute dependencies_path) true
+      SharedMem.load_dep_table_sqlite (PyrePath.absolute dependencies_path) true
     in
     ()
   with
@@ -287,4 +284,42 @@ module Serializer (Value : SerializableValueType) = struct
     let table = Table.find_unsafe SingletonKey.key |> Value.deserialize in
     Table.remove_batch (Table.KeySet.singleton SingletonKey.key);
     table
+end
+
+module type InternerValueType = sig
+  include ValueType
+
+  val to_string : t -> string
+end
+
+(* Provide a unique integer for a given value. *)
+module Interner (Value : InternerValueType) = struct
+  module Table = SharedMemory.WithCache (Int) (Value)
+
+  type t = int
+
+  let intern value =
+    (* The shared memory implementation uses the first 8 bytes of the md5 as a
+     * key to the hashtable. Since we already assume that there won't be
+     * collisions there, let's use the same strategy here.
+     *)
+    let id =
+      value
+      |> Value.to_string
+      |> Digest.string
+      |> Md5_lib.to_binary
+      |> Caml.Bytes.of_string
+      |> fun md5 -> Caml.Bytes.get_int64_ne md5 0 |> Int64.to_int_trunc
+    in
+    Table.write_through id value;
+    id
+
+
+  let unintern id =
+    match Table.get id with
+    | Some value -> value
+    | None -> Format.asprintf "Invalid intern key %d" id |> failwith
+
+
+  let compare = Int.compare
 end

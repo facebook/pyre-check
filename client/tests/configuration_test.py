@@ -1,10 +1,9 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
 import dataclasses
-import hashlib
 import json
 import shutil
 import site
@@ -13,6 +12,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Optional, Dict
 
 import testslide
 
@@ -23,6 +23,7 @@ from .. import (
 )
 from ..configuration import (
     PythonVersion,
+    IdeFeatures,
     InvalidPythonVersion,
     SharedMemory,
     Configuration,
@@ -32,6 +33,8 @@ from ..configuration import (
     SimpleSearchPathElement,
     SitePackageSearchPathElement,
     SubdirectorySearchPathElement,
+    UnwatchedFiles,
+    UnwatchedDependency,
     check_nested_local_configuration,
     create_configuration,
     create_search_paths,
@@ -41,6 +44,7 @@ from ..configuration import (
 from ..find_directories import BINARY_NAME
 from .setup import (
     ensure_directories_exists,
+    ensure_files_exist,
     switch_environment,
     switch_working_directory,
     write_configuration_file,
@@ -69,6 +73,59 @@ class PythonVersionTest(unittest.TestCase):
         assert_parsed("3.6.7", PythonVersion(major=3, minor=6, micro=7))
 
 
+class UnwatchedDependencyTest(unittest.TestCase):
+    def test_unwatched_files_from_json(self) -> None:
+        def assert_parsed(input: Dict[str, object], expected: UnwatchedFiles) -> None:
+            self.assertEqual(UnwatchedFiles.from_json(input), expected)
+
+        def assert_not_parsed(input: Dict[str, object]) -> None:
+            with self.assertRaises(InvalidConfiguration):
+                UnwatchedFiles.from_json(input)
+
+        assert_not_parsed({})
+        assert_not_parsed({"derp": 42})
+        assert_not_parsed({"root": 42})
+        assert_not_parsed({"root": "foo"})
+        assert_not_parsed({"checksum_path": []})
+        assert_not_parsed({"checksum_path": "bar"})
+        assert_not_parsed({"root": "foo", "checksum_path": True})
+        assert_not_parsed({"root": {}, "checksum_path": "bar"})
+
+        assert_parsed(
+            {"root": "foo", "checksum_path": "bar"},
+            UnwatchedFiles(root="foo", checksum_path="bar"),
+        )
+
+    def test_unwatched_dependency_from_json(self) -> None:
+        def assert_parsed(
+            input: Dict[str, object], expected: UnwatchedDependency
+        ) -> None:
+            self.assertEqual(UnwatchedDependency.from_json(input), expected)
+
+        def assert_not_parsed(input: Dict[str, object]) -> None:
+            with self.assertRaises(InvalidConfiguration):
+                UnwatchedDependency.from_json(input)
+
+        assert_not_parsed({})
+        assert_not_parsed({"derp": 42})
+        assert_not_parsed({"change_indicator": 42})
+        assert_not_parsed({"change_indicator": "foo"})
+        assert_not_parsed({"change_indicator": "foo", "files": 42})
+        assert_not_parsed({"change_indicator": "foo", "files": {}})
+        assert_not_parsed({"change_indicator": "foo", "files": {"root": "foo"}})
+
+        assert_parsed(
+            {
+                "change_indicator": "foo",
+                "files": {"root": "bar", "checksum_path": "baz"},
+            },
+            UnwatchedDependency(
+                change_indicator="foo",
+                files=UnwatchedFiles(root="bar", checksum_path="baz"),
+            ),
+        )
+
+
 class PartialConfigurationTest(unittest.TestCase):
     def test_create_from_command_arguments(self) -> None:
         configuration = PartialConfiguration.from_command_arguments(
@@ -76,23 +133,20 @@ class PartialConfigurationTest(unittest.TestCase):
                 local_configuration=None,
                 logger="logger",
                 targets=[],
-                use_buck_builder=False,
-                use_buck_source_database=True,
-                use_command_v2=True,
                 source_directories=[],
                 search_path=["x", "y"],
                 binary="binary",
-                buck_builder_binary="buck_builder_binary",
                 buck_mode="opt",
                 exclude=["excludes"],
                 typeshed="typeshed",
                 dot_pyre_directory=Path(".pyre"),
                 python_version="3.6.7",
                 shared_memory_heap_size=42,
+                number_of_workers=43,
+                use_buck2=True,
             )
         )
         self.assertEqual(configuration.binary, "binary")
-        self.assertEqual(configuration.buck_builder_binary, "buck_builder_binary")
         self.assertEqual(configuration.buck_mode, "opt")
         self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
         self.assertListEqual(list(configuration.excludes), ["excludes"])
@@ -106,29 +160,37 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertEqual(configuration.strict, None)
         self.assertIsNone(configuration.targets)
         self.assertEqual(configuration.typeshed, "typeshed")
-        self.assertEqual(configuration.use_buck_builder, False)
-        self.assertEqual(configuration.use_buck_source_database, True)
-        self.assertEqual(configuration.use_command_v2, True)
+        self.assertEqual(configuration.unwatched_dependency, None)
         self.assertEqual(
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
         self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=42))
+        self.assertEqual(configuration.number_of_workers, 43)
+        self.assertEqual(configuration.use_buck2, True)
+
+    def test_create_from_command_arguments__ide_features(self) -> None:
+        configuration = PartialConfiguration.from_command_arguments(
+            command_arguments.CommandArguments(
+                enable_hover=True,
+            )
+        )
+        assert configuration.ide_features is not None
+        self.assertTrue(configuration.ide_features.is_hover_enabled())
+        configuration = PartialConfiguration.from_command_arguments(
+            command_arguments.CommandArguments(
+                enable_hover=False,
+            )
+        )
+        assert configuration.ide_features is not None
+        self.assertFalse(configuration.ide_features.is_hover_enabled())
+        configuration = PartialConfiguration.from_command_arguments(
+            command_arguments.CommandArguments()
+        )
+        self.assertEqual(configuration.ide_features, None)
 
     def test_create_from_string_success(self) -> None:
         self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"autocomplete": True})
-            ).autocomplete,
-            True,
-        )
-        self.assertEqual(
             PartialConfiguration.from_string(json.dumps({"binary": "foo"})).binary,
-            "foo",
-        )
-        self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"buck_builder_binary": "foo"})
-            ).buck_builder_binary,
             "foo",
         )
         self.assertEqual(
@@ -145,7 +207,7 @@ class PartialConfigurationTest(unittest.TestCase):
             list(
                 PartialConfiguration.from_string(
                     json.dumps({"do_not_ignore_errors_in": ["foo", "bar"]})
-                ).do_not_ignore_all_errors_in
+                ).do_not_ignore_errors_in
             ),
             ["foo", "bar"],
         )
@@ -281,26 +343,14 @@ class PartialConfigurationTest(unittest.TestCase):
         )
         self.assertEqual(
             PartialConfiguration.from_string(
-                json.dumps({"use_buck_builder": True})
-            ).use_buck_builder,
-            True,
-        )
-        self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"use_buck_source_database": True})
-            ).use_buck_source_database,
-            True,
-        )
-        self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"use_command_v2": True})
-            ).use_command_v2,
-            True,
-        )
-        self.assertEqual(
-            PartialConfiguration.from_string(
                 json.dumps({"version": "abc"})
             ).version_hash,
+            "abc",
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"pysa_version": "abc"})
+            ).pysa_version_hash,
             "abc",
         )
         self.assertEqual(
@@ -339,6 +389,13 @@ class PartialConfigurationTest(unittest.TestCase):
                 json.dumps({"shared_memory": {"hash_table_power": 3}})
             ).shared_memory,
             SharedMemory(hash_table_power=3),
+        )
+
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"use_buck2": False})
+            ).use_buck2,
+            False,
         )
 
         self.assertIsNone(PartialConfiguration.from_string("{}").source_directories)
@@ -403,15 +460,45 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertIsNotNone(targets)
         self.assertListEqual(list(targets), ["//foo", "//bar"])
 
+        unwatched_dependency = PartialConfiguration.from_string(
+            json.dumps(
+                {
+                    "unwatched_dependency": {
+                        "change_indicator": "foo",
+                        "files": {"root": "bar", "checksum_path": "baz"},
+                    }
+                }
+            )
+        ).unwatched_dependency
+        self.assertIsNotNone(unwatched_dependency)
         self.assertEqual(
-            PartialConfiguration.from_string(json.dumps({"version": "abc"})).file_hash,
-            None,
+            unwatched_dependency,
+            UnwatchedDependency(
+                change_indicator="foo",
+                files=UnwatchedFiles(root="bar", checksum_path="baz"),
+            ),
         )
-        file_content = json.dumps({"version": "abc", "saved_state": "xyz"})
-        self.assertEqual(
-            PartialConfiguration.from_string(file_content).file_hash,
-            hashlib.sha1(file_content.encode("utf-8")).hexdigest(),
+
+    def test_create_from_string_ide_features(self) -> None:
+        def assert_ide_features_equal(input: object, expected: object) -> None:
+            self.assertEqual(
+                PartialConfiguration.from_string(json.dumps(input)).ide_features,
+                expected,
+            )
+
+        def assert_ide_features_raises(input: object) -> None:
+            with self.assertRaises(InvalidConfiguration):
+                PartialConfiguration.from_string(json.dumps(input))
+
+        assert_ide_features_equal({}, None)
+        assert_ide_features_equal({"ide_features": {}}, IdeFeatures())
+        assert_ide_features_equal(
+            {"ide_features": {"hover_enabled": True}}, IdeFeatures(hover_enabled=True)
         )
+        assert_ide_features_equal(
+            {"ide_features": {"hover_enabled": False}}, IdeFeatures(hover_enabled=False)
+        )
+        assert_ide_features_raises({"ide_features": {"hover_enabled": 42}})
 
     def test_create_from_string_failure(self) -> None:
         def assert_raises(content: str) -> None:
@@ -420,9 +507,7 @@ class PartialConfigurationTest(unittest.TestCase):
 
         assert_raises("")
         assert_raises("{")
-        assert_raises(json.dumps({"autocomplete": 42}))
         assert_raises(json.dumps({"binary": True}))
-        assert_raises(json.dumps({"buck_builder_binary": ["."]}))
         assert_raises(json.dumps({"buck_mode": {}}))
         assert_raises(json.dumps({"disabled": "False"}))
         assert_raises(json.dumps({"do_not_ignore_errors_in": "abc"}))
@@ -441,14 +526,14 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"taint_models_path": ["foo", 42]}))
         assert_raises(json.dumps({"targets": "abc"}))
         assert_raises(json.dumps({"typeshed": ["abc"]}))
-        assert_raises(json.dumps({"use_buck_builder": "derp"}))
-        assert_raises(json.dumps({"use_buck_source_database": 4.2}))
-        assert_raises(json.dumps({"use_command_v2": 42}))
         assert_raises(json.dumps({"version": 123}))
+        assert_raises(json.dumps({"pysa_version": 123}))
         assert_raises(json.dumps({"python_version": "abc"}))
         assert_raises(json.dumps({"python_version": 42}))
         assert_raises(json.dumps({"shared_memory": "abc"}))
         assert_raises(json.dumps({"shared_memory": {"heap_size": "abc"}}))
+        assert_raises(json.dumps({"unwatched_dependency": {"change_indicator": "abc"}}))
+        assert_raises(json.dumps({"use_buck2": {}}))
 
     def test_merge(self) -> None:
         # Unsafe features like `getattr` has to be used in this test to reduce boilerplates.
@@ -536,15 +621,12 @@ class PartialConfigurationTest(unittest.TestCase):
                     override=create_configuration(attribute_name, override_value),
                 )
 
-        assert_overwritten("autocomplete")
-        assert_overwritten("buck_builder_binary")
         assert_overwritten("buck_mode")
         assert_overwritten("disabled")
-        assert_prepended("do_not_ignore_all_errors_in")
+        assert_prepended("do_not_ignore_errors_in")
         assert_overwritten("dot_pyre_directory")
         assert_prepended("excludes")
         assert_prepended("extensions")
-        assert_overwritten("file_hash")
         assert_prepended("ignore_all_errors")
         assert_prepended("ignore_infer")
         assert_overwritten("logger")
@@ -558,10 +640,41 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_prepended("taint_models_path")
         assert_raise_when_overridden("targets")
         assert_overwritten("typeshed")
-        assert_overwritten("use_buck_builder")
-        assert_overwritten("use_buck_source_database")
-        assert_overwritten("use_command_v2")
+        assert_overwritten("unwatched_dependency")
+        assert_overwritten("use_buck2")
         assert_overwritten("version_hash")
+
+    def test_merge__ide_features(self) -> None:
+        def assert_merged(
+            base_ide_features: Optional[IdeFeatures],
+            override_ide_features: Optional[IdeFeatures],
+            expected: Optional[IdeFeatures],
+        ) -> None:
+            self.assertEqual(
+                merge_partial_configurations(
+                    base=PartialConfiguration(ide_features=base_ide_features),
+                    override=PartialConfiguration(ide_features=override_ide_features),
+                ).ide_features,
+                expected,
+            )
+
+        assert_merged(None, None, None)
+        assert_merged(
+            IdeFeatures(hover_enabled=True), None, IdeFeatures(hover_enabled=True)
+        )
+        assert_merged(
+            None, IdeFeatures(hover_enabled=True), IdeFeatures(hover_enabled=True)
+        )
+        assert_merged(
+            IdeFeatures(hover_enabled=False),
+            IdeFeatures(hover_enabled=True),
+            IdeFeatures(hover_enabled=True),
+        )
+        assert_merged(
+            IdeFeatures(hover_enabled=True),
+            IdeFeatures(hover_enabled=False),
+            IdeFeatures(hover_enabled=False),
+        )
 
     def test_expand_relative_paths(self) -> None:
         self.assertEqual(
@@ -573,15 +686,9 @@ class PartialConfigurationTest(unittest.TestCase):
             str(Path.home() / "foo"),
         )
         self.assertEqual(
-            PartialConfiguration(buck_builder_binary="foo")
-            .expand_relative_paths("bar")
-            .buck_builder_binary,
-            "bar/foo",
-        )
-        self.assertEqual(
-            PartialConfiguration(do_not_ignore_all_errors_in=["foo", "bar"])
+            PartialConfiguration(do_not_ignore_errors_in=["foo", "bar"])
             .expand_relative_paths("baz")
-            .do_not_ignore_all_errors_in,
+            .do_not_ignore_errors_in,
             ["baz/foo", "baz/bar"],
         )
         self.assertEqual(
@@ -647,6 +754,28 @@ class PartialConfigurationTest(unittest.TestCase):
             "bar/foo",
         )
 
+        def assert_expanded_unwatched_root(
+            original: str, root: str, expected: str
+        ) -> None:
+            actual = (
+                PartialConfiguration(
+                    unwatched_dependency=UnwatchedDependency(
+                        change_indicator="indicator",
+                        files=UnwatchedFiles(root=original, checksum_path="checksum"),
+                    )
+                )
+                .expand_relative_paths(root)
+                .unwatched_dependency
+            )
+            self.assertIsNotNone(actual)
+            self.assertEqual(actual.files.root, expected)
+
+        assert_expanded_unwatched_root(
+            original="foo",
+            root="bar",
+            expected="bar/foo",
+        )
+
 
 class ConfigurationTest(testslide.TestCase):
     def test_from_partial_configuration(self) -> None:
@@ -654,16 +783,14 @@ class ConfigurationTest(testslide.TestCase):
             project_root=Path("root"),
             relative_local_root="local",
             partial_configuration=PartialConfiguration(
-                autocomplete=None,
                 binary="binary",
-                buck_builder_binary="buck_builder_binary",
                 buck_mode="opt",
                 disabled=None,
-                do_not_ignore_all_errors_in=["foo"],
+                do_not_ignore_errors_in=["foo"],
                 dot_pyre_directory=None,
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
-                file_hash="abc",
+                ide_features=IdeFeatures(hover_enabled=True),
                 ignore_all_errors=["bar"],
                 ignore_infer=["baz"],
                 logger="logger",
@@ -678,25 +805,22 @@ class ConfigurationTest(testslide.TestCase):
                 taint_models_path=["taint"],
                 targets=None,
                 typeshed="typeshed",
-                use_buck_builder=None,
-                use_buck_source_database=None,
-                use_command_v2=None,
+                unwatched_dependency=None,
+                use_buck2=None,
                 version_hash="abc",
             ),
             in_virtual_environment=False,
         )
         self.assertEqual(configuration.project_root, "root")
         self.assertEqual(configuration.relative_local_root, "local")
-        self.assertEqual(configuration.autocomplete, False)
         self.assertEqual(configuration.binary, "binary")
-        self.assertEqual(configuration.buck_builder_binary, "buck_builder_binary")
         self.assertEqual(configuration.buck_mode, "opt")
         self.assertEqual(configuration.disabled, False)
-        self.assertListEqual(list(configuration.do_not_ignore_all_errors_in), ["foo"])
+        self.assertListEqual(list(configuration.do_not_ignore_errors_in), ["foo"])
         self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))
         self.assertListEqual(list(configuration.excludes), ["exclude"])
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])
-        self.assertEqual(configuration.file_hash, "abc")
+        self.assertEqual(configuration.ide_features, IdeFeatures(hover_enabled=True))
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
         self.assertListEqual(list(configuration.ignore_infer), ["baz"])
         self.assertEqual(configuration.logger, "logger")
@@ -715,9 +839,8 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.taint_models_path, ["taint"])
         self.assertEqual(configuration.targets, None)
         self.assertEqual(configuration.typeshed, "typeshed")
-        self.assertEqual(configuration.use_buck_builder, False)
-        self.assertEqual(configuration.use_buck_source_database, False)
-        self.assertEqual(configuration.use_command_v2, True)
+        self.assertEqual(configuration.unwatched_dependency, None)
+        self.assertEqual(configuration.use_buck2, False)
         self.assertEqual(configuration.version_hash, "abc")
 
     def test_get_site_roots(self) -> None:
@@ -881,6 +1004,47 @@ class ConfigurationTest(testslide.TestCase):
                 ],
             )
 
+    def test_existent_unwatched_dependency(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            ensure_files_exist(root_path, ["a/b"])
+            self.assertIsNotNone(
+                Configuration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    unwatched_dependency=UnwatchedDependency(
+                        change_indicator="indicator",
+                        files=UnwatchedFiles(
+                            root=str(root_path / "a"), checksum_path="b"
+                        ),
+                    ),
+                ).get_existent_unwatched_dependency()
+            )
+            self.assertIsNone(
+                Configuration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    unwatched_dependency=UnwatchedDependency(
+                        change_indicator="indicator",
+                        files=UnwatchedFiles(
+                            root=str(root_path / "a"), checksum_path="c"
+                        ),
+                    ),
+                ).get_existent_unwatched_dependency()
+            )
+            self.assertIsNone(
+                Configuration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    unwatched_dependency=UnwatchedDependency(
+                        change_indicator="indicator",
+                        files=UnwatchedFiles(
+                            root=str(root_path / "c"), checksum_path="b"
+                        ),
+                    ),
+                ).get_existent_unwatched_dependency()
+            )
+
     def test_existent_ignore_infer(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
@@ -909,7 +1073,7 @@ class ConfigurationTest(testslide.TestCase):
                 Configuration(
                     project_root=str(root_path),
                     dot_pyre_directory=Path(".pyre"),
-                    do_not_ignore_all_errors_in=[
+                    do_not_ignore_errors_in=[
                         str(root_path / "a"),
                         str(root_path / "x"),
                         "//b/c",
@@ -1162,6 +1326,21 @@ class ConfigurationTest(testslide.TestCase):
                 ],
             ).get_valid_extension_suffixes(),
             [".bar"],
+        )
+
+    def test_is_hover_enabled(self) -> None:
+        self.assertFalse(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+            ).is_hover_enabled(),
+        )
+        self.assertTrue(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                ide_features=IdeFeatures(hover_enabled=True),
+            ).is_hover_enabled(),
         )
 
     def test_create_from_command_arguments_only(self) -> None:
@@ -1472,6 +1651,13 @@ class SearchPathElementTest(unittest.TestCase):
             create_search_paths({"site-package": "foo"}, site_roots=["site1"]),
             [SitePackageSearchPathElement("site1", "foo")],
         )
+        self.assertListEqual(
+            create_search_paths(
+                {"site-package": "foo", "is_toplevel_module": "true"},
+                site_roots=["site1"],
+            ),
+            [SitePackageSearchPathElement("site1", "foo", True)],
+        )
 
         with self.assertRaises(InvalidConfiguration):
             create_search_paths({}, site_roots=[])
@@ -1499,6 +1685,10 @@ class SearchPathElementTest(unittest.TestCase):
         self.assertEqual(
             SitePackageSearchPathElement("foo", "bar").command_line_argument(),
             "foo$bar",
+        )
+        self.assertEqual(
+            SitePackageSearchPathElement("foo", "bar", True).command_line_argument(),
+            "foo$bar.py",
         )
 
     def test_expand_global_root(self) -> None:

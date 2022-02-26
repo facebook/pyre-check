@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -33,9 +33,8 @@ let test_check_tuple context =
         a.tuple_method(1.0)
     |}
     [
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `tuple.tuple_method` but got \
-         `float`.";
+      "Incompatible parameter type [6]: In call `tuple.tuple_method`, for 1st positional only \
+       parameter expected `int` but got `float`.";
     ];
   assert_type_errors
     {|
@@ -50,10 +49,7 @@ let test_check_tuple context =
       def foo() -> typing.Tuple[int, str]:
         return (1, "string", 3)
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Tuple[int, str]` but got "
-      ^ "`typing.Tuple[int, str, int]`.";
-    ];
+    ["Incompatible return type [7]: Expected `Tuple[int, str]` but got `Tuple[int, str, int]`."];
   assert_type_errors
     {|
       import typing
@@ -61,8 +57,8 @@ let test_check_tuple context =
         return (1, "string", 3)
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Tuple[int, ...]` but got "
-      ^ "`typing.Tuple[int, str, int]`.";
+      "Incompatible return type [7]: Expected `typing.Tuple[int, ...]` but got `Tuple[int, str, \
+       int]`.";
     ];
   assert_type_errors
     {|
@@ -116,10 +112,7 @@ let test_check_tuple context =
         a, *b = x
         return b
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Tuple[str, int]` but got "
-      ^ "`typing.List[typing.Union[int, str]]`.";
-    ];
+    ["Incompatible return type [7]: Expected `Tuple[str, int]` but got `List[Union[int, str]]`."];
   assert_type_errors
     {|
       def derp() -> int:
@@ -181,7 +174,7 @@ let test_check_tuple context =
       def foo() -> typing.Tuple[int, str]:
         return ()
     |}
-    ["Incompatible return type [7]: Expected `typing.Tuple[int, str]` but got `typing.Tuple[]`."];
+    ["Incompatible return type [7]: Expected `Tuple[int, str]` but got `Tuple[]`."];
   assert_type_errors
     {|
       import typing
@@ -210,10 +203,7 @@ let test_check_tuple context =
       def foo( *args: int) -> typing.Iterable[str]:
         return args
     |}
-    [
-      "Incompatible return type [7]: Expected `typing.Iterable[str]` but "
-      ^ "got `typing.Tuple[int, ...]`.";
-    ];
+    ["Incompatible return type [7]: Expected `Iterable[str]` but got `typing.Tuple[int, ...]`."];
   assert_type_errors
     {|
       import collections
@@ -434,13 +424,35 @@ let test_tuple_literal_access context =
         x = (0, "one", 2)
         return x[p]
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Union[int, str]`."];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        x = (0, "one", 2)
+        return x[-1]
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        x = (0, "one", 2)
+        return x[-2]
+    |}
+    ["Incompatible return type [7]: Expected `int` but got `str`."];
   assert_type_errors
     {|
       def foo() -> int:
         i = 0
         x = (0, "one", 2)
         return x[i]
+    |}
+    [];
+  assert_type_errors
+    {|
+      def foo() -> int:
+        i = -2
+        x = (0, "one", 2.)
+        return x[-3]
     |}
     [];
 
@@ -451,7 +463,7 @@ let test_tuple_literal_access context =
         x = (0, "one", 2)
         return x[3]
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Union[int, str]`."];
 
   (* TODO(T41500251): This would ideally work as well *)
   assert_type_errors
@@ -462,8 +474,8 @@ let test_tuple_literal_access context =
         return x[0:2]
     |}
     [
-      "Incompatible return type [7]: Expected `typing.Tuple[int, int]` but got "
-      ^ "`typing.Tuple[typing.Union[int, str], ...]`.";
+      "Incompatible return type [7]: Expected `Tuple[int, int]` but got "
+      ^ "`typing.Tuple[Union[int, str], ...]`.";
     ];
   assert_type_errors
     {|
@@ -497,10 +509,10 @@ let test_tuple_literal_access context =
       func(1, *c)
     |}
     [
-      "Incompatible parameter type [6]: Expected `bool` for 2nd positional only parameter to call \
-       `func` but got `str`.";
-      "Incompatible parameter type [6]: Expected `str` for 3rd positional only parameter to call \
-       `func` but got `bool`.";
+      "Incompatible parameter type [6]: In call `func`, for 2nd positional only parameter expected \
+       `bool` but got `str`.";
+      "Incompatible parameter type [6]: In call `func`, for 3rd positional only parameter expected \
+       `str` but got `bool`.";
     ];
   assert_type_errors
     {|
@@ -633,11 +645,11 @@ let test_unpacking context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def foo(x: int, xs: Tuple[str, *Ts, bool]) -> Tuple[int, str, *Ts, bool]:
+      def foo(x: int, xs: Tuple[str, Unpack[Ts], bool]) -> Tuple[int, str, Unpack[Ts], bool]:
         y = (x, *xs)
         reveal_type(y)
         return y
@@ -646,11 +658,11 @@ let test_unpacking context =
   assert_type_errors
     {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple
+      from pyre_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
-      def foo(xs: Tuple[str, *Ts, bool]) -> None:
+      def foo(xs: Tuple[str, Unpack[Ts], bool]) -> None:
         y = ( *xs, *(2, 3), *xs)
         reveal_type(y)
     |}
@@ -713,6 +725,110 @@ let test_unpacking context =
   ()
 
 
+let test_star_args context =
+  let assert_type_errors = assert_type_errors ~context in
+  (* We should be able to pass an unpacked list to `*args`. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import Unpack
+      from typing import List, Tuple
+
+      def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
+
+      def main(xs: List[int]) -> None:
+        expect_int( *xs)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from pyre_extensions import Unpack
+      from typing import List, Tuple
+
+      def expect_int( *args: Unpack[Tuple[int, ...]]) -> None: ...
+
+      def main(list_of_string: List[str]) -> None:
+        expect_int( *list_of_string)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `expect_int`, for 1st positional only parameter \
+       expected `int` but got `str`.";
+    ];
+  (* ParamSpec `P.args` should be treated as having type `Tuple[object, ...]`. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import ParameterSpecification, Unpack
+      from typing import Callable, Tuple
+
+      P = ParameterSpecification("P")
+
+      def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
+
+      def expect_object( *args: Unpack[Tuple[object, Unpack[Tuple[object, ...]]]]) -> None: ...
+
+      def outer(f: Callable[P, int]) -> None:
+        def inner( *args: P.args, **kwargs: P.kwargs) -> None:
+          expect_object( *args)
+          expect_int( *args)
+    |}
+    [
+      "Invalid argument [32]: Argument types `*Tuple[object, ...]` are not compatible with \
+       expected variadic elements `int, *Tuple[int, ...]`.";
+    ];
+  (* We should be able to pass multiple unpacked lists to `*args`. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import Unpack
+      from typing import List, Tuple
+
+      def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
+
+      def main(xs: List[int]) -> None:
+        expect_int( *xs, 42, *xs)
+    |}
+    [];
+  assert_type_errors
+    {|
+      from pyre_extensions import Unpack
+      from typing import List, Tuple
+
+      def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
+
+      def main(xs: List[int], ys: List[str]) -> None:
+        expect_int( *xs, *ys)
+    |}
+    [
+      "Invalid argument [32]: Argument types `*Tuple[typing.Union[int, str], ...]` are not \
+       compatible with expected variadic elements `int, *Tuple[int, ...]`.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import Unpack
+      from typing import List, Tuple
+
+      def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
+
+      def main(x: int) -> None:
+        expect_int( *x)
+    |}
+    [
+      "Invalid argument [32]: Unpacked argument `x` must have an unpackable type but has type `int`.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import Unpack
+      from typing import List, Tuple
+
+      def expect_int( *args: int) -> None: ...
+
+      def main(x: int) -> None:
+        expect_int( *x)
+    |}
+    [
+      "Invalid argument [32]: Unpacked argument `x` must have an unpackable type but has type `int`.";
+    ];
+  ()
+
+
 let () =
   "tuple"
   >::: [
@@ -721,5 +837,6 @@ let () =
          "custom_tuple" >:: test_custom_tuple;
          "length" >:: test_length;
          "unpacking" >:: test_unpacking;
+         "star_args" >:: test_star_args;
        ]
   |> Test.run

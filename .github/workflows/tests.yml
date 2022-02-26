@@ -9,18 +9,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  tests:
+  test:
+
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python: [3.6, 3.7, 3.8, 3.9]
 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v1
-
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run Tests
-        run: |
-          ./scripts/run-python-tests.sh
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install tox
+        run: pip install tox
+      - name: Run tox on python version from matrix
+        run: tox -e py

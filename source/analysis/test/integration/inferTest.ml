@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -322,9 +322,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Returning `typing.Union[bool, int]` "
       ^ "but type `Any` is specified.";
-      "Incompatible parameter type [6]: "
-      ^ "Expected `int` for 1st positional only parameter to call `int_to_bool` but got "
-      ^ "`typing.Optional[int]`.";
+      "Incompatible parameter type [6]: In call `int_to_bool`, for 1st positional only parameter \
+       expected `int` but got `Optional[int]`.";
     ];
   assert_type_errors
     {|
@@ -336,25 +335,6 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Returning `typing.Union[None, bool, int]` but type `Any` is \
        specified.";
-    ];
-  assert_type_errors
-    {|
-      import typing
-      def foo() -> typing.Any:
-        yield
-    |}
-    [
-      "Missing return annotation [3]: Returning `typing.Generator[None, None, None]` "
-      ^ "but type `Any` is specified.";
-    ];
-  assert_type_errors
-    {|
-      def foo():
-        yield
-    |}
-    [
-      "Missing return annotation [3]: Returning `typing.Generator[None, None, None]` "
-      ^ "but no return type is specified.";
     ];
 
   (* Joining. *)

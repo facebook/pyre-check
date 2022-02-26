@@ -15,14 +15,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 212,
               "start": 39,
               "end": 53
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -30,6 +35,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -38,22 +55,20 @@
                 "end": 53
               },
               "resolves_to": [ "decorator.foo_args_kwargs_with_sink" ],
-              "port": "formal(y)",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(y)"
+            }
           }
         ]
       }
     ],
     "features": [
+      { "always-type": "integer" },
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_args_kwargs_with_sink|1|formal(y):7315584bf913d3a8482a86c3fd7f62de"
     ]
   }
 }
@@ -73,14 +88,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 220,
               "start": 29,
               "end": 43
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -88,6 +108,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -96,22 +128,20 @@
                 "end": 43
               },
               "resolves_to": [ "decorator.foo_with_helper_function" ],
-              "port": "formal(x)",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
     ],
     "features": [
+      { "always-type": "integer" },
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_with_helper_function|0|formal(x):79a023bb314b79dbaaa797b4418a0ff8"
     ]
   }
 }
@@ -131,14 +161,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 205,
               "start": 20,
               "end": 34
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -146,6 +181,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -154,11 +197,8 @@
                 "end": 34
               },
               "resolves_to": [ "decorator.foo_async" ],
-              "port": "formal(y)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(y)"
+            }
           }
         ]
       }
@@ -166,6 +206,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_async|0|formal(y):f3a4be07afbf6d338177c5c28d7b0103"
     ]
   }
 }
@@ -185,14 +228,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 226,
               "start": 39,
               "end": 53
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -200,6 +248,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 6,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -208,11 +264,8 @@
                 "end": 53
               },
               "resolves_to": [ "decorator.Foo.self_has_generic_type" ],
-              "port": "formal(x)",
-              "length": 6
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -220,6 +273,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.Foo.self_has_generic_type|0|formal(x):1d904e1b10103dc63761eb151649220a"
     ]
   }
 }
@@ -239,14 +295,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 218,
               "start": 28,
               "end": 42
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -254,6 +315,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -262,22 +335,20 @@
                 "end": 42
               },
               "resolves_to": [ "decorator.foo_log_first_parameter" ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
     ],
     "features": [
+      { "always-type": "integer" },
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_log_first_parameter|0|formal(x):5ae16dac4bb4fe64e2aa75438894edf6"
     ]
   }
 }
@@ -297,14 +368,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 216,
               "start": 32,
               "end": 46
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -312,6 +388,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -320,11 +404,8 @@
                 "end": 46
               },
               "resolves_to": [ "decorator.foo_using_decorator_factory" ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -332,6 +413,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_using_decorator_factory|0|formal(x):feb621b717fb8c1c72c833590bf4051a"
     ]
   }
 }
@@ -351,14 +435,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 222,
               "start": 14,
               "end": 28
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -366,6 +455,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 4,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -374,11 +471,8 @@
                 "end": 28
               },
               "resolves_to": [ "decorator.Foo.foo" ],
-              "port": "formal(x)",
-              "length": 4
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -386,6 +480,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.Foo.foo|0|formal(x):698e390b3ce78adb9bb075b68552d797"
     ]
   }
 }
@@ -405,14 +502,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 207,
               "start": 20,
               "end": 34
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -420,6 +522,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -428,11 +538,8 @@
                 "end": 34
               },
               "resolves_to": [ "decorator.foo_args_kwargs" ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -440,6 +547,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_args_kwargs|0|formal(x):1d108131364bdb806b02a8cb2668d990"
     ]
   }
 }
@@ -459,14 +569,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 228,
               "start": 26,
               "end": 40
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -474,6 +589,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 4,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -482,11 +605,8 @@
                 "end": 40
               },
               "resolves_to": [ "decorator.Foo.some_class_method" ],
-              "port": "formal(x)",
-              "length": 4
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -494,6 +614,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.Foo.some_class_method|0|formal(x):393e937dd9a9ecb6162292427e244201"
     ]
   }
 }
@@ -513,14 +636,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 204,
               "start": 18,
               "end": 32
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -528,6 +656,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -536,22 +676,20 @@
                 "end": 32
               },
               "resolves_to": [ "decorator.foo_with_sink" ],
-              "port": "formal(x)",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
     ],
     "features": [
+      { "always-type": "integer" },
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo_with_sink|0|formal(x):2777cc7f8c266e9329c3fe15799386ca"
     ]
   }
 }
@@ -571,14 +709,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 224,
               "start": 14,
               "end": 28
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -586,6 +729,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -594,11 +745,8 @@
                 "end": 28
               },
               "resolves_to": [ "decorator.Foo.bar" ],
-              "port": "formal(x)",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -606,6 +754,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.Foo.bar|0|formal(x):d6c399de2b9d476a13ea748378ba1a2a"
     ]
   }
 }
@@ -625,14 +776,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 203,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -640,6 +796,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -648,22 +816,20 @@
                 "end": 22
               },
               "resolves_to": [ "decorator.foo" ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
     ],
     "features": [
+      { "always-type": "integer" },
       { "always-type": "scalar" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.main:5002:0:Call|decorator.foo|0|formal(x):3260e990263b34bb8e48f747f4d4d381"
     ]
   }
 }
@@ -677,6 +843,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -687,11 +861,8 @@
               "resolves_to": [
                 "decorator.Foo.bar._inlined_with_logging_args_kwargs"
               ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       },
@@ -699,6 +870,14 @@
         "port": "formal(self)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -709,11 +888,8 @@
               "resolves_to": [
                 "decorator.Foo.bar._inlined_with_logging_args_kwargs"
               ],
-              "port": "formal(self)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(self)"
+            }
           }
         ]
       }
@@ -730,6 +906,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 4,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -740,11 +924,8 @@
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type._original_function"
               ],
-              "port": "formal(x)",
-              "length": 4
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       },
@@ -752,6 +933,14 @@
         "port": "formal(other)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 4,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -762,11 +951,8 @@
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type._original_function"
               ],
-              "port": "formal(other)",
-              "length": 4
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(other)"
+            }
           }
         ]
       }
@@ -783,6 +969,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -793,11 +987,8 @@
               "resolves_to": [
                 "decorator.Foo.some_class_method._original_function"
               ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -814,6 +1005,22 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -824,14 +1031,8 @@
               "resolves_to": [
                 "decorator.foo_args_kwargs_with_sink._original_function"
               ],
-              "port": "formal(y)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(y)"
+            }
           }
         ]
       }
@@ -848,17 +1049,23 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 135,
               "start": 23,
               "end": 38
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -875,14 +1082,19 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 117,
               "start": 23,
               "end": 27
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -899,6 +1111,14 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -909,11 +1129,8 @@
               "resolves_to": [
                 "decorator.foo_with_helper_function._inlined_with_logging_helper_functions.after"
               ],
-              "port": "formal(*rest0)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(*rest0)"
+            }
           }
         ]
       },
@@ -921,6 +1138,18 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -931,14 +1160,8 @@
               "resolves_to": [
                 "decorator.foo_with_helper_function._inlined_with_logging_helper_functions.after"
               ],
-              "port": "formal(*rest0)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(*rest0)"
+            }
           }
         ]
       }
@@ -955,14 +1178,19 @@
         "port": "formal(*rest0)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 164,
               "start": 19,
               "end": 23
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -979,14 +1207,19 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 87,
               "start": 19,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -1003,6 +1236,19 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 95, "start": 17, "end": 18 } ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1013,16 +1259,8 @@
               "resolves_to": [
                 "decorator.foo_with_shady_decorators._inlined_with_logging_sink"
               ],
-              "port": "formal(y)",
-              "length": 1
-            },
-            "tito": [ { "line": 95, "start": 17, "end": 18 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(y)"
+            }
           }
         ]
       }
@@ -1046,19 +1284,24 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 95, "start": 21, "end": 35 } ],
             "root": {
               "filename": "decorator.py",
               "line": 95,
               "start": 21,
               "end": 35
-            },
-            "tito": [ { "line": 95, "start": 21, "end": 35 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -1066,6 +1309,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1076,20 +1327,20 @@
               "resolves_to": [
                 "decorator.foo_with_shady_decorators._inlined_with_logging_sink"
               ],
-              "port": "formal(y)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(y)"
+            }
           }
         ]
       }
     ],
     "features": [
-      { "always-via": "tito" },
       { "always-via": "string_concat_rhs" },
+      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "decorator.foo_with_shady_decorators._inlined_with_logging_source:5002:0:Call|decorator.foo_with_shady_decorators._inlined_with_logging_sink|0|formal(y):82a70286f12b4d788c5be3bb7399cce2"
     ]
   }
 }
@@ -1102,6 +1353,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1112,11 +1371,8 @@
               "resolves_to": [
                 "decorator.Foo.bar._inlined_with_logging_args_kwargs_no_sink2"
               ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       },
@@ -1124,6 +1380,14 @@
         "port": "formal(self)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1134,11 +1398,8 @@
               "resolves_to": [
                 "decorator.Foo.bar._inlined_with_logging_args_kwargs_no_sink2"
               ],
-              "port": "formal(self)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(self)"
+            }
           }
         ]
       }
@@ -1154,14 +1415,19 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 62,
               "start": 19,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       },
@@ -1169,14 +1435,19 @@
         "port": "formal(self)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 62,
               "start": 19,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -1192,6 +1463,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1202,11 +1481,8 @@
               "resolves_to": [
                 "decorator.Foo.foo._inlined_with_logging_args_kwargs_no_sink"
               ],
-              "port": "formal(x)",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1222,6 +1498,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1230,11 +1514,8 @@
                 "end": 9
               },
               "resolves_to": [ "decorator.Foo.foo._original_function" ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1250,6 +1531,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1258,11 +1547,8 @@
                 "end": 26
               },
               "resolves_to": [ "decorator.Foo.sink_method" ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1278,6 +1564,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 5,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1288,11 +1582,8 @@
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type._inlined_with_logging_args_kwargs_no_sink"
               ],
-              "port": "formal(x)",
-              "length": 5
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       },
@@ -1300,6 +1591,14 @@
         "port": "formal(other)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 5,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1310,11 +1609,8 @@
               "resolves_to": [
                 "decorator.Foo.self_has_generic_type._inlined_with_logging_args_kwargs_no_sink"
               ],
-              "port": "formal(other)",
-              "length": 5
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(other)"
+            }
           }
         ]
       }
@@ -1330,6 +1626,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1338,11 +1642,8 @@
                 "end": 19
               },
               "resolves_to": [ "decorator.Foo.bar" ],
-              "port": "formal(x)",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       },
@@ -1350,6 +1651,14 @@
         "port": "formal(other)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1358,11 +1667,8 @@
                 "end": 13
               },
               "resolves_to": [ "decorator.Foo.bar" ],
-              "port": "formal(self)",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(self)"
+            }
           }
         ]
       }
@@ -1378,14 +1684,19 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 180,
               "start": 19,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -1401,6 +1712,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1411,11 +1730,8 @@
               "resolves_to": [
                 "decorator.Foo.some_class_method._inlined_with_logging_args_kwargs_no_sink"
               ],
-              "port": "formal(x)",
-              "length": 3
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1431,6 +1747,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1439,11 +1763,8 @@
                 "end": 27
               },
               "resolves_to": [ "decorator.Foo.sink_method" ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1459,8 +1780,8 @@
         "port": "formal(f)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -1476,6 +1797,22 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1484,14 +1821,8 @@
                 "end": 13
               },
               "resolves_to": [ "decorator.foo._inlined_with_logging" ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1507,17 +1838,23 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 19,
               "start": 19,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -1533,6 +1870,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1543,11 +1888,8 @@
               "resolves_to": [
                 "decorator.foo_args_kwargs._inlined_with_logging_args_kwargs"
               ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1563,14 +1905,19 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 62,
               "start": 19,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -1586,6 +1933,22 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1596,14 +1959,8 @@
               "resolves_to": [
                 "decorator.foo_args_kwargs_with_sink._inlined_with_logging_args_kwargs_no_sink"
               ],
-              "port": "formal(y)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(y)"
+            }
           }
         ]
       }
@@ -1619,17 +1976,23 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 82,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -1645,6 +2008,14 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1655,11 +2026,8 @@
               "resolves_to": [
                 "decorator.foo_async._inlined_with_logging_async"
               ],
-              "port": "formal(y)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(y)"
+            }
           }
         ]
       }
@@ -1675,14 +2043,19 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 50,
               "start": 23,
               "end": 24
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -1698,6 +2071,22 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1708,14 +2097,8 @@
               "resolves_to": [
                 "decorator.foo_log_first_parameter._inlined_with_logging_first_parameter"
               ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1731,6 +2114,14 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1741,11 +2132,8 @@
               "resolves_to": [
                 "decorator.foo_using_decorator_factory._inlined_with_named_logger"
               ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1761,6 +2149,14 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1771,11 +2167,8 @@
               "resolves_to": [
                 "decorator.foo_with_helper_function._inlined_with_logging_helper_functions"
               ],
-              "port": "formal(y)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(y)"
+            }
           }
         ]
       },
@@ -1783,6 +2176,22 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1793,14 +2202,8 @@
               "resolves_to": [
                 "decorator.foo_with_helper_function._inlined_with_logging_helper_functions"
               ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1816,6 +2219,18 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "string_concat_lhs" },
+                  { "always-via": "tito" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1826,15 +2241,8 @@
               "resolves_to": [
                 "decorator.foo_with_shady_decorators._inlined_with_logging_source"
               ],
-              "port": "formal(y)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(y)"
+            }
           }
         ]
       }
@@ -1850,6 +2258,22 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1860,14 +2284,8 @@
               "resolves_to": [
                 "decorator.foo_with_sink._inlined_with_logging_no_sink"
               ],
-              "port": "formal(x)",
-              "length": 2
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1883,6 +2301,22 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -1891,14 +2325,8 @@
                 "end": 11
               },
               "resolves_to": [ "decorator.foo_with_sink._original_function" ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -1914,17 +2342,23 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 39,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -1940,17 +2374,23 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 19,
               "start": 19,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -1966,14 +2406,19 @@
         "port": "formal(**kw)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 62,
               "start": 19,
               "end": 25
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -1989,14 +2434,19 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 50,
               "start": 23,
               "end": 24
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -2012,17 +2462,23 @@
         "port": "formal(first_parameter)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 135,
               "start": 23,
               "end": 38
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [
-              { "always-type": "scalar" },
-              { "always-via": "special_sink" }
-            ]
+            }
           }
         ]
       }
@@ -2038,14 +2494,19 @@
         "port": "formal(*rest0)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 164,
               "start": 19,
               "end": 23
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -2061,6 +2522,14 @@
         "port": "formal(*rest0)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "decorator.py",
@@ -2071,11 +2540,8 @@
               "resolves_to": [
                 "decorator.with_logging_helper_functions.after"
               ],
-              "port": "formal(*rest0)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(*rest0)"
+            }
           }
         ]
       }
@@ -2091,14 +2557,19 @@
         "port": "formal(y)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 87,
               "start": 19,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -2114,14 +2585,19 @@
         "port": "formal(*rest0)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "decorator.py",
               "line": 117,
               "start": 23,
               "end": 27
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }

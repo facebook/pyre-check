@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -19,7 +19,7 @@ type class_metadata = {
   is_protocol: bool;
   is_typed_dictionary: bool;
 }
-[@@deriving eq, compare, show]
+[@@deriving compare, show]
 
 module ClassMetadataValue = struct
   type t = class_metadata option
@@ -147,7 +147,7 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
 
   let show_key = Fn.id
 
-  let equal_value = Option.equal equal_class_metadata
+  let equal_value = Option.equal [%compare.equal: class_metadata]
 end)
 
 include MetadataTable

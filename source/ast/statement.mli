@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,27 +10,24 @@ module Assign : sig
     target: Expression.t;
     annotation: Expression.t option;
     value: Expression.t;
-    parent: Reference.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash]
-
-  val is_static_attribute_initialization : t -> bool
+  [@@deriving compare, sexp, show, hash]
 
   val location_insensitive_compare : t -> t -> int
 end
 
 module Import : sig
   type import = {
-    name: Reference.t Node.t;
-    alias: Identifier.t Node.t option;
+    name: Reference.t;
+    alias: Identifier.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   type t = {
-    from: Reference.t Node.t option;
-    imports: import list;
+    from: Reference.t option;
+    imports: import Node.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   val location_insensitive_compare : t -> t -> int
 end
@@ -40,7 +37,7 @@ module Raise : sig
     expression: Expression.t option;
     from: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end
@@ -50,7 +47,7 @@ module Return : sig
     is_implicit: bool;
     expression: Expression.t option;
   }
-  [@@deriving compare, eq, sexp, show, hash]
+  [@@deriving compare, sexp, show, hash]
 
   val location_insensitive_compare : t -> t -> int
 end
@@ -60,11 +57,13 @@ module Decorator : sig
     name: Reference.t Node.t;
     arguments: Expression.Call.Argument.t list option;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
   val to_expression : t -> Expression.t
+
+  val from_expression : Expression.t -> t option
 end
 
 module rec Assert : sig
@@ -73,7 +72,8 @@ module rec Assert : sig
       | Assertion
       | If of { true_branch: bool }
       | While of { true_branch: bool }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+      | Match
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
   end
@@ -83,20 +83,20 @@ module rec Assert : sig
     message: Expression.t option;
     origin: Origin.t;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end
 
 and Class : sig
   type t = {
-    name: Reference.t Node.t;
+    name: Reference.t;
     base_arguments: Expression.Call.Argument.t list;
     body: Statement.t list;
-    decorators: Decorator.t list;
+    decorators: Expression.t list;
     top_level_unbound_names: Define.NameAccess.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
@@ -116,15 +116,17 @@ and Class : sig
 
   val init_subclass_arguments : t -> Expression.Call.Argument.t list
 
-  type class_t = t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  val name_location : body_location:Location.t -> t -> Location.t
+
+  type class_t = t [@@deriving compare, sexp, show, hash, to_yojson]
 end
 
 and Define : sig
   module Signature : sig
     type t = {
-      name: Reference.t Node.t;
+      name: Reference.t;
       parameters: Expression.Parameter.t list;
-      decorators: Decorator.t list;
+      decorators: Expression.t list;
       return_annotation: Expression.t option;
       async: bool;
       generator: bool;
@@ -133,7 +135,7 @@ and Define : sig
       (* If the define is nested, this is the name of the nesting define. *)
       nesting_define: Reference.t option;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
 
@@ -175,7 +177,7 @@ and Define : sig
 
     val has_decorator : ?match_prefix:bool -> t -> string -> bool
 
-    val has_return_annotation : t -> bool [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    val has_return_annotation : t -> bool [@@deriving compare, sexp, show, hash, to_yojson]
   end
 
   module Capture : sig
@@ -185,14 +187,14 @@ and Define : sig
         | Self of Reference.t
         | ClassSelf of Reference.t
         | DefineSignature of Define.Signature.t
-      [@@deriving compare, eq, sexp, show, hash, to_yojson]
+      [@@deriving compare, sexp, show, hash, to_yojson]
     end
 
     type t = {
       name: Identifier.t;
       kind: Kind.t;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
   end
 
   module NameAccess : sig
@@ -200,7 +202,7 @@ and Define : sig
       name: Identifier.t;
       location: Location.t;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
   end
 
   type t = {
@@ -209,7 +211,7 @@ and Define : sig
     unbound_names: NameAccess.t list;
     body: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
@@ -219,9 +221,11 @@ and Define : sig
     statements:Statement.t list ->
     t
 
-  val name : t -> Reference.t Node.t
+  val name : t -> Reference.t
 
   val unqualified_name : t -> Identifier.t
+
+  val name_location : body_location:Location.t -> t -> Location.t
 
   val self_identifier : t -> Identifier.t
 
@@ -267,6 +271,8 @@ and Define : sig
 
   val dump_call_graph : t -> bool
 
+  val dump_perf : t -> bool
+
   val show_json : t -> string
 
   val has_decorator : ?match_prefix:bool -> t -> string -> bool
@@ -282,7 +288,7 @@ and For : sig
     orelse: Statement.t list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val preamble : t -> Statement.t
 
@@ -295,7 +301,60 @@ and If : sig
     body: Statement.t list;
     orelse: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
+
+  val location_insensitive_compare : t -> t -> int
+end
+
+and Match : sig
+  module Pattern : sig
+    type pattern =
+      | MatchAs of {
+          pattern: t option;
+          name: Identifier.t;
+        }
+      | MatchClass of {
+          class_name: Expression.Name.t Node.t;
+          patterns: t list;
+          keyword_attributes: Identifier.t list;
+          keyword_patterns: t list;
+        }
+      | MatchMapping of {
+          keys: Expression.t list;
+          patterns: t list;
+          rest: Identifier.t option;
+        }
+      | MatchOr of t list
+      | MatchSequence of t list
+      | MatchSingleton of Expression.Constant.t
+      | MatchStar of Identifier.t option
+      | MatchValue of Expression.t
+      | MatchWildcard
+    [@@deriving compare, sexp, show, hash, to_yojson]
+
+    and t = pattern Node.t [@@deriving compare, sexp, show, hash, to_yojson]
+
+    val location_insensitive_compare : t -> t -> int
+  end
+
+  module Case : sig
+    type t = {
+      pattern: Pattern.t;
+      guard: Expression.t option;
+      body: Statement.t list;
+    }
+    [@@deriving compare, sexp, show, hash, to_yojson]
+
+    val location_insensitive_compare : t -> t -> int
+
+    val is_refutable : t -> bool
+  end
+
+  type t = {
+    subject: Expression.t;
+    cases: Case.t list;
+  }
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end
@@ -307,7 +366,7 @@ and Try : sig
       name: Identifier.t option;
       body: Statement.t list;
     }
-    [@@deriving compare, eq, sexp, show, hash, to_yojson]
+    [@@deriving compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
   end
@@ -318,7 +377,7 @@ and Try : sig
     orelse: Statement.t list;
     finally: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val preamble : Handler.t -> Statement.t list
 
@@ -331,7 +390,7 @@ and While : sig
     body: Statement.t list;
     orelse: Statement.t list;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end
@@ -342,7 +401,7 @@ and With : sig
     body: Statement.t list;
     async: bool;
   }
-  [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  [@@deriving compare, sexp, show, hash, to_yojson]
 
   val preamble : t -> Statement.t list
 
@@ -357,12 +416,13 @@ and Statement : sig
     | Class of Class.t
     | Continue
     | Define of Define.t
-    | Delete of Expression.t
+    | Delete of Expression.t list
     | Expression of Expression.t
     | For of For.t
     | Global of Identifier.t list
     | If of If.t
     | Import of Import.t
+    | Match of Match.t
     | Nonlocal of Identifier.t list
     | Pass
     | Raise of Raise.t
@@ -370,11 +430,9 @@ and Statement : sig
     | Try of Try.t
     | With of With.t
     | While of While.t
-    | Yield of Expression.t
-    | YieldFrom of Expression.t
-  [@@deriving compare, eq, sexp, hash, to_yojson]
+  [@@deriving compare, sexp, hash, to_yojson]
 
-  type t = statement Node.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+  type t = statement Node.t [@@deriving compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
@@ -383,9 +441,9 @@ and Statement : sig
   val generator_assignment : Expression.Comprehension.Generator.t -> Assign.t
 end
 
-type statement = Statement.statement [@@deriving compare, eq, sexp, show, hash, to_yojson]
+type statement = Statement.statement [@@deriving compare, sexp, show, hash, to_yojson]
 
-type t = Statement.t [@@deriving compare, eq, sexp, show, hash, to_yojson]
+type t = Statement.t [@@deriving compare, sexp, show, hash, to_yojson]
 
 val location_insensitive_compare : t -> t -> int
 

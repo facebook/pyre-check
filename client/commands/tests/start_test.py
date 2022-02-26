@@ -1,583 +1,475 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
-import errno
-import unittest
+import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, mock_open, patch
+from typing import Iterable, Tuple
 
-from ... import (
-    commands,
-    configuration_monitor,
-    filesystem,
-    find_directories,
-    project_files_monitor,
-    configuration as configuration_module,
+import testslide
+
+from ... import command_arguments, configuration
+from ...tests import setup
+from .. import backend_arguments
+from ..start import (
+    Arguments,
+    CriticalFile,
+    LoadSavedStateFromFile,
+    LoadSavedStateFromProject,
+    StoreSavedStateToFile,
+    MatchPolicy,
+    create_server_arguments,
+    get_critical_files,
+    get_saved_state_action,
+    get_server_identifier,
+    background_server_log_file,
 )
-from ...analysis_directory import AnalysisDirectory
-from ..command import ExitCode
-from ..start import Start
-from .command_test import mock_arguments, mock_configuration
 
 
-class StartTest(unittest.TestCase):
-    @patch(
-        f"{find_directories.__name__}.find_global_and_local_root",
-        return_value=find_directories.FoundRoot(Path(".")),
-    )
-    @patch("fcntl.lockf")
-    @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
-    def test_start(
-        self,
-        _daemonize,
-        get_directories_to_analyze,
-        lock_file,
-        find_global_and_local_root,
-    ) -> None:
-        original_directory = "/original/directory"
-        arguments = mock_arguments()
-
-        configuration = mock_configuration(version_hash="hash")
-
-        # Check start without watchman.
-        analysis_directory = AnalysisDirectory(
-            configuration_module.SimpleSearchPathElement(".")
+class ArgumentTest(testslide.TestCase):
+    def test_serialize_critical_file(self) -> None:
+        self.assertDictEqual(
+            CriticalFile(policy=MatchPolicy.BASE_NAME, path="foo").serialize(),
+            {"base_name": "foo"},
         )
-        with patch("builtins.open", mock_open()), patch.object(
-            commands.Command, "_call_client"
-        ) as call_client, patch.object(
-            project_files_monitor, "ProjectFilesMonitor"
-        ) as Monitor:
-            Start(
-                arguments,
-                original_directory,
-                terminal=False,
-                store_type_check_resolution=False,
-                use_watchman=False,
-                incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-                configuration=configuration,
-                analysis_directory=analysis_directory,
-            ).run()
-            call_client.assert_called_once_with(command=Start.NAME)
-            Monitor.assert_not_called()
-
-        # Check start with watchman.
-        analysis_directory = AnalysisDirectory(
-            configuration_module.SimpleSearchPathElement(".")
+        self.assertDictEqual(
+            CriticalFile(policy=MatchPolicy.EXTENSION, path="foo").serialize(),
+            {"extension": "foo"},
         )
-        with patch("builtins.open", mock_open()), patch.object(
-            commands.Command, "_call_client"
-        ) as call_client, patch.object(
-            project_files_monitor, "ProjectFilesMonitor"
-        ) as Monitor:
-            Start(
-                arguments,
-                original_directory,
-                terminal=False,
-                store_type_check_resolution=False,
-                use_watchman=True,
-                incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-                configuration=configuration,
-                analysis_directory=analysis_directory,
-            ).run()
-            call_client.assert_called_once_with(command=Start.NAME)
-            Monitor.assert_called_once_with(configuration, "/root", analysis_directory)
-            Monitor.return_value.daemonize.assert_called_once_with()
+        self.assertDictEqual(
+            CriticalFile(policy=MatchPolicy.FULL_PATH, path="/foo/bar").serialize(),
+            {"full_path": "/foo/bar"},
+        )
 
-        lock_file.side_effect = None
+    def test_serialize_saved_state_action(self) -> None:
+        self.assertTupleEqual(
+            LoadSavedStateFromFile(shared_memory_path="/foo/bar").serialize(),
+            ("load_from_file", {"shared_memory_path": "/foo/bar"}),
+        )
+        self.assertTupleEqual(
+            LoadSavedStateFromFile(
+                shared_memory_path="/foo/bar", changed_files_path="derp.txt"
+            ).serialize(),
+            (
+                "load_from_file",
+                {"shared_memory_path": "/foo/bar", "changed_files_path": "derp.txt"},
+            ),
+        )
+        self.assertTupleEqual(
+            LoadSavedStateFromProject(project_name="my_project").serialize(),
+            ("load_from_project", {"project_name": "my_project"}),
+        )
+        self.assertTupleEqual(
+            LoadSavedStateFromProject(
+                project_name="my_project", project_metadata="my_metadata"
+            ).serialize(),
+            (
+                "load_from_project",
+                {"project_name": "my_project", "project_metadata": "my_metadata"},
+            ),
+        )
+        self.assertTupleEqual(
+            StoreSavedStateToFile(shared_memory_path="/foo/bar").serialize(),
+            ("save_to_file", {"shared_memory_path": "/foo/bar"}),
+        )
 
-        def raise_mount_error(fileno, command):
-            raise OSError(errno.ENOTCONN)
+    def test_serialize_arguments(self) -> None:
+        def assert_serialized(
+            arguments: Arguments, items: Iterable[Tuple[str, object]]
+        ) -> None:
+            serialized = arguments.serialize()
+            for key, value in items:
+                if key not in serialized:
+                    self.fail(f"Cannot find key `{key}` in serialized arguments")
+                else:
+                    self.assertEqual(value, serialized[key])
 
-        lock_file.side_effect = raise_mount_error
+        assert_serialized(
+            Arguments(
+                base_arguments=backend_arguments.BaseArguments(
+                    log_path="foo",
+                    global_root="bar",
+                    source_paths=backend_arguments.SimpleSourcePath(
+                        [configuration.SimpleSearchPathElement("source")]
+                    ),
+                ),
+                taint_models_path=["/taint/model"],
+                strict=True,
+                show_error_traces=True,
+                store_type_check_resolution=True,
+                critical_files=[
+                    CriticalFile(policy=MatchPolicy.BASE_NAME, path="foo.py"),
+                    CriticalFile(policy=MatchPolicy.EXTENSION, path="txt"),
+                    CriticalFile(policy=MatchPolicy.FULL_PATH, path="/home/bar.txt"),
+                ],
+                watchman_root=Path("/project"),
+                saved_state_action=LoadSavedStateFromProject(
+                    project_name="my_project", project_metadata="my_metadata"
+                ),
+            ),
+            [
+                ("log_path", "foo"),
+                ("global_root", "bar"),
+                ("source_paths", {"kind": "simple", "paths": ["source"]}),
+                ("taint_model_paths", ["/taint/model"]),
+                ("strict", True),
+                ("show_error_traces", True),
+                ("store_type_check_resolution", True),
+                (
+                    "critical_files",
+                    [
+                        {"base_name": "foo.py"},
+                        {"extension": "txt"},
+                        {"full_path": "/home/bar.txt"},
+                    ],
+                ),
+                ("watchman_root", "/project"),
+                (
+                    "saved_state_action",
+                    (
+                        "load_from_project",
+                        {
+                            "project_name": "my_project",
+                            "project_metadata": "my_metadata",
+                        },
+                    ),
+                ),
+            ],
+        )
 
-        # Check that the command errors on OS errors other than EAGAIN.
-        with patch("builtins.open", mock_open()), patch.object(
-            commands.Command, "_call_client"
-        ) as call_client, patch.object(
-            project_files_monitor, "ProjectFilesMonitor"
-        ) as Monitor:
-            with self.assertRaises(OSError):
-                Start(
-                    arguments,
-                    original_directory,
-                    terminal=False,
-                    store_type_check_resolution=False,
-                    use_watchman=False,
-                    incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-                    configuration=configuration,
-                    analysis_directory=analysis_directory,
-                ).run()
-            call_client.assert_not_called()
-            Monitor.assert_not_called()
 
-        lock_file.side_effect = None
+class ServerIdentifierTest(testslide.TestCase):
+    def test_server_identifier(self) -> None:
+        def assert_server_identifier(
+            client_configuration: configuration.Configuration, expected: str
+        ) -> None:
+            self.assertEqual(get_server_identifier(client_configuration), expected)
 
-        # Shared analysis directories are prepared when starting.
-        shared_analysis_directory = MagicMock()
-        shared_analysis_directory.get_root = lambda: "."
-        with patch.object(
-            commands.Command, "_call_client"
-        ) as call_client, patch.object(
-            shared_analysis_directory, "prepare"
-        ) as prepare, patch.object(
-            project_files_monitor, "ProjectFilesMonitor"
-        ) as Monitor:
-            arguments = mock_arguments()
-            configuration = mock_configuration(version_hash="hash")
-            Start(
-                arguments,
-                original_directory,
-                terminal=False,
-                store_type_check_resolution=False,
-                use_watchman=False,
-                incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-                configuration=configuration,
-                analysis_directory=shared_analysis_directory,
-            ).run()
-            call_client.assert_called_once_with(command=Start.NAME)
-            prepare.assert_called_once_with()
-            Monitor.assert_not_called()
+        assert_server_identifier(
+            configuration.Configuration(
+                project_root="project", dot_pyre_directory=Path(".pyre")
+            ),
+            "project",
+        )
+        assert_server_identifier(
+            configuration.Configuration(
+                project_root="my/project", dot_pyre_directory=Path(".pyre")
+            ),
+            "project",
+        )
+        assert_server_identifier(
+            configuration.Configuration(
+                project_root="my/project",
+                dot_pyre_directory=Path(".pyre"),
+                relative_local_root="foo",
+            ),
+            "project/foo",
+        )
+        assert_server_identifier(
+            configuration.Configuration(
+                project_root="my/project",
+                dot_pyre_directory=Path(".pyre"),
+                relative_local_root="foo/bar",
+            ),
+            "project/foo/bar",
+        )
 
-        # Exit code is success when server already exists.
-        mock_object = Mock()
-        mock_object.__enter__ = Mock(return_value=(Mock(), None))
-        mock_object.__exit__ = Mock(return_value=None)
 
-        def raise_os_error(lock, blocking):
-            if lock.endswith("server.lock"):
-                raise OSError
-            return mock_object
-
-        with patch("builtins.open", mock_open()), patch.object(
-            commands.Command, "_call_client"
-        ) as call_client, patch.object(
-            project_files_monitor, "ProjectFilesMonitor"
-        ) as Monitor, patch.object(
-            filesystem, "acquire_lock"
-        ) as acquire_lock:
-            acquire_lock.side_effect = raise_os_error
-            command = Start(
-                arguments,
-                original_directory,
-                terminal=False,
-                store_type_check_resolution=False,
-                use_watchman=False,
-                incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-                configuration=configuration,
-                analysis_directory=analysis_directory,
+class StartTest(testslide.TestCase):
+    def test_get_critical_files(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "project/local"])
+            setup.write_configuration_file(
+                root_path, {"critical_files": ["foo", "bar/baz"]}
             )
-            command.run()
-            self.assertEqual(command._exit_code, ExitCode.SUCCESS)
+            setup.write_configuration_file(
+                root_path, {"source_directories": ["."]}, relative="local"
+            )
+            setup.ensure_files_exist(root_path, ["foo", "bar/baz"])
 
-    @patch(
-        f"{find_directories.__name__}.find_global_and_local_root",
-        return_value=find_directories.FoundRoot(Path(".")),
-    )
-    @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    def test_start_flags(
-        self, get_directories_to_analyze, find_global_and_local_root
-    ) -> None:
-        flags = [
-            "-logging-sections",
-            "environment,-progress",
-            "-project-root",
-            "/root",
-            "-log-directory",
-            ".pyre",
-            "-python-major-version",
-            "3",
-            "-python-minor-version",
-            "6",
-            "-python-micro-version",
-            "0",
-            "-shared-memory-heap-size",
-            "1073741824",
-            "-workers",
-            "5",
-            "-expected-binary-version",
-            "hash",
-            "-new-incremental-check",
-        ]
-
-        # Check start with watchman.
-        original_directory = "/original/directory"
-        arguments = mock_arguments()
-        configuration = mock_configuration(version_hash="hash")
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(command._flags(), flags)
-
-        arguments = mock_arguments()
-        configuration = mock_configuration(version_hash="hash")
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=True,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(set(command._flags()), {*flags, "-terminal"})
-
-        # Check filter directories.
-        arguments = mock_arguments()
-        configuration = mock_configuration(version_hash="hash")
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        with patch.object(command, "_get_directories_to_analyze") as get_directories:
-            get_directories.return_value = {"a", "b"}
-            self.assertEqual(
-                set(command._flags()), {*flags, "-filter-directories", "a;b"}
+            self.assertCountEqual(
+                get_critical_files(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(local_configuration="local"),
+                        root_path,
+                    )
+                ),
+                [
+                    CriticalFile(
+                        MatchPolicy.FULL_PATH, str(root_path / ".pyre_configuration")
+                    ),
+                    CriticalFile(
+                        MatchPolicy.FULL_PATH,
+                        str(root_path / "local/.pyre_configuration.local"),
+                    ),
+                    CriticalFile(MatchPolicy.FULL_PATH, str(root_path / "foo")),
+                    CriticalFile(MatchPolicy.FULL_PATH, str(root_path / "bar/baz")),
+                ],
             )
 
-        # Check configuration-file-hash.
-        arguments = mock_arguments()
-        configuration = mock_configuration(version_hash="hash", file_hash="ABCD")
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
+    def test_get_critical_files_with_buck(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "project/local"])
+            setup.write_configuration_file(root_path, {"targets": ["//foo:bar"]})
+
+            self.assertCountEqual(
+                get_critical_files(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(),
+                        root_path,
+                    )
+                ),
+                [
+                    CriticalFile(
+                        MatchPolicy.FULL_PATH, str(root_path / ".pyre_configuration")
+                    ),
+                    CriticalFile(
+                        MatchPolicy.EXTENSION,
+                        "thrift",
+                    ),
+                ],
+            )
+
+    def test_get_saved_state_action(self) -> None:
+        self.assertIsNone(get_saved_state_action(command_arguments.StartArguments()))
+        self.assertEqual(
+            get_saved_state_action(
+                command_arguments.StartArguments(load_initial_state_from="foo")
+            ),
+            LoadSavedStateFromFile(shared_memory_path="foo"),
+        )
+        self.assertEqual(
+            get_saved_state_action(
+                command_arguments.StartArguments(
+                    load_initial_state_from="foo", changed_files_path="bar"
+                )
+            ),
+            LoadSavedStateFromFile(shared_memory_path="foo", changed_files_path="bar"),
+        )
+        self.assertEqual(
+            get_saved_state_action(
+                command_arguments.StartArguments(saved_state_project="my_project")
+            ),
+            LoadSavedStateFromProject(project_name="my_project"),
+        )
+        self.assertEqual(
+            get_saved_state_action(
+                command_arguments.StartArguments(saved_state_project="my_project"),
+                relative_local_root="local/root",
+            ),
+            LoadSavedStateFromProject(
+                project_name="my_project", project_metadata="local$root"
             ),
         )
-        with patch.object(command, "_get_directories_to_analyze") as get_directories:
-            get_directories.return_value = {"a", "b"}
-            self.assertEqual(
-                set(command._flags()),
+        self.assertEqual(
+            get_saved_state_action(
+                command_arguments.StartArguments(
+                    load_initial_state_from="foo", changed_files_path="bar"
+                ),
+                relative_local_root="local/root",
+            ),
+            LoadSavedStateFromFile(shared_memory_path="foo", changed_files_path="bar"),
+        )
+        self.assertEqual(
+            get_saved_state_action(
+                command_arguments.StartArguments(save_initial_state_to="/foo")
+            ),
+            StoreSavedStateToFile(shared_memory_path="/foo"),
+        )
+
+    def test_create_server_arguments(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(
+                root_path, [".pyre", "allows", "blocks", "search", "taint", "local/src"]
+            )
+            setup.ensure_files_exist(root_path, ["critical", ".watchmanconfig"])
+            setup.write_configuration_file(
+                root_path,
                 {
-                    *flags,
-                    "-filter-directories",
-                    "a;b",
-                    "-configuration-file-hash",
-                    "ABCD",
+                    "do_not_ignore_errors_in": ["allows", "nonexistent"],
+                    "ignore_all_errors": ["blocks", "nonexistent"],
+                    "critical_files": ["critical"],
+                    "exclude": ["exclude"],
+                    "extensions": [".ext", "invalid_extension"],
+                    "workers": 42,
+                    "search_path": ["search", "nonexistent"],
+                    "strict": True,
+                    "taint_models_path": ["taint"],
                 },
             )
+            setup.write_configuration_file(
+                root_path, {"source_directories": ["src"]}, relative="local"
+            )
 
-        # Check save-initial-state-to.
-        arguments = mock_arguments(save_initial_state_to="/tmp")
-        configuration = mock_configuration(version_hash="hash")
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(
-            set(command._flags()), {*flags, "-save-initial-state-to", "/tmp"}
-        )
+            server_configuration = configuration.create_configuration(
+                command_arguments.CommandArguments(
+                    local_configuration="local",
+                    dot_pyre_directory=root_path / ".pyre",
+                ),
+                root_path,
+            )
+            self.assertEqual(
+                create_server_arguments(
+                    server_configuration,
+                    command_arguments.StartArguments(
+                        debug=True,
+                        no_watchman=False,
+                        saved_state_project="project",
+                        sequential=False,
+                        show_error_traces=True,
+                        store_type_check_resolution=True,
+                    ),
+                ),
+                Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        log_path=str(root_path / ".pyre/local"),
+                        global_root=str(root_path),
+                        checked_directory_allowlist=[
+                            str(root_path / "allows"),
+                        ],
+                        checked_directory_blocklist=[str(root_path / "blocks")],
+                        debug=True,
+                        excludes=["exclude"],
+                        extensions=[".ext"],
+                        relative_local_root="local",
+                        number_of_workers=42,
+                        parallel=True,
+                        python_version=server_configuration.get_python_version(),
+                        search_paths=[
+                            configuration.SimpleSearchPathElement(
+                                str(root_path / "search")
+                            )
+                        ],
+                        source_paths=backend_arguments.SimpleSourcePath(
+                            [
+                                configuration.SimpleSearchPathElement(
+                                    str(root_path / "local/src")
+                                )
+                            ]
+                        ),
+                    ),
+                    additional_logging_sections=["server"],
+                    critical_files=[
+                        CriticalFile(
+                            MatchPolicy.FULL_PATH,
+                            str(root_path / ".pyre_configuration"),
+                        ),
+                        CriticalFile(
+                            MatchPolicy.FULL_PATH,
+                            str(root_path / "local/.pyre_configuration.local"),
+                        ),
+                        CriticalFile(
+                            MatchPolicy.FULL_PATH, str(root_path / "critical")
+                        ),
+                    ],
+                    saved_state_action=LoadSavedStateFromProject(
+                        project_name="project", project_metadata="local"
+                    ),
+                    show_error_traces=True,
+                    store_type_check_resolution=True,
+                    strict=True,
+                    taint_models_path=[str(root_path / "taint")],
+                    watchman_root=root_path,
+                ),
+            )
 
-        # Test saved state options.
-        arguments = mock_arguments(
-            load_initial_state_from="/tmp/pyre_shared_memory",
-            changed_files_path="/tmp/changed_files",
-        )
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(
-            set(command._flags()),
-            {
-                *flags,
-                "-load-state-from",
-                "/tmp/pyre_shared_memory",
-                "-changed-files-path",
-                "/tmp/changed_files",
-            },
-        )
+    def test_create_server_arguments_watchman_not_found(self) -> None:
+        with tempfile.TemporaryDirectory(dir="/tmp") as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "src"])
+            setup.write_configuration_file(
+                root_path,
+                {"source_directories": ["src"]},
+            )
+            arguments = create_server_arguments(
+                configuration.create_configuration(
+                    command_arguments.CommandArguments(
+                        dot_pyre_directory=root_path / ".pyre",
+                    ),
+                    root_path,
+                ),
+                command_arguments.StartArguments(
+                    no_watchman=False,
+                ),
+            )
+            self.assertIsNone(arguments.watchman_root)
 
-        arguments = mock_arguments(load_initial_state_from="/tmp/pyre_shared_memory")
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(
-            set(command._flags()),
-            {*flags, "-load-state-from", "/tmp/pyre_shared_memory"},
-        )
+    def test_create_server_arguments_disable_saved_state(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "src"])
+            setup.write_configuration_file(
+                root_path,
+                {"source_directories": ["src"]},
+            )
+            arguments = create_server_arguments(
+                configuration.create_configuration(
+                    command_arguments.CommandArguments(
+                        dot_pyre_directory=root_path / ".pyre",
+                    ),
+                    root_path,
+                ),
+                command_arguments.StartArguments(
+                    no_saved_state=True, saved_state_project="some/project"
+                ),
+            )
+            self.assertIsNone(arguments.saved_state_action)
 
-        arguments = mock_arguments(saved_state_project="pyre/saved_state")
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(
-            set(command._flags()), {*flags, "-saved-state-project", "pyre/saved_state"}
-        )
+    def test_create_server_arguments_logging(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            log_path = root_path / ".pyre"
+            logger_path = root_path / "logger"
 
-        arguments = mock_arguments(
-            no_saved_state=True,
-            load_initial_state_from="/do/not/load",
-            save_initial_state_to="/do/not/save",
-            changed_files_path="/do/not/change",
-        )
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(set(command._flags()), {*flags})
+            setup.ensure_directories_exists(root_path, [".pyre", "src"])
+            setup.ensure_files_exist(root_path, ["logger"])
+            setup.write_configuration_file(
+                root_path,
+                {"source_directories": ["src"], "logger": str(logger_path)},
+            )
 
-        arguments = mock_arguments(saved_state_project="pyre/saved_state")
-        configuration = mock_configuration(version_hash="hash")
-        configuration.relative_local_root = "first/second"
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(
-            set(command._flags()),
-            {
-                *flags,
-                "-saved-state-project",
-                "pyre/saved_state",
-                "-saved-state-metadata",
-                "first$second",
-            },
-        )
+            arguments = create_server_arguments(
+                configuration.create_configuration(
+                    command_arguments.CommandArguments(dot_pyre_directory=log_path),
+                    root_path,
+                ),
+                command_arguments.StartArguments(
+                    logging_sections="foo,bar,-baz",
+                    noninteractive=True,
+                    enable_profiling=True,
+                    enable_memory_profiling=True,
+                    log_identifier="derp",
+                ),
+            )
+            self.assertListEqual(
+                list(arguments.additional_logging_sections),
+                ["foo", "bar", "-baz", "-progress", "server"],
+            )
+            self.assertEqual(
+                arguments.base_arguments.profiling_output,
+                backend_arguments.get_profiling_log_path(log_path),
+            )
+            self.assertEqual(
+                arguments.base_arguments.memory_profiling_output,
+                backend_arguments.get_profiling_log_path(log_path),
+            )
+            self.assertEqual(
+                arguments.base_arguments.remote_logging,
+                backend_arguments.RemoteLogging(
+                    logger=str(logger_path), identifier="derp"
+                ),
+            )
 
-        # Store type check resolution.
-        arguments = mock_arguments()
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=True,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(
-            set(command._flags()), {*flags, "-store-type-check-resolution"}
-        )
-
-        # Test autocomplete.
-        arguments = mock_arguments()
-        configuration = mock_configuration(version_hash="hash")
-        configuration.autocomplete = True
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(set(command._flags()), {*flags, "-autocomplete"})
-
-        # Test profiling options.
-        arguments = mock_arguments(enable_profiling=True)
-        configuration = mock_configuration(version_hash="hash")
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(
-            set(command._flags()), {*flags, "-profiling-output", ".pyre/profiling.log"}
-        )
-
-        arguments = mock_arguments(enable_memory_profiling=True)
-        configuration = mock_configuration(version_hash="hash")
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(
-            set(command._flags()),
-            {*flags, "-memory-profiling-output", ".pyre/profiling.log"},
-        )
-
-    @patch(
-        f"{find_directories.__name__}.find_global_and_local_root",
-        return_value=find_directories.FoundRoot(Path(".")),
-    )
-    @patch.object(commands.Reporting, "_get_directories_to_analyze", return_value=set())
-    def test_start_flags__ignore_all_errors(
-        self,
-        get_directories_to_analyze: MagicMock,
-        find_global_and_local_root: MagicMock,
-    ) -> None:
-        original_directory = "/original/directory"
-        arguments = mock_arguments()
-        configuration = mock_configuration(version_hash="hash")
-        configuration.get_existent_ignore_all_errors_paths.return_value = [
-            "/absolute/a",
-            "/root/b",
-        ]
-        flags = [
-            "-logging-sections",
-            "environment,-progress",
-            "-project-root",
-            "/root",
-            "-log-directory",
-            ".pyre",
-            "-python-major-version",
-            "3",
-            "-python-minor-version",
-            "6",
-            "-python-micro-version",
-            "0",
-            "-shared-memory-heap-size",
-            "1073741824",
-            "-workers",
-            "5",
-            "-expected-binary-version",
-            "hash",
-            "-new-incremental-check",
-        ]
-        command = Start(
-            arguments,
-            original_directory,
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=True,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=configuration,
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement(".")
-            ),
-        )
-        self.assertEqual(
-            set(command._flags()), {*flags, "-ignore-all-errors", "/absolute/a;/root/b"}
-        )
-
-    @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
-    def test_start_configuration_monitor_watchman_enabled(
-        self, daemonize: MagicMock
-    ) -> None:
-        start_command = Start(
-            mock_arguments(),
-            "/original/directory",
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=True,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=mock_configuration(version_hash="hash"),
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement("/root")
-            ),
-        )
-        start_command._start_configuration_monitor()
-        daemonize.assert_called_once()
-
-    @patch.object(configuration_monitor.ConfigurationMonitor, "daemonize")
-    def test_start_configuration_monitor_watchman_disabled(
-        self, daemonize: MagicMock
-    ) -> None:
-        start_command = Start(
-            mock_arguments(),
-            "/original/directory",
-            terminal=False,
-            store_type_check_resolution=False,
-            use_watchman=False,
-            incremental_style=commands.IncrementalStyle.FINE_GRAINED,
-            configuration=mock_configuration(version_hash="hash"),
-            analysis_directory=AnalysisDirectory(
-                configuration_module.SimpleSearchPathElement("/root")
-            ),
-        )
-        start_command._start_configuration_monitor()
-        daemonize.assert_not_called()
+    def test_background_server_log_placement(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            with background_server_log_file(root_path) as log_file:
+                print("foo", file=log_file)
+            # Make sure that the log content can be read from a known location.
+            self.assertEqual(
+                (root_path / "new_server" / "server.stderr").read_text().strip(), "foo"
+            )

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,10 +15,9 @@ open Test
 
 let test_apply_decorators context =
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
-  let decorator ?arguments name = { Decorator.name = + !&name; arguments } in
   let create_define ~decorators ~parameters ~return_annotation =
     {
-      Define.Signature.name = + !&"define";
+      Define.Signature.name = !&"define";
       parameters;
       decorators;
       return_annotation;
@@ -62,22 +61,26 @@ let test_apply_decorators context =
     Type.string;
   assert_apply_contextlib_decorators
     (create_define
-       ~decorators:[decorator "contextlib.contextmanager"]
+       ~decorators:[!"contextlib.contextmanager"]
        ~parameters:[]
-       ~return_annotation:(Some (+Expression.String (StringLiteral.create "typing.Iterator[str]"))))
+       ~return_annotation:
+         (Some
+            (+Expression.Constant (Constant.String (StringLiteral.create "typing.Iterator[str]")))))
     (Type.parametric "contextlib._GeneratorContextManager" [Single Type.string]);
   assert_apply_contextlib_decorators
     (create_define
-       ~decorators:[decorator "contextlib.contextmanager"]
+       ~decorators:[!"contextlib.contextmanager"]
        ~parameters:[]
        ~return_annotation:
-         (Some (+Expression.String (StringLiteral.create "typing.Generator[str, None, None]"))))
+         (Some
+            (+Expression.Constant
+                (Constant.String (StringLiteral.create "typing.Generator[str, None, None]")))))
     (Type.parametric "contextlib._GeneratorContextManager" [Single Type.string]);
 
   let create_parameter ~name = Parameter.create ~location:Location.any ~name () in
   (* Custom decorators. *)
   create_define
-    ~decorators:[decorator "$strip_first_parameter"]
+    ~decorators:[!"_strip_first_parameter_"]
     ~parameters:[create_parameter ~name:"self"; create_parameter ~name:"other"]
     ~return_annotation:None
   |> (fun define ->

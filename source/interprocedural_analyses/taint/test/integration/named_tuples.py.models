@@ -15,6 +15,21 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "bad" }
+            ],
             "call": {
               "position": {
                 "filename": "named_tuples.py",
@@ -23,16 +38,8 @@
                 "end": 23
               },
               "resolves_to": [ "named_tuples.tainted_tuple" ],
-              "port": "result[bad]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-field" },
-              { "first-field": "bad" },
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+              "port": "result[bad]"
+            }
           }
         ]
       },
@@ -40,14 +47,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "named_tuples.py",
               "line": 22,
               "start": 15,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -58,6 +70,9 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "named_tuples.issue_with_bad:5002:0:Call|_test_sink|0|formal(arg):e89e0d97d39ad4c9aeffa0299b935629"
     ]
   }
 }
@@ -77,6 +92,21 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "bad" }
+            ],
             "call": {
               "position": {
                 "filename": "named_tuples.py",
@@ -85,16 +115,8 @@
                 "end": 25
               },
               "resolves_to": [ "named_tuples.inherited_tuple" ],
-              "port": "result[bad]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-field" },
-              { "first-field": "bad" },
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+              "port": "result[bad]"
+            }
           }
         ]
       },
@@ -102,14 +124,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "named_tuples.py",
               "line": 57,
               "start": 15,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -120,6 +147,79 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "named_tuples.issue_with_inherited_named_tuple:5002:0:Call|_test_sink|0|formal(arg):7cc3bcce733ca7e014d258073ca4480f"
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "named_tuples.issue_with_named_tuple_with_tainted_attribute",
+    "callable_line": 76,
+    "code": 5002,
+    "line": 77,
+    "start": 39,
+    "end": 53,
+    "filename": "named_tuples.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "named_tuples.py",
+              "line": 77,
+              "start": 39,
+              "end": 53
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "named_tuples.py",
+                "line": 77,
+                "start": 39,
+                "end": 53
+              },
+              "resolves_to": [
+                "named_tuples.NamedTupleWithTaintedAttribute.__init__"
+              ],
+              "port": "formal(bad)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "master_handles": [
+      "named_tuples.issue_with_named_tuple_with_tainted_attribute:5002:0:Call|named_tuples.NamedTupleWithTaintedAttribute.__init__|0|formal(bad):977049b125c3b118003728cf9b7cfb27"
     ]
   }
 }
@@ -139,6 +239,21 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "special_source" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "bad" }
+            ],
             "call": {
               "position": {
                 "filename": "named_tuples.py",
@@ -147,16 +262,8 @@
                 "end": 27
               },
               "resolves_to": [ "named_tuples.tainted_old_tuple" ],
-              "port": "result[bad]",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-field" },
-              { "first-field": "bad" },
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+              "port": "result[bad]"
+            }
           }
         ]
       },
@@ -164,14 +271,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "named_tuples.py",
               "line": 39,
               "start": 15,
               "end": 20
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -182,6 +294,21 @@
       { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "named_tuples.issue_with_old_school_named_tuples:5002:0:Call|_test_sink|0|formal(arg):7c43f1a34913fb7584197322a7b4c82d"
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
     ]
   }
 }
@@ -194,10 +321,10 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -205,22 +332,14 @@
         "port": "formal(benign)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
+            "kinds": [
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
             ],
-            "features": [ { "always-type": "scalar" } ]
-          }
-        ]
-      },
-      {
-        "port": "formal(bad)",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
-            ]
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -228,8 +347,53 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{named_tuples.NamedTupleWithTaintedAttribute::__init__}",
+    "sinks": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -237,10 +401,23 @@
         "port": "formal(benign)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -256,10 +433,10 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -267,21 +444,10 @@
         "port": "formal(benign)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
-            ]
-          }
-        ]
-      },
-      {
-        "port": "formal(bad)",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -289,19 +455,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
-          }
-        ]
-      },
-      {
-        "port": "formal(benign)",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -312,15 +467,41 @@
   "kind": "model",
   "data": {
     "callable": "Ovr{typing.NamedTuple::__init__}",
+    "sinks": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ],
     "tito": [
       {
         "port": "formal(bad)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -328,22 +509,11 @@
         "port": "formal(benign)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
+            "kinds": [
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
             ],
-            "features": [ { "type": "scalar" } ]
-          }
-        ]
-      },
-      {
-        "port": "formal(bad)",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
-            ]
+            "local_features": [ { "type": "integer" }, { "type": "scalar" } ],
+            "decl": null
           }
         ]
       },
@@ -351,19 +521,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
-          }
-        ]
-      },
-      {
-        "port": "formal(benign)",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -379,10 +538,10 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -390,22 +549,14 @@
         "port": "formal(benign)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
+            "kinds": [
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
             ],
-            "features": [ { "always-type": "scalar" } ]
-          }
-        ]
-      },
-      {
-        "port": "formal(bad)",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
-            ]
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -413,8 +564,53 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.NamedTupleWithTaintedAttribute.__init__",
+    "sinks": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name":
+                      "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "named_tuples.py",
+              "line": 71,
+              "start": 0,
+              "end": 0
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -422,10 +618,23 @@
         "port": "formal(benign)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -441,10 +650,10 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -452,21 +661,10 @@
         "port": "formal(benign)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
-            ]
-          }
-        ]
-      },
-      {
-        "port": "formal(bad)",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[bad]", "depth": 0 }
-            ]
+            "kinds": [
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
           }
         ]
       },
@@ -474,19 +672,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
-          }
-        ]
-      },
-      {
-        "port": "formal(benign)",
-        "taint": [
-          {
-            "decl": null,
-            "leaves": [
-              { "kind": "LocalReturn", "name": "[benign]", "depth": 0 }
-            ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -502,18 +689,21 @@
         "port": "result[bad]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 52, "start": 35, "end": 49 } ],
             "root": {
               "filename": "named_tuples.py",
               "line": 52,
               "start": 35,
               "end": 49
-            },
-            "tito": [ { "line": 52, "start": 35, "end": 49 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -529,18 +719,21 @@
         "port": "result[bad]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 34, "start": 35, "end": 49 } ],
             "root": {
               "filename": "named_tuples.py",
               "line": 34,
               "start": 35,
               "end": 49
-            },
-            "tito": [ { "line": 34, "start": 35, "end": 49 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -556,18 +749,21 @@
         "port": "result[bad]",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 17, "start": 28, "end": 42 } ],
             "root": {
               "filename": "named_tuples.py",
               "line": 17,
               "start": 28,
               "end": 42
-            },
-            "tito": [ { "line": 17, "start": 28, "end": 42 } ],
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "always-via": "tito" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }

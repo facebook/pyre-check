@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -15,13 +15,13 @@ type unary_interval = {
   upper_bound: Type.t;
   lower_bound: Type.t;
 }
-[@@deriving show]
+[@@deriving compare, show]
 
 type callable_parameter_interval =
   | Top
   | Singleton of Type.Callable.parameters
   | Bottom
-[@@deriving show]
+[@@deriving compare, show]
 
 (* A variadic tuple Ts must solve to a concrete tuple of known length and dimensions.
 
@@ -45,7 +45,7 @@ type tuple_interval =
   | TopTuple
   | BottomTuple
   | SingletonTuple of Type.t Type.OrderedTypes.record
-[@@deriving show]
+[@@deriving compare, show]
 
 type t = {
   unaries: unary_interval UnaryVariable.Map.t;
@@ -53,6 +53,7 @@ type t = {
   tuple_variadics: tuple_interval TupleVariable.Map.t;
   have_fallbacks: Type.Variable.Set.t;
 }
+[@@deriving compare]
 
 let show_map map ~show_key ~show_data ~short_name =
   if Map.is_empty map then
@@ -180,6 +181,8 @@ module Solution = struct
     in
     Format.sprintf "{%s%s%s}" unaries callable_parameters tuple_variadics
 
+
+  let pp format solution = Format.fprintf format "%s" (show solution)
 
   let empty =
     {

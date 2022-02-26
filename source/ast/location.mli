@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,7 +12,7 @@ type position = {
   line: int;
   column: int;
 }
-[@@deriving compare, eq, sexp, show, hash, to_yojson]
+[@@deriving compare, sexp, show, hash, to_yojson]
 
 val any_position : position
 
@@ -20,9 +20,11 @@ type t = {
   start: position;
   stop: position;
 }
-[@@deriving compare, eq, sexp, show, hash, to_yojson]
+[@@deriving compare, sexp, show, hash, to_yojson]
 
 val create : start:Lexing.position -> stop:Lexing.position -> t
+
+val equal : t -> t -> bool
 
 val any : t
 
@@ -52,7 +54,7 @@ module WithPath : sig
     start: position;
     stop: position;
   }
-  [@@deriving compare, eq, sexp, hash, to_yojson]
+  [@@deriving compare, sexp, hash, to_yojson]
 
   val any : t
 
@@ -69,7 +71,7 @@ module WithModule : sig
     start: position;
     stop: position;
   }
-  [@@deriving compare, eq, sexp, hash, to_yojson]
+  [@@deriving compare, sexp, hash, to_yojson]
 
   val any : t
 

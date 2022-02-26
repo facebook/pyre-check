@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -24,38 +24,23 @@ let initialize_models kind ~scheduler ~static_analysis_configuration ~environmen
     AnalysisResult.get_abstract_analysis kind
   in
   let module Analysis = (val analysis) in
-  (* We call initialize_models outside the returned lambda so that initial models are computed
-     eagerly. *)
-  let initialized_models =
-    Analysis.initialize_models
-      ~static_analysis_configuration
-      ~scheduler
-      ~environment
-      ~callables
-      ~stubs
-  in
-  let specialize_models
-      { AnalysisResult.InitializedModels.initial_models = analysis_initial_models; skip_overrides }
-    =
+  let specialize_models { AnalysisResult.initial_models = analysis_initial_models; skip_overrides } =
     let to_model_t model =
       let pkg = AnalysisResult.Pkg { kind = ModelPart storable_kind; value = model } in
       { AnalysisResult.models = Kind.Map.add kind pkg Kind.Map.empty; is_obscure = false }
     in
     {
-      AnalysisResult.InitializedModels.initial_models =
-        analysis_initial_models |> Target.Map.map ~f:to_model_t;
+      AnalysisResult.initial_models = analysis_initial_models |> Target.Map.map ~f:to_model_t;
       skip_overrides;
     }
   in
-  let get_specialized_models ~updated_environment =
-    (* We call get_models_including_generated_models within the lambda so that callable-specific
-       models are generated only on demand. *)
-    AnalysisResult.InitializedModels.get_models_including_generated_models
-      ~updated_environment
-      initialized_models
-    |> specialize_models
-  in
-  AnalysisResult.InitializedModels.create get_specialized_models
+  Analysis.initialize_models
+    ~static_analysis_configuration
+    ~scheduler
+    ~environment
+    ~callables
+    ~stubs
+  |> specialize_models
 
 
 module Testing = struct
@@ -334,7 +319,7 @@ let analyze_define
           ~section:`Info
           "Could not generate model for `%a` due to invalid annotation `%s`"
           Reference.pp
-          (Node.value name)
+          name
           annotation;
         AnalysisResult.Kind.Map.empty, AnalysisResult.Kind.Map.empty
     | Sys.Break as exn -> analysis_failed step ~exn ~message:"Hit Ctrl+C" callable
@@ -357,6 +342,7 @@ let strip_for_callsite model =
 
 
 let analyze_overrides ({ FixpointState.iteration; _ } as step) callable =
+  let timer = Timer.start () in
   let overrides =
     DependencyGraphSharedMemory.get_overriding_types
       ~member:(Target.get_override_reference callable)
@@ -393,7 +379,18 @@ let analyze_overrides ({ FixpointState.iteration; _ } as step) callable =
     | None ->
         Format.asprintf "No initial model found for %a" Target.pretty_print callable |> failwith
   in
-  widen_if_necessary step callable ~old_model ~new_model:model AnalysisResult.empty_result
+  let state =
+    widen_if_necessary step callable ~old_model ~new_model:model AnalysisResult.empty_result
+  in
+  Statistics.performance
+    ~randomly_log_every:1000
+    ~always_log_time_threshold:1.0 (* Seconds *)
+    ~name:"Override analysis"
+    ~section:`Interprocedural
+    ~normals:["callable", callable |> Target.get_override_reference |> Reference.show]
+    ~timer
+    ();
+  state
 
 
 let callables_to_dump =
@@ -471,14 +468,15 @@ let one_analysis_pass ~analysis ~step ~environment ~callables =
     let result = analyze_callable analysis step callable environment in
     FixpointState.add step callable result;
     (* Log outliers. *)
-    if Timer.stop_in_ms timer > 500 then begin
+    let time_to_analyze_in_ms = Timer.stop_in_ms timer in
+    if time_to_analyze_in_ms > 500 then begin
       Statistics.performance
         ~name:"static analysis of expensive callable"
         ~timer
         ~section:`Interprocedural
         ~normals:["callable", Target.show callable]
         ();
-      { time_to_analyze_in_ms = Timer.stop_in_ms timer; callable } :: expensive_callables
+      { time_to_analyze_in_ms; callable } :: expensive_callables
     end
     else
       expensive_callables
@@ -663,7 +661,7 @@ let compute_fixpoint
           iteration
           number_of_callables
           (Int.to_float (SharedMem.heap_size ()) /. 1000000000.0)
-          (Timer.stop timer |> Time.Span.to_sec)
+          (Timer.stop_in_sec timer)
       in
       iterate ~iteration:(iteration + 1) callables_to_analyze
   in
@@ -692,7 +690,7 @@ let compute_fixpoint
       in
       Log.dump
         "Model for `%s` after %d iterations:\n%a"
-        (Log.Color.yellow (Reference.show (Node.value name)))
+        (Log.Color.yellow (Reference.show name))
         iterations
         AnalysisResult.pp_model_t
         model

@@ -1,0 +1,3 @@
+(tests
+ (names expressionTest statementTest locationTest)
+ (libraries oUnit pyrelib.test pyrelib.ast pyreNewParser))

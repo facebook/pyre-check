@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -55,6 +55,8 @@ val pretty_print : Format.formatter -> [< t ] -> unit
 val external_target_name : [< t ] -> string
 
 val class_name : [< t ] -> string option
+
+val method_name : [< t ] -> string option
 
 val compare : ([< t ] as 'a) -> 'a -> int
 
@@ -125,8 +127,6 @@ module CallableKey : sig
   val from_string : string -> out
 end
 
-module Set : Caml.Set.S with type elt = t
-
 val get_module_and_definition
   :  resolution:Analysis.GlobalResolution.t ->
   [< callable_t ] ->
@@ -140,14 +140,16 @@ val resolve_method
 
 module Map : Core.Map.S with type Key.t = t
 
-module Hashable : Core.Hashable.S with type t := t
+module Set : Caml.Set.S with type elt = t
 
 module CallableMap : Core.Map.S with type Key.t = callable_t
 
 module CallableSet : Caml.Set.S with type elt = callable_t
 
+module CallableHashSet : Core.Hash_set.S with type elt := callable_t
+
 module OverrideSet : Caml.Set.S with type elt = override_t
 
-module HashSet : Core.Hash_set.S with type elt := t
+module HashMap : Core.Hashtbl.S with type key := t
 
-module CallableHashSet : Core.Hash_set.S with type elt := callable_t
+module HashSet : Core.Hash_set.S with type elt := t

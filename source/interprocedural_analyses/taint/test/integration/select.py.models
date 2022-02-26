@@ -7,7 +7,7 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
+          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
         ]
       }
     ]
@@ -22,8 +22,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "decl": null,
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 0 } ]
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -39,18 +39,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "access_token" }
+            ],
             "root": {
               "filename": "select.py",
               "line": 21,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "access_token" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -66,18 +71,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" }
+            ],
             "root": {
               "filename": "select.py",
               "line": 26,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -93,18 +103,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ],
             "root": {
               "filename": "select.py",
               "line": 31,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -120,24 +135,24 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
             "root": {
               "filename": "select.py",
               "line": 41,
               "start": 11,
               "end": 22
-            },
-            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "payload" },
-              { "always-via": "tito" }
-            ]
+            }
           }
         ]
       }
@@ -146,7 +161,7 @@
       {
         "port": "result",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "RemoteCodeExecution" } ] }
+          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
         ]
       }
     ],
@@ -155,14 +170,16 @@
         "port": "formal(request)[GET]",
         "taint": [
           {
-            "decl": null,
-            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
-            "leaves": [ { "kind": "LocalReturn", "name": "", "depth": 1 } ],
-            "features": [
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
               { "has": "first-index" },
               { "first-index": "payload" },
               { "always-via": "tito" }
-            ]
+            ],
+            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
+            "decl": null
           }
         ]
       }
@@ -186,24 +203,24 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
             "root": {
               "filename": "select.py",
               "line": 41,
               "start": 11,
               "end": 22
-            },
-            "tito": [ { "line": 41, "start": 11, "end": 22 } ],
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "payload" },
-              { "always-via": "tito" }
-            ]
+            }
           }
         ]
       },
@@ -211,13 +228,13 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
             "root": {
               "filename": "select.py",
               "line": 41,
               "start": 4,
               "end": 48
-            },
-            "leaves": [ { "kind": "RemoteCodeExecution" } ]
+            }
           }
         ]
       }
@@ -226,6 +243,9 @@
       { "has": "first-index" },
       { "first-index": "payload" },
       { "always-via": "tito" }
+    ],
+    "master_handles": [
+      "select.return_is_RCE:5001:0:Return:75714e82b1119786167df4c408a8f7c4"
     ]
   }
 }
@@ -237,7 +257,7 @@
       {
         "port": "formal(request)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
+          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
         ]
       }
     ],
@@ -246,13 +266,18 @@
         "port": "formal(request)[payload]",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
             "root": {
               "filename": "select.py",
               "line": 13,
               "start": 9,
               "end": 24
-            },
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+            }
           }
         ]
       }
@@ -276,19 +301,22 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "select.view_entry_field" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "payload" }
+            ],
             "root": {
               "filename": "select.py",
               "line": 12,
               "start": 21,
               "end": 28
-            },
-            "leaves": [
-              { "kind": "UserControlled", "name": "select.view_entry_field" }
-            ],
-            "features": [
-              { "has": "first-field" },
-              { "first-field": "payload" }
-            ]
+            }
           }
         ]
       },
@@ -296,18 +324,26 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
             "root": {
               "filename": "select.py",
               "line": 13,
               "start": 9,
               "end": 24
-            },
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+            }
           }
         ]
       }
     ],
-    "features": [ { "has": "first-field" }, { "first-field": "payload" } ]
+    "features": [ { "has": "first-field" }, { "first-field": "payload" } ],
+    "master_handles": [
+      "select.view_entry_field:5001:0:Call|eval|0|formal(arg):164dcdb169663c76cefeb4fd4eb5fb86"
+    ]
   }
 }
 {
@@ -319,19 +355,24 @@
         "port": "formal(request)[GET]",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 37, "start": 9, "end": 20 } ],
             "root": {
               "filename": "select.py",
               "line": 37,
               "start": 9,
               "end": 46
-            },
-            "tito": [ { "line": 37, "start": 9, "end": 20 } ],
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "payload" },
-              { "always-via": "tito" }
-            ]
+            }
           }
         ]
       }
@@ -355,24 +396,24 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 37, "start": 9, "end": 20 } ],
             "root": {
               "filename": "select.py",
               "line": 37,
               "start": 9,
               "end": 20
-            },
-            "tito": [ { "line": 37, "start": 9, "end": 20 } ],
-            "leaves": [
-              {
-                "kind": "UserControlled",
-                "name": "Obj{django.http.Request.GET}"
-              }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "payload" },
-              { "always-via": "tito" }
-            ]
+            }
           }
         ]
       },
@@ -380,13 +421,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
             "root": {
               "filename": "select.py",
               "line": 37,
               "start": 9,
               "end": 46
-            },
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+            }
           }
         ]
       }
@@ -395,6 +441,9 @@
       { "has": "first-index" },
       { "first-index": "payload" },
       { "always-via": "tito" }
+    ],
+    "master_handles": [
+      "select.view_entry_get:5001:0:Call|eval|0|formal(arg):7b1a3d8fd4bd2ae19d8c755f3b339d00"
     ]
   }
 }
@@ -406,7 +455,7 @@
       {
         "port": "formal(request)",
         "taint": [
-          { "decl": null, "leaves": [ { "kind": "UserControlled" } ] }
+          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
         ]
       }
     ],
@@ -415,17 +464,22 @@
         "port": "formal(request)[GET][payload]",
         "taint": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" }
+            ],
             "root": {
               "filename": "select.py",
               "line": 17,
               "start": 9,
               "end": 31
-            },
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "payload" }
-            ]
+            }
           }
         ]
       }
@@ -449,21 +503,24 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "select.view_entry_index" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "has": "first-field" },
+              { "first-field": "GET" }
+            ],
             "root": {
               "filename": "select.py",
               "line": 16,
               "start": 21,
               "end": 28
-            },
-            "leaves": [
-              { "kind": "UserControlled", "name": "select.view_entry_index" }
-            ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "payload" },
-              { "has": "first-field" },
-              { "first-field": "GET" }
-            ]
+            }
           }
         ]
       },
@@ -471,13 +528,18 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
             "root": {
               "filename": "select.py",
               "line": 17,
               "start": 9,
               "end": 31
-            },
-            "leaves": [ { "kind": "RemoteCodeExecution", "name": "eval" } ]
+            }
           }
         ]
       }
@@ -487,6 +549,9 @@
       { "first-index": "payload" },
       { "has": "first-field" },
       { "first-field": "GET" }
+    ],
+    "master_handles": [
+      "select.view_entry_index:5001:0:Call|eval|0|formal(arg):d2317d02e768fc9f4945b5d8852e4363"
     ]
   }
 }

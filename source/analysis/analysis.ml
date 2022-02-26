@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -31,14 +31,16 @@ module AnalysisError = AnalysisError
 module Fixpoint = Fixpoint
 module FunctionDefinition = FunctionDefinition
 module GlobalResolution = GlobalResolution
+module InlineDecorator = InlineDecorator
 module LivenessCheck = LivenessCheck
 module LocalAnnotationMap = LocalAnnotationMap
-module Lookup = Lookup
+module LocationBasedLookup = LocationBasedLookup
+module MatchTranslate = MatchTranslate
 module ModuleTracker = ModuleTracker
 module NamedTuple = NamedTuple
 module Postprocessing = Postprocessing
 module Preprocessing = Preprocessing
-module RefinementUnit = RefinementUnit
+module Refinement = Refinement
 module Resolution = Resolution
 module Scope = Scope
 module SharedMemoryKeys = SharedMemoryKeys
@@ -59,3 +61,4 @@ module UnannotatedGlobalEnvironment = UnannotatedGlobalEnvironment
 module UndecoratedFunctionEnvironment = UndecoratedFunctionEnvironment
 module UninitializedLocalCheck = UninitializedLocalCheck
 module WeakenMutableLiterals = WeakenMutableLiterals
+module WeakTopologicalOrder = WeakTopologicalOrder

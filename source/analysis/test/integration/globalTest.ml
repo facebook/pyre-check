@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -69,7 +69,7 @@ let test_check_with_qualification context =
       def len(s: str) -> int:
           return 1
       def assign() -> int:
-          global_number="a" # type: str
+          global_number: str = "a"
           return len(global_number)
     |}
     [];
@@ -79,7 +79,7 @@ let test_check_with_qualification context =
       def len(s: str) -> int:
         return 1
       def assign_outer() -> None:
-          global_number="a" # type: str
+          global_number: str ="a"
           def assign_inner_access() -> int:
               return len(global_number)
           def assign_inner_global() -> int:
@@ -92,7 +92,7 @@ let test_check_with_qualification context =
       global_number: int = 1
       def derp() -> int:
           def derp_inner() -> None:
-              global_number="a" # type: str
+              global_number: str = "a"
               pass
           return global_number
     |}
@@ -163,7 +163,7 @@ let test_check_globals context =
       def foo() -> int:
         return constant
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Union[int, str]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Union[int, str]`."];
   assert_type_errors
     {|
       constant: int = 1
@@ -284,7 +284,7 @@ let test_check_globals context =
       def foo() -> str:
         return str_to_int_dictionary
     |}
-    ["Incompatible return type [7]: Expected `str` but got `typing.Dict[str, int]`."];
+    ["Incompatible return type [7]: Expected `str` but got `Dict[str, int]`."];
   assert_type_errors
     ~update_environment_with:[{ handle = "export.py"; source = "x = 1" }]
     {|
@@ -362,7 +362,7 @@ let test_check_globals context =
           return GLOBAL
         return 0
     |}
-    ["Incompatible return type [7]: Expected `int` but got `typing.Optional[int]`."];
+    ["Incompatible return type [7]: Expected `int` but got `Optional[int]`."];
   assert_type_errors
     {|
       from typing import Any, Callable, Mapping, Union

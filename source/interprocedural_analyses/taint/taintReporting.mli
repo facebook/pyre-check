@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,8 +11,8 @@ module Json = Yojson.Safe
 val externalize
   :  filename_lookup:(Ast.Reference.t -> string option) ->
   Target.t ->
-  TaintResult.result option ->
-  TaintResult.call_model ->
+  Issue.t list option ->
+  Model.t ->
   Yojson.Safe.json list
 
 val fetch_and_externalize

@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -18,9 +18,10 @@ module Error = AnalysisError
 let ignore ~qualifier { Source.metadata = { Source.Metadata.ignore_lines; _ }; _ } errors =
   let unused_ignores, ignore_lookup =
     let unused_ignores = Location.Table.create () in
-    let ignore_lookup = Location.Table.create () in
+    let ignore_lookup = Int.Table.create () in
     List.iter ignore_lines ~f:(fun ignore ->
-        Hashtbl.add_multi ignore_lookup ~key:(Ignore.key ignore) ~data:ignore);
+        let key = Ignore.ignored_line ignore in
+        Hashtbl.add_multi ignore_lookup ~key ~data:ignore);
     let register_unused_ignore ignore =
       match Ignore.kind ignore with
       | Ignore.TypeIgnore ->
@@ -60,8 +61,10 @@ let ignore ~qualifier { Source.metadata = { Source.Metadata.ignore_lines; _ }; _
           ignored := true)
       in
       let key =
-        (* Don't care about module name here since we always operate within the same module *)
-        Error.key error |> fun { Location.WithModule.start; stop; _ } -> { Location.start; stop }
+        let { Error.location = { Location.WithModule.start = { Location.line; _ }; _ }; _ } =
+          error
+        in
+        line
       in
       Hashtbl.find ignore_lookup key >>| List.iter ~f:process_ignore |> ignore;
       not !ignored
@@ -142,10 +145,15 @@ let run_on_source
 
 
 let run ~scheduler ~configuration ~environment sources =
+  let timer = Timer.start () in
   let number_of_sources = List.length sources in
   Log.log ~section:`Progress "Postprocessing %d sources..." number_of_sources;
+  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let unannotated_global_environment =
+    GlobalResolution.unannotated_global_environment global_resolution
+  in
   let map _ modules =
-    let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
     let run_on_module module_name =
       match AstEnvironment.ReadOnly.get_raw_source ast_environment module_name with
       | None -> []
@@ -156,13 +164,7 @@ let run ~scheduler ~configuration ~environment sources =
         when is_external ->
           []
       | Some (Result.Error { AstEnvironment.ParserError.is_suppressed; _ }) when is_suppressed -> []
-      | Some (Result.Error { AstEnvironment.ParserError.message; _ }) ->
-          let location =
-            {
-              Location.start = { Location.line = 1; column = 1 };
-              stop = { Location.line = 1; column = 1 };
-            }
-          in
+      | Some (Result.Error { AstEnvironment.ParserError.message; location; _ }) ->
           let location_with_module =
             {
               Location.WithModule.path = module_name;
@@ -196,11 +198,7 @@ let run ~scheduler ~configuration ~environment sources =
             }) ->
           []
       | Some (Result.Ok source) ->
-          let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
           let errors_by_define =
-            let unannotated_global_environment =
-              GlobalResolution.unannotated_global_environment global_resolution
-            in
             UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
               unannotated_global_environment
               module_name
@@ -219,10 +217,10 @@ let run ~scheduler ~configuration ~environment sources =
     Scheduler.map_reduce
       scheduler
       ~policy:
-        (Scheduler.Policy.fixed_chunk_size
-           ~minimum_chunk_size:10
-           ~minimum_chunks_per_worker:2
-           ~preferred_chunk_size:250
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:100
+           ~preferred_chunks_per_worker:5
            ())
       ~initial:(0, [])
       ~map
@@ -230,4 +228,5 @@ let run ~scheduler ~configuration ~environment sources =
       ~inputs:sources
       ()
   in
+  Statistics.performance ~name:"check_Postprocessing" ~phase_name:"Postprocessing" ~timer ();
   errors

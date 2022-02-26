@@ -8,18 +8,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ],
             "root": {
               "filename": "constant_fields.py",
               "line": 53,
               "start": 28,
               "end": 42
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -35,18 +40,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "CONSTANT_A" }
+            ],
             "root": {
               "filename": "constant_fields.py",
               "line": 41,
               "start": 20,
               "end": 34
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "CONSTANT_A" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -62,18 +72,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "CONSTANT_B" }
+            ],
             "root": {
               "filename": "constant_fields.py",
               "line": 47,
               "start": 20,
               "end": 34
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "CONSTANT_B" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -89,18 +104,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "TRACKED_FIELD" }
+            ],
             "root": {
               "filename": "constant_fields.py",
               "line": 18,
               "start": 34,
               "end": 48
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "TRACKED_FIELD" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -116,18 +136,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ],
             "root": {
               "filename": "constant_fields.py",
               "line": 24,
               "start": 36,
               "end": 50
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }
@@ -143,18 +168,23 @@
         "port": "result",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ],
             "root": {
               "filename": "constant_fields.py",
               "line": 30,
               "start": 36,
               "end": 50
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       }

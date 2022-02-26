@@ -1,0 +1,11 @@
+ModelQuery(
+  find="functions",
+  where=[name.matches("test1_f")],
+  model=Parameters(TaintSink[Test, ViaTypeOf])
+)
+
+ModelQuery(
+  find="methods",
+  where=[parent.matches("Test2_C")],
+  model=Parameters(TaintSink[Test, ViaTypeOf], where=[Not(name.matches("self"))])
+)

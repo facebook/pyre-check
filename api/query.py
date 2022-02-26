@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -27,6 +27,8 @@ T = TypeVar("T")
 class Attributes(NamedTuple):
     name: str
     annotation: Optional[str]
+    kind: str
+    final: bool
 
 
 class DefineParameter(NamedTuple):
@@ -241,6 +243,7 @@ def _annotations_per_file(
             for locations_and_annotations in response["response"][0]["types"]
         ]
         for response in data["response"]
+        if "response" in response
     }
 
 
@@ -282,7 +285,12 @@ def _get_attributes(
     query = f"attributes({class_name})"
     response = pyre_connection.query_server(query)["response"]
     return [
-        Attributes(name=attribute["name"], annotation=attribute["annotation"])
+        Attributes(
+            name=attribute["name"],
+            annotation=attribute["annotation"],
+            kind=attribute["kind"],
+            final=attribute["final"],
+        )
         for attribute in response["attributes"]
     ]
 
@@ -302,6 +310,8 @@ def get_attributes(
                     Attributes(
                         name=attribute["name"],
                         annotation=attribute["annotation"],
+                        kind=attribute["kind"],
+                        final=attribute["final"],
                     )
                     for attribute in response["response"]["attributes"]
                 ]

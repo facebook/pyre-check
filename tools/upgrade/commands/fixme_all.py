@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -61,7 +61,7 @@ class FixmeAll(ErrorSuppressingCommand):
         project_configuration = Configuration.find_project_configuration()
         configurations = Configuration.gather_local_configurations()
         for configuration in configurations:
-            self._suppress_errors(
+            self._get_and_suppress_errors(
                 configuration=configuration,
                 error_source=self._error_source,
                 upgrade_version=self._upgrade_version,

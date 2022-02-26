@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -260,6 +260,14 @@ let test_final_attributes context =
       "Incompatible attribute type [8]: Attribute `x` declared in class `A` has type `int` but is \
        used as type `str`.";
     ];
+  assert_type_errors
+    {|
+      from typing import Final
+      x: Final = 1
+      def foo() -> str:
+        return x
+    |}
+    ["Incompatible return type [7]: Expected `str` but got `int`."];
   ()
 
 

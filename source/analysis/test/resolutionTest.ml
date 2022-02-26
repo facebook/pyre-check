@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -14,30 +14,15 @@ open Statement
 open Test
 open WeakenMutableLiterals
 
-let test_set_local context =
-  let assert_local ~resolution ~name ~expected =
+let test_new_and_refine context =
+  let create_name = Expression.create_name ~location:Location.any in
+  let assert_local ~name ~expected resolution =
     assert_equal
       ~cmp:(Option.equal Type.equal)
       (expected >>| parse_single_expression >>| Type.create ~aliases:Type.empty_aliases)
-      (Resolution.get_local resolution ~reference:!&name >>| Annotation.annotation)
+      (Resolution.get_local ~reference:!&name resolution >>| Annotation.annotation)
   in
-  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
-  assert_local ~resolution ~name:"local" ~expected:None;
-  let resolution =
-    Resolution.set_local
-      resolution
-      ~reference:!&"local"
-      ~annotation:(Annotation.create Type.integer)
-  in
-  assert_local ~resolution ~name:"local" ~expected:(Some "int");
-  let resolution =
-    Resolution.set_local resolution ~reference:!&"local" ~annotation:(Annotation.create Type.float)
-  in
-  assert_local ~resolution ~name:"local" ~expected:(Some "float")
-
-
-let test_set_local_with_attributes context =
-  let assert_local_with_attributes ?(global_fallback = true) ~resolution ~name ~expected () =
+  let assert_local_with_attributes ?(global_fallback = true) ~name ~expected resolution =
     assert_equal
       ~cmp:(Option.equal Type.equal)
       (expected >>| parse_single_expression >>| Type.create ~aliases:Type.empty_aliases)
@@ -48,22 +33,69 @@ let test_set_local_with_attributes context =
       >>| Annotation.annotation)
   in
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_resolution in
-  assert_local_with_attributes ~resolution ~name:"local" ~expected:None ();
+  (* nothing to start out with *)
+  assert_local ~name:"local" ~expected:None resolution;
+  (* create a local `local` and make sure the type is right *)
   let resolution =
-    Resolution.set_local_with_attributes
+    Resolution.new_local
       resolution
-      ~name:(Expression.create_name ~location:Location.any "local.a.x")
-      ~annotation:(Annotation.create Type.integer)
+      ~reference:!&"local"
+      ~annotation:(Annotation.create_mutable Type.object_primitive)
   in
-  assert_local_with_attributes ~resolution ~name:"local.a.x" ~expected:(Some "int") ();
-  assert_local_with_attributes ~resolution ~name:"local.a.y" ~expected:None ();
+  assert_local ~name:"local" ~expected:(Some "object") resolution;
+  (* create an attribute `local.x.y` and make sure the type is right, also refine it *)
+  assert_local_with_attributes ~name:"local.x.y" ~expected:None resolution;
   let resolution =
-    Resolution.set_local_with_attributes
+    Resolution.new_local_with_attributes
       resolution
-      ~name:(Expression.create_name ~location:Location.any "local.a.x")
-      ~annotation:(Annotation.create Type.float)
+      ~name:(create_name "local.x.y")
+      ~annotation:(Annotation.create_mutable Type.object_primitive)
   in
-  assert_local_with_attributes ~resolution ~name:"local.a.x" ~expected:(Some "float") ();
+  assert_local_with_attributes ~name:"local.x.y" ~expected:(Some "object") resolution;
+  (* Make sure we can refine `local.x.y` *)
+  let resolution =
+    Resolution.refine_local_with_attributes
+      resolution
+      ~name:(create_name "local.x.y")
+      ~annotation:(Annotation.create_mutable Type.integer)
+  in
+  assert_local_with_attributes ~name:"local.x.y" ~expected:(Some "int") resolution;
+  (* refine `local.x` and make sure it refines, and doesn't destroy `local.x.y` *)
+  let resolution =
+    Resolution.refine_local_with_attributes
+      resolution
+      ~name:(create_name "local.x")
+      ~annotation:(Annotation.create_mutable Type.float)
+  in
+  assert_local_with_attributes ~name:"local.x" ~expected:(Some "float") resolution;
+  assert_local_with_attributes ~name:"local.x.y" ~expected:(Some "int") resolution;
+  (* bind a new type to `local.x`. This should destroy `local.x.y` *)
+  let resolution =
+    Resolution.new_local_with_attributes
+      resolution
+      ~name:(create_name "local.x")
+      ~annotation:(Annotation.create_mutable Type.integer)
+  in
+  assert_local_with_attributes ~name:"local.x" ~expected:(Some "int") resolution;
+  assert_local_with_attributes ~name:"local.x.y" ~expected:None resolution;
+  (* refine `local`. This should not destroy `local.x`. *)
+  let resolution =
+    Resolution.refine_local
+      resolution
+      ~reference:!&"local"
+      ~annotation:(Annotation.create_mutable Type.float)
+  in
+  assert_local ~name:"local" ~expected:(Some "float") resolution;
+  assert_local_with_attributes ~name:"local.x" ~expected:(Some "int") resolution;
+  (* bind a new type to `local`. This should destroy `local.x`. *)
+  let resolution =
+    Resolution.new_local
+      resolution
+      ~reference:!&"local"
+      ~annotation:(Annotation.create_mutable Type.integer)
+  in
+  assert_local ~name:"local" ~expected:(Some "int") resolution;
+  assert_local_with_attributes ~name:"local.x" ~expected:None resolution;
   ()
 
 
@@ -73,8 +105,7 @@ let test_parse_annotation context =
       ~cmp:Type.equal
       ~printer:Type.show
       (parse_single_expression expected |> Type.create ~aliases:Type.empty_aliases)
-      (parse_single_expression expression
-      |> GlobalResolution.parse_annotation ~validation resolution)
+      (GlobalResolution.parse_annotation ~validation resolution expression)
   in
   let resolution =
     let resolution =
@@ -89,22 +120,22 @@ let test_parse_annotation context =
     ~validation:ValidatePrimitivesAndTypeParameters
     ~resolution
     ~expected:"int"
-    "int";
+    !"int";
   assert_parse_annotation
     ~validation:NoValidation
     ~resolution
     ~expected:"qualifier.int"
-    "$local_qualifier$int";
+    !"$local_qualifier$int";
   assert_parse_annotation
     ~validation:ValidatePrimitivesAndTypeParameters
     ~resolution
     ~expected:"typing.Any"
-    "empty.stub.Annotation";
+    !"empty.stub.Annotation";
   assert_parse_annotation
     ~validation:ValidatePrimitivesAndTypeParameters
     ~resolution
     ~expected:"typing.Dict[str, typing.Any]"
-    "typing.Dict[str, empty.stub.Annotation]"
+    (parse_single_expression "typing.Dict[str, empty.stub.Annotation]")
 
 
 let make_resolution ~context source =
@@ -778,7 +809,9 @@ let test_resolve_mutable_literals_typed_dictionary context =
         { Node.value = expected_mismatch; _ }
         { Node.value = actual_mismatch; _ }
       =
-      WeakenMutableLiterals.equal_typed_dictionary_mismatch expected_mismatch actual_mismatch
+      [%compare.equal: WeakenMutableLiterals.typed_dictionary_mismatch]
+        expected_mismatch
+        actual_mismatch
     in
     let location_insensitive_equal_weakened_type
         { WeakenMutableLiterals.resolved = expected_resolved; typed_dictionary_errors = expected }
@@ -1286,7 +1319,7 @@ let test_function_definitions context =
     let functions =
       GlobalResolution.function_definitions resolution !&function_name
       >>| List.map ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
-              Reference.show (Node.value name))
+              Reference.show name)
       |> Option.value ~default:[]
     in
     assert_equal ~printer:(String.concat ~sep:", ") expected functions
@@ -1363,7 +1396,7 @@ let test_source_is_unit_test context =
 
 
 let test_fallback_attribute context =
-  let assert_fallback_attribute ~name source annotation =
+  let assert_fallback_attribute ?(instantiated = None) ~name source annotation =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
@@ -1392,7 +1425,7 @@ let test_fallback_attribute context =
            | _ -> failwith "Last statement was not a class")
       |> ClassSummary.name
       |> Reference.show
-      |> Resolution.fallback_attribute ~resolution ~name
+      |> Resolution.fallback_attribute ~instantiated ~resolution ~name
     in
     let printer optional_type = optional_type >>| Type.show |> Option.value ~default:"None" in
     assert_equal
@@ -1409,7 +1442,7 @@ let test_fallback_attribute context =
     ~name:"attribute"
     {|
       class Foo:
-        def Foo.__getattr__(self, attribute: str) -> int:
+        def __getattr__(self, attribute: str) -> int:
           return 1
     |}
     (Some Type.integer);
@@ -1417,14 +1450,14 @@ let test_fallback_attribute context =
     ~name:"attribute"
     {|
       class Foo:
-        def Foo.__getattr__(self, attribute: str) -> int: ...
+        def __getattr__(self, attribute: str) -> int: ...
     |}
     (Some Type.integer);
   assert_fallback_attribute
     ~name:"attribute"
     {|
       class Foo:
-        def Foo.__getattr__(self, attribute: str) -> int: ...
+        def __getattr__(self, attribute: str) -> int: ...
       class Bar(Foo):
         pass
     |}
@@ -1433,7 +1466,7 @@ let test_fallback_attribute context =
     ~name:"__iadd__"
     {|
       class Foo:
-        def Foo.__add__(self, other: Foo) -> int:
+        def __add__(self, other: Foo) -> int:
           pass
     |}
     (Some
@@ -1449,6 +1482,29 @@ let test_fallback_attribute context =
                 Single (Primitive "test.Foo");
               ];
           }));
+  assert_fallback_attribute
+    ~name:"__iadd__"
+    ~instantiated:(Some (Type.parametric "test.Foo" [Single Type.integer]))
+    {|
+      from typing import Generic, TypeVar
+      T = TypeVar("T")
+      class Foo(Generic[T]):
+        def __add__(self, other: Foo[T]) -> Foo[T]:
+          pass
+    |}
+    (Some
+       (Parametric
+          {
+            name = "BoundMethod";
+            parameters =
+              [
+                Single
+                  (parse_callable
+                     "typing.Callable(test.Foo.__add__)[[Named(self, test.Foo[int]), Named(other, \
+                      test.Foo[int])], test.Foo[int]]");
+                Single (Type.parametric "test.Foo" [Single Type.integer]);
+              ];
+          }));
   assert_fallback_attribute ~name:"__iadd__" {|
       class Foo:
         pass
@@ -1457,7 +1513,7 @@ let test_fallback_attribute context =
     ~name:"__iadd__"
     {|
       class Foo:
-        def Foo.__getattr__(self, attribute) -> int: ...
+        def __getattr__(self, attribute) -> int: ...
     |}
     (Some Type.integer);
   assert_fallback_attribute
@@ -1467,11 +1523,11 @@ let test_fallback_attribute context =
       import typing_extensions
       class Foo:
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
         @overload
-        def Foo.__getattr__(self, attribute: str) -> None: ...
+        def __getattr__(self, attribute: str) -> None: ...
     |}
     (Some Type.integer);
   assert_fallback_attribute
@@ -1481,11 +1537,11 @@ let test_fallback_attribute context =
       import typing_extensions
       class Foo:
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
         @overload
-        def Foo.__getattr__(self, attribute: str) -> None: ...
+        def __getattr__(self, attribute: str) -> None: ...
     |}
     (Some Type.string);
   assert_fallback_attribute
@@ -1495,11 +1551,11 @@ let test_fallback_attribute context =
       import typing_extensions
       class Foo:
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
         @overload
-        def Foo.__getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+        def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
         @overload
-        def Foo.__getattr__(self, attribute: str) -> None: ...
+        def __getattr__(self, attribute: str) -> None: ...
     |}
     (Some Type.none);
   assert_fallback_attribute
@@ -1509,7 +1565,7 @@ let test_fallback_attribute context =
       import typing_extensions
       class Foo:
         @overload
-        def Foo.__getattr__(self: Foo, attribute: str) -> int: ...
+        def __getattr__(self: Foo, attribute: str) -> int: ...
     |}
     (Some Type.integer);
   (* Callables on the instance do not get picked up by the runtime. Who knew? *)
@@ -1533,8 +1589,7 @@ let test_fallback_attribute context =
 let () =
   "resolution"
   >::: [
-         "set_local" >:: test_set_local;
-         "set_local_with_attributes" >:: test_set_local_with_attributes;
+         "new_and_refine" >:: test_new_and_refine;
          "parse_annotation" >:: test_parse_annotation;
          "parse_reference" >:: test_parse_reference;
          "partition_name" >:: test_partition_name;

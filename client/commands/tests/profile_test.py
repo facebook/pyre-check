@@ -1,10 +1,9 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-
-import unittest
+import testslide
 
 from ..profile import (
     CounterEvent,
@@ -13,12 +12,12 @@ from ..profile import (
     StatisticsOverTime,
     TableStatistics,
     parse_event,
-    to_cold_start_phases,
     to_incremental_updates,
+    to_cold_start_phases,
 )
 
 
-class ProfileTest(unittest.TestCase):
+class ProfileTest(testslide.TestCase):
     def test_parse_event(self) -> None:
         self.assertEqual(
             parse_event(

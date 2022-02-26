@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -11,16 +11,11 @@ open Pyre
 
 type t = {
   global_resolution: GlobalResolution.t;
-  annotation_store: annotation_store;
+  annotation_store: Refinement.Store.t;
   type_variables: Type.Variable.Set.t;
   resolve_expression: resolution:t -> Expression.t -> t * Annotation.t;
   resolve_statement: resolution:t -> Statement.t -> resolve_statement_result_t;
   parent: Reference.t option;
-}
-
-and annotation_store = {
-  annotations: RefinementUnit.t Reference.Map.t;
-  temporary_annotations: RefinementUnit.t Reference.Map.t;
 }
 
 and resolve_statement_result_t =
@@ -41,29 +36,15 @@ let create ~global_resolution ~annotation_store ~resolve_expression ~resolve_sta
   }
 
 
-let pp format { annotation_store = { annotations; temporary_annotations }; type_variables; _ } =
-  let annotation_store_entry (reference, refinement_unit) =
-    Format.asprintf "%a -> %a" Reference.pp reference RefinementUnit.pp refinement_unit
-  in
+let pp format { annotation_store; type_variables; _ } =
   Type.Variable.Set.to_list type_variables
   |> List.map ~f:Type.Variable.show
   |> String.concat ~sep:", "
   |> Format.fprintf format "Type variables: [%s]\n";
-  Map.to_alist annotations
-  |> List.map ~f:annotation_store_entry
-  |> String.concat ~sep:", "
-  |> Format.fprintf format "Annotation Store: [%s]";
-  Map.to_alist temporary_annotations
-  |> List.map ~f:annotation_store_entry
-  |> String.concat ~sep:", "
-  |> Format.fprintf format "Temporary Annotation Store: [%s]"
+  Format.fprintf format "%a" Refinement.Store.pp annotation_store
 
 
 let show resolution = Format.asprintf "%a" pp resolution
-
-let empty_annotation_store =
-  { annotations = Reference.Map.empty; temporary_annotations = Reference.Map.empty }
-
 
 let is_global { global_resolution; _ } ~reference =
   Reference.delocalize reference |> GlobalResolution.global global_resolution |> Option.is_some
@@ -128,7 +109,7 @@ let partition_name resolution ~name =
           | attribute :: attribute_list ->
               partition_attribute Reference.(attribute |> create |> combine base) attribute_list
         else
-          base, attribute_list, Some (Annotation.create base_type)
+          base, attribute_list, Some (Annotation.create_mutable base_type)
       in
       partition_attribute (Reference.create head) attributes
       |> fun (base, attributes, annotation) ->
@@ -136,104 +117,71 @@ let partition_name resolution ~name =
   | _ -> Reference.create_from_list identifiers, Reference.create "", None
 
 
-let set_local
-    ?(temporary = false)
-    ({ annotation_store = { annotations; temporary_annotations }; _ } as resolution)
-    ~reference
-    ~annotation
-  =
-  let annotations, temporary_annotations =
-    if temporary then
-      ( annotations,
-        Map.set
-          temporary_annotations
-          ~key:reference
-          ~data:(RefinementUnit.create () |> RefinementUnit.set_base ~base:annotation) )
-    else
-      ( Map.set
-          annotations
-          ~key:reference
-          ~data:(RefinementUnit.create () |> RefinementUnit.set_base ~base:annotation),
-        temporary_annotations )
-  in
-  { resolution with annotation_store = { annotations; temporary_annotations } }
+let has_nontemporary_annotation ~reference resolution =
+  Refinement.Store.has_nontemporary_annotation ~name:reference resolution.annotation_store
 
 
-let set_local_with_attributes
-    ?(temporary = false)
-    ({ annotation_store = { annotations; temporary_annotations }; _ } as resolution)
-    ~name
-    ~annotation
-  =
-  let object_reference, attribute_path, base = partition_name resolution ~name in
-  let set_base refinement_unit ~base =
-    match RefinementUnit.base refinement_unit, base with
-    | None, Some base -> RefinementUnit.set_base refinement_unit ~base
-    | _ -> refinement_unit
-  in
-  let annotations, temporary_annotations =
-    if temporary then
-      ( annotations,
-        Map.set
-          temporary_annotations
-          ~key:object_reference
-          ~data:
-            (Map.find temporary_annotations object_reference
-            |> (fun existing -> Option.first_some existing (Map.find annotations object_reference))
-            |> Option.value ~default:(RefinementUnit.create ())
-            |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~base:annotation
-            |> set_base ~base) )
-    else
-      ( Map.set
-          annotations
-          ~key:object_reference
-          ~data:
-            (Map.find annotations object_reference
-            |> Option.value ~default:(RefinementUnit.create ())
-            |> RefinementUnit.add_attribute_refinement ~reference:attribute_path ~base:annotation
-            |> set_base ~base),
-        temporary_annotations )
-  in
-  { resolution with annotation_store = { annotations; temporary_annotations } }
+let new_local ?(temporary = false) resolution ~reference ~annotation =
+  {
+    resolution with
+    annotation_store =
+      resolution.annotation_store
+      |> Refinement.Store.new_as_base ~temporary ~name:reference ~base:annotation;
+  }
 
 
-let get_local
-    ?(global_fallback = true)
-    ~reference
-    ({ annotation_store = { annotations; temporary_annotations }; global_resolution; _ } as
-    resolution)
-  =
-  match
-    Option.first_some (Map.find temporary_annotations reference) (Map.find annotations reference)
-  with
-  | Some result when global_fallback || not (is_global resolution ~reference) ->
-      RefinementUnit.base result
-  | _ when global_fallback ->
+let refine_local ?(temporary = false) resolution ~reference ~annotation =
+  {
+    resolution with
+    annotation_store =
+      resolution.annotation_store
+      |> Refinement.Store.set_base ~temporary ~name:reference ~base:annotation;
+  }
+
+
+let set_local_with_attributes ~wipe_subtree ?(temporary = false) resolution ~name ~annotation =
+  let name, attribute_path, base = partition_name resolution ~name in
+  {
+    resolution with
+    annotation_store =
+      resolution.annotation_store
+      |> Refinement.Store.set_annotation
+           ~temporary
+           ~wipe_subtree
+           ~name
+           ~attribute_path
+           ~base
+           ~annotation;
+  }
+
+
+let new_local_with_attributes = set_local_with_attributes ~wipe_subtree:true
+
+let refine_local_with_attributes = set_local_with_attributes ~wipe_subtree:false
+
+let get_local ?(global_fallback = true) ~reference { annotation_store; global_resolution; _ } =
+  match Refinement.Store.get_base ~name:reference annotation_store with
+  | Some _ as result -> result
+  | None when global_fallback ->
       let global = GlobalResolution.global global_resolution in
       Reference.delocalize reference |> global >>| fun { annotation; _ } -> annotation
-  | _ -> None
+  | None -> None
 
 
 let get_local_with_attributes
     ?(global_fallback = true)
     ~name
-    ({ annotation_store = { annotations; temporary_annotations }; global_resolution; _ } as
-    resolution)
+    ({ annotation_store; global_resolution; _ } as resolution)
   =
-  let object_reference, attribute_path, _ = partition_name resolution ~name in
-  match
-    Option.first_some
-      (Map.find temporary_annotations object_reference)
-      (Map.find annotations object_reference)
-  with
-  | Some result when global_fallback || not (is_global resolution ~reference:object_reference) ->
-      RefinementUnit.annotation result ~reference:attribute_path
-  | _ when global_fallback ->
+  let name, attribute_path, _ = partition_name resolution ~name in
+  match Refinement.Store.get_annotation ~name ~attribute_path annotation_store with
+  | Some _ as result -> result
+  | None when global_fallback ->
       let global = GlobalResolution.global global_resolution in
-      Reference.(combine object_reference attribute_path |> delocalize)
+      Reference.(combine name attribute_path |> delocalize)
       |> global
       >>| fun { annotation; _ } -> annotation
-  | _ -> None
+  | None -> None
 
 
 let unset_local
@@ -260,7 +208,7 @@ let clear_temporary_annotations ({ annotation_store; _ } as resolution) =
 let resolve_attribute_access resolution ~base_type ~attribute =
   let unique_name = Reference.create "$n" in
   let resolution =
-    set_local resolution ~reference:unique_name ~annotation:(Annotation.create base_type)
+    new_local resolution ~reference:unique_name ~annotation:(Annotation.create_mutable base_type)
   in
   let expression_to_analyze =
     Expression.from_reference
@@ -275,8 +223,8 @@ let resolve_expression_to_type_with_locals
     ~locals
     expression
   =
-  let add_local resolution (reference, annotation) = set_local resolution ~reference ~annotation in
-  let resolution_with_locals = List.fold ~init:resolution ~f:add_local locals in
+  let new_local resolution (reference, annotation) = new_local resolution ~reference ~annotation in
+  let resolution_with_locals = List.fold ~init:resolution ~f:new_local locals in
   resolve_expression ~resolution:resolution_with_locals expression |> snd |> Annotation.annotation
 
 
@@ -292,10 +240,74 @@ let all_type_variables_in_scope { type_variables; _ } = Type.Variable.Set.to_lis
 
 let annotation_store { annotation_store; _ } = annotation_store
 
-let annotations { annotation_store = { annotations; _ }; _ } = annotations
+let refinements_equal left right =
+  Refinement.Store.equal left.annotation_store right.annotation_store
 
-let temporary_annotations { annotation_store = { temporary_annotations; _ }; _ } =
-  temporary_annotations
+
+(** Meet refinements.
+
+    Because the type variables in client code are always the same, we just take the left as an
+    optimization *)
+let meet_refinements left right =
+  let global_resolution = left.global_resolution in
+  {
+    left with
+    annotation_store =
+      Refinement.Store.meet ~global_resolution left.annotation_store right.annotation_store;
+  }
+
+
+(** Merge refinements. This means we join type information but preserve new bindings from both sides
+    (which causes client code to be strict about type errors but permissive about uninstantiated
+    variables)
+
+    Because the type variables in client code are always the same, we just take the left as an
+    optimization *)
+let outer_join_refinements left right =
+  let global_resolution = left.global_resolution in
+  {
+    left with
+    annotation_store =
+      Refinement.Store.outer_join ~global_resolution left.annotation_store right.annotation_store;
+  }
+
+
+(** Similar to `outer_join_refinements`, but as a widening operation *)
+let outer_widen_refinements ~iteration ~widening_threshold left right =
+  let global_resolution = left.global_resolution in
+  {
+    left with
+    annotation_store =
+      Refinement.Store.outer_widen
+        ~global_resolution
+        ~iteration
+        ~widening_threshold
+        left.annotation_store
+        right.annotation_store;
+  }
+
+
+let update_existing_refinements ~old_resolution ~new_resolution =
+  {
+    old_resolution with
+    annotation_store =
+      Refinement.Store.update_existing
+        ~old_store:old_resolution.annotation_store
+        ~new_store:new_resolution.annotation_store;
+  }
+
+
+(** Update the refinements in `old_resolution` to match `new_resolution`, except for locals where
+    `filter` applied to the new name + annotation returns false *)
+let update_refinements_with_filter ~old_resolution ~new_resolution ~filter =
+  {
+    old_resolution with
+    annotation_store =
+      Refinement.Store.update_with_filter
+        ~old_store:old_resolution.annotation_store
+        ~new_store:new_resolution.annotation_store
+        ~filter;
+  }
 
 
 let with_annotation_store resolution ~annotation_store = { resolution with annotation_store }
@@ -312,7 +324,13 @@ let is_consistent_with ({ global_resolution; _ } as resolution) =
 
 let global_resolution { global_resolution; _ } = global_resolution
 
-let fallback_attribute ?(accessed_through_class = false) ~resolution ~name class_name =
+let fallback_attribute
+    ?(accessed_through_class = false)
+    ?(instantiated = None)
+    ~resolution
+    ~name
+    class_name
+  =
   let class_name_reference = Reference.create class_name in
   let global_resolution = global_resolution resolution in
   let compound_backup =
@@ -341,7 +359,7 @@ let fallback_attribute ?(accessed_through_class = false) ~resolution ~name class
           class_name
           ~accessed_through_class:false
           ~transitive:true
-          ~instantiated:(Type.Primitive class_name)
+          ~instantiated:(Option.value instantiated ~default:(Type.Primitive class_name))
           ~name
     | _ -> None
   in

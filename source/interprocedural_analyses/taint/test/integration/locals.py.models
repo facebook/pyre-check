@@ -15,18 +15,23 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "x" }
+            ],
             "root": {
               "filename": "locals.py",
               "line": 18,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [
-              { "has": "first-index" },
-              { "first-index": "x" },
-              { "always-via": "special_source" }
-            ]
+            }
           }
         ]
       },
@@ -34,14 +39,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "locals.py",
               "line": 20,
               "start": 15,
               "end": 28
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -51,6 +61,9 @@
       { "first-index": "x" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "locals.locals_to_sink:5002:0:Call|_test_sink|1|formal(arg):7fbc70d5dc3b10640602ae6ed885848c"
     ]
   }
 }
@@ -70,14 +83,19 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "locals.py",
               "line": 18,
               "start": 8,
               "end": 22
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_source" } ],
-            "features": [ { "always-via": "special_source" } ]
+            }
           }
         ]
       },
@@ -85,6 +103,14 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "locals.py",
@@ -93,11 +119,8 @@
                 "end": 25
               },
               "resolves_to": [ "locals.named_sink" ],
-              "port": "formal(x)",
-              "length": 1
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+              "port": "formal(x)"
+            }
           }
         ]
       }
@@ -105,6 +128,9 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "locals.locals_to_sink:5002:0:Call|locals.named_sink|0|formal(x):e86eb462636e5e28768c97e19403578d"
     ]
   }
 }
@@ -117,14 +143,19 @@
         "port": "formal(x)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "locals.py",
               "line": 12,
               "start": 15,
               "end": 16
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -138,7 +169,7 @@
     "sources": [
       {
         "port": "formal(x)",
-        "taint": [ { "decl": null, "leaves": [ { "kind": "Test" } ] } ]
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
   }
@@ -159,16 +190,22 @@
         "name": "forward",
         "roots": [
           {
+            "kinds": [
+              {
+                "leaves": [ { "name": "locals.source_parameter_to_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "x" }
+            ],
             "root": {
               "filename": "locals.py",
               "line": 28,
               "start": 29,
               "end": 30
-            },
-            "leaves": [
-              { "kind": "Test", "name": "locals.source_parameter_to_sink" }
-            ],
-            "features": [ { "has": "first-index" }, { "first-index": "x" } ]
+            }
           }
         ]
       },
@@ -176,14 +213,19 @@
         "name": "backward",
         "roots": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "root": {
               "filename": "locals.py",
               "line": 29,
               "start": 15,
               "end": 28
-            },
-            "leaves": [ { "kind": "Test", "name": "_test_sink" } ],
-            "features": [ { "always-via": "special_sink" } ]
+            }
           }
         ]
       }
@@ -192,6 +234,9 @@
       { "has": "first-index" },
       { "first-index": "x" },
       { "always-via": "special_sink" }
+    ],
+    "master_handles": [
+      "locals.source_parameter_to_sink:5002:0:Call|_test_sink|0|formal(arg):2b5c4e9505cceda2f46c9f4bb0fbf18e"
     ]
   }
 }

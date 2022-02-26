@@ -1,5 +1,5 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -264,6 +264,7 @@ and read_without_indent state = parse
       | "in" -> IN
       | "is" -> IS
       | "lambda" -> LAMBDA lexbuf.lex_start_p
+      | "None" -> NONE (lexbuf.lex_start_p, lexbuf.lex_curr_p)
       | "nonlocal" -> NONLOCAL lexbuf.lex_start_p
       | "not" -> NOT lexbuf.lex_start_p
       | "or" -> OR

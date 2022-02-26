@@ -1,23 +1,28 @@
 (*
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
 
 open Core
+open Pyre
 open Ast
 open Analysis
 open Interprocedural
 open Taint
-open Model
-open Pyre
+module ModelQuery = ModelParser.Internal.ModelQuery
+
+module ModelParser = struct
+  include ModelParser.Internal
+  include ModelParser
+end
 
 module DumpModelQueryResults : sig
-  val dump : path:Path.t -> models:Taint.Result.call_model Target.Map.t -> unit
+  val dump : path:PyrePath.t -> models:Model.t Target.Map.t -> unit
 end = struct
   let dump ~path ~models =
-    Log.warning "Emitting the model query results to `%s`" (Path.absolute path);
+    Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
     let content =
       let to_json (callable, model) =
         `Assoc
@@ -141,14 +146,38 @@ let matches_decorator_constraint ~name_constraint ~arguments_constraint decorato
              (SanitizedCallArgumentSet.of_list constraint_keyword_arguments)
              (SanitizedCallArgumentSet.of_list decorator_keyword_arguments)
   in
-  decorator_name_matches decorator && decorator_arguments_matches decorator
+  match Statement.Decorator.from_expression decorator with
+  | None -> false
+  | Some decorator -> decorator_name_matches decorator && decorator_arguments_matches decorator
 
 
 let matches_annotation_constraint ~annotation_constraint ~annotation =
+  let open Expression in
   match annotation_constraint, annotation with
-  | ModelQuery.IsAnnotatedTypeConstraint, Type.Annotated _ -> true
-  | ModelQuery.AnnotationNameConstraint name_constraint, _ ->
-      matches_name_constraint ~name_constraint (Type.show annotation)
+  | ( ModelQuery.IsAnnotatedTypeConstraint,
+      {
+        Node.value =
+          Expression.Call
+            {
+              Call.callee =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                        {
+                          base =
+                            { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
+                          _;
+                        });
+                  _;
+                };
+              _;
+            };
+        _;
+      } ) ->
+      true
+  | ModelQuery.AnnotationNameConstraint name_constraint, annotation_expression ->
+      matches_name_constraint ~name_constraint (Expression.show annotation_expression)
   | _ -> false
 
 
@@ -160,10 +189,7 @@ let rec normalized_parameter_matches_constraint
   = function
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       annotation
-      >>| (fun annotation ->
-            matches_annotation_constraint
-              ~annotation_constraint
-              ~annotation:(GlobalResolution.parse_annotation resolution annotation))
+      >>| (fun annotation -> matches_annotation_constraint ~annotation_constraint ~annotation)
       |> Option.value ~default:false
   | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
       matches_name_constraint ~name_constraint (Identifier.sanitized parameter_name)
@@ -175,6 +201,8 @@ let rec normalized_parameter_matches_constraint
       List.exists constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
   | ModelQuery.ParameterConstraint.Not query_constraint ->
       not (normalized_parameter_matches_constraint ~resolution ~parameter query_constraint)
+  | ModelQuery.ParameterConstraint.AllOf constraints ->
+      List.for_all constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
 
 
 let rec callable_matches_constraint query_constraint ~resolution ~callable =
@@ -210,15 +238,14 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
           {
             Node.value =
               {
-                Statement.Define.signature =
-                  { Statement.Define.Signature.return_annotation = Some annotation; _ };
+                Statement.Define.signature = { Statement.Define.Signature.return_annotation; _ };
                 _;
               };
             _;
           } ->
-          matches_annotation_constraint
-            ~annotation_constraint
-            ~annotation:(GlobalResolution.parse_annotation resolution annotation)
+          return_annotation
+          >>| (fun annotation -> matches_annotation_constraint ~annotation_constraint ~annotation)
+          |> Option.value ~default:false
       | _ -> false)
   | ModelQuery.AnyParameterConstraint parameter_constraint -> (
       let callable_type = get_callable_type () in
@@ -235,6 +262,8 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
       | _ -> false)
   | ModelQuery.AnyOf constraints ->
       List.exists constraints ~f:(callable_matches_constraint ~resolution ~callable)
+  | ModelQuery.AllOf constraints ->
+      List.for_all constraints ~f:(callable_matches_constraint ~resolution ~callable)
   | ModelQuery.Not query_constraint ->
       not (callable_matches_constraint ~resolution ~callable query_constraint)
   | ModelQuery.ParentConstraint (NameSatisfies name_constraint) ->
@@ -245,6 +274,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
       Target.class_name callable
       >>| is_ancestor ~resolution ~is_transitive class_name
       |> Option.value ~default:false
+  | _ -> failwith "impossible case"
 
 
 let apply_callable_productions ~resolution ~productions ~callable =
@@ -262,7 +292,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
             };
           _;
         } ) ->
-      let production_to_taint ~annotation ~production =
+      let production_to_taint ?(parameter = None) ~production annotation =
         let open Expression in
         let get_subkind_from_annotation ~pattern annotation =
           let get_annotation_of_type annotation =
@@ -311,15 +341,66 @@ let apply_callable_productions ~resolution ~productions ~callable =
                 None
           | _ -> None
         in
+        let update_placeholder_via_feature ~actual_parameter =
+          (* If we see a via_feature on the $global attribute symbolic parameter in the taint for an
+             actual parameter, we replace it with the actual parameter. *)
+          let open Features in
+          function
+          | ViaFeature.ViaTypeOf
+              {
+                parameter =
+                  AccessPath.Root.PositionalParameter
+                    { position = 0; name = "$global"; positional_only = false };
+                tag;
+              } ->
+              ViaFeature.ViaTypeOf { parameter = actual_parameter; tag }
+          | ViaFeature.ViaValueOf
+              {
+                parameter =
+                  AccessPath.Root.PositionalParameter
+                    { position = 0; name = "$global"; positional_only = false };
+                tag;
+              } ->
+              ViaFeature.ViaValueOf { parameter = actual_parameter; tag }
+          | feature -> feature
+        in
+        let update_placeholder_via_features taint_annotation =
+          match parameter, taint_annotation with
+          | Some actual_parameter, ModelParser.Source source ->
+              let via_features =
+                List.map ~f:(update_placeholder_via_feature ~actual_parameter) source.via_features
+              in
+              ModelParser.Source { source with via_features }
+          | Some actual_parameter, ModelParser.Sink sink ->
+              let via_features =
+                List.map ~f:(update_placeholder_via_feature ~actual_parameter) sink.via_features
+              in
+              ModelParser.Sink { sink with via_features }
+          | Some actual_parameter, ModelParser.Tito tito ->
+              let via_features =
+                List.map ~f:(update_placeholder_via_feature ~actual_parameter) tito.via_features
+              in
+              ModelParser.Tito { tito with via_features }
+          | Some actual_parameter, ModelParser.AddFeatureToArgument annotation ->
+              let via_features =
+                List.map
+                  ~f:(update_placeholder_via_feature ~actual_parameter)
+                  annotation.via_features
+              in
+              ModelParser.AddFeatureToArgument { annotation with via_features }
+          | _ -> taint_annotation
+        in
         match production with
-        | ModelQuery.TaintAnnotation taint_annotation -> Some taint_annotation
+        | ModelQuery.TaintAnnotation taint_annotation ->
+            Some (update_placeholder_via_features taint_annotation)
         | ModelQuery.ParametricSourceFromAnnotation { source_pattern; kind } ->
             get_subkind_from_annotation ~pattern:source_pattern annotation
             >>| fun subkind ->
-            Source
+            ModelParser.Source
               {
                 source = Sources.ParametricSource { source_name = kind; subkind };
                 breadcrumbs = [];
+                via_features = [];
                 path = [];
                 leaf_names = [];
                 leaf_name_provided = false;
@@ -327,10 +408,11 @@ let apply_callable_productions ~resolution ~productions ~callable =
         | ModelQuery.ParametricSinkFromAnnotation { sink_pattern; kind } ->
             get_subkind_from_annotation ~pattern:sink_pattern annotation
             >>| fun subkind ->
-            Sink
+            ModelParser.Sink
               {
                 sink = Sinks.ParametricSink { sink_name = kind; subkind };
                 breadcrumbs = [];
+                via_features = [];
                 path = [];
                 leaf_names = [];
                 leaf_name_provided = false;
@@ -340,8 +422,8 @@ let apply_callable_productions ~resolution ~productions ~callable =
       let apply_production = function
         | ModelQuery.ReturnTaint productions ->
             List.filter_map productions ~f:(fun production ->
-                production_to_taint ~annotation:return_annotation ~production
-                >>| fun taint -> ReturnAnnotation, taint)
+                production_to_taint return_annotation ~production
+                >>| fun taint -> ModelParser.ReturnAnnotation, taint)
         | ModelQuery.NamedParameterTaint { name; taint = productions } -> (
             let parameter =
               List.find_map
@@ -359,8 +441,8 @@ let apply_callable_productions ~resolution ~productions ~callable =
             match parameter with
             | Some (parameter, annotation) ->
                 List.filter_map productions ~f:(fun production ->
-                    production_to_taint ~annotation ~production
-                    >>| fun taint -> ParameterAnnotation parameter, taint)
+                    production_to_taint annotation ~production
+                    >>| fun taint -> ModelParser.ParameterAnnotation parameter, taint)
             | None -> [])
         | ModelQuery.PositionalParameterTaint { index; taint = productions } -> (
             let parameter =
@@ -375,8 +457,8 @@ let apply_callable_productions ~resolution ~productions ~callable =
             match parameter with
             | Some (parameter, annotation) ->
                 List.filter_map productions ~f:(fun production ->
-                    production_to_taint ~annotation ~production
-                    >>| fun taint -> ParameterAnnotation parameter, taint)
+                    production_to_taint annotation ~production
+                    >>| fun taint -> ModelParser.ParameterAnnotation parameter, taint)
             | None -> [])
         | ModelQuery.AllParametersTaint { excludes; taint } ->
             let apply_parameter_production
@@ -389,8 +471,8 @@ let apply_callable_productions ~resolution ~productions ~callable =
               then
                 None
               else
-                production_to_taint ~annotation ~production
-                >>| fun taint -> ParameterAnnotation root, taint
+                production_to_taint annotation ~production
+                >>| fun taint -> ModelParser.ParameterAnnotation root, taint
             in
             List.cartesian_product normalized_parameters taint
             |> List.filter_map ~f:apply_parameter_production
@@ -405,8 +487,9 @@ let apply_callable_productions ~resolution ~productions ~callable =
                   where
                   ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
               then
-                production_to_taint ~annotation ~production
-                >>| fun taint -> ParameterAnnotation root, taint
+                let parameter, _, _ = parameter in
+                production_to_taint annotation ~production ~parameter:(Some parameter)
+                >>| fun taint -> ModelParser.ParameterAnnotation root, taint
               else
                 None
             in
@@ -444,15 +527,21 @@ let apply_callable_query_rule
     []
 
 
-let rec attribute_matches_constraint query_constraint ~resolution ~attribute =
-  let attribute_class_name = Reference.prefix attribute >>| Reference.show in
+let rec attribute_matches_constraint query_constraint ~resolution ~name ~annotation =
+  let attribute_class_name = Reference.prefix name >>| Reference.show in
   match query_constraint with
   | ModelQuery.NameConstraint name_constraint ->
-      matches_name_constraint ~name_constraint (Reference.show attribute)
+      matches_name_constraint ~name_constraint (Reference.show name)
+  | ModelQuery.AnnotationConstraint annotation_constraint ->
+      annotation
+      >>| (fun annotation -> matches_annotation_constraint ~annotation_constraint ~annotation)
+      |> Option.value ~default:false
   | ModelQuery.AnyOf constraints ->
-      List.exists constraints ~f:(attribute_matches_constraint ~resolution ~attribute)
+      List.exists constraints ~f:(attribute_matches_constraint ~resolution ~name ~annotation)
+  | ModelQuery.AllOf constraints ->
+      List.for_all constraints ~f:(attribute_matches_constraint ~resolution ~name ~annotation)
   | ModelQuery.Not query_constraint ->
-      not (attribute_matches_constraint ~resolution ~attribute query_constraint)
+      not (attribute_matches_constraint ~resolution ~name ~annotation query_constraint)
   | ModelQuery.ParentConstraint (NameSatisfies name_constraint) ->
       attribute_class_name
       >>| matches_name_constraint ~name_constraint
@@ -479,8 +568,9 @@ let apply_attribute_productions ~productions =
 let apply_attribute_query_rule
     ~verbose
     ~resolution
-    ~rule:{ ModelQuery.rule_kind; query; productions; name }
-    ~attribute
+    ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name }
+    ~name
+    ~annotation
   =
   let kind_matches =
     match rule_kind with
@@ -488,13 +578,15 @@ let apply_attribute_query_rule
     | _ -> false
   in
 
-  if kind_matches && List.for_all ~f:(attribute_matches_constraint ~resolution ~attribute) query
+  if
+    kind_matches
+    && List.for_all ~f:(attribute_matches_constraint ~resolution ~name ~annotation) query
   then begin
     if verbose then
       Log.info
         "Attribute `%s` matches all constraints for the model query rule%s."
-        (Reference.show attribute)
-        (name |> Option.map ~f:(Format.sprintf " `%s`") |> Option.value ~default:"");
+        (Reference.show name)
+        (rule_name |> Option.map ~f:(Format.sprintf " `%s`") |> Option.value ~default:"");
     apply_attribute_productions ~productions
   end
   else
@@ -515,11 +607,22 @@ let get_class_attributes ~global_resolution ~class_name =
       let all_attributes =
         Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
       in
-      Identifier.SerializableMap.fold
-        (fun attribute _ accumulator ->
-          Reference.create ~prefix:class_name_reference attribute :: accumulator)
-        all_attributes
-        []
+      let get_name_and_annotation_from_attributes attribute_name attribute accumulator =
+        match attribute with
+        | {
+         Node.value =
+           {
+             ClassSummary.Attribute.kind =
+               ClassSummary.Attribute.Simple { ClassSummary.Attribute.annotation; _ };
+             _;
+           };
+         _;
+        } ->
+            (Reference.create ~prefix:class_name_reference attribute_name, annotation)
+            :: accumulator
+        | _ -> accumulator
+      in
+      Identifier.SerializableMap.fold get_name_and_annotation_from_attributes all_attributes []
 
 
 let apply_all_rules
@@ -539,8 +642,7 @@ let apply_all_rules
       ModelParser.compute_sources_and_sinks_to_keep ~configuration ~rule_filter
     in
     let merge_models new_models models =
-      Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
-          Taint.Result.join ~iteration:0 left right)
+      Map.merge_skewed new_models models ~combine:(fun ~key:_ left right -> Model.join left right)
     in
     let attribute_rules, callable_rules =
       List.partition_tf
@@ -575,16 +677,14 @@ let apply_all_rules
             let models =
               let model =
                 match Target.Map.find models (callable :> Target.t) with
-                | Some existing_model -> Taint.Result.join ~iteration:0 existing_model model
+                | Some existing_model -> Model.join existing_model model
                 | None -> model
               in
               Target.Map.set models ~key:(callable :> Target.t) ~data:model
             in
             models
         | Error error ->
-            Log.error
-              "Error while executing model query: %s"
-              (Model.display_verification_error error);
+            Log.error "Error while executing model query: %s" (ModelVerificationError.display error);
             models)
       else
         models
@@ -607,27 +707,28 @@ let apply_all_rules
         ~map:(fun models callables -> List.fold callables ~init:models ~f:apply_rules_for_callable)
         ~reduce:(fun new_models models ->
           Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
-              Taint.Result.join ~iteration:0 left right))
+              Model.join left right))
         ~inputs:callables
         ()
     in
 
     (* Generate models for attributes. *)
-    let apply_rules_for_attribute models attribute =
+    let apply_rules_for_attribute models (name, annotation) =
       let taint_to_model =
         List.concat_map attribute_rules ~f:(fun rule ->
             apply_attribute_query_rule
               ~verbose:(Option.is_some configuration.dump_model_query_results_path)
               ~resolution:global_resolution
               ~rule
-              ~attribute)
+              ~name
+              ~annotation)
       in
       if not (List.is_empty taint_to_model) then (
-        let callable = Target.create_object attribute in
+        let callable = Target.create_object name in
         match
           ModelParser.create_attribute_model_from_annotations
             ~resolution
-            ~name:attribute
+            ~name
             ~sources_to_keep
             ~sinks_to_keep
             taint_to_model
@@ -636,16 +737,14 @@ let apply_all_rules
             let models =
               let model =
                 match Target.Map.find models (callable :> Target.t) with
-                | Some existing_model -> Taint.Result.join ~iteration:0 existing_model model
+                | Some existing_model -> Model.join existing_model model
                 | None -> model
               in
               Target.Map.set models ~key:(callable :> Target.t) ~data:model
             in
             models
         | Error error ->
-            Log.error
-              "Error while executing model query: %s"
-              (Model.display_verification_error error);
+            Log.error "Error while executing model query: %s" (ModelVerificationError.display error);
             models)
       else
         models
@@ -673,7 +772,7 @@ let apply_all_rules
             List.fold attributes ~init:models ~f:apply_rules_for_attribute)
           ~reduce:(fun new_models models ->
             Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
-                Taint.Result.join ~iteration:0 left right))
+                Model.join left right))
           ~inputs:attributes
           ()
       else

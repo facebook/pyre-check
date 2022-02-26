@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
+# Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
@@ -7,7 +7,6 @@
 
 import json
 import unittest
-from io import BytesIO
 from typing import Type
 
 from ..json_rpc import (
@@ -15,8 +14,6 @@ from ..json_rpc import (
     Response,
     SuccessResponse,
     ErrorResponse,
-    read_lsp_request,
-    write_lsp_request,
     ByNameParameters,
     ByPositionParameters,
     JSONRPCException,
@@ -200,79 +197,3 @@ class JsonRPCTest(unittest.TestCase):
             },
             ErrorResponse(id=0, code=42, message="foo", data=[1, True]),
         )
-
-    def test_read_message(self) -> None:
-        # well-formed message
-        result = read_lsp_request(
-            BytesIO(
-                b"Content-Length: 104\r\n"
-                b"Content-Type: application/vscode-jsonrpc; charset=utf8\r\n"
-                b"\r\n"
-                b'{"jsonrpc":"2.0", "id": "123abc", "method":"textDocument/didSave",'
-                b'"params": {"a": 123, "b": ["c", "d"]}}'
-            )
-        )
-
-        self.assertEqual(result.id, "123abc")
-        self.assertEqual(result.method, "textDocument/didSave")
-
-        parameters = result.parameters
-        self.assertIsNotNone(parameters)
-        self.assertEqual(parameters.values, {"a": 123, "b": ["c", "d"]})
-
-        # end of file
-        with self.assertRaises(JSONRPCException):
-            result = read_lsp_request(BytesIO())
-
-        # broken header
-        with self.assertRaises(JSONRPCException):
-            result = read_lsp_request(BytesIO(b"Content-Length: 123abc\r\n\r\n{}"))
-
-        # missing json-rpc fields
-        with self.assertRaises(JSONRPCException):
-            result = read_lsp_request(
-                BytesIO(
-                    b"Content-Length: 87\r\n"
-                    b"\r\n"
-                    b'{"id": "123abc", "method":"textDocument/didSave",'
-                    b'"params": {"a": 123, "b": ["c", "d"]}}'
-                )
-            )
-
-    def test_write_message(self) -> None:
-        file = BytesIO()
-        message = Request(
-            method="textDocument/hover",
-            id="123abc",
-            parameters=ByNameParameters({"a": "b"}),
-        )
-        self.assertTrue(write_lsp_request(file, message))
-        file.seek(0)
-        self.assertEqual(file.readline(), b"Content-Length: 88\r\n")
-        self.assertEqual(file.readline(), b"\r\n")
-        self.assertDictEqual(
-            json.loads(file.readline().decode("utf-8")),
-            {
-                "jsonrpc": "2.0",
-                "method": "textDocument/hover",
-                "id": "123abc",
-                "params": {"a": "b"},
-            },
-        )
-
-        file.close()
-        self.assertFalse(write_lsp_request(file, message))
-
-    def test_read_write(self) -> None:
-        file = BytesIO()
-        message = Request(
-            method="textDocument/definition",
-            id="123abc",
-            parameters=ByNameParameters({"a": "b", "c": "d"}),
-        )
-
-        write_lsp_request(file, message)
-        file.seek(0)
-        parsed_message = read_lsp_request(file)
-
-        self.assertEqual(message, parsed_message)
