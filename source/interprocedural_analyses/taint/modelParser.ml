@@ -49,6 +49,7 @@ module Internal = struct
         path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
+        trace_length: int option;
       }
     | Source of {
         source: Sources.t;
@@ -57,6 +58,7 @@ module Internal = struct
         path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
+        trace_length: int option;
       }
     | Tito of {
         tito: Sinks.t;
@@ -460,6 +462,7 @@ let rec parse_annotations
             path = [];
             leaf_names = [];
             leaf_name_provided = false;
+            trace_length = None;
           })
     |> all
     |> map_error ~f:annotation_error
@@ -479,6 +482,7 @@ let rec parse_annotations
             path = [];
             leaf_names = [];
             leaf_name_provided = false;
+            trace_length = None;
           })
     |> all
     |> map_error ~f:annotation_error
@@ -598,7 +602,7 @@ let rec parse_annotations
           | _ -> None
         in
         match required_arguments, optional_arguments with
-        | Some (taint, canonical_name, canonical_port, producer_id), Some _ ->
+        | Some (taint, canonical_name, canonical_port, producer_id), Some trace_length ->
             let add_cross_repository_information annotation =
               let leaf_name =
                 Features.LeafName.
@@ -614,6 +618,7 @@ let rec parse_annotations
                       source with
                       leaf_names = leaf_name :: source.leaf_names;
                       leaf_name_provided = true;
+                      trace_length = Option.merge ~f:min source.trace_length (Some trace_length);
                     }
               | Sink sink ->
                   Sink
@@ -621,6 +626,7 @@ let rec parse_annotations
                       sink with
                       leaf_names = leaf_name :: sink.leaf_names;
                       leaf_name_provided = true;
+                      trace_length = Option.merge ~f:min sink.trace_length (Some trace_length);
                     }
               | _ -> annotation
             in
@@ -733,6 +739,7 @@ let rec parse_annotations
                   path = [];
                   leaf_names = [];
                   leaf_name_provided = false;
+                  trace_length = None;
                 };
             ]
         | Some "AttachToTito" ->
@@ -751,6 +758,7 @@ let rec parse_annotations
                   path = [];
                   leaf_names = [];
                   leaf_name_provided = false;
+                  trace_length = None;
                 };
             ]
         | Some "PartialSink" ->
@@ -805,6 +813,7 @@ let rec parse_annotations
                   path = [];
                   leaf_names = [];
                   leaf_name_provided = false;
+                  trace_length = None;
                 };
             ]
         | _ -> invalid_annotation_error ())
@@ -861,6 +870,7 @@ let rec parse_annotations
                 via_features = [];
                 leaf_names = [];
                 leaf_name_provided = false;
+                trace_length = None;
                 path = [];
               } ->
               Ok (source :: sources, sinks)
@@ -871,6 +881,7 @@ let rec parse_annotations
                 via_features = [];
                 leaf_names = [];
                 leaf_name_provided = false;
+                trace_length = None;
                 path = [];
               } ->
               Ok (sources, sink :: sinks)
@@ -902,6 +913,7 @@ let rec parse_annotations
                 via_features = [];
                 leaf_names = [];
                 leaf_name_provided = false;
+                trace_length = None;
                 path = [];
               } ->
               Ok (SpecificSource source)
@@ -912,6 +924,7 @@ let rec parse_annotations
                 via_features = [];
                 leaf_names = [];
                 leaf_name_provided = false;
+                trace_length = None;
                 path = [];
               } ->
               Ok (SpecificSink sink)
@@ -935,6 +948,7 @@ let introduce_sink_taint
     ~path
     ~leaf_names
     ~leaf_name_provided
+    ~trace_length
     ({ Model.backward = { sink_taint; _ }; _ } as taint)
     taint_sink_kind
     via_features
@@ -966,6 +980,12 @@ let introduce_sink_taint
             else
               taint
           in
+          let transform_trace_length taint =
+            match trace_length with
+            | Some trace_length ->
+                Frame.transform TraceLength.Self Map ~f:(fun _ -> trace_length) taint
+            | None -> taint
+          in
           let leaf_names =
             leaf_names
             |> List.map ~f:Features.LeafNameInterned.intern
@@ -978,6 +998,7 @@ let introduce_sink_taint
             |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
             |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
             |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
+            |> transform_trace_length
             |> BackwardTaint.singleton taint_sink_kind
             |> transform_call_information
             |> BackwardState.Tree.create_leaf
@@ -1047,6 +1068,7 @@ let introduce_source_taint
     ~path
     ~leaf_names
     ~leaf_name_provided
+    ~trace_length
     ({ Model.forward = { source_taint }; _ } as taint)
     taint_source_kind
     via_features
@@ -1080,6 +1102,11 @@ let introduce_source_taint
         else
           taint
       in
+      let transform_trace_length taint =
+        match trace_length with
+        | Some trace_length -> Frame.transform TraceLength.Self Map ~f:(fun _ -> trace_length) taint
+        | None -> taint
+      in
 
       let leaf_taint =
         let leaf_names =
@@ -1089,6 +1116,7 @@ let introduce_source_taint
         |> Frame.transform Features.LeafNameSet.Self Add ~f:leaf_names
         |> Frame.transform Features.BreadcrumbSet.Self Add ~f:breadcrumbs
         |> Frame.transform Features.ViaFeatureSet.Self Add ~f:via_features
+        |> transform_trace_length
         |> ForwardTaint.singleton taint_source_kind
         |> transform_call_information
         |> ForwardState.Tree.create_leaf
@@ -1962,7 +1990,8 @@ let add_taint_annotation_to_model
   | ReturnAnnotation -> (
       let root = AccessPath.Root.LocalResult in
       match annotation with
-      | Sink { sink; breadcrumbs; via_features; path; leaf_names; leaf_name_provided } ->
+      | Sink { sink; breadcrumbs; via_features; path; leaf_names; leaf_name_provided; trace_length }
+        ->
           breadcrumbs
           |> List.map ~f:Features.BreadcrumbInterned.intern
           |> List.map ~f:Features.BreadcrumbSet.inject
@@ -1972,12 +2001,15 @@ let add_taint_annotation_to_model
                ~path
                ~leaf_names
                ~leaf_name_provided
+               ~trace_length
                ~sinks_to_keep
                model
                sink
                via_features
           |> map_error ~f:invalid_model_for_taint
-      | Source { source; breadcrumbs; via_features; path; leaf_names; leaf_name_provided } ->
+      | Source
+          { source; breadcrumbs; via_features; path; leaf_names; leaf_name_provided; trace_length }
+        ->
           breadcrumbs
           |> List.map ~f:Features.BreadcrumbInterned.intern
           |> List.map ~f:Features.BreadcrumbSet.inject
@@ -1987,6 +2019,7 @@ let add_taint_annotation_to_model
                ~path
                ~leaf_names
                ~leaf_name_provided
+               ~trace_length
                ~sources_to_keep
                model
                source
@@ -2007,7 +2040,8 @@ let add_taint_annotation_to_model
       | Sanitize annotations -> Ok (introduce_sanitize ~root model annotations))
   | ParameterAnnotation root -> (
       match annotation with
-      | Sink { sink; breadcrumbs; via_features; path; leaf_names; leaf_name_provided } ->
+      | Sink { sink; breadcrumbs; via_features; path; leaf_names; leaf_name_provided; trace_length }
+        ->
           breadcrumbs
           |> List.map ~f:Features.BreadcrumbInterned.intern
           |> List.map ~f:Features.BreadcrumbSet.inject
@@ -2017,12 +2051,15 @@ let add_taint_annotation_to_model
                ~path
                ~leaf_names
                ~leaf_name_provided
+               ~trace_length
                ~sinks_to_keep
                model
                sink
                via_features
           |> map_error ~f:invalid_model_for_taint
-      | Source { source; breadcrumbs; via_features; path; leaf_names; leaf_name_provided } ->
+      | Source
+          { source; breadcrumbs; via_features; path; leaf_names; leaf_name_provided; trace_length }
+        ->
           breadcrumbs
           |> List.map ~f:Features.BreadcrumbInterned.intern
           |> List.map ~f:Features.BreadcrumbSet.inject
@@ -2032,6 +2069,7 @@ let add_taint_annotation_to_model
                ~path
                ~leaf_names
                ~leaf_name_provided
+               ~trace_length
                ~sources_to_keep
                model
                source
@@ -2059,6 +2097,7 @@ let add_taint_annotation_to_model
                ~path
                ~leaf_names:[]
                ~leaf_name_provided:false
+               ~trace_length:None
                ~sinks_to_keep
                model
                Sinks.AddFeatureToArgument

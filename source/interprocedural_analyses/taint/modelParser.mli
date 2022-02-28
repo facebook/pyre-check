@@ -44,6 +44,7 @@ module Internal : sig
         path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
+        trace_length: int option;
       }
     | Source of {
         source: Sources.t;
@@ -52,6 +53,7 @@ module Internal : sig
         path: Abstract.TreeDomain.Label.path;
         leaf_names: Features.LeafName.t list;
         leaf_name_provided: bool;
+        trace_length: int option;
       }
     | Tito of {
         tito: Sinks.t;

@@ -45,7 +45,10 @@ module CallInfo = struct
 
   type t =
     (* User-specified taint on a model. *)
-    | Declaration of { leaf_name_provided: bool }
+    | Declaration of {
+        (* If not provided, the leaf name set is set as the callee when taint is propagated. *)
+        leaf_name_provided: bool;
+      }
     (* Leaf taint at the callsite of a tainted model, i.e the start or end of the trace. *)
     | Origin of Location.WithModule.t
     (* Taint propagated from a call. *)

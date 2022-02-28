@@ -16,6 +16,16 @@ def cross_repository.returns_crtex_source() -> CrossRepositoryTaint[
   ]: ...
 
 
+def cross_repository.reaches_crtex_sink(
+  x: CrossRepositoryTaint[
+    TaintSink[Test],
+    'crossRepositorySink',
+    'formal(x)',
+    1,
+    5
+  ]
+): ...
+
 def cross_repository.cross_repository_anchor_sink(
   sink_parameter: CrossRepositoryTaintAnchor[
     TaintSink[Test],

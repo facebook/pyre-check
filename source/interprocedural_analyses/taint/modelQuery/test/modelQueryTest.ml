@@ -36,6 +36,7 @@ let test_apply_rule context =
         path = [];
         leaf_names = [];
         leaf_name_provided = false;
+        trace_length = None;
       }
   in
   let sink name =
@@ -48,6 +49,7 @@ let test_apply_rule context =
         path = [];
         leaf_names = [];
         leaf_name_provided = false;
+        trace_length = None;
       }
   in
   let assert_applied_rules ~source ~rule ~callable ~expected =
@@ -1004,6 +1006,7 @@ let test_apply_rule context =
               path = [];
               leaf_names = [];
               leaf_name_provided = false;
+              trace_length = None;
             } );
       ];
   (* Type annotation constraint for callables *)

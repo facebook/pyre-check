@@ -2963,7 +2963,7 @@ let test_invalid_models context =
     ~expect:
       {|`Sanitize[TaintSource[(A, Via[featureA])]]` is an invalid taint annotation: `ModelParser.Internal.Source {source = A;
    breadcrumbs = [SimpleVia[featureA]]; via_features = []; path = ;
-   leaf_names = []; leaf_name_provided = false}` is not supported within `Sanitize[...]`|}
+   leaf_names = []; leaf_name_provided = false; trace_length = None}` is not supported within `Sanitize[...]`|}
     ();
   assert_invalid_model
     ~model_source:
@@ -3555,6 +3555,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -3590,6 +3591,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -3629,6 +3631,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -3664,6 +3667,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                   TaintAnnotation
                     (ModelParser.Sink
@@ -3674,6 +3678,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -3709,6 +3714,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                   TaintAnnotation
                     (ModelParser.Sink
@@ -3719,6 +3725,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -3755,6 +3762,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                   TaintAnnotation
                     (ModelParser.Sink
@@ -3765,6 +3773,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -3801,6 +3810,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -3837,6 +3847,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -3883,6 +3894,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -3929,6 +3941,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -3969,6 +3982,7 @@ let test_query_parsing context =
                              path = [];
                              leaf_names = [];
                              leaf_name_provided = false;
+                             trace_length = None;
                            });
                     ];
                 };
@@ -4009,6 +4023,7 @@ let test_query_parsing context =
                              path = [];
                              leaf_names = [];
                              leaf_name_provided = false;
+                             trace_length = None;
                            });
                     ];
                 };
@@ -4049,6 +4064,7 @@ let test_query_parsing context =
                              path = [];
                              leaf_names = [];
                              leaf_name_provided = false;
+                             trace_length = None;
                            });
                     ];
                 };
@@ -4156,6 +4172,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                   TaintAnnotation
                     (ModelParser.Sink
@@ -4166,6 +4183,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -4201,6 +4219,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                   TaintAnnotation
                     (ModelParser.Sink
@@ -4211,6 +4230,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -4246,6 +4266,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -4281,6 +4302,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -4316,6 +4338,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                   TaintAnnotation
                     (ModelParser.Sink
@@ -4326,6 +4349,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -4366,6 +4390,7 @@ let test_query_parsing context =
                          path = [];
                          leaf_names = [];
                          leaf_name_provided = false;
+                         trace_length = None;
                        });
                 ];
             ];
@@ -4438,6 +4463,7 @@ let test_query_parsing context =
                              path = [];
                              leaf_names = [];
                              leaf_name_provided = false;
+                             trace_length = None;
                            });
                     ];
                 };

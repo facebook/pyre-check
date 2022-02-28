@@ -14,6 +14,10 @@ def returns_crtex_source():
     pass
 
 
+def reaches_crtex_sink(x):
+    pass
+
+
 def test():
     s = returns_crtex_source()
     _test_sink(s)
@@ -26,3 +30,19 @@ def cross_repository_anchor_sink(sink_parameter):
 def test_cross_repository_anchor():
     source = _test_source()
     cross_repository_anchor_sink(source)
+
+
+def test_propagate_cross_repository_source_once():
+    return returns_crtex_source()
+
+
+def test_propagate_cross_repository_source_twice():
+    return test_propagate_cross_repository_source_once()
+
+
+def test_propagate_cross_repository_sink_once(y):
+    reaches_crtex_sink(y)
+
+
+def test_propagate_cross_repository_sink_twice(z):
+    test_propagate_cross_repository_sink_once(z)

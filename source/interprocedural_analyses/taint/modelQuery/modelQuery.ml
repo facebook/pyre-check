@@ -404,6 +404,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
                 path = [];
                 leaf_names = [];
                 leaf_name_provided = false;
+                trace_length = None;
               }
         | ModelQuery.ParametricSinkFromAnnotation { sink_pattern; kind } ->
             get_subkind_from_annotation ~pattern:sink_pattern annotation
@@ -416,6 +417,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
                 path = [];
                 leaf_names = [];
                 leaf_name_provided = false;
+                trace_length = None;
               }
       in
       let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
