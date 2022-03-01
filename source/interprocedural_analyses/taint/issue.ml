@@ -91,33 +91,6 @@ module SinkHandle = struct
         `Assoc ["kind", `String "LiteralStringSink"; "sink", `String (Sinks.show sink)]
     | ConditionalTestSink sink ->
         `Assoc ["kind", `String "ConditionalTestSink"; "sink", `String (Sinks.show sink)]
-
-
-  let master_handle ~callable ~code sink_handle =
-    let version = 0 (* Increment the version on format change. *) in
-    let sink_handle =
-      match sink_handle with
-      | Call { callee; index; parameter } ->
-          Format.asprintf
-            "Call|%s|%d|%s"
-            (Target.external_target_name callee)
-            index
-            (AccessPath.Root.to_string parameter)
-      | Global { callee; index } ->
-          Format.asprintf "Global|%s|%d" (Target.external_target_name callee) index
-      | Return -> "Return"
-      | LiteralStringSink sink -> Format.asprintf "LiteralStringSink|%a" Sinks.pp sink
-      | ConditionalTestSink sink -> Format.asprintf "ConditionalTestSink|%a" Sinks.pp sink
-    in
-    let full_handle = Format.asprintf "%s:%d:%d:%s" callable code version sink_handle in
-    let hash = full_handle |> Digest.string |> Digest.to_hex in
-    let short_handle =
-      String.sub
-        full_handle
-        ~pos:0
-        ~len:(min (String.length full_handle) (255 - String.length hash - 1))
-    in
-    Format.asprintf "%s:%s" short_handle hash
 end
 
 module SinkTreeWithHandle = struct
@@ -146,6 +119,34 @@ module Handle = struct
     sink: SinkHandle.t;
   }
   [@@deriving compare, hash, sexp]
+
+  let master_handle { code; callable; sink = sink_handle; _ } =
+    let version = 0 (* Increment the version on format change. *) in
+    let sink_handle =
+      match sink_handle with
+      | Call { callee; index; parameter } ->
+          Format.asprintf
+            "Call|%s|%d|%s"
+            (Target.external_target_name callee)
+            index
+            (AccessPath.Root.to_string parameter)
+      | Global { callee; index } ->
+          Format.asprintf "Global|%s|%d" (Target.external_target_name callee) index
+      | Return -> "Return"
+      | LiteralStringSink sink -> Format.asprintf "LiteralStringSink|%a" Sinks.pp sink
+      | ConditionalTestSink sink -> Format.asprintf "ConditionalTestSink|%a" Sinks.pp sink
+    in
+    let full_handle =
+      Format.asprintf "%s:%d:%d:%s" (Target.external_target_name callable) code version sink_handle
+    in
+    let hash = full_handle |> Digest.string |> Digest.to_hex in
+    let short_handle =
+      String.sub
+        full_handle
+        ~pos:0
+        ~len:(min (String.length full_handle) (255 - String.length hash - 1))
+    in
+    Format.asprintf "%s:%s" short_handle hash
 end
 
 module LocationSet = Stdlib.Set.Make (Location.WithModule)
@@ -624,9 +625,7 @@ let to_json ~filename_lookup issue =
   in
   let callable_line = Ast.(Location.line issue.define.location) in
   let sink_handle = SinkHandle.to_json issue.handle.sink in
-  let master_handle =
-    SinkHandle.master_handle ~callable:callable_name ~code:issue.handle.code issue.handle.sink
-  in
+  let master_handle = Handle.master_handle issue.handle in
   `Assoc
     [
       "callable", `String callable_name;
