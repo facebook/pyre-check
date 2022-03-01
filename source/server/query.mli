@@ -22,6 +22,10 @@ module Request : sig
       }
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
+    | LocationOfDefinition of {
+        path: PyrePath.t;
+        position: Location.position;
+      }
     | ModulesOfPath of PyrePath.t
     | PathOfModule of Reference.t
     | SaveServerState of PyrePath.t

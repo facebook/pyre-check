@@ -116,6 +116,13 @@ let test_parse_query context =
   assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=a.b.decorator1)";
   assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=[a.b.decorator1, 1 + 1])";
   assert_parses "modules_of_path('/a.py')" (ModulesOfPath (PyrePath.create_absolute "/a.py"));
+  assert_parses
+    "location_of_definition(path='/foo.py', line=42, column=10)"
+    (LocationOfDefinition
+       { path = PyrePath.create_absolute "/foo.py"; position = Location.{ line = 42; column = 10 } });
+  assert_fails_to_parse "location_of_definition(path='/foo.py', line=42)";
+  assert_fails_to_parse "location_of_definition(path='/foo.py', column=10)";
+  assert_fails_to_parse "location_of_definition(path=99, line=42, column=10)";
   ()
 
 

@@ -29,6 +29,10 @@ module Request = struct
       }
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
+    | LocationOfDefinition of {
+        path: PyrePath.t;
+        position: Location.position;
+      }
     | ModulesOfPath of PyrePath.t
     | PathOfModule of Reference.t
     | SaveServerState of PyrePath.t
@@ -271,6 +275,10 @@ let help () =
            decorator2]): Shows the function definition after decorators have been inlined."
     | IsCompatibleWith _ -> None
     | LessOrEqual _ -> Some "less_or_equal(T1, T2): Returns whether T1 is a subtype of T2."
+    | LocationOfDefinition _ ->
+        Some
+          "location_of_definition(path='<absolute path>', line=<line>, character=<character>): \
+           Returns the location of the definition for the symbol at the given line and character."
     | ModulesOfPath _ ->
         Some "modules_of_path(path): Returns the modules of a file pointed to by path."
     | PathOfModule _ -> Some "path_of_module(module): Gives an absolute path for `module`."
@@ -387,6 +395,13 @@ let rec parse_request_exn query =
                  "inline_decorators expects qualified name and optional `decorators_to_skip=[...]`")
       in
       let string argument = argument |> expression |> string_of_expression in
+      let integer argument =
+        let integer_of_expression = function
+          | { Node.value = Expression.Constant (Constant.Integer value); _ } -> value
+          | _ -> raise (InvalidQuery "expected integer")
+        in
+        argument |> expression |> integer_of_expression
+      in
       match String.lowercase name, arguments with
       | "attributes", [name] -> Request.Attributes (reference name)
       | "batch", queries ->
@@ -410,6 +425,12 @@ let rec parse_request_exn query =
       | "inline_decorators", arguments -> parse_inline_decorators arguments
       | "is_compatible_with", [left; right] -> Request.IsCompatibleWith (access left, access right)
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
+      | "location_of_definition", [path; line; column] ->
+          Request.LocationOfDefinition
+            {
+              path = PyrePath.create_absolute (string path);
+              position = { line = integer line; column = integer column };
+            }
       | "modules_of_path", [path] -> Request.ModulesOfPath (PyrePath.create_absolute (string path))
       | "path_of_module", [module_access] -> Request.PathOfModule (reference module_access)
       | "save_server_state", [path] ->
@@ -716,6 +737,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         let right = parse_and_validate right in
         GlobalResolution.less_or_equal global_resolution ~left ~right
         |> fun response -> Single (Base.Boolean response)
+    | LocationOfDefinition _ -> failwith "TODO(T112570623)"
     | PathOfModule module_name ->
         ModuleTracker.lookup_source_path module_tracker module_name
         >>= (fun source_path ->
