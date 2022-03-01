@@ -174,6 +174,18 @@ let parse_callable ?name ?(aliases = Type.empty_aliases) callable =
   | _ -> callable
 
 
+let parse_position position =
+  match String.split ~on:':' position |> List.map ~f:int_of_string with
+  | [line_; column_] -> Location.{ line = line_; column = column_ }
+  | _ -> failwith "expected line:column"
+
+
+let parse_location location =
+  match String.split ~on:'-' location |> List.map ~f:parse_position with
+  | [start_; stop_] -> Location.{ start = start_; stop = stop_ }
+  | _ -> failwith "expected <position>-<position>"
+
+
 let diff ~print format (left, right) =
   let escape string =
     String.substr_replace_all string ~pattern:"\"" ~with_:"\\\""
