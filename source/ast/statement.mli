@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+val toplevel_define_name : string
+
 module Assign : sig
   type t = {
     target: Expression.t;

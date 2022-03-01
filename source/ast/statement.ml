@@ -8,6 +8,10 @@
 open Core
 open Pyre
 
+let toplevel_define_name = "$toplevel"
+
+let class_toplevel_define_name = "$class_toplevel"
+
 let name_location
     ~offset_columns
     ~body_location:{ Location.start = { line = start_line; column = start_column }; _ }
@@ -584,7 +588,7 @@ end = struct
 
     let create_toplevel ~qualifier =
       {
-        name = Reference.create ?prefix:qualifier "$toplevel";
+        name = Reference.create ?prefix:qualifier toplevel_define_name;
         parameters = [];
         decorators = [];
         return_annotation = None;
@@ -597,7 +601,7 @@ end = struct
 
     let create_class_toplevel ~parent =
       {
-        name = Reference.create ~prefix:parent "$class_toplevel";
+        name = Reference.create ~prefix:parent class_toplevel_define_name;
         parameters = [];
         decorators = [];
         return_annotation = None;
@@ -709,9 +713,10 @@ end = struct
 
     let is_async { async; _ } = async
 
-    let is_toplevel signature = String.equal (unqualified_name signature) "$toplevel"
+    let is_toplevel signature = String.equal (unqualified_name signature) toplevel_define_name
 
-    let is_class_toplevel signature = String.equal (unqualified_name signature) "$class_toplevel"
+    let is_class_toplevel signature =
+      String.equal (unqualified_name signature) class_toplevel_define_name
   end
 
   module Capture = struct
