@@ -17,9 +17,14 @@ type types_by_location = ((Location.t * Type.t) list, error_reason) Result.t
 
 let get_lookup ~configuration ~build_system ~environment path =
   let generate_lookup_for_existent_path { SourcePath.qualifier; _ } =
+    let timer = Timer.start () in
     let lookup =
       LocationBasedLookup.create_of_module (TypeEnvironment.read_only environment) qualifier
     in
+    Log.log
+      ~section:`Performance
+      "locationBasedLookupProcessor: create_of_module: %d"
+      (Timer.stop_in_ms timer);
     Result.Ok lookup
   in
   let generate_lookup_for_nonexistent_path error_reason = Result.Error error_reason in
