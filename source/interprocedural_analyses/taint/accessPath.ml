@@ -22,7 +22,7 @@ module Root = struct
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
-  [@@deriving compare, show { with_path = false }, hash]
+  [@@deriving compare, eq, hash, sexp, show { with_path = false }]
 
   let chop_parameter_prefix name =
     match String.chop_prefix ~prefix:"$parameter$" name with

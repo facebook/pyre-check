@@ -62,9 +62,14 @@
       { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "model_query_annotated.test1_alarm1:5002:0:Call|_test_sink|0|formal(arg):d18d16b3ac087c81541bb98ad54eaa39"
-    ]
   }
 }
 {
@@ -130,9 +135,14 @@
       { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "model_query_annotated.test1_alarm2:5002:0:Call|_test_sink|0|formal(arg):c6ed0280dd85d05f1393f0cb0972c470"
-    ]
   }
 }
 {
@@ -198,9 +208,14 @@
       { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "model_query_annotated.test1_alarm3:5002:0:Call|_test_sink|0|formal(arg):c759ed3c804e9d78a0f981103e0e21dc"
-    ]
   }
 }
 {
@@ -266,9 +281,14 @@
       { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "model_query_annotated.test1_alarm4:5002:0:Call|_test_sink|0|formal(arg):3c2f0013f846fd8b28d85ca246eae6dd"
-    ]
   }
 }
 {
@@ -334,9 +354,14 @@
       { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "model_query_annotated.test2_alarm1:5002:0:Call|_test_sink|0|formal(arg):b8e24537537f3d32304c259208734d83"
-    ]
   }
 }
 {
@@ -402,9 +427,14 @@
       { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "model_query_annotated.test2_alarm2:5002:0:Call|_test_sink|0|formal(arg):8997edd700a2f9344b93da74dec2ee25"
-    ]
   }
 }
 {
@@ -668,9 +698,14 @@
       }
     ],
     "features": [ { "always-via": "special_sink" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "model_query_annotated.test3_alarm1:5002:0:Call|_test_sink|0|formal(arg):dbfab590f77ae77afa60c7051afcaecf"
-    ]
   }
 }
 {
@@ -766,9 +801,14 @@
       }
     ],
     "features": [ { "always-via": "special_sink" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "model_query_annotated.test3_alarm2:5002:0:Call|_test_sink|0|formal(arg):7ad3a5dd0d1814ffb9adc16f74cd5597"
-    ]
   }
 }
 {

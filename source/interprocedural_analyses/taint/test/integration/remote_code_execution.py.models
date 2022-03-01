@@ -52,8 +52,13 @@
       }
     ],
     "features": [],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "remote_code_execution.rce_problem:5001:0:Call|eval|0|formal(arg):ed84aec82b00e80f14a8f4828907cb17"
-    ]
   }
 }

@@ -14,7 +14,7 @@ module T = struct
     line: int;
     column: int;
   }
-  [@@deriving compare, sexp, hash, to_yojson]
+  [@@deriving compare, eq, sexp, hash, to_yojson]
 
   (* These are not filtered: our backend is broken if any locations appear in errors. *)
   let any_position = { line = -1; column = -1 }
@@ -104,7 +104,7 @@ module WithModule = struct
       start: position;
       stop: position;
     }
-    [@@deriving compare, sexp, hash, to_yojson]
+    [@@deriving compare, eq, sexp, hash, to_yojson]
 
     let any = { path = Reference.empty; start = any_position; stop = any_position }
 

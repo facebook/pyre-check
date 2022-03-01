@@ -67,9 +67,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "decorator_location.call_return_foo:5002:0:Call|_test_sink|0|formal(arg):2a0af123bc578f26c9b93f5a6b02bbc0"
-    ]
   }
 }
 {
@@ -140,9 +145,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator_location.baz",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle":
       "decorator_location.main:5002:0:Call|decorator_location.baz|0|formal(x):e305d13e20261144972c6aebbaa0efa9"
-    ]
   }
 }
 {
@@ -213,9 +223,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator_location.foo",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle":
       "decorator_location.main:5002:0:Call|decorator_location.foo|0|formal(x):f6ed7fba11687138661e229d5d1ba9ce"
-    ]
   }
 }
 {
@@ -280,9 +295,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator_location.handle_request",
+      "index": 1,
+      "parameter": "formal(request)"
+    },
+    "master_handle":
       "decorator_location.main:5002:0:Call|decorator_location.handle_request|1|formal(request):3091b7eeaeb9168762c2959242487aac"
-    ]
   }
 }
 {

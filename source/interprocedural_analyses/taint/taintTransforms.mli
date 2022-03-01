@@ -9,7 +9,7 @@ type t = {
   ordered: TaintTransform.t list;
   sanitize: SanitizeTransform.Set.t;
 }
-[@@deriving compare, eq]
+[@@deriving compare, eq, hash, sexp]
 
 val empty : t
 

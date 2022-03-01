@@ -56,9 +56,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "exception_test.test_except_to_finally:5002:0:Call|_test_sink|0|formal(arg):847a13df579e034004a8fdef4fc1f9a7"
-    ]
   }
 }
 {
@@ -191,9 +196,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "exception_test.test_before_try_to_finally:5002:0:Call|_test_sink|0|formal(arg):592321a59534b02a2dab5f619e054218"
-    ]
   }
 }
 {

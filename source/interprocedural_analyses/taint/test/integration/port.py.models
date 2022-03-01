@@ -66,9 +66,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "port.sink_field",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "port.match_flows:5002:0:Call|port.sink_field|0|formal(arg):0aa7e5a2830e39fae8409f8982e2230c"
-    ]
   }
 }
 {
@@ -144,9 +149,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "port.star_arg_wrapper",
+      "index": 0,
+      "parameter": "formal(*rest0)"
+    },
+    "master_handle":
       "port.match_star_arg_directly:5002:0:Call|port.star_arg_wrapper|0|formal(*rest0):567c174a993cd37392a220794cdc3456"
-    ]
   }
 }
 {
@@ -222,9 +232,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "port.star_arg_wrapper",
+      "index": 0,
+      "parameter": "formal(*rest0)"
+    },
+    "master_handle":
       "port.match_star_arg_with_star:5002:0:Call|port.star_arg_wrapper|0|formal(*rest0):7d80386b4e2b2584ff7801d13aff8e44"
-    ]
   }
 }
 {
@@ -300,9 +315,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "port.star_star_arg_wrapper",
+      "index": 0,
+      "parameter": "formal(**kw)"
+    },
+    "master_handle":
       "port.match_star_star_arg_directly:5002:0:Call|port.star_star_arg_wrapper|0|formal(**kw):d69dca21ec2bc2b20878ed87871d012b"
-    ]
   }
 }
 {
@@ -378,9 +398,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "port.star_star_arg_wrapper",
+      "index": 0,
+      "parameter": "formal(**kw)"
+    },
+    "master_handle":
       "port.match_star_star_arg_with_star:5002:0:Call|port.star_star_arg_wrapper|0|formal(**kw):cef5bd5ded9b7b5e37110897f64b4afa"
-    ]
   }
 }
 {
@@ -445,9 +470,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "port.refer_to_method_as_field:5002:0:Call|_test_sink|0|formal(arg):c7a47913d9f1119ff23e07d044bbf466"
-    ]
   }
 }
 {

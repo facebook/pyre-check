@@ -61,9 +61,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "optionals.Client.offer",
+      "index": 0,
+      "parameter": "formal(message)"
+    },
+    "master_handle":
       "optionals.test:5002:0:Call|optionals.Client.offer|0|formal(message):d287521289e8aa5bd054cffb5eb9cd7a"
-    ]
   }
 }
 {

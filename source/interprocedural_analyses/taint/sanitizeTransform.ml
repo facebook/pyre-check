@@ -11,7 +11,7 @@ module T = struct
   type t =
     | NamedSource of string
     | NamedSink of string
-  [@@deriving compare, eq]
+  [@@deriving compare, eq, hash, sexp]
 
   let pp formatter = function
     | NamedSource source -> Format.fprintf formatter "NotSource[%s]" source
@@ -24,9 +24,15 @@ end
 include T
 
 module Set = struct
-  include Stdlib.Set.Make (struct
-    include T
-  end)
+  include Stdlib.Set.Make (T)
+
+  let t_of_sexp set = [%of_sexp: T.t list] set |> of_list
+
+  let sexp_of_t set = set |> elements |> [%sexp_of: T.t list]
+
+  let hash_fold_t state set = set |> elements |> [%hash_fold: T.t list] state
+
+  let hash set = set |> elements |> [%hash: T.t list]
 
   let show set =
     set |> elements |> List.map ~f:T.show |> String.concat ~sep:", " |> Format.asprintf "{%s}"

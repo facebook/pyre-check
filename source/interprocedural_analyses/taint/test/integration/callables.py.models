@@ -66,9 +66,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "Ovr{callables.AbstractEventProcessor::async_call_tainted}",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle":
       "callables.async_execute_event_processor:5002:0:Call|Ovr{callables.AbstractEventProcessor::async_call_tainted}|0|formal(self):e4458631c86e70465ffcabff68de947f"
-    ]
   }
 }
 {

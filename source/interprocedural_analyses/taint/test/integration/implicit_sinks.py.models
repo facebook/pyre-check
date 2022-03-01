@@ -51,9 +51,9 @@
       { "always-via": "format-string" },
       { "always-via": "special_source" }
     ],
-    "master_handles": [
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle":
       "implicit_sinks.inline_issue:1337:0:LiteralStringSink|Test:4b23f220f0c56c92a09c1005056d0f3c"
-    ]
   }
 }
 {

@@ -53,9 +53,14 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "taint_transform.sink_b",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_transform.a_to_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):8797d4879165d1d1386f471ab1fb93e2"
-    ]
   }
 }
 {
@@ -115,9 +120,14 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "taint_transform.sink_b",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_transform.a_to_y_to_z_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):e5a8da0b9b8037467466ff05b61f4c6f"
-    ]
   }
 }
 {
@@ -182,9 +192,14 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "taint_transform.sink_taint_with_transform_z",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_transform.a_to_y_zb_issue:124:0:Call|taint_transform.sink_taint_with_transform_z|0|formal(arg):6792ab0f443e1f2c4ceab6ffa4ef7407"
-    ]
   }
 }
 {
@@ -241,9 +256,14 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "taint_transform.sink_b",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_transform.a_to_yz_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):f6b77574eb4a959346ca7df965f9f134"
-    ]
   }
 }
 {
@@ -306,9 +326,14 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "taint_transform.sink_taint_with_transform_yz",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_transform.a_to_yzb_issue:124:0:Call|taint_transform.sink_taint_with_transform_yz|0|formal(arg):f7dfdf3a481bbe93ab697768ef5b39cb"
-    ]
   }
 }
 {
@@ -373,9 +398,14 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "taint_transform.sink_b",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_transform.ay_to_z_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):7ecd155fecd72808d2ceb2f36b920f12"
-    ]
   }
 }
 {
@@ -446,9 +476,14 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "taint_transform.sink_taint_with_transform_z",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_transform.ay_to_zb_issue:124:0:Call|taint_transform.sink_taint_with_transform_z|0|formal(arg):8acfee7aebe884bc7fec1490aec2089b"
-    ]
   }
 }
 {
@@ -511,9 +546,14 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "taint_transform.sink_b",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_transform.ayz_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):097c513f469d442b0be4bf969be7171d"
-    ]
   }
 }
 {
@@ -568,9 +608,14 @@
       }
     ],
     "features": [],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "taint_transform.sink_d",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_transform.c_to_d_issue:125:0:Call|taint_transform.sink_d|0|formal(arg):33bfd9c68180155a8b647eb8d87a7893"
-    ]
   }
 }
 {
@@ -640,9 +685,14 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "taint_transform.sink_taint_with_transform_yz",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_transform.issue_with_repeated_transforms:126:0:Call|taint_transform.sink_taint_with_transform_yz|0|formal(arg):ed27312783c4eff03e0f5e79307cd678"
-    ]
   }
 }
 {

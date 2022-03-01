@@ -47,9 +47,9 @@
       }
     ],
     "features": [ { "always-via-value": "my-data" } ],
-    "master_handles": [
+    "sink_handle": { "kind": "ConditionalTestSink", "sink": "InTest" },
+    "master_handle":
       "conditional.issue1:123:0:ConditionalTestSink|InTest:45e375676071b503631c5b5a4da3286b"
-    ]
   }
 }
 {
@@ -100,9 +100,9 @@
       }
     ],
     "features": [ { "always-via-value": "other" } ],
-    "master_handles": [
+    "sink_handle": { "kind": "ConditionalTestSink", "sink": "InTest" },
+    "master_handle":
       "conditional.issue2:123:0:ConditionalTestSink|InTest:bac100ce2eb7ca255a4834112ed5f755"
-    ]
   }
 }
 {

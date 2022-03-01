@@ -18,6 +18,8 @@ module Flow : sig
   }
   [@@deriving show]
 
+  val bottom : t
+
   val is_bottom : t -> bool
 
   val join : t -> t -> t
@@ -44,8 +46,6 @@ module SinkHandle : sig
   val make_global : call_target:CallGraph.CallTarget.t -> t
 end
 
-module SinkHandleSet : Caml.Set.S with type elt = SinkHandle.t
-
 module SinkTreeWithHandle : sig
   type t = {
     sink_tree: BackwardState.Tree.t;
@@ -58,39 +58,32 @@ module SinkTreeWithHandle : sig
   val join : t list -> BackwardState.Tree.t
 end
 
+module Handle : sig
+  type t = {
+    code: int;
+    callable: Target.t;
+    sink: SinkHandle.t;
+  }
+  [@@deriving compare]
+end
+
+module LocationSet : Stdlib.Set.S with type elt = Location.WithModule.t
+
 type t = {
-  code: int;
   flow: Flow.t;
-  location: Location.WithModule.t;
-  sink_handles: SinkHandleSet.t;
+  handle: Handle.t;
+  locations: LocationSet.t;
   (* Only used to create the Pyre errors. *)
   define: Ast.Statement.Define.t Ast.Node.t;
 }
 
 type issue = t
 
-val to_json : filename_lookup:(Reference.t -> string option) -> Target.t -> t -> Yojson.Safe.json
+val canonical_location : t -> Location.WithModule.t
+
+val to_json : filename_lookup:(Reference.t -> string option) -> t -> Yojson.Safe.json
 
 val to_error : t -> Error.t
-
-(* Exposed for testing purpose. *)
-module Candidate : sig
-  type t = {
-    flows: Flow.t list;
-    location: Location.WithModule.t;
-    sink_handles: SinkHandleSet.t;
-  }
-
-  val join : t -> t -> t
-end
-
-(* Exposed for testing purpose. *)
-val generate_source_sink_matches
-  :  location:Location.WithModule.t ->
-  sink_handle:SinkHandle.t ->
-  source_tree:ForwardState.Tree.t ->
-  sink_tree:BackwardState.Tree.t ->
-  Candidate.t
 
 module TriggeredSinks : sig
   type t = String.Hash_set.t

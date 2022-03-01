@@ -61,9 +61,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "binary_operators.Add.__add__",
+      "index": 0,
+      "parameter": "formal(other)"
+    },
+    "master_handle":
       "binary_operators.test1:5002:0:Call|binary_operators.Add.__add__|0|formal(other):e6a103bbaecc137e992946ecaead11e6"
-    ]
   }
 }
 {
@@ -128,9 +133,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "binary_operators.Add.__add__",
+      "index": 0,
+      "parameter": "formal(other)"
+    },
+    "master_handle":
       "binary_operators.test2:5002:0:Call|binary_operators.Add.__add__|0|formal(other):5ef261b25d55ce37fd84795645c4c318"
-    ]
   }
 }
 {

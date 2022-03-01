@@ -60,9 +60,14 @@
       }
     ],
     "features": [ { "has": "first-index" }, { "first-index": "b" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multi_subkind.multi_sink",
+      "index": 0,
+      "parameter": "formal(d)"
+    },
+    "master_handle":
       "multi_subkind.issue:1000:0:Call|multi_subkind.multi_sink|0|formal(d):58ce21d125b38395a964fbad39de0b2d"
-    ]
   }
 }
 {
@@ -126,9 +131,14 @@
       }
     ],
     "features": [ { "has": "first-index" }, { "first-index": "a" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "multi_subkind.multi_sink",
+      "index": 0,
+      "parameter": "formal(d)"
+    },
+    "master_handle":
       "multi_subkind.issue:1000:0:Call|multi_subkind.multi_sink|0|formal(d):58ce21d125b38395a964fbad39de0b2d"
-    ]
   }
 }
 {

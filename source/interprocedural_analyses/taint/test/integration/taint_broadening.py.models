@@ -62,9 +62,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_broadening.issue_collapse:5002:0:Call|_test_sink|0|formal(arg):a8cad47527b963e7a61f7090ad8cea85"
-    ]
   }
 }
 {
@@ -137,9 +142,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "taint_broadening.tito_collapse_issue:5002:0:Call|_test_sink|0|formal(arg):138379028e02f0ac33c56db31dd10394"
-    ]
   }
 }
 {

@@ -62,8 +62,13 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "multiline.test:5002:0:Call|_test_sink|0|formal(arg):a72e59962d22f1b031fbba207867ea4e"
-    ]
   }
 }

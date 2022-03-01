@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t = Named of string [@@deriving compare, eq]
+type t = Named of string [@@deriving compare, eq, hash, sexp]
 
 val pp : Format.formatter -> t -> unit
 

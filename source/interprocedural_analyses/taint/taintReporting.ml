@@ -21,12 +21,12 @@ let get_model callable =
 
 let get_errors result = List.map ~f:Issue.to_error result
 
-let issues_to_json ~filename_lookup callable result_opt =
+let issues_to_json ~filename_lookup result_opt =
   match result_opt with
   | None -> []
   | Some issues ->
       let issue_to_json issue =
-        let json = Issue.to_json ~filename_lookup callable issue in
+        let json = Issue.to_json ~filename_lookup issue in
         `Assoc ["kind", `String "issue"; "data", json]
       in
       List.map ~f:issue_to_json issues
@@ -61,7 +61,7 @@ let extract_errors scheduler callables =
 
 
 let externalize ~filename_lookup callable result_option model =
-  let issues = issues_to_json ~filename_lookup callable result_option in
+  let issues = issues_to_json ~filename_lookup result_option in
   if not (Model.should_externalize model) then
     issues
   else

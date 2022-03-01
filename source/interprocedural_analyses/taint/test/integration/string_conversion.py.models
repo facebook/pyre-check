@@ -5,76 +5,6 @@
     "callable": "string_conversion.analyze_implicit_call",
     "callable_line": 108,
     "code": 5001,
-    "line": 112,
-    "start": 9,
-    "end": 20,
-    "filename": "string_conversion.py",
-    "message":
-      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
-                "kind": "UserControlled"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "tainted" },
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
-            ],
-            "tito": [ { "line": 112, "start": 16, "end": 17 } ],
-            "root": {
-              "filename": "string_conversion.py",
-              "line": 110,
-              "start": 10,
-              "end": 21
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "eval" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "root": {
-              "filename": "string_conversion.py",
-              "line": 112,
-              "start": 9,
-              "end": 20
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "tainted" },
-      { "always-via": "format-string" },
-      { "always-via": "tito" }
-    ],
-    "master_handles": [
-      "string_conversion.analyze_implicit_call:5001:0:Call|eval|0|formal(arg):47162a06740e61b2ff38aff07e5fd6fb"
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "string_conversion.analyze_implicit_call",
-    "callable_line": 108,
-    "code": 5001,
     "line": 114,
     "start": 9,
     "end": 15,
@@ -134,9 +64,89 @@
       { "always-via": "format-string" },
       { "always-via": "tito" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.analyze_implicit_call:5001:0:Call|eval|1|formal(arg):60c3fc42d556350aebd2ae733337759f"
-    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "string_conversion.analyze_implicit_call",
+    "callable_line": 108,
+    "code": 5001,
+    "line": 112,
+    "start": 9,
+    "end": 20,
+    "filename": "string_conversion.py",
+    "message":
+      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
+                "kind": "UserControlled"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "tainted" },
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 112, "start": 16, "end": 17 } ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 110,
+              "start": 10,
+              "end": 21
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "string_conversion.py",
+              "line": 112,
+              "start": 9,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "tainted" },
+      { "always-via": "format-string" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
+      "string_conversion.analyze_implicit_call:5001:0:Call|eval|0|formal(arg):47162a06740e61b2ff38aff07e5fd6fb"
   }
 }
 {
@@ -206,9 +216,14 @@
       { "first-index": "tainted" },
       { "always-via": "format-string" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.explicit_str:5001:0:Call|eval|0|formal(arg):d15763e1c2cbfc32ce62890235e81baa"
-    ]
   }
 }
 {
@@ -278,9 +293,14 @@
       { "first-index": "tainted" },
       { "always-via": "format-string" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.implicit_repr:5001:0:Call|eval|0|formal(arg):2a2ee08bf65691e8e61d45cdd2487850"
-    ]
   }
 }
 {
@@ -350,9 +370,14 @@
       { "first-index": "tainted" },
       { "always-via": "format-string" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.implicit_str:5001:0:Call|eval|0|formal(arg):8b2abca0699fbe46ed4b1bf6e7ba61bf"
-    ]
   }
 }
 {
@@ -442,9 +467,14 @@
       { "always-via": "format-string" },
       { "via": "tito" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.join_source_and_attribute_source:5001:0:Call|eval|0|formal(arg):53aff03a56106f3bb97f4109a7a68445"
-    ]
   }
 }
 {
@@ -509,9 +539,14 @@
       { "first-index": "tainted" },
       { "always-via": "format-string" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.joined_base:5001:0:Call|eval|0|formal(arg):a89a4128c1864cc8f4db26b2eef217cd"
-    ]
   }
 }
 {
@@ -582,9 +617,14 @@
       { "always-via": "format-string" },
       { "always-via": "tito" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.propagate_taint:5001:0:Call|eval|0|formal(arg):4fbb7ee4358c96a3fda2c589a1a839fb"
-    ]
   }
 }
 {
@@ -649,9 +689,14 @@
       }
     ],
     "features": [ { "has": "first-index" }, { "first-index": "tainted" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.repr_is_tainted:5001:0:Call|eval|0|formal(arg):23d81ad7230b52543f70b3bba37a8ce6"
-    ]
   }
 }
 {
@@ -716,9 +761,14 @@
       }
     ],
     "features": [ { "has": "first-index" }, { "first-index": "tainted" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.str_falls_back_to_repr:5001:0:Call|eval|0|formal(arg):8fae9955ef2804b3e7cdc1b6da3bd8bf"
-    ]
   }
 }
 {
@@ -783,9 +833,14 @@
       }
     ],
     "features": [ { "has": "first-index" }, { "first-index": "tainted" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.str_is_tainted:5001:0:Call|eval|0|formal(arg):7870f312970ef68ef994d2b872d99ad2"
-    ]
   }
 }
 {
@@ -1657,9 +1712,14 @@
       { "first-index": "tainted" },
       { "always-via": "format-string" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.multiple_targets_for_single_expression:5001:0:Call|eval|0|formal(arg):b9cc3c511ddc86e7475a252fa462eadc"
-    ]
   }
 }
 {
@@ -1754,9 +1814,14 @@
       }
     ],
     "features": [ { "always-via": "format-string" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "string_conversion.multiple_targets_for_single_expression_2:5001:0:Call|eval|0|formal(arg):48ad7e71c84860b5b46b69082a1926f4"
-    ]
   }
 }
 {

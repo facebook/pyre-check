@@ -58,9 +58,14 @@
       { "always-via-type": "str" },
       { "always-via": "special_source" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.test1_f1",
+      "index": 0,
+      "parameter": "formal(a)"
+    },
+    "master_handle":
       "model_query_parameters_viatypeof.test1_alarm1:5002:0:Call|model_query_parameters_viatypeof.test1_f1|0|formal(a):c51e901c4f6836be53837c9f1907f539"
-    ]
   }
 }
 {
@@ -124,9 +129,14 @@
       { "always-via-type": "typing.Annotated[str]" },
       { "always-via": "special_source" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.test1_f1",
+      "index": 0,
+      "parameter": "formal(b)"
+    },
+    "master_handle":
       "model_query_parameters_viatypeof.test1_alarm2:5002:0:Call|model_query_parameters_viatypeof.test1_f1|0|formal(b):5f13254d8db4ffe94e337525439dc6c2"
-    ]
   }
 }
 {
@@ -188,9 +198,14 @@
       { "always-via-type": "int" },
       { "always-via": "special_source" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.test1_f1",
+      "index": 0,
+      "parameter": "formal(c)"
+    },
+    "master_handle":
       "model_query_parameters_viatypeof.test1_alarm3:5002:0:Call|model_query_parameters_viatypeof.test1_f1|0|formal(c):2d29c72d71f3145db2a63205262a151c"
-    ]
   }
 }
 {
@@ -252,9 +267,14 @@
       { "always-via-type": "str" },
       { "always-via": "special_source" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.Test2_C.f1",
+      "index": 0,
+      "parameter": "formal(a)"
+    },
+    "master_handle":
       "model_query_parameters_viatypeof.test2_alarm1:5002:0:Call|model_query_parameters_viatypeof.Test2_C.f1|0|formal(a):ba3f43ef71adac88b842f5676c2925da"
-    ]
   }
 }
 {
@@ -318,9 +338,14 @@
       { "always-via": "special_source" },
       { "always-via-type": "typing.Dict[str, int]" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.Test2_C.f1",
+      "index": 0,
+      "parameter": "formal(b)"
+    },
+    "master_handle":
       "model_query_parameters_viatypeof.test2_alarm2:5002:0:Call|model_query_parameters_viatypeof.Test2_C.f1|0|formal(b):c3718e253c030c7757aac7dc1aceb3ab"
-    ]
   }
 }
 {
@@ -386,9 +411,14 @@
       { "always-via": "special_source" },
       { "always-via-type": "model_query_parameters_viatypeof.Test2_T" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.Test2_C.f1",
+      "index": 0,
+      "parameter": "formal(c)"
+    },
+    "master_handle":
       "model_query_parameters_viatypeof.test2_alarm3:5002:0:Call|model_query_parameters_viatypeof.Test2_C.f1|0|formal(c):b815fd8d1aa0201159837f3010a77365"
-    ]
   }
 }
 {
@@ -450,9 +480,14 @@
       { "always-via-type": "int" },
       { "always-via": "special_source" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.Test2_C.f2",
+      "index": 0,
+      "parameter": "formal(a)"
+    },
+    "master_handle":
       "model_query_parameters_viatypeof.test2_alarm4:5002:0:Call|model_query_parameters_viatypeof.Test2_C.f2|0|formal(a):874735c5414de7a64dd7628a8ca39839"
-    ]
   }
 }
 {
@@ -522,9 +557,14 @@
       },
       { "always-via": "special_source" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.Test2_C.f2",
+      "index": 0,
+      "parameter": "formal(b)"
+    },
+    "master_handle":
       "model_query_parameters_viatypeof.test2_alarm5:5002:0:Call|model_query_parameters_viatypeof.Test2_C.f2|0|formal(b):ff2f385ddca1a1a4f2a1f47e981f8479"
-    ]
   }
 }
 {
@@ -586,9 +626,14 @@
       { "always-via": "special_source" },
       { "always-via-type": "float" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.Test2_C.f2",
+      "index": 0,
+      "parameter": "formal(c)"
+    },
+    "master_handle":
       "model_query_parameters_viatypeof.test2_alarm6:5002:0:Call|model_query_parameters_viatypeof.Test2_C.f2|0|formal(c):c4d9be9b05c06bc0c027f3a7a3be2337"
-    ]
   }
 }
 {

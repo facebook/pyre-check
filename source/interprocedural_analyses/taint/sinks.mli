@@ -30,7 +30,7 @@ type t =
       (* Invariant: not a transform. *)
       base: t;
     }
-[@@deriving compare, show]
+[@@deriving compare, hash, sexp, show]
 
 val equal : t -> t -> bool
 

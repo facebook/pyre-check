@@ -61,9 +61,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "Ovr{dict::__setitem__}",
+      "index": 0,
+      "parameter": "formal(key)"
+    },
+    "master_handle":
       "dictionary.copy_untainted_values_with_tainted_keys:5002:0:Call|Ovr{dict::__setitem__}|0|formal(key):ff22f9dc5c260ff09cad0e910bab52a4"
-    ]
   }
 }
 {
@@ -129,9 +134,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "dictionary.dict_with_tainted_key_flows_to_sink:5002:0:Call|_test_sink|0|formal(arg):54c199f9fa87e419c55556323777c09d"
-    ]
   }
 }
 {
@@ -197,9 +207,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "dictionary.flow_through_keywords:5002:0:Call|_test_sink|0|formal(arg):7e630432541639ac879e182f897ca1d0"
-    ]
   }
 }
 {
@@ -272,9 +287,14 @@
       { "always-via": "issue-broadening" },
       { "always-via": "special_source" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "dictionary.update_dictionary_indirectly",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "dictionary.indirect_flow_from_source_to_global_dictionary:5002:0:Call|dictionary.update_dictionary_indirectly|0|formal(arg):7345de284f58f532d285eb74386659cc"
-    ]
   }
 }
 {
@@ -340,9 +360,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "dictionary.lists_of_dictionary_iteration_is_precise:5002:0:Call|_test_sink|0|formal(arg):9e36b69412c214642f26116f4acfbdbf"
-    ]
   }
 }
 {
@@ -405,9 +430,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "dictionary.test_index_from_tito:5002:0:Call|_test_sink|0|formal(arg):73bc958bc29113a529b2d3ab96b5c2ab"
-    ]
   }
 }
 {
@@ -467,9 +497,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "dictionary.test_items:5002:0:Call|_test_sink|3|formal(arg):a1a5cd53de970c95a4f65fe8250cfcec"
-    ]
   }
 }
 {
@@ -529,77 +564,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "dictionary.test_items:5002:0:Call|_test_sink|0|formal(arg):bc122860c8540b884890e53ad2e47507"
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "dictionary.test_keys_and_values",
-    "callable_line": 239,
-    "code": 5002,
-    "line": 250,
-    "start": 15,
-    "end": 34,
-    "filename": "dictionary.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "broadening" },
-              { "always-via": "issue-broadening" }
-            ],
-            "root": {
-              "filename": "dictionary.py",
-              "line": 248,
-              "start": 20,
-              "end": 34
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "dictionary.py",
-              "line": 250,
-              "start": 15,
-              "end": 34
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "broadening" },
-      { "always-via": "issue-broadening" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
-    "master_handles": [
-      "dictionary.test_keys_and_values:5002:0:Call|_test_sink|3|formal(arg):acea50d57e2f5e8db3d68f91d60ddab2"
-    ]
   }
 }
 {
@@ -665,9 +637,87 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "dictionary.test_keys_and_values:5002:0:Call|_test_sink|0|formal(arg):4d2c82bafc7d29b00d2b85eee523f3e7"
-    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary.test_keys_and_values",
+    "callable_line": 239,
+    "code": 5002,
+    "line": 250,
+    "start": 15,
+    "end": 34,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 248,
+              "start": 20,
+              "end": 34
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 250,
+              "start": 15,
+              "end": 34
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
+      "dictionary.test_keys_and_values:5002:0:Call|_test_sink|3|formal(arg):acea50d57e2f5e8db3d68f91d60ddab2"
   }
 }
 {
@@ -734,9 +784,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "dictionary.test_service_with_dict:5002:0:Call|_test_sink|0|formal(arg):887ad86812deeb7e5016b495e826b640"
-    ]
   }
 }
 {
@@ -803,9 +858,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "dictionary.test_service_with_mapping:5002:0:Call|_test_sink|0|formal(arg):da318e0faef70fe1ad1abf7f0e2f1e90"
-    ]
   }
 }
 {
@@ -865,9 +925,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "dictionary.test_with_issue_in_dict_comprehension:5002:0:Call|_test_sink|0|formal(arg):38410b25e5af49eb7bd846aa99f05099"
-    ]
   }
 }
 {
@@ -934,9 +999,13 @@
       { "always-via": "issue-broadening" },
       { "always-via": "special_source" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{dictionary.tainted_dictionary}",
+      "index": 0
+    },
+    "master_handle":
       "dictionary.update_tainted_dictionary:5002:0:Global|Obj{dictionary.tainted_dictionary}|0:cf68853721eceffa4b204d35a0c9a92f"
-    ]
   }
 }
 {
@@ -1929,9 +1998,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "dictionary.SpecialSetitemDict.__setitem__",
+      "index": 0,
+      "parameter": "formal(key)"
+    },
+    "master_handle":
       "dictionary.tainted_setitem:5002:0:Call|dictionary.SpecialSetitemDict.__setitem__|0|formal(key):b935bbcf2ce72073367ec745a37db21e"
-    ]
   }
 }
 {

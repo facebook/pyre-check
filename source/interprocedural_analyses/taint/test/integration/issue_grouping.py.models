@@ -60,9 +60,14 @@
       }
     ],
     "features": [ { "has": "first-index" }, { "first-index": "b" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "issue_grouping.multi_sink",
+      "index": 0,
+      "parameter": "formal(d)"
+    },
+    "master_handle":
       "issue_grouping.issue:1003:0:Call|issue_grouping.multi_sink|0|formal(d):3a59e7397660c7d8070a92a8a244a960"
-    ]
   }
 }
 {
@@ -126,9 +131,14 @@
       }
     ],
     "features": [ { "has": "first-index" }, { "first-index": "a" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "issue_grouping.multi_sink",
+      "index": 0,
+      "parameter": "formal(d)"
+    },
+    "master_handle":
       "issue_grouping.issue:1000:0:Call|issue_grouping.multi_sink|0|formal(d):8de0af2b47354365a27f7eb6d4686d3f"
-    ]
   }
 }
 {

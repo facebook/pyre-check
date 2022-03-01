@@ -49,7 +49,7 @@ module SinkHandle = struct
     | Return
     | LiteralStringSink of Sinks.t
     | ConditionalTestSink of Sinks.t
-  [@@deriving compare]
+  [@@deriving compare, hash, sexp]
 
   let make_call ~call_target:{ CallGraph.CallTarget.target; index; _ } ~root =
     let root =
@@ -68,6 +68,29 @@ module SinkHandle = struct
 
   let make_global ~call_target:{ CallGraph.CallTarget.target; index; _ } =
     Global { callee = target; index }
+
+
+  let to_json = function
+    | Call { callee; index; parameter } ->
+        `Assoc
+          [
+            "kind", `String "Call";
+            "callee", `String (Target.external_target_name callee);
+            "index", `Int index;
+            "parameter", `String (AccessPath.Root.to_string parameter);
+          ]
+    | Global { callee; index } ->
+        `Assoc
+          [
+            "kind", `String "Global";
+            "callee", `String (Target.external_target_name callee);
+            "index", `Int index;
+          ]
+    | Return -> `Assoc ["kind", `String "Return"]
+    | LiteralStringSink sink ->
+        `Assoc ["kind", `String "LiteralStringSink"; "sink", `String (Sinks.show sink)]
+    | ConditionalTestSink sink ->
+        `Assoc ["kind", `String "ConditionalTestSink"; "sink", `String (Sinks.show sink)]
 
 
   let master_handle ~callable ~code sink_handle =
@@ -97,8 +120,6 @@ module SinkHandle = struct
     Format.asprintf "%s:%s" short_handle hash
 end
 
-module SinkHandleSet = Caml.Set.Make (SinkHandle)
-
 module SinkTreeWithHandle = struct
   type t = {
     sink_tree: BackwardState.Tree.t;
@@ -118,46 +139,66 @@ module SinkTreeWithHandle = struct
       sink_tree_with_identifiers
 end
 
+module Handle = struct
+  type t = {
+    code: int;
+    callable: Target.t;
+    sink: SinkHandle.t;
+  }
+  [@@deriving compare, hash, sexp]
+end
+
+module LocationSet = Stdlib.Set.Make (Location.WithModule)
+
 type t = {
-  code: int;
   flow: Flow.t;
-  location: Location.WithModule.t;
-  sink_handles: SinkHandleSet.t;
+  handle: Handle.t;
+  locations: LocationSet.t;
   define: Statement.Define.t Node.t;
 }
 
 type issue = t
 
-module Handle = struct
-  type t = {
-    code: int;
-    location: Location.WithModule.t;
-    callable: Target.t;
+let join
+    { flow = flow_left; handle; locations = locations_left; define }
+    { flow = flow_right; handle = _; locations = locations_right; define = _ }
+  =
+  {
+    flow = Flow.join flow_left flow_right;
+    handle;
+    locations = LocationSet.union locations_left locations_right;
+    define;
   }
-  [@@deriving sexp, compare]
 
-  let from_issue { code; location; define; _ } =
-    { code; location; callable = Interprocedural.Target.create define }
-end
+
+let canonical_location { locations; _ } =
+  Option.value_exn ~message:"issue has no location" (LocationSet.min_elt_opt locations)
+
 
 module HandleMap = Map.Make (Handle)
+
+(* Define how to group issue candidates for a given function. *)
+module CandidateKey = struct
+  module T = struct
+    type t = {
+      location: Location.WithModule.t;
+      sink_handle: SinkHandle.t;
+    }
+    [@@deriving compare, sexp, hash]
+  end
+
+  include T
+  include Hashable.Make (T)
+end
 
 module Candidate = struct
   type t = {
     flows: Flow.t list;
-    location: Location.WithModule.t;
-    sink_handles: SinkHandleSet.t;
+    key: CandidateKey.t;
   }
 
-  let join
-      { flows = left_flows; location; sink_handles = left_sink_handles }
-      { flows = right_flows; sink_handles = right_sink_handles; _ }
-    =
-    {
-      flows = List.rev_append left_flows right_flows;
-      location;
-      sink_handles = SinkHandleSet.union left_sink_handles right_sink_handles;
-    }
+  let join { flows = left_flows; key } { flows = right_flows; _ } =
+    { flows = List.rev_append left_flows right_flows; key }
 end
 
 module TriggeredSinks = struct
@@ -190,7 +231,7 @@ let generate_source_sink_matches ~location ~sink_handle ~source_tree ~sink_tree 
     else
       BackwardState.Tree.fold BackwardState.Tree.Path ~init:[] ~f:make_source_sink_matches sink_tree
   in
-  { Candidate.flows; location; sink_handles = SinkHandleSet.singleton sink_handle }
+  { Candidate.flows; key = { location; sink_handle } }
 
 
 let compute_triggered_sinks ~triggered_sinks ~location ~sink_handle ~source_tree ~sink_tree =
@@ -249,7 +290,7 @@ module PartitionedFlow = struct
   }
 end
 
-let generate_issues ~define { Candidate.flows; location; sink_handles } =
+let generate_issues ~define { Candidate.flows; key = { location; sink_handle } } =
   let partitions =
     let partition { Flow.source_taint; sink_taint } =
       {
@@ -365,7 +406,14 @@ let generate_issues ~define { Candidate.flows; location; sink_handles } =
   let apply_rule_separate_access_path issues_so_far (rule : Rule.t) =
     let fold_partitions issues candidate =
       match apply_rule_on_flow rule candidate with
-      | Some flow -> { code = rule.code; flow; location; sink_handles; define } :: issues
+      | Some flow ->
+          {
+            flow;
+            handle = { code = rule.code; callable = Target.create define; sink = sink_handle };
+            locations = LocationSet.singleton location;
+            define;
+          }
+          :: issues
       | None -> issues
     in
     List.fold partitions ~init:issues_so_far ~f:fold_partitions
@@ -385,16 +433,23 @@ let generate_issues ~define { Candidate.flows; location; sink_handles } =
     if Flow.is_bottom flow then
       None
     else
-      Some { code = rule.code; flow; location; sink_handles; define }
+      Some
+        {
+          flow;
+          handle = { code = rule.code; callable = Target.create define; sink = sink_handle };
+          locations = LocationSet.singleton location;
+          define;
+        }
   in
   let group_by_handle map issue =
     (* SAPP invariant: There should be a single issue per issue handle.
      * The configuration might have multiple rules with the same code due to
      * multi source-sink rules, hence we need to merge issues here. *)
-    let handle = Handle.from_issue issue in
-    HandleMap.update map handle ~f:(function
-        | None -> issue
-        | Some previous_issue -> { issue with flow = Flow.join issue.flow previous_issue.flow })
+    let update = function
+      | None -> issue
+      | Some previous_issue -> join previous_issue issue
+    in
+    HandleMap.update map issue.handle ~f:update
   in
   let configuration = TaintConfiguration.get () in
   if configuration.lineage_analysis then
@@ -409,12 +464,12 @@ let generate_issues ~define { Candidate.flows; location; sink_handles } =
 
 
 module Candidates = struct
-  type t = Candidate.t Location.WithModule.Table.t
+  type t = Candidate.t CandidateKey.Table.t
 
-  let create () = Location.WithModule.Table.create ()
+  let create () = CandidateKey.Table.create ()
 
-  let add_candidate candidates ({ Candidate.location; _ } as candidate) =
-    Location.WithModule.Table.update candidates location ~f:(function
+  let add_candidate candidates ({ Candidate.key; _ } as candidate) =
+    CandidateKey.Table.update candidates key ~f:(function
         | None -> candidate
         | Some current_candidate -> Candidate.join current_candidate candidate)
 
@@ -444,7 +499,7 @@ module Candidates = struct
       let new_issues = generate_issues ~define candidate in
       List.rev_append new_issues issues
     in
-    Location.WithModule.Table.fold candidates ~f:accumulate ~init:[]
+    CandidateKey.Table.fold candidates ~f:accumulate ~init:[]
 end
 
 type features = {
@@ -479,7 +534,7 @@ let sources_regexp = Str.regexp_string "{$sources}"
 
 let transforms_regexp = Str.regexp_string "{$transforms}"
 
-let get_name_and_detailed_message { code; flow; _ } =
+let get_name_and_detailed_message { flow; handle = { code; _ }; _ } =
   let configuration = TaintConfiguration.get () in
   match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) configuration.rules with
   | None -> failwith "issue with code that has no rule"
@@ -507,18 +562,19 @@ let get_name_and_detailed_message { code; flow; _ } =
       name, message
 
 
-let to_error ({ code; location; define; _ } as issue) =
+let to_error ({ handle = { code; _ }; define; _ } as issue) =
   let configuration = TaintConfiguration.get () in
   match List.find ~f:(fun { code = rule_code; _ } -> code = rule_code) configuration.rules with
   | None -> failwith "issue with code that has no rule"
   | Some _ ->
       let name, detail = get_name_and_detailed_message issue in
       let kind = { Error.name; messages = [detail]; code } in
+      let location = canonical_location issue in
       Error.create ~location ~define ~kind
 
 
-let to_json ~filename_lookup callable issue =
-  let callable_name = Target.external_target_name callable in
+let to_json ~filename_lookup issue =
+  let callable_name = Target.external_target_name issue.handle.callable in
   let _, message = get_name_and_detailed_message issue in
   let source_traces =
     Domains.ForwardTaint.to_external_json ~filename_lookup issue.flow.source_taint
@@ -564,22 +620,18 @@ let to_json ~filename_lookup callable issue =
     stop = { column = stop_column; _ };
   }
     =
-    Location.WithModule.instantiate ~lookup:filename_lookup issue.location
+    canonical_location issue |> Location.WithModule.instantiate ~lookup:filename_lookup
   in
   let callable_line = Ast.(Location.line issue.define.location) in
-  let master_handles =
-    SinkHandleSet.fold
-      (fun sink_handle handles ->
-        `String (SinkHandle.master_handle ~callable:callable_name ~code:issue.code sink_handle)
-        :: handles)
-      issue.sink_handles
-      []
+  let sink_handle = SinkHandle.to_json issue.handle.sink in
+  let master_handle =
+    SinkHandle.master_handle ~callable:callable_name ~code:issue.handle.code issue.handle.sink
   in
   `Assoc
     [
       "callable", `String callable_name;
       "callable_line", `Int callable_line;
-      "code", `Int issue.code;
+      "code", `Int issue.handle.code;
       "line", `Int line;
       "start", `Int start_column;
       "end", `Int stop_column;
@@ -587,7 +639,8 @@ let to_json ~filename_lookup callable issue =
       "message", `String message;
       "traces", traces;
       "features", `List json_features;
-      "master_handles", `List master_handles;
+      "sink_handle", sink_handle;
+      "master_handle", `String master_handle;
     ]
 
 

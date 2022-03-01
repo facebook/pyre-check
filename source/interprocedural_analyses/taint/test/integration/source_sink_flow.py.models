@@ -66,9 +66,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "source_sink_flow.bad",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "source_sink_flow.match_flows:5002:0:Call|source_sink_flow.bad|0|formal(arg):ee668a40093f74b91027413eca9a3ce0"
-    ]
   }
 }
 {

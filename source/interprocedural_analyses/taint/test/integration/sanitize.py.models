@@ -57,9 +57,15 @@
       }
     ],
     "features": [ { "always-via": "special_sink" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee":
+        "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle":
       "sanitize.issue_propagation_of_sanitize_all_parameters_no_user_controlled:1000:0:Call|sanitize.propagation_of_sanitize_all_parameters_no_user_controlled|0|formal(x):b75f37e6531a692f62a8eaa584c2ec08"
-    ]
   }
 }
 {
@@ -123,9 +129,14 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_rce",
+      "index": 0,
+      "parameter": "formal(argument)"
+    },
+    "master_handle":
       "sanitize.issue_propagation_of_sanitize_parameter_no_sql_tito_in_source_trace:1000:0:Call|_rce|0|formal(argument):687b5173c87b17e0acfc721d005ea6a8"
-    ]
   }
 }
 {
@@ -185,9 +196,15 @@
       }
     ],
     "features": [],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee":
+        "sanitize.propagation_of_sanitize_parameter_no_user_controlled",
+      "index": 0,
+      "parameter": "formal(b)"
+    },
+    "master_handle":
       "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled:1000:0:Call|sanitize.propagation_of_sanitize_parameter_no_user_controlled|0|formal(b):8dce41020019b004abc550be0c8e65e2"
-    ]
   }
 }
 {
@@ -248,9 +265,15 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee":
+        "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle":
       "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace:1000:0:Call|sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace|0|formal(x):72c9cb9df7e6450f9380ee8c7cd20a37"
-    ]
   }
 }
 {
@@ -314,9 +337,14 @@
       }
     ],
     "features": [ { "always-via": "tito" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_rce",
+      "index": 0,
+      "parameter": "formal(argument)"
+    },
+    "master_handle":
       "sanitize.issue_propagation_of_sanitize_return_no_sql_in_source_trace:1000:0:Call|_rce|0|formal(argument):c36524d4a7d40d87a009cbbf2d35f649"
-    ]
   }
 }
 {
@@ -386,9 +414,14 @@
       { "always-via": "tito" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize.sanitize_test_a_source_attribute_in_sink_trace",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle":
       "sanitize.issue_sanitize_test_a_source_attribute_in_sink_trace:1000:0:Call|sanitize.sanitize_test_a_source_attribute_in_sink_trace|0|formal(x):807f91dcca4f60c817ce767e8862c493"
-    ]
   }
 }
 {
@@ -445,9 +478,14 @@
       }
     ],
     "features": [],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_sql",
+      "index": 0,
+      "parameter": "formal(argument)"
+    },
+    "master_handle":
       "sanitize.issue_propagation_of_sanitize_return_no_rce:1000:0:Call|_sql|0|formal(argument):9ec0e6a1cdda39553423a67f8749b562"
-    ]
   }
 }
 {
@@ -518,9 +556,14 @@
       { "first-field": "attribute" },
       { "always-via": "tito" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize.b_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle":
       "sanitize.issue_sanitize_a_sink_attribute_in_source_trace:1000:0:Call|sanitize.b_sink|0|formal(x):7686a72c71228c29d0906b9abcaafd0d"
-    ]
   }
 }
 {
@@ -581,9 +624,14 @@
       }
     ],
     "features": [ { "always-via": "special_source" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize.sanitize_a_sink_attribute",
+      "index": 0,
+      "parameter": "formal(c)"
+    },
+    "master_handle":
       "sanitize.sanitize_test_a_sink_attribute:1000:0:Call|sanitize.sanitize_a_sink_attribute|0|formal(c):f5e38016e7e68c070cd86aa484e6d0ce"
-    ]
   }
 }
 {
@@ -644,9 +692,14 @@
       }
     ],
     "features": [ { "always-via": "special_source" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize.sanitize_a_sink_instance",
+      "index": 0,
+      "parameter": "formal(c)"
+    },
+    "master_handle":
       "sanitize.sanitize_test_a_sink_instance:1000:0:Call|sanitize.sanitize_a_sink_instance|0|formal(c):bc700707d83559854382e8bf695a11dc"
-    ]
   }
 }
 {
@@ -713,9 +766,14 @@
       { "always-via": "tito" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "sanitize.sanitize_test_a_source_attribute:1000:0:Call|_test_sink|0|formal(arg):7cf279501d48a6922a15112fda44e69a"
-    ]
   }
 }
 {
@@ -782,9 +840,14 @@
       { "always-via": "tito" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "sanitize.sanitize_test_a_source_instance:1000:0:Call|_test_sink|0|formal(arg):4d775a95a91ae016f99f4813bdd80989"
-    ]
   }
 }
 {
@@ -844,9 +907,14 @@
       }
     ],
     "features": [ { "always-via": "special_sink" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "sanitize.sanitize_test_ab_sources_attribute:1000:0:Call|_test_sink|0|formal(arg):38452faed7dd8a226475656fd4db7a59"
-    ]
   }
 }
 {
@@ -904,9 +972,14 @@
       }
     ],
     "features": [ { "always-via": "special_sink" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "sanitize.sanitize_test_ab_sources_instance:1000:0:Call|_test_sink|0|formal(arg):4edd9983bb03615959969b8fc84cd29f"
-    ]
   }
 }
 {
@@ -964,9 +1037,13 @@
       }
     ],
     "features": [ { "always-via": "special_source" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{sanitize.C_sanitized_all_sinks.attribute}",
+      "index": 0
+    },
+    "master_handle":
       "sanitize.sanitize_test_all_sinks_attribute:1000:0:Global|Obj{sanitize.C_sanitized_all_sinks.attribute}|0:0289f565d4809cd72569ae4d0e5ac86b"
-    ]
   }
 }
 {
@@ -1024,9 +1101,13 @@
       }
     ],
     "features": [ { "always-via": "special_source" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{sanitize.C_sanitized_all_sinks.instance}",
+      "index": 0
+    },
+    "master_handle":
       "sanitize.sanitize_test_all_sinks_instance:1000:0:Global|Obj{sanitize.C_sanitized_all_sinks.instance}|0:5b9ff058a828c7ef795feedb702523f9"
-    ]
   }
 }
 {
@@ -1087,9 +1168,14 @@
       }
     ],
     "features": [ { "always-via": "special_source" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize.sanitize_b_sink_attribute",
+      "index": 0,
+      "parameter": "formal(c)"
+    },
+    "master_handle":
       "sanitize.sanitize_test_b_sink_attribute:1000:0:Call|sanitize.sanitize_b_sink_attribute|0|formal(c):f22f651b9c14ec23512c5b0b363404bc"
-    ]
   }
 }
 {
@@ -1150,9 +1236,14 @@
       }
     ],
     "features": [ { "always-via": "special_source" } ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize.sanitize_b_sink_instance",
+      "index": 0,
+      "parameter": "formal(c)"
+    },
+    "master_handle":
       "sanitize.sanitize_test_b_sink_instance:1000:0:Call|sanitize.sanitize_b_sink_instance|0|formal(c):cce981ebc6d16e96b7bfa28e230598dd"
-    ]
   }
 }
 {
@@ -1219,9 +1310,14 @@
       { "always-via": "tito" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "sanitize.sanitize_test_b_source_attribute:1000:0:Call|_test_sink|0|formal(arg):c9287a2192ebb69f44c803599227303b"
-    ]
   }
 }
 {
@@ -1288,9 +1384,14 @@
       { "always-via": "tito" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "sanitize.sanitize_test_b_source_instance:1000:0:Call|_test_sink|0|formal(arg):693b78211926f9ba8005843bc962d801"
-    ]
   }
 }
 {
@@ -1350,9 +1451,14 @@
       }
     ],
     "features": [],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize.sanitize_a_source_tito_with_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle":
       "sanitize.test4:1000:0:Call|sanitize.sanitize_a_source_tito_with_sink|0|formal(x):dec4d336c24b1bea188695e93ef685f3"
-    ]
   }
 }
 {

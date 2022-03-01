@@ -63,9 +63,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "constructor_inheritance.MyBaseClass.__init__",
+      "index": 0,
+      "parameter": "formal(argument)"
+    },
+    "master_handle":
       "constructor_inheritance.test:5002:0:Call|constructor_inheritance.MyBaseClass.__init__|0|formal(argument):93a5705e4cb2a6fca29f77771ebef246"
-    ]
   }
 }
 {

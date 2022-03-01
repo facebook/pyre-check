@@ -119,4 +119,108 @@ let test_errors _ =
   ()
 
 
-let () = "taint_flow" >::: ["no_errors" >:: test_no_errors; "errors" >:: test_errors] |> Test.run
+let test_canonical_location _ =
+  let assert_canonical_location ~set ~expected =
+    let define =
+      Statement.Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
+      |> Node.create_with_default_location
+    in
+    let locations =
+      List.fold
+        ~init:Issue.LocationSet.empty
+        ~f:(fun set location -> Issue.LocationSet.add location set)
+        set
+    in
+    let issue =
+      {
+        Issue.flow = Issue.Flow.bottom;
+        handle =
+          {
+            code = 1000;
+            callable = Interprocedural.Target.create define;
+            sink = Issue.SinkHandle.Return;
+          };
+        locations;
+        define;
+      }
+    in
+    let actual = Issue.canonical_location issue in
+    assert_equal expected actual
+  in
+  let create_location
+      ?(qualifier = "a")
+      ?(start_line = 0)
+      ?(start_column = 0)
+      ?(stop_line = 0)
+      ?(stop_column = 1)
+      ()
+    =
+    Location.with_module
+      ~qualifier:(Reference.create qualifier)
+      {
+        start = { line = start_line; column = start_column };
+        stop = { line = stop_line; column = stop_column };
+      }
+  in
+  assert_canonical_location ~set:[create_location ()] ~expected:(create_location ());
+  assert_canonical_location
+    ~set:[create_location (); create_location ()]
+    ~expected:(create_location ());
+  assert_canonical_location
+    ~set:
+      [
+        create_location ~qualifier:"a" ();
+        create_location ~qualifier:"b" ();
+        create_location ~qualifier:"c" ();
+      ]
+    ~expected:(create_location ~qualifier:"a" ());
+  assert_canonical_location
+    ~set:
+      [
+        create_location ~qualifier:"b.a" ();
+        create_location ~qualifier:"a.z" ();
+        create_location ~qualifier:"a.y" ();
+      ]
+    ~expected:(create_location ~qualifier:"a.y" ());
+  assert_canonical_location
+    ~set:
+      [
+        create_location ~start_line:2 ();
+        create_location ~start_line:1 ();
+        create_location ~start_line:0 ();
+      ]
+    ~expected:(create_location ~start_line:0 ());
+  assert_canonical_location
+    ~set:
+      [
+        create_location ~start_line:2 ~start_column:6 ();
+        create_location ~start_line:2 ~start_column:2 ();
+        create_location ~start_line:2 ~start_column:4 ();
+      ]
+    ~expected:(create_location ~start_line:2 ~start_column:2 ());
+  assert_canonical_location
+    ~set:
+      [
+        create_location ~qualifier:"c" ~start_line:4 ~start_column:3 ~stop_line:10 ~stop_column:9 ();
+        create_location ~qualifier:"b" ~start_line:2 ~start_column:10 ~stop_line:8 ~stop_column:8 ();
+        create_location ~qualifier:"e" ~start_line:20 ~start_column:2 ~stop_line:4 ~stop_column:6 ();
+        create_location ~qualifier:"b" ~start_line:2 ~start_column:7 ~stop_line:6 ~stop_column:7 ();
+        create_location ~qualifier:"b" ~start_line:2 ~start_column:20 ~stop_line:2 ~stop_column:5 ();
+        create_location ~qualifier:"c" ~start_line:4 ~start_column:4 ~stop_line:4 ~stop_column:4 ();
+        create_location ~qualifier:"b" ~start_line:4 ~start_column:7 ~stop_line:6 ~stop_column:3 ();
+        create_location ~qualifier:"b" ~start_line:2 ~start_column:7 ~stop_line:98 ~stop_column:2 ();
+        create_location ~qualifier:"b" ~start_line:2 ~start_column:7 ~stop_line:6 ~stop_column:10 ();
+      ]
+    ~expected:
+      (create_location ~qualifier:"b" ~start_line:2 ~start_column:7 ~stop_line:6 ~stop_column:7 ());
+  ()
+
+
+let () =
+  "taint_flow"
+  >::: [
+         "no_errors" >:: test_no_errors;
+         "errors" >:: test_errors;
+         "canonical_location" >:: test_canonical_location;
+       ]
+  |> Test.run

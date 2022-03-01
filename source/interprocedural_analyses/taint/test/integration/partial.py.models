@@ -61,9 +61,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "partial.a_flows_to_sink",
+      "index": 0,
+      "parameter": "formal(a)"
+    },
+    "master_handle":
       "partial.multiprocessing_tainted:5002:0:Call|partial.a_flows_to_sink|0|formal(a):869b7105b8715dde7f3556295c7b0a37"
-    ]
   }
 }
 {
@@ -128,9 +133,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "partial.a_flows_to_sink",
+      "index": 0,
+      "parameter": "formal(a)"
+    },
+    "master_handle":
       "partial.partial_application_with_named_a:5002:0:Call|partial.a_flows_to_sink|0|formal(a):34f14ddc9c6c4fdbf4096df1ebd4bac1"
-    ]
   }
 }
 {
@@ -195,9 +205,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "partial.a_flows_to_sink",
+      "index": 0,
+      "parameter": "formal(a)"
+    },
+    "master_handle":
       "partial.partial_application_with_tainted:5002:0:Call|partial.a_flows_to_sink|0|formal(a):8a950369a943dc22b133a84f5fecfcfc"
-    ]
   }
 }
 {

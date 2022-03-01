@@ -14,7 +14,7 @@ module T = struct
     kind: string;
     label: string;
   }
-  [@@deriving compare, show]
+  [@@deriving compare, hash, sexp, show]
 
   type t =
     | Attach
@@ -36,7 +36,7 @@ module T = struct
         (* Invariant: not a transform. *)
         base: t;
       }
-  [@@deriving compare]
+  [@@deriving compare, hash, sexp]
 
   let rec pp formatter = function
     | Attach -> Format.fprintf formatter "Attach"

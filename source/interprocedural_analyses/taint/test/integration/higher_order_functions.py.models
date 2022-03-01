@@ -65,9 +65,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "higher_order_functions.callable_class:5002:0:Call|_test_sink|0|formal(arg):bcd395b0205c3e72c1a3305f7acfd77f"
-    ]
   }
 }
 {
@@ -132,9 +137,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "higher_order_functions.goes_to_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "higher_order_functions.test_higher_order_function:5002:0:Call|higher_order_functions.goes_to_sink|0|formal(arg):9481df2a3a4aecc8f6cc4a86c8fa37a9"
-    ]
   }
 }
 {
@@ -201,9 +211,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "higher_order_functions.higher_order_function_and_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "higher_order_functions.test_higher_order_function_and_sink:5002:0:Call|higher_order_functions.higher_order_function_and_sink|0|formal(arg):d3ea6391f3b3696fd17aaaef375a6ba4"
-    ]
   }
 }
 {
@@ -268,9 +283,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "higher_order_functions.goes_to_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "higher_order_functions.test_higher_order_function_and_sink:5002:0:Call|higher_order_functions.goes_to_sink|0|formal(arg):da1d8cce3614c6d7c93d269ed97651d0"
-    ]
   }
 }
 {
@@ -339,9 +359,14 @@
       { "always-via": "lambda" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "higher_order_functions.higher_order_method",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "higher_order_functions.test_higher_order_method:5002:0:Call|higher_order_functions.higher_order_method|0|formal(arg):bb12423a5f50e40b60294e8804787996"
-    ]
   }
 }
 {
@@ -406,9 +431,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "higher_order_functions.C.self_to_sink",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle":
       "higher_order_functions.test_higher_order_method_self:5002:0:Call|higher_order_functions.C.self_to_sink|0|formal(self):62f145bcd8b30e191c2191bd8dc59b2e"
-    ]
   }
 }
 {

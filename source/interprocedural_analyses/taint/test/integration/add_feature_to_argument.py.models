@@ -64,9 +64,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "add_feature_to_argument.test_add_feature_in_comprehension:5002:0:Call|_test_sink|0|formal(arg):e660dc46ee53a95cdb86c321f40be0a3"
-    ]
   }
 }
 {

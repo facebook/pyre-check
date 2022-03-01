@@ -141,9 +141,14 @@
       { "always-via": "obscure:unknown-callee" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
       "missing_type.test_unknown_source_attribute:5002:0:Call|_test_sink|0|formal(arg):1584cf04889a0197e642b9b46c97bc33"
-    ]
   }
 }
 {

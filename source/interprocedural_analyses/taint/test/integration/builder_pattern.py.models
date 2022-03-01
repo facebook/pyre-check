@@ -64,9 +64,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "builder_pattern.Builder.async_save",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle":
       "builder_pattern.test_issue:5002:0:Call|builder_pattern.Builder.async_save|0|formal(self):e183c160aeb69b7105783b6d44ec9ece"
-    ]
   }
 }
 {
@@ -134,9 +139,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "builder_pattern.Builder.async_save",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle":
       "builder_pattern.test_issue_with_sub_builder:5002:0:Call|builder_pattern.Builder.async_save|0|formal(self):f1b48755fa47e28484bcf20199cf4425"
-    ]
   }
 }
 {
@@ -204,9 +214,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "builder_pattern.Builder.async_save",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle":
       "builder_pattern.test_issue_with_type_var:5002:0:Call|builder_pattern.Builder.async_save|0|formal(self):7c21ffd5281ef1a5ec4beaa2b6514b5c"
-    ]
   }
 }
 {

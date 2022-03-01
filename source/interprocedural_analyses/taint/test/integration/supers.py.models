@@ -66,9 +66,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "supers.B.f5",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle":
       "supers.B.g4:5002:0:Call|supers.B.f5|0|formal(x):2d4b1bc6d721a1e484a34d0e7dafabcb"
-    ]
   }
 }
 {
@@ -138,9 +143,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "Ovr{supers.B::g1}",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle":
       "supers.attribute_B_not_overwritten:5002:0:Call|Ovr{supers.B::g1}|0|formal(self):0086033306352f8790c5fdab7be5aab9"
-    ]
   }
 }
 {
@@ -210,9 +220,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "Ovr{supers.C::g1}",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle":
       "supers.attribute_C_not_overwritten:5002:0:Call|Ovr{supers.C::g1}|0|formal(self):4a31e44da11c02f9167dac9709b76bfc"
-    ]
   }
 }
 {
@@ -282,9 +297,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "supers.D.g1",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle":
       "supers.attribute_D_not_overwritten:5002:0:Call|supers.D.g1|0|formal(self):4efab0cd3bce52ce9554d5d4b7dd38a8"
-    ]
   }
 }
 {
@@ -931,9 +951,14 @@
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
-    "master_handles": [
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "supers.A.f2",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle":
       "supers.B.g1:5002:0:Call|supers.A.f2|0|formal(x):bca647bf5e2ed5af745949c32f12e179"
-    ]
   }
 }
 {
