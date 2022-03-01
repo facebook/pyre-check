@@ -2694,6 +2694,7 @@ let test_call_graph_of_define context =
                    [
                      CallTarget.create
                        ~implicit_self:true
+                       ~index:1
                        (`Method { Target.class_name = "object"; method_name = "__repr__" });
                    ];
                }) );
@@ -2705,6 +2706,7 @@ let test_call_graph_of_define context =
                    [
                      CallTarget.create
                        ~implicit_self:true
+                       ~index:2
                        (`Method { Target.class_name = "object"; method_name = "__repr__" });
                    ];
                }) );
@@ -2716,6 +2718,7 @@ let test_call_graph_of_define context =
                    [
                      CallTarget.create
                        ~implicit_self:true
+                       ~index:1
                        (`Method { Target.class_name = "int"; method_name = "__str__" });
                    ];
                }) );
@@ -2727,6 +2730,7 @@ let test_call_graph_of_define context =
                    [
                      CallTarget.create
                        ~implicit_self:true
+                       ~index:1
                        (`Method { Target.class_name = "str"; method_name = "__str__" });
                    ];
                }) );
@@ -2738,6 +2742,7 @@ let test_call_graph_of_define context =
                    [
                      CallTarget.create
                        ~implicit_self:true
+                       ~index:3
                        (`Method { Target.class_name = "object"; method_name = "__repr__" });
                    ];
                }) );

@@ -1492,6 +1492,7 @@ struct
                           location = expression_location;
                         }
                       in
+                      CallTargetIndexer.generate_fresh_indices call_indexer;
                       resolve_regular_callees
                         ~resolution
                         ~call_indexer
