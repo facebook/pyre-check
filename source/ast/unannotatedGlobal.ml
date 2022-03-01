@@ -89,7 +89,7 @@ module Collector = struct
                 {
                   explicit_annotation = annotation;
                   value;
-                  target_location = Location.with_module ~qualifier location;
+                  target_location = Location.with_module ~module_reference:qualifier location;
                 };
           }
           :: globals
@@ -105,7 +105,8 @@ module Collector = struct
                         TupleAssign
                           {
                             value;
-                            target_location = Location.with_module ~qualifier location;
+                            target_location =
+                              Location.with_module ~module_reference:qualifier location;
                             index;
                             total_length;
                           };
@@ -157,7 +158,13 @@ module Collector = struct
           {
             Result.name = name |> Reference.last;
             unannotated_global =
-              Define [{ define = signature; location = Location.with_module ~qualifier location }];
+              Define
+                [
+                  {
+                    define = signature;
+                    location = Location.with_module ~module_reference:qualifier location;
+                  };
+                ];
           }
           :: globals
       | If { If.body; orelse; _ } ->

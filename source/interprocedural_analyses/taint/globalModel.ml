@@ -44,7 +44,7 @@ let from_expression ~resolution ~call_graph ~qualifier ~expression =
     { Model.WithCallTarget.model; call_target }
   in
   let models = get_global_targets ~call_graph ~expression |> List.map ~f:fetch_model in
-  let location = Node.location expression |> Location.with_module ~qualifier in
+  let location = Node.location expression |> Location.with_module ~module_reference:qualifier in
   { models; resolution; location }
 
 

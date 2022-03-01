@@ -36,7 +36,7 @@ let test_no_errors _ =
   let assert_no_errors ~source_tree ~sink_tree =
     let location =
       Location.with_module
-        ~qualifier:Reference.empty
+        ~module_reference:Reference.empty
         (Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos)
     in
     let define =
@@ -89,7 +89,7 @@ let test_errors _ =
   let assert_errors ~source_tree ~sink_tree codes =
     let location =
       Location.with_module
-        ~qualifier:Reference.empty
+        ~module_reference:Reference.empty
         (Location.create ~start:Lexing.dummy_pos ~stop:Lexing.dummy_pos)
     in
     let define =

@@ -379,7 +379,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         { CallModel.ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches }
       =
       let location =
-        Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
+        Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location
       in
       let sink_taint =
         CallModel.sink_trees_of_argument
@@ -666,7 +666,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if unresolved && TaintConfiguration.is_missing_flow_analysis Type then (
         let callable =
           MissingFlow.unknown_callee
-            ~location:(Location.with_module call_location ~qualifier:FunctionContext.qualifier)
+            ~location:
+              (Location.with_module call_location ~module_reference:FunctionContext.qualifier)
             ~call:(Expression.Call { Call.callee; arguments })
         in
         if not (Interprocedural.FixpointState.has_model callable) then
@@ -1429,14 +1430,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               Log.dump
                 "%a: Revealed backward taint for `%s`: expression is too complex"
                 Location.WithModule.pp
-                (Location.with_module location ~qualifier:FunctionContext.qualifier)
+                (Location.with_module location ~module_reference:FunctionContext.qualifier)
                 (Transform.sanitize_expression expression |> Expression.show)
           | access_path ->
               let taint = get_taint access_path state in
               Log.dump
                 "%a: Revealed backward taint for `%s`: %s"
                 Location.WithModule.pp
-                (Location.with_module location ~qualifier:FunctionContext.qualifier)
+                (Location.with_module location ~module_reference:FunctionContext.qualifier)
                 (Transform.sanitize_expression expression |> Expression.show)
                 (BackwardState.Tree.show taint)
         end;
@@ -1661,7 +1662,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~resolution
           ~taint
           ~state
-          ~location:(Location.with_module ~qualifier:FunctionContext.qualifier location)
+          ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
           substrings
     | Ternary { target; test; alternative } ->
         let state_then = analyze_expression ~resolution ~taint ~state ~expression:target in

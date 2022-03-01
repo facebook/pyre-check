@@ -292,7 +292,7 @@ module State (Context : Context) = struct
             >>| (fun { Annotation.annotation; _ } ->
                   let error =
                     Error.create
-                      ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                      ~location:(Location.with_module ~module_reference:Context.qualifier location)
                       ~kind:
                         (Error.MissingParameterAnnotation
                            {
@@ -492,7 +492,8 @@ module State (Context : Context) = struct
               in
               Some
                 (Error.create
-                   ~location:(Location.with_module ~qualifier:Context.qualifier define_location)
+                   ~location:
+                     (Location.with_module ~module_reference:Context.qualifier define_location)
                    ~define:Context.define
                    ~kind:
                      (Error.MissingReturnAnnotation
@@ -1046,7 +1047,7 @@ let infer_parameters_from_parent
                      && should_annotate name ->
                   Some
                     (Error.create
-                       ~location:(Location.with_module ~qualifier location)
+                       ~location:(Location.with_module ~module_reference:qualifier location)
                        ~kind:
                          (Error.MissingParameterAnnotation
                             {
@@ -1103,7 +1104,7 @@ let legacy_infer_for_define
       if configuration.debug then
         [
           Error.create
-            ~location:(Location.with_module ~qualifier location)
+            ~location:(Location.with_module ~module_reference:qualifier location)
             ~kind:(Error.AnalysisFailure (UnexpectedUndefinedType annotation))
             ~define;
         ]

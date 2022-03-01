@@ -279,7 +279,7 @@ let test_simple_global_registration context =
   in
   let target_location =
     { Location.start = { line = 2; column = 0 }; stop = { line = 2; column = 3 } }
-    |> Location.with_module ~qualifier:(Reference.create "test")
+    |> Location.with_module ~module_reference:(Reference.create "test")
   in
   let value_location =
     { Location.start = { line = 2; column = 6 }; stop = { line = 2; column = 7 } }
@@ -319,14 +319,14 @@ let test_simple_global_registration context =
                 (3, 9);
             target_location =
               { Location.start = { line = 3; column = 2 }; stop = { line = 3; column = 5 } }
-              |> Location.with_module ~qualifier:(Reference.create "test");
+              |> Location.with_module ~module_reference:(Reference.create "test");
           }));
   let parse_define define =
     match parse_single_statement define ~preprocess:true ~handle:"test.py" with
     | { Node.value = Statement.Statement.Define { signature; _ }; location } ->
         {
           UnannotatedGlobal.UnannotatedDefine.define = signature;
-          location = Location.with_module ~qualifier:(Reference.create "test") location;
+          location = Location.with_module ~module_reference:(Reference.create "test") location;
         }
     | _ -> failwith "not define"
   in
@@ -958,7 +958,7 @@ let test_updates context =
         {
           Location.WithModule.start = { Location.line = start_line; column = start_column };
           stop = { Location.line = stop_line; column = stop_column };
-          path = Reference.create "test";
+          module_reference = Reference.create "test";
         };
     }
   in

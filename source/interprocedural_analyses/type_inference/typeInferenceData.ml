@@ -49,7 +49,7 @@ module AnnotationLocation = struct
 
   let from_location_with_module
       ~lookup
-      Location.WithModule.{ path = qualifier; start = { line; _ }; _ }
+      Location.WithModule.{ module_reference = qualifier; start = { line; _ }; _ }
     =
     create ~lookup ~qualifier ~line
 end

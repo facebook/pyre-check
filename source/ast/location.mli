@@ -67,7 +67,7 @@ end
 
 module WithModule : sig
   type t = {
-    path: Reference.t;
+    module_reference: Reference.t;
     start: position;
     stop: position;
   }
@@ -88,6 +88,6 @@ end
 
 val with_path : path:string -> t -> WithPath.t
 
-val with_module : qualifier:Reference.t -> t -> WithModule.t
+val with_module : module_reference:Reference.t -> t -> WithModule.t
 
 val strip_module : WithModule.t -> t

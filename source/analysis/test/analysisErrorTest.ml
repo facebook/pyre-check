@@ -54,7 +54,7 @@ let error
     ?(location = Location.any)
     kind
   =
-  { Error.location = Location.with_module ~qualifier location; kind; signature }
+  { Error.location = Location.with_module ~module_reference:qualifier location; kind; signature }
 
 
 let revealed_type expression annotation =

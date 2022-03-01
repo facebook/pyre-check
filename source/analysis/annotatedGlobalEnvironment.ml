@@ -62,7 +62,7 @@ let produce_global_location attribute_resolution name ~dependency =
          (unannotated_global_environment class_metadata_environment)
          ?dependency
     >>| fun { Node.location; value = { ClassSummary.qualifier; _ } } ->
-    Location.with_module ~qualifier location
+    Location.with_module ~module_reference:qualifier location
   in
   match class_location with
   | Some location -> Some location

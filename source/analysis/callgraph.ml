@@ -213,7 +213,7 @@ module DefaultBuilder : Builder = struct
           |> Option.value ~default:[]
       | _ -> []
     in
-    let key = Location.with_module ~qualifier (Node.location callee) in
+    let key = Location.with_module ~module_reference:qualifier (Node.location callee) in
     Hashtbl.set table ~key ~data:callees
 
 
@@ -267,7 +267,7 @@ module DefaultBuilder : Builder = struct
     in
     List.iter attributes ~f:register;
     if not (List.is_empty !property_callables) then
-      let key = Location.with_module ~qualifier location in
+      let key = Location.with_module ~module_reference:qualifier location in
       Hashtbl.set table ~key ~data:!property_callables
 
 

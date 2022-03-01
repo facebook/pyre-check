@@ -74,7 +74,8 @@ let ignore ~qualifier { Source.metadata = { Source.Metadata.ignore_lines; _ }; _
   let unused_ignore_errors =
     let to_error unused_ignore =
       {
-        Error.location = Location.with_module ~qualifier (Ignore.location unused_ignore);
+        Error.location =
+          Location.with_module ~module_reference:qualifier (Ignore.location unused_ignore);
         kind = Error.UnusedIgnore (Ignore.codes unused_ignore);
         signature =
           {
@@ -101,7 +102,7 @@ let add_local_mode_errors
     match actual_mode with
     | Some actual_mode ->
         Error.create
-          ~location:(Location.with_module ~qualifier (Node.location unused_mode))
+          ~location:(Location.with_module ~module_reference:qualifier (Node.location unused_mode))
           ~kind:(Error.UnusedLocalMode { unused_mode; actual_mode })
           ~define
         :: errors
@@ -167,7 +168,7 @@ let run ~scheduler ~configuration ~environment sources =
       | Some (Result.Error { AstEnvironment.ParserError.message; location; _ }) ->
           let location_with_module =
             {
-              Location.WithModule.path = module_name;
+              Location.WithModule.module_reference = module_name;
               start = Location.start location;
               stop = Location.stop location;
             }

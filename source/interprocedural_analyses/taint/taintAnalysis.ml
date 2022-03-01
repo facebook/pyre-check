@@ -371,7 +371,7 @@ include Taint.Result.Register (struct
          qualifier. *)
       InlineDecorator.InlinedNameToOriginalName.get define_qualifier
       >>= AnnotatedGlobalEnvironment.ReadOnly.get_global_location annotated_global_environment
-      >>| fun { Location.WithModule.path; _ } -> path
+      >>| fun { Location.WithModule.module_reference; _ } -> module_reference
     in
     let qualifier = Option.value ~default:qualifier module_reference in
     match existing with

@@ -342,7 +342,7 @@ module State (Context : Context) = struct
 
   let emit_error ~errors ~location ~kind =
     Error.create
-      ~location:(Location.with_module ~qualifier:Context.qualifier location)
+      ~location:(Location.with_module ~module_reference:Context.qualifier location)
       ~kind
       ~define:Context.define
     :: errors
@@ -524,7 +524,7 @@ module State (Context : Context) = struct
           let define = StatementDefine.name define_value in
           AnalysisError.AnalysisFailure (FixpointThresholdReached { define })
         in
-        let location = Location.with_module ~qualifier:Context.qualifier define_location in
+        let location = Location.with_module ~module_reference:Context.qualifier define_location in
         let error = AnalysisError.create ~location ~kind ~define in
         let statement_key = [%hash: int * int] (Cfg.entry_index, 0) in
         let (_ : unit option) = Context.error_map >>| LocalErrorMap.append ~statement_key ~error in
@@ -659,7 +659,7 @@ module State (Context : Context) = struct
 
   let instantiate_path ~global_resolution location =
     let ast_environment = GlobalResolution.ast_environment global_resolution in
-    let location = Location.with_module ~qualifier:Context.qualifier location in
+    let location = Location.with_module ~module_reference:Context.qualifier location in
     Location.WithModule.instantiate
       ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
       location
@@ -3780,7 +3780,8 @@ module State (Context : Context) = struct
                               ~attribute
                               ~instantiated_parent:parent
                               ~name
-                              ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                              ~location:
+                                (Location.with_module ~module_reference:Context.qualifier location)
                         | _ -> ()
                       end;
                       reference, attribute, target_annotation
@@ -6086,7 +6087,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           >>| List.filter ~f:(fun attribute -> AnnotatedAttribute.is_private attribute)
           >>| List.map ~f:(fun attribute ->
                   Error.create
-                    ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                    ~location:(Location.with_module ~module_reference:Context.qualifier location)
                     ~kind:
                       (Error.PrivateProtocolProperty
                          {
@@ -6230,7 +6231,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                    in
                    Some
                      (Error.create
-                        ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                        ~location:
+                          (Location.with_module ~module_reference:Context.qualifier location)
                         ~kind:
                           (Error.UninitializedAttribute
                              {
@@ -6254,7 +6256,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             if is_final then
               let error =
                 Error.create
-                  ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                  ~location:(Location.with_module ~module_reference:Context.qualifier location)
                   ~kind:(Error.InvalidInheritance (ClassName (Expression.show expression_value)))
                   ~define:Context.define
               in
@@ -6342,7 +6344,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               |> Option.value ~default:location
             in
             Error.create
-              ~location:(Location.with_module ~qualifier:Context.qualifier location)
+              ~location:(Location.with_module ~module_reference:Context.qualifier location)
               ~kind
               ~define:Context.define
           in
@@ -6423,7 +6425,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                         in
                         Some
                           (Error.create
-                             ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                             ~location:
+                               (Location.with_module ~module_reference:Context.qualifier location)
                              ~kind
                              ~define:Context.define)
                     in
@@ -6486,7 +6489,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         then
           let error =
             Error.create
-              ~location:(Location.with_module ~qualifier:Context.qualifier location)
+              ~location:(Location.with_module ~module_reference:Context.qualifier location)
               ~kind:(Error.MissingOverloadImplementation name)
               ~define:Context.define
           in
@@ -6516,7 +6519,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             else
               let error =
                 Error.create
-                  ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                  ~location:(Location.with_module ~module_reference:Context.qualifier location)
                   ~kind:
                     (Error.IncompatibleOverload
                        (ReturnType
@@ -6538,7 +6541,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           then
             let error =
               Error.create
-                ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                ~location:(Location.with_module ~module_reference:Context.qualifier location)
                 ~define:Context.define
                 ~kind:(Error.IncompatibleOverload (Parameters { name; location }))
             in
@@ -6566,7 +6569,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                   ~right)
             >>| (fun matching_overload ->
                   Error.create
-                    ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                    ~location:(Location.with_module ~module_reference:Context.qualifier location)
                     ~define:Context.define
                     ~kind:
                       (Error.IncompatibleOverload
@@ -6582,7 +6585,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           when Type.Callable.equal_overload Type.equal current_overload offender ->
             let error =
               Error.create
-                ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                ~location:(Location.with_module ~module_reference:Context.qualifier location)
                 ~define:Context.define
                 ~kind:(Error.IncompatibleOverload DifferingDecorators)
             in
@@ -6603,7 +6606,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         if overload_decorator_misplaced then
           let error =
             Error.create
-              ~location:(Location.with_module ~qualifier:Context.qualifier location)
+              ~location:(Location.with_module ~module_reference:Context.qualifier location)
               ~define:Context.define
               ~kind:(Error.IncompatibleOverload MisplacedOverloadDecorator)
           in
@@ -6625,7 +6628,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               let make_error ~location reason =
                 let error =
                   Error.create
-                    ~location:(Location.with_module ~qualifier:Context.qualifier location)
+                    ~location:(Location.with_module ~module_reference:Context.qualifier location)
                     ~define:Context.define
                     ~kind:(Error.InvalidDecoration reason)
                 in
@@ -6848,7 +6851,7 @@ let check_define
         Log.dump "Analysis crashed because of untracked type `%s`." (Log.Color.red annotation);
       let undefined_error =
         Error.create
-          ~location:(Location.with_module ~qualifier location)
+          ~location:(Location.with_module ~module_reference:qualifier location)
           ~kind:(Error.AnalysisFailure (UnexpectedUndefinedType annotation))
           ~define:define_node
       in

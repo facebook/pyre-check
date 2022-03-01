@@ -100,22 +100,22 @@ end
 module WithModule = struct
   module T = struct
     type t = {
-      path: Reference.t;
+      module_reference: Reference.t;
       start: position;
       stop: position;
     }
     [@@deriving compare, eq, sexp, hash, to_yojson]
 
-    let any = { path = Reference.empty; start = any_position; stop = any_position }
+    let any = { module_reference = Reference.empty; start = any_position; stop = any_position }
 
     let line { start = { line; _ }; _ } = line
 
-    let pp format { path; start; stop } =
+    let pp format { module_reference; start; stop } =
       Format.fprintf
         format
         "%a:%d:%d-%d:%d"
         Reference.pp
-        path
+        module_reference
         start.line
         start.column
         stop.line
@@ -124,8 +124,8 @@ module WithModule = struct
 
     let show location = Format.asprintf "%a" pp location
 
-    let instantiate ~lookup { path; start; stop } =
-      let path = Option.value (lookup path) ~default:"*" in
+    let instantiate ~lookup { module_reference; start; stop } =
+      let path = Option.value (lookup module_reference) ~default:"*" in
       { WithPath.path; start; stop }
   end
 
@@ -135,6 +135,6 @@ end
 
 let with_path ~path { start; stop } = { WithPath.path; start; stop }
 
-let with_module ~qualifier { start; stop } = { WithModule.path = qualifier; start; stop }
+let with_module ~module_reference { start; stop } = { WithModule.module_reference; start; stop }
 
 let strip_module { WithModule.start; stop; _ } = { start; stop }

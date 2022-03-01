@@ -2481,7 +2481,7 @@ let create ~location ~kind ~define =
   { location; kind; signature = { Node.value = signature; location = define_location } }
 
 
-let path { location = { Location.WithModule.path; _ }; _ } = path
+let path { location = { Location.WithModule.module_reference; _ }; _ } = module_reference
 
 let code { kind; _ } = code_of_kind kind
 
@@ -3653,12 +3653,12 @@ let filter ~resolution errors =
           String.equal (Reference.last name) "patch"
       | _ -> false
     in
-    let is_stub_error { kind; location = { Location.WithModule.path; _ }; _ } =
+    let is_stub_error { kind; location = { Location.WithModule.module_reference; _ }; _ } =
       match kind with
       | UninitializedAttribute _
       | MissingOverloadImplementation _ -> (
           let ast_environment = GlobalResolution.ast_environment resolution in
-          match AstEnvironment.ReadOnly.get_source_path ast_environment path with
+          match AstEnvironment.ReadOnly.get_source_path ast_environment module_reference with
           | Some { SourcePath.is_stub; _ } -> is_stub
           | _ -> false)
       | _ -> false

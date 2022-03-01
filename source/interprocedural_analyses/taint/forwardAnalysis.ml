@@ -161,7 +161,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let check_flow_to_global ~location ~source_tree global_model =
-    let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
+    let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
     let check { Issue.SinkTreeWithHandle.sink_tree; handle } =
       check_flow ~location ~sink_handle:handle ~source_tree ~sink_tree
     in
@@ -393,7 +393,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           tito_effects
       in
       let location =
-        Location.with_module ~qualifier:FunctionContext.qualifier argument.Node.location
+        Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location
       in
       let sink_trees =
         CallModel.sink_trees_of_argument
@@ -457,7 +457,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
       |> ForwardState.Tree.apply_call
            ~resolution
-           ~location:(Location.with_module ~qualifier:FunctionContext.qualifier call_location)
+           ~location:
+             (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
            ~callees:[target]
            ~arguments
            ~port:AccessPath.Root.LocalResult
@@ -662,7 +663,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if unresolved && TaintConfiguration.is_missing_flow_analysis Type then (
         let callable =
           MissingFlow.unknown_callee
-            ~location:(Location.with_module ~qualifier:FunctionContext.qualifier call_location)
+            ~location:
+              (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
             ~call:(Expression.Call { Call.callee; arguments })
         in
         if not (Interprocedural.FixpointState.has_model callable) then
@@ -1442,7 +1444,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       } ->
           let taint, _ = analyze_expression ~resolution ~state ~expression in
           let location =
-            Node.location callee |> Location.with_module ~qualifier:FunctionContext.qualifier
+            Node.location callee |> Location.with_module ~module_reference:FunctionContext.qualifier
           in
           Log.dump
             "%a: Revealed forward taint for `%s`: %s"
@@ -1456,7 +1458,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        arguments = [{ Call.Argument.value = expression; _ }];
       } ->
           let location =
-            Node.location callee |> Location.with_module ~qualifier:FunctionContext.qualifier
+            Node.location callee |> Location.with_module ~module_reference:FunctionContext.qualifier
           in
           Log.dump
             "%a: Revealed type for %s: %s"
@@ -1621,7 +1623,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_string_literal ~resolution ~state ~location ~nested_expressions value =
-    let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
+    let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
     let value_taint =
       let literal_string_regular_expressions = TaintConfiguration.literal_string_sources () in
       if List.is_empty literal_string_regular_expressions then
@@ -1901,7 +1903,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   and analyze_condition ~resolution expression state =
     let { Node.location; _ } = expression in
-    let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
+    let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
     let taint, state = analyze_expression ~resolution ~state ~expression in
     (* There maybe configured sinks for conditionals, so test them here. *)
     let () =
@@ -2016,7 +2018,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         state
     | Return { expression = Some expression; _ } ->
         let taint, state = analyze_expression ~resolution ~state ~expression in
-        let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
+        let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
         check_flow
           ~location
           ~sink_handle:Issue.SinkHandle.Return
@@ -2044,7 +2046,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (parameter_root, name, { Node.location; value = { Parameter.value; _ } })
       =
       let prime =
-        let location = Location.with_module ~qualifier:FunctionContext.qualifier location in
+        let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
         ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
         |> ForwardState.Tree.apply_call
              ~resolution
