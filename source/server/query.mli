@@ -103,6 +103,24 @@ module Response : sig
     }
     [@@deriving sexp, compare]
 
+    type position = {
+      line: int;
+      character: int;
+    }
+    [@@deriving sexp, compare, to_yojson]
+
+    type range = {
+      start: position;
+      end_: position;
+    }
+    [@@deriving sexp, compare, to_yojson]
+
+    type location_of_definition = {
+      uri: string;
+      range: range;
+    }
+    [@@deriving sexp, compare, to_yojson]
+
     type t =
       | Boolean of bool
       | Callees of Analysis.Callgraph.callee list
@@ -112,6 +130,7 @@ module Response : sig
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | FoundAttributes of attribute list
       | FoundDefines of define list
+      | FoundLocationsOfDefinitions of location_of_definition list
       | FoundModules of Ast.Reference.t list
       | FoundPath of string
       | FunctionDefinition of Statement.Define.t

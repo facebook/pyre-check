@@ -1346,6 +1346,55 @@ let test_inline_decorators context =
              |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
+let test_location_of_definition context =
+  let sources =
+    [
+      ( "foo.py",
+        {|
+              def foo(a: int) -> int:
+                return a
+
+              class Base:
+                def __init__(self, x: int) -> None:
+                  self.x = x
+            |}
+      );
+      ( "bar.py",
+        {|
+              from foo import foo, Base
+
+              class Child(Base): ...
+
+              def bar() -> int:
+                print(Child())
+                print(Base())
+                return foo(42) + 1
+            |}
+      );
+    ]
+  in
+  (* TODO(T112570623): Add actual response. *)
+  let queries_and_expected_responses =
+    [
+      ( "location_of_definition(path='bar.py', line=6, column=8)",
+        {|
+      {
+      "response": []
+      }
+    |} );
+    ]
+  in
+  assert_queries_with_local_root
+    ~context
+    ~sources
+    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
+         ( query,
+           fun _ ->
+             response
+             |> Yojson.Safe.from_string
+             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
+
+
 let () =
   "query"
   >::: [
@@ -1355,5 +1404,6 @@ let () =
          >:: OUnitLwt.lwt_wrapper test_handle_query_with_build_system;
          "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
          "inline_decorators" >:: OUnitLwt.lwt_wrapper test_inline_decorators;
+         "location_of_definition" >:: OUnitLwt.lwt_wrapper test_location_of_definition;
        ]
   |> Test.run

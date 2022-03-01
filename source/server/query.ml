@@ -111,6 +111,28 @@ module Response = struct
     }
     [@@deriving sexp, compare, to_yojson]
 
+    type position = {
+      line: int;
+      character: int;
+    }
+    [@@deriving sexp, compare, to_yojson]
+
+    type range = {
+      start: position;
+      end_: position;
+    }
+    [@@deriving sexp, compare]
+
+    let range_to_yojson { start; end_ } =
+      `Assoc ["start", position_to_yojson start; "end", position_to_yojson end_]
+
+
+    type location_of_definition = {
+      uri: string;
+      range: range;
+    }
+    [@@deriving sexp, compare, to_yojson]
+
     type t =
       | Boolean of bool
       | Callees of Analysis.Callgraph.callee list
@@ -120,6 +142,7 @@ module Response = struct
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | FoundAttributes of attribute list
       | FoundDefines of define list
+      | FoundLocationsOfDefinitions of location_of_definition list
       | FoundModules of Reference.t list
       | FoundPath of string
       | FunctionDefinition of Statement.Define.t
@@ -207,6 +230,8 @@ module Response = struct
               ]
           in
           `List (List.map defines ~f:define_to_yojson)
+      | FoundLocationsOfDefinitions locations ->
+          `List (List.map locations ~f:location_of_definition_to_yojson)
       | FoundModules references ->
           let reference_to_yojson reference = `String (Reference.show reference) in
           `List (List.map references ~f:reference_to_yojson)
@@ -737,7 +762,9 @@ let rec process_request ~environment ~build_system ~configuration request =
         let right = parse_and_validate right in
         GlobalResolution.less_or_equal global_resolution ~left ~right
         |> fun response -> Single (Base.Boolean response)
-    | LocationOfDefinition _ -> failwith "TODO(T112570623)"
+    | LocationOfDefinition _ ->
+        (* TODO(T112570623): Return actual locations. *)
+        Single (Base.FoundLocationsOfDefinitions [])
     | PathOfModule module_name ->
         ModuleTracker.lookup_source_path module_tracker module_name
         >>= (fun source_path ->
