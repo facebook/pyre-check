@@ -1349,6 +1349,13 @@ let test_inline_decorators context =
 let test_location_of_definition context =
   let sources =
     [
+      "stubbed_library.py", {|
+              def identity(a):
+                return a
+            |};
+      "stubbed_library.pyi", {|
+              def identity(a: int) -> int: ...
+            |};
       ( "foo.py",
         {|
               def foo(a: int) -> int:
@@ -1362,29 +1369,97 @@ let test_location_of_definition context =
       ( "bar.py",
         {|
               from foo import foo, Base
+              from stubbed_library import identity
 
               class Child(Base): ...
 
               def bar() -> int:
                 print(Child())
                 print(Base())
+                print(identity(42))
                 return foo(42) + 1
             |}
       );
     ]
   in
-  (* TODO(T112570623): Add actual response. *)
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
   let queries_and_expected_responses =
     [
-      ( "location_of_definition(path='bar.py', line=6, column=8)",
+      (* Look up `Base()`. *)
+      ( Format.sprintf
+          "location_of_definition(path='%s', line=9, column=9)"
+          (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute),
+        Format.asprintf
+          {|
+            {
+              "response": [
+                {
+                  "uri": "%s/foo.py",
+                  "range": {
+                    "start": {
+                      "line": 5,
+                      "character": 0
+                    },
+                    "end": {
+                      "line": 7,
+                      "character": 14
+                    }
+                  }
+                }
+              ]
+            }
+          |}
+          (PyrePath.absolute custom_source_root) );
+      (* Look up `identity`. *)
+      ( Format.sprintf
+          "location_of_definition(path='%s', line=10, column=9)"
+          (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute),
+        Format.asprintf
+          {|
+            {
+              "response": [
+                {
+                  "uri": "%s/stubbed_library.pyi",
+                  "range": {
+                    "start": {
+                      "line": 2,
+                      "character": 0
+                    },
+                    "end": {
+                      "line": 2,
+                      "character": 32
+                    }
+                  }
+                }
+              ]
+            }
+          |}
+          (PyrePath.absolute custom_source_root) );
+      (* Look up `def`. *)
+      ( Format.sprintf
+          "location_of_definition(path='%s', line=7, column=1)"
+          (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute),
         {|
-      {
-      "response": []
-      }
-    |} );
+            {
+              "response": []
+            }
+          |} );
+      ( Format.sprintf
+          "location_of_definition(path='%s', line=10, column=9)"
+          (PyrePath.append custom_source_root ~element:"non_existent.py" |> PyrePath.absolute),
+        Format.asprintf
+          {|
+            {
+              "error": "Did not find path `%s/non_existent.py`"
+            }
+          |}
+          (PyrePath.absolute custom_source_root) );
     ]
   in
   assert_queries_with_local_root
+    ~custom_source_root
     ~context
     ~sources
     (List.map queries_and_expected_responses ~f:(fun (query, response) ->

@@ -24,3 +24,10 @@ val find_all_resolved_types_for_path
   configuration:Configuration.Analysis.t ->
   string ->
   types_by_location
+
+val get_lookup
+  :  configuration:Configuration.Analysis.t ->
+  build_system:BuildSystem.t ->
+  environment:TypeEnvironment.t ->
+  string ->
+  (LocationBasedLookup.t, error_reason) result
