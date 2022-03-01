@@ -16,6 +16,10 @@ module Request : sig
     | Defines of Reference.t list
     | DumpCallGraph
     | Help of string
+    | InlineDecorators of {
+        function_reference: Reference.t;
+        decorators_to_skip: Reference.t list;
+      }
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
     | ModulesOfPath of PyrePath.t
@@ -25,10 +29,6 @@ module Request : sig
     | Type of Expression.t
     | TypesInFiles of string list
     | ValidateTaintModels of string option
-    | InlineDecorators of {
-        function_reference: Reference.t;
-        decorators_to_skip: Reference.t list;
-      }
   [@@deriving sexp, compare]
 
   val inline_decorators : ?decorators_to_skip:Reference.t list -> Reference.t -> t

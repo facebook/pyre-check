@@ -23,6 +23,10 @@ module Request = struct
     | Defines of Reference.t list
     | DumpCallGraph
     | Help of string
+    | InlineDecorators of {
+        function_reference: Reference.t;
+        decorators_to_skip: Reference.t list;
+      }
     | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
     | ModulesOfPath of PyrePath.t
@@ -32,10 +36,6 @@ module Request = struct
     | Type of Expression.t
     | TypesInFiles of string list
     | ValidateTaintModels of string option
-    | InlineDecorators of {
-        function_reference: Reference.t;
-        decorators_to_skip: Reference.t list;
-      }
   [@@deriving sexp, compare]
 
   let inline_decorators ?(decorators_to_skip = []) function_reference =
@@ -265,6 +265,10 @@ let help () =
            given module or class."
     | DumpCallGraph ->
         Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
+    | InlineDecorators _ ->
+        Some
+          "inline_decorators(qualified_function_name, optional decorators_to_skip=[decorator1, \
+           decorator2]): Shows the function definition after decorators have been inlined."
     | IsCompatibleWith _ -> None
     | LessOrEqual _ -> Some "less_or_equal(T1, T2): Returns whether T1 is a subtype of T2."
     | ModulesOfPath _ ->
@@ -285,10 +289,6 @@ let help () =
         Some
           "validate_taint_models('optional path'): Validates models and returns errors. Defaults \
            to model path in configuration if no parameter is passed in."
-    | InlineDecorators _ ->
-        Some
-          "inline_decorators(qualified_function_name, optional decorators_to_skip=[decorator1, \
-           decorator2]): Shows the function definition after decorators have been inlined."
     | Help _ -> None
   in
   let path = PyrePath.current_working_directory () in
@@ -407,6 +407,7 @@ let rec parse_request_exn query =
       | "dump_call_graph", [] -> Request.DumpCallGraph
       | "dump_class_hierarchy", [] -> Request.Superclasses []
       | "help", _ -> Request.Help (help ())
+      | "inline_decorators", arguments -> parse_inline_decorators arguments
       | "is_compatible_with", [left; right] -> Request.IsCompatibleWith (access left, access right)
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
       | "modules_of_path", [path] -> Request.ModulesOfPath (PyrePath.create_absolute (string path))
@@ -418,7 +419,6 @@ let rec parse_request_exn query =
       | "types", paths -> Request.TypesInFiles (List.map ~f:string paths)
       | "validate_taint_models", [] -> ValidateTaintModels None
       | "validate_taint_models", [argument] -> Request.ValidateTaintModels (Some (string argument))
-      | "inline_decorators", arguments -> parse_inline_decorators arguments
       | _ -> raise (InvalidQuery "unexpected query"))
   | Ok _ when String.equal query "help" -> Help (help ())
   | Ok _ -> raise (InvalidQuery "unexpected query")
@@ -684,6 +684,11 @@ let rec process_request ~environment ~build_system ~configuration request =
         let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
         Single (Base.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
     | Help help_list -> Single (Base.Help help_list)
+    | InlineDecorators { function_reference; decorators_to_skip } ->
+        InlineDecorators.inline_decorators
+          ~environment:(TypeEnvironment.read_only environment)
+          ~decorators_to_skip:(Reference.Set.of_list decorators_to_skip)
+          function_reference
     | IsCompatibleWith (left, right) ->
         (* We need a special version of parse_and_validate to handle the "unknown" type that
            Monkeycheck may send us *)
@@ -814,11 +819,6 @@ let rec process_request ~environment ~build_system ~configuration request =
             Single (Base.ModelVerificationErrors errors)
         with
         | error -> Error (Exn.to_string error))
-    | InlineDecorators { function_reference; decorators_to_skip } ->
-        InlineDecorators.inline_decorators
-          ~environment:(TypeEnvironment.read_only environment)
-          ~decorators_to_skip:(Reference.Set.of_list decorators_to_skip)
-          function_reference
   in
   try process_request () with
   | ClassHierarchy.Untracked untracked ->
