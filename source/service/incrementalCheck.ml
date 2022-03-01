@@ -173,7 +173,7 @@ let recheck
   (* Associate the new errors with new files *)
   Log.info "Number of new errors = %d" (List.length new_errors);
   List.iter new_errors ~f:(fun error ->
-      let key = AnalysisError.path error in
+      let key = AnalysisError.module_reference error in
       Hashtbl.add_multi errors ~key ~data:error);
 
   Statistics.performance

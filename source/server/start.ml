@@ -234,7 +234,7 @@ let initialize_server_state
     let error_table =
       let table = Ast.Reference.Table.create () in
       let add_error error =
-        let key = Analysis.AnalysisError.path error in
+        let key = Analysis.AnalysisError.module_reference error in
         Hashtbl.add_multi table ~key ~data:error
       in
       List.iter errors ~f:add_error;

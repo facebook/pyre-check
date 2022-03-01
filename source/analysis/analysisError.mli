@@ -461,7 +461,7 @@ include Hashable with type t := t
 
 val create : location:Location.WithModule.t -> kind:kind -> define:Statement.Define.t Node.t -> t
 
-val path : t -> Reference.t
+val module_reference : t -> Reference.t
 
 val code : t -> int
 

@@ -2481,7 +2481,9 @@ let create ~location ~kind ~define =
   { location; kind; signature = { Node.value = signature; location = define_location } }
 
 
-let path { location = { Location.WithModule.module_reference; _ }; _ } = module_reference
+let module_reference { location = { Location.WithModule.module_reference; _ }; _ } =
+  module_reference
+
 
 let code { kind; _ } = code_of_kind kind
 
