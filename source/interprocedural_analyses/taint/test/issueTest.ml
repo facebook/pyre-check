@@ -156,7 +156,7 @@ let test_canonical_location _ =
       ()
     =
     Location.with_module
-      ~qualifier:(Reference.create qualifier)
+      ~module_reference:(Reference.create qualifier)
       {
         start = { line = start_line; column = start_column };
         stop = { line = stop_line; column = stop_column };
