@@ -15,10 +15,6 @@ val get_resolved_type : t -> position:Location.position -> (Location.t * Type.t)
 
 val get_all_resolved_types : t -> (Location.t * Type.t) list
 
-val get_definition : t -> position:Location.position -> Location.WithModule.t option
-
-val get_all_definitions : t -> (Location.t * Location.WithModule.t) list
-
 type symbol_with_definition =
   | Expression of Expression.t
   | TypeAnnotation of Expression.t
