@@ -55,3 +55,9 @@ val resolve_definition_for_symbol
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   symbol_and_cfg_data ->
   Location.WithModule.t option
+
+val location_of_definition
+  :  type_environment:TypeEnvironment.ReadOnly.t ->
+  module_reference:Reference.t ->
+  Location.position ->
+  Location.WithModule.t option

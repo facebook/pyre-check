@@ -1449,13 +1449,11 @@ let test_location_of_definition context =
       ( Format.sprintf
           "location_of_definition(path='%s', line=10, column=9)"
           (PyrePath.append custom_source_root ~element:"non_existent.py" |> PyrePath.absolute),
-        Format.asprintf
-          {|
+        {|
             {
-              "error": "Did not find path `%s/non_existent.py`"
+              "response": []
             }
-          |}
-          (PyrePath.absolute custom_source_root) );
+          |} );
     ]
   in
   assert_queries_with_local_root

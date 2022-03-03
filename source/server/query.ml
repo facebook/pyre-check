@@ -762,58 +762,56 @@ let rec process_request ~environment ~build_system ~configuration request =
         let right = parse_and_validate right in
         GlobalResolution.less_or_equal global_resolution ~left ~right
         |> fun response -> Single (Base.Boolean response)
-    | LocationOfDefinition { path; position } -> (
-        let path_string = PyrePath.absolute path in
-        let lookup =
-          LocationBasedLookupProcessor.get_lookup
-            ~environment
-            ~build_system
-            ~configuration
-            path_string
+    | LocationOfDefinition { path; position } ->
+        let module_of_path path =
+          let relative_path =
+            let { Configuration.Analysis.local_root = root; _ } = configuration in
+            PyrePath.create_relative ~root ~relative:(PyrePath.absolute path)
+          in
+          match
+            BuildSystem.lookup_artifact build_system relative_path
+            |> List.map ~f:(ModuleTracker.lookup_path ~configuration module_tracker)
+          with
+          | [ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ }] -> Some qualifier
+          | _ -> None
         in
-        match lookup with
-        | Ok lookup ->
-            let open Base in
-            let location_to_location_of_definition
-                Location.WithModule.(
-                  {
-                    start = { line = start_line; column = start_column };
-                    stop = { line = stop_line; column = stop_column };
-                    _;
-                  } as location_with_module)
-              =
-              let module_to_absolute_path reference =
-                AstEnvironment.ReadOnly.get_real_path
-                  ~configuration
-                  (TypeEnvironment.ReadOnly.ast_environment read_only_environment)
-                  reference
-                >>| PyrePath.absolute
-              in
-              let Location.WithPath.{ path; _ } =
-                Location.WithModule.instantiate location_with_module ~lookup:module_to_absolute_path
-              in
+        let open Base in
+        let location_to_location_of_definition
+            Location.WithModule.(
               {
-                uri = path;
-                range =
-                  {
-                    start = { line = start_line; character = start_column };
-                    end_ = { line = stop_line; character = stop_column };
-                  };
-              }
-            in
-            let definitions =
-              lookup
-              |> LocationBasedLookup.get_definition ~position
-              >>| location_to_location_of_definition
-              |> Option.to_list
-            in
-            Single (Base.FoundLocationsOfDefinitions definitions)
-        | Error StubShadowing ->
-            Error
-              (Format.sprintf
-                 "Could not find source definition for path `%s` because it is shadowed by a stub"
-                 path_string)
-        | Error FileNotFound -> Error (Format.sprintf "Did not find path `%s`" path_string))
+                start = { line = start_line; column = start_column };
+                stop = { line = stop_line; column = stop_column };
+                _;
+              } as location_with_module)
+          =
+          let module_to_absolute_path reference =
+            AstEnvironment.ReadOnly.get_real_path
+              ~configuration
+              (TypeEnvironment.ReadOnly.ast_environment read_only_environment)
+              reference
+            >>| PyrePath.absolute
+          in
+          let Location.WithPath.{ path; _ } =
+            Location.WithModule.instantiate location_with_module ~lookup:module_to_absolute_path
+          in
+          {
+            uri = path;
+            range =
+              {
+                start = { line = start_line; character = start_column };
+                end_ = { line = stop_line; character = stop_column };
+              };
+          }
+        in
+        module_of_path path
+        >>= (fun module_reference ->
+              LocationBasedLookup.location_of_definition
+                ~type_environment:(TypeEnvironment.read_only environment)
+                ~module_reference
+                position)
+        >>| location_to_location_of_definition
+        |> Option.to_list
+        |> fun definitions -> Single (Base.FoundLocationsOfDefinitions definitions)
     | PathOfModule module_name ->
         ModuleTracker.lookup_source_path module_tracker module_name
         >>= (fun source_path ->

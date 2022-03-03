@@ -704,3 +704,8 @@ let resolve_definition_for_symbol
     "locationBasedLookup: Resolve definition for symbol: %d"
     (Timer.stop_in_ms timer);
   definition_location
+
+
+let location_of_definition ~type_environment ~module_reference position =
+  let result = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
+  result >>= resolve_definition_for_symbol ~type_environment
