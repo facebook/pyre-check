@@ -246,35 +246,6 @@ let test_lookup_definitions_instances context =
   ()
 
 
-let test_lookup_self context =
-  let source =
-    {|
-      class X:
-          def foo(self) -> int:
-            return 42
-
-          def bar(self) -> None:
-              print(self.foo())
-    |}
-  in
-  let lookup = generate_lookup ~context source in
-  let assert_definition = assert_definition ~lookup in
-  assert_definition_list
-    ~lookup
-    [
-      "2:6-2:7 -> test:2:0-7:25";
-      "3:8-3:11 -> test:2:0-7:25";
-      "3:21-3:24 -> :120:0-181:32";
-      "6:8-6:11 -> test:2:0-7:25";
-      "7:8-7:13 -> :381:2-383:16";
-    ];
-  (* TODO(T112570623): Get the definition for `self`. *)
-  assert_definition ~position:{ Location.line = 7; column = 15 } ~definition:None;
-  (* TODO(T112570623): Get the definition for `self.foo()`. *)
-  assert_definition ~position:{ Location.line = 7; column = 20 } ~definition:None;
-  ()
-
-
 let test_narrowest_match _ =
   let open LocationBasedLookup in
   let assert_narrowest expressions expected =
@@ -491,6 +462,50 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:{|
+      class Foo:
+        def bar(self) -> None:
+            print(self.foo())
+    |}
+    "4:12"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Node.create_with_default_location
+                (Expression.Name (Name.Identifier "$parameter$self")));
+         cfg_data = { define_name = !&"test.Foo.bar"; node_id = 5; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+      class Foo:
+        def bar(self) -> None:
+            print(self.foo())
+
+        def foo(self) -> int:
+          return 42
+    |}
+    "4:17"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Node.create_with_default_location
+                (Expression.Name
+                   (Name.Attribute
+                      {
+                        base =
+                          Node.create_with_default_location
+                            (Expression.Name (Name.Identifier "$parameter$self"));
+                        attribute = "foo";
+                        special = false;
+                      })));
+         cfg_data = { define_name = !&"test.Foo.bar"; node_id = 5; statement_index = 0 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -552,6 +567,49 @@ let test_resolve_definition_for_symbol context =
     {
       symbol_with_definition = TypeAnnotation (parse_single_expression "list[str]");
       cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 4 };
+      use_postcondition_info = false;
+    }
+    None;
+  (* TODO(T112570623): Get the definition for `self`. *)
+  assert_resolved_definition
+    ~source:{|
+      class Foo:
+        def bar(self) -> None:
+            print(self.foo())
+    |}
+    {
+      symbol_with_definition =
+        Expression
+          (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$self")));
+      cfg_data = { define_name = !&"test.Foo.bar"; node_id = 5; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    None;
+  (* TODO(T112570623): Get the definition for `self.foo()`. *)
+  assert_resolved_definition
+    ~source:
+      {|
+      class Foo:
+        def bar(self) -> None:
+            print(self.foo())
+
+        def foo(self) -> int:
+          return 42
+    |}
+    {
+      symbol_with_definition =
+        Expression
+          (Node.create_with_default_location
+             (Expression.Name
+                (Name.Attribute
+                   {
+                     base =
+                       Node.create_with_default_location
+                         (Expression.Name (Name.Identifier "$parameter$self"));
+                     attribute = "foo";
+                     special = false;
+                   })));
+      cfg_data = { define_name = !&"test.Foo.bar"; node_id = 5; statement_index = 0 };
       use_postcondition_info = false;
     }
     None;
@@ -1208,7 +1266,6 @@ let () =
          "lookup_pick_narrowest" >:: test_lookup_pick_narrowest;
          "lookup_definitions" >:: test_lookup_definitions;
          "lookup_definitions_instances" >:: test_lookup_definitions_instances;
-         "lookup_self" >:: test_lookup_self;
          "narrowest_match" >:: test_narrowest_match;
          "find_narrowest_spanning_symbol" >:: test_find_narrowest_spanning_symbol;
          "resolve_definition_for_symbol" >:: test_resolve_definition_for_symbol;
