@@ -133,62 +133,6 @@ let assert_definition ~lookup ~position ~definition =
     (LocationBasedLookup.get_definition lookup ~position >>| [%show: Location.WithModule.t])
 
 
-let test_lookup_definitions context =
-  let source =
-    {|
-      from library import Base, return_str
-
-      def getint() -> int:
-          return 12
-
-      def takeint(a:int) -> None:
-          pass
-
-      def foo(a:int, b:str) -> None:
-          pass
-
-      def test() -> None:
-          foo(a=getint(), b="one")
-          takeint(getint())
-          y = return_str()
-          Base()
-    |}
-  in
-  let environment_sources =
-    [
-      ( "library.py",
-        {|
-      class Base: ...
-
-      def return_str() -> str:
-          return "hello"
-    |} );
-    ]
-  in
-  let lookup = generate_lookup ~environment_sources ~context source in
-  let assert_definition = assert_definition ~lookup in
-  assert_definition_list
-    ~lookup
-    [
-      "2:20-2:24 -> library:2:0-2:15";
-      "2:26-2:36 -> library:4:0-5:18";
-      "4:4-4:10 -> test:4:0-5:13";
-      "4:16-4:19 -> :120:0-181:32";
-      "7:4-7:11 -> test:7:0-8:8";
-      "10:4-10:7 -> test:10:0-11:8";
-      "13:4-13:8 -> test:13:0-17:10";
-      "14:4-14:7 -> test:10:0-11:8";
-      "14:10-14:16 -> test:4:0-5:13";
-      "15:4-15:11 -> test:7:0-8:8";
-      "15:12-15:18 -> test:4:0-5:13";
-      "16:8-16:18 -> library:4:0-5:18";
-      "17:4-17:8 -> library:2:0-2:15";
-    ];
-  assert_definition ~position:{ Location.line = 14; column = 0 } ~definition:None;
-  assert_definition ~position:{ Location.line = 14; column = 4 } ~definition:(Some "test:10:0-11:8");
-  assert_definition ~position:{ Location.line = 14; column = 7 } ~definition:None
-
-
 let test_lookup_definitions_instances context =
   let source =
     {|
@@ -506,6 +450,21 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.Foo.bar"; node_id = 5; statement_index = 0 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:
+      {|
+        def takes_int(x: int) -> None: ...
+
+        def foo() -> None:
+          takes_int(x=42)
+    |}
+    "5:14"
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "42");
+         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -523,6 +482,17 @@ let test_resolve_definition_for_symbol context =
       ~printer:[%show: Location.WithModule.t option]
       (expected >>| parse_location_with_module)
       (LocationBasedLookup.resolve_definition_for_symbol ~type_environment symbol_data)
+  in
+  let external_sources =
+    [
+      ( "library.py",
+        {|
+      class Base: ...
+
+      def return_str() -> str:
+          return "hello"
+    |} );
+    ]
   in
   let open LocationBasedLookup in
   assert_resolved_definition
@@ -613,6 +583,17 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     None;
+  assert_resolved_definition
+    ~external_sources
+    ~source:{|
+        from library import Base
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "library.Base");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 5; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some "library:2:0-2:15");
   ()
 
 
@@ -1264,7 +1245,6 @@ let () =
   >::: [
          "lookup_out_of_bounds_location" >:: test_lookup_out_of_bounds_location;
          "lookup_pick_narrowest" >:: test_lookup_pick_narrowest;
-         "lookup_definitions" >:: test_lookup_definitions;
          "lookup_definitions_instances" >:: test_lookup_definitions_instances;
          "narrowest_match" >:: test_narrowest_match;
          "find_narrowest_spanning_symbol" >:: test_find_narrowest_spanning_symbol;
