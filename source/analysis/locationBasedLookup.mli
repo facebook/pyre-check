@@ -48,3 +48,8 @@ val find_narrowest_spanning_symbol
   module_reference:Reference.t ->
   Location.position ->
   symbol_and_cfg_data option
+
+val resolve_definition_for_symbol
+  :  type_environment:TypeEnvironment.ReadOnly.t ->
+  symbol_and_cfg_data ->
+  Location.WithModule.t option

@@ -399,6 +399,72 @@ let test_find_narrowest_spanning_symbol context =
   ()
 
 
+let test_resolve_definition_for_symbol context =
+  let environment_sources =
+    [
+      ( "library.py",
+        {|
+      class Base: ...
+
+      def return_str() -> str:
+          return "hello"
+    |} );
+    ]
+  in
+  let source =
+    {|
+      from library import Base, return_str
+
+      def getint() -> int:
+          return 12
+
+      def takeint(a: int) -> None:
+          pass
+
+      def foo(a: int, b: str) -> None:
+          pass
+
+      def test() -> None:
+          foo(a=getint(), b="one")
+          takeint(getint())
+          y = return_str()
+          Base()
+    |}
+  in
+  let type_environment =
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+      ScratchProject.setup ~context ["test.py", source] ~external_sources:environment_sources
+      |> ScratchProject.build_type_environment
+    in
+    TypeEnvironment.read_only type_environment
+  in
+  let open LocationBasedLookup in
+  let assert_resolved_definition symbol_data expected =
+    assert_equal
+      ~cmp:[%compare.equal: Location.WithModule.t option]
+      ~printer:[%show: Location.WithModule.t option]
+      (expected >>| parse_location_with_module)
+      (LocationBasedLookup.resolve_definition_for_symbol ~type_environment symbol_data)
+  in
+  assert_resolved_definition
+    {
+      symbol_with_definition = Expression (parse_single_expression "test.getint");
+      cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some "test:4:0-5:13");
+  assert_resolved_definition
+    {
+      symbol_with_definition =
+        Expression
+          (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$b")));
+      cfg_data = { define_name = !&"test.foo"; node_id = 0; statement_index = 0 };
+      use_postcondition_info = true;
+    }
+    None;
+  ()
+
+
 (* Annotations *)
 
 let test_lookup_attributes context =
@@ -1051,6 +1117,7 @@ let () =
          "lookup_definitions_instances" >:: test_lookup_definitions_instances;
          "lookup_self" >:: test_lookup_self;
          "find_narrowest_spanning_symbol" >:: test_find_narrowest_spanning_symbol;
+         "resolve_definition_for_symbol" >:: test_resolve_definition_for_symbol;
          "lookup_attributes" >:: test_lookup_attributes;
          "lookup_assign" >:: test_lookup_assign;
          "lookup_call_arguments" >:: test_lookup_call_arguments;

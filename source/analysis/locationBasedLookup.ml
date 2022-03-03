@@ -600,3 +600,83 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
     "locationBasedLookup: Find narrowest symbol spanning position: %d"
     (Timer.stop_in_ms timer);
   List.hd symbols_covering_position
+
+
+let resolve ~resolution expression =
+  try
+    let annotation = Resolution.resolve_expression_to_annotation resolution expression in
+    let original = Annotation.original annotation in
+    if Type.is_top original || Type.is_unbound original then
+      let annotation = Annotation.annotation annotation in
+      if Type.is_top annotation || Type.is_unbound annotation then
+        None
+      else
+        Some annotation
+    else
+      Some original
+  with
+  | ClassHierarchy.Untracked _ -> None
+
+
+let resolve_definition_for_name ~resolution expression =
+  let find_definition reference =
+    GlobalResolution.global_location (Resolution.global_resolution resolution) reference
+    >>= fun location ->
+    Option.some_if
+      (not ([%compare.equal: Location.WithModule.t] location Location.WithModule.any))
+      location
+  in
+  match Node.value expression with
+  | Expression.Name (Name.Identifier identifier) -> find_definition (Reference.create identifier)
+  | Name (Name.Attribute { base; attribute; _ } as name) -> (
+      let definition = name_to_reference name >>= find_definition in
+      match definition with
+      | Some definition -> Some definition
+      | None ->
+          (* Resolve prefix to check if this is a method. *)
+          resolve ~resolution base
+          >>| Type.class_name
+          >>| (fun prefix -> Reference.create ~prefix attribute)
+          >>= find_definition)
+  | _ -> None
+
+
+let resolve_definition_for_symbol
+    ~type_environment
+    {
+      symbol_with_definition;
+      cfg_data = { define_name; node_id; statement_index };
+      use_postcondition_info;
+    }
+  =
+  let timer = Timer.start () in
+  let resolution =
+    let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
+    let resolved_type_lookup =
+      TypeCheck.get_or_recompute_local_annotations ~environment:type_environment define_name
+      |> function
+      | Some resolved_type_lookup -> resolved_type_lookup
+      | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
+    in
+    let annotation_store =
+      let statement_key = [%hash: int * int] (node_id, statement_index) in
+      if use_postcondition_info then
+        LocalAnnotationMap.ReadOnly.get_postcondition resolved_type_lookup ~statement_key
+        |> Option.value ~default:Refinement.Store.empty
+      else
+        LocalAnnotationMap.ReadOnly.get_precondition resolved_type_lookup ~statement_key
+        |> Option.value ~default:Refinement.Store.empty
+    in
+    (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+    TypeCheck.resolution global_resolution ~annotation_store (module TypeCheck.DummyContext)
+  in
+  let definition_location =
+    match symbol_with_definition with
+    | Expression expression -> resolve_definition_for_name ~resolution expression
+    | TypeAnnotation _ -> failwith "TODO(T112570623)"
+  in
+  Log.log
+    ~section:`Performance
+    "locationBasedLookup: Resolve definition for symbol: %d"
+    (Timer.stop_in_ms timer);
+  definition_location

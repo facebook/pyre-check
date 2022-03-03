@@ -186,6 +186,12 @@ let parse_location location =
   | _ -> failwith "expected <position>-<position>"
 
 
+let parse_location_with_module location =
+  let module_reference, location = String.lsplit2_exn ~on:':' location in
+  parse_location location
+  |> Location.with_module ~module_reference:(Reference.create module_reference)
+
+
 let diff ~print format (left, right) =
   let escape string =
     String.substr_replace_all string ~pattern:"\"" ~with_:"\\\""
