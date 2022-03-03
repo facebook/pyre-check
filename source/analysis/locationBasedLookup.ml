@@ -13,22 +13,9 @@ open Statement
 
 type resolved_type_lookup = Type.t Location.Table.t
 
-type definition_lookup = Location.WithModule.t Location.Table.t
+(** This visitor stores the resolved type formation for an expression on the key of its location.
 
-type t = {
-  resolved_types_lookup: resolved_type_lookup;
-  definitions_lookup: definition_lookup;
-}
-
-(** This visitor stores two kinds of information for an expression: its definition and resolved
-    type.
-
-    Definition: For names (such as `foo` or `bar.baz.some_method`), it stores the definition in the
-    `definitions_lookup` table on the key of the name's location.
-
-    Resolved type: For all expressions, store the resolved type in `resolved_types_lookup` on the
-    key of the expression's location. Special-case names such as named arguments or the names in
-    comprehensions and generators.
+    It special-case names such as named arguments or the names in comprehensions and generators.
 
     The result state of this visitor is ignored. We need two read-only pieces of information to
     build the location table: the types resolved for this statement, and a reference to the
@@ -38,12 +25,11 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
     pre_resolution: Resolution.t;
     post_resolution: Resolution.t;
     resolved_types_lookup: resolved_type_lookup;
-    definitions_lookup: definition_lookup;
   }
 
   let node_base
       ~postcondition
-      ({ pre_resolution; post_resolution; resolved_types_lookup; definitions_lookup; _ } as state)
+      ({ pre_resolution; post_resolution; resolved_types_lookup; _ } as state)
       node
     =
     let resolve ~resolution ~expression =
@@ -60,38 +46,6 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
           Some original
       with
       | ClassHierarchy.Untracked _ -> None
-    in
-    let store_definition ({ Node.location; _ } as expression) =
-      let resolve_definition_for_name ~resolution ~expression =
-        let find_definition reference =
-          GlobalResolution.global_location (Resolution.global_resolution resolution) reference
-          >>= fun location ->
-          Option.some_if
-            (not ([%compare.equal: Location.WithModule.t] location Location.WithModule.any))
-            location
-        in
-        match Node.value expression with
-        | Expression.Name (Name.Identifier identifier) ->
-            find_definition (Reference.create identifier)
-        | Name (Name.Attribute { base; attribute; _ } as name) -> (
-            let definition = name_to_reference name >>= find_definition in
-            match definition with
-            | Some definition -> Some definition
-            | None ->
-                (* Resolve prefix to check if this is a method. *)
-                resolve ~resolution ~expression:base
-                >>| Type.class_name
-                >>| (fun prefix -> Reference.create ~prefix attribute)
-                >>= find_definition)
-        | _ -> None
-      in
-      let store_lookup ~table ~location data =
-        if not (Location.equal location Location.any) then
-          Hashtbl.set table ~key:location ~data |> ignore
-      in
-      let resolution = if postcondition then post_resolution else pre_resolution in
-      resolve_definition_for_name ~resolution ~expression
-      |> Option.iter ~f:(store_lookup ~table:definitions_lookup ~location)
     in
     let store_resolved_type ({ Node.location; value } as expression) =
       let store_lookup ~table ~location data =
@@ -173,11 +127,9 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
     in
     match node with
     | Visit.Expression expression ->
-        store_definition expression;
         store_resolved_type expression;
         state
     | Visit.Reference { Node.value = reference; location } ->
-        store_definition (Ast.Expression.from_reference ~location reference);
         store_resolved_type (Ast.Expression.from_reference ~location reference);
         state
     | _ -> state
@@ -278,7 +230,6 @@ end
 
 let create_of_module type_environment qualifier =
   let resolved_types_lookup = Location.Table.create () in
-  let definitions_lookup = Location.Table.create () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
       ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
@@ -317,7 +268,6 @@ let create_of_module type_environment qualifier =
           CreateDefinitionAndAnnotationLookupVisitor.pre_resolution;
           post_resolution;
           resolved_types_lookup;
-          definitions_lookup;
         }
         (Source.create [statement])
       |> ignore
@@ -345,7 +295,7 @@ let create_of_module type_environment qualifier =
          ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment)
   in
   List.iter all_defines ~f:walk_define;
-  { resolved_types_lookup; definitions_lookup }
+  resolved_types_lookup
 
 
 let get_best_location lookup_table ~position =
@@ -376,11 +326,9 @@ let get_best_location lookup_table ~position =
          weight location_left - weight location_right)
 
 
-let get_resolved_type { resolved_types_lookup; _ } ~position =
-  get_best_location resolved_types_lookup ~position
+let get_resolved_type = get_best_location
 
-
-let get_all_resolved_types { resolved_types_lookup; _ } = Hashtbl.to_alist resolved_types_lookup
+let get_all_resolved_types resolved_types_lookup = Hashtbl.to_alist resolved_types_lookup
 
 type symbol_with_definition =
   | Expression of Expression.t

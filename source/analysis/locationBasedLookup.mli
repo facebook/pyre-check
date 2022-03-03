@@ -7,13 +7,16 @@
 
 open Ast
 
-type t
+type resolved_type_lookup
 
-val create_of_module : TypeEnvironment.ReadOnly.t -> Reference.t -> t
+val create_of_module : TypeEnvironment.ReadOnly.t -> Reference.t -> resolved_type_lookup
 
-val get_resolved_type : t -> position:Location.position -> (Location.t * Type.t) option
+val get_resolved_type
+  :  resolved_type_lookup ->
+  position:Location.position ->
+  (Location.t * Type.t) option
 
-val get_all_resolved_types : t -> (Location.t * Type.t) list
+val get_all_resolved_types : resolved_type_lookup -> (Location.t * Type.t) list
 
 type symbol_with_definition =
   | Expression of Expression.t

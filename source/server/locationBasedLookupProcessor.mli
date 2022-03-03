@@ -30,4 +30,4 @@ val get_lookup
   build_system:BuildSystem.t ->
   environment:TypeEnvironment.t ->
   string ->
-  (LocationBasedLookup.t, error_reason) result
+  (LocationBasedLookup.resolved_type_lookup, error_reason) result
