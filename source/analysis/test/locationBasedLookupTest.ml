@@ -275,6 +275,46 @@ let test_lookup_self context =
   ()
 
 
+let test_narrowest_match _ =
+  let open LocationBasedLookup in
+  let assert_narrowest expressions expected =
+    let narrowest_matching_expression =
+      expressions
+      |> List.map ~f:(fun (expression, location) ->
+             {
+               symbol_with_definition =
+                 Expression
+                   { (parse_single_expression expression) with location = parse_location location };
+               cfg_data = { define_name = !&"test.foo"; node_id = 0; statement_index = 0 };
+               use_postcondition_info = false;
+             })
+      |> narrowest_match
+      >>| function
+      | { symbol_with_definition = Expression expression; _ } -> expression
+      | _ -> failwith "Expected expression"
+    in
+    assert_equal
+      ~cmp:(fun left right ->
+        match left, right with
+        | Some left, Some right -> location_insensitive_compare left right = 0
+        | None, None -> true
+        | _ -> false)
+      ~printer:[%show: Expression.t option]
+      (expected >>| parse_single_expression)
+      narrowest_matching_expression
+  in
+  assert_narrowest
+    [
+      "library.return_str().capitalize().lower()", "2:5-2:38";
+      "library.return_str().capitalize().lower", "2:5-2:36";
+      "library.return_str().capitalize()", "2:5-2:30";
+      "library.return_str().capitalize", "2:5-2:28";
+    ]
+    (Some "library.return_str().capitalize");
+  assert_narrowest [] None;
+  ()
+
+
 let test_find_narrowest_spanning_symbol context =
   let environment_sources =
     [
@@ -1131,6 +1171,7 @@ let () =
          "lookup_definitions" >:: test_lookup_definitions;
          "lookup_definitions_instances" >:: test_lookup_definitions_instances;
          "lookup_self" >:: test_lookup_self;
+         "narrowest_match" >:: test_narrowest_match;
          "find_narrowest_spanning_symbol" >:: test_find_narrowest_spanning_symbol;
          "resolve_definition_for_symbol" >:: test_resolve_definition_for_symbol;
          "lookup_attributes" >:: test_lookup_attributes;

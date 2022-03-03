@@ -43,6 +43,8 @@ val location_insensitive_compare_symbol_and_cfg_data
   symbol_and_cfg_data ->
   int
 
+val narrowest_match : symbol_and_cfg_data list -> symbol_and_cfg_data option
+
 val find_narrowest_spanning_symbol
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   module_reference:Reference.t ->

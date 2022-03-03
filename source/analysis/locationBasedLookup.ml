@@ -554,6 +554,29 @@ module FindNarrowestSpanningExpressionOrTypeAnnotation (PositionData : PositionD
     !state
 end
 
+let narrowest_match symbol_data_list =
+  let compare_by_length
+      { symbol_with_definition = Expression left | TypeAnnotation left; _ }
+      { symbol_with_definition = Expression right | TypeAnnotation right; _ }
+    =
+    let open Location in
+    let { start = left_start; stop = left_stop } = Node.location left in
+    let { start = right_start; stop = right_stop } = Node.location right in
+    (* We assume that if expression A overlaps with expression B, then A contains B (or vice versa).
+       That is, there are no partially-overlapping expressions. *)
+    if compare_position left_start right_start = -1 || compare_position left_stop right_stop = 1
+    then
+      1
+    else if
+      compare_position right_start left_start = -1 || compare_position right_stop left_stop = 1
+    then
+      -1
+    else
+      0
+  in
+  List.min_elt ~compare:compare_by_length symbol_data_list
+
+
 let find_narrowest_spanning_symbol ~type_environment ~module_reference position =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
