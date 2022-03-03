@@ -1152,20 +1152,24 @@ class Configuration:
         if unwatched_dependency is None:
             return None
         unwatched_root = Path(unwatched_dependency.files.root)
-        if not unwatched_root.is_dir():
-            LOG.warning(
-                "Nonexistent directory passed in to `unwatched_dependency`: "
-                f"`{unwatched_root}`"
-            )
+        try:
+            if not unwatched_root.is_dir():
+                LOG.warning(
+                    "Nonexistent directory passed in to `unwatched_dependency`: "
+                    f"`{unwatched_root}`"
+                )
+                return None
+            checksum_path = unwatched_root / unwatched_dependency.files.checksum_path
+            if not checksum_path.is_file():
+                LOG.warning(
+                    "Nonexistent file passed in to `unwatched_dependency`: "
+                    f"`{checksum_path}`"
+                )
+                return None
+            return self.unwatched_dependency
+        except PermissionError as error:
+            LOG.warning(str(error))
             return None
-        checksum_path = unwatched_root / unwatched_dependency.files.checksum_path
-        if not checksum_path.is_file():
-            LOG.warning(
-                "Nonexistent file passed in to `unwatched_dependency`: "
-                f"`{checksum_path}`"
-            )
-            return None
-        return self.unwatched_dependency
 
     # Expansion and validation of search paths cannot happen at Configuration creation
     # because link trees need to be built first.
