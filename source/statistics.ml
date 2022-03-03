@@ -163,7 +163,7 @@ let performance
   =
   let time_in_seconds = Timer.stop_in_sec timer in
   let integer_time_in_microseconds = time_in_seconds *. 1e6 |> Int.of_float in
-  Log.log ~section "%s: %.2fs" (String.capitalize name) time_in_seconds;
+  Log.log ~section "%s: %.3fs" (String.capitalize name) time_in_seconds;
   Profiling.log_performance_event (fun () ->
       let tags =
         List.map ~f:(fun (name, value) -> name, string_of_int value) integers
