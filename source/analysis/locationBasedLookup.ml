@@ -622,7 +622,7 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
     ~section:`Performance
     "locationBasedLookup: Find narrowest symbol spanning position: %d"
     (Timer.stop_in_ms timer);
-  List.hd symbols_covering_position
+  narrowest_match symbols_covering_position
 
 
 let resolve ~resolution expression =

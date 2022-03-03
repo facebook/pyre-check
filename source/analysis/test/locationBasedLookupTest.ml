@@ -343,9 +343,10 @@ let test_find_narrowest_spanning_symbol context =
       def test() -> None:
           foo(a=getint(), b="one")
           takeint(getint())
-          y = return_str()
-          Base()
+          y = return_str().capitalize().lower()
+          print(Base())
           xs: list[str] = ["a", "b"]
+          getint() + 2
     |}
   in
   let type_environment =
@@ -434,6 +435,37 @@ let test_find_narrowest_spanning_symbol context =
        {
          symbol_with_definition = TypeAnnotation (parse_single_expression "list[str]");
          cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 4 };
+         use_postcondition_info = false;
+       });
+  (* Look up `Base()` in `print(Base())`. *)
+  assert_narrowest_expression
+    "17:11"
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "library.Base");
+         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 3 };
+         use_postcondition_info = false;
+       });
+  (* Look up `+` in `getint() + 2`.
+
+     TODO(T112570623): This should probably be `getint().__add__` so that we can go to the
+     definition of `+`. *)
+  assert_narrowest_expression
+    "19:13"
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "test.getint() + 2");
+         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 5 };
+         use_postcondition_info = false;
+       });
+  (* Look up `return_str().capitalize()` in `y = return_str().capitalize().lower()`. *)
+  assert_narrowest_expression
+    "16:26"
+    (Some
+       {
+         symbol_with_definition =
+           Expression (parse_single_expression "(library.return_str()).capitalize");
+         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 2 };
          use_postcondition_info = false;
        });
   ()
