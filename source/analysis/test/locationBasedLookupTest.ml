@@ -316,7 +316,7 @@ let test_narrowest_match _ =
 
 
 let test_find_narrowest_spanning_symbol context =
-  let environment_sources =
+  let external_sources =
     [
       ( "library.py",
         {|
@@ -327,37 +327,15 @@ let test_find_narrowest_spanning_symbol context =
     |} );
     ]
   in
-  let source =
-    {|
-      from library import Base, return_str
-
-      def getint() -> int:
-          return 12
-
-      def takeint(a: int) -> None:
-          pass
-
-      def foo(a: int, b: str) -> None:
-          pass
-
-      def test() -> None:
-          foo(a=getint(), b="one")
-          takeint(getint())
-          y = return_str().capitalize().lower()
-          print(Base())
-          xs: list[str] = ["a", "b"]
-          getint() + 2
-    |}
-  in
-  let type_environment =
-    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] ~external_sources:environment_sources
-      |> ScratchProject.build_type_environment
-    in
-    TypeEnvironment.read_only type_environment
-  in
   let open LocationBasedLookup in
-  let assert_narrowest_expression position expected =
+  let assert_narrowest_expression ?(external_sources = []) ~source position expected =
+    let type_environment =
+      let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] ~external_sources
+        |> ScratchProject.build_type_environment
+      in
+      TypeEnvironment.read_only type_environment
+    in
     assert_equal
       ~cmp:(fun left right ->
         Option.compare location_insensitive_compare_symbol_and_cfg_data left right = 0)
@@ -368,27 +346,42 @@ let test_find_narrowest_spanning_symbol context =
          ~module_reference:!&"test"
          (parse_position position))
   in
-  (* Look up `getint` in `def getint() -> int`. *)
   assert_narrowest_expression
-    "4:4"
+    ~source:{|
+        def getint() -> int:
+          return 12
+    |}
+    "2:4"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "test.getint");
          cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
          use_postcondition_info = false;
        });
-  assert_narrowest_expression "4:3" None;
-  (* Look up the type annotation `int` in `def getint() -> int`. *)
   assert_narrowest_expression
-    "4:16"
+    ~source:{|
+        def getint() -> int:
+          return 12
+    |}
+    "2:3"
+    None;
+  assert_narrowest_expression
+    ~source:{|
+        def getint() -> int:
+          return 12
+    |}
+    "2:16"
     (Some
        {
          symbol_with_definition = TypeAnnotation (parse_single_expression "int");
          cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
          use_postcondition_info = false;
        });
-  (* Look up the import `Base`. *)
   assert_narrowest_expression
+    ~external_sources
+    ~source:{|
+        from library import Base
+    |}
     "2:20"
     (Some
        {
@@ -396,9 +389,11 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.$toplevel"; node_id = 5; statement_index = 0 };
          use_postcondition_info = false;
        });
-  (* Look up the parameter `b` in `def foo(a: int, b: str) -> None`. *)
   assert_narrowest_expression
-    "10:16"
+    ~source:{|
+        def foo(a: int, b: str) -> None: ...
+    |}
+    "2:16"
     (Some
        {
          symbol_with_definition =
@@ -407,65 +402,93 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.foo"; node_id = 0; statement_index = 0 };
          use_postcondition_info = true;
        });
-  (* Look up `xs` in `xs: list[str]`. *)
   assert_narrowest_expression
-    "18:4"
+    ~source:{|
+        def foo() -> None:
+          xs: list[str] = ["a", "b"]
+    |}
+    "3:2"
     (Some
        {
          symbol_with_definition =
            Expression
              (Node.create_with_default_location
-                (Expression.Name (Name.Identifier "$local_test?test$xs")));
-         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 4 };
+                (Expression.Name (Name.Identifier "$local_test?foo$xs")));
+         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
          use_postcondition_info = true;
        });
-  (* Look up `["a", "b"]` in `xs: list[str] = ["a", "b"]`. *)
   assert_narrowest_expression
-    "18:20"
+    ~source:{|
+        def foo() -> None:
+          xs: list[str] = ["a", "b"]
+    |}
+    "3:18"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression {|["a", "b"]|});
-         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 4 };
+         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
          use_postcondition_info = false;
        });
-  (* Look up the type annotation `list[str]` in `xs: list[str]`. *)
   assert_narrowest_expression
-    "18:8"
+    ~source:{|
+        def foo() -> None:
+          xs: list[str] = ["a", "b"]
+    |}
+    "3:6"
     (Some
        {
          symbol_with_definition = TypeAnnotation (parse_single_expression "list[str]");
-         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 4 };
+         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
          use_postcondition_info = false;
        });
-  (* Look up `Base()` in `print(Base())`. *)
   assert_narrowest_expression
-    "17:11"
+    ~external_sources
+    ~source:
+      {|
+        from library import Base
+        def foo() -> None:
+          print(Base())
+    |}
+    "4:8"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "library.Base");
-         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 3 };
+         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
          use_postcondition_info = false;
        });
-  (* Look up `+` in `getint() + 2`.
-
-     TODO(T112570623): This should probably be `getint().__add__` so that we can go to the
+  (* TODO(T112570623): This should probably be `getint().__add__` so that we can go to the
      definition of `+`. *)
   assert_narrowest_expression
-    "19:13"
+    ~source:
+      {|
+        def getint() -> int:
+          return 42
+
+        def foo() -> None:
+          getint() + 2
+    |}
+    "6:11"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "test.getint() + 2");
-         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 5 };
+         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
          use_postcondition_info = false;
        });
-  (* Look up `return_str().capitalize()` in `y = return_str().capitalize().lower()`. *)
   assert_narrowest_expression
-    "16:26"
+    ~source:
+      {|
+        def return_str() -> str:
+          return "hello"
+
+        def foo() -> None:
+          return_str().capitalize().lower()
+    |}
+    "6:19"
     (Some
        {
          symbol_with_definition =
-           Expression (parse_single_expression "(library.return_str()).capitalize");
-         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 2 };
+           Expression (parse_single_expression "(test.return_str()).capitalize");
+         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
          use_postcondition_info = false;
        });
   ()
