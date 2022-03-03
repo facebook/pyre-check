@@ -25,6 +25,7 @@ from .commands.fixme import Fixme
 from .commands.fixme_all import FixmeAll
 from .commands.fixme_single import FixmeSingle
 from .commands.global_version_update import GlobalVersionUpdate
+from .commands.pysa_version_update import PysaVersionUpdate
 from .commands.strict_default import StrictDefault
 from .commands.support_sqlalchemy import SupportSqlalchemy
 from .commands.targets_to_configuration import TargetsToConfiguration
@@ -69,6 +70,10 @@ def run(repository: Repository) -> None:
     # to all local configurations to run previous version.
     update_global_version = commands.add_parser("update-global-version")
     GlobalVersionUpdate.add_arguments(update_global_version)
+
+    # Subcommand: Set global configuration `pysa_version` to given hash
+    update_pysa_version = commands.add_parser("update-pysa-version")
+    PysaVersionUpdate.add_arguments(update_pysa_version)
 
     # Subcommand: Fixme all errors inputted through stdin.
     fixme = commands.add_parser("fixme")

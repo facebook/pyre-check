@@ -40,6 +40,7 @@ class Configuration:
             "source_directories"
         )
         self.version: Optional[str] = json_contents.get("version")
+        self.pysa_version: Optional[str] = json_contents.get("pysa_version")
         self.use_buck_builder: Optional[bool] = json_contents.get("use_buck_builder")
         self.use_buck_source_database: Optional[bool] = json_contents.get(
             "use_buck_source_database"
@@ -64,6 +65,7 @@ class Configuration:
         update_contents("targets")
         update_contents("source_directories")
         update_contents("version")
+        update_contents("pysa_version")
         update_contents("strict")
         update_contents("use_buck_builder")
         update_contents("use_buck_source_database")
@@ -152,6 +154,9 @@ class Configuration:
 
     def set_version(self, version: str) -> None:
         self.version = version
+
+    def set_pysa_version(self, pysa_version: str) -> None:
+        self.pysa_version = pysa_version
 
     def enable_source_database_buck_builder(self) -> None:
         self.use_buck_builder = True
