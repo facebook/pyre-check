@@ -495,61 +495,36 @@ let test_find_narrowest_spanning_symbol context =
 
 
 let test_resolve_definition_for_symbol context =
-  let environment_sources =
-    [
-      ( "library.py",
-        {|
-      class Base: ...
-
-      def return_str() -> str:
-          return "hello"
-    |} );
-    ]
-  in
-  let source =
-    {|
-      from library import Base, return_str
-
-      def getint() -> int:
-          return 12
-
-      def takeint(a: int) -> None:
-          pass
-
-      def foo(a: int, b: str) -> None:
-          pass
-
-      def test() -> None:
-          foo(a=getint(), b="one")
-          takeint(getint())
-          y = return_str()
-          Base()
-          xs: list[str] = ["a", "b"]
-    |}
-  in
-  let type_environment =
-    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] ~external_sources:environment_sources
-      |> ScratchProject.build_type_environment
+  let assert_resolved_definition ?(external_sources = []) ~source symbol_data expected =
+    let type_environment =
+      let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] ~external_sources
+        |> ScratchProject.build_type_environment
+      in
+      TypeEnvironment.read_only type_environment
     in
-    TypeEnvironment.read_only type_environment
-  in
-  let open LocationBasedLookup in
-  let assert_resolved_definition symbol_data expected =
     assert_equal
       ~cmp:[%compare.equal: Location.WithModule.t option]
       ~printer:[%show: Location.WithModule.t option]
       (expected >>| parse_location_with_module)
       (LocationBasedLookup.resolve_definition_for_symbol ~type_environment symbol_data)
   in
+  let open LocationBasedLookup in
   assert_resolved_definition
+    ~source:{|
+        def getint() -> int:
+          return 42
+    |}
     {
       symbol_with_definition = Expression (parse_single_expression "test.getint");
       cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
       use_postcondition_info = false;
     }
-    (Some "test:4:0-5:13");
+    (Some "test:2:0-3:11");
   assert_resolved_definition
+    ~source:{|
+        def foo(a: int, b: str) -> None: ...
+    |}
     {
       symbol_with_definition =
         Expression
@@ -559,6 +534,10 @@ let test_resolve_definition_for_symbol context =
     }
     None;
   assert_resolved_definition
+    ~source:{|
+        def getint() -> int:
+          return 42
+    |}
     {
       symbol_with_definition = TypeAnnotation (parse_single_expression "int");
       cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
@@ -566,6 +545,10 @@ let test_resolve_definition_for_symbol context =
     }
     (Some ":120:0-181:32");
   assert_resolved_definition
+    ~source:{|
+        def foo() -> None:
+          xs: list[str] = ["a", "b"]
+    |}
     {
       symbol_with_definition = TypeAnnotation (parse_single_expression "list[str]");
       cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 4 };
