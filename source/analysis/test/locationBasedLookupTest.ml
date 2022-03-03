@@ -10,6 +10,7 @@ open OUnit2
 open Ast
 open Analysis
 open Pyre
+open Expression
 open Test
 
 let show_location { Location.start; stop } =
@@ -271,6 +272,130 @@ let test_lookup_self context =
   assert_definition ~position:{ Location.line = 7; column = 15 } ~definition:None;
   (* TODO(T112570623): Get the definition for `self.foo()`. *)
   assert_definition ~position:{ Location.line = 7; column = 20 } ~definition:None;
+  ()
+
+
+let test_find_narrowest_spanning_symbol context =
+  let environment_sources =
+    [
+      ( "library.py",
+        {|
+      class Base: ...
+
+      def return_str() -> str:
+          return "hello"
+    |} );
+    ]
+  in
+  let source =
+    {|
+      from library import Base, return_str
+
+      def getint() -> int:
+          return 12
+
+      def takeint(a: int) -> None:
+          pass
+
+      def foo(a: int, b: str) -> None:
+          pass
+
+      def test() -> None:
+          foo(a=getint(), b="one")
+          takeint(getint())
+          y = return_str()
+          Base()
+          xs: list[str] = ["a", "b"]
+    |}
+  in
+  let type_environment =
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+      ScratchProject.setup ~context ["test.py", source] ~external_sources:environment_sources
+      |> ScratchProject.build_type_environment
+    in
+    TypeEnvironment.read_only type_environment
+  in
+  let open LocationBasedLookup in
+  let assert_narrowest_expression position expected =
+    assert_equal
+      ~cmp:(fun left right ->
+        Option.compare location_insensitive_compare_symbol_and_cfg_data left right = 0)
+      ~printer:[%show: symbol_and_cfg_data option]
+      expected
+      (LocationBasedLookup.find_narrowest_spanning_symbol
+         ~type_environment
+         ~module_reference:!&"test"
+         (parse_position position))
+  in
+  (* Look up `getint` in `def getint() -> int`. *)
+  assert_narrowest_expression
+    "4:4"
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "test.getint");
+         cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression "4:3" None;
+  (* Look up the type annotation `int` in `def getint() -> int`. *)
+  assert_narrowest_expression
+    "4:16"
+    (Some
+       {
+         symbol_with_definition = TypeAnnotation (parse_single_expression "int");
+         cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  (* Look up the import `Base`. *)
+  assert_narrowest_expression
+    "2:20"
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "library.Base");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 5; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  (* Look up the parameter `b` in `def foo(a: int, b: str) -> None`. *)
+  assert_narrowest_expression
+    "10:16"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$b")));
+         cfg_data = { define_name = !&"test.foo"; node_id = 0; statement_index = 0 };
+         use_postcondition_info = true;
+       });
+  (* Look up `xs` in `xs: list[str]`. *)
+  assert_narrowest_expression
+    "18:4"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Node.create_with_default_location
+                (Expression.Name (Name.Identifier "$local_test?test$xs")));
+         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 4 };
+         use_postcondition_info = true;
+       });
+  (* Look up `["a", "b"]` in `xs: list[str] = ["a", "b"]`. *)
+  assert_narrowest_expression
+    "18:20"
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression {|["a", "b"]|});
+         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 4 };
+         use_postcondition_info = false;
+       });
+  (* Look up the type annotation `list[str]` in `xs: list[str]`. *)
+  assert_narrowest_expression
+    "18:8"
+    (Some
+       {
+         symbol_with_definition = TypeAnnotation (parse_single_expression "list[str]");
+         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 4 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -925,6 +1050,7 @@ let () =
          "lookup_definitions" >:: test_lookup_definitions;
          "lookup_definitions_instances" >:: test_lookup_definitions_instances;
          "lookup_self" >:: test_lookup_self;
+         "find_narrowest_spanning_symbol" >:: test_find_narrowest_spanning_symbol;
          "lookup_attributes" >:: test_lookup_attributes;
          "lookup_assign" >:: test_lookup_assign;
          "lookup_call_arguments" >:: test_lookup_call_arguments;

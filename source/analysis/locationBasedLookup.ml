@@ -387,3 +387,216 @@ let get_definition { definitions_lookup; _ } ~position =
 let get_all_resolved_types { resolved_types_lookup; _ } = Hashtbl.to_alist resolved_types_lookup
 
 let get_all_definitions { definitions_lookup; _ } = Hashtbl.to_alist definitions_lookup
+
+type symbol_with_definition =
+  | Expression of Expression.t
+  | TypeAnnotation of Expression.t
+[@@deriving compare, show]
+
+type cfg_data = {
+  define_name: Reference.t;
+  node_id: int;
+  statement_index: int;
+}
+[@@deriving compare, show]
+
+type symbol_and_cfg_data = {
+  symbol_with_definition: symbol_with_definition;
+  cfg_data: cfg_data;
+  (* This indicates whether the expression needs to be processed using information after checking
+     the current statement.
+
+     For example, in `x = f(x)`, we want the type of the target `x` after typechecking the statement
+     but we want the type of the argument `x` before typechecking the statement. *)
+  use_postcondition_info: bool;
+}
+[@@deriving compare, show]
+
+let location_insensitive_compare_symbol_and_cfg_data
+    ({ symbol_with_definition = left_symbol_with_definition; _ } as left)
+    ({ symbol_with_definition = right_symbol_with_definition; _ } as right)
+  =
+  let first_result =
+    match left_symbol_with_definition, right_symbol_with_definition with
+    | Expression left_expression, Expression right_expression
+    | TypeAnnotation left_expression, TypeAnnotation right_expression ->
+        Expression.location_insensitive_compare left_expression right_expression
+    | Expression _, TypeAnnotation _ -> -1
+    | TypeAnnotation _, Expression _ -> 1
+  in
+  if first_result = 0 then
+    [%compare: symbol_and_cfg_data]
+      left
+      { right with symbol_with_definition = left_symbol_with_definition }
+  else
+    first_result
+
+
+module type PositionData = sig
+  val position : Location.position
+
+  val cfg_data : cfg_data
+end
+
+module FindNarrowestSpanningExpression (PositionData : PositionData) = struct
+  type t = symbol_and_cfg_data list
+
+  let node_common ~use_postcondition_info state = function
+    | Visit.Expression ({ Node.location; _ } as expression)
+      when Location.contains ~location PositionData.position ->
+        {
+          symbol_with_definition = Expression expression;
+          cfg_data = PositionData.cfg_data;
+          use_postcondition_info;
+        }
+        :: state
+    | _ -> state
+
+
+  let node = node_common ~use_postcondition_info:false
+
+  let node_using_postcondition = node_common ~use_postcondition_info:true
+
+  let visit_statement_children _ { Node.location; _ } =
+    Location.contains ~location PositionData.position
+
+
+  let visit_format_string_children _ _ = false
+end
+
+(** This is a simple wrapper around [FindNarrowestSpanningExpression]. It visits imported symbols
+    and type annotations, and ensures that we use postcondition information when dealing with
+    function parameters or target variables in assignment statements. . *)
+module FindNarrowestSpanningExpressionOrTypeAnnotation (PositionData : PositionData) = struct
+  include Visit.MakeNodeVisitor (FindNarrowestSpanningExpression (PositionData))
+
+  let visit state source =
+    let visit_statement_for_type_annotations_and_parameters
+        ~state
+        ({ Node.location; _ } as statement)
+      =
+      let module Visitor = FindNarrowestSpanningExpression (PositionData) in
+      let visit_using_precondition_info = visit_expression ~state ~visitor_override:Visitor.node in
+      let visit_using_postcondition_info =
+        visit_expression ~state ~visitor_override:Visitor.node_using_postcondition
+      in
+      let store_type_annotation ({ Node.location; _ } as annotation) =
+        if Location.contains ~location PositionData.position then
+          state :=
+            {
+              symbol_with_definition = TypeAnnotation annotation;
+              cfg_data = PositionData.cfg_data;
+              use_postcondition_info = false;
+            }
+            :: !state
+      in
+      if Location.contains ~location PositionData.position then
+        match Node.value statement with
+        | Statement.Assign { Assign.target; annotation; value; _ } ->
+            visit_using_postcondition_info target;
+            Option.iter annotation ~f:store_type_annotation;
+            visit_using_precondition_info value
+        | Define
+            ({ Define.signature = { name; parameters; decorators; return_annotation; _ }; _ } as
+            define) ->
+            let visit_parameter { Node.value = { Parameter.annotation; value; name }; location } =
+              (* Location in the AST includes both the parameter name and the annotation. For our
+                 purpose, we just need the location of the name. *)
+              let location =
+                let { Location.start = { Location.line = start_line; column = start_column }; _ } =
+                  location
+                in
+                {
+                  Location.start = { Location.line = start_line; column = start_column };
+                  stop =
+                    {
+                      Location.line = start_line;
+                      column = start_column + String.length (Identifier.sanitized name);
+                    };
+                }
+              in
+              Expression.Name (Name.Identifier name)
+              |> Node.create ~location
+              |> visit_using_postcondition_info;
+              Option.iter value ~f:visit_using_postcondition_info;
+              Option.iter annotation ~f:store_type_annotation
+            in
+            let define_name =
+              Ast.Expression.from_reference
+                ~location:(Define.name_location ~body_location:statement.location define)
+                name
+            in
+            visit_using_precondition_info define_name;
+            List.iter parameters ~f:visit_parameter;
+            List.iter decorators ~f:visit_using_postcondition_info;
+            Option.iter return_annotation ~f:store_type_annotation
+            (* Note that we do not recurse on the body of the define. That is done by the caller
+               when walking the CFG. *)
+        | Import { Import.from; imports } ->
+            let visit_import { Node.value = { Import.name; _ }; location = import_location } =
+              let qualifier =
+                match from with
+                | Some from -> from
+                | None -> Reference.empty
+              in
+              let create_qualified_expression ~location =
+                Reference.combine qualifier name |> Ast.Expression.from_reference ~location
+              in
+              create_qualified_expression ~location:import_location |> visit_using_precondition_info
+            in
+            List.iter imports ~f:visit_import
+        | _ -> visit_statement ~state statement
+    in
+    let state = ref state in
+    List.iter
+      ~f:(visit_statement_for_type_annotations_and_parameters ~state)
+      source.Source.statements;
+    !state
+end
+
+let find_narrowest_spanning_symbol ~type_environment ~module_reference position =
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
+  let walk_define
+      names_so_far
+      ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
+    =
+    let walk_statement ~node_id statement_index symbols_so_far statement =
+      let module FindNarrowestSpanningExpressionOrTypeAnnotation =
+      FindNarrowestSpanningExpressionOrTypeAnnotation (struct
+        let position = position
+
+        let cfg_data = { define_name = name; node_id; statement_index }
+      end)
+      in
+      FindNarrowestSpanningExpressionOrTypeAnnotation.visit [] (Source.create [statement])
+      @ symbols_so_far
+    in
+    let walk_cfg_node ~key:node_id ~data:cfg_node names_so_far =
+      let statements = Cfg.Node.statements cfg_node in
+      List.foldi statements ~init:names_so_far ~f:(walk_statement ~node_id)
+    in
+    let cfg = Cfg.create define in
+    let names_so_far = Hashtbl.fold cfg ~init:names_so_far ~f:walk_cfg_node in
+    (* Special-case define signature processing, since this is not included in the define's cfg. *)
+    let define_signature =
+      { define_node with value = Statement.Define { define with Define.body = [] } }
+    in
+    walk_statement ~node_id:Cfg.entry_index 0 names_so_far define_signature
+  in
+  let all_defines =
+    let unannotated_global_environment =
+      GlobalResolution.unannotated_global_environment global_resolution
+    in
+    UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+      unannotated_global_environment
+      module_reference
+    |> List.filter_map
+         ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment)
+  in
+  let timer = Timer.start () in
+  let symbols_covering_position = List.fold all_defines ~init:[] ~f:walk_define in
+  Log.log
+    ~section:`Performance
+    "locationBasedLookup: Find narrowest symbol spanning position: %d"
+    (Timer.stop_in_ms timer);
+  List.hd symbols_covering_position
