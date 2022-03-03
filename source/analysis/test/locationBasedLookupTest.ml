@@ -113,83 +113,6 @@ let test_lookup_pick_narrowest context =
   assert_annotation ~position:{ Location.line = 3; column = 28 } ~annotation:None
 
 
-(* Definitions *)
-let assert_definition_list ~lookup expected =
-  let list_diff format list = Format.fprintf format "%s\n" (String.concat ~sep:"\n" list) in
-  assert_equal
-    ~printer:(String.concat ~sep:", ")
-    ~pp_diff:(diff ~print:list_diff)
-    expected
-    (LocationBasedLookup.get_all_definitions lookup
-    |> List.sort ~compare:[%compare: Location.t * Location.WithModule.t]
-    |> List.map ~f:(fun (key, data) ->
-           Format.asprintf "%s -> %s" (show_location key) ([%show: Location.WithModule.t] data)))
-
-
-let assert_definition ~lookup ~position ~definition =
-  assert_equal
-    ~printer:(Option.value ~default:"(none)")
-    definition
-    (LocationBasedLookup.get_definition lookup ~position >>| [%show: Location.WithModule.t])
-
-
-let test_lookup_definitions_instances context =
-  let source =
-    {|
-      class X:
-          def bar(self) -> None:
-              pass
-
-      class Y:
-          x: X = X()
-          def foo(self) -> X:
-              return X()
-
-      def test() -> None:
-          x = X()
-          x.bar()
-          X().bar()
-          y = Y()
-          y.foo().bar()
-          Y().foo().bar()
-          y.x.bar()
-          Y().x.bar()
-    |}
-  in
-  let lookup = generate_lookup ~context source in
-  let assert_definition = assert_definition ~lookup in
-  assert_definition_list
-    ~lookup
-    [
-      "2:6-2:7 -> test:2:0-4:12";
-      "3:8-3:11 -> test:2:0-4:12";
-      "6:6-6:7 -> test:6:0-9:18";
-      "7:4-7:5 -> test:6:0-9:18";
-      "7:7-7:8 -> test:2:0-4:12";
-      "7:11-7:12 -> test:2:0-4:12";
-      "8:8-8:11 -> test:6:0-9:18";
-      "8:21-8:22 -> test:2:0-4:12";
-      "9:15-9:16 -> test:2:0-4:12";
-      "11:4-11:8 -> test:11:0-19:15";
-      "12:8-12:9 -> test:2:0-4:12";
-      "14:4-14:5 -> test:2:0-4:12";
-      "15:8-15:9 -> test:6:0-9:18";
-      "17:4-17:5 -> test:6:0-9:18";
-      "19:4-19:5 -> test:6:0-9:18";
-    ];
-  (* TODO(T112570623): Get the definition for `Y().foo().bar()`self`. *)
-  assert_definition ~position:{ Location.line = 16; column = 4 } ~definition:None;
-  assert_definition ~position:{ Location.line = 16; column = 5 } ~definition:None;
-  assert_definition ~position:{ Location.line = 16; column = 6 } ~definition:None;
-  assert_definition ~position:{ Location.line = 16; column = 8 } ~definition:None;
-  assert_definition ~position:{ Location.line = 16; column = 9 } ~definition:None;
-  assert_definition ~position:{ Location.line = 16; column = 11 } ~definition:None;
-  assert_definition ~position:{ Location.line = 16; column = 12 } ~definition:None;
-  assert_definition ~position:{ Location.line = 16; column = 14 } ~definition:None;
-  assert_definition ~position:{ Location.line = 16; column = 15 } ~definition:None;
-  ()
-
-
 let test_narrowest_match _ =
   let open LocationBasedLookup in
   let assert_narrowest expressions expected =
@@ -465,6 +388,59 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:
+      {|
+        class Foo: ...
+
+        class Bar:
+          some_attribute: Foo = Foo()
+    |}
+    "5:2"
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "test.Bar.some_attribute");
+         cfg_data = { define_name = !&"test.Bar.$class_toplevel"; node_id = 5; statement_index = 0 };
+         use_postcondition_info = true;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+        class Foo: ...
+
+        class Bar:
+          some_attribute: Foo = Foo()
+    |}
+    "5:18"
+    (Some
+       {
+         symbol_with_definition = TypeAnnotation (parse_single_expression "test.Foo");
+         cfg_data = { define_name = !&"test.Bar.$class_toplevel"; node_id = 5; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+        class Foo:
+          def bar(self) -> None:
+              pass
+
+        class Bar:
+          some_attribute: Foo = Foo()
+
+          def foo(self) -> Foo:
+              return Foo()
+
+        def test() -> None:
+          Bar().foo().bar()
+    |}
+    "13:14"
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "(test.Bar()).foo().bar");
+         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 0 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -594,6 +570,45 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     (Some "library:2:0-2:15");
+  (* TODO(T112570623): Get the definition for `return_str()`. *)
+  assert_resolved_definition
+    ~source:
+      {|
+        def return_str() -> str:
+          return "hello"
+
+        def foo() -> None:
+          return_str().capitalize().lower()
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "(test.return_str()).capitalize");
+      cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    None;
+  (* TODO(T112570623): Get the definition for `Y().foo().bar()`. *)
+  assert_resolved_definition
+    ~source:
+      {|
+        class Foo:
+          def bar(self) -> None:
+              pass
+
+        class Bar:
+          some_attribute: Foo = Foo()
+
+          def foo(self) -> Foo:
+              return Foo()
+
+        def test() -> None:
+          Bar().foo().bar()
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "(test.Bar()).foo().bar");
+      cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    None;
   ()
 
 
@@ -1245,7 +1260,6 @@ let () =
   >::: [
          "lookup_out_of_bounds_location" >:: test_lookup_out_of_bounds_location;
          "lookup_pick_narrowest" >:: test_lookup_pick_narrowest;
-         "lookup_definitions_instances" >:: test_lookup_definitions_instances;
          "narrowest_match" >:: test_narrowest_match;
          "find_narrowest_spanning_symbol" >:: test_find_narrowest_spanning_symbol;
          "resolve_definition_for_symbol" >:: test_resolve_definition_for_symbol;
