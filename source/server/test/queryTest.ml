@@ -1396,7 +1396,7 @@ let test_location_of_definition context =
             {
               "response": [
                 {
-                  "uri": "%s/foo.py",
+                  "path": "%s/foo.py",
                   "range": {
                     "start": {
                       "line": 5,
@@ -1421,7 +1421,7 @@ let test_location_of_definition context =
             {
               "response": [
                 {
-                  "uri": "%s/stubbed_library.pyi",
+                  "path": "%s/stubbed_library.pyi",
                   "range": {
                     "start": {
                       "line": 2,

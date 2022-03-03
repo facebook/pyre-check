@@ -116,7 +116,7 @@ module Response : sig
     [@@deriving sexp, compare, to_yojson]
 
     type location_of_definition = {
-      uri: string;
+      path: string;
       range: range;
     }
     [@@deriving sexp, compare, to_yojson]

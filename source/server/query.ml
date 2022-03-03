@@ -128,7 +128,7 @@ module Response = struct
 
 
     type location_of_definition = {
-      uri: string;
+      path: string;
       range: range;
     }
     [@@deriving sexp, compare, to_yojson]
@@ -795,7 +795,7 @@ let rec process_request ~environment ~build_system ~configuration request =
             Location.WithModule.instantiate location_with_module ~lookup:module_to_absolute_path
           in
           {
-            uri = path;
+            path;
             range =
               {
                 start = { line = start_line; character = start_column };
