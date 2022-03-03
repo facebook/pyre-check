@@ -672,8 +672,9 @@ let resolve_definition_for_symbol
   in
   let definition_location =
     match symbol_with_definition with
-    | Expression expression -> resolve_definition_for_name ~resolution expression
-    | TypeAnnotation _ -> failwith "TODO(T112570623)"
+    | Expression expression
+    | TypeAnnotation expression ->
+        resolve_definition_for_name ~resolution expression
   in
   Log.log
     ~section:`Performance

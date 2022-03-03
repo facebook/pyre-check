@@ -429,6 +429,7 @@ let test_resolve_definition_for_symbol context =
           takeint(getint())
           y = return_str()
           Base()
+          xs: list[str] = ["a", "b"]
     |}
   in
   let type_environment =
@@ -460,6 +461,20 @@ let test_resolve_definition_for_symbol context =
           (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$b")));
       cfg_data = { define_name = !&"test.foo"; node_id = 0; statement_index = 0 };
       use_postcondition_info = true;
+    }
+    None;
+  assert_resolved_definition
+    {
+      symbol_with_definition = TypeAnnotation (parse_single_expression "int");
+      cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some ":120:0-181:32");
+  assert_resolved_definition
+    {
+      symbol_with_definition = TypeAnnotation (parse_single_expression "list[str]");
+      cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 4 };
+      use_postcondition_info = false;
     }
     None;
   ()
