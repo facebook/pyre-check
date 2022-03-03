@@ -155,6 +155,7 @@ module.exports = {
           'fb/pysa-deployment',
           'fb/pysa-sandcastle-internals',
           'fb/pysa-oncall-runbook',
+          'fb/review-tma-system-coverage',
         ],
       },
     ]),
