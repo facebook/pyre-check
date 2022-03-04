@@ -499,6 +499,15 @@ class PartialConfigurationTest(unittest.TestCase):
             {"ide_features": {"hover_enabled": False}}, IdeFeatures(hover_enabled=False)
         )
         assert_ide_features_raises({"ide_features": {"hover_enabled": 42}})
+        assert_ide_features_equal(
+            {"ide_features": {"go_to_definition_enabled": True}},
+            IdeFeatures(go_to_definition_enabled=True),
+        )
+        assert_ide_features_equal(
+            {"ide_features": {"go_to_definition_enabled": False}},
+            IdeFeatures(go_to_definition_enabled=False),
+        )
+        assert_ide_features_raises({"ide_features": {"go_to_definition_enabled": 42}})
 
     def test_create_from_string_failure(self) -> None:
         def assert_raises(content: str) -> None:
@@ -675,6 +684,26 @@ class PartialConfigurationTest(unittest.TestCase):
             IdeFeatures(hover_enabled=False),
             IdeFeatures(hover_enabled=False),
         )
+        assert_merged(
+            IdeFeatures(go_to_definition_enabled=True),
+            None,
+            IdeFeatures(go_to_definition_enabled=True),
+        )
+        assert_merged(
+            None,
+            IdeFeatures(go_to_definition_enabled=True),
+            IdeFeatures(go_to_definition_enabled=True),
+        )
+        assert_merged(
+            IdeFeatures(go_to_definition_enabled=False),
+            IdeFeatures(go_to_definition_enabled=True),
+            IdeFeatures(go_to_definition_enabled=True),
+        )
+        assert_merged(
+            IdeFeatures(go_to_definition_enabled=True),
+            IdeFeatures(go_to_definition_enabled=False),
+            IdeFeatures(go_to_definition_enabled=False),
+        )
 
     def test_expand_relative_paths(self) -> None:
         self.assertEqual(
@@ -790,7 +819,9 @@ class ConfigurationTest(testslide.TestCase):
                 dot_pyre_directory=None,
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
-                ide_features=IdeFeatures(hover_enabled=True),
+                ide_features=IdeFeatures(
+                    hover_enabled=True, go_to_definition_enabled=True
+                ),
                 ignore_all_errors=["bar"],
                 ignore_infer=["baz"],
                 logger="logger",
@@ -820,7 +851,10 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))
         self.assertListEqual(list(configuration.excludes), ["exclude"])
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])
-        self.assertEqual(configuration.ide_features, IdeFeatures(hover_enabled=True))
+        self.assertEqual(
+            configuration.ide_features,
+            IdeFeatures(hover_enabled=True, go_to_definition_enabled=True),
+        )
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
         self.assertListEqual(list(configuration.ignore_infer), ["baz"])
         self.assertEqual(configuration.logger, "logger")
@@ -1341,6 +1375,21 @@ class ConfigurationTest(testslide.TestCase):
                 dot_pyre_directory=Path(".pyre"),
                 ide_features=IdeFeatures(hover_enabled=True),
             ).is_hover_enabled(),
+        )
+
+    def test_is_go_to_definition_enabled(self) -> None:
+        self.assertFalse(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+            ).is_go_to_definition_enabled(),
+        )
+        self.assertTrue(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                ide_features=IdeFeatures(go_to_definition_enabled=True),
+            ).is_go_to_definition_enabled(),
         )
 
     def test_create_from_command_arguments_only(self) -> None:

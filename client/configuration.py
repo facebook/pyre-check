@@ -392,12 +392,19 @@ class SharedMemory:
 class IdeFeatures:
     hover_enabled: Optional[bool] = None
     DEFAULT_HOVER_ENABLED: ClassVar[bool] = False
+    go_to_definition_enabled: Optional[bool] = None
+    DEFAULT_GO_TO_DEFINITION_ENABLED: ClassVar[bool] = False
 
     def to_json(self) -> Dict[str, int]:
         return {
             **(
                 {"hover_enabled": self.hover_enabled}
                 if self.hover_enabled is not None
+                else {}
+            ),
+            **(
+                {"go_to_definition_enabled": self.go_to_definition_enabled}
+                if self.go_to_definition_enabled is not None
                 else {}
             ),
         }
@@ -407,6 +414,13 @@ class IdeFeatures:
             self.hover_enabled
             if self.hover_enabled is not None
             else self.DEFAULT_HOVER_ENABLED
+        )
+
+    def is_go_to_definition_enabled(self) -> bool:
+        return (
+            self.go_to_definition_enabled
+            if self.go_to_definition_enabled is not None
+            else self.DEFAULT_GO_TO_DEFINITION_ENABLED
         )
 
 
@@ -710,6 +724,9 @@ class PartialConfiguration:
                     hover_enabled=ensure_option_type(
                         ide_features_json, "hover_enabled", bool
                     ),
+                    go_to_definition_enabled=ensure_option_type(
+                        ide_features_json, "go_to_definition_enabled", bool
+                    ),
                 )
                 for unrecognized_key in ide_features_json:
                     LOG.warning(f"Unrecognized configuration item: {unrecognized_key}")
@@ -884,7 +901,10 @@ def merge_partial_configurations(
         if base is None:
             return override
         return IdeFeatures(
-            hover_enabled=overwrite_base(base.hover_enabled, override.hover_enabled)
+            hover_enabled=overwrite_base(base.hover_enabled, override.hover_enabled),
+            go_to_definition_enabled=overwrite_base(
+                base.go_to_definition_enabled, override.go_to_definition_enabled
+            ),
         )
 
     def prepend_base(base: Sequence[T], override: Sequence[T]) -> Sequence[T]:
@@ -1339,6 +1359,11 @@ class Configuration:
         if self.ide_features is None:
             return IdeFeatures.DEFAULT_HOVER_ENABLED
         return self.ide_features.is_hover_enabled()
+
+    def is_go_to_definition_enabled(self) -> bool:
+        if self.ide_features is None:
+            return IdeFeatures.DEFAULT_GO_TO_DEFINITION_ENABLED
+        return self.ide_features.is_go_to_definition_enabled()
 
     def get_valid_extension_suffixes(self) -> List[str]:
         vaild_extensions = []
