@@ -552,8 +552,12 @@ class PartialConfiguration:
         )
         python_version_string = arguments.python_version
         ide_features = (
-            IdeFeatures(hover_enabled=arguments.enable_hover)
+            IdeFeatures(
+                hover_enabled=arguments.enable_hover,
+                go_to_definition_enabled=arguments.enable_go_to_definition,
+            )
             if arguments.enable_hover is not None
+            or arguments.enable_go_to_definition is not None
             else None
         )
         return PartialConfiguration(

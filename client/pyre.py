@@ -257,6 +257,13 @@ def _check_configuration(configuration: configuration_module.Configuration) -> N
     default=None,
     hidden=True,
 )
+@click.option(
+    "--enable-go-to-definition/--no-enable-go-to-definition",
+    is_flag=True,
+    help="Whether Pyre should support go-to-definition in the IDE.",
+    default=None,
+    hidden=True,
+)
 @click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
 def pyre(
     context: click.Context,
@@ -285,6 +292,7 @@ def pyre(
     shared_memory_hash_table_power: Optional[int],
     number_of_workers: Optional[int],
     enable_hover: Optional[bool],
+    enable_go_to_definition: Optional[bool],
 ) -> int:
     arguments = command_arguments.CommandArguments(
         local_configuration=None,
@@ -324,6 +332,7 @@ def pyre(
         number_of_workers=number_of_workers,
         enable_hover=enable_hover,
         use_buck2=None,
+        enable_go_to_definition=enable_go_to_definition,
     )
     if arguments.version:
         show_pyre_version(arguments)

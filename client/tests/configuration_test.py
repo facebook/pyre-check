@@ -172,17 +172,23 @@ class PartialConfigurationTest(unittest.TestCase):
         configuration = PartialConfiguration.from_command_arguments(
             command_arguments.CommandArguments(
                 enable_hover=True,
+                enable_go_to_definition=True,
             )
         )
         assert configuration.ide_features is not None
         self.assertTrue(configuration.ide_features.is_hover_enabled())
+        self.assertTrue(configuration.ide_features.is_go_to_definition_enabled())
+
         configuration = PartialConfiguration.from_command_arguments(
             command_arguments.CommandArguments(
                 enable_hover=False,
+                enable_go_to_definition=False,
             )
         )
         assert configuration.ide_features is not None
         self.assertFalse(configuration.ide_features.is_hover_enabled())
+        self.assertFalse(configuration.ide_features.is_go_to_definition_enabled())
+
         configuration = PartialConfiguration.from_command_arguments(
             command_arguments.CommandArguments()
         )
