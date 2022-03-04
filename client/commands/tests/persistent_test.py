@@ -1310,3 +1310,118 @@ class PyreQueryHandlerTest(testslide.TestCase):
         self.assertEqual(
             result.uncovered_ranges[0].message, "This file is not type checked by Pyre."
         )
+
+    @setup.async_test
+    async def test_query_definition_location(self) -> None:
+        json_output = """
+        {
+            "response": [
+                {
+                    "path": "/foo.py",
+                    "range": {
+                        "start": {
+                            "line": 9,
+                            "character": 6
+                        },
+                        "end": {
+                            "line": 10,
+                            "character": 11
+                        }
+                    }
+                }
+            ]
+        }
+        """
+        client_output_writer = MemoryBytesWriter()
+        pyre_query_manager = PyreQueryHandler(
+            state=PyreQueryState(path_to_location_type_lookup={}),
+            server_start_options_reader=_create_server_start_options_reader(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root="/global/root",
+                    )
+                ),
+                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
+            ),
+            client_output_channel=TextWriter(client_output_writer),
+        )
+        memory_bytes_writer = MemoryBytesWriter()
+        flat_json = "".join(json_output.splitlines())
+        input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
+        output_channel = TextWriter(memory_bytes_writer)
+
+        with patch_connect_in_text_mode(input_channel, output_channel):
+            await pyre_query_manager._query_and_send_definition_location(
+                query=DefinitionLocationQuery(
+                    id=99,
+                    path=Path("bar.py"),
+                    position=lsp.Position(line=42, character=10),
+                ),
+                socket_path=Path("fake_socket_path"),
+            )
+
+        self.assertEqual(
+            memory_bytes_writer.items(),
+            [
+                b'["Query", "location_of_definition(path=\'bar.py\','
+                b' line=42, column=10)"]\n'
+            ],
+        )
+        self.assertEqual(len(client_output_writer.items()), 1)
+        response = client_output_writer.items()[0].splitlines()[2]
+        result = json.loads(response)["result"]
+        self.assertEqual(
+            # pyre-ignore[16]: Pyre does not understand
+            # `dataclasses_json`.
+            lsp.LspDefinitionResponse.schema().load(result, many=True),
+            [
+                lsp.LspDefinitionResponse(
+                    uri="/foo.py",
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=8, character=6),
+                        end=lsp.LspPosition(line=9, character=11),
+                    ),
+                )
+            ],
+        )
+
+    @setup.async_test
+    async def test_query_definition_location__bad_json(self) -> None:
+        client_output_writer = MemoryBytesWriter()
+        pyre_query_manager = PyreQueryHandler(
+            state=PyreQueryState(),
+            server_start_options_reader=_create_server_start_options_reader(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root="/global/root",
+                    )
+                ),
+                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
+            ),
+            client_output_channel=TextWriter(client_output_writer),
+        )
+
+        input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
+        memory_bytes_writer = MemoryBytesWriter()
+        output_channel = TextWriter(memory_bytes_writer)
+        with patch_connect_in_text_mode(input_channel, output_channel):
+            await pyre_query_manager._query_and_send_definition_location(
+                query=DefinitionLocationQuery(
+                    id=99,
+                    path=Path("bar.py"),
+                    position=lsp.Position(line=42, character=10),
+                ),
+                socket_path=Path("fake_socket_path"),
+            )
+
+        self.assertEqual(len(client_output_writer.items()), 1)
+        response = client_output_writer.items()[0].splitlines()[2]
+        self.assertEqual(json.loads(response)["result"], [])

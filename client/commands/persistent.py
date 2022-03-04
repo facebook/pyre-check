@@ -411,6 +411,15 @@ class DefinitionLocationQuery:
     position: lsp.Position
 
 
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class DefinitionLocationResponse:
+    response: List[lsp.PyreDefinitionResponse]
+
+
 QueryTypes = Union[TypeCoverageQuery, TypesQuery, DefinitionLocationQuery]
 
 
@@ -1194,6 +1203,38 @@ class PyreQueryHandler(connection.BackgroundTask):
                 ),
             )
 
+    async def _query_and_send_definition_location(
+        self, query: DefinitionLocationQuery, socket_path: Path
+    ) -> None:
+        path_string = f"'{query.path}'"
+        query_text = (
+            f"location_of_definition(path={path_string},"
+            f" line={query.position.line}, column={query.position.character})"
+        )
+        definition_response = await self._query_and_interpret_response(
+            query_text, socket_path, DefinitionLocationResponse
+        )
+        definitions = (
+            [
+                response.to_lsp_definition_response()
+                for response in definition_response.response
+            ]
+            if definition_response is not None
+            else []
+        )
+        await lsp.write_json_rpc(
+            self.client_output_channel,
+            json_rpc.SuccessResponse(
+                id=query.id,
+                # pyre-ignore[16]: Pyre does not understand
+                # `dataclasses_json`.
+                result=lsp.LspDefinitionResponse.schema().dump(
+                    definitions,
+                    many=True,
+                ),
+            ),
+        )
+
     async def _run(self, server_start_options: "PyreServerStartOptions") -> None:
         start_arguments = server_start_options.start_arguments
         local_root = start_arguments.base_arguments.relative_local_root
@@ -1215,6 +1256,8 @@ class PyreQueryHandler(connection.BackgroundTask):
                 await self._handle_type_coverage_query(
                     query, strict_default, socket_path
                 )
+            elif isinstance(query, DefinitionLocationQuery):
+                await self._query_and_send_definition_location(query, socket_path)
 
     def read_server_start_options(self) -> "PyreServerStartOptions":
         try:
