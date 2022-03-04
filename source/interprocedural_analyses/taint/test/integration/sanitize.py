@@ -320,6 +320,29 @@ def no_issue_fixpoint_sanitize():
     no_issue_fixpoint_sanitize_sinks(x)
 
 
+def partial_issue_sources():
+    if 1 > 2:
+        x = a_source()
+        return sanitize_a_sink_tito(x)
+    else:
+        return a_source()
+
+
+def partial_issue_sinks(x):
+    if 1 > 2:
+        a_sink(x)
+    else:
+        y = sanitize_a_source_tito(x)
+        a_sink(y)
+
+
+def partial_issue_sanitize():
+    # Sources: {NotSink[TestA]@TestA, TestA}
+    # Sinks: {TestA, NotSource[testA]@TestA}
+    x = partial_issue_sources()
+    partial_issue_sinks(x)
+
+
 def sanitize_test_a_source_attribute():
     if 1 > 2:
         x = a_source()

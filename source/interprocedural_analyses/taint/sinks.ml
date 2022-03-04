@@ -88,6 +88,21 @@ module Set = struct
       | sink -> Format.asprintf "cannot sanitize the sink `%a`" T.pp sink |> failwith
     in
     set |> elements |> List.map ~f:to_transform |> SanitizeTransform.Set.of_list
+
+
+  let is_singleton set =
+    (* The only way to implement this in O(1) is with `for_all` or `exists`. *)
+    (not (is_empty set))
+    &&
+    let count = ref 0 in
+    for_all
+      (fun _ ->
+        incr count;
+        !count = 1)
+      set
+
+
+  let as_singleton set = if is_singleton set then Some (choose set) else None
 end
 
 module Map = struct
@@ -207,3 +222,12 @@ let apply_ordered_transforms transforms sink =
 let get_ordered_transforms = function
   | Transform { local; global; _ } -> local.ordered @ global.ordered
   | _ -> []
+
+
+let contains_sanitize_transform sink sanitize_transform =
+  match sink with
+  | Transform
+      { local = { sanitize = local_sanitize; _ }; global = { sanitize = global_sanitize; _ }; _ } ->
+      SanitizeTransform.Set.mem sanitize_transform local_sanitize
+      || SanitizeTransform.Set.mem sanitize_transform global_sanitize
+  | _ -> false

@@ -48,6 +48,8 @@ module Set : sig
   val show : t -> string
 
   val to_sanitize_transforms_exn : t -> SanitizeTransform.Set.t
+
+  val as_singleton : t -> elt option
 end
 
 module Map : sig
@@ -78,3 +80,5 @@ val apply_sanitize_sink_transforms : SanitizeTransform.Set.t -> t -> t
 val apply_ordered_transforms : TaintTransform.t list -> t -> t
 
 val get_ordered_transforms : t -> TaintTransform.t list
+
+val contains_sanitize_transform : t -> SanitizeTransform.t -> bool

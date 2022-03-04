@@ -325,6 +325,8 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
     let rec apply_sanitizers
         ?(previous_sanitized_sources = Sources.Set.empty)
         ?(previous_sanitized_sinks = Sinks.Set.empty)
+        ?(previous_single_base_source = None)
+        ?(previous_single_base_sink = None)
         { Flow.source_taint; sink_taint }
       =
       (* This needs a fixpoint since refining sinks might sanitize more sources etc.
@@ -366,15 +368,61 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
       in
       let source_taint = ForwardTaint.sanitize sanitized_sources source_taint in
 
+      (* If all sources have the same base, we can remove sink flows that sanitize
+       * that base (and vice versa). *)
+      let gather_base_sources kind sofar =
+        Sources.Set.add (Sources.discard_transforms kind) sofar
+      in
+      let single_base_source =
+        ForwardTaint.fold
+          ForwardTaint.kind
+          ~init:Sources.Set.empty
+          ~f:gather_base_sources
+          source_taint
+        |> Sources.Set.as_singleton
+      in
+      let sink_taint =
+        match single_base_source with
+        | Some (Sources.NamedSource source) ->
+            let sanitize_transform = SanitizeTransform.NamedSource source in
+            BackwardTaint.transform
+              BackwardTaint.kind
+              Filter
+              ~f:(fun kind -> not (Sinks.contains_sanitize_transform kind sanitize_transform))
+              sink_taint
+        | _ -> sink_taint
+      in
+
+      let gather_base_sinks kind sofar = Sinks.Set.add (Sinks.discard_transforms kind) sofar in
+      let single_base_sink =
+        BackwardTaint.fold BackwardTaint.kind ~init:Sinks.Set.empty ~f:gather_base_sinks sink_taint
+        |> Sinks.Set.as_singleton
+      in
+      let source_taint =
+        match single_base_sink with
+        | Some (Sinks.NamedSink sink) ->
+            let sanitize_transform = SanitizeTransform.NamedSink sink in
+            ForwardTaint.transform
+              ForwardTaint.kind
+              Filter
+              ~f:(fun kind -> not (Sources.contains_sanitize_transform kind sanitize_transform))
+              source_taint
+        | _ -> source_taint
+      in
+
       if
         Sources.Set.equal sanitized_sources previous_sanitized_sources
         && Sinks.Set.equal sanitized_sinks previous_sanitized_sinks
+        && Option.equal Sources.equal single_base_source previous_single_base_source
+        && Option.equal Sinks.equal single_base_sink previous_single_base_sink
       then
         { Flow.source_taint; sink_taint }
       else
         apply_sanitizers
           ~previous_sanitized_sources:sanitized_sources
           ~previous_sanitized_sinks:sanitized_sinks
+          ~previous_single_base_source:single_base_source
+          ~previous_single_base_sink:single_base_sink
           { source_taint; sink_taint }
     in
     let partition_flow = apply_sanitizers { source_taint; sink_taint } in
