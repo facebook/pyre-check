@@ -221,6 +221,16 @@ class Range:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
+class LspRange:
+    start: LspPosition
+    end: LspPosition
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
 class Diagnostic:
     range: Range
     message: str
@@ -531,3 +541,31 @@ class TypeCoverageResult:
     covered_percent: float
     uncovered_ranges: List[Diagnostic]
     default_message: str
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class DefinitionTextDocumentParameters:
+    text_document: TextDocumentIdentifier
+    position: LspPosition
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "DefinitionTextDocumentParameters":
+        return _parse_parameters(parameters, target=DefinitionTextDocumentParameters)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class LspDefinitionResponse:
+    """Contains one possible definition for a symbol."""
+
+    uri: str
+    range: LspRange

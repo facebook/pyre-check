@@ -404,6 +404,16 @@ class TypesQuery:
     path: Path
 
 
+@dataclasses.dataclass(frozen=True)
+class DefinitionLocationQuery:
+    id: Union[int, str, None]
+    path: Path
+    position: lsp.Position
+
+
+QueryTypes = Union[TypeCoverageQuery, TypesQuery, DefinitionLocationQuery]
+
+
 @dataclasses.dataclass
 class PyreQueryState:
     # Shared mutable state.
@@ -411,7 +421,7 @@ class PyreQueryState:
         default_factory=dict
     )
     # Queue of queries.
-    queries: "asyncio.Queue[Union[TypeCoverageQuery, TypesQuery]]" = dataclasses.field(
+    queries: "asyncio.Queue[QueryTypes]" = dataclasses.field(
         default_factory=asyncio.Queue
     )
 
@@ -700,6 +710,37 @@ class PyreServer:
             )
         await self.state.query_state.queries.put(
             TypeCoverageQuery(id=request_id, path=document_path)
+        )
+
+    async def process_definition_request(
+        self,
+        parameters: lsp.DefinitionTextDocumentParameters,
+        request_id: Union[int, str, None],
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+
+        if document_path not in self.state.opened_documents:
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    # pyre-ignore[16]: Pyre does not understand
+                    # `dataclasses_json`.
+                    result=lsp.LspDefinitionResponse.schema().dump([], many=True),
+                ),
+            )
+            return
+
+        self.state.query_state.queries.put_nowait(
+            DefinitionLocationQuery(
+                id=request_id,
+                path=document_path,
+                position=parameters.position.to_pyre_position(),
+            )
         )
 
     async def _run(self) -> int:
