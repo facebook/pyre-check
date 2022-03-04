@@ -157,7 +157,7 @@ let create ?(additional_log_size = 0) () =
             [Format.sprintf "@%s" filename]
         in
         let consume_stderr = consume_stderr ~log_buffer in
-        LwtSubprocess.run "buck" ~arguments ~consume_stderr)
+        LwtSubprocess.run "buck1" ~arguments ~consume_stderr)
     >>= fun result ->
     let arguments = List.append (isolation_prefix_to_buck_arguments isolation_prefix) arguments in
     on_completion ~arguments ~log_buffer result
