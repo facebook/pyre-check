@@ -198,7 +198,10 @@ def process_initialize_request(
             save=lsp.SaveOptions(include_text=False),
         ),
         **(
-            {"hover_provider": ide_features.is_hover_enabled()}
+            {
+                "hover_provider": ide_features.is_hover_enabled(),
+                "definition_provider": ide_features.is_go_to_definition_enabled(),
+            }
             if ide_features is not None
             else {}
         ),
@@ -767,6 +770,18 @@ class PyreServer:
                         json_rpc.SuccessResponse(id=request.id, result=None),
                     )
                     return await self.wait_for_exit()
+                elif request.method == "textDocument/definition":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for definition method"
+                        )
+                    await self.process_definition_request(
+                        lsp.DefinitionTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        ),
+                        request.id,
+                    )
                 elif request.method == "textDocument/didOpen":
                     parameters = request.parameters
                     if parameters is None:
