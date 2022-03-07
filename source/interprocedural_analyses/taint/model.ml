@@ -113,11 +113,17 @@ end
 
 module Sanitizers = struct
   type t = {
-    (* Sanitizers applying to all parameters and the return value. *)
+    (* `global` applies to all parameters and the return value.
+     * For callables:
+     * - sources are only sanitized in the forward trace;
+     * - sinks are only sanitized in the backward trace;
+     * - titos are sanitized in both traces (using sanitize taint transforms).
+     * For attribute models, sanitizers are applied on attribute accesses, in both traces.
+     *)
     global: Sanitize.t;
-    (* Sanitizers applying to all parameters. *)
+    (* Sanitizers applying to all parameters, in both traces. *)
     parameters: Sanitize.t;
-    (* Map from parameter or return value to sanitizers. *)
+    (* Map from parameter or return value to sanitizers applying in both traces. *)
     roots: SanitizeRootMap.t;
   }
 
