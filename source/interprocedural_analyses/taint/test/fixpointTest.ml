@@ -376,11 +376,7 @@ let test_sanitized_analysis context =
               ~tito_parameters:[{ name = "z"; sinks = [Sinks.LocalReturn] }]
               ~errors:[{ code = 5001; pattern = ".*" }]
               ~global_sanitizer:
-                {
-                  Taint.Domains.Sanitize.sources = Some AllSources;
-                  sinks = Some AllSinks;
-                  tito = Some AllTito;
-                }
+                { Taint.Domains.Sanitize.sources = Some All; sinks = Some All; tito = Some All }
               "qualifier.sanitized_model";
           ];
         iterations = 1;

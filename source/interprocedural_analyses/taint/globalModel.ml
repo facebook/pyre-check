@@ -133,9 +133,9 @@ let is_sanitized { models; _ } =
     =
     match sanitize with
     | {
-     sources = Some Sanitize.AllSources;
-     sinks = Some Sanitize.AllSinks;
-     tito = Some Sanitize.AllTito;
+     sources = Some SanitizeSources.All;
+     sinks = Some SanitizeSinks.All;
+     tito = Some SanitizeTito.All;
     } ->
         true
     | _ -> false

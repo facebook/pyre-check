@@ -142,55 +142,47 @@ let test_sanitize _ =
   assert_sanitize_equal
     (Sanitize.join
        Sanitize.bottom
-       { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito })
-    ~expected:{ Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito };
+       { Sanitize.sources = Some All; sinks = Some All; tito = Some All })
+    ~expected:{ Sanitize.sources = Some All; sinks = Some All; tito = Some All };
   assert_sanitize_equal
     (Sanitize.join
-       { Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+       { Sanitize.sources = Some All; sinks = Some All; tito = Some All }
        Sanitize.bottom)
-    ~expected:{ Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito };
+    ~expected:{ Sanitize.sources = Some All; sinks = Some All; tito = Some All };
   assert_sanitize_equal
     (Sanitize.join
        {
-         Sanitize.sources = Some (SpecificSources source_a_set);
-         sinks = Some AllSinks;
+         Sanitize.sources = Some (Specific source_a_set);
+         sinks = Some All;
          tito =
            Some
-             (SpecificTito
-                { sanitized_tito_sources = source_b_set; sanitized_tito_sinks = sink_a_set });
+             (Specific { sanitized_tito_sources = source_b_set; sanitized_tito_sinks = sink_a_set });
        }
-       {
-         Sanitize.sources = Some AllSources;
-         sinks = Some (SpecificSinks sink_b_set);
-         tito = Some AllTito;
-       })
-    ~expected:{ Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito };
+       { Sanitize.sources = Some All; sinks = Some (Specific sink_b_set); tito = Some All })
+    ~expected:{ Sanitize.sources = Some All; sinks = Some All; tito = Some All };
   assert_sanitize_equal
     (Sanitize.join
        {
-         Sanitize.sources = Some (SpecificSources source_a_set);
-         sinks = Some (SpecificSinks sink_b_set);
+         Sanitize.sources = Some (Specific source_a_set);
+         sinks = Some (Specific sink_b_set);
          tito =
            Some
-             (SpecificTito
-                { sanitized_tito_sources = source_b_set; sanitized_tito_sinks = sink_a_set });
+             (Specific { sanitized_tito_sources = source_b_set; sanitized_tito_sinks = sink_a_set });
        }
        {
-         Sanitize.sources = Some (SpecificSources source_b_set);
-         sinks = Some (SpecificSinks sink_a_set);
+         Sanitize.sources = Some (Specific source_b_set);
+         sinks = Some (Specific sink_a_set);
          tito =
            Some
-             (SpecificTito
-                { sanitized_tito_sources = source_a_set; sanitized_tito_sinks = sink_b_set });
+             (Specific { sanitized_tito_sources = source_a_set; sanitized_tito_sinks = sink_b_set });
        })
     ~expected:
       {
-        Sanitize.sources = Some (SpecificSources source_ab_set);
-        sinks = Some (SpecificSinks sink_ab_set);
+        Sanitize.sources = Some (Specific source_ab_set);
+        sinks = Some (Specific sink_ab_set);
         tito =
           Some
-            (SpecificTito
-               { sanitized_tito_sources = source_ab_set; sanitized_tito_sinks = sink_ab_set });
+            (Specific { sanitized_tito_sources = source_ab_set; sanitized_tito_sinks = sink_ab_set });
       };
 
   (* Tess less_or_equal *)
@@ -212,67 +204,62 @@ let test_sanitize _ =
   in
   assert_less_or_equal
     ~left:Sanitize.bottom
-    ~right:{ Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito };
+    ~right:{ Sanitize.sources = Some All; sinks = Some All; tito = Some All };
   assert_not_less_or_equal
-    ~left:{ Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+    ~left:{ Sanitize.sources = Some All; sinks = Some All; tito = Some All }
     ~right:Sanitize.bottom;
   assert_less_or_equal
-    ~left:{ Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
-    ~right:{ Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito };
+    ~left:{ Sanitize.sources = Some All; sinks = Some All; tito = Some All }
+    ~right:{ Sanitize.sources = Some All; sinks = Some All; tito = Some All };
   assert_less_or_equal
-    ~left:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
-    ~right:{ Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito };
+    ~left:{ Sanitize.sources = None; sinks = Some All; tito = None }
+    ~right:{ Sanitize.sources = Some All; sinks = Some All; tito = Some All };
   assert_not_less_or_equal
-    ~left:{ Sanitize.sources = None; sinks = Some AllSinks; tito = None }
-    ~right:{ Sanitize.sources = Some AllSources; sinks = None; tito = Some AllTito };
+    ~left:{ Sanitize.sources = None; sinks = Some All; tito = None }
+    ~right:{ Sanitize.sources = Some All; sinks = None; tito = Some All };
   assert_less_or_equal
     ~left:
       {
-        Sanitize.sources = Some (SpecificSources source_a_set);
-        sinks = Some (SpecificSinks sink_a_set);
+        Sanitize.sources = Some (Specific source_a_set);
+        sinks = Some (Specific sink_a_set);
         tito =
           Some
-            (SpecificTito
-               { sanitized_tito_sources = source_a_set; sanitized_tito_sinks = sink_b_set });
+            (Specific { sanitized_tito_sources = source_a_set; sanitized_tito_sinks = sink_b_set });
       }
-    ~right:{ Sanitize.sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito };
+    ~right:{ Sanitize.sources = Some All; sinks = Some All; tito = Some All };
   assert_less_or_equal
     ~left:
       {
-        Sanitize.sources = Some (SpecificSources source_a_set);
-        sinks = Some (SpecificSinks sink_b_set);
+        Sanitize.sources = Some (Specific source_a_set);
+        sinks = Some (Specific sink_b_set);
         tito =
           Some
-            (SpecificTito
-               { sanitized_tito_sources = source_a_set; sanitized_tito_sinks = sink_b_set });
+            (Specific { sanitized_tito_sources = source_a_set; sanitized_tito_sinks = sink_b_set });
       }
     ~right:
       {
-        Sanitize.sources = Some (SpecificSources source_ab_set);
-        sinks = Some (SpecificSinks sink_ab_set);
+        Sanitize.sources = Some (Specific source_ab_set);
+        sinks = Some (Specific sink_ab_set);
         tito =
           Some
-            (SpecificTito
-               { sanitized_tito_sources = source_ab_set; sanitized_tito_sinks = sink_ab_set });
+            (Specific { sanitized_tito_sources = source_ab_set; sanitized_tito_sinks = sink_ab_set });
       };
   assert_not_less_or_equal
     ~left:
       {
-        Sanitize.sources = Some (SpecificSources source_a_set);
-        sinks = Some (SpecificSinks sink_b_set);
+        Sanitize.sources = Some (Specific source_a_set);
+        sinks = Some (Specific sink_b_set);
         tito =
           Some
-            (SpecificTito
-               { sanitized_tito_sources = source_a_set; sanitized_tito_sinks = sink_b_set });
+            (Specific { sanitized_tito_sources = source_a_set; sanitized_tito_sinks = sink_b_set });
       }
     ~right:
       {
-        Sanitize.sources = Some (SpecificSources source_ab_set);
-        sinks = Some (SpecificSinks sink_ab_set);
+        Sanitize.sources = Some (Specific source_ab_set);
+        sinks = Some (Specific sink_ab_set);
         tito =
           Some
-            (SpecificTito
-               { sanitized_tito_sources = source_b_set; sanitized_tito_sinks = sink_ab_set });
+            (Specific { sanitized_tito_sources = source_b_set; sanitized_tito_sinks = sink_ab_set });
       }
 
 

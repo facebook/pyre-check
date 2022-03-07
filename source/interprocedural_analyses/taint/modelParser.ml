@@ -1131,19 +1131,19 @@ let introduce_source_taint
 let sanitize_from_annotations annotations =
   let open Domains in
   let to_sanitize = function
-    | AllSources -> { Sanitize.empty with sources = Some AllSources }
+    | AllSources -> { Sanitize.empty with sources = Some All }
     | SpecificSource source ->
-        { Sanitize.empty with sources = Some (SpecificSources (Sources.Set.singleton source)) }
-    | AllSinks -> { Sanitize.empty with sinks = Some AllSinks }
+        { Sanitize.empty with sources = Some (Specific (Sources.Set.singleton source)) }
+    | AllSinks -> { Sanitize.empty with sinks = Some All }
     | SpecificSink sink ->
-        { Sanitize.empty with sinks = Some (SpecificSinks (Sinks.Set.singleton sink)) }
-    | AllTito -> { Sanitize.empty with tito = Some AllTito }
+        { Sanitize.empty with sinks = Some (Specific (Sinks.Set.singleton sink)) }
+    | AllTito -> { Sanitize.empty with tito = Some All }
     | SpecificTito { sources; sinks } ->
         {
           Sanitize.empty with
           tito =
             Some
-              (SpecificTito
+              (Specific
                  {
                    sanitized_tito_sources = Sources.Set.of_list sources;
                    sanitized_tito_sinks = Sinks.Set.of_list sinks;
@@ -2237,13 +2237,13 @@ let adjust_sanitize_and_modes_and_skipped_override
         ] -> (
         match identifier with
         | "TaintSource" ->
-            let global = { sanitizers.global with sources = Some AllSources } in
+            let global = { sanitizers.global with sources = Some All } in
             Ok { sanitizers with global }
         | "TaintSink" ->
-            let global = { sanitizers.global with sinks = Some AllSinks } in
+            let global = { sanitizers.global with sinks = Some All } in
             Ok { sanitizers with global }
         | "TaintInTaintOut" ->
-            let global = { sanitizers.global with tito = Some AllTito } in
+            let global = { sanitizers.global with tito = Some All } in
             Ok { sanitizers with global }
         | "Parameters" -> Ok { sanitizers with parameters = Sanitize.all }
         | _ -> failwith "impossible")

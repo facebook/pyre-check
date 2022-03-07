@@ -406,8 +406,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Apply source- and sink- specific tito sanitizers for obscure models,
            * since the tito is not materialized in `backward.taint_in_taint_out`. *)
           match obscure_sanitize.tito with
-          | Some AllTito -> BackwardState.Tree.bottom
-          | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
+          | Some All -> BackwardState.Tree.bottom
+          | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
               let sanitized_tito_sources =
                 Sources.Set.to_sanitize_transforms_exn sanitized_tito_sources
               in
@@ -866,8 +866,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             let sanitizer = GlobalModel.get_sanitize global_model in
             let taint =
               match sanitizer.sinks with
-              | Some AllSinks -> BackwardState.Tree.empty
-              | Some (SpecificSinks sanitized_sinks) ->
+              | Some All -> BackwardState.Tree.empty
+              | Some (Specific sanitized_sinks) ->
                   let sanitized_sinks_transforms =
                     Sinks.Set.to_sanitize_transforms_exn sanitized_sinks
                   in
@@ -878,7 +878,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             in
             let taint =
               match sanitizer.sources with
-              | Some (SpecificSources sanitized_sources) ->
+              | Some (Specific sanitized_sources) ->
                   let sanitized_sources_transforms =
                     Sources.Set.to_sanitize_transforms_exn sanitized_sources
                   in

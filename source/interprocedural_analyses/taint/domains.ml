@@ -336,7 +336,13 @@ module type KIND_ARG = sig
 
   val apply_ordered_transforms : TaintTransform.t list -> t -> t
 
-  module Set : Stdlib.Set.S with type elt = t
+  module Set : sig
+    include Stdlib.Set.S with type elt = t
+
+    val pp : Format.formatter -> t -> unit
+
+    val show : t -> string
+  end
 end
 
 (* Represents a map from a taint kind (`Sources.t` or `Sinks.t`) to a frame. *)
@@ -1109,65 +1115,97 @@ let local_return_frame =
 (* Special sink as it needs the return access path *)
 let local_return_taint = BackwardTaint.singleton Sinks.LocalReturn local_return_frame
 
-module Sanitize = struct
-  type sanitize_sources =
-    | AllSources
-    | SpecificSources of Sources.Set.t
-  [@@deriving show, eq]
-
-  type sanitize_sinks =
-    | AllSinks
-    | SpecificSinks of Sinks.Set.t
-  [@@deriving show, eq]
-
-  type sanitize_tito =
-    | AllTito
-    | SpecificTito of {
-        sanitized_tito_sources: Sources.Set.t;
-        sanitized_tito_sinks: Sinks.Set.t;
-      }
-  [@@deriving show, eq]
-
-  type sanitize = {
-    sources: sanitize_sources option;
-    sinks: sanitize_sinks option;
-    tito: sanitize_tito option;
-  }
+module MakeSanitizeKinds (Kind : KIND_ARG) = struct
+  type set =
+    | All
+    | Specific of Kind.Set.t
   [@@deriving show, eq]
 
   include Abstract.SimpleDomain.Make (struct
-    type t = sanitize
+    type t = set option [@@deriving show]
 
-    let name = "sanitize"
+    let name = Format.sprintf "sanitize %ss" Kind.name
 
-    let bottom = { sources = None; sinks = None; tito = None }
+    let bottom = None
 
     let less_or_equal ~left ~right =
       if phys_equal left right then
         true
       else
-        (match left.sources, right.sources with
+        match left, right with
         | None, _ -> true
         | Some _, None -> false
-        | Some AllSources, Some AllSources -> true
-        | Some AllSources, Some (SpecificSources _) -> false
-        | Some (SpecificSources _), Some AllSources -> true
-        | Some (SpecificSources left), Some (SpecificSources right) -> Sources.Set.subset left right)
-        && (match left.sinks, right.sinks with
-           | None, _ -> true
-           | Some _, None -> false
-           | Some AllSinks, Some AllSinks -> true
-           | Some AllSinks, Some (SpecificSinks _) -> false
-           | Some (SpecificSinks _), Some AllSinks -> true
-           | Some (SpecificSinks left), Some (SpecificSinks right) -> Sinks.Set.subset left right)
-        &&
-        match left.tito, right.tito with
+        | Some All, Some All -> true
+        | Some All, Some (Specific _) -> false
+        | Some (Specific _), Some All -> true
+        | Some (Specific left), Some (Specific right) -> Kind.Set.subset left right
+
+
+    let join left right =
+      if phys_equal left right then
+        left
+      else
+        match left, right with
+        | None, Some _ -> right
+        | Some _, None -> left
+        | Some All, _
+        | _, Some All ->
+            Some All
+        | Some (Specific left_sources), Some (Specific right_sources) ->
+            Some (Specific (Kind.Set.union left_sources right_sources))
+        | None, None -> None
+
+
+    let meet a b = if less_or_equal ~left:b ~right:a then b else a
+  end)
+
+  let all = Some All
+
+  let equal = [%equal: set option]
+
+  let to_json set =
+    let label = Format.sprintf "%ss" Kind.name in
+    match set with
+    | Some All -> [label, `String "All"]
+    | Some (Specific set) ->
+        [
+          ( label,
+            let to_string name = `String name in
+            `List (set |> Kind.Set.elements |> List.map ~f:Kind.show |> List.map ~f:to_string) );
+        ]
+    | None -> []
+end
+
+module SanitizeSources = MakeSanitizeKinds (Sources)
+module SanitizeSinks = MakeSanitizeKinds (Sinks)
+
+module SanitizeTito = struct
+  type set =
+    | All
+    | Specific of {
+        sanitized_tito_sources: Sources.Set.t;
+        sanitized_tito_sinks: Sinks.Set.t;
+      }
+  [@@deriving show, eq]
+
+  include Abstract.SimpleDomain.Make (struct
+    type t = set option [@@deriving show]
+
+    let name = "sanitize tito"
+
+    let bottom = None
+
+    let less_or_equal ~left ~right =
+      if phys_equal left right then
+        true
+      else
+        match left, right with
         | None, _ -> true
         | Some _, None -> false
-        | Some AllTito, Some AllTito -> true
-        | Some AllTito, Some (SpecificTito _) -> false
-        | Some (SpecificTito _), Some AllTito -> true
-        | Some (SpecificTito left), Some (SpecificTito right) ->
+        | Some All, Some All -> true
+        | Some All, Some (Specific _) -> false
+        | Some (Specific _), Some All -> true
+        | Some (Specific left), Some (Specific right) ->
             Sources.Set.subset left.sanitized_tito_sources right.sanitized_tito_sources
             && Sinks.Set.subset left.sanitized_tito_sinks right.sanitized_tito_sinks
 
@@ -1176,47 +1214,83 @@ module Sanitize = struct
       if phys_equal left right then
         left
       else
-        let sources =
-          match left.sources, right.sources with
-          | None, Some _ -> right.sources
-          | Some _, None -> left.sources
-          | Some AllSources, _
-          | _, Some AllSources ->
-              Some AllSources
-          | Some (SpecificSources left_sources), Some (SpecificSources right_sources) ->
-              Some (SpecificSources (Sources.Set.union left_sources right_sources))
-          | None, None -> None
-        in
-        let sinks =
-          match left.sinks, right.sinks with
-          | None, Some _ -> right.sinks
-          | Some _, None -> left.sinks
-          | Some AllSinks, _
-          | _, Some AllSinks ->
-              Some AllSinks
-          | Some (SpecificSinks left_sinks), Some (SpecificSinks right_sinks) ->
-              Some (SpecificSinks (Sinks.Set.union left_sinks right_sinks))
-          | None, None -> None
-        in
-        let tito =
-          match left.tito, right.tito with
-          | None, Some tito
-          | Some tito, None ->
-              Some tito
-          | Some AllTito, _
-          | _, Some AllTito ->
-              Some AllTito
-          | Some (SpecificTito left), Some (SpecificTito right) ->
-              Some
-                (SpecificTito
-                   {
-                     sanitized_tito_sources =
-                       Sources.Set.union left.sanitized_tito_sources right.sanitized_tito_sources;
-                     sanitized_tito_sinks =
-                       Sinks.Set.union left.sanitized_tito_sinks right.sanitized_tito_sinks;
-                   })
-          | None, None -> None
-        in
+        match left, right with
+        | None, Some tito
+        | Some tito, None ->
+            Some tito
+        | Some All, _
+        | _, Some All ->
+            Some All
+        | Some (Specific left), Some (Specific right) ->
+            Some
+              (Specific
+                 {
+                   sanitized_tito_sources =
+                     Sources.Set.union left.sanitized_tito_sources right.sanitized_tito_sources;
+                   sanitized_tito_sinks =
+                     Sinks.Set.union left.sanitized_tito_sinks right.sanitized_tito_sinks;
+                 })
+        | None, None -> None
+
+
+    let meet a b = if less_or_equal ~left:b ~right:a then b else a
+  end)
+
+  let all = Some All
+
+  let equal = [%equal: set option]
+
+  let to_json set =
+    let to_string name = `String name in
+    let sources_to_json sources =
+      `List (sources |> Sources.Set.elements |> List.map ~f:Sources.show |> List.map ~f:to_string)
+    in
+    let sinks_to_json sinks =
+      `List (sinks |> Sinks.Set.elements |> List.map ~f:Sinks.show |> List.map ~f:to_string)
+    in
+    match set with
+    | Some All -> ["tito", `String "All"]
+    | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
+        [
+          "tito_sources", sources_to_json sanitized_tito_sources;
+          "tito_sinks", sinks_to_json sanitized_tito_sinks;
+        ]
+    | None -> []
+end
+
+module Sanitize = struct
+  type sanitize = {
+    sources: SanitizeSources.t;
+    sinks: SanitizeSinks.t;
+    tito: SanitizeTito.t;
+  }
+  [@@deriving show, eq]
+
+  include Abstract.SimpleDomain.Make (struct
+    type t = sanitize
+
+    let name = "sanitize"
+
+    let bottom =
+      { sources = SanitizeSources.bottom; sinks = SanitizeSinks.bottom; tito = SanitizeTito.bottom }
+
+
+    let less_or_equal ~left ~right =
+      if phys_equal left right then
+        true
+      else
+        SanitizeSources.less_or_equal ~left:left.sources ~right:right.sources
+        && SanitizeSinks.less_or_equal ~left:left.sinks ~right:right.sinks
+        && SanitizeTito.less_or_equal ~left:left.tito ~right:right.tito
+
+
+    let join left right =
+      if phys_equal left right then
+        left
+      else
+        let sources = SanitizeSources.join left.sources right.sources in
+        let sinks = SanitizeSinks.join left.sinks right.sinks in
+        let tito = SanitizeTito.join left.tito right.tito in
         { sources; sinks; tito }
 
 
@@ -1225,7 +1299,7 @@ module Sanitize = struct
     let show = show_sanitize
   end)
 
-  let all = { sources = Some AllSources; sinks = Some AllSinks; tito = Some AllTito }
+  let all = { sources = SanitizeSources.all; sinks = SanitizeSinks.all; tito = SanitizeTito.all }
 
   let empty = bottom
 
@@ -1234,35 +1308,9 @@ module Sanitize = struct
   let equal = equal_sanitize
 
   let to_json { sources; sinks; tito } =
-    let to_string name = `String name in
-    let sources_to_json sources =
-      `List (sources |> Sources.Set.elements |> List.map ~f:Sources.show |> List.map ~f:to_string)
-    in
-    let sinks_to_json sinks =
-      `List (sinks |> Sinks.Set.elements |> List.map ~f:Sinks.show |> List.map ~f:to_string)
-    in
-    let sources_json =
-      match sources with
-      | Some AllSources -> ["sources", `String "All"]
-      | Some (SpecificSources sources) -> ["sources", sources_to_json sources]
-      | None -> []
-    in
-    let sinks_json =
-      match sinks with
-      | Some AllSinks -> ["sinks", `String "All"]
-      | Some (SpecificSinks sinks) -> ["sinks", sinks_to_json sinks]
-      | None -> []
-    in
-    let tito_json =
-      match tito with
-      | Some AllTito -> ["tito", `String "All"]
-      | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
-          [
-            "tito_sources", sources_to_json sanitized_tito_sources;
-            "tito_sinks", sinks_to_json sanitized_tito_sinks;
-          ]
-      | None -> []
-    in
+    let sources_json = SanitizeSources.to_json sources in
+    let sinks_json = SanitizeSinks.to_json sinks in
+    let tito_json = SanitizeTito.to_json tito in
     `Assoc (sources_json @ sinks_json @ tito_json)
 end
 

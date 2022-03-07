@@ -368,8 +368,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             CallModel.sanitize_of_argument ~model:taint_model ~sanitize_matches
           in
           match obscure_sanitize.tito with
-          | Some AllTito -> TaintInTaintOutEffects.remove tito_effects ~kind:Sinks.LocalReturn
-          | Some (SpecificTito { sanitized_tito_sources; sanitized_tito_sinks }) ->
+          | Some All -> TaintInTaintOutEffects.remove tito_effects ~kind:Sinks.LocalReturn
+          | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
               let apply_taint_transforms = function
                 | None -> ForwardState.Tree.bottom
                 | Some taint_tree ->
@@ -1579,14 +1579,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             let sanitizer = GlobalModel.get_sanitize global_model in
             let taint =
               match sanitizer.sources with
-              | Some AllSources -> ForwardState.Tree.empty
-              | Some (SpecificSources sanitized_sources) ->
+              | Some All -> ForwardState.Tree.empty
+              | Some (Specific sanitized_sources) ->
                   ForwardState.Tree.sanitize sanitized_sources taint
               | None -> taint
             in
             let taint =
               match sanitizer.sinks with
-              | Some (SpecificSinks sanitized_sinks) ->
+              | Some (Specific sanitized_sinks) ->
                   let sanitized_sinks_transforms =
                     Sinks.Set.to_sanitize_transforms_exn sanitized_sinks
                   in
