@@ -5,6 +5,7 @@ sidebar_label: Getting Started
 ---
 import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
 import FbGettingStarted from './fb/getting_started.md';
+import YouTube from 'react-youtube';
 
 <FbInternalOnly>
 
@@ -55,3 +56,7 @@ test.py:1:0 Incompatible variable type [9]: i is declared to have type `int` but
 This first invocation will start a daemon listening for filesystem changes – type checking your project incrementally as you make edits to the code. You will notice that subsequent invocations of `pyre` will be faster than the first one.
 
 </OssOnly>
+
+## Introductory Video
+
+<YouTube videoId="k_xElpxw9aY" />
