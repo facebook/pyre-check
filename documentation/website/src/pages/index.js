@@ -79,43 +79,6 @@ function Feature({imageUrl, title, description}) {
   );
 }
 
-function VideoContainer() {
-  return (
-    <div className="container text--center margin-bottom--xl">
-      <div className="row">
-        <div className="col">
-          <h2>Brief Introduction to Pyre</h2>
-          <div>
-            <iframe
-              width="560"
-              height="315"
-              src="https://www.youtube.com/embed/k_xElpxw9aY"
-              title="Explain Like I'm 5: Pyre"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        </div>
-        <div className="col">
-          <h2>Brief Introduction to Pysa</h2>
-          <div>
-            <iframe
-              width="560"
-              height="315"
-              src="https://www.youtube.com/embed/LDxAczqkBiY"
-              title="Explain Like I’m 5: Pysa"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Home() {
   const context = useDocusaurusContext();
   const {siteConfig = {}} = context;
@@ -141,7 +104,6 @@ function Home() {
         </div>
       </header>
       <main>
-      <VideoContainer />
         {features && features.length && (
           <section className={styles.features}>
             <div className="container">
