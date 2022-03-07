@@ -659,20 +659,19 @@ module ClassDecorators = struct
             let extract_init_value (attribute, value) =
               let initialized = AnnotatedAttribute.initialized attribute in
               let get_default_value { Call.Argument.name; value } =
-                match name with
-                | Some { Node.value = parameter_name; _ } ->
-                    if String.equal "default" (Identifier.sanitized parameter_name) then
-                      Some value
-                    else if String.equal "default_factory" (Identifier.sanitized parameter_name)
-                    then
-                      let { Node.location; _ } = value in
-                      Some
-                        {
-                          Node.value = Expression.Call { Call.callee = value; arguments = [] };
-                          location;
-                        }
-                    else
-                      None
+                name
+                >>| Node.value
+                >>| Identifier.sanitized
+                >>= function
+                | "default" -> Some value
+                | "default_factory"
+                | "factory" ->
+                    let { Node.location; _ } = value in
+                    Some
+                      {
+                        Node.value = Expression.Call { Call.callee = value; arguments = [] };
+                        location;
+                      }
                 | _ -> None
               in
               match initialized with

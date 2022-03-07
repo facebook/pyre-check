@@ -1256,6 +1256,7 @@ let test_dataclass_transform context =
         *,
         default: Optional[Any] = ...,
         default_factory: Optional[Callable[[], Any]] = ...,
+        factory: Optional[Callable[[], Any]] = ...,
         init: bool = True,
       ):
         ...
@@ -1270,6 +1271,7 @@ let test_dataclass_transform context =
         x2: int = myfield(init=True)
         x3: int = myfield(init=True, default=1)
         x4: int = myfield(init=True, default_factory=foo)
+        x5: int = myfield(init=True, factory=foo)
     |}
     [
       {|
@@ -1278,10 +1280,12 @@ let test_dataclass_transform context =
           x2: int = myfield(init=True)
           x3: int = myfield(init=True, default=1)
           x4: int = myfield(init=True, default_factory=foo)
-          def __init__(self, x2: int, x3: int = 1, x4: int = foo()) -> None:
+          x5: int = myfield(init=True, factory=foo)
+          def __init__(self, x2: int, x3: int = 1, x4: int = foo(), x5: int = foo()) -> None:
             self.x2 = x2
             self.x3 = x3
             self.x4 = x4
+            self.x5 = x5
           def __eq__(self, o: object) -> bool:
             pass
       |};
