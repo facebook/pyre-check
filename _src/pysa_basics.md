@@ -226,90 +226,10 @@ adding a special decorator:
 ```python
 # This will remove any taint passing through a function, regardless of whether
 # it is a taint source returned by this function, taint reaching sinks within
-# the function via 'argument', or taint propagateing through 'argument' to the
+# the function via 'text', or taint propagateing through 'text' to the
 # return value.
 @Sanitize
 def django.utils.html.escape(text): ...
-```
-
-Sanitizers can also be scoped to only remove taint sources, sinks, or
-taint-in-taint-out (TITO), rather than all taint that passes through the
-function. Understanding Pysa's [implementation
-details](pysa_implementation_details.md) will help you better pick whether to
-sanitize sources, sinks, or TITO :
-
-```python
-# This will remove any taint sources returned by this function, but allow taint
-# to reach sinks within the function via 'argument' as well as allow taint to
-# propagate through 'argument' to the return value.
-@Sanitize(TaintSource)
-def module.sanitize_source(argument): ...
-
-# This remove any taint which passes through 'argument' to reach a sink within
-# the function, but allow taint sources to be returned from the function as well
-# as allow taint to propagate through 'argument' to the return value.
-@Sanitize(TaintSink)
-def module.sanitize_sink(argument): ...
-
-# This will remove any taint which propagates through 'argument' to the return
-# value, but allow taint sources to be returned from the function as well as
-# allow taint to reach sinks within the function via 'argument'.
-@Sanitize(TaintInTaintOut)
-def module.sanitize_tito(argument): ...
-```
-
-For source and sink sanitizers, Pysa also supports only sanitizing specific kinds of
-taint to ensure that the sanitizers used for a rule don't have adverse effects on other
-rules. The syntax used is identical to how taint sources and sinks are specified normally:
-
-```python
-# Sanitizes only the `UserControlled` source kind.
-@Sanitize(TaintSource[UserControlled])
-def module.return_not_user_controlled(): ...
-
-# Sanitizes both the `SQL` and `Logging` sinks.
-@Sanitize(TaintSink[SQL, Logging])
-def module.sanitizes_sql_and_logging_sinks(flows_to_sql, logged_parameter): ...
-```
-
-For TITO sanitizers, Pysa supports only sanitizing specific sources and sinks through TITO:
-
-```python
-# With this annotation, whenever `escape(data)` is called, the UserControlled taint of `data`
-# will be sanitized, whereas other taint that might be present on `data` will be preserved.
-@Sanitize(TaintInTaintOut[TaintSource[UserControlled]])
-def django.utils.html.escape(text: TaintInTaintOut): ...
-
-@Sanitize(TaintInTaintOut[TaintSink[SQL, Logging]])
-def module.sanitize_for_logging_and_sql(): ...
-```
-
-Specific parameters can be marked as sanitized to remove all taint passing through them:
-
-```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_START end=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_END
-```
-
-Similarly, the return value can be marked as sanitized:
-
-```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_RETURN_SANITIZERS_START end=DOCUMENTATION_RETURN_SANITIZERS_END
-```
-
-All parameters can be marked as sanitized as well:
-
-```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETERS_SANITIZERS_START end=DOCUMENTATION_PARAMETERS_SANITIZERS_END
-```
-
-Attributes can also be marked as sanitizers to remove all taint passing through
-them:
-
-```python
-django.http.request.HttpRequest.GET: Sanitize
-```
-
-Sanitizing specific sources and sinks can also be used with attributes:
-```python
-def module.Node.id: Sanitize[TaintSource[UserSecrets]] = ...
-def module.Node.id: Sanitize[TaintSink[Logging]] = ...
 ```
 
 This annotation is useful in the case of explicit sanitizers such as `escape`,
@@ -320,18 +240,103 @@ tainted data. One such example could be `hmac.digest(key, msg, digest)`, which
 returns sufficiently unpredictable data that the output should no longer be
 considered attacker-controlled after passing through.
 
-Note that sanitizers come with the risk of losing legitimate taint flows.
-They remove all taint and aren't restricted to a specific rule or
-individual source to sink flows. This means you need to ensure you aren't
-potentially affecting other flows when you add a sanitizer for a flow you care
-about. For this reason, the above sanitizer examples might not be a good idea
-to use. If you are trying to track flows where SQL injection occurs, the `escape`
-sanitizer would prevent you from seeing any flows where data going into your
-SQL query happened to be HTML escaped.
+Sanitizers can also be scoped to only remove taint returned by a function,
+passing through a specific argument, or passing through all arguments.
 
-The best practice with sanitizers, then, is to make them as specific as possible.
-It's recommended to sanitize specific sources and sinks over using the general
-@Sanitize annotation.
+```python
+# This will remove any taint returned by this function, but allow taint
+# to be passed in to the function via 'argument'. It also prevents taint
+# from propagating from any argument to the return value.
+def module.sanitize_return(argument) -> Sanitize: ...
+
+# This prevents any taint which passes through 'argument' from reaching a sink within
+# the function, but allows taint which originates within the function to be returned.
+def module.sanitize_parameter(argument: Sanitize): ...
+
+# This prevents any taint which passes through any parameter from entering the function,
+# but allows taint which originates within the function to be returned. It also prevents
+# taint from propagating from any argument to the return value.
+@Sanitize(Parameters)
+def module.sanitize_all_parameters(): ...
+
+# This will remove any taint which propagates through any argument to the return
+# value, but allow taint sources to be returned from the function as well as
+# allow taint to reach sinks within the function via any argument.
+@Sanitize(TaintInTaintOut)
+def module.sanitize_tito(a, b, c): ...
+
+# Same as before, but only for parameter 'b'
+def module.sanitize_tito_b(a, b: Sanitize[TaintInTaintOut], c): ...
+```
+
+Pysa also supports only sanitizing specific sources or sinks to ensure that the
+sanitizers used for a rule don't have adverse effects on other rules. The syntax
+used is identical to how taint sources and sinks are specified normally:
+
+```python
+# Sanitizes only the `UserControlled` source kind.
+def module.return_not_user_controlled() -> Sanitize[TaintSource[UserControlled]]: ...
+
+# Sanitizes both the `SQL` and `Logging` sinks.
+def module.sanitizes_sql_and_logging_sinks(
+  flows_to_sql: Sanitize[TaintSink[SQL]],
+  logged_parameter: Sanitize[TaintSink[Logging]],
+): ...
+```
+
+For taint-in-taint-out (TITO) sanitizers, Pysa supports only sanitizing specific
+sources and sinks through TITO:
+
+```python
+# With this annotation, whenever `escape(data)` is called, the UserControlled taint of `data`
+# will be sanitized, whereas other taint that might be present on `data` will be preserved.
+@Sanitize(TaintInTaintOut[TaintSource[UserControlled]])
+def django.utils.html.escape(text): ...
+
+@Sanitize(TaintInTaintOut[TaintSink[SQL, Logging]])
+def module.sanitize_for_logging_and_sql(): ...
+```
+
+Note that you can use any combination of annotations, i.e sanitizing specific
+sources or specific sinks, on the return value, a specific parameter or all parameters:
+
+```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_RETURN_SANITIZERS_START end=DOCUMENTATION_RETURN_SANITIZERS_END
+
+```
+
+```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_START end=DOCUMENTATION_PARAMETER_SPECIFIC_SANITIZERS_END
+
+```
+
+```python file=source/interprocedural_analyses/taint/test/integration/sanitize.py.pysa start=DOCUMENTATION_PARAMETERS_SANITIZERS_START end=DOCUMENTATION_PARAMETERS_SANITIZERS_END
+
+```
+
+Attributes can also be marked as sanitizers to remove all taint passing through
+them:
+
+```python
+django.http.request.HttpRequest.GET: Sanitize
+```
+
+Sanitizing specific sources and sinks can also be used with attributes:
+
+```python
+def module.Node.id: Sanitize[TaintSource[UserSecrets]] = ...
+def module.Node.id: Sanitize[TaintSink[Logging]] = ...
+```
+
+Note that sanitizers come with the risk of losing legitimate taint flows. They
+remove all taint and aren't restricted to a specific rule or individual source
+to sink flows. This means you need to ensure you aren't potentially affecting
+other flows when you add a sanitizer for a flow you care about. For this reason,
+some of the above sanitizer examples might not be a good idea to use. For example,
+if you are trying to track flows where SQL injection occurs, the `escape` sanitizer
+removing all taint kinds would prevent you from seeing any flows where data going
+into your SQL query happened to be HTML escaped. The best practice with sanitizers,
+then, is to make them as specific as possible. It's recommended to sanitize
+specific sources and sinks over using the general `@Sanitize`, `-> Sanitize` or
+`: Sanitize` annotations.
 
 ## Taint Propagation
 
