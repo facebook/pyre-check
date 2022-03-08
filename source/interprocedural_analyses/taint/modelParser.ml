@@ -2189,7 +2189,6 @@ let resolve_global_callable
 
 let adjust_sanitize_and_modes_and_skipped_override
     ~path
-    ~location
     ~define_name
     ~configuration
     ~top_level_decorators
@@ -2197,27 +2196,40 @@ let adjust_sanitize_and_modes_and_skipped_override
     model
   =
   let open Core.Result in
-  let join_with_sanitize_decorator ~sanitizers ~decorator_location arguments =
-    let parse_sanitize arguments =
-      (* Pretend that it is a `Sanitize[...]` expression and use the annotation parser. *)
-      let expression =
-        List.map ~f:(fun { Call.Argument.value; _ } -> value) arguments
-        |> Ast.Expression.get_item_call "Sanitize" ~location:decorator_location
-        |> Node.create ~location:decorator_location
-      in
-      parse_annotations
-        ~path
-        ~location
-        ~model_name:(Reference.show define_name)
-        ~configuration
-        ~parameters:[]
-        ~callable_parameter_names_to_positions:None
-        ~is_object_target
-        expression
-      >>= function
-      | [Sanitize sanitize_annotations] -> Ok (sanitize_from_annotations sanitize_annotations)
-      | _ -> failwith "impossible case"
-    in
+  let create_get_item_call ~location callee arguments =
+    List.map ~f:(fun { Call.Argument.value; _ } -> value) arguments
+    |> Ast.Expression.get_item_call callee ~location
+    |> Node.create ~location
+  in
+  let create_function_call ~location callee arguments =
+    Ast.Expression.Expression.Call
+      { callee = { Node.location; value = Name (Name.Identifier callee) }; arguments }
+    |> Node.create ~location
+  in
+  let parse_sanitize_annotations ~location ~original_expression arguments =
+    (* Pretend that it is a `Sanitize[...]` expression and use the annotation parser. *)
+    let expression = create_get_item_call ~location "Sanitize" arguments in
+    parse_annotations
+      ~path
+      ~location
+      ~model_name:(Reference.show define_name)
+      ~configuration
+      ~parameters:[]
+      ~callable_parameter_names_to_positions:None
+      ~is_object_target
+      expression
+    |> function
+    | Ok [Sanitize sanitize_annotations] -> Ok (sanitize_from_annotations sanitize_annotations)
+    | Ok _ -> failwith "impossible case"
+    | Error ({ ModelVerificationError.kind = InvalidTaintAnnotation { reason; _ }; _ } as error) ->
+        Error
+          {
+            error with
+            kind = InvalidTaintAnnotation { taint_annotation = original_expression; reason };
+          }
+    | Error error -> Error error
+  in
+  let join_with_sanitize_decorator ~sanitizers ~location ~original_expression arguments =
     match arguments with
     | None -> Ok { sanitizers with Model.Sanitizers.global = Sanitize.all }
     | Some
@@ -2252,21 +2264,78 @@ let adjust_sanitize_and_modes_and_skipped_override
           { Call.Argument.value = { Node.value = Expression.Call { Call.callee; arguments }; _ }; _ };
         ]
       when [%compare.equal: string option] (base_name callee) (Some "Parameters") ->
-        parse_sanitize arguments
+        parse_sanitize_annotations ~location ~original_expression arguments
         >>| fun parameters_sanitize ->
         { sanitizers with parameters = Sanitize.join sanitizers.parameters parameters_sanitize }
     | Some arguments ->
-        parse_sanitize arguments
+        parse_sanitize_annotations ~location ~original_expression arguments
         >>| fun global_sanitize ->
         { sanitizers with global = Sanitize.join sanitizers.global global_sanitize }
+  in
+  let join_with_sanitize_single_trace_decorator ~sanitizers ~location ~original_expression arguments
+    =
+    let annotation_error reason =
+      model_verification_error
+        ~path
+        ~location
+        (InvalidTaintAnnotation { taint_annotation = original_expression; reason })
+    in
+    match arguments with
+    | None ->
+        Error
+          (annotation_error
+             "`SanitizeSingleTrace()` is ambiguous. Did you mean \
+              `SanitizeSingleTrace(TaintSource)` or `SanitizeSingleTrace(TaintSink)`?")
+    | Some
+        [
+          {
+            Call.Argument.value = { Node.value = Expression.Name (Name.Identifier "TaintSource"); _ };
+            _;
+          };
+        ] ->
+        let global = { sanitizers.Model.Sanitizers.global with sources = Some All } in
+        Ok { sanitizers with global }
+    | Some
+        [
+          {
+            Call.Argument.value = { Node.value = Expression.Name (Name.Identifier "TaintSink"); _ };
+            _;
+          };
+        ] ->
+        let global = { sanitizers.Model.Sanitizers.global with sinks = Some All } in
+        Ok { sanitizers with global }
+    | Some arguments -> (
+        parse_sanitize_annotations ~location ~original_expression arguments
+        >>= function
+        | { Sanitize.tito = Some _; _ } ->
+            Error
+              (annotation_error
+                 "`TaintInTaintOut` is not supported within `SanitizeSingleTrace(...)`. Did you \
+                  mean to use `Sanitize(...)`?")
+        | sanitizer -> Ok { sanitizers with global = Sanitize.join sanitizers.global sanitizer })
   in
   let join_with_decorator
       (sanitizers, modes, skipped_override)
       { Decorator.name = { Node.value = name; location = decorator_location }; arguments }
     =
-    match Reference.show name with
+    let name = Reference.show name in
+    let original_expression =
+      create_function_call ~location:decorator_location name (Option.value ~default:[] arguments)
+    in
+    match name with
     | "Sanitize" ->
-        join_with_sanitize_decorator ~sanitizers ~decorator_location arguments
+        join_with_sanitize_decorator
+          ~sanitizers
+          ~location:decorator_location
+          ~original_expression
+          arguments
+        >>| fun sanitizers -> sanitizers, modes, skipped_override
+    | "SanitizeSingleTrace" ->
+        join_with_sanitize_single_trace_decorator
+          ~sanitizers
+          ~location:decorator_location
+          ~original_expression
+          arguments
         >>| fun sanitizers -> sanitizers, modes, skipped_override
     | "SkipAnalysis" -> Ok (sanitizers, Model.ModeSet.add SkipAnalysis modes, skipped_override)
     | "SkipDecoratorWhenInlining" ->
@@ -2683,6 +2752,7 @@ let create_model_from_signature
       | Some ({ Decorator.name = { Node.value = name; _ }; _ } as decorator) -> (
           match Reference.as_list name with
           | ["Sanitize"]
+          | ["SanitizeSingleTrace"]
           | ["SkipAnalysis"]
           | ["SkipDecoratorWhenInlining"]
           | ["SkipOverrides"]
@@ -2867,7 +2937,6 @@ let create_model_from_signature
   model
   >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
-        ~location
         ~configuration
         ~top_level_decorators
         ~define_name:callable_name
@@ -2943,7 +3012,6 @@ let create_model_from_attribute
         annotation)
   >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
-        ~location
         ~configuration
         ~top_level_decorators:decorators
         ~define_name:name

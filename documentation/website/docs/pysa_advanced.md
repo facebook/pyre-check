@@ -369,3 +369,58 @@ def bar(x: int) -> None:
 ```
 
 This will prevent the decorator from being inlined when analyzing `bar`. Note that we use `@SkipDecoratorWhenInlining` on the decorator that is to be skipped, not the function on which the decorator is applied.
+
+# Single trace sanitizers with `@SanitizeSingleTrace`
+
+Sanitizers, as described in the [Overview](pysa_basics.md), are applied in both
+the forward (i.e source) trace and backward (i.e sink) trace.
+
+For instance, with the given `.pysa` file:
+
+```python
+@Sanitize(TaintInTaintOut[TaintSink[RemoteCodeExecution]])
+def shlex.quote(x): ...
+```
+
+And the following Python code:
+
+```python
+import subprocess
+from shlex import quote
+
+def quoted_input():
+  x = input() # source 'UserControlled'
+  y = quote(x)
+  return y
+
+def echo(argument):
+  subprocess.run(f'/bin/echo {argument}', shell=True) # sink 'RemoteCodeExecution'
+
+def issue():
+  x = quoted_input() # source trace: input -> quoted_input -> issue
+  echo(x) # sink trace: issue -> echo -> subprocess.run
+```
+
+Pysa will NOT find an issue here, as expected.
+This is because during the propagation of the 'UserControlled' source in the
+forward trace, pysa remembers that it was sanitized for the sink 'RemoteCodeExecution'.
+
+However, Pysa provides a simpler version of sanitizers, which only sanitizes in the
+forward trace or the backward trace:
+
+```python
+@SanitizeSingleTrace(TaintSource)
+def f(): ...
+
+@SanitizeSingleTrace(TaintSource[UserControlled])
+def g(): ...
+
+@SanitizeSingleTrace(TaintSink)
+def h(): ...
+
+@SanitizeSingleTrace(TaintSink[RemoteCodeExecution])
+def i(): ...
+```
+
+These sanitizers are a lot cheaper and could save analysis time. However, these
+might introduce false positives, so we recommend to use the default sanitizers.

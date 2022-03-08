@@ -390,7 +390,7 @@ let test_global_sanitize context =
       def test.taint(x): ...
     |}
     ~expect:
-      "`Sanitize[(TaintSource, TaintInTaintOut)]` is an invalid taint annotation: \
+      "`Sanitize(TaintSource, TaintInTaintOut)` is an invalid taint annotation: \
        `Sanitize[TaintSource]` is ambiguous here. Did you mean `Sanitize`?"
     ();
   assert_model
@@ -552,6 +552,185 @@ let test_global_sanitize context =
           "test.taint";
       ]
     ()
+
+
+let test_sanitize_single_trace context =
+  let open Taint.Domains in
+  let assert_model = assert_model ~context in
+  let assert_invalid_model = assert_invalid_model ~context in
+  assert_invalid_model
+    ~model_source:{|
+      @SanitizeSingleTrace
+      def test.taint(x): ...
+    |}
+    ~expect:
+      "`SanitizeSingleTrace()` is an invalid taint annotation: `SanitizeSingleTrace()` is \
+       ambiguous. Did you mean `SanitizeSingleTrace(TaintSource)` or \
+       `SanitizeSingleTrace(TaintSink)`?"
+    ();
+  assert_model
+    ~model_source:{|
+      @SanitizeSingleTrace(TaintSource)
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~global_sanitizer:{ Sanitize.sources = Some All; sinks = None; tito = None }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      @SanitizeSingleTrace(TaintSink)
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~global_sanitizer:{ Sanitize.sources = None; sinks = Some All; tito = None }
+          "test.taint";
+      ]
+    ();
+  assert_invalid_model
+    ~model_source:{|
+      @SanitizeSingleTrace(TaintInTaintOut)
+      def test.taint(x): ...
+    |}
+    ~expect:
+      "`SanitizeSingleTrace(TaintInTaintOut)` is an invalid taint annotation: `TaintInTaintOut` is \
+       not supported within `SanitizeSingleTrace(...)`. Did you mean to use `Sanitize(...)`?"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      @SanitizeSingleTrace(TaintSource)
+      @SanitizeSingleTrace(TaintInTaintOut)
+      def test.taint(x): ...
+    |}
+    ~expect:
+      "`SanitizeSingleTrace(TaintInTaintOut)` is an invalid taint annotation: `TaintInTaintOut` is \
+       not supported within `SanitizeSingleTrace(...)`. Did you mean to use `Sanitize(...)`?"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      @SanitizeSingleTrace(TaintSink)
+      @SanitizeSingleTrace(TaintInTaintOut)
+      def test.taint(x): ...
+    |}
+    ~expect:
+      "`SanitizeSingleTrace(TaintInTaintOut)` is an invalid taint annotation: `TaintInTaintOut` is \
+       not supported within `SanitizeSingleTrace(...)`. Did you mean to use `Sanitize(...)`?"
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @SanitizeSingleTrace(TaintSource[Test])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~global_sanitizer:
+            {
+              Sanitize.sources =
+                Some (Specific (Sources.Set.singleton (Sources.NamedSource "Test")));
+              sinks = None;
+              tito = None;
+            }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @SanitizeSingleTrace(TaintSource[Test, UserControlled])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~global_sanitizer:
+            {
+              Sanitize.sources =
+                Some
+                  (Specific
+                     (Sources.Set.of_list
+                        [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]));
+              sinks = None;
+              tito = None;
+            }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:{|
+      @SanitizeSingleTrace(TaintSink[Test])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~global_sanitizer:
+            {
+              Sanitize.sources = None;
+              sinks = Some (Specific (Sinks.Set.singleton (Sinks.NamedSink "Test")));
+              tito = None;
+            }
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      @SanitizeSingleTrace(TaintSink[TestSink, OtherSink])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~global_sanitizer:
+            {
+              Sanitize.sources = None;
+              sinks =
+                Some
+                  (Specific
+                     (Sinks.Set.of_list [Sinks.NamedSink "TestSink"; Sinks.NamedSink "OtherSink"]));
+              tito = None;
+            }
+          "test.taint";
+      ]
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      @SanitizeSingleTrace(TaintInTaintOut[TaintSource[A]])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      "`SanitizeSingleTrace(TaintInTaintOut[TaintSource[A]])` is an invalid taint annotation: \
+       `TaintInTaintOut` is not supported within `SanitizeSingleTrace(...)`. Did you mean to use \
+       `Sanitize(...)`?"
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      @SanitizeSingleTrace(TaintInTaintOut[TaintSink[X]])
+      def test.taint(x): ...
+    |}
+    ~expect:
+      "`SanitizeSingleTrace(TaintInTaintOut[TaintSink[X]])` is an invalid taint annotation: \
+       `TaintInTaintOut` is not supported within `SanitizeSingleTrace(...)`. Did you mean to use \
+       `Sanitize(...)`?"
+    ();
+  ()
 
 
 let test_attribute_sanitize context =
@@ -1114,8 +1293,8 @@ let test_parameters_sanitize context =
       def test.taint(x): ...
     |}
     ~expect:
-      "`Sanitize[TaintSource]` is an invalid taint annotation: `Sanitize[TaintSource]` is \
-       ambiguous here. Did you mean `Sanitize`?"
+      "`Sanitize(Parameters[TaintSource])` is an invalid taint annotation: `Sanitize[TaintSource]` \
+       is ambiguous here. Did you mean `Sanitize`?"
     ();
   assert_invalid_model
     ~model_source:{|
@@ -1123,8 +1302,8 @@ let test_parameters_sanitize context =
       def test.taint(x): ...
     |}
     ~expect:
-      "`Sanitize[TaintSink]` is an invalid taint annotation: `Sanitize[TaintSink]` is ambiguous \
-       here. Did you mean `Sanitize`?"
+      "`Sanitize(Parameters[TaintSink])` is an invalid taint annotation: `Sanitize[TaintSink]` is \
+       ambiguous here. Did you mean `Sanitize`?"
     ();
   assert_model
     ~model_source:
@@ -1148,8 +1327,8 @@ let test_parameters_sanitize context =
       def test.taint(x): ...
     |}
     ~expect:
-      "`Sanitize[TaintSource]` is an invalid taint annotation: `Sanitize[TaintSource]` is \
-       ambiguous here. Did you mean `Sanitize`?"
+      "`Sanitize(Parameters[TaintSource])` is an invalid taint annotation: `Sanitize[TaintSource]` \
+       is ambiguous here. Did you mean `Sanitize`?"
     ();
   assert_invalid_model
     ~model_source:
@@ -1158,7 +1337,7 @@ let test_parameters_sanitize context =
       def test.taint(x): ...
     |}
     ~expect:
-      "`Sanitize[(TaintSource, TaintInTaintOut)]` is an invalid taint annotation: \
+      "`Sanitize(Parameters[(TaintSource, TaintInTaintOut)])` is an invalid taint annotation: \
        `Sanitize[TaintSource]` is ambiguous here. Did you mean `Sanitize`?"
     ();
   assert_model
@@ -2901,7 +3080,7 @@ let test_invalid_models context =
       def test.foo(x): ...
     |}
     ~expect:
-      {|`Sanitize[TaintInTaintOut[LocalReturn]]` is an invalid taint annotation: Failed to parse the given taint annotation.|}
+      {|`Sanitize(TaintInTaintOut[LocalReturn])` is an invalid taint annotation: Failed to parse the given taint annotation.|}
     ();
 
   (* Test source- and sink- specific tito parsing. *)
@@ -2948,7 +3127,7 @@ let test_invalid_models context =
       def test.foo(x): ...
     |}
     ~expect:
-      {|`Sanitize[TaintSource[(A, Via[featureA])]]` is an invalid taint annotation: `ModelParser.Internal.Source {source = A;
+      {|`Sanitize(TaintSource[(A, Via[featureA])])` is an invalid taint annotation: `ModelParser.Internal.Source {source = A;
    breadcrumbs = [SimpleVia[featureA]]; via_features = []; path = ;
    leaf_names = []; leaf_name_provided = false; trace_length = None}` is not supported within `Sanitize[...]`|}
     ();
@@ -4473,6 +4652,7 @@ let () =
          "partial_sinks" >:: test_partial_sinks;
          "query_parsing" >:: test_query_parsing;
          "global_sanitize" >:: test_global_sanitize;
+         "sanitize_single_trace" >:: test_sanitize_single_trace;
          "attribute_sanitize" >:: test_attribute_sanitize;
          "parameter_sanitize" >:: test_parameter_sanitize;
          "return_sanitize" >:: test_return_sanitize;
