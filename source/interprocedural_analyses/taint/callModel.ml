@@ -82,7 +82,27 @@ let match_actuals_to_formals ~model:{ Model.backward; sanitizers; _ } ~arguments
 
 
 let tito_sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =
-  let to_tito_sanitize { Sanitize.tito; _ } = tito in
+  let to_tito_sanitize { Sanitize.sources; sinks; tito } =
+    let sources_tito =
+      match sources with
+      | None -> None
+      | Some SanitizeSources.All -> Some SanitizeTito.All
+      | Some (SanitizeSources.Specific sources) ->
+          Some
+            (SanitizeTito.Specific
+               { sanitized_tito_sources = sources; sanitized_tito_sinks = Sinks.Set.empty })
+    in
+    let sinks_tito =
+      match sinks with
+      | None -> None
+      | Some SanitizeSinks.All -> Some SanitizeTito.All
+      | Some (SanitizeSinks.Specific sinks) ->
+          Some
+            (SanitizeTito.Specific
+               { sanitized_tito_sources = Sources.Set.empty; sanitized_tito_sinks = sinks })
+    in
+    tito |> SanitizeTito.join sources_tito |> SanitizeTito.join sinks_tito
+  in
   List.map
     ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots |> to_tito_sanitize)
     sanitize_matches

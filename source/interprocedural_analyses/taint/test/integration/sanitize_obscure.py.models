@@ -148,6 +148,38 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize_obscure.propagation_of_b_sink_via_parameter",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize_obscure.b_sink" } ],
+                "kind": "TestB"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 194, "start": 34, "end": 35 } ],
+            "root": {
+              "filename": "sanitize_obscure.py",
+              "line": 195,
+              "start": 11,
+              "end": 12
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize_obscure.propagation_of_b_sink_via_parameter_tito",
     "sinks": [
       {
@@ -168,6 +200,38 @@
             "root": {
               "filename": "sanitize_obscure.py",
               "line": 139,
+              "start": 11,
+              "end": 12
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_obscure.propagation_of_b_sink_via_return",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize_obscure.b_sink" } ],
+                "kind": "TestB"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 222, "start": 31, "end": 32 } ],
+            "root": {
+              "filename": "sanitize_obscure.py",
+              "line": 223,
               "start": 11,
               "end": 12
             }
@@ -244,6 +308,38 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize_obscure.propagation_of_b_source_via_parameter",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize_obscure.b_source" } ],
+                "kind": "TestB"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 181, "start": 39, "end": 40 } ],
+            "root": {
+              "filename": "sanitize_obscure.py",
+              "line": 180,
+              "start": 8,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize_obscure.propagation_of_b_source_via_parameter_tito",
     "sources": [
       {
@@ -264,6 +360,38 @@
             "root": {
               "filename": "sanitize_obscure.py",
               "line": 119,
+              "start": 8,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_obscure.propagation_of_b_source_via_return",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize_obscure.b_source" } ],
+                "kind": "TestB"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 209, "start": 36, "end": 37 } ],
+            "root": {
+              "filename": "sanitize_obscure.py",
+              "line": 208,
               "start": 8,
               "end": 18
             }
@@ -372,10 +500,26 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize_obscure.sanitize_parameter_sink_a",
+    "sanitizers": [ { "port": "formal(x)", "sinks": [ "TestA" ] } ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize_obscure.sanitize_parameter_sink_a_tito",
     "sanitizers": [
       { "port": "formal(x)", "tito_sources": [], "tito_sinks": [ "TestA" ] }
     ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_obscure.sanitize_parameter_source_a",
+    "sanitizers": [ { "port": "formal(x)", "sources": [ "TestA" ] } ],
     "modes": [ "Obscure" ]
   }
 }
@@ -392,10 +536,26 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize_obscure.sanitize_return_sink_a",
+    "sanitizers": [ { "port": "result", "sinks": [ "TestA" ] } ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize_obscure.sanitize_return_sink_a_tito",
     "sanitizers": [
       { "port": "result", "tito_sources": [], "tito_sinks": [ "TestA" ] }
     ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_obscure.sanitize_return_source_a",
+    "sanitizers": [ { "port": "result", "sources": [ "TestA" ] } ],
     "modes": [ "Obscure" ]
   }
 }

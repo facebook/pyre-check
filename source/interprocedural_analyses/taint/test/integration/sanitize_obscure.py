@@ -165,3 +165,59 @@ def no_propagation_of_a_sink_via_return_tito(x):
 def propagation_of_b_sink_via_return_tito(x):
     y = sanitize_return_sink_a_tito(x)
     b_sink(y)
+
+
+def sanitize_parameter_source_a(x):
+    ...
+
+
+def no_propagation_of_a_source_via_parameter():
+    x = a_source()
+    return sanitize_parameter_source_a(x)
+
+
+def propagation_of_b_source_via_parameter():
+    x = b_source()
+    return sanitize_parameter_source_a(x)
+
+
+def sanitize_parameter_sink_a(x):
+    ...
+
+
+def no_propagation_of_a_sink_via_parameter(x):
+    y = sanitize_parameter_sink_a(x)
+    a_sink(y)
+
+
+def propagation_of_b_sink_via_parameter(x):
+    y = sanitize_parameter_sink_a(x)
+    b_sink(y)
+
+
+def sanitize_return_source_a(x):
+    ...
+
+
+def no_propagation_of_a_source_via_return():
+    x = a_source()
+    return sanitize_return_source_a(x)
+
+
+def propagation_of_b_source_via_return():
+    x = b_source()
+    return sanitize_return_source_a(x)
+
+
+def sanitize_return_sink_a(x):
+    ...
+
+
+def no_propagation_of_a_sink_via_return(x):
+    y = sanitize_return_sink_a(x)
+    a_sink(y)
+
+
+def propagation_of_b_sink_via_return(x):
+    y = sanitize_return_sink_a(x)
+    b_sink(y)
