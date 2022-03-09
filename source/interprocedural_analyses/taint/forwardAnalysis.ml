@@ -365,9 +365,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (* Apply source- and sink- specific tito sanitizers for obscure models,
            * since the tito is not materialized in `backward.taint_in_taint_out`. *)
           let obscure_sanitize =
-            CallModel.sanitize_of_argument ~model:taint_model ~sanitize_matches
+            CallModel.tito_sanitize_of_argument ~model:taint_model ~sanitize_matches
           in
-          match obscure_sanitize.tito with
+          match obscure_sanitize with
           | Some All -> TaintInTaintOutEffects.remove tito_effects ~kind:Sinks.LocalReturn
           | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
               let apply_taint_transforms = function

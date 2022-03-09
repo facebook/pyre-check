@@ -165,10 +165,13 @@ let sink_trees_of_argument
   List.map sink_matches ~f:to_sink_tree_with_identifier |> Issue.SinkTreeWithHandle.filter_bottom
 
 
-let sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =
+let tito_sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =
+  let to_tito_sanitize { Sanitize.tito; _ } = tito in
   List.map
-    ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots)
+    ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots |> to_tito_sanitize)
     sanitize_matches
-  |> List.fold ~f:Sanitize.join ~init:Sanitize.empty
-  |> Sanitize.join sanitizers.global
-  |> Sanitize.join sanitizers.parameters
+  |> List.fold ~f:SanitizeTito.join ~init:SanitizeTito.bottom
+  |> SanitizeTito.join
+       (SanitizeRootMap.get AccessPath.Root.LocalResult sanitizers.roots |> to_tito_sanitize)
+  |> SanitizeTito.join (to_tito_sanitize sanitizers.global)
+  |> SanitizeTito.join (to_tito_sanitize sanitizers.parameters)

@@ -57,7 +57,7 @@ val sink_trees_of_argument
   sink_matches:AccessPath.argument_match list ->
   Issue.SinkTreeWithHandle.t list
 
-val sanitize_of_argument
+val tito_sanitize_of_argument
   :  model:Model.t ->
   sanitize_matches:AccessPath.argument_match list ->
-  Sanitize.sanitize
+  SanitizeTito.t

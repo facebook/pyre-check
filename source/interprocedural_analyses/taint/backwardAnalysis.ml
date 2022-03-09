@@ -401,11 +401,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let taint_in_taint_out =
         if Model.ModeSet.contains Obscure modes then
           let obscure_sanitize =
-            CallModel.sanitize_of_argument ~model:taint_model ~sanitize_matches
+            CallModel.tito_sanitize_of_argument ~model:taint_model ~sanitize_matches
           in
           (* Apply source- and sink- specific tito sanitizers for obscure models,
            * since the tito is not materialized in `backward.taint_in_taint_out`. *)
-          match obscure_sanitize.tito with
+          match obscure_sanitize with
           | Some All -> BackwardState.Tree.bottom
           | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
               let sanitized_tito_sources =
