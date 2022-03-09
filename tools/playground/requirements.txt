@@ -48,6 +48,6 @@ ujson==4.0.1
 wcwidth==0.2.5
 Werkzeug==1.0.1
 xxhash==2.0.0
-uWSGI==2.0.20
+gunicorn==20.1.0
 pyre-check-nightly
 pyre-extensions

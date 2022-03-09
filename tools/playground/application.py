@@ -73,6 +73,10 @@ class Pyre:
         watchman_configuration_path = self._directory / WATCHMAN_CONFIG_FILE
         watchman_configuration_path.write_text("{}\n")
 
+        LOG.debug("Initializing the code")
+        code_path = self._directory / INPUT_FILE
+        code_path.write_text("x = 0\n")
+
         LOG.debug("Starting watchman")
         subprocess.check_call(["watchman", "watch", str(self._directory)])
 
@@ -188,7 +192,7 @@ class Pysa:
             emit("pysa_results_channel", result)
 
 
-def run_server(debug: bool) -> None:
+def get_server():
     application = Flask(__name__)
 
     # You may need to modify the origin to the pyre-check website
@@ -237,6 +241,11 @@ def run_server(debug: bool) -> None:
     def index() -> str:
         return "404"
 
+    return application, socketio
+
+
+def run_server(debug: bool) -> None:
+    application, socketio = get_server()
     socketio.run(application, debug=debug)
 
 
