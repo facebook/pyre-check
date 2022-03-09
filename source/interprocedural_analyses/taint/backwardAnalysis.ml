@@ -393,35 +393,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |> Issue.SinkTreeWithHandle.join
       in
       let taint_in_taint_out =
-        CallModel.taint_in_taint_out_mapping ~transform_non_leaves ~model:taint_model ~tito_matches
+        CallModel.taint_in_taint_out_mapping
+          ~transform_non_leaves
+          ~model:taint_model
+          ~tito_matches
+          ~sanitize_matches
         |> CallModel.TaintInTaintOutMap.fold
              ~init:BackwardState.Tree.empty
              ~f:(convert_tito_tree_to_taint ~argument)
-      in
-      let taint_in_taint_out =
-        if Model.ModeSet.contains Obscure modes then
-          let obscure_sanitize =
-            CallModel.tito_sanitize_of_argument ~model:taint_model ~sanitize_matches
-          in
-          (* Apply source- and sink- specific tito sanitizers for obscure models,
-           * since the tito is not materialized in `backward.taint_in_taint_out`. *)
-          match obscure_sanitize with
-          | Some All -> BackwardState.Tree.bottom
-          | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
-              let sanitized_tito_sources =
-                Sources.Set.to_sanitize_transforms_exn sanitized_tito_sources
-              in
-              let sanitized_tito_sinks_transforms =
-                Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks
-              in
-              taint_in_taint_out
-              |> BackwardState.Tree.sanitize sanitized_tito_sinks
-              |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
-              |> BackwardState.Tree.apply_sanitize_sink_transforms sanitized_tito_sinks_transforms
-              |> BackwardState.Tree.transform BackwardTaint.kind Filter ~f:Issue.sink_can_match_rule
-          | None -> taint_in_taint_out
-        else
-          taint_in_taint_out
       in
       let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
       let state =

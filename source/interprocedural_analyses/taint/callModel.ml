@@ -81,6 +81,18 @@ let match_actuals_to_formals ~model:{ Model.backward; sanitizers; _ } ~arguments
          { ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches })
 
 
+let tito_sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =
+  let to_tito_sanitize { Sanitize.tito; _ } = tito in
+  List.map
+    ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots |> to_tito_sanitize)
+    sanitize_matches
+  |> List.fold ~f:SanitizeTito.join ~init:SanitizeTito.bottom
+  |> SanitizeTito.join
+       (SanitizeRootMap.get AccessPath.Root.LocalResult sanitizers.roots |> to_tito_sanitize)
+  |> SanitizeTito.join (to_tito_sanitize sanitizers.global)
+  |> SanitizeTito.join (to_tito_sanitize sanitizers.parameters)
+
+
 module TaintInTaintOutMap = struct
   type t = (Sinks.t, BackwardState.Tree.t) Map.Poly.t
 
@@ -99,13 +111,16 @@ module TaintInTaintOutMap = struct
 
   let set map ~kind ~tito_tree = Map.Poly.set map ~key:kind ~data:tito_tree
 
+  let remove map ~kind = Map.Poly.remove map kind
+
   let fold map ~init ~f = Map.Poly.fold map ~init ~f:(fun ~key ~data -> f ~kind:key ~tito_tree:data)
 end
 
 let taint_in_taint_out_mapping
     ~transform_non_leaves
-    ~model:{ Model.backward; modes; _ }
+    ~model:({ Model.backward; modes; _ } as model)
     ~tito_matches
+    ~sanitize_matches
   =
   let combine_tito sofar { AccessPath.root; actual_path; formal_path } =
     BackwardState.read ~transform_non_leaves ~root ~path:formal_path backward.taint_in_taint_out
@@ -116,19 +131,47 @@ let taint_in_taint_out_mapping
   let mapping = List.fold tito_matches ~f:combine_tito ~init:TaintInTaintOutMap.empty in
   let mapping =
     if Model.ModeSet.contains Obscure modes then
-      let breadcrumbs =
+      (* Turn source- and sink- specific tito sanitizers into a tito taint with
+       * sanitize taint transforms for obscure models. *)
+      let obscure_sanitize = tito_sanitize_of_argument ~model ~sanitize_matches in
+      let obscure_breadcrumbs =
         TaintInTaintOutMap.get mapping ~kind:Sinks.LocalReturn
         >>| BackwardState.Tree.joined_breadcrumbs
         |> Option.value ~default:Features.BreadcrumbSet.empty
         |> Features.BreadcrumbSet.add (Features.obscure_model ())
       in
-      let return_tito =
-        Domains.local_return_frame
-        |> Frame.update Frame.Slots.Breadcrumb breadcrumbs
-        |> BackwardTaint.singleton Sinks.LocalReturn
-        |> BackwardState.Tree.create_leaf
-      in
-      TaintInTaintOutMap.set mapping ~kind:Sinks.LocalReturn ~tito_tree:return_tito
+      let mapping = TaintInTaintOutMap.remove mapping ~kind:Sinks.LocalReturn in
+      match obscure_sanitize with
+      | Some All -> mapping
+      | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
+          let sanitize_transforms =
+            Sources.Set.to_sanitize_transforms_exn sanitized_tito_sources
+            |> SanitizeTransform.Set.union
+                 (Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks)
+          in
+          let tito_kind =
+            Sinks.Transform
+              {
+                local = { ordered = []; sanitize = sanitize_transforms };
+                global = TaintTransforms.empty;
+                base = Sinks.LocalReturn;
+              }
+          in
+          let return_tito =
+            Domains.local_return_frame
+            |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
+            |> BackwardTaint.singleton tito_kind
+            |> BackwardState.Tree.create_leaf
+          in
+          TaintInTaintOutMap.set mapping ~kind:tito_kind ~tito_tree:return_tito
+      | None ->
+          let return_tito =
+            Domains.local_return_frame
+            |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
+            |> BackwardTaint.singleton Sinks.LocalReturn
+            |> BackwardState.Tree.create_leaf
+          in
+          TaintInTaintOutMap.set mapping ~kind:Sinks.LocalReturn ~tito_tree:return_tito
     else
       mapping
   in
@@ -163,15 +206,3 @@ let sink_trees_of_argument
     { Issue.SinkTreeWithHandle.sink_tree; handle = Issue.SinkHandle.make_call ~call_target ~root }
   in
   List.map sink_matches ~f:to_sink_tree_with_identifier |> Issue.SinkTreeWithHandle.filter_bottom
-
-
-let tito_sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =
-  let to_tito_sanitize { Sanitize.tito; _ } = tito in
-  List.map
-    ~f:(fun { AccessPath.root; _ } -> SanitizeRootMap.get root sanitizers.roots |> to_tito_sanitize)
-    sanitize_matches
-  |> List.fold ~f:SanitizeTito.join ~init:SanitizeTito.bottom
-  |> SanitizeTito.join
-       (SanitizeRootMap.get AccessPath.Root.LocalResult sanitizers.roots |> to_tito_sanitize)
-  |> SanitizeTito.join (to_tito_sanitize sanitizers.global)
-  |> SanitizeTito.join (to_tito_sanitize sanitizers.parameters)

@@ -235,8 +235,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           | Some previous -> ForwardState.Tree.join previous taint)
 
 
-    let remove map ~kind = Map.Poly.remove map kind
-
     let get map ~kind = Map.Poly.find map kind |> Option.value ~default:ForwardState.Tree.empty
 
     let fold map ~init ~f = Map.Poly.fold map ~init ~f:(fun ~key ~data -> f ~kind:key ~taint:data)
@@ -356,41 +354,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~transform_non_leaves:(fun _ tito -> tito)
           ~model:taint_model
           ~tito_matches
+          ~sanitize_matches
         |> CallModel.TaintInTaintOutMap.fold
              ~init:tito_effects
              ~f:(convert_tito_tree_to_taint ~argument ~argument_taint)
-      in
-      let tito_effects =
-        if Model.ModeSet.contains Obscure modes then
-          (* Apply source- and sink- specific tito sanitizers for obscure models,
-           * since the tito is not materialized in `backward.taint_in_taint_out`. *)
-          let obscure_sanitize =
-            CallModel.tito_sanitize_of_argument ~model:taint_model ~sanitize_matches
-          in
-          match obscure_sanitize with
-          | Some All -> TaintInTaintOutEffects.remove tito_effects ~kind:Sinks.LocalReturn
-          | Some (Specific { sanitized_tito_sources; sanitized_tito_sinks }) ->
-              let apply_taint_transforms = function
-                | None -> ForwardState.Tree.bottom
-                | Some taint_tree ->
-                    let sanitized_tito_sinks =
-                      Sinks.Set.to_sanitize_transforms_exn sanitized_tito_sinks
-                    in
-                    taint_tree
-                    |> ForwardState.Tree.sanitize sanitized_tito_sources
-                    |> ForwardState.Tree.apply_sanitize_transforms sanitized_tito_sinks
-                    |> ForwardState.Tree.transform
-                         ForwardTaint.kind
-                         Filter
-                         ~f:Issue.source_can_match_rule
-              in
-              TaintInTaintOutEffects.update
-                tito_effects
-                ~kind:Sinks.LocalReturn
-                ~f:apply_taint_transforms
-          | None -> tito_effects
-        else
-          tito_effects
       in
       let location =
         Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location
