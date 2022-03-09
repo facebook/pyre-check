@@ -27,9 +27,18 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def _distribution_platform() -> str:
-    if platform.system() == "Linux":
+    system = platform.system()
+    if system == "Linux":
+        # Currently we only ever build on Intel Linux machines.
         return "-manylinux1_x86_64"
-    return "-macosx_10_11_x86_64"
+    elif system == "Darwin":
+        if "arm" in platform.processor():
+            # This means we are on Apple Silicon machines.
+            # The minimum possible arm64 Mac version for pip is 11.0.
+            return "-macosx_11_0_arm64"
+        return "-macosx_10_11_x86_64"
+    else:
+        raise RuntimeError(f"Building on platform `{system}` is not supported.")
 
 
 def _validate_typeshed(typeshed_path: Path) -> None:
