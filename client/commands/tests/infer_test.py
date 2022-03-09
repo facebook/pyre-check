@@ -1491,6 +1491,44 @@ class StubApplicationTest(testslide.TestCase):
             """,
         )
 
+    def test_forward_references(self) -> None:
+        self._assert_in_place(
+            """
+            class Foo:
+                def method(self) -> Foo: ...
+            """,
+            """
+            class Foo:
+                def method(self):
+                    return self
+            """,
+            """
+            class Foo:
+                def method(self) -> "Foo":
+                    return self
+            """,
+        )
+
+        self._assert_in_place(
+            """
+            def foo() -> Foo: ...
+            """,
+            """
+            def foo():
+                return Foo()
+
+            class Foo:
+                pass
+            """,
+            """
+            def foo() -> "Foo":
+                return Foo()
+
+            class Foo:
+                pass
+            """,
+        )
+
     def test_generated(self) -> None:
         self._assert_in_place(
             """
