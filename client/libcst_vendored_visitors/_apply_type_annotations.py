@@ -5,6 +5,7 @@
 
 # flake8: noqa
 # VENDORED FROM Instagram/LibCST/libcst/codemod/visitors/_apply_type_annotations.py ON COMMIT f7417febe71c1fa8581b40dbf456d7d7d6025e62
+
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence, Set, Tuple, Union
 
@@ -16,6 +17,8 @@ from libcst.codemod.visitors._add_imports import AddImportsVisitor
 from libcst.codemod.visitors._gather_imports import GatherImportsVisitor
 from libcst.helpers import get_full_name_for_node
 from libcst.metadata import PositionProvider, QualifiedNameProvider
+
+from ._gather_global_names import GatherGlobalNamesVisitor
 
 
 NameOrAttribute = Union[cst.Name, cst.Attribute]
@@ -596,6 +599,11 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         self.current_assign: Optional[cst.Assign] = None
         self.typevars: Dict[str, cst.Assign] = {}
 
+        # Global variables and classes defined on the toplevel of the target module.
+        # Used to help determine which names we need to check are in scope, and add
+        # quotations to avoid undefined forward references in type annotations.
+        self.global_names: Set[str] = set()
+
     @staticmethod
     def store_stub_in_context(
         context: CodemodContext,
@@ -632,10 +640,18 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         Collect type annotations from all stubs and apply them to ``tree``.
 
         Gather existing imports from ``tree`` so that we don't add duplicate imports.
+
+        Gather global names from ``tree`` so forward references are quoted.
         """
         import_gatherer = GatherImportsVisitor(CodemodContext())
         tree.visit(import_gatherer)
         existing_import_names = _get_imported_names(import_gatherer.all_imports)
+
+        global_names_gatherer = GatherGlobalNamesVisitor(CodemodContext())
+        tree.visit(global_names_gatherer)
+        self.global_names = global_names_gatherer.global_names.union(
+            global_names_gatherer.class_names
+        )
 
         context_contents = self.context.scratch.get(
             ApplyTypeAnnotationsVisitor.CONTEXT_KEY
@@ -678,6 +694,26 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         else:
             return tree
 
+    # helpers for processing annotation nodes
+    def _quote_future_annotations(self, annotation: cst.Annotation) -> cst.Annotation:
+        # TODO: We probably want to make sure references to classes defined in the current
+        # module come to us fully qualified - so we can do the dequalification here and
+        # know to look for what is in-scope without also catching builtins like "None" in the
+        # quoting. This should probably also be extended to handle what imports are in scope,
+        # as well as subscriptable types.
+        # Note: We are collecting all imports and passing this to the type collector grabbing
+        # annotations from the stub file; should consolidate import handling somewhere too.
+        node = annotation.annotation
+        if (
+            isinstance(node, cst.Name)
+            and (node.value in self.global_names)
+            and not (node.value in self.visited_classes)
+        ):
+            return annotation.with_changes(
+                annotation=cst.SimpleString(value=f'"{node.value}"')
+            )
+        return annotation
+
     # smart constructors: all applied annotations happen via one of these
 
     def _apply_annotation_to_attribute_or_global(
@@ -692,7 +728,7 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
             self.annotation_counts.attribute_annotations += 1
         return cst.AnnAssign(
             cst.Name(name),
-            annotation,
+            self._quote_future_annotations(annotation),
             value,
         )
 
@@ -703,7 +739,7 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
     ) -> cst.Param:
         self.annotation_counts.parameter_annotations += 1
         return parameter.with_changes(
-            annotation=annotation,
+            annotation=self._quote_future_annotations(annotation),
         )
 
     def _apply_annotation_to_return(
@@ -712,7 +748,9 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         annotation: cst.Annotation,
     ) -> cst.FunctionDef:
         self.annotation_counts.return_annotations += 1
-        return function_def.with_changes(returns=annotation)
+        return function_def.with_changes(
+            returns=self._quote_future_annotations(annotation),
+        )
 
     # private methods used in the visit and leave methods
 
@@ -949,13 +987,13 @@ class ApplyTypeAnnotationsVisitor(ContextAwareTransformer):
         node: cst.ClassDef,
     ) -> None:
         self.qualifier.append(node.name.value)
-        self.visited_classes.add(node.name.value)
 
     def leave_ClassDef(
         self,
         original_node: cst.ClassDef,
         updated_node: cst.ClassDef,
     ) -> cst.ClassDef:
+        self.visited_classes.add(original_node.name.value)
         cls_name = ".".join(self.qualifier)
         self.qualifier.pop()
         definition = self.annotations.class_definitions.get(cls_name)
