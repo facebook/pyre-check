@@ -7,10 +7,19 @@
 
 open Core
 
-type t = Named of string [@@deriving compare, eq, hash, sexp]
+type t =
+  | Named of string
+  | Sanitize of SanitizeTransform.t
+[@@deriving compare, eq, hash, sexp]
 
 let pp formatter = function
   | Named transform -> Format.fprintf formatter "%s" transform
+  | Sanitize sanitize_transform ->
+      Format.fprintf formatter "%a" SanitizeTransform.pp sanitize_transform
 
 
 let show = Format.asprintf "%a" pp
+
+let is_named_transform = function
+  | Named _ -> true
+  | Sanitize _ -> false

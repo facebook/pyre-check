@@ -429,10 +429,10 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
     let apply_ordered_transforms { Flow.source_taint; sink_taint } =
       (* TODO(T90698159): Handle interaction with sanitizing transforms *)
       let taint_by_source_transforms =
-        ForwardTaint.partition ForwardTaint.kind By source_taint ~f:Sources.get_ordered_transforms
+        ForwardTaint.partition ForwardTaint.kind By source_taint ~f:Sources.get_named_transforms
       in
       let taint_by_sink_transforms =
-        BackwardTaint.partition BackwardTaint.kind By sink_taint ~f:Sinks.get_ordered_transforms
+        BackwardTaint.partition BackwardTaint.kind By sink_taint ~f:Sinks.get_named_transforms
       in
       let find_flow source_transforms sink_transforms =
         Map.Poly.find taint_by_source_transforms source_transforms
@@ -590,14 +590,14 @@ let get_name_and_detailed_message { flow; handle = { code; _ }; _ } =
   | Some { name; message_format; transforms; _ } ->
       let sources =
         Domains.ForwardTaint.kinds flow.source_taint
-        |> List.map ~f:Sources.discard_sanitize_transforms
+        |> List.map ~f:Sources.discard_transforms
         |> List.dedup_and_sort ~compare:Sources.compare
         |> List.map ~f:Sources.show
         |> String.concat ~sep:", "
       in
       let sinks =
         Domains.BackwardTaint.kinds flow.sink_taint
-        |> List.map ~f:Sinks.discard_sanitize_transforms
+        |> List.map ~f:Sinks.discard_transforms
         |> List.dedup_and_sort ~compare:Sinks.compare
         |> List.map ~f:Sinks.show
         |> String.concat ~sep:", "
@@ -702,7 +702,9 @@ let source_can_match_rule = function
   | Sources.Transform { local; global; base = ParametricSource { source_name = name; _ } } -> (
       let { matching_sinks; _ } = TaintConfiguration.get () in
       let source =
-        match local.ordered @ global.ordered with
+        local.ordered @ global.ordered
+        |> List.filter ~f:TaintTransform.is_named_transform
+        |> function
         | [] -> Sources.NamedSource name
         | ordered ->
             Sources.Transform
@@ -730,7 +732,9 @@ let sink_can_match_rule = function
   | Sinks.Transform { local; global; base = ParametricSink { sink_name = name; _ } } -> (
       let { matching_sources; _ } = TaintConfiguration.get () in
       let sink =
-        match local.ordered @ global.ordered with
+        local.ordered @ global.ordered
+        |> List.filter ~f:TaintTransform.is_named_transform
+        |> function
         | [] -> Sinks.NamedSink name
         | ordered ->
             Sinks.Transform

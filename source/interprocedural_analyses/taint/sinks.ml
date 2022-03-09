@@ -138,9 +138,20 @@ let discard_transforms = function
   | sink -> sink
 
 
-let discard_sanitize_transforms =
-  (* TODO(T90698159): Assumes only sanitizing transforms present, revisit. *)
-  discard_transforms
+let discard_sanitize_transforms = function
+  | Transform { base; local; global } -> (
+      let local_ordered = List.filter local.ordered ~f:TaintTransform.is_named_transform in
+      let global_ordered = List.filter global.ordered ~f:TaintTransform.is_named_transform in
+      match local_ordered, global_ordered with
+      | [], [] -> base
+      | _, _ ->
+          Transform
+            {
+              base;
+              local = { ordered = local_ordered; sanitize = SanitizeTransform.Set.empty };
+              global = { ordered = global_ordered; sanitize = SanitizeTransform.Set.empty };
+            })
+  | sink -> sink
 
 
 let extract_sanitized_sinks_from_transforms transforms =
@@ -219,8 +230,9 @@ let apply_ordered_transforms transforms sink =
       Transform { local = { local with ordered = transforms @ local.ordered }; global; base }
 
 
-let get_ordered_transforms = function
-  | Transform { local; global; _ } -> local.ordered @ global.ordered
+let get_named_transforms = function
+  | Transform { local; global; _ } ->
+      local.ordered @ global.ordered |> List.filter ~f:TaintTransform.is_named_transform
   | _ -> []
 
 

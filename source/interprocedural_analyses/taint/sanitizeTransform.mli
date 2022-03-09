@@ -10,6 +10,8 @@ type t =
   | NamedSink of string
 [@@deriving compare, eq, hash, sexp]
 
+val pp : Format.formatter -> t -> unit
+
 val show : t -> string
 
 module Set : sig

@@ -118,9 +118,20 @@ let discard_transforms = function
   | source -> source
 
 
-let discard_sanitize_transforms =
-  (* For now, we only have sanitize taint transforms. *)
-  discard_transforms
+let discard_sanitize_transforms = function
+  | Transform { base; local; global } -> (
+      let local_ordered = List.filter local.ordered ~f:TaintTransform.is_named_transform in
+      let global_ordered = List.filter global.ordered ~f:TaintTransform.is_named_transform in
+      match local_ordered, global_ordered with
+      | [], [] -> base
+      | _, _ ->
+          Transform
+            {
+              base;
+              local = { ordered = local_ordered; sanitize = SanitizeTransform.Set.empty };
+              global = { ordered = global_ordered; sanitize = SanitizeTransform.Set.empty };
+            })
+  | source -> source
 
 
 let extract_sanitized_sources_from_transforms transforms =
@@ -180,8 +191,9 @@ let apply_ordered_transforms transforms source =
         { local = { local with ordered = List.rev_append transforms local.ordered }; global; base }
 
 
-let get_ordered_transforms = function
-  | Transform { local; global; _ } -> local.ordered @ global.ordered
+let get_named_transforms = function
+  | Transform { local; global; _ } ->
+      local.ordered @ global.ordered |> List.filter ~f:TaintTransform.is_named_transform
   | _ -> []
 
 
