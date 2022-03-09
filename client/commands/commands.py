@@ -20,6 +20,7 @@ class ExitCode(enum.IntEnum):
     WATCHMAN_ERROR = 8
     TAINT_CONFIGURATION_ERROR = 9
     MODEL_VERIFICATION_ERROR = 10
+    UNSUPPORTED_PLATFORM = 11
     # If the process exited due to a signal, this will be the negative signal number.
     SIGSEGV = -signal.SIGSEGV
 
