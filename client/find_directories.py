@@ -6,6 +6,7 @@
 
 import itertools
 import logging
+import sys
 from pathlib import Path
 from typing import Callable, List, NamedTuple, Optional
 
@@ -181,26 +182,22 @@ def find_parent_directory_containing_directory(
 
 
 def find_typeshed() -> Optional[Path]:
-    current_directory = Path(__file__).parent
-
     # Prefer the typeshed we bundled ourselves (if any) to the one
     # from the environment.
-    bundled_typeshed_relative_path = "pyre_check/typeshed/"
-    bundled_typeshed = find_parent_directory_containing_directory(
-        current_directory, bundled_typeshed_relative_path
-    )
-    if bundled_typeshed:
-        return bundled_typeshed / bundled_typeshed_relative_path
+    install_root = Path(sys.prefix)
+    bundled_typeshed = install_root / "lib/pyre_check/typeshed/"
+    if bundled_typeshed.is_dir():
+        return bundled_typeshed
 
+    LOG.debug("Could not find bundled typeshed. Try importing typeshed directly...")
     try:
         import typeshed  # pyre-fixme: Can't find module import typeshed
 
         return Path(typeshed.typeshed)
     except ImportError:
-        LOG.debug("`import typeshed` failed, attempting a manual lookup")
+        LOG.debug("`import typeshed` failed.")
 
-    # This is a terrible, terrible hack.
-    return find_parent_directory_containing_directory(current_directory, "typeshed/")
+    return None
 
 
 def find_typeshed_search_paths(typeshed_root: Path) -> List[Path]:
