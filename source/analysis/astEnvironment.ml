@@ -389,7 +389,7 @@ let update
             UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
             invalidated_modules = List.append updated_submodules parsed;
           }
-      | _ ->
+      | Configuration.Analysis.FineGrained ->
           let changed_modules =
             let reparse_modules =
               List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)

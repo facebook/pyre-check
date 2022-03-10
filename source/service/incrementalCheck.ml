@@ -120,7 +120,7 @@ let recheck
         in
 
         recheck_modules, errors, Map.length recheck_functions
-    | _ ->
+    | Shallow ->
         let total_rechecked_functions =
           let unannotated_global_environment_update_result =
             AnnotatedGlobalEnvironment.UpdateResult.unannotated_global_environment_update_result
