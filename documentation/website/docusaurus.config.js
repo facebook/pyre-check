@@ -149,7 +149,7 @@ module.exports = {
           ],
         },
       ],
-      copyright: `Copyright &#169; ${new Date().getFullYear()} Facebook, Inc.`,
+      copyright: `Copyright &#169; ${new Date().getFullYear()} Meta Platforms, Inc.`,
     },
     image: 'img/docusaurus.png',
     gtag: {
