@@ -219,6 +219,10 @@ def sanitize_b_source_tito(x):
     return x
 
 
+def sanitize_test_source_tito(x):
+    return x
+
+
 def combine_sanitize_a_source_b_source_in_sink_trace(x):
     y = sanitize_b_source_tito(x)
     propagation_of_sanitize_a_source_in_sink_trace(y)
@@ -883,3 +887,21 @@ def propagation_of_rce_with_sanitize_all_parameters_no_cookies_sql_tito(x):
 
 def sanitize_all_parameters_with_user_declared_sink(x):
     return x
+
+
+# Frame linking test
+
+
+def sink_taint_sanitize_a(arg):
+    arg = sanitize_a_source_tito(arg)
+    _rce(arg)
+
+
+def sink_taint_sanitize_a_sanitize_b(arg):
+    arg = sanitize_b_source_tito(arg)
+    sink_taint_sanitize_a(arg)
+
+
+def sink_taint_sanitize_a_sanitize_b_santize_test(arg):
+    arg = sanitize_test_source_tito(arg)
+    sink_taint_sanitize_a_sanitize_b(arg)
