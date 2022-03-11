@@ -53,8 +53,8 @@ let test_superclasses context =
   ()
 
 
-let test_get_decorator context =
-  let assert_get_decorator source decorator expected =
+let test_first_matching_decorator context =
+  let assert_first_matching_decorator source name expected =
     let resolution =
       ScratchProject.setup ~context ["__init__.py", source]
       |> ScratchProject.build_global_resolution
@@ -63,11 +63,11 @@ let test_get_decorator context =
       match parse_last_statement source with
       | { Node.value = Statement.Class definition; _ } ->
           let actual =
-            Node.create_with_default_location definition
-            |> Node.map ~f:(ClassSummary.create ~qualifier:Reference.empty)
-            |> UnannotatedGlobalEnvironment.ReadOnly.get_decorator
-                 (GlobalResolution.unannotated_global_environment resolution)
-                 ~decorator
+            let class_summary = ClassSummary.create ~qualifier:Reference.empty definition in
+            UnannotatedGlobalEnvironment.ReadOnly.first_matching_class_decorator
+              (GlobalResolution.unannotated_global_environment resolution)
+              ~names:[name]
+              (Node.create_with_default_location class_summary)
           in
           let equal_decorator left right =
             let open Decorator in
@@ -78,51 +78,57 @@ let test_get_decorator context =
                  left.arguments
                  right.arguments
           in
-          assert_equal
-            ~printer:(List.to_string ~f:Decorator.show)
-            ~cmp:(List.equal equal_decorator)
-            expected
-            actual
-      | _ -> assert_true (List.is_empty expected)
+          let printer = function
+            | Some decorator -> Decorator.show decorator
+            | None -> "None"
+          in
+          assert_equal ~printer ~cmp:(Option.equal equal_decorator) expected actual
+      | _ -> assert_true (Option.is_empty expected)
     in
     assert_logic expected
   in
-  assert_get_decorator "class A: pass" "decorator" [];
-  assert_get_decorator
+  assert_first_matching_decorator "class A: pass" "decorator" None;
+  assert_first_matching_decorator
     {|
       @decorator
       class A:
         pass
     |}
     "decorator"
-    [{ name = + !&"decorator"; arguments = None }];
-  assert_get_decorator {|
+    (Some { name = + !&"decorator"; arguments = None });
+  assert_first_matching_decorator
+    {|
       @decorator.a.b
       class A:
         pass
-    |} "decorator.a" [];
-  assert_get_decorator {|
+    |}
+    "decorator.a"
+    None;
+  assert_first_matching_decorator
+    {|
       @decorator
       class A:
         pass
-    |} "decorator.a" [];
-  assert_get_decorator
+    |}
+    "decorator.a"
+    None;
+  assert_first_matching_decorator
     {|
       @decorator.a.b
       class A:
         pass
     |}
     "decorator.a.b"
-    [{ name = + !&"decorator.a.b"; arguments = None }];
-  assert_get_decorator
+    (Some { Decorator.name = + !&"decorator.a.b"; arguments = None });
+  assert_first_matching_decorator
     {|
       @decorator(a=b, c=d)
       class A:
         pass
     |}
     "decorator.a.b"
-    [];
-  assert_get_decorator
+    None;
+  assert_first_matching_decorator
     {|
       @other.decorator
       @decorator(a=b, c=d)
@@ -130,18 +136,17 @@ let test_get_decorator context =
         pass
     |}
     "decorator"
-    [
-      {
-        name = + !&"decorator";
-        arguments =
-          Some
-            [
-              { Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") };
-              { Argument.name = Some ~+"c"; value = +Expression.Name (Name.Identifier "d") };
-            ];
-      };
-    ];
-  assert_get_decorator
+    (Some
+       {
+         Decorator.name = + !&"decorator";
+         arguments =
+           Some
+             [
+               { Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") };
+               { Argument.name = Some ~+"c"; value = +Expression.Name (Name.Identifier "d") };
+             ];
+       });
+  assert_first_matching_decorator
     {|
       @decorator(a=b)
       @decorator(a=b, c=d)
@@ -149,23 +154,13 @@ let test_get_decorator context =
         pass
     |}
     "decorator"
-    [
-      {
-        name = + !&"decorator";
-        arguments =
-          Some [{ Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") }];
-      };
-      {
-        name = + !&"decorator";
-        arguments =
-          Some
-            [
-              { Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") };
-              { Argument.name = Some ~+"c"; value = +Expression.Name (Name.Identifier "d") };
-            ];
-      };
-    ];
-  assert_get_decorator
+    (Some
+       {
+         Decorator.name = + !&"decorator";
+         arguments =
+           Some [{ Argument.name = Some ~+"a"; value = +Expression.Name (Name.Identifier "b") }];
+       });
+  assert_first_matching_decorator
     (* `enum` imports `ABCMeta` from `abc`. *)
     {|
       import enum
@@ -174,7 +169,8 @@ let test_get_decorator context =
         pass
     |}
     "abc.ABCMeta"
-    [{ name = + !&"abc.ABCMeta"; arguments = None }]
+    (Some { name = + !&"abc.ABCMeta"; arguments = None });
+  ()
 
 
 let test_constructors context =
@@ -2819,7 +2815,7 @@ let () =
          "typed_dictionary_individual_attributes" >:: test_typed_dictionary_individual_attributes;
          "constraints" >:: test_constraints;
          "constructors" >:: test_constructors;
-         "get_decorator" >:: test_get_decorator;
+         "first_matching_decorator" >:: test_first_matching_decorator;
          "is_protocol" >:: test_is_protocol;
          "metaclasses" >:: test_metaclasses;
          "superclasses" >:: test_superclasses;

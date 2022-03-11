@@ -313,22 +313,12 @@ module ClassDecorators = struct
     field_descriptors: Ast.Expression.t list;
   }
 
-  let find_decorator
-      ~class_metadata_environment
-      ~names
+  let find_decorator ~class_metadata_environment ~names ?dependency class_summary =
+    UnannotatedGlobalEnvironment.ReadOnly.first_matching_class_decorator
+      (unannotated_global_environment class_metadata_environment)
       ?dependency
-      { Node.value = { ClassSummary.decorators; _ }; _ }
-    =
-    let get_decorator name =
-      List.find_map
-        ~f:
-          (UnannotatedGlobalEnvironment.ReadOnly.resolve_decorator_if_matches
-             (unannotated_global_environment class_metadata_environment)
-             ?dependency
-             ~target:name)
-        decorators
-    in
-    names |> List.find_map ~f:get_decorator
+      ~names
+      class_summary
 
 
   let extract_options ~default ~init ~repr ~eq ~order decorator =
@@ -3513,16 +3503,11 @@ class base class_metadata_environment dependency =
               | None, Some value ->
                   let literal_value_annotation = self#resolve_literal ~assumptions value in
                   let is_dataclass_attribute =
-                    let get_decorator =
-                      UnannotatedGlobalEnvironment.ReadOnly.get_decorator
-                        (unannotated_global_environment class_metadata_environment)
-                        ?dependency
-                    in
-                    let get_dataclass_decorator annotated =
-                      get_decorator annotated ~decorator:"dataclasses.dataclass"
-                      @ get_decorator annotated ~decorator:"dataclass"
-                    in
-                    not (List.is_empty (get_dataclass_decorator parent))
+                    UnannotatedGlobalEnvironment.ReadOnly.exists_matching_class_decorator
+                      (unannotated_global_environment class_metadata_environment)
+                      ?dependency
+                      ~names:["dataclasses.dataclass"; "dataclass"]
+                      parent
                   in
                   if
                     (not (Type.is_partially_typed literal_value_annotation))

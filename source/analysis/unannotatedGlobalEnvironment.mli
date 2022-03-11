@@ -101,19 +101,19 @@ module ReadOnly : sig
     Reference.t ->
     ResolvedReference.t option
 
-  val resolve_decorator_if_matches
+  val first_matching_class_decorator
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
-    Ast.Expression.t ->
-    target:string ->
+    names:string list ->
+    ClassSummary.t Node.t ->
     Ast.Statement.Decorator.t option
 
-  val get_decorator
+  val exists_matching_class_decorator
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
+    names:string list ->
     ClassSummary.t Node.t ->
-    decorator:string ->
-    Ast.Statement.Decorator.t list
+    bool
 end
 
 module UpdateResult : sig

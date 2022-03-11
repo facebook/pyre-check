@@ -243,31 +243,35 @@ module ReadOnly = struct
     resolve_module_alias ~current_module:from ~names_to_resolve:(Reference.as_list reference) ()
 
 
-  let resolve_decorator_if_matches read_only ?dependency decorator ~target =
-    match Decorator.from_expression decorator with
-    | None -> None
-    | Some ({ Ast.Statement.Decorator.name = { Node.value = name; location }; _ } as decorator) ->
-        let resolved_name =
-          match resolve_exports read_only ?dependency name with
-          | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
-              Reference.create_from_list (name :: remaining) |> Reference.combine from
-          | _ -> name
-        in
-        if String.equal (Reference.show resolved_name) target then
-          Some { decorator with name = { Node.value = resolved_name; location } }
-        else
-          None
-
-
-  let get_decorator
+  let first_matching_class_decorator
       read_only
       ?dependency
+      ~names
       { Node.value = { ClassSummary.decorators; _ }; _ }
-      ~decorator
     =
-    List.filter_map
-      ~f:(resolve_decorator_if_matches read_only ?dependency ~target:decorator)
-      decorators
+    let resolve_and_check_for_match decorator =
+      match Decorator.from_expression decorator with
+      | None -> None
+      | Some ({ Ast.Statement.Decorator.name = { Node.value = name; location }; _ } as decorator) ->
+          let resolved_name =
+            match resolve_exports read_only ?dependency name with
+            | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
+                Reference.create_from_list (name :: remaining) |> Reference.combine from
+            | _ -> name
+          in
+          let with_matched_name_if_matches name_to_match =
+            if String.equal (Reference.show resolved_name) name_to_match then
+              Some { decorator with name = { Node.value = resolved_name; location } }
+            else
+              None
+          in
+          List.find_map names ~f:with_matched_name_if_matches
+    in
+    List.find_map decorators ~f:resolve_and_check_for_match
+
+
+  let exists_matching_class_decorator read_only ?dependency ~names class_summary =
+    first_matching_class_decorator read_only ?dependency ~names class_summary |> Option.is_some
 end
 
 (* The key tracking is necessary because there is no empirical way to determine which classes exist

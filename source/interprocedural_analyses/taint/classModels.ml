@@ -106,11 +106,10 @@ let infer ~environment ~user_models =
   in
   let compute_models class_name class_summary =
     let is_dataclass =
-      UnannotatedGlobalEnvironment.ReadOnly.get_decorator
+      UnannotatedGlobalEnvironment.ReadOnly.exists_matching_class_decorator
         (TypeEnvironment.ReadOnly.unannotated_global_environment environment)
+        ~names:["dataclasses.dataclass"; "dataclass"]
         class_summary
-        ~decorator:"dataclasses.dataclass"
-      |> fun decorators -> not (List.is_empty decorators)
     in
     if is_dataclass then
       compute_dataclass_models class_name
