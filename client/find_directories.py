@@ -219,6 +219,8 @@ def find_typeshed_search_paths(typeshed_root: Path) -> List[Path]:
 
 
 def find_taint_models_directory() -> Optional[Path]:
-    return find_parent_directory_containing_directory(
-        Path(__file__).parent, "pyre_check/taint/"
-    )
+    install_root = Path(sys.prefix)
+    bundled_taint_models = install_root / "lib/pyre_check/taint/"
+    if bundled_taint_models.is_dir():
+        return bundled_taint_models
+    return None
