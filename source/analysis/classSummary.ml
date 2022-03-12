@@ -517,8 +517,6 @@ module ClassAttributes = struct
       name: string;
       self_annotation: Expression.t option;
       value_annotation: Expression.t option;
-      location: Location.t;
-      async: bool;
     }
 
     type t =
@@ -556,7 +554,7 @@ module ClassAttributes = struct
               _
               :: { Node.value = { Expression.Parameter.annotation = value_annotation; _ }; _ } :: _
             ) ->
-              Some (Setter { name; self_annotation; value_annotation; async; location })
+              Some (Setter { name; self_annotation; value_annotation })
           | _ -> None
       in
       parent
