@@ -65,12 +65,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{properties.TaintedGetterAndSetter::my_property$setter}",
+      "callee": "properties.TaintedGetterAndSetter.my_property$setter",
       "index": 0,
       "parameter": "formal(value)"
     },
     "master_handle":
-      "properties.TaintedGetterAndSetter.writes_to_property:5002:0:Call|Ovr{properties.TaintedGetterAndSetter::my_property$setter}|0|formal(value):529f1f15dcffe6e1d29083e68d97703e"
+      "properties.TaintedGetterAndSetter.writes_to_property:5002:0:Call|properties.TaintedGetterAndSetter.my_property$setter|0|formal(value):901e19701bdd5680de120df1d3dc9f27"
   }
 }
 {
@@ -288,12 +288,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{properties.TaintedGetterAndSetter::my_property$setter}",
+      "callee": "properties.TaintedGetterAndSetter.my_property$setter",
       "index": 0,
       "parameter": "formal(value)"
     },
     "master_handle":
-      "properties.sets_tainted_value:5002:0:Call|Ovr{properties.TaintedGetterAndSetter::my_property$setter}|0|formal(value):13502aa3c8befe2e0aa7197e58eacdba"
+      "properties.sets_tainted_value:5002:0:Call|properties.TaintedGetterAndSetter.my_property$setter|0|formal(value):6fa489c71098e6334f437d9d6af3574f"
   }
 }
 {

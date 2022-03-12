@@ -294,6 +294,14 @@ let get_short_name = function
   | `Object name -> name
 
 
+let override_to_method = function
+  | `Function target -> `Function target
+  | `Method target
+  | `OverrideTarget target ->
+      `Method target
+  | `Object name -> `Object name
+
+
 let compare target1 target2 =
   let target1 = (target1 :> t) in
   let target2 = (target2 :> t) in

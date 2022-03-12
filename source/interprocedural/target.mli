@@ -91,6 +91,8 @@ val get_callable_t : [< t ] -> [> callable_t ] option
 (* function or method name, no class or anything else *)
 val get_short_name : [< t ] -> string
 
+val override_to_method : [< t ] -> t
+
 module Key : sig
   type nonrec t = t
 

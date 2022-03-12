@@ -557,10 +557,17 @@ module CallTargetIndexer = struct
     indexer.seen_targets <- Target.Set.empty
 
 
-  let create_target indexer ~implicit_self ~implicit_dunder_call ~collapse_tito target =
-    let index = Target.HashMap.find indexer.indices target |> Option.value ~default:0 in
-    indexer.seen_targets <- Target.Set.add target indexer.seen_targets;
-    { CallTarget.target; implicit_self; implicit_dunder_call; collapse_tito; index }
+  let create_target indexer ~implicit_self ~implicit_dunder_call ~collapse_tito original_target =
+    let target_for_index = Target.override_to_method original_target in
+    let index = Target.HashMap.find indexer.indices target_for_index |> Option.value ~default:0 in
+    indexer.seen_targets <- Target.Set.add target_for_index indexer.seen_targets;
+    {
+      CallTarget.target = original_target;
+      implicit_self;
+      implicit_dunder_call;
+      collapse_tito;
+      index;
+    }
 end
 
 let defining_attribute ~resolution parent_type attribute =

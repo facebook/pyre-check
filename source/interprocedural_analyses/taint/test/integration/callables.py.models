@@ -68,12 +68,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{callables.AbstractEventProcessor::async_call_tainted}",
+      "callee": "callables.AbstractEventProcessor.async_call_tainted",
       "index": 0,
       "parameter": "formal(self)"
     },
     "master_handle":
-      "callables.async_execute_event_processor:5002:0:Call|Ovr{callables.AbstractEventProcessor::async_call_tainted}|0|formal(self):e4458631c86e70465ffcabff68de947f"
+      "callables.async_execute_event_processor:5002:0:Call|callables.AbstractEventProcessor.async_call_tainted|0|formal(self):7a96ef90e2bb1543556804c72ef5a35c"
   }
 }
 {

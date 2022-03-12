@@ -63,6 +63,7 @@ module SinkHandle = struct
       | StarStarParameter _ -> StarStarParameter { excluded = [] }
       | Variable name -> Variable name
     in
+    let target = Target.override_to_method target in
     Call { callee = target; index; parameter = root }
 
 

@@ -68,12 +68,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{overrides.B::classMethod}",
+      "callee": "overrides.B.classMethod",
       "index": 0,
       "parameter": "formal(arg)"
     },
     "master_handle":
-      "overrides.testB:5002:0:Call|Ovr{overrides.B::classMethod}|0|formal(arg):6f1d11d7c4a41b6e328306c71bbef469"
+      "overrides.testB:5002:0:Call|overrides.B.classMethod|0|formal(arg):42ef7d7a7344b2f9d5f1045e588277d3"
   }
 }
 {
@@ -145,12 +145,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{overrides.C::methodA}",
+      "callee": "overrides.C.methodA",
       "index": 0,
       "parameter": "formal(arg)"
     },
     "master_handle":
-      "overrides.testB:5002:0:Call|Ovr{overrides.C::methodA}|0|formal(arg):675e80aeedecf222fa5a8611235983f4"
+      "overrides.testB:5002:0:Call|overrides.C.methodA|0|formal(arg):11ff9fd3d2c724202b6ea0cd0be5f2fb"
   }
 }
 {
@@ -222,12 +222,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{overrides.Base::methodA}",
+      "callee": "overrides.Base.methodA",
       "index": 0,
       "parameter": "formal(arg)"
     },
     "master_handle":
-      "overrides.testBase:5002:0:Call|Ovr{overrides.Base::methodA}|0|formal(arg):23ebf2d57da4ec32ed0bc3402f1e99d5"
+      "overrides.testBase:5002:0:Call|overrides.Base.methodA|0|formal(arg):d582808863ca13f526636f4be61b3798"
   }
 }
 {
@@ -299,12 +299,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{overrides.Base::classMethod}",
+      "callee": "overrides.Base.classMethod",
       "index": 0,
       "parameter": "formal(arg)"
     },
     "master_handle":
-      "overrides.testBase:5002:0:Call|Ovr{overrides.Base::classMethod}|0|formal(arg):c37983e035a1210aaac892e62de94067"
+      "overrides.testBase:5002:0:Call|overrides.Base.classMethod|0|formal(arg):6304845a214712032ec8b09f3d1a2f41"
   }
 }
 {
@@ -396,12 +396,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{overrides.C::methodA}",
+      "callee": "overrides.C.methodA",
       "index": 0,
       "parameter": "formal(arg)"
     },
     "master_handle":
-      "overrides.testC:5002:0:Call|Ovr{overrides.C::methodA}|0|formal(arg):8a3b19b30dfe7ca6a395cffeeafa0106"
+      "overrides.testC:5002:0:Call|overrides.C.methodA|0|formal(arg):00a5a4693306bd5bdaf6271b2eb334c9"
   }
 }
 {
@@ -473,12 +473,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{overrides.D::methodA}",
+      "callee": "overrides.D.methodA",
       "index": 0,
       "parameter": "formal(arg)"
     },
     "master_handle":
-      "overrides.testD:5002:0:Call|Ovr{overrides.D::methodA}|0|formal(arg):11322891bb86e5e6e9429c9b184f3f21"
+      "overrides.testD:5002:0:Call|overrides.D.methodA|0|formal(arg):8b6e6664ece15ea2f6a4cfa900d281ea"
   }
 }
 {

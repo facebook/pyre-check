@@ -145,12 +145,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{supers.B::g1}",
+      "callee": "supers.B.g1",
       "index": 0,
       "parameter": "formal(self)"
     },
     "master_handle":
-      "supers.attribute_B_not_overwritten:5002:0:Call|Ovr{supers.B::g1}|0|formal(self):0086033306352f8790c5fdab7be5aab9"
+      "supers.attribute_B_not_overwritten:5002:0:Call|supers.B.g1|0|formal(self):cf3e1071fa977700dde4c49bfb876739"
   }
 }
 {
@@ -222,12 +222,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{supers.C::g1}",
+      "callee": "supers.C.g1",
       "index": 0,
       "parameter": "formal(self)"
     },
     "master_handle":
-      "supers.attribute_C_not_overwritten:5002:0:Call|Ovr{supers.C::g1}|0|formal(self):4a31e44da11c02f9167dac9709b76bfc"
+      "supers.attribute_C_not_overwritten:5002:0:Call|supers.C.g1|0|formal(self):4b655967d23f2129530996ae2a1b68dd"
   }
 }
 {

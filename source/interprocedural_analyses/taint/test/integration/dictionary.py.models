@@ -63,12 +63,12 @@
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee": "Ovr{dict::__setitem__}",
+      "callee": "dict.__setitem__",
       "index": 0,
       "parameter": "formal(key)"
     },
     "master_handle":
-      "dictionary.copy_untainted_values_with_tainted_keys:5002:0:Call|Ovr{dict::__setitem__}|0|formal(key):ff22f9dc5c260ff09cad0e910bab52a4"
+      "dictionary.copy_untainted_values_with_tainted_keys:5002:0:Call|dict.__setitem__|0|formal(key):dc1d69a06f3933dab76cbe33ad6e5c51"
   }
 }
 {
