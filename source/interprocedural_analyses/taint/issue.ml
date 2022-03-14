@@ -427,7 +427,7 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
           { source_taint; sink_taint }
     in
     let partition_flow = apply_sanitizers { source_taint; sink_taint } in
-    let apply_ordered_transforms { Flow.source_taint; sink_taint } =
+    let apply_named_transforms { Flow.source_taint; sink_taint } =
       (* TODO(T90698159): Handle interaction with sanitizing transforms *)
       let taint_by_source_transforms =
         ForwardTaint.partition ForwardTaint.kind By source_taint ~f:Sources.get_named_transforms
@@ -447,7 +447,7 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
       in
       transform_splits transforms |> List.fold ~init:Flow.bottom ~f:add_flow
     in
-    let partition_flow = apply_ordered_transforms partition_flow in
+    let partition_flow = apply_named_transforms partition_flow in
     if Flow.is_bottom partition_flow then
       None
     else

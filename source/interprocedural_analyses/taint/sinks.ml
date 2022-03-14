@@ -209,7 +209,7 @@ let apply_sanitize_sink_transforms transforms sink =
   | _ -> sink
 
 
-let apply_ordered_transforms transforms sink =
+let apply_named_transforms transforms sink =
   match sink with
   | Attach
   | AddFeatureToArgument ->

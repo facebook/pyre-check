@@ -339,7 +339,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             |> BackwardState.Tree.sanitize sanitized_tito_sinks
             |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
             |> BackwardState.Tree.apply_sanitize_sink_transforms sanitized_tito_sinks_transforms
-            |> BackwardState.Tree.apply_ordered_transforms transforms.ordered
+            |> BackwardState.Tree.apply_named_transforms transforms.ordered
             |> BackwardState.Tree.transform BackwardTaint.kind Filter ~f:Issue.sink_can_match_rule
         | _ -> taint_to_propagate
       in

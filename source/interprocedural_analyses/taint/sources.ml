@@ -171,7 +171,7 @@ let apply_sanitize_transforms transforms source =
 
 let apply_sanitize_sink_transforms = apply_sanitize_transforms
 
-let apply_ordered_transforms transforms source =
+let apply_named_transforms transforms source =
   match source with
   | Attach -> Attach
   | NamedSource _

@@ -324,7 +324,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             taint_to_propagate
             |> ForwardState.Tree.sanitize sanitized_tito_sources
             |> ForwardState.Tree.apply_sanitize_transforms sanitized_tito_sinks
-            |> ForwardState.Tree.apply_ordered_transforms transforms.ordered
+            |> ForwardState.Tree.apply_named_transforms transforms.ordered
             |> ForwardState.Tree.transform ForwardTaint.kind Filter ~f:Issue.source_can_match_rule
         | _ -> taint_to_propagate
       in
