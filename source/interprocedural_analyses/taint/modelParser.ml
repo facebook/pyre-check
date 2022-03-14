@@ -2230,6 +2230,12 @@ let adjust_sanitize_and_modes_and_skipped_override
     | Error error -> Error error
   in
   let join_with_sanitize_decorator ~sanitizers ~location ~original_expression arguments =
+    let annotation_error reason =
+      model_verification_error
+        ~path
+        ~location
+        (InvalidTaintAnnotation { taint_annotation = original_expression; reason })
+    in
     match arguments with
     | None -> Ok { sanitizers with Model.Sanitizers.global = Sanitize.all }
     | Some
@@ -2248,6 +2254,16 @@ let adjust_sanitize_and_modes_and_skipped_override
           };
         ] -> (
         match identifier with
+        | "TaintSource" when not is_object_target ->
+            Error
+              (annotation_error
+                 "`TaintSource` is not supported within `Sanitize()`. Did you mean to use \
+                  `SanitizeSingleTrace(...)`?")
+        | "TaintSink" when not is_object_target ->
+            Error
+              (annotation_error
+                 "`TaintSink` is not supported within `Sanitize()`. Did you mean to use \
+                  `SanitizeSingleTrace(...)`?")
         | "TaintSource" ->
             let global = { sanitizers.global with sources = Some All } in
             Ok { sanitizers with global }
@@ -2267,10 +2283,21 @@ let adjust_sanitize_and_modes_and_skipped_override
         parse_sanitize_annotations ~location ~original_expression arguments
         >>| fun parameters_sanitize ->
         { sanitizers with parameters = Sanitize.join sanitizers.parameters parameters_sanitize }
-    | Some arguments ->
+    | Some arguments -> (
         parse_sanitize_annotations ~location ~original_expression arguments
-        >>| fun global_sanitize ->
-        { sanitizers with global = Sanitize.join sanitizers.global global_sanitize }
+        >>= function
+        | { Sanitize.sources = Some _; _ } when not is_object_target ->
+            Error
+              (annotation_error
+                 "`TaintSource` is not supported within `Sanitize(...)`. Did you mean to use \
+                  `SanitizeSingleTrace(...)`?")
+        | { Sanitize.sinks = Some _; _ } when not is_object_target ->
+            Error
+              (annotation_error
+                 "`TaintSink` is not supported within `Sanitize(...)`. Did you mean to use \
+                  `SanitizeSingleTrace(...)`?")
+        | global_sanitize ->
+            Ok { sanitizers with global = Sanitize.join sanitizers.global global_sanitize })
   in
   let join_with_sanitize_single_trace_decorator ~sanitizers ~location ~original_expression arguments
     =

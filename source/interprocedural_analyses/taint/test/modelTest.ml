@@ -329,31 +329,23 @@ let test_global_sanitize context =
           "test.taint";
       ]
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:{|
       @Sanitize(TaintSource)
       def test.taint(x): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~global_sanitizer:{ Sanitize.sources = Some All; sinks = None; tito = None }
-          "test.taint";
-      ]
+      "`Sanitize(TaintSource)` is an invalid taint annotation: `TaintSource` is not supported \
+       within `Sanitize()`. Did you mean to use `SanitizeSingleTrace(...)`?"
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:{|
       @Sanitize(TaintSink)
       def test.taint(x): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~global_sanitizer:{ Sanitize.sources = None; sinks = Some All; tito = None }
-          "test.taint";
-      ]
+      "`Sanitize(TaintSink)` is an invalid taint annotation: `TaintSink` is not supported within \
+       `Sanitize()`. Did you mean to use `SanitizeSingleTrace(...)`?"
     ();
   assert_model
     ~model_source:{|
@@ -368,7 +360,7 @@ let test_global_sanitize context =
           "test.taint";
       ]
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:
       {|
       @Sanitize(TaintSource)
@@ -376,12 +368,8 @@ let test_global_sanitize context =
       def test.taint(x): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~global_sanitizer:{ Sanitize.sources = Some All; sinks = None; tito = Some All }
-          "test.taint";
-      ]
+      "`Sanitize(TaintSource)` is an invalid taint annotation: `TaintSource` is not supported \
+       within `Sanitize()`. Did you mean to use `SanitizeSingleTrace(...)`?"
     ();
   assert_invalid_model
     ~model_source:
@@ -393,47 +381,23 @@ let test_global_sanitize context =
       "`Sanitize(TaintSource, TaintInTaintOut)` is an invalid taint annotation: \
        `Sanitize[TaintSource]` is ambiguous here. Did you mean `Sanitize`?"
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:{|
-      @Sanitize(TaintSource[Test])
+      @Sanitize(TaintSource[A])
       def test.taint(x): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~global_sanitizer:
-            {
-              Sanitize.sources =
-                Some (Specific (Sources.Set.singleton (Sources.NamedSource "Test")));
-              sinks = None;
-              tito = None;
-            }
-          "test.taint";
-      ]
+      "`Sanitize(TaintSource[A])` is an invalid taint annotation: `TaintSource` is not supported \
+       within `Sanitize(...)`. Did you mean to use `SanitizeSingleTrace(...)`?"
     ();
-  assert_model
-    ~model_source:
-      {|
-      @Sanitize(TaintSource[Test, UserControlled])
+  assert_invalid_model
+    ~model_source:{|
+      @Sanitize(TaintSource[A, B])
       def test.taint(x): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~global_sanitizer:
-            {
-              Sanitize.sources =
-                Some
-                  (Specific
-                     (Sources.Set.of_list
-                        [Sources.NamedSource "UserControlled"; Sources.NamedSource "Test"]));
-              sinks = None;
-              tito = None;
-            }
-          "test.taint";
-      ]
+      "`Sanitize(TaintSource[(A, B)])` is an invalid taint annotation: `TaintSource` is not \
+       supported within `Sanitize(...)`. Did you mean to use `SanitizeSingleTrace(...)`?"
     ();
   assert_model
     ~model_source:
@@ -485,31 +449,16 @@ let test_global_sanitize context =
           "test.taint";
       ]
     ();
-  assert_model
+  assert_invalid_model
     ~model_source:
       {|
-      @Sanitize(TaintSource[Test], TaintInTaintOut[TaintSink[Test]])
+      @Sanitize(TaintSource[A], TaintInTaintOut[TaintSink[X]])
       def test.taint(x): ...
     |}
     ~expect:
-      [
-        outcome
-          ~kind:`Function
-          ~global_sanitizer:
-            {
-              Sanitize.sources =
-                Some (Specific (Sources.Set.singleton (Sources.NamedSource "Test")));
-              sinks = None;
-              tito =
-                Some
-                  (Specific
-                     {
-                       sanitized_tito_sources = Sources.Set.empty;
-                       sanitized_tito_sinks = Sinks.Set.singleton (Sinks.NamedSink "Test");
-                     });
-            }
-          "test.taint";
-      ]
+      "`Sanitize(TaintSource[A], TaintInTaintOut[TaintSink[X]])` is an invalid taint annotation: \
+       `TaintSource` is not supported within `Sanitize(...)`. Did you mean to use \
+       `SanitizeSingleTrace(...)`?"
     ();
   assert_model
     ~model_source:
@@ -3106,7 +3055,7 @@ let test_invalid_models context =
       def test.foo(x): ...
     |}
     ();
-  assert_valid_model
+  assert_invalid_model
     ~source:{|
       def foo(x):
         ...
@@ -3115,6 +3064,9 @@ let test_invalid_models context =
       @Sanitize(TaintSource[A])
       def test.foo(x): ...
     |}
+    ~expect:
+      "`Sanitize(TaintSource[A])` is an invalid taint annotation: `TaintSource` is not supported \
+       within `Sanitize(...)`. Did you mean to use `SanitizeSingleTrace(...)`?"
     ();
   assert_invalid_model
     ~source:{|
