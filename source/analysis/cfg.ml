@@ -278,7 +278,6 @@ module Node = struct
     | Try of Try.t
     | With of With.t
     | While of While.t
-    | Yield
   [@@deriving compare, show, sexp]
 
   type t = {
@@ -385,7 +384,6 @@ module Node = struct
     | Try statement -> Statement.Try statement |> process_statement
     | With statement -> Statement.With statement |> process_statement
     | While statement -> Statement.While statement |> process_statement
-    | Yield -> "Yield"
 end
 
 type t = Node.t Int.Table.t
@@ -395,7 +393,6 @@ type jumps = {
   continue: Node.t;
   error: Node.t;
   normal: Node.t;
-  yield: Node.t;
 }
 
 let match_cases_refutable cases =
@@ -466,7 +463,6 @@ let create define =
   assert (error.Node.id = error_index);
   let exit = Node.empty graph Node.Final in
   assert (exit.Node.id = exit_index);
-  let yield = Node.empty graph Node.Yield in
   Node.connect normal exit;
   Node.connect error exit;
 
@@ -694,7 +690,7 @@ let create define =
         | _ -> create statements jumps node)
     | [] -> Some predecessor
   in
-  let jumps = { break = normal; continue = normal; error; normal; yield } in
+  let jumps = { break = normal; continue = normal; error; normal } in
   let node = create define.Define.body jumps entry in
   Node.connect_option node normal;
   graph

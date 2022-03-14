@@ -224,7 +224,7 @@ let test_find_narrowest_spanning_symbol context =
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "library.Base");
-         cfg_data = { define_name = !&"test.$toplevel"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
   assert_narrowest_expression
@@ -252,7 +252,7 @@ let test_find_narrowest_spanning_symbol context =
            Expression
              (Node.create_with_default_location
                 (Expression.Name (Name.Identifier "$local_test?foo$xs")));
-         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = true;
        });
   assert_narrowest_expression
@@ -264,7 +264,7 @@ let test_find_narrowest_spanning_symbol context =
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression {|["a", "b"]|});
-         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
   assert_narrowest_expression
@@ -276,7 +276,7 @@ let test_find_narrowest_spanning_symbol context =
     (Some
        {
          symbol_with_definition = TypeAnnotation (parse_single_expression "list[str]");
-         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
   assert_narrowest_expression
@@ -291,7 +291,7 @@ let test_find_narrowest_spanning_symbol context =
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "library.Base");
-         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
   (* TODO(T112570623): This should probably be `getint().__add__` so that we can go to the
@@ -309,7 +309,7 @@ let test_find_narrowest_spanning_symbol context =
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "test.getint() + 2");
-         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
   assert_narrowest_expression
@@ -326,7 +326,7 @@ let test_find_narrowest_spanning_symbol context =
        {
          symbol_with_definition =
            Expression (parse_single_expression "(test.return_str()).capitalize");
-         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
   assert_narrowest_expression
@@ -342,7 +342,7 @@ let test_find_narrowest_spanning_symbol context =
            Expression
              (Node.create_with_default_location
                 (Expression.Name (Name.Identifier "$parameter$self")));
-         cfg_data = { define_name = !&"test.Foo.bar"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.Foo.bar"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
   assert_narrowest_expression
@@ -370,7 +370,7 @@ let test_find_narrowest_spanning_symbol context =
                         attribute = "foo";
                         special = false;
                       })));
-         cfg_data = { define_name = !&"test.Foo.bar"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.Foo.bar"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
   assert_narrowest_expression
@@ -385,7 +385,7 @@ let test_find_narrowest_spanning_symbol context =
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "42");
-         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
   assert_narrowest_expression
@@ -400,7 +400,7 @@ let test_find_narrowest_spanning_symbol context =
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "test.Bar.some_attribute");
-         cfg_data = { define_name = !&"test.Bar.$class_toplevel"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.Bar.$class_toplevel"; node_id = 4; statement_index = 0 };
          use_postcondition_info = true;
        });
   assert_narrowest_expression
@@ -415,7 +415,7 @@ let test_find_narrowest_spanning_symbol context =
     (Some
        {
          symbol_with_definition = TypeAnnotation (parse_single_expression "test.Foo");
-         cfg_data = { define_name = !&"test.Bar.$class_toplevel"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.Bar.$class_toplevel"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
   assert_narrowest_expression
@@ -438,7 +438,7 @@ let test_find_narrowest_spanning_symbol context =
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "(test.Bar()).foo().bar");
-         cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 0 };
+         cfg_data = { define_name = !&"test.test"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
   ()
@@ -512,7 +512,7 @@ let test_resolve_definition_for_symbol context =
     |}
     {
       symbol_with_definition = TypeAnnotation (parse_single_expression "list[str]");
-      cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 4 };
+      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 4 };
       use_postcondition_info = false;
     }
     None;
@@ -527,7 +527,7 @@ let test_resolve_definition_for_symbol context =
       symbol_with_definition =
         Expression
           (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$self")));
-      cfg_data = { define_name = !&"test.Foo.bar"; node_id = 5; statement_index = 0 };
+      cfg_data = { define_name = !&"test.Foo.bar"; node_id = 4; statement_index = 0 };
       use_postcondition_info = false;
     }
     None;
@@ -555,7 +555,7 @@ let test_resolve_definition_for_symbol context =
                      attribute = "foo";
                      special = false;
                    })));
-      cfg_data = { define_name = !&"test.Foo.bar"; node_id = 5; statement_index = 0 };
+      cfg_data = { define_name = !&"test.Foo.bar"; node_id = 4; statement_index = 0 };
       use_postcondition_info = false;
     }
     None;
@@ -566,7 +566,7 @@ let test_resolve_definition_for_symbol context =
     |}
     {
       symbol_with_definition = Expression (parse_single_expression "library.Base");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 5; statement_index = 0 };
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
       use_postcondition_info = false;
     }
     (Some "library:2:0-2:15");
@@ -582,7 +582,7 @@ let test_resolve_definition_for_symbol context =
     |}
     {
       symbol_with_definition = Expression (parse_single_expression "(test.return_str()).capitalize");
-      cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 0 };
+      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
       use_postcondition_info = false;
     }
     None;
@@ -605,7 +605,7 @@ let test_resolve_definition_for_symbol context =
     |}
     {
       symbol_with_definition = Expression (parse_single_expression "(test.Bar()).foo().bar");
-      cfg_data = { define_name = !&"test.test"; node_id = 5; statement_index = 0 };
+      cfg_data = { define_name = !&"test.test"; node_id = 4; statement_index = 0 };
       use_postcondition_info = false;
     }
     None;

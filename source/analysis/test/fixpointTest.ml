@@ -89,28 +89,28 @@ let test_forward _ =
     {
       preconditions =
         Int.Table.of_alist_exn
-          [0, 0; (* Entry *) 1, 1; (* Exit *) 3, 1; (* Final *) 5, 0 (* Pass *)];
+          [0, 0; (* Entry *) 1, 1; (* Exit *) 3, 1; (* Final *) 4, 0 (* Pass *)];
       postconditions =
         Int.Table.of_alist_exn
-          [0, 0; (* Entry *) 1, 1; (* Exit *) 3, 1; (* Final *) 5, 1 (* Pass *)];
+          [0, 0; (* Entry *) 1, 1; (* Exit *) 3, 1; (* Final *) 4, 1 (* Pass *)];
     };
   assert_fixpoint
     [+Statement.Pass; +Statement.Expression !"ignored"]
     {
-      preconditions = Int.Table.of_alist_exn [0, 0; 1, 1; 3, 1; 5, 0];
-      postconditions = Int.Table.of_alist_exn [0, 0; 1, 1; 3, 1; 5, 1];
+      preconditions = Int.Table.of_alist_exn [0, 0; 1, 1; 3, 1; 4, 0];
+      postconditions = Int.Table.of_alist_exn [0, 0; 1, 1; 3, 1; 4, 1];
     };
   assert_fixpoint
     [+Statement.Pass; +Statement.Pass]
     {
-      preconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0];
-      postconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 2];
+      preconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 4, 0];
+      postconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 4, 2];
     };
   assert_fixpoint
     [+Statement.Pass; +Statement.Pass; +Statement.Expression !"ignored"; +Statement.Pass]
     {
-      preconditions = Int.Table.of_alist_exn [0, 0; 1, 3; 3, 3; 5, 0];
-      postconditions = Int.Table.of_alist_exn [0, 0; 1, 3; 3, 3; 5, 3];
+      preconditions = Int.Table.of_alist_exn [0, 0; 1, 3; 3, 3; 4, 0];
+      postconditions = Int.Table.of_alist_exn [0, 0; 1, 3; 3, 3; 4, 3];
     }
 
 
@@ -135,13 +135,13 @@ let test_join _ =
             (* Exit *)
             3, 1;
             (* Final *)
-            5, 0;
+            4, 0;
             (* If *)
-            6, 1;
+            5, 1;
             (* Join *)
-            7, 0;
+            6, 0;
             (* Body *)
-            8, 0;
+            7, 0;
             (* Orelse *)
           ];
       postconditions =
@@ -153,13 +153,13 @@ let test_join _ =
             (* Exit *)
             3, 1;
             (* Final *)
-            5, 0;
+            4, 0;
             (* If *)
-            6, 1;
+            5, 1;
             (* Join *)
-            7, 1;
+            6, 1;
             (* Body *)
-            8, 1;
+            7, 1;
             (* Orelse *)
           ];
     };
@@ -169,8 +169,8 @@ let test_join _ =
          { If.test = +Expression.Constant Constant.True; body = [+Statement.Pass]; orelse = [] };
     ]
     {
-      preconditions = Int.Table.of_alist_exn [5, 0; 6, 1; 0, 0; 8, 0; 1, 1; 3, 1; 7, 0];
-      postconditions = Int.Table.of_alist_exn [5, 0; 6, 1; 0, 0; 8, 0; 1, 1; 3, 1; 7, 1];
+      preconditions = Int.Table.of_alist_exn [4, 0; 5, 1; 0, 0; 7, 0; 1, 1; 3, 1; 6, 0];
+      postconditions = Int.Table.of_alist_exn [4, 0; 5, 1; 0, 0; 7, 0; 1, 1; 3, 1; 6, 1];
     };
   assert_fixpoint
     [
@@ -182,8 +182,8 @@ let test_join _ =
          };
     ]
     {
-      preconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0; 6, 2; 7, 0; 8, 0];
-      postconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 5, 0; 6, 2; 7, 2; 8, 1];
+      preconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 4, 0; 5, 2; 6, 0; 7, 0];
+      postconditions = Int.Table.of_alist_exn [0, 0; 1, 2; 3, 2; 4, 0; 5, 2; 6, 2; 7, 1];
     }
 
 
@@ -204,11 +204,11 @@ let test_widening _ =
             (* Exit *)
             3, Int.max_value;
             (* Final *)
-            5, Int.max_value;
+            4, Int.max_value;
             (* Split *)
-            7, Int.max_value;
+            6, Int.max_value;
             (* Pass *)
-            8, Int.max_value;
+            7, Int.max_value;
             (* Synthetic assert False *)
           ];
       postconditions =
@@ -220,11 +220,11 @@ let test_widening _ =
             (* Exit *)
             3, Int.max_value;
             (* Final *)
-            5, Int.max_value;
+            4, Int.max_value;
             (* Split *)
-            7, Int.max_value;
+            6, Int.max_value;
             (* Pass *)
-            8, Int.max_value;
+            7, Int.max_value;
             (* Synthetic assert False *)
           ];
     }

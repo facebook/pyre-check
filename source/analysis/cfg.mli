@@ -23,7 +23,6 @@ module Node : sig
     | Try of Try.t
     | With of With.t
     | While of While.t
-    | Yield
   [@@deriving compare, show, sexp]
 
   type t [@@deriving compare, sexp]

@@ -53,12 +53,11 @@ let test_to_dot _ =
       {|1[label="Normal"]|};
       {|2[label="Error"]|};
       {|3[label="Final"]|};
-      {|4[label="Yield"]|};
-      {|5[label="pass"]|};
-      "0 -> 5 [label=\"\", fontcolor=blue]";
+      {|4[label="pass"]|};
+      "0 -> 4 [label=\"\", fontcolor=blue]";
       "1 -> 3 [label=\"\", fontcolor=blue]";
       "2 -> 3 [label=\"\", fontcolor=blue]";
-      "5 -> 1 [label=\"\", fontcolor=blue]";
+      "4 -> 1 [label=\"\", fontcolor=blue]";
     ];
   assert_dot
     ~precondition:Int.to_string
@@ -68,12 +67,11 @@ let test_to_dot _ =
       {|1[label="Normal"]|};
       {|2[label="Error"]|};
       {|3[label="Final"]|};
-      {|4[label="Yield"]|};
-      {|5[label="b"]|};
-      "0 -> 5 [label=\"5\", fontcolor=blue]";
+      {|4[label="b"]|};
+      "0 -> 4 [label=\"4\", fontcolor=blue]";
       "1 -> 3 [label=\"3\", fontcolor=blue]";
       "2 -> 3 [label=\"3\", fontcolor=blue]";
-      "5 -> 1 [label=\"1\", fontcolor=blue]";
+      "4 -> 1 [label=\"1\", fontcolor=blue]";
     ];
   let conditional =
     { If.test = +Expression.Constant Constant.True; body = [!!"body"]; orelse = [!!"orelse"] }
@@ -85,19 +83,18 @@ let test_to_dot _ =
       {|1[label="Normal"]|};
       {|2[label="Error"]|};
       {|3[label="Final"]|};
-      {|4[label="Yield"]|};
-      {|5[label="if True:\n  body\nelse:\n  orelse"]|};
-      {|6[label="Join"]|};
-      {|7[label="assert True, \nbody"]|};
-      {|8[label="assert False, \norelse"]|};
-      "0 -> 5 [label=\"\", fontcolor=blue]";
+      {|4[label="if True:\n  body\nelse:\n  orelse"]|};
+      {|5[label="Join"]|};
+      {|6[label="assert True, \nbody"]|};
+      {|7[label="assert False, \norelse"]|};
+      "0 -> 4 [label=\"\", fontcolor=blue]";
       "1 -> 3 [label=\"\", fontcolor=blue]";
       "2 -> 3 [label=\"\", fontcolor=blue]";
-      "5 -> 7 [label=\"\", fontcolor=blue]";
-      "5 -> 8 [label=\"\", fontcolor=blue]";
-      "6 -> 1 [label=\"\", fontcolor=blue]";
-      "7 -> 6 [label=\"\", fontcolor=blue]";
-      "8 -> 6 [label=\"\", fontcolor=blue]";
+      "4 -> 6 [label=\"\", fontcolor=blue]";
+      "4 -> 7 [label=\"\", fontcolor=blue]";
+      "5 -> 1 [label=\"\", fontcolor=blue]";
+      "6 -> 5 [label=\"\", fontcolor=blue]";
+      "7 -> 5 [label=\"\", fontcolor=blue]";
     ]
 
 
@@ -146,22 +143,20 @@ let test_block _ =
   assert_cfg
     [+Statement.Pass]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [5] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [4] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Block [+Statement.Pass]) [0] [1];
+      node 4 (Node.Block [+Statement.Pass]) [0] [1];
     ];
   assert_cfg
     [!!"first"; !!"second"]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [5] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [4] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Block [!!"first"; !!"second"]) [0] [1];
+      node 4 (Node.Block [!!"first"; !!"second"]) [0] [1];
     ]
 
 
@@ -178,23 +173,22 @@ let test_for _ =
   assert_cfg
     [+Statement.For loop]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.For loop) [0; 7] [6; 7; 8];
-      node 6 Node.Join [5; 8] [1];
+      node 4 (Node.For loop) [0; 6] [5; 6; 7];
+      node 5 Node.Join [4; 7] [1];
       node
-        7
+        6
         (Node.Block
            [
              parse_single_statement ~coerce_special_methods:true "a = [].__iter__().__next__()";
              !!"body";
            ])
-        [5]
-        [5];
-      node 8 (Node.Block [!!"orelse"]) [5] [6];
+        [4]
+        [4];
+      node 7 (Node.Block [!!"orelse"]) [4] [5];
     ]
 
 
@@ -205,15 +199,14 @@ let test_if _ =
   assert_cfg
     [+Statement.If conditional]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.If conditional) [0] [7; 8];
-      node 6 Node.Join [7; 8] [1];
+      node 4 (Node.If conditional) [0] [6; 7];
+      node 5 Node.Join [6; 7] [1];
       node
-        7
+        6
         (Node.Block
            [
              Statement.assume
@@ -221,10 +214,10 @@ let test_if _ =
                (+Expression.Constant Constant.True);
              !!"body";
            ])
-        [5]
-        [6];
+        [4]
+        [5];
       node
-        8
+        7
         (Node.Block
            [
              Statement.assume
@@ -232,8 +225,8 @@ let test_if _ =
                (+Expression.Constant Constant.False);
              !!"orelse";
            ])
-        [5]
-        [6];
+        [4]
+        [5];
     ];
   let conditional =
     { If.test = +Expression.Constant Constant.True; body = [!!"body"]; orelse = [] }
@@ -241,15 +234,14 @@ let test_if _ =
   assert_cfg
     [+Statement.If conditional]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.If conditional) [0] [7; 8];
-      node 6 Node.Join [7; 8] [1];
+      node 4 (Node.If conditional) [0] [6; 7];
+      node 5 Node.Join [6; 7] [1];
       node
-        7
+        6
         (Node.Block
            [
              Statement.assume
@@ -257,18 +249,18 @@ let test_if _ =
                (+Expression.Constant Constant.True);
              !!"body";
            ])
-        [5]
-        [6];
+        [4]
+        [5];
       node
-        8
+        7
         (Node.Block
            [
              Statement.assume
                ~origin:(Assert.Origin.If { true_branch = false })
                (+Expression.Constant Constant.False);
            ])
-        [5]
-        [6];
+        [4]
+        [5];
     ];
   let conditional =
     {
@@ -280,13 +272,53 @@ let test_if _ =
   assert_cfg
     [+Statement.If conditional]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.If conditional) [0] [7; 8];
-      node 6 Node.Join [7; 8] [1];
+      node 4 (Node.If conditional) [0] [6; 7];
+      node 5 Node.Join [6; 7] [1];
+      node
+        6
+        (Node.Block
+           [
+             Statement.assume
+               ~origin:(Assert.Origin.If { true_branch = true })
+               (+Expression.Constant Constant.True);
+             !!"first";
+             !!"second";
+           ])
+        [4]
+        [5];
+      node
+        7
+        (Node.Block
+           [
+             Statement.assume
+               ~origin:(Assert.Origin.If { true_branch = false })
+               (+Expression.Constant Constant.False);
+             +Statement.Pass;
+           ])
+        [4]
+        [5];
+    ];
+  let conditional =
+    {
+      If.test = +Expression.Constant Constant.True;
+      body = [!!"first"; !!"second"];
+      orelse = [!!"orelse"];
+    }
+  in
+  assert_cfg
+    [!!"before"; +Statement.If conditional; !!"after"]
+    [
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [9] [3];
+      node 2 Node.Error [] [3];
+      node 3 Node.Final [1; 2] [];
+      node 4 (Node.Block [!!"before"]) [0] [5];
+      node 5 (Node.If conditional) [4] [7; 8];
+      node 6 Node.Join [7; 8] [9];
       node
         7
         (Node.Block
@@ -306,53 +338,11 @@ let test_if _ =
              Statement.assume
                ~origin:(Assert.Origin.If { true_branch = false })
                (+Expression.Constant Constant.False);
-             +Statement.Pass;
+             !!"orelse";
            ])
         [5]
         [6];
-    ];
-  let conditional =
-    {
-      If.test = +Expression.Constant Constant.True;
-      body = [!!"first"; !!"second"];
-      orelse = [!!"orelse"];
-    }
-  in
-  assert_cfg
-    [!!"before"; +Statement.If conditional; !!"after"]
-    [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [10] [3];
-      node 2 Node.Error [] [3];
-      node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Block [!!"before"]) [0] [6];
-      node 6 (Node.If conditional) [5] [8; 9];
-      node 7 Node.Join [8; 9] [10];
-      node
-        8
-        (Node.Block
-           [
-             Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = true })
-               (+Expression.Constant Constant.True);
-             !!"first";
-             !!"second";
-           ])
-        [6]
-        [7];
-      node
-        9
-        (Node.Block
-           [
-             Statement.assume
-               ~origin:(Assert.Origin.If { true_branch = false })
-               (+Expression.Constant Constant.False);
-             !!"orelse";
-           ])
-        [6]
-        [7];
-      node 10 (Node.Block [!!"after"]) [7] [1];
+      node 9 (Node.Block [!!"after"]) [6] [1];
     ]
 
 
@@ -378,14 +368,13 @@ let test_match _ =
   assert_cfg
     [+Statement.Match { Match.subject = !"x"; cases = [refutable_case] }]
     [
-      node 0 Node.Entry [] [6; 7];
-      node 1 Node.Normal [5] [3];
+      node 0 Node.Entry [] [5; 6];
+      node 1 Node.Normal [4] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 Node.Join [6; 7] [1];
-      node 6 expected_refutable_case_pass_block [0] [5];
-      node 7 expected_refutable_case_fail_block [0] [5];
+      node 4 Node.Join [5; 6] [1];
+      node 5 expected_refutable_case_pass_block [0] [4];
+      node 6 expected_refutable_case_fail_block [0] [4];
     ];
   let irrefutable_case =
     {
@@ -407,16 +396,15 @@ let test_match _ =
   assert_cfg
     [+Statement.Match { Match.subject = !"x"; cases = [refutable_case; irrefutable_case] }]
     [
-      node 0 Node.Entry [] [6; 7];
-      node 1 Node.Normal [5] [3];
+      node 0 Node.Entry [] [5; 6];
+      node 1 Node.Normal [4] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 Node.Join [6; 8] [1];
-      node 6 expected_refutable_case_pass_block [0] [5];
-      node 7 expected_refutable_case_fail_block [0] [8; 9];
-      node 8 expected_irrefutable_case_pass_block [7] [5];
-      node 9 expected_irrefutable_case_fail_block [7] [];
+      node 4 Node.Join [5; 7] [1];
+      node 5 expected_refutable_case_pass_block [0] [4];
+      node 6 expected_refutable_case_fail_block [0] [7; 8];
+      node 7 expected_irrefutable_case_pass_block [6] [4];
+      node 8 expected_irrefutable_case_fail_block [6] [];
     ];
   assert_true
     (match_cases_refutable
@@ -490,22 +478,20 @@ let test_raise _ =
   assert_cfg
     [error]
     [
-      node 0 Node.Entry [] [5];
+      node 0 Node.Entry [] [4];
       node 1 Node.Normal [] [3];
-      node 2 Node.Error [5] [3];
+      node 2 Node.Error [4] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Block [error]) [0] [2];
+      node 4 (Node.Block [error]) [0] [2];
     ];
   assert_cfg
     [!!"reached"; error; !!"unreached"]
     [
-      node 0 Node.Entry [] [5];
+      node 0 Node.Entry [] [4];
       node 1 Node.Normal [] [3];
-      node 2 Node.Error [5] [3];
+      node 2 Node.Error [4] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Block [!!"reached"; error]) [0] [2];
+      node 4 (Node.Block [!!"reached"; error]) [0] [2];
     ]
 
 
@@ -521,22 +507,20 @@ let test_assert_false _ =
   assert_cfg
     [error]
     [
-      node 0 Node.Entry [] [5];
+      node 0 Node.Entry [] [4];
       node 1 Node.Normal [] [3];
-      node 2 Node.Error [5] [3];
+      node 2 Node.Error [4] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Block [error]) [0] [2];
+      node 4 (Node.Block [error]) [0] [2];
     ];
   assert_cfg
     [!!"reached"; error; !!"unreached"]
     [
-      node 0 Node.Entry [] [5];
+      node 0 Node.Entry [] [4];
       node 1 Node.Normal [] [3];
-      node 2 Node.Error [5] [3];
+      node 2 Node.Error [4] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Block [!!"reached"; error]) [0] [2];
+      node 4 (Node.Block [!!"reached"; error]) [0] [2];
     ]
 
 
@@ -545,22 +529,20 @@ let test_return _ =
   assert_cfg
     [return]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [5] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [4] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Block [return]) [0] [1];
+      node 4 (Node.Block [return]) [0] [1];
     ];
   assert_cfg
     [!!"reached"; return; !!"unreached"]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [5] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [4] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Block [!!"reached"; return]) [0] [1];
+      node 4 (Node.Block [!!"reached"; return]) [0] [1];
     ]
 
 
@@ -570,15 +552,14 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block; !!"fall-through"]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7] [3];
-      node 2 Node.Error [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6] [3];
+      node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2];
-      node 7 (Node.Block [!!"fall-through"]) [8] [1];
-      node 8 (Node.Block [!!"body"]) [5] [7];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2];
+      node 6 (Node.Block [!!"fall-through"]) [7] [1];
+      node 7 (Node.Block [!!"body"]) [4] [6];
     ];
   let block =
     {
@@ -591,22 +572,21 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7] [3];
-      node 2 Node.Error [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6] [3];
+      node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
+      node 4 (Node.Try block) [0] [5; 7];
       (* split *)
-      node 6 Node.Dispatch [5] [2; 9];
-      node 7 (Node.Block [!!"finally"]) [8; 9] [1];
+      node 5 Node.Dispatch [4] [2; 8];
+      node 6 (Node.Block [!!"finally"]) [7; 8] [1];
       (* normal *)
-      node 8 (Node.Block [!!"body"; !!"orelse"]) [5] [7];
+      node 7 (Node.Block [!!"body"; !!"orelse"]) [4] [6];
       node
-        9
+        8
         (Node.Block [+Statement.Expression (+Expression.Constant (Constant.Integer 1)); !!"handler"])
-        [6]
-        [7];
+        [5]
+        [6];
     ];
   let block =
     { Try.body = [!!"body"]; handlers = [handler "handler"]; orelse = []; finally = [!!"finally"] }
@@ -614,16 +594,15 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7] [3];
-      node 2 Node.Error [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6] [3];
+      node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2; 9];
-      node 7 (Node.Block [!!"finally"]) [8; 9] [1];
-      node 8 (Node.Block [!!"body"]) [5] [7];
-      node 9 (Node.Block [!!"handler"]) [6] [7];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2; 8];
+      node 6 (Node.Block [!!"finally"]) [7; 8] [1];
+      node 7 (Node.Block [!!"body"]) [4] [6];
+      node 8 (Node.Block [!!"handler"]) [5] [6];
     ];
   let block =
     { Try.body = [!!"body"]; handlers = [handler "handler"]; orelse = []; finally = [] }
@@ -631,16 +610,15 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7] [3];
-      node 2 Node.Error [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6] [3];
+      node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2; 9];
-      node 7 (Node.Block []) [8; 9] [1];
-      node 8 (Node.Block [!!"body"]) [5] [7];
-      node 9 (Node.Block [!!"handler"]) [6] [7];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2; 8];
+      node 6 (Node.Block []) [7; 8] [1];
+      node 7 (Node.Block [!!"body"]) [4] [6];
+      node 8 (Node.Block [!!"handler"]) [5] [6];
     ];
   let block =
     {
@@ -653,17 +631,16 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7] [3];
-      node 2 Node.Error [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6] [3];
+      node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2; 9; 10];
-      node 7 (Node.Block []) [8; 9; 10] [1];
-      node 8 (Node.Block [!!"body"]) [5] [7];
-      node 9 (Node.Block [!!"handler 1"]) [6] [7];
-      node 10 (Node.Block [!!"handler 2"]) [6] [7];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2; 8; 9];
+      node 6 (Node.Block []) [7; 8; 9] [1];
+      node 7 (Node.Block [!!"body"]) [4] [6];
+      node 8 (Node.Block [!!"handler 1"]) [5] [6];
+      node 9 (Node.Block [!!"handler 2"]) [5] [6];
     ];
   let return = +Statement.Return { Return.expression = None; is_implicit = false } in
   let block =
@@ -677,16 +654,15 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7; 8] [3];
-      node 2 Node.Error [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6; 7] [3];
+      node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2; 9];
-      node 7 (Node.Block []) [9] [1];
-      node 8 (Node.Block [!!"body"; return]) [5] [1];
-      node 9 (Node.Block [!!"handler"]) [6] [7];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2; 8];
+      node 6 (Node.Block []) [8] [1];
+      node 7 (Node.Block [!!"body"; return]) [4] [1];
+      node 8 (Node.Block [!!"handler"]) [5] [6];
     ];
   let error = +Statement.Raise { Raise.expression = None; from = None } in
   let block =
@@ -700,16 +676,15 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7] [3];
-      node 2 Node.Error [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6] [3];
+      node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5; 8] [2; 9];
-      node 7 (Node.Block []) [9] [1];
-      node 8 (Node.Block [!!"body"; error]) [5] [6];
-      node 9 (Node.Block [!!"handler"]) [6] [7];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4; 7] [2; 8];
+      node 6 (Node.Block []) [8] [1];
+      node 7 (Node.Block [!!"body"; error]) [4] [5];
+      node 8 (Node.Block [!!"handler"]) [5] [6];
     ];
   let block =
     {
@@ -722,30 +697,28 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7] [3];
-      node 2 Node.Error [6; 8] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6] [3];
+      node 2 Node.Error [5; 7] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2; 9];
-      node 7 (Node.Block []) [9] [1];
-      node 8 (Node.Block [!!"body"; !!"orelse"; error]) [5] [2];
-      node 9 (Node.Block [!!"handler"]) [6] [7];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2; 8];
+      node 6 (Node.Block []) [8] [1];
+      node 7 (Node.Block [!!"body"; !!"orelse"; error]) [4] [2];
+      node 8 (Node.Block [!!"handler"]) [5] [6];
     ];
   let block = { Try.body = [!!"body"]; handlers = []; orelse = []; finally = [!!"finally"] } in
   assert_cfg
     [+Statement.Try block]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7] [3];
-      node 2 Node.Error [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6] [3];
+      node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2];
-      node 7 (Node.Block [!!"finally"]) [8] [1];
-      node 8 (Node.Block [!!"body"]) [5] [7];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2];
+      node 6 (Node.Block [!!"finally"]) [7] [1];
+      node 7 (Node.Block [!!"body"]) [4] [6];
     ];
   let block =
     {
@@ -758,34 +731,32 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block; !!"unreached"]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7] [3];
-      node 2 Node.Error [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6] [3];
+      node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2];
       node
-        7
+        6
         (Node.Block [+Statement.Return { Return.expression = None; is_implicit = false }])
-        [8]
+        [7]
         [1];
-      node 8 (Node.Block [!!"body"]) [5] [7];
+      node 7 (Node.Block [!!"body"]) [4] [6];
     ];
   let error = +Statement.Raise { Raise.expression = None; from = None } in
   let block = { Try.body = [!!"body"]; handlers = []; orelse = []; finally = [error] } in
   assert_cfg
     [+Statement.Try block; !!"unreached"]
     [
-      node 0 Node.Entry [] [5];
+      node 0 Node.Entry [] [4];
       node 1 Node.Normal [] [3];
-      node 2 Node.Error [6; 7] [3];
+      node 2 Node.Error [5; 6] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2];
-      node 7 (Node.Block [error]) [8] [2];
-      node 8 (Node.Block [!!"body"]) [5] [7];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2];
+      node 6 (Node.Block [error]) [7] [2];
+      node 7 (Node.Block [!!"body"]) [4] [6];
     ];
   let bool_handler =
     +Expression.BooleanOperator
@@ -802,16 +773,15 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7] [3];
-      node 2 Node.Error [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6] [3];
+      node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2; 9];
-      node 7 (Node.Block []) [8; 9] [1];
-      node 8 (Node.Block [!!"body"]) [5] [7];
-      node 9 (Node.Block [+Statement.Expression bool_handler; !!"handler"]) [6] [7];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2; 8];
+      node 6 (Node.Block []) [7; 8] [1];
+      node 7 (Node.Block [!!"body"]) [4] [6];
+      node 8 (Node.Block [+Statement.Expression bool_handler; !!"handler"]) [5] [6];
     ];
   let block =
     {
@@ -824,15 +794,14 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [8] [3];
-      node 2 Node.Error [6; 7] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [7] [3];
+      node 2 Node.Error [5; 6] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2; 7];
-      node 7 (Node.Block [!!"finally"]) [6] [2];
-      node 8 (Node.Block [+Statement.Return { is_implicit = false; expression = None }]) [5] [1];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2; 6];
+      node 6 (Node.Block [!!"finally"]) [5] [2];
+      node 7 (Node.Block [+Statement.Return { is_implicit = false; expression = None }]) [4] [1];
     ];
   let block =
     {
@@ -853,15 +822,14 @@ let test_try _ =
   assert_cfg
     [+Statement.Try block]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [7; 8] [3];
-      node 2 Node.Error [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [6; 7] [3];
+      node 2 Node.Error [5] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.Try block) [0] [6; 8];
-      node 6 Node.Dispatch [5] [2; 7];
+      node 4 (Node.Try block) [0] [5; 7];
+      node 5 Node.Dispatch [4] [2; 6];
       node
-        7
+        6
         (Node.Block
            [
              +Statement.Return
@@ -870,10 +838,10 @@ let test_try _ =
                   expression = Some (+Expression.Constant (Constant.Integer 2));
                 };
            ])
-        [6]
+        [5]
         [1];
       node
-        8
+        7
         (Node.Block
            [
              +Statement.Return
@@ -882,7 +850,7 @@ let test_try _ =
                   expression = Some (+Expression.Constant (Constant.Integer 1));
                 };
            ])
-        [5]
+        [4]
         [1];
     ];
   ()
@@ -899,14 +867,13 @@ let test_with _ =
   assert_cfg
     [+Statement.With block; !!"after"]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.With block) [0] [6];
+      node 4 (Node.With block) [0] [5];
       node
-        6
+        5
         (Node.Block
            [
              +Statement.Expression
@@ -921,7 +888,7 @@ let test_with _ =
              !!"body";
              !!"after";
            ])
-        [5]
+        [4]
         [1];
     ]
 
@@ -933,27 +900,26 @@ let test_while _ =
   assert_cfg
     [+Statement.While loop]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0; 7] [7; 8];
-      node 6 Node.Join [8] [1];
+      node 4 (Node.While loop) [0; 6] [6; 7];
+      node 5 Node.Join [7] [1];
       node
-        7
+        6
         (Node.Block
            [Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) x; !!"body"])
-        [5]
-        [5];
+        [4]
+        [4];
       node
-        8
+        7
         (Node.Block
            [
              Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) not_x; !!"orelse";
            ])
-        [5]
-        [6];
+        [4]
+        [5];
     ];
   let conditional =
     { If.test = +Expression.Constant Constant.True; body = [+Statement.Break]; orelse = [] }
@@ -964,22 +930,21 @@ let test_while _ =
   assert_cfg
     [+Statement.While loop]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0; 12] [7; 13];
-      node 6 Node.Join [10; 13] [1];
+      node 4 (Node.While loop) [0; 11] [6; 12];
+      node 5 Node.Join [9; 12] [1];
       node
-        7
+        6
         (Node.Block [Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) x])
-        [5]
-        [8];
-      node 8 (Node.If conditional) [7] [10; 11];
-      node 9 Node.Join [11] [12];
+        [4]
+        [7];
+      node 7 (Node.If conditional) [6] [9; 10];
+      node 8 Node.Join [10] [11];
       node
-        10
+        9
         (Node.Block
            [
              Statement.assume
@@ -987,27 +952,27 @@ let test_while _ =
                (+Expression.Constant Constant.True);
              +Statement.Break;
            ])
-        [8]
-        [6];
+        [7]
+        [5];
       node
-        11
+        10
         (Node.Block
            [
              Statement.assume
                ~origin:(Assert.Origin.If { true_branch = false })
                (+Expression.Constant Constant.False);
            ])
-        [8]
-        [9];
-      node 12 (Node.Block [!!"body"]) [9] [5];
+        [7]
+        [8];
+      node 11 (Node.Block [!!"body"]) [8] [4];
       node
-        13
+        12
         (Node.Block
            [
              Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) not_x; !!"orelse";
            ])
-        [5]
-        [6];
+        [4]
+        [5];
     ];
   let conditional =
     { If.test = +Expression.Constant Constant.True; body = [+Statement.Continue]; orelse = [] }
@@ -1018,22 +983,21 @@ let test_while _ =
   assert_cfg
     [+Statement.While loop]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0; 10; 12] [7; 13];
-      node 6 Node.Join [13] [1];
+      node 4 (Node.While loop) [0; 9; 11] [6; 12];
+      node 5 Node.Join [12] [1];
       node
-        7
+        6
         (Node.Block [Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) x])
-        [5]
-        [8];
-      node 8 (Node.If conditional) [7] [10; 11];
-      node 9 Node.Join [11] [12];
+        [4]
+        [7];
+      node 7 (Node.If conditional) [6] [9; 10];
+      node 8 Node.Join [10] [11];
       node
-        10
+        9
         (Node.Block
            [
              Statement.assume
@@ -1041,27 +1005,27 @@ let test_while _ =
                (+Expression.Constant Constant.True);
              +Statement.Continue;
            ])
-        [8]
-        [5];
+        [7]
+        [4];
       node
-        11
+        10
         (Node.Block
            [
              Statement.assume
                ~origin:(Assert.Origin.If { true_branch = false })
                (+Expression.Constant Constant.False);
            ])
-        [8]
-        [9];
-      node 12 (Node.Block [!!"body"]) [9] [5];
+        [7]
+        [8];
+      node 11 (Node.Block [!!"body"]) [8] [4];
       node
-        13
+        12
         (Node.Block
            [
              Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) not_x; !!"orelse";
            ])
-        [5]
-        [6];
+        [4]
+        [5];
     ];
 
   (* Jumps are reset after the loop. *)
@@ -1072,37 +1036,36 @@ let test_while _ =
   assert_cfg
     [+Statement.While outer]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.While outer) [0; 12] [7; 13];
-      node 6 Node.Join [13] [1];
+      node 4 (Node.While outer) [0; 11] [6; 12];
+      node 5 Node.Join [12] [1];
       node
-        7
+        6
         (Node.Block [Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) x])
-        [5]
-        [8];
-      node 8 (Node.While inner) [7; 10] [10; 11];
-      node 9 Node.Join [11] [12];
+        [4]
+        [7];
+      node 7 (Node.While inner) [6; 9] [9; 10];
+      node 8 Node.Join [10] [11];
       node
-        10
+        9
         (Node.Block
            [Statement.assume ~origin:(Assert.Origin.While { true_branch = true }) x; !!"body"])
-        [8]
+        [7]
+        [7];
+      node
+        10
+        (Node.Block [Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) not_x])
+        [7]
         [8];
+      node 11 (Node.Block [+Statement.Continue]) [8] [4];
       node
-        11
+        12
         (Node.Block [Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) not_x])
-        [8]
-        [9];
-      node 12 (Node.Block [+Statement.Continue]) [9] [5];
-      node
-        13
-        (Node.Block [Statement.assume ~origin:(Assert.Origin.While { true_branch = false }) not_x])
-        [5]
-        [6];
+        [4]
+        [5];
     ]
 
 
@@ -1113,15 +1076,14 @@ let test_while_true _ =
   assert_cfg
     [+Statement.While loop; !!"rest"]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [5] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [4] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0; 7] [1; 7; 8];
-      node 6 Node.Join [] [];
+      node 4 (Node.While loop) [0; 6] [1; 6; 7];
+      node 5 Node.Join [] [];
       node
-        7
+        6
         (Node.Block
            [
              Statement.assume
@@ -1129,17 +1091,17 @@ let test_while_true _ =
                (+Expression.Constant Constant.True);
              !!"body";
            ])
-        [5]
-        [5];
+        [4]
+        [4];
       node
-        8
+        7
         (Node.Block
            [
              Statement.assume
                ~origin:(Assert.Origin.While { true_branch = false })
                (+Expression.Constant Constant.False);
            ])
-        [5]
+        [4]
         [];
     ];
   let loop =
@@ -1152,15 +1114,14 @@ let test_while_true _ =
   assert_cfg
     [+Statement.While loop; !!"rest"]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [9] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [8] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0] [7; 8];
-      node 6 Node.Join [7] [9];
+      node 4 (Node.While loop) [0] [6; 7];
+      node 5 Node.Join [6] [8];
       node
-        7
+        6
         (Node.Block
            [
              Statement.assume
@@ -1168,19 +1129,19 @@ let test_while_true _ =
                (+Expression.Constant Constant.True);
              +Statement.Break;
            ])
-        [5]
-        [6];
+        [4]
+        [5];
       node
-        8
+        7
         (Node.Block
            [
              Statement.assume
                ~origin:(Assert.Origin.While { true_branch = false })
                (+Expression.Constant Constant.False);
            ])
-        [5]
+        [4]
         [];
-      node 9 (Node.Block [!!"rest"]) [6] [1];
+      node 8 (Node.Block [!!"rest"]) [5] [1];
     ]
 
 
@@ -1191,25 +1152,24 @@ let test_while_false _ =
   assert_cfg
     [+Statement.While loop]
     [
-      node 0 Node.Entry [] [5];
-      node 1 Node.Normal [6] [3];
+      node 0 Node.Entry [] [4];
+      node 1 Node.Normal [5] [3];
       node 2 Node.Error [] [3];
       node 3 Node.Final [1; 2] [];
-      node 4 Node.Yield [] [];
-      node 5 (Node.While loop) [0] [7; 8];
-      node 6 Node.Join [8] [1];
+      node 4 (Node.While loop) [0] [6; 7];
+      node 5 Node.Join [7] [1];
       node
-        7
+        6
         (Node.Block
            [
              Statement.assume
                ~origin:(Assert.Origin.While { true_branch = true })
                (+Expression.Constant Constant.False);
            ])
-        [5]
+        [4]
         [];
       node
-        8
+        7
         (Node.Block
            [
              Statement.assume
@@ -1217,8 +1177,8 @@ let test_while_false _ =
                (+Expression.Constant Constant.True);
              !!"orelse";
            ])
-        [5]
-        [6];
+        [4]
+        [5];
     ]
 
 

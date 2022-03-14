@@ -444,7 +444,7 @@ let test_type_collection context =
         |}
     ~handle:"test1.py"
     ~expected:
-      [5, 1, "$local_0$a.foo.(...)", "test1.A.foo"; 5, 3, "$local_0$a.foo.(...)", "test1.B.foo"];
+      [4, 1, "$local_0$a.foo.(...)", "test1.A.foo"; 4, 3, "$local_0$a.foo.(...)", "test1.B.foo"];
   assert_type_collection
     {|
        class A:
@@ -460,7 +460,7 @@ let test_type_collection context =
            a = B().foo().foo()
     |}
     ~handle:"test2.py"
-    ~expected:[5, 0, "$local_0$a.foo.(...).foo.(...)", "test2.A.foo"]
+    ~expected:[4, 0, "$local_0$a.foo.(...).foo.(...)", "test2.A.foo"]
 
 
 let test_method_overrides context =
