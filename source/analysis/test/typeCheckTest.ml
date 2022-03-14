@@ -721,6 +721,17 @@ let test_forward_expression context =
     ~postcondition:["x", Type.Primitive "test.Foo"; "y", Type.string]
     "getattr(x, y)"
     Type.Any;
+  assert_forward
+    ~environment:{|
+        class Foo:
+          field: int
+      |}
+    ~precondition:
+      ["x", Type.Primitive "test.Foo"; "y", Type.Literal (String (LiteralValue "field"))]
+    ~postcondition:
+      ["x", Type.Primitive "test.Foo"; "y", Type.Literal (String (LiteralValue "field"))]
+    "getattr(x, y, None)"
+    Type.integer;
 
   (* Complex literal. *)
   assert_forward "1j" Type.complex;

@@ -1740,6 +1740,34 @@ let test_check_getattr context =
     ]
 
 
+let test_getattr_literal_access context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      class A:
+          def __init__(self) -> None:
+              self.a = 1
+
+      reveal_type(getattr(A(), "a"))
+      reveal_type(getattr(A(), "a", None))
+      reveal_type(getattr(A(), "a", 1))
+      reveal_type(getattr(A(), "b"))
+      reveal_type(getattr(A(), "c", None))
+      getattr(A(), "a")
+      getattr(A(), "b")
+      getattr(A(), "c", None)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `getattr(test.A(), \"a\")` is `int`.";
+      "Revealed type [-1]: Revealed type for `getattr(test.A(), \"a\", None)` is `int`.";
+      "Revealed type [-1]: Revealed type for `getattr(test.A(), \"a\", 1)` is `int`.";
+      "Revealed type [-1]: Revealed type for `getattr(test.A(), \"b\")` is `unknown`.";
+      "Revealed type [-1]: Revealed type for `getattr(test.A(), \"c\", None)` is `unknown`.";
+      "Undefined attribute [16]: `A` has no attribute `b`.";
+    ];
+  ()
+
+
 let test_check_metaclass_attributes context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
@@ -1943,6 +1971,7 @@ let () =
          "check_missing_attribute" >:: test_check_missing_attribute;
          "check_attribute_type_variable_resolution" >:: test_attribute_type_variable_resolution;
          "check_getattr" >:: test_check_getattr;
+         "check_getattr_literal_access" >:: test_getattr_literal_access;
          "check_metaclass_attributes" >:: test_check_metaclass_attributes;
          "check_annotated" >:: test_check_annotated;
        ]

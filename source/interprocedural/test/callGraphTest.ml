@@ -2383,7 +2383,7 @@ let test_call_graph_of_define context =
                    ExpressionCallees.from_call
                      (CallCallees.create
                         ~call_targets:[CallTarget.create (`Function "getattr")]
-                        ~return_type:Type.Any
+                        ~return_type:(Type.Primitive "str")
                         ()) );
                  ( "token",
                    ExpressionCallees.from_attribute_access

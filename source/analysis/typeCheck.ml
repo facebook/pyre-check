@@ -990,6 +990,7 @@ module State (Context : Context) = struct
         ~base
         ~special
         ~attribute
+        ~has_default
       =
       let name = Name.Attribute { base; special; attribute } in
       let reference = name_to_reference name in
@@ -1040,20 +1041,23 @@ module State (Context : Context) = struct
         match Type.resolve_class resolved_base >>| List.map ~f:find_attribute >>= Option.all with
         | None ->
             let errors =
-              emit_error
-                ~errors
-                ~location
-                ~kind:
-                  (Error.UndefinedAttribute
-                     {
-                       attribute;
-                       origin =
-                         Error.Class
-                           {
-                             class_origin = ClassType resolved_base;
-                             parent_source_path = source_path_of_parent_module resolved_base;
-                           };
-                     })
+              if has_default then
+                errors
+              else
+                emit_error
+                  ~errors
+                  ~location
+                  ~kind:
+                    (Error.UndefinedAttribute
+                       {
+                         attribute;
+                         origin =
+                           Error.Class
+                             {
+                               class_origin = ClassType resolved_base;
+                               parent_source_path = source_path_of_parent_module resolved_base;
+                             };
+                       })
             in
             {
               Resolved.resolution;
@@ -1104,7 +1108,9 @@ module State (Context : Context) = struct
               in
               match target with
               | Some target ->
-                  if Option.is_some (inverse_operator name) then
+                  if has_default then
+                    errors
+                  else if Option.is_some (inverse_operator name) then
                     (* Defer any missing attribute error until the inverse operator has been
                        typechecked. *)
                     errors
@@ -2127,7 +2133,8 @@ module State (Context : Context) = struct
         {
           callee = { Node.value = Name (Name.Identifier "getattr"); _ };
           arguments =
-            [{ Call.Argument.value = base; _ }; { Call.Argument.value = attribute_expression; _ }];
+            { Call.Argument.value = base; _ }
+            :: { Call.Argument.value = attribute_expression; _ } :: (([] | [_]) as default_argument);
         } -> (
         let ({ Resolved.errors; resolution; _ } as base_resolved) =
           forward_expression ~resolution base
@@ -2137,6 +2144,14 @@ module State (Context : Context) = struct
           |> fun { resolution; errors = attribute_errors; resolved = attribute_resolved; _ } ->
           resolution, List.append attribute_errors errors, attribute_resolved
         in
+        let resolution, errors, has_default =
+          match default_argument with
+          | [{ Call.Argument.value = default_expression; _ }] ->
+              forward_expression ~resolution default_expression
+              |> fun { resolution; errors = default_errors; _ } ->
+              resolution, List.append default_errors errors, true
+          | _ -> resolution, errors, false
+        in
         match attribute_resolved with
         | Type.Literal (String (LiteralValue attribute)) ->
             resolve_attribute_access
@@ -2144,6 +2159,7 @@ module State (Context : Context) = struct
               ~base
               ~special:false
               ~attribute
+              ~has_default
         | _ ->
             {
               Resolved.resolution;
@@ -2754,6 +2770,7 @@ module State (Context : Context) = struct
           ~base
           ~special
           ~attribute
+          ~has_default:false
     | Constant Constant.NoneLiteral ->
         {
           resolution;
