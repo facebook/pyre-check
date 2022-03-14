@@ -374,23 +374,23 @@ module WriteOnly : sig
 
   val read_only : ast_environment:AstEnvironment.ReadOnly.t -> ReadOnly.t
 end = struct
-  module ClassValue = struct
+  module ClassSummaryValue = struct
     type t = ClassSummary.t Node.t
 
     let prefix = Prefix.make ()
 
-    let description = "Class"
+    let description = "ClassSummary"
 
     let unmarshall value = Marshal.from_string value 0
 
     let compare = Node.compare ClassSummary.compare
   end
 
-  module ClassDefinitions =
+  module ClassSummaries =
     DependencyTrackedMemory.DependencyTrackedTableWithCache
       (SharedMemoryKeys.StringKey)
       (DependencyKey)
-      (ClassValue)
+      (ClassSummaryValue)
 
   module UnannotatedGlobalValue = struct
     type t = UnannotatedGlobal.t
@@ -413,7 +413,7 @@ end = struct
   module FunctionDefinitionValue = struct
     type t = FunctionDefinition.t
 
-    let description = "Define"
+    let description = "FunctionDefinition"
 
     let prefix = Prefix.make ()
 
@@ -428,7 +428,7 @@ end = struct
       (DependencyKey)
       (FunctionDefinitionValue)
 
-  module ModuleMetadataValue = struct
+  module ModuleValue = struct
     type t = Module.t
 
     let prefix = Prefix.make ()
@@ -440,19 +440,19 @@ end = struct
     let compare = Module.compare
   end
 
-  module ModuleMetadata =
+  module Modules =
     DependencyTrackedMemory.DependencyTrackedTableWithCache
       (SharedMemoryKeys.ReferenceKey)
       (SharedMemoryKeys.DependencyKey)
-      (ModuleMetadataValue)
+      (ModuleValue)
 
   let set_unannotated_global ~target = UnannotatedGlobals.add target
 
-  let set_class_definition ~name ~definition = ClassDefinitions.write_through name definition
+  let set_class_definition ~name ~definition = ClassSummaries.write_through name definition
 
   let set_define ~name definitions = FunctionDefinitions.write_through name definitions
 
-  let set_module_metadata ~qualifier = ModuleMetadata.add qualifier
+  let set_module_metadata ~qualifier = Modules.add qualifier
 
   let add_to_transaction
       transaction
@@ -461,22 +461,22 @@ end = struct
       ~previous_defines_list
       ~previous_modules_list
     =
-    let class_keys = ClassDefinitions.KeySet.of_list previous_classes_list in
+    let class_keys = ClassSummaries.KeySet.of_list previous_classes_list in
     let unannotated_globals_keys =
       UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
     in
     let defines_keys = FunctionDefinitions.KeySet.of_list previous_defines_list in
-    let module_keys = ModuleMetadata.KeySet.of_list previous_modules_list in
-    ClassDefinitions.add_to_transaction ~keys:class_keys transaction
+    let module_keys = Modules.KeySet.of_list previous_modules_list in
+    ClassSummaries.add_to_transaction ~keys:class_keys transaction
     |> UnannotatedGlobals.add_to_transaction ~keys:unannotated_globals_keys
     |> FunctionDefinitions.add_to_transaction ~keys:defines_keys
-    |> ModuleMetadata.add_to_transaction ~keys:module_keys
+    |> Modules.add_to_transaction ~keys:module_keys
 
 
   let get_all_dependents ~class_additions ~unannotated_global_additions ~define_additions =
     let function_and_class_dependents =
       DependencyKey.RegisteredSet.union
-        (ClassDefinitions.KeySet.of_list class_additions |> ClassDefinitions.get_all_dependents)
+        (ClassSummaries.KeySet.of_list class_additions |> ClassSummaries.get_all_dependents)
         (FunctionDefinitions.KeySet.of_list define_additions
         |> FunctionDefinitions.get_all_dependents)
     in
@@ -492,11 +492,11 @@ end = struct
       ~previous_defines_list
       ~previous_modules_list
     =
-    ClassDefinitions.KeySet.of_list previous_classes_list |> ClassDefinitions.remove_batch;
+    ClassSummaries.KeySet.of_list previous_classes_list |> ClassSummaries.remove_batch;
     UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
     |> UnannotatedGlobals.remove_batch;
     FunctionDefinitions.KeySet.of_list previous_defines_list |> FunctionDefinitions.remove_batch;
-    ModuleMetadata.KeySet.of_list previous_modules_list |> ModuleMetadata.remove_batch
+    Modules.KeySet.of_list previous_modules_list |> Modules.remove_batch
 
 
   let read_only ~ast_environment =
@@ -517,7 +517,7 @@ end = struct
       AstEnvironment.ReadOnly.all_explicit_modules ast_environment
       |> KeyTracker.get_define_body_keys
     in
-    let class_exists ?dependency name = ClassDefinitions.mem ?dependency name in
+    let class_exists ?dependency name = ClassSummaries.mem ?dependency name in
     let get_define = FunctionDefinitions.get in
     let get_define_body ?dependency key =
       FunctionDefinitions.get ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
@@ -531,7 +531,7 @@ end = struct
             Reference.empty
         | _ -> qualifier
       in
-      match ModuleMetadata.get ?dependency qualifier with
+      match Modules.get ?dependency qualifier with
       | Some _ as result -> result
       | None -> (
           match AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier with
@@ -546,13 +546,13 @@ end = struct
             Reference.empty
         | _ -> qualifier
       in
-      match ModuleMetadata.mem ?dependency qualifier with
+      match Modules.mem ?dependency qualifier with
       | true -> true
       | false -> AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier
     in
     {
       ast_environment;
-      ReadOnly.get_class_definition = ClassDefinitions.get;
+      ReadOnly.get_class_definition = ClassSummaries.get;
       all_classes;
       all_indices;
       all_defines;
