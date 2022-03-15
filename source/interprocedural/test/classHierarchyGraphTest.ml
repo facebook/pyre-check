@@ -59,7 +59,7 @@ let test_from_source context =
       {|
       class Meta(type): pass
       class A(metaclass=Meta): pass
-      class B(Meta): pass
+      class B(Meta, object): pass
     |}
     ~expected:
       (create

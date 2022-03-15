@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Interprocedural
+
 (* Intervals that represent non-strict subclasses of a class. Intervals are based on the DFS start
  * and finish discovery times when traversing the class hierarchy. For example, consider the
  * following classes.
@@ -25,6 +27,8 @@ type t
 
 val empty : t
 
+val equal : t -> t -> bool
+
 (* Create a class interval that is representable as a single range. Multiple disjoint ranges can be
    created with the union operation. *)
 val create : int -> int -> t
@@ -32,3 +36,9 @@ val create : int -> int -> t
 val join : t -> t -> t
 
 val meet : t -> t -> t
+
+val compute_intervals : ClassHierarchyGraph.t -> t ClassHierarchyGraph.ClassNameMap.t
+
+val show : t -> string
+
+val pp : Format.formatter -> t -> unit

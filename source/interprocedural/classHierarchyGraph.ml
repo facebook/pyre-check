@@ -12,8 +12,23 @@ open Analysis
 
 type class_name = string
 
-module ClassNameMap = Core.Map.Make (String)
 module ClassNameSet = Caml.Set.Make (String)
+
+module ClassNameMap = struct
+  include Caml.Map.Make (String)
+
+  let pp_map pp_value formatter map =
+    let pp_pairs pp_value formatter pairs =
+      let pp_pair formatter key value =
+        Format.fprintf formatter "@,%s -> [%a]" key pp_value value
+      in
+      iter (pp_pair formatter) pairs
+    in
+    Format.fprintf formatter "{@[<v 2>%a@]@,}" (pp_pairs pp_value) map
+
+
+  let show ~pp_value map = Format.asprintf "%a" (pp_map pp_value) map
+end
 
 type t = {
   roots: ClassNameSet.t;
@@ -21,17 +36,18 @@ type t = {
 }
 [@@deriving eq]
 
+let pp_set formatter set =
+  ClassNameSet.iter (fun element -> Format.fprintf formatter "@[%s,@]" element) set
+
+
 let pp formatter { roots; edges } =
-  let pp_set formatter set =
-    ClassNameSet.iter (fun e -> Format.fprintf formatter "@[%s,@]" e) set
-  in
-  let pp_pairs formatter =
-    let pp_pair formatter (key, value) = Format.fprintf formatter "@,%s -> [%a]" key pp_set value in
-    List.iter ~f:(pp_pair formatter)
-  in
-  edges
-  |> ClassNameMap.to_alist
-  |> Format.fprintf formatter "roots: @[[%a]@]@\nedges: {@[<v 2>%a@]@,}" pp_set roots pp_pairs
+  Format.fprintf
+    formatter
+    "roots: @[[%a]@]@\nedges: {@[<v 2>%a@]@,}"
+    pp_set
+    roots
+    (ClassNameMap.pp_map pp_set)
+    edges
 
 
 let show = Format.asprintf "%a" pp
@@ -43,12 +59,12 @@ let set_of_children = function
   | Some children -> children
 
 
-let children { edges; _ } parent = set_of_children (ClassNameMap.find edges parent)
+let children { edges; _ } parent = set_of_children (ClassNameMap.find_opt parent edges)
 
 let add { roots; edges } ~parent:parent_class ~child:child_class =
   let new_roots =
     let new_roots =
-      if ClassNameMap.mem edges parent_class then
+      if ClassNameMap.mem parent_class edges then
         roots
       else
         ClassNameSet.add parent_class roots
@@ -56,11 +72,11 @@ let add { roots; edges } ~parent:parent_class ~child:child_class =
     ClassNameSet.remove child_class new_roots
   in
   let new_edges =
-    let add_child parent = ClassNameSet.add child_class (set_of_children parent) in
-    let update_children ~parent ~update edges = ClassNameMap.update edges parent ~f:update in
+    let add_child parent = Some (ClassNameSet.add child_class (set_of_children parent)) in
+    let update_children ~parent ~update edges = ClassNameMap.update parent update edges in
     edges
     |> update_children ~parent:parent_class ~update:add_child
-    |> update_children ~parent:child_class ~update:set_of_children
+    |> update_children ~parent:child_class ~update:(fun key -> Some (set_of_children key))
   in
   { roots = new_roots; edges = new_edges }
 
@@ -86,6 +102,6 @@ let create ~roots ~edges =
   let roots = ClassNameSet.of_list roots in
   let edges =
     List.fold edges ~init:ClassNameMap.empty ~f:(fun accumulator (parent, children) ->
-        ClassNameMap.set accumulator ~key:parent ~data:(ClassNameSet.of_list children))
+        ClassNameMap.add parent (ClassNameSet.of_list children) accumulator)
   in
   { roots; edges }

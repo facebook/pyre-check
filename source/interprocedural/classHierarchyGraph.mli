@@ -14,6 +14,12 @@ type class_name = string
 
 module ClassNameSet : Caml.Set.S with type elt = class_name
 
+module ClassNameMap : sig
+  include Caml.Map.S with type key = class_name
+
+  val show : pp_value:(Format.formatter -> 'a -> unit) -> 'a t -> string
+end
+
 val empty : t
 
 (* Return the immediate children *)
