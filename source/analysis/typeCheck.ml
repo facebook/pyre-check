@@ -6993,7 +6993,11 @@ let run_on_define ~configuration ~environment ?call_graph_builder (name, depende
             name
             (LocalAnnotationMap.read_only local_annotations)
       in
-      TypeEnvironment.set_errors environment name errors
+      let () =
+        if configuration.store_type_errors then
+          TypeEnvironment.set_errors environment name errors
+      in
+      ()
 
 
 let run_on_defines ~scheduler ~configuration ~environment ?call_graph_builder defines =

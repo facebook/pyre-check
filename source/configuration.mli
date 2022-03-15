@@ -137,6 +137,7 @@ module Analysis : sig
     excludes: Str.regexp list;
     extensions: Extension.t list;
     store_type_check_resolution: bool;
+    store_type_errors: bool;
     incremental_style: incremental_style;
     log_directory: PyrePath.t;
     python_major_version: int;
@@ -164,6 +165,7 @@ module Analysis : sig
     ?excludes:string list ->
     ?extensions:Extension.t list ->
     ?store_type_check_resolution:bool ->
+    ?store_type_errors:bool ->
     ?incremental_style:incremental_style ->
     ?log_directory:string ->
     ?python_major_version:int ->

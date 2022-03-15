@@ -145,6 +145,7 @@ module AnalyzeConfiguration = struct
         ~show_error_traces:false
         ~excludes
         ~extensions
+        ~store_type_errors:false
         ~incremental_style:Configuration.Analysis.Shallow
         ~log_directory:(PyrePath.absolute log_path)
         ~python_major_version:major

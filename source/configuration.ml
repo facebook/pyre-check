@@ -335,6 +335,7 @@ module Analysis = struct
     excludes: Str.regexp list; [@opaque]
     extensions: Extension.t list;
     store_type_check_resolution: bool;
+    store_type_errors: bool;
     incremental_style: incremental_style;
     log_directory: PyrePath.t;
     python_major_version: int;
@@ -362,6 +363,7 @@ module Analysis = struct
       ?(excludes = [])
       ?(extensions = [])
       ?(store_type_check_resolution = true)
+      ?(store_type_errors = true)
       ?(incremental_style = Shallow)
       ?log_directory
       ?(python_major_version = default_python_major_version)
@@ -398,6 +400,7 @@ module Analysis = struct
             |> Str.regexp);
       extensions;
       store_type_check_resolution;
+      store_type_errors;
       incremental_style;
       log_directory =
         (match log_directory with
