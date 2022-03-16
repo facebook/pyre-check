@@ -370,7 +370,7 @@ def bar(x: int) -> None:
 
 This will prevent the decorator from being inlined when analyzing `bar`. Note that we use `@SkipDecoratorWhenInlining` on the decorator that is to be skipped, not the function on which the decorator is applied.
 
-# Single trace sanitizers with `@SanitizeSingleTrace`
+## Single trace sanitizers with `@SanitizeSingleTrace`
 
 Sanitizers, as described in the [Overview](pysa_basics.md), are applied in both
 the forward (i.e source) trace and backward (i.e sink) trace.
@@ -424,3 +424,87 @@ def i(): ...
 
 These sanitizers are a lot cheaper and could save analysis time. However, these
 might introduce false positives, so we recommend to use the default sanitizers.
+
+## Taint In Taint Out Transforms
+
+Taint in taint out transforms can be used to capture more precise flows.
+
+As an example:
+```python
+def read_file(path):
+  with open(path, "r") as f:
+    content = f.read()
+  return content
+```
+Without taint in taint transforms we can write a rule that captures a `UserControlled` path is `read`. Such a rule can be made much higher signal if we can detect that `content` is also `ReturnedToUser`. We can use taint in taint out transforms to stitch the two flows together. We mark `read` with a taint in taint out transform `FileRead`, and the rule becomes `UserControlled -> FileRead -> ReturnedToUser`.
+
+To contrast with feature annotations, there are two differences:
+* The filtering is done during analysis itself, and limits the issues generated (as opposed to a post-processing step by the user)
+* Taint in taint out transforms can be used to reason about the order of events
+
+### Syntax
+In `taint.config`, one can specify `transforms` to define new transforms. Each transform is defined by following fields:
+* `name`: name of the transform, this is used when defining rules, as well as writing models
+* `comment`: description of the transform
+
+```
+{
+  ...
+  "transforms": [
+    {
+      "name": "MyTransform",
+      "comment": "This is my transform"
+    },
+    ...
+  ],
+  ...
+}
+```
+
+Then, one may use these transforms in `rules` as follows:
+```
+ {
+  ...
+  "rules": [
+    {
+      "name": ...,
+      "code": ...,
+      "sources": ["SourceA"],
+      "transforms": ["MyTransform1", "MyTransform2"],
+      "sinks": ["SinkB"],
+      "message_format": "[{$sources}] transformed by [${transforms}] may reach [${sinks}]"
+    },
+    ...
+  ],
+  ...
+}
+```
+Intuitively, one can think of the rule above as `SourceA -> MyTransform1 -> MyTransform2 -> SinkB`. The order is important.
+
+Finally, in `.pysa` model files a taint transform can be specified using a `TaintInTaintOut[Transform[...]]` annotation, where the parameter is the name of the transform.
+```
+def my_function(arg: TaintInTaintOut[Transform[MyTransform]]): ...
+```
+
+### Semantics
+```
+  y = my_function(x)
+```
+If `x` has source taint `SourceA`, the taint of `y` is `MyTransform:SourceA`. This will correspond to matching `SourceA -> MyTransform` in a rule. Likewise, if `y` has sink taint `SinkB`, then the taint of `x` is `MyTransorm:SinkB`. This will correspond to matching `MyTransform -> SinkB` in a rule.
+
+Note that a transform modifies the taint itself. Hence, if a flow passes through a transform, it will no longer match rules which do not contain the transform.
+```
+RuleX: SourceA -> SinkB
+RuleY: SourceA -> MyTransform -> SinkB
+Flow1: SourceA -> SinkB
+Flow2: SourceA -> MyTransform -> SinkB
+```
+`Flow1` matches `RuleX` but not `RuleY`. `Flow2` matches `RuleY` but not `RuleX`.
+
+Consider the scenario where we have an additional rule:
+```
+RuleZ: SourceC -> SinkD
+```
+If transform `MyTransform` is applied to taint `SourceC`, there is no possible rule it can possibly match. As an optimization, we check for this continuously in our analysis and filter out eagerly.
+
+Also note that the existing TaintInTaintOut annotation semantics of TITO being assumed (instead of inferred) on the argument are unchanged.
