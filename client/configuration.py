@@ -12,6 +12,7 @@ import json
 import logging
 import multiprocessing
 import os
+import platform
 import re
 import shutil
 import site
@@ -23,8 +24,10 @@ from logging import Logger
 from pathlib import Path
 from typing import (
     Any,
+    Callable,
     ClassVar,
     Dict,
+    Generic,
     Iterable,
     List,
     Optional,
@@ -334,6 +337,95 @@ def _expand_and_get_existent_paths(
     return existent_paths
 
 
+PLATFORM_MAPPING = {
+    "Darwin": "macos",
+    "Windows": "windows",
+    "Linux": "linux",
+    "default": "default",
+}
+
+
+@dataclass(frozen=True)
+class PlatformAware(Generic[T]):
+    default: T
+    windows: Optional[T] = None
+    macos: Optional[T] = None
+    linux: Optional[T] = None
+
+    @staticmethod
+    def from_json(
+        value: Union[T, Dict[str, T]], field_name: str
+    ) -> Optional["PlatformAware"]:
+        if value is None:
+            return None
+        elif isinstance(value, Dict):
+            if len(value) == 0:
+                return None
+
+            invalid_keys = value.keys() - PLATFORM_MAPPING.values()
+            if not len(invalid_keys) == 0:
+                raise InvalidConfiguration(
+                    f"Configuration `{field_name}` only supports platforms: "
+                    f"{PLATFORM_MAPPING.values()} but got: `{invalid_keys}`."
+                )
+
+            default = (
+                value["default"]
+                if "default" in value
+                else value[sorted(value.keys())[0]]
+            )
+            return PlatformAware(
+                default=default,
+                windows=value["windows"] if "windows" in value else None,
+                macos=value["macos"] if "macos" in value else None,
+                linux=value["linux"] if "linux" in value else None,
+            )
+        else:
+            return PlatformAware(default=value)
+
+    @staticmethod
+    def merge(
+        base: Optional["PlatformAware"], override: Optional["PlatformAware"]
+    ) -> Optional["PlatformAware"]:
+        if base is None:
+            return override
+        elif override is None:
+            return base
+        else:
+            return PlatformAware(
+                default=override.default,
+                windows=override.windows
+                if override.windows is not None
+                else base.windows,
+                macos=override.macos if override.macos is not None else base.macos,
+                linux=override.linux if override.linux is not None else base.linux,
+            )
+
+    def get(self, key: Optional[str] = None) -> T:
+        if key is None:
+            key = PLATFORM_MAPPING[platform.system()]
+        value: T = self.__getattribute__(key)
+        return value if value is not None else self.default
+
+    def validate_values(self, check: Callable[[T], bool]):
+        return (
+            check(self.default)
+            and (check(self.windows) if self.windows is not None else True)
+            and (check(self.macos) if self.macos is not None else True)
+            and (check(self.linux) if self.linux is not None else True)
+        )
+
+    def to_json(self):
+        result = {"default": self.default}
+        if self.windows is not None:
+            result["windows"] = self.windows
+        if self.linux is not None:
+            result["linux"] = self.linux
+        if self.macos is not None:
+            result["macos"] = self.macos
+        return result
+
+
 @dataclass(frozen=True)
 class PythonVersion:
     major: int
@@ -498,7 +590,7 @@ class UnwatchedDependency:
 @dataclass(frozen=True)
 class PartialConfiguration:
     binary: Optional[str] = None
-    buck_mode: Optional[str] = None
+    buck_mode: Optional[PlatformAware[str]] = None
     disabled: Optional[bool] = None
     do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
     dot_pyre_directory: Optional[Path] = None
@@ -562,7 +654,7 @@ class PartialConfiguration:
         )
         return PartialConfiguration(
             binary=arguments.binary,
-            buck_mode=arguments.buck_mode,
+            buck_mode=PlatformAware.from_json(arguments.buck_mode, "buck_mode"),
             disabled=None,
             do_not_ignore_errors_in=arguments.do_not_ignore_errors_in,
             dot_pyre_directory=arguments.dot_pyre_directory,
@@ -618,6 +710,27 @@ class PartialConfiguration:
             raise InvalidConfiguration(
                 f"Configuration `{name}` is expected to have type "
                 f"{expected_type} but got: `{json}`."
+            )
+
+        def ensure_optional_string_or_string_dict(
+            json: Dict[str, Any], name: str
+        ) -> Optional[Union[Dict[str, str], str]]:
+            result = json.pop(name, None)
+            if result is None:
+                return None
+            elif isinstance(result, str):
+                return result
+            elif isinstance(result, Dict):
+                for value in result.values():
+                    if not isinstance(value, str):
+                        raise InvalidConfiguration(
+                            f"Configuration `{name}` is expected to be a "
+                            + f"dict of strings but got `{json}`."
+                        )
+                return result
+            raise InvalidConfiguration(
+                f"Configuration `{name}` is expected to be a string or a "
+                + f"dict of strings but got `{json}`."
             )
 
         def ensure_optional_string_list(
@@ -747,7 +860,12 @@ class PartialConfiguration:
 
             partial_configuration = PartialConfiguration(
                 binary=ensure_option_type(configuration_json, "binary", str),
-                buck_mode=ensure_option_type(configuration_json, "buck_mode", str),
+                buck_mode=PlatformAware.from_json(
+                    ensure_optional_string_or_string_dict(
+                        configuration_json, "buck_mode"
+                    ),
+                    "buck_mode",
+                ),
                 disabled=ensure_option_type(configuration_json, "disabled", bool),
                 do_not_ignore_errors_in=ensure_string_list(
                     configuration_json, "do_not_ignore_errors_in"
@@ -928,7 +1046,7 @@ def merge_partial_configurations(
 
     return PartialConfiguration(
         binary=overwrite_base(base.binary, override.binary),
-        buck_mode=overwrite_base(base.buck_mode, override.buck_mode),
+        buck_mode=PlatformAware.merge(base.buck_mode, override.buck_mode),
         disabled=overwrite_base(base.disabled, override.disabled),
         do_not_ignore_errors_in=prepend_base(
             base.do_not_ignore_errors_in, override.do_not_ignore_errors_in
@@ -999,7 +1117,7 @@ class Configuration:
     dot_pyre_directory: Path
 
     binary: Optional[str] = None
-    buck_mode: Optional[str] = None
+    buck_mode: Optional[PlatformAware[str]] = None
     disabled: bool = False
     do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
     excludes: Sequence[str] = field(default_factory=list)
@@ -1111,7 +1229,7 @@ class Configuration:
             "global_root": self.project_root,
             "dot_pyre_directory": str(self.dot_pyre_directory),
             **({"binary": binary} if binary is not None else {}),
-            **({"buck_mode": buck_mode} if buck_mode is not None else {}),
+            **({"buck_mode": buck_mode.to_json()} if buck_mode is not None else {}),
             "disabled": self.disabled,
             "do_not_ignore_errors_in": list(self.do_not_ignore_errors_in),
             "excludes": list(self.excludes),

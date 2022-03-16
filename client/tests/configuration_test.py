@@ -25,6 +25,7 @@ from ..configuration import (
     PythonVersion,
     IdeFeatures,
     InvalidPythonVersion,
+    PlatformAware,
     SharedMemory,
     Configuration,
     ExtensionElement,
@@ -147,7 +148,9 @@ class PartialConfigurationTest(unittest.TestCase):
             )
         )
         self.assertEqual(configuration.binary, "binary")
-        self.assertEqual(configuration.buck_mode, "opt")
+        self.assertEqual(
+            configuration.buck_mode, PlatformAware.from_json("opt", "buck_mode")
+        )
         self.assertEqual(configuration.dot_pyre_directory, Path(".pyre"))
         self.assertListEqual(list(configuration.excludes), ["excludes"])
         self.assertEqual(configuration.logger, "logger")
@@ -199,12 +202,28 @@ class PartialConfigurationTest(unittest.TestCase):
             PartialConfiguration.from_string(json.dumps({"binary": "foo"})).binary,
             "foo",
         )
-        self.assertEqual(
-            PartialConfiguration.from_string(
-                json.dumps({"buck_mode": "foo"})
-            ).buck_mode,
+
+        for mode in [
             "foo",
-        )
+            {"default": "foo"},
+            {"linux": "foo"},
+            {"default": "bar", "macos": "foo", "linux": "foo"},
+        ]:
+            buck_mode = PartialConfiguration.from_string(
+                json.dumps({"buck_mode": mode})
+            ).buck_mode
+            expected_value = PlatformAware.from_json("foo", "buck_mode")
+            self.assertIsNotNone(buck_mode)
+            self.assertIsNotNone(expected_value)
+            self.assertEqual(buck_mode.get(), expected_value.get())
+
+        for null_mode in [{}, None]:
+            self.assertIsNone(
+                PartialConfiguration.from_string(
+                    json.dumps({"buck_mode": null_mode})
+                ).buck_mode
+            )
+
         self.assertEqual(
             PartialConfiguration.from_string(json.dumps({"disabled": True})).disabled,
             True,
@@ -523,7 +542,18 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises("")
         assert_raises("{")
         assert_raises(json.dumps({"binary": True}))
-        assert_raises(json.dumps({"buck_mode": {}}))
+        assert_raises(json.dumps({"buck_mode": {"default": 5}}))
+        assert_raises(json.dumps({"buck_mode": {"bad-platform": "mode"}}))
+        assert_raises(
+            json.dumps(
+                {
+                    "buck_mode": {
+                        "win": "valid",
+                        "bad": "valid-also",
+                    }
+                }
+            )
+        )
         assert_raises(json.dumps({"disabled": "False"}))
         assert_raises(json.dumps({"do_not_ignore_errors_in": "abc"}))
         assert_raises(json.dumps({"dot_pyre_directory": {}}))
@@ -561,12 +591,16 @@ class PartialConfigurationTest(unittest.TestCase):
         # - If one of the config is presented, result is the that config.
         # - If both base config and overriding config are present, result is the
         #   overriding config.
-        def assert_overwritten(attribute_name: str) -> None:
+        def assert_overwritten(
+            attribute_name: str,
+            base_value: Optional[object] = None,
+            override_value: Optional[object] = None,
+        ) -> None:
+            base_value = base_value if base_value is not None else object()
+            override_value = override_value if override_value is not None else object()
             # The actual value doesn't really matter. We only care about equalities.
             # This is obviously not type-safe but it does save a significant amount
             # of keystrokes.
-            base_value = object()
-            override_value = object()
             self.assertIsNone(
                 getattr(
                     merge_partial_configurations(
@@ -636,7 +670,11 @@ class PartialConfigurationTest(unittest.TestCase):
                     override=create_configuration(attribute_name, override_value),
                 )
 
-        assert_overwritten("buck_mode")
+        assert_overwritten(
+            "buck_mode",
+            PlatformAware.from_json("one", "buck_mode"),
+            PlatformAware.from_json("two", "buck_mode"),
+        )
         assert_overwritten("disabled")
         assert_prepended("do_not_ignore_errors_in")
         assert_overwritten("dot_pyre_directory")
@@ -819,7 +857,7 @@ class ConfigurationTest(testslide.TestCase):
             relative_local_root="local",
             partial_configuration=PartialConfiguration(
                 binary="binary",
-                buck_mode="opt",
+                buck_mode=PlatformAware.from_json("opt", "buck_mode"),
                 disabled=None,
                 do_not_ignore_errors_in=["foo"],
                 dot_pyre_directory=None,
@@ -851,7 +889,8 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.project_root, "root")
         self.assertEqual(configuration.relative_local_root, "local")
         self.assertEqual(configuration.binary, "binary")
-        self.assertEqual(configuration.buck_mode, "opt")
+        self.assertIsNotNone(configuration.buck_mode)
+        self.assertEqual(configuration.buck_mode.get(), "opt")
         self.assertEqual(configuration.disabled, False)
         self.assertListEqual(list(configuration.do_not_ignore_errors_in), ["foo"])
         self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))

@@ -252,6 +252,7 @@ def get_source_path(
 ) -> SourcePath:
     source_directories = configuration.source_directories
     targets = configuration.targets
+    buck_mode = configuration.buck_mode.get() if configuration.buck_mode else None
 
     if source_directories is not None and targets is None:
         elements: Sequence[
@@ -290,7 +291,7 @@ def get_source_path(
             artifact_root=configuration.dot_pyre_directory / artifact_root_name,
             checked_directory=search_base,
             targets=targets,
-            mode=configuration.buck_mode,
+            mode=buck_mode,
             isolation_prefix=configuration.isolation_prefix,
             use_buck2=use_buck2,
         )
