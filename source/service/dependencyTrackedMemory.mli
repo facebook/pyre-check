@@ -92,13 +92,13 @@ module DependencyTrackedTableWithCache
     (Value : ComparableValueType) : sig
   include
     WithCache.S
-      with type t = Value.t
+      with type value = Value.t
        and type key = Key.t
        and type key_out = Key.out
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 
-  val get : ?dependency:DependencyKey.registered -> key -> t option
+  val get : ?dependency:DependencyKey.registered -> key -> value option
 
   val mem : ?dependency:DependencyKey.registered -> key -> bool
 
@@ -123,13 +123,13 @@ module DependencyTrackedTableNoCache
     (Value : ComparableValueType) : sig
   include
     NoCache.S
-      with type t = Value.t
+      with type value = Value.t
        and type key = Key.t
        and type key_out = Key.out
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 
-  val get : ?dependency:DependencyKey.registered -> key -> t option
+  val get : ?dependency:DependencyKey.registered -> key -> value option
 
   val mem : ?dependency:DependencyKey.registered -> key -> bool
 

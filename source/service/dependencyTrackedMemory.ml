@@ -168,7 +168,7 @@ module DependencyTracking = struct
   module type TableType = sig
     include NoCache.S
 
-    module Value : ComparableValueType with type t = t
+    module Value : ComparableValueType with type t = value
   end
 
   module Make (DependencyKey : DependencyKey.S) (Table : TableType) = struct

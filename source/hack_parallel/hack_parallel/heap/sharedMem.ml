@@ -779,17 +779,17 @@ module Old : functor (Key : Key) -> functor (Value : Value.Type) ->
 
 module type NoCache = sig
   type key
-  type t
+  type value
   module KeySet : Set.S with type elt = key
   module KeyMap : MyMap.S with type key = key
 
-  val add              : key -> t -> unit
-  val get              : key -> t option
-  val get_old          : key -> t option
-  val get_old_batch    : KeySet.t -> t option KeyMap.t
+  val add              : key -> value -> unit
+  val get              : key -> value option
+  val get_old          : key -> value option
+  val get_old_batch    : KeySet.t -> value option KeyMap.t
   val remove_old_batch : KeySet.t -> unit
-  val find_unsafe      : key -> t
-  val get_batch        : KeySet.t -> t option KeyMap.t
+  val find_unsafe      : key -> value
+  val get_batch        : KeySet.t -> value option KeyMap.t
   val remove_batch     : KeySet.t -> unit
   val string_of_key    : key -> string
   val mem              : key -> bool
@@ -810,8 +810,8 @@ end
 
 module type WithCache = sig
   include NoCache
-  val write_through : key -> t -> unit
-  val get_no_cache: key -> t option
+  val write_through : key -> value -> unit
+  val get_no_cache: key -> value option
 end
 
 (*****************************************************************************)
@@ -837,7 +837,7 @@ module NoCache (UserKeyType : UserKeyType) (Value : Value.Type) = struct
   module KeyMap = MyMap.Make (UserKeyType)
 
   type key = UserKeyType.t
-  type t = Value.t
+  type value = Value.t
 
   let string_of_key key =
     key |> Key.make Value.prefix |> Key.md5 |> Key.string_of_md5;;
@@ -1155,7 +1155,7 @@ module WithCache (UserKeyType : UserKeyType) (Value:Value.Type) = struct
   module Direct = NoCache (UserKeyType) (Value)
 
   type key = Direct.key
-  type t = Direct.t
+  type value = Direct.value
 
   module KeySet = Direct.KeySet
   module KeyMap = Direct.KeyMap

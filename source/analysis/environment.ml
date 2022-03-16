@@ -158,7 +158,7 @@ module EnvironmentTable = struct
       keys:KeySet.t ->
       SharedMemoryKeys.DependencyKey.Transaction.t
 
-    val get : ?dependency:SharedMemoryKeys.DependencyKey.registered -> key -> t option
+    val get : ?dependency:SharedMemoryKeys.DependencyKey.registered -> key -> value option
 
     val mem : ?dependency:SharedMemoryKeys.DependencyKey.registered -> key -> bool
   end
@@ -196,7 +196,10 @@ module EnvironmentTable = struct
 
   module Make
       (In : In)
-      (Table : Table with type t = In.Value.t and type key = In.Key.t and type key_out = In.Key.out) =
+      (Table : Table
+                 with type value = In.Value.t
+                  and type key = In.Key.t
+                  and type key_out = In.Key.out) =
   struct
     let _ = Table.mem
 

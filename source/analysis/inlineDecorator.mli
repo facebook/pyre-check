@@ -46,11 +46,15 @@ val rename_local_variables : pairs:(Identifier.t * Identifier.t) list -> Define.
 
 (** Mapping from an inlined decorator function name to its original name. *)
 module InlinedNameToOriginalName :
-  Memory.WithCache.S with type t = Ast.Reference.t and type key = SharedMemoryKeys.ReferenceKey.t
+  Memory.WithCache.S
+    with type value = Ast.Reference.t
+     and type key = SharedMemoryKeys.ReferenceKey.t
 
 (** The keys represent the decorators to skip. The values are dont-care values. *)
 module DecoratorsToSkip :
-  Memory.WithCache.S with type t = Ast.Reference.t and type key = SharedMemoryKeys.ReferenceKey.t
+  Memory.WithCache.S
+    with type value = Ast.Reference.t
+     and type key = SharedMemoryKeys.ReferenceKey.t
 
 val inline_decorators : get_source:(Reference.t -> Source.t option) -> Source.t -> Source.t
 

@@ -126,7 +126,7 @@ module Std : sig
     (*****************************************************************************)
     (* Part of the heap not reachable from hashtable entries. *)
     (*****************************************************************************)
-    val wasted_heap_size: unit -> int 
+    val wasted_heap_size: unit -> int
 
     (*****************************************************************************)
     (* Stats of the statically sized hash / dep tables *)
@@ -166,23 +166,23 @@ module Std : sig
 
     module type NoCache = sig
       type key
-      type t
+      type value
       module KeySet : Set.S with type elt = key
       module KeyMap : MyMap.S with type key = key
 
       (* Safe for concurrent writes, the first writer wins, the second write
        * is dismissed.
       *)
-      val add              : key -> t -> unit
+      val add              : key -> value -> unit
       (* Safe for concurrent reads. Safe for interleaved reads and mutations,
        * provided the code runs on Intel architectures.
       *)
-      val get              : key -> t option
-      val get_old          : key -> t option
-      val get_old_batch    : KeySet.t -> t option KeyMap.t
+      val get              : key -> value option
+      val get_old          : key -> value option
+      val get_old_batch    : KeySet.t -> value option KeyMap.t
       val remove_old_batch : KeySet.t -> unit
-      val find_unsafe      : key -> t
-      val get_batch        : KeySet.t -> t option KeyMap.t
+      val find_unsafe      : key -> value
+      val get_batch        : KeySet.t -> value option KeyMap.t
       val remove_batch     : KeySet.t -> unit
       val string_of_key    : key -> string
       (* Safe for concurrent access. *)
@@ -211,8 +211,8 @@ module Std : sig
 
     module type WithCache = sig
       include NoCache
-      val write_through : key -> t -> unit
-      val get_no_cache: key -> t option
+      val write_through : key -> value -> unit
+      val get_no_cache: key -> value option
     end
 
     module type UserKeyType = sig
@@ -224,7 +224,7 @@ module Std : sig
     module NoCache :
       functor (UserKeyType : UserKeyType) ->
       functor (Value:Value.Type) ->
-        NoCache with type t = Value.t
+        NoCache with type value = Value.t
                  and type key = UserKeyType.t
                  and module KeySet = Set.Make (UserKeyType)
                  and module KeyMap = MyMap.Make (UserKeyType)
@@ -232,7 +232,7 @@ module Std : sig
     module WithCache :
       functor (UserKeyType : UserKeyType) ->
       functor (Value:Value.Type) ->
-        WithCache with type t = Value.t
+        WithCache with type value = Value.t
                    and type key = UserKeyType.t
                    and module KeySet = Set.Make (UserKeyType)
                    and module KeyMap = MyMap.Make (UserKeyType)

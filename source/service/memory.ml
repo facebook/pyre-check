@@ -34,7 +34,7 @@ module NoCache = struct
   module Make (Key : KeyType) (Value : ValueType) : sig
     include
       S
-        with type t = Value.t
+        with type value = Value.t
          and type key = Key.t
          and type key_out = Key.out
          and module KeySet = Set.Make(Key)
@@ -56,7 +56,7 @@ module WithCache = struct
   module Make (Key : KeyType) (Value : ValueType) : sig
     include
       S
-        with type t = Value.t
+        with type value = Value.t
          and type key = Key.t
          and type key_out = Key.out
          and module KeySet = Set.Make(Key)

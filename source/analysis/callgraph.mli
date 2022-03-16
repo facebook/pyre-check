@@ -44,7 +44,7 @@ module CallerKey : Memory.KeyType with type t = caller and type out = caller
 
 module SharedMemory :
   Memory.WithCache.S
-    with type t = CalleeValue.t
+    with type value = CalleeValue.t
      and type key = caller
      and type key_out = caller
      and module KeySet = Caml.Set.Make(CallerKey)
