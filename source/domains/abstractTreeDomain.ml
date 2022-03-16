@@ -372,6 +372,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
   (** Compute join of all element components in tree t. *)
   let collapse ?(transform = Fn.id) ~widen_depth { element; children } =
+    let transform e = if Element.is_bottom e then e else transform e in
     let rec collapse_tree { element; children } element_accumulator =
       let element_accumulator = element_join ~widen_depth element_accumulator (transform element) in
       let collapse_child ~key:_ ~data:subtree = collapse_tree subtree in
