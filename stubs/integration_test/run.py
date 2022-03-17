@@ -39,6 +39,15 @@ if __name__ == "__main__":
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
     )
 
+    # Verify `PYRE_BINARY` is set
+    if "PYRE_BINARY" not in os.environ:
+        LOG.error(
+            "Required environment variable `PYRE_BINARY` is not set. "
+            "`make all` from this script's directory will "
+            "automatically set `PYRE_BINARY`"
+        )
+        sys.exit(1)
+
     # Switch to directory of this script.
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     LOG.info("Running in `%s`", os.getcwd())
