@@ -24,16 +24,17 @@ let make_callable_from_arguments annotations =
        annotations)
 
 
+let assert_create ?(aliases = fun _ -> None) source annotation =
+  assert_equal
+    ~printer:Type.show
+    ~cmp:Type.equal
+    annotation
+    (Type.create
+       ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> aliases)
+       (parse_single_expression ~preprocess:true source))
+
+
 let test_create _ =
-  let assert_create ?(aliases = fun _ -> None) source annotation =
-    assert_equal
-      ~printer:Type.show
-      ~cmp:Type.equal
-      annotation
-      (Type.create
-         ~aliases:(fun ?replace_unbound_parameters_with_any:_ -> aliases)
-         (parse_single_expression ~preprocess:true source))
-  in
   assert_create "foo" (Type.Primitive "foo");
   assert_create "foo.bar" (Type.Primitive "foo.bar");
   assert_create "object" (Type.Primitive "object");
@@ -132,74 +133,6 @@ let test_create _ =
        ~constraints:(Type.Variable.Bound (Type.Primitive "typing.Callable"))
        "_CallableT");
 
-  (* Check that type aliases are resolved. *)
-  let assert_alias source resolved =
-    let aliases primitive =
-      Identifier.Table.of_alist_exn
-        [
-          "Alias", Type.Primitive "Aliased";
-          "IntList", Type.list Type.integer;
-          ( "_Future",
-            Type.union
-              [
-                Type.parametric "Future" ![Type.integer; Type.variable "_T"];
-                Type.awaitable (Type.variable "_T");
-              ] );
-          "baz.Callable", Type.Callable.create ~annotation:Type.Any ~parameters:Undefined ();
-          ( "Predicate",
-            Type.Callable.create
-              ~annotation:Type.integer
-              ~parameters:
-                (Defined
-                   [PositionalOnly { index = 0; annotation = Type.variable "T"; default = false }])
-              () );
-        ]
-      |> (fun table -> Identifier.Table.find table primitive)
-      >>| fun alias -> Type.TypeAlias alias
-    in
-    assert_create ~aliases source resolved
-  in
-  assert_alias "Alias" (Type.Primitive "Aliased");
-  assert_alias "Aliased" (Type.Primitive "Aliased");
-  assert_alias "typing.Optional[Alias]" (Type.optional (Type.Primitive "Aliased"));
-  assert_alias "Parametric[Alias]" (Type.parametric "Parametric" ![Type.Primitive "Aliased"]);
-  assert_alias "Alias[int]" (Type.parametric "Aliased" ![Type.integer]);
-
-  assert_alias "IntList" (Type.list Type.integer);
-  assert_alias "IntList[str]" (Type.list Type.integer);
-
-  assert_alias
-    "_Future[int]"
-    (Type.union
-       [Type.parametric "Future" ![Type.integer; Type.integer]; Type.awaitable Type.integer]);
-
-  assert_alias
-    "baz.Callable[[int], str]"
-    (Type.Callable
-       {
-         kind = Type.Callable.Anonymous;
-         implementation =
-           {
-             annotation = Type.string;
-             parameters =
-               Defined [PositionalOnly { index = 0; annotation = Type.integer; default = false }];
-           };
-         overloads = [];
-       });
-  assert_alias
-    "Predicate[str]"
-    (Type.Callable
-       {
-         kind = Type.Callable.Anonymous;
-         implementation =
-           {
-             annotation = Type.integer;
-             parameters =
-               Defined [PositionalOnly { index = 0; annotation = Type.string; default = false }];
-           };
-         overloads = [];
-       });
-
   (* String literals. *)
   assert_create "'foo'" (Type.Primitive "foo");
   assert_create "'foo.bar'" (Type.Primitive "foo.bar");
@@ -207,56 +140,49 @@ let test_create _ =
   assert_create "'Type[str]'" (Type.parametric "Type" ![Type.Primitive "str"]);
   assert_create "'Type[[[]str]'" (Type.Primitive "Type[[[]str]");
 
-  (* Recursion with loop. *)
-  let aliases = function
-    | "A" -> Some (Type.Primitive "A")
-    | _ -> None
-  in
-  let aliases = create_type_alias_table aliases in
-  assert_create ~aliases "A" (Type.Primitive "A");
-  let aliases = function
-    | "A" -> Some (Type.list (Type.Primitive "A"))
-    | _ -> None
-  in
-  let aliases = create_type_alias_table aliases in
-  assert_create ~aliases "A" (Type.list (Type.Primitive "A"));
-
-  (* Nested aliasing. *)
-  let aliases = function
-    | "A" -> Some (Type.list (Type.Primitive "B"))
-    | "B" -> Some (Type.Primitive "C")
-    | "X" -> Some (Type.Callable.create ~annotation:(Type.Primitive "A") ())
-    | _ -> None
-  in
-  let aliases = create_type_alias_table aliases in
-  assert_create ~aliases "A" (Type.list (Type.Primitive "C"));
-  assert_create ~aliases "X" (Type.Callable.create ~annotation:(Type.list (Type.Primitive "C")) ());
-
-  (* Aliasing of subclasses through imports. *)
-  let aliases = function
-    | "A" -> Some (Type.Primitive "B")
-    | "module.R" -> Some (Type.Primitive "module.R.R")
-    | _ -> None
-  in
-  let aliases = create_type_alias_table aliases in
-  assert_create ~aliases "A" (Type.Primitive "B");
-  assert_create ~aliases "A.InnerClass" (Type.Primitive "B.InnerClass");
-  assert_create ~aliases "A.InnerClass[int]" (Type.parametric "B.InnerClass" ![Type.integer]);
-  assert_create ~aliases "module.R.R" (Type.Primitive "module.R.R.R");
+  assert_create "typing_extensions.Literal['foo']" (Type.literal_string "foo");
+  assert_create "typing_extensions.Literal[u'foo']" (Type.literal_string "foo");
+  assert_create "typing_extensions.Literal[b'foo']" (Type.literal_bytes "foo");
   assert_create
-    ~aliases
-    "A.InnerClass.InnerInnerClass"
-    (Type.Primitive "B.InnerClass.InnerInnerClass");
+    "typing_extensions.Literal[u'foo', b'foo']"
+    (Type.union [Type.literal_string "foo"; Type.literal_bytes "foo"]);
+  assert_create
+    "typing_extensions.Literal[Foo.ONE]"
+    (Type.Literal
+       (Type.EnumerationMember { enumeration_type = Type.Primitive "Foo"; member_name = "ONE" }));
+  assert_create
+    "typing_extensions.Literal[Foo.ONE, Foo.TWO]"
+    (Type.union
+       [
+         Type.Literal
+           (Type.EnumerationMember { enumeration_type = Type.Primitive "Foo"; member_name = "ONE" });
+         Type.Literal
+           (Type.EnumerationMember { enumeration_type = Type.Primitive "Foo"; member_name = "TWO" });
+       ]);
+  assert_create "typing_extensions.Literal[ONE]" Type.Top;
+  assert_create "typing_extensions.Literal[None]" Type.none;
+  assert_create "typing_extensions.Literal[str]" (Type.Literal (Type.String AnyLiteral));
+  assert_create "_NotImplementedType" Type.Any;
 
-  (* Aliases with Unions. *)
-  let aliases = function
-    | "A" -> Some (Type.union [Type.string; Type.bytes])
-    | _ -> None
-  in
-  let aliases = create_type_alias_table aliases in
-  assert_create ~aliases "typing.Union[A, str]" (Type.union [Type.string; Type.bytes]);
+  (* ParamSpec class. *)
+  assert_create
+    "ParamSpecClass[[int, str], [bool]]"
+    (Type.parametric
+       "ParamSpecClass"
+       [
+         CallableParameters
+           (Defined
+              [
+                PositionalOnly { index = 0; annotation = Type.integer; default = false };
+                PositionalOnly { index = 1; annotation = Type.string; default = false };
+              ]);
+         CallableParameters
+           (Defined [PositionalOnly { index = 0; annotation = Type.bool; default = false }]);
+       ]);
+  ()
 
-  (* Callables. *)
+
+let test_create_callable _ =
   let default_overload = { Type.Callable.annotation = Type.Top; parameters = Undefined } in
   let open Type.Callable in
   assert_create "typing.Callable" (Type.Primitive "typing.Callable");
@@ -362,46 +288,124 @@ let test_create _ =
   assert_create
     "typing.Callable[..., function]"
     (Type.Callable.create ~annotation:(Type.Callable.create ~annotation:Type.Any ()) ());
+  ()
 
-  assert_create "typing_extensions.Literal['foo']" (Type.literal_string "foo");
-  assert_create "typing_extensions.Literal[u'foo']" (Type.literal_string "foo");
-  assert_create "typing_extensions.Literal[b'foo']" (Type.literal_bytes "foo");
-  assert_create
-    "typing_extensions.Literal[u'foo', b'foo']"
-    (Type.union [Type.literal_string "foo"; Type.literal_bytes "foo"]);
-  assert_create
-    "typing_extensions.Literal[Foo.ONE]"
-    (Type.Literal
-       (Type.EnumerationMember { enumeration_type = Type.Primitive "Foo"; member_name = "ONE" }));
-  assert_create
-    "typing_extensions.Literal[Foo.ONE, Foo.TWO]"
-    (Type.union
-       [
-         Type.Literal
-           (Type.EnumerationMember { enumeration_type = Type.Primitive "Foo"; member_name = "ONE" });
-         Type.Literal
-           (Type.EnumerationMember { enumeration_type = Type.Primitive "Foo"; member_name = "TWO" });
-       ]);
-  assert_create "typing_extensions.Literal[ONE]" Type.Top;
-  assert_create "typing_extensions.Literal[None]" Type.none;
-  assert_create "typing_extensions.Literal[str]" (Type.Literal (Type.String AnyLiteral));
-  assert_create "_NotImplementedType" Type.Any;
 
-  (* ParamSpec class. *)
-  assert_create
-    "ParamSpecClass[[int, str], [bool]]"
-    (Type.parametric
-       "ParamSpecClass"
-       [
-         CallableParameters
-           (Defined
+let test_create_alias _ =
+  let assert_alias source resolved =
+    let aliases primitive =
+      Identifier.Table.of_alist_exn
+        [
+          "Alias", Type.Primitive "Aliased";
+          "IntList", Type.list Type.integer;
+          ( "_Future",
+            Type.union
               [
-                PositionalOnly { index = 0; annotation = Type.integer; default = false };
-                PositionalOnly { index = 1; annotation = Type.string; default = false };
-              ]);
-         CallableParameters
-           (Defined [PositionalOnly { index = 0; annotation = Type.bool; default = false }]);
-       ]);
+                Type.parametric "Future" ![Type.integer; Type.variable "_T"];
+                Type.awaitable (Type.variable "_T");
+              ] );
+          "baz.Callable", Type.Callable.create ~annotation:Type.Any ~parameters:Undefined ();
+          ( "Predicate",
+            Type.Callable.create
+              ~annotation:Type.integer
+              ~parameters:
+                (Defined
+                   [PositionalOnly { index = 0; annotation = Type.variable "T"; default = false }])
+              () );
+        ]
+      |> (fun table -> Identifier.Table.find table primitive)
+      >>| fun alias -> Type.TypeAlias alias
+    in
+    assert_create ~aliases source resolved
+  in
+  assert_alias "Alias" (Type.Primitive "Aliased");
+  assert_alias "Aliased" (Type.Primitive "Aliased");
+  assert_alias "typing.Optional[Alias]" (Type.optional (Type.Primitive "Aliased"));
+  assert_alias "Parametric[Alias]" (Type.parametric "Parametric" ![Type.Primitive "Aliased"]);
+  assert_alias "Alias[int]" (Type.parametric "Aliased" ![Type.integer]);
+
+  assert_alias "IntList" (Type.list Type.integer);
+  assert_alias "IntList[str]" (Type.list Type.integer);
+
+  assert_alias
+    "_Future[int]"
+    (Type.union
+       [Type.parametric "Future" ![Type.integer; Type.integer]; Type.awaitable Type.integer]);
+
+  assert_alias
+    "baz.Callable[[int], str]"
+    (Type.Callable
+       {
+         kind = Type.Callable.Anonymous;
+         implementation =
+           {
+             annotation = Type.string;
+             parameters =
+               Defined [PositionalOnly { index = 0; annotation = Type.integer; default = false }];
+           };
+         overloads = [];
+       });
+  assert_alias
+    "Predicate[str]"
+    (Type.Callable
+       {
+         kind = Type.Callable.Anonymous;
+         implementation =
+           {
+             annotation = Type.integer;
+             parameters =
+               Defined [PositionalOnly { index = 0; annotation = Type.string; default = false }];
+           };
+         overloads = [];
+       });
+  (* Recursion with loop. *)
+  let aliases = function
+    | "A" -> Some (Type.Primitive "A")
+    | _ -> None
+  in
+  let aliases = create_type_alias_table aliases in
+  assert_create ~aliases "A" (Type.Primitive "A");
+  let aliases = function
+    | "A" -> Some (Type.list (Type.Primitive "A"))
+    | _ -> None
+  in
+  let aliases = create_type_alias_table aliases in
+  assert_create ~aliases "A" (Type.list (Type.Primitive "A"));
+
+  (* Nested aliasing. *)
+  let aliases = function
+    | "A" -> Some (Type.list (Type.Primitive "B"))
+    | "B" -> Some (Type.Primitive "C")
+    | "X" -> Some (Type.Callable.create ~annotation:(Type.Primitive "A") ())
+    | _ -> None
+  in
+  let aliases = create_type_alias_table aliases in
+  assert_create ~aliases "A" (Type.list (Type.Primitive "C"));
+  assert_create ~aliases "X" (Type.Callable.create ~annotation:(Type.list (Type.Primitive "C")) ());
+
+  (* Aliasing of subclasses through imports. *)
+  let aliases = function
+    | "A" -> Some (Type.Primitive "B")
+    | "module.R" -> Some (Type.Primitive "module.R.R")
+    | _ -> None
+  in
+  let aliases = create_type_alias_table aliases in
+  assert_create ~aliases "A" (Type.Primitive "B");
+  assert_create ~aliases "A.InnerClass" (Type.Primitive "B.InnerClass");
+  assert_create ~aliases "A.InnerClass[int]" (Type.parametric "B.InnerClass" ![Type.integer]);
+  assert_create ~aliases "module.R.R" (Type.Primitive "module.R.R.R");
+  assert_create
+    ~aliases
+    "A.InnerClass.InnerInnerClass"
+    (Type.Primitive "B.InnerClass.InnerInnerClass");
+
+  (* Aliases with Unions. *)
+  let aliases = function
+    | "A" -> Some (Type.union [Type.string; Type.bytes])
+    | _ -> None
+  in
+  let aliases = create_type_alias_table aliases in
+  assert_create ~aliases "typing.Union[A, str]" (Type.union [Type.string; Type.bytes]);
   ()
 
 
@@ -6394,6 +6398,8 @@ let () =
   "type"
   >::: [
          "create" >:: test_create;
+         "create_callable" >:: test_create_callable;
+         "create_alias" >:: test_create_alias;
          "create_type_operator" >:: test_create_type_operator;
          "create_variadic_tuple" >:: test_create_variadic_tuple;
          "resolve_aliases" >:: test_resolve_aliases;
