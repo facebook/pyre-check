@@ -299,6 +299,73 @@ let test_bound_method context =
   ()
 
 
+let test_reexported_callable context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "reexports_callable.pyi";
+          source = {|
+        from typing import Callable as Callable
+
+      |};
+        };
+      ]
+    {|
+      from typing import Any, TypeVar
+      from reexports_callable import Callable
+
+      _FuncT = TypeVar("_FuncT", bound=Callable[..., Any])
+
+      def identity_for_function(funcobj: _FuncT) -> _FuncT: ...
+
+      class Foo:
+        @identity_for_function
+        def my_method(self) -> int: ...
+
+      def main() -> None:
+        f1: Callable[[int], str]
+        reveal_type(f1)
+        reveal_type(Foo.my_method)
+    |}
+    [
+      "Prohibited any [33]: `_FuncT` cannot alias to a type containing `Any`.";
+      "Revealed type [-1]: Revealed type for `f1` is `typing.Callable[[int], str]`.";
+      "Revealed type [-1]: Revealed type for `test.Foo.my_method` is \
+       `typing.Callable(Foo.my_method)[[Named(self, Foo)], int]`.";
+    ];
+  assert_type_errors
+    ~update_environment_with:
+      [
+        {
+          handle = "reexports_callable.pyi";
+          source = {|
+        from typing import Callable as Callable, List as List
+
+      |};
+        };
+      ]
+    {|
+      from typing import Any, TypeVar
+      import typing
+      from reexports_callable import Callable, List
+
+      MyCallable = typing.Callable
+      F = MyCallable[..., Any]
+      G = MyCallable[[int], Any]
+
+      f1: F
+      f2: G
+    |}
+    [
+      "Invalid type parameters [24]: Generic type `typing.Callable` expects 2 type parameters.";
+      "Prohibited any [33]: `F` cannot alias to a type containing `Any`.";
+      "Prohibited any [33]: `G` cannot alias to a type containing `Any`.";
+    ];
+  ()
+
+
 let () =
   "callable"
   >::: [
@@ -307,5 +374,6 @@ let () =
          "callable_attribute_access" >:: test_callable_attribute_access;
          "position_only_parameters" >:: test_position_only_parameters;
          "bound_method" >:: test_bound_method;
+         "reexported_callable" >:: test_reexported_callable;
        ]
   |> Test.run

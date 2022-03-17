@@ -62,8 +62,8 @@ let test_simple_registration context =
 
 
 let test_harder_registrations context =
-  let assert_registers ~expected_alias source name =
-    let project = ScratchProject.setup ["test.py", source] ~context in
+  let assert_registers ?external_sources ~expected_alias source name =
+    let project = ScratchProject.setup ?external_sources ["test.py", source] ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
     let alias_environment = AliasEnvironment.create ast_environment in
     let update_result =
@@ -282,6 +282,17 @@ let test_harder_registrations context =
                    (Type.OrderedTypes.Concatenation.create_unpackable
                       (Type.Variable.Variadic.Tuple.create "test.Ts"));
                ])));
+  (* An alias containing "..." should not mistake the "..." for some unknown alias. *)
+  assert_registers
+    ~external_sources:["reexports_callable.py", {|
+    from typing import Callable as Callable
+  |}]
+    {|
+    from reexports_callable import Callable
+    F = Callable[..., int]
+  |}
+    "test.F"
+    ~expected_alias:(Some (Type.TypeAlias (Type.Callable.create ~annotation:Type.integer ())));
   ()
 
 

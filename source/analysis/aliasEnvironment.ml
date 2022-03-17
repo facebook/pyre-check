@@ -93,6 +93,8 @@ module UnresolvedAlias = struct
                         empty_stub_environment)
                      ?dependency
                      (Reference.create primitive)
+                (* Don't consider "..." in `MyCallable[..., int]` to be a dependent alias. *)
+                || Identifier.equal primitive "..."
               then
                 (), annotation
               else
