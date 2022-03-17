@@ -105,3 +105,29 @@ let create ~roots ~edges =
         ClassNameMap.add parent (ClassNameSet.of_list children) accumulator)
   in
   { roots; edges }
+
+
+let join ({ roots = _; edges = edges_left } as left) { roots = roots_right; edges = edges_right } =
+  let add_edges parent_right children_right { roots; edges } =
+    if ClassNameSet.is_empty children_right && not (ClassNameMap.mem parent_right edges) then
+      let edges = ClassNameMap.add parent_right ClassNameSet.empty edges in
+      { roots; edges }
+    else
+      let update = function
+        | Some children_left -> Some (ClassNameSet.union children_left children_right)
+        | None -> Some children_right
+      in
+      let edges = ClassNameMap.update parent_right update edges in
+      (* Remove roots that now have incoming edges *)
+      let roots = ClassNameSet.diff roots children_right in
+      { roots; edges }
+  in
+  let { roots; edges } = ClassNameMap.fold add_edges edges_right left in
+  let add_root root_right accumulator =
+    if ClassNameMap.mem root_right edges_left then
+      accumulator
+    else
+      ClassNameSet.add root_right accumulator
+  in
+  let roots = ClassNameSet.fold add_root roots_right roots in
+  { roots; edges }

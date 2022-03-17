@@ -97,4 +97,51 @@ let test_from_source context =
            ])
 
 
-let () = "class_hierarchy" >::: ["from_source" >:: test_from_source] |> Test.run
+let test_graph_join _ =
+  let assert_graph_join ~left ~right ~expected =
+    let joined = ClassHierarchyGraph.join left right in
+    assert_equal expected joined ~printer:ClassHierarchyGraph.show ~cmp:ClassHierarchyGraph.equal
+  in
+  let left_graph = create ~roots:["A"; "D"] ~edges:["A", ["B"; "C"]; "B", []; "C", []; "D", []] in
+  assert_graph_join ~left:left_graph ~right:left_graph ~expected:left_graph;
+  assert_graph_join
+    ~left:left_graph
+    ~right:(create ~roots:["A"] ~edges:["A", []])
+    ~expected:left_graph;
+  assert_graph_join
+    ~left:left_graph
+    ~right:(create ~roots:["E"] ~edges:["E", []])
+    ~expected:
+      (create ~roots:["A"; "D"; "E"] ~edges:["A", ["B"; "C"]; "B", []; "C", []; "D", []; "E", []]);
+  assert_graph_join
+    ~left:left_graph
+    ~right:(create ~roots:["E"] ~edges:["A", []; "E", ["A"]])
+    ~expected:
+      (create ~roots:["D"; "E"] ~edges:["A", ["B"; "C"]; "B", []; "C", []; "D", []; "E", ["A"]]);
+  assert_graph_join
+    ~left:left_graph
+    ~right:(create ~roots:["E"] ~edges:["B", []; "E", ["B"]])
+    ~expected:
+      (create
+         ~roots:["A"; "D"; "E"]
+         ~edges:["A", ["B"; "C"]; "B", []; "C", []; "D", []; "E", ["B"]]);
+  assert_graph_join
+    ~left:left_graph
+    ~right:(create ~roots:["B"] ~edges:["B", ["C"]; "C", []])
+    ~expected:(create ~roots:["A"; "D"] ~edges:["A", ["B"; "C"]; "B", ["C"]; "C", []; "D", []]);
+  assert_graph_join
+    ~left:left_graph
+    ~right:(create ~roots:["B"] ~edges:["B", ["E"]; "E", []])
+    ~expected:
+      (create ~roots:["A"; "D"] ~edges:["A", ["B"; "C"]; "B", ["E"]; "C", []; "D", []; "E", []]);
+  assert_graph_join
+    ~left:left_graph
+    ~right:(create ~roots:["A"] ~edges:["A", ["E"]; "D", []; "E", ["D"]])
+    ~expected:
+      (create ~roots:["A"] ~edges:["A", ["B"; "C"; "E"]; "B", []; "C", []; "D", []; "E", ["D"]])
+
+
+let () =
+  "class_hierarchy"
+  >::: ["from_source" >:: test_from_source; "graph_join" >:: test_graph_join]
+  |> Test.run

@@ -35,3 +35,5 @@ val from_source : environment:TypeEnvironment.ReadOnly.t -> source:Source.t -> t
 val create : roots:class_name list -> edges:(class_name * class_name list) list -> t
 
 val roots : t -> ClassNameSet.t
+
+val join : t -> t -> t
