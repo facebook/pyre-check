@@ -19,6 +19,7 @@ module CallTarget = struct
     implicit_dunder_call: bool;
     collapse_tito: bool;
     index: int;
+    receiver_type: Type.t option;
   }
   [@@deriving compare, eq, show { with_path = false }]
 
@@ -37,9 +38,35 @@ module CallTarget = struct
       ?(implicit_dunder_call = false)
       ?(collapse_tito = true)
       ?(index = 0)
+      ?receiver_type
       target
     =
-    { target; implicit_self; implicit_dunder_call; collapse_tito; index }
+    { target; implicit_self; implicit_dunder_call; collapse_tito; index; receiver_type }
+
+
+  let equal_ignoring_types
+      {
+        target = target_left;
+        implicit_self = implicit_self_left;
+        implicit_dunder_call = implicit_dunder_call_left;
+        collapse_tito = collapse_tito_left;
+        index = index_left;
+        receiver_type = _;
+      }
+      {
+        target = target_right;
+        implicit_self = implicit_self_right;
+        implicit_dunder_call = implicit_dunder_call_right;
+        collapse_tito = collapse_tito_right;
+        index = index_right;
+        receiver_type = _;
+      }
+    =
+    Target.equal target_left target_right
+    && implicit_self_left == implicit_self_right
+    && implicit_dunder_call_left == implicit_dunder_call_right
+    && collapse_tito_left == collapse_tito_right
+    && index_left == index_right
 end
 
 module HigherOrderParameter = struct
@@ -192,9 +219,9 @@ module CallCallees = struct
         unresolved = unresolved_right;
       }
     =
-    List.equal CallTarget.equal call_targets_left call_targets_right
-    && List.equal CallTarget.equal new_targets_left new_targets_right
-    && List.equal CallTarget.equal init_targets_left init_targets_right
+    List.equal CallTarget.equal_ignoring_types call_targets_left call_targets_right
+    && List.equal CallTarget.equal_ignoring_types new_targets_left new_targets_right
+    && List.equal CallTarget.equal_ignoring_types init_targets_left init_targets_right
     && Option.equal
          HigherOrderParameter.equal_ignoring_types
          higher_order_parameter_left
@@ -557,7 +584,14 @@ module CallTargetIndexer = struct
     indexer.seen_targets <- Target.Set.empty
 
 
-  let create_target indexer ~implicit_self ~implicit_dunder_call ~collapse_tito original_target =
+  let create_target
+      indexer
+      ~implicit_self
+      ~implicit_dunder_call
+      ~collapse_tito
+      ?receiver_type
+      original_target
+    =
     let target_for_index = Target.override_to_method original_target in
     let index = Target.HashMap.find indexer.indices target_for_index |> Option.value ~default:0 in
     indexer.seen_targets <- Target.Set.add target_for_index indexer.seen_targets;
@@ -567,6 +601,7 @@ module CallTargetIndexer = struct
       implicit_dunder_call;
       collapse_tito;
       index;
+      receiver_type;
     }
 end
 
@@ -791,6 +826,7 @@ let rec resolve_callees_from_type
                   ~implicit_self:true
                   ~implicit_dunder_call:dunder_call
                   ~collapse_tito
+                  ~receiver_type
                   target)
               targets
           in
@@ -809,6 +845,7 @@ let rec resolve_callees_from_type
                   ~implicit_self:false
                   ~implicit_dunder_call:dunder_call
                   ~collapse_tito
+                  ?receiver_type
                   target;
               ]
             ~return_type
@@ -875,6 +912,7 @@ let rec resolve_callees_from_type
                         ~implicit_self:true
                         ~implicit_dunder_call:true
                         ~collapse_tito
+                        ?receiver_type
                         target;
                     ]
                   ~return_type

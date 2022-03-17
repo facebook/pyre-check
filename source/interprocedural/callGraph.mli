@@ -22,6 +22,8 @@ module CallTarget : sig
     collapse_tito: bool;
     (* The textual order index of the call in the function. *)
     index: int;
+    (* The type of the receiver object at this call site, if any. *)
+    receiver_type: Type.t option;
   }
   [@@deriving eq, show]
 
@@ -32,6 +34,7 @@ module CallTarget : sig
     ?implicit_dunder_call:bool ->
     ?collapse_tito:bool ->
     ?index:int ->
+    ?receiver_type:Type.t ->
     Target.t ->
     t
 end

@@ -258,6 +258,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          implicit_dunder_call;
          collapse_tito;
          index = _;
+         receiver_type = _;
        } as call_target)
     =
     (* Add implicit self. *)
@@ -637,14 +638,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         if not (Interprocedural.FixpointState.has_model callable) then
           MissingFlow.register_unknown_callee_model callable;
         let target =
-          {
-            CallGraph.CallTarget.target = callable;
-            implicit_self = false;
-            implicit_dunder_call = false;
-            collapse_tito = true;
-            index = 0;
-          }
+          CallGraph.CallTarget.create
+            ~implicit_self:false
+            ~implicit_dunder_call:false
+            ~collapse_tito:true
+            ~index:0
+            callable
         in
+
         target :: call_targets)
       else
         call_targets
