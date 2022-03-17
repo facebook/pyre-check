@@ -897,6 +897,28 @@ let test_inferred_function_parameters context =
         ]
      |};
 
+  (* Type refinement calls *)
+  (* Inference logic is aggressive in picking up types that are verifiably possible, and not
+     throwing all of it away if an unknown alternative exists. *)
+  check_inference_results
+    {|
+      def foo(x) -> None:
+          if type(x) is int:
+            return
+    |}
+    ~target:"test.foo"
+    ~expected:(single_parameter "int");
+  check_inference_results
+    {|
+      def foo(x) -> None:
+          if type(x) is int:
+            return
+          elif type(x) is str:
+            return
+    |}
+    ~target:"test.foo"
+    ~expected:(single_parameter "typing.Union[int, str]");
+
   (* Conditionals *)
   check_inference_results
     {|
