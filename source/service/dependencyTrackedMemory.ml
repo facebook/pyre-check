@@ -8,7 +8,6 @@
 open Core
 module Hashtbl = Caml.Hashtbl
 module Set = Caml.Set
-open Memory
 
 module EncodedDependency = struct
   type t = int [@@deriving compare, sexp]
@@ -166,9 +165,9 @@ end
 
 module DependencyTracking = struct
   module type TableType = sig
-    include NoCache.S
+    include Memory.NoCache.S
 
-    module Value : ComparableValueType with type t = value
+    module Value : Memory.ComparableValueType with type t = value
   end
 
   module Make (DependencyKey : DependencyKey.S) (Table : TableType) = struct
@@ -263,11 +262,11 @@ module DependencyTracking = struct
 end
 
 module DependencyTrackedTableWithCache
-    (Key : KeyType)
+    (Key : Memory.KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : ComparableValueType) =
+    (Value : Memory.ComparableValueType) =
 struct
-  module Table = WithCache.Make (Key) (Value)
+  module Table = Memory.WithCache.Make (Key) (Value)
   include Table
 
   include
@@ -280,11 +279,11 @@ struct
 end
 
 module DependencyTrackedTableNoCache
-    (Key : KeyType)
+    (Key : Memory.KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : ComparableValueType) =
+    (Value : Memory.ComparableValueType) =
 struct
-  module Table = NoCache.Make (Key) (Value)
+  module Table = Memory.NoCache.Make (Key) (Value)
   include Table
 
   include

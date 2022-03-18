@@ -7,7 +7,6 @@
 
 open Core
 module Set = Caml.Set
-open Memory
 
 (* Deliberately left abstract to prevent calls to DependencyKey.Transaction.add from outside this
    module *)
@@ -87,11 +86,11 @@ module DependencyKind : sig
 end
 
 module DependencyTrackedTableWithCache
-    (Key : KeyType)
+    (Key : Memory.KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : ComparableValueType) : sig
+    (Value : Memory.ComparableValueType) : sig
   include
-    WithCache.S
+    Memory.WithCache.S
       with type value = Value.t
        and type key = Key.t
        and type key_out = Key.out
@@ -118,11 +117,11 @@ module DependencyTrackedTableWithCache
 end
 
 module DependencyTrackedTableNoCache
-    (Key : KeyType)
+    (Key : Memory.KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : ComparableValueType) : sig
+    (Value : Memory.ComparableValueType) : sig
   include
-    NoCache.S
+    Memory.NoCache.S
       with type value = Value.t
        and type key = Key.t
        and type key_out = Key.out
