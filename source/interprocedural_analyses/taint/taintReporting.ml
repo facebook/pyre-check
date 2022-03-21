@@ -195,7 +195,7 @@ let report
         ~integers:
           [
             "pysa fixpoint iterations", iterations;
-            "pysa heap size", SharedMem.heap_size ();
+            "pysa heap size", SharedMemory.heap_size ();
             "pysa issues", List.length errors;
           ]
         ()

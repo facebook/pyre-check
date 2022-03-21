@@ -7,7 +7,7 @@
 
 module Std = struct
 
-  module SharedMem = SharedMem
+  module SharedMemory = SharedMemory
 
   module String_utils = String_utils
 

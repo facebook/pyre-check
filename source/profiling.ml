@@ -100,12 +100,12 @@ let track_duration_event ?(tags = []) ~f name =
 
 let track_shared_memory_usage ?name () =
   let create_event () =
-    let used_heap_size = SharedMem.heap_size () in
-    let wasted_heap_size = SharedMem.wasted_heap_size () in
-    let { SharedMem.nonempty_slots = nonempty_hash_slots; used_slots = used_hash_slots; _ } =
-      SharedMem.hash_stats ()
+    let used_heap_size = SharedMemory.heap_size () in
+    let wasted_heap_size = SharedMemory.wasted_heap_size () in
+    let { SharedMemory.nonempty_slots = nonempty_hash_slots; used_slots = used_hash_slots; _ } =
+      SharedMemory.hash_stats ()
     in
-    let { SharedMem.used_slots = used_dependency_slots; _ } = SharedMem.dep_stats () in
+    let { SharedMemory.used_slots = used_dependency_slots; _ } = SharedMemory.dep_stats () in
     let create_tag name counter = name, string_of_int counter in
     Event.create
       "Shared Memory Usage"

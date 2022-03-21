@@ -161,13 +161,13 @@ let slave_main ic oc =
   with
   | End_of_file ->
       exit 1
-  | SharedMem.Out_of_shared_memory ->
+  | SharedMemory.Out_of_shared_memory ->
       Exit_status.(exit Out_of_shared_memory)
-  | SharedMem.Hash_table_full ->
+  | SharedMemory.Hash_table_full ->
       Exit_status.(exit Hash_table_full)
-  | SharedMem.Heap_full ->
+  | SharedMemory.Heap_full ->
       Exit_status.(exit Heap_full)
-  | SharedMem.Sql_assertion_failure err_num ->
+  | SharedMemory.Sql_assertion_failure err_num ->
       let exit_code = match err_num with
         | 11 -> Exit_status.Sql_corrupt
         | 14 -> Exit_status.Sql_cantopen
@@ -224,7 +224,7 @@ let unix_worker_main restore state (ic, oc) =
     assert false
   with End_of_file -> exit 0
 
-type 'a entry_state = 'a * Gc.control * SharedMem.handle
+type 'a entry_state = 'a * Gc.control * SharedMemory.handle
 type 'a entry = ('a entry_state, request, void) Daemon.entry
 
 let entry_counter = ref 0
@@ -232,7 +232,7 @@ let register_entry_point ~restore =
   incr entry_counter;
   let restore (st, gc_control, heap_handle) =
     restore st;
-    SharedMem.connect heap_handle;
+    SharedMemory.connect heap_handle;
     Gc.set gc_control in
   let name = Printf.sprintf "slave_%d" !entry_counter in
   Daemon.register_entry_point
@@ -264,13 +264,13 @@ let make_one spawn id =
  * the workload is wrapped in the call_wrapper. *)
 let make ~saved_state ~entry ~nbr_procs ~gc_control ~heap_handle =
   let spawn _log_fd =
-    Unix.clear_close_on_exec heap_handle.SharedMem.h_fd;
+    Unix.clear_close_on_exec heap_handle.SharedMemory.h_fd;
     let handle =
       Daemon.spawn
         (Daemon.null_fd (), Unix.stdout, Unix.stderr)
         entry
         (saved_state, gc_control, heap_handle) in
-    Unix.set_close_on_exec heap_handle.SharedMem.h_fd;
+    Unix.set_close_on_exec heap_handle.SharedMemory.h_fd;
     handle
   in
   let made_workers = ref [] in
@@ -303,7 +303,7 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
         Measure.merge ~from:(Measure.deserialize (snd res)) ();
         fst res
     | _, Unix.WEXITED i when i = Exit_status.(exit_code Out_of_shared_memory) ->
-        raise SharedMem.Out_of_shared_memory
+        raise SharedMemory.Out_of_shared_memory
     | _, exit_status ->
         raise (Worker_exited_abnormally (slave_pid, exit_status))
   in

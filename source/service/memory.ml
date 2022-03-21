@@ -8,10 +8,9 @@
 open Core
 module Gc = Caml.Gc
 module Set = Caml.Set
-module SharedMemory = Hack_parallel.Std.SharedMem
 
 module type KeyType = sig
-  include SharedMem.UserKeyType
+  include SharedMemory.UserKeyType
 
   type out
 
@@ -71,7 +70,7 @@ end
 type bytes = int
 
 type configuration = {
-  heap_handle: Hack_parallel.Std.SharedMem.handle;
+  heap_handle: SharedMemory.handle;
   minor_heap_size: bytes;
 }
 
@@ -208,9 +207,9 @@ exception SavedStateLoadingFailure of string
 let save_shared_memory ~path ~configuration =
   SharedMemory.collect `aggressive;
   let { directory; table_path; dependencies_path } = prepare_saved_state_directory configuration in
-  SharedMem.save_table (PyrePath.absolute table_path);
+  SharedMemory.save_table (PyrePath.absolute table_path);
   let _edges_count : bytes =
-    SharedMem.save_dep_table_sqlite (PyrePath.absolute dependencies_path) "0.0.0"
+    SharedMemory.save_dep_table_sqlite (PyrePath.absolute dependencies_path) "0.0.0"
   in
   run_tar ["cf"; path; "-C"; PyrePath.absolute directory; "."]
 
@@ -219,13 +218,13 @@ let load_shared_memory ~path ~configuration =
   let { directory; table_path; dependencies_path } = prepare_saved_state_directory configuration in
   run_tar ["xf"; path; "-C"; PyrePath.absolute directory];
   try
-    SharedMem.load_table (PyrePath.absolute table_path);
+    SharedMemory.load_table (PyrePath.absolute table_path);
     let _edges_count : bytes =
-      SharedMem.load_dep_table_sqlite (PyrePath.absolute dependencies_path) true
+      SharedMemory.load_dep_table_sqlite (PyrePath.absolute dependencies_path) true
     in
     ()
   with
-  | SharedMem.C_assertion_failure message ->
+  | SharedMemory.C_assertion_failure message ->
       let message =
         Format.sprintf
           "Assertion failure in shared memory loading: %s. This is likely due to a mismatch \
@@ -238,7 +237,7 @@ let load_shared_memory ~path ~configuration =
 external pyre_reset : unit -> unit = "pyre_reset"
 
 let reset_shared_memory () =
-  SharedMem.invalidate_caches ();
+  SharedMemory.invalidate_caches ();
   pyre_reset ()
 
 
@@ -323,3 +322,5 @@ module Interner (Value : InternerValueType) = struct
 
   let compare = Int.compare
 end
+
+module SharedMemory = Hack_parallel.Std.SharedMemory

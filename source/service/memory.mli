@@ -7,10 +7,10 @@
 
 open Core
 module Set = Caml.Set
-module SharedMemory = Hack_parallel.Std.SharedMem
+module SharedMemory = Hack_parallel.Std.SharedMemory
 
 module type KeyType = sig
-  include SharedMem.UserKeyType
+  include SharedMemory.UserKeyType
 
   type out
 

@@ -24,9 +24,9 @@ let recheck
   let ast_environment = TypeEnvironment.ast_environment environment in
   let module_tracker = AstEnvironment.module_tracker ast_environment in
   let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
-  Scheduler.once_per_worker scheduler ~configuration ~f:SharedMem.invalidate_caches;
-  SharedMem.invalidate_caches ();
-  SharedMem.collect `aggressive;
+  Scheduler.once_per_worker scheduler ~configuration ~f:SharedMemory.invalidate_caches;
+  SharedMemory.invalidate_caches ();
+  SharedMemory.collect `aggressive;
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment...";
 

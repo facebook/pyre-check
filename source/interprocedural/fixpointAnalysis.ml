@@ -660,7 +660,7 @@ let compute_fixpoint
           "Iteration #%n, %d callables, heap size %.3fGB took %.2fs"
           iteration
           number_of_callables
-          (Int.to_float (SharedMem.heap_size ()) /. 1000000000.0)
+          (Int.to_float (SharedMemory.heap_size ()) /. 1000000000.0)
           (Timer.stop_in_sec timer)
       in
       iterate ~iteration:(iteration + 1) callables_to_analyze

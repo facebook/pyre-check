@@ -39,14 +39,14 @@ let test_reset _ =
 
   assert_bool "reset_shared_memory should clear all cached results" (not (MockAnnotations.mem 42));
 
-  let heap_size = SharedMem.heap_size () in
+  let heap_size = SharedMemory.heap_size () in
   assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 heap_size;
 
-  let { SharedMem.nonempty_slots; used_slots; _ } = SharedMem.dep_stats () in
+  let { SharedMemory.nonempty_slots; used_slots; _ } = SharedMemory.dep_stats () in
   assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 nonempty_slots;
   assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 used_slots;
 
-  let { SharedMem.nonempty_slots; used_slots; _ } = SharedMem.hash_stats () in
+  let { SharedMemory.nonempty_slots; used_slots; _ } = SharedMemory.hash_stats () in
   assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 nonempty_slots;
   assert_equal ~cmp:Int.equal ~printer:Int.to_string 0 used_slots;
   ()

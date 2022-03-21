@@ -56,7 +56,7 @@ val make:
   entry       : 'a entry ->
   nbr_procs   : int ->
   gc_control  : Gc.control ->
-  heap_handle : SharedMem.handle ->
+  heap_handle : SharedMemory.handle ->
   t list
 
 (* Call in a sub-process (CAREFUL, GLOBALS ARE COPIED) *)
