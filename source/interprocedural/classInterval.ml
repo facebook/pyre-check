@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Interprocedural
 open ClassHierarchyGraph
 include Interval.Int
 

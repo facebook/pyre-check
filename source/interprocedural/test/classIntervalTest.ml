@@ -9,7 +9,6 @@ open Core
 open OUnit2
 open Interprocedural
 open ClassHierarchyGraph
-open Taint
 
 let test_meet _ =
   let assert_meet ~left ~right ~result = assert_equal result (ClassInterval.meet left right) in

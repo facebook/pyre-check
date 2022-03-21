@@ -29,4 +29,3 @@ module Reporting = TaintReporting
 module Sinks = Sinks
 module Sources = Sources
 module ExitStatus = ExitStatus
-module ClassInterval = ClassInterval

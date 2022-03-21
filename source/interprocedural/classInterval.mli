@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Interprocedural
-
 (* Intervals that represent non-strict subclasses of a class. Intervals are based on the DFS start
  * and finish discovery times when traversing the class hierarchy. For example, consider the
  * following classes.

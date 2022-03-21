@@ -17,3 +17,4 @@ module Error = Error
 module FixpointState = FixpointState
 module AnalysisResult = AnalysisResult
 module ClassHierarchyGraph = ClassHierarchyGraph
+module ClassInterval = ClassInterval
