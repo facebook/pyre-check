@@ -172,15 +172,24 @@ class Setup(NamedTuple):
             [
                 "opam",
                 "init",
+                "--bare",
                 "--yes",
-                "--reinit",
-                "--disable-sandboxing",
-                "--compiler",
-                self.compiler,
                 "--root",
                 self.opam_root.as_posix(),
                 "default",
                 "https://opam.ocaml.org",
+            ]
+        )
+        self.run(
+            [
+                "opam",
+                "switch",
+                "create",
+                self.compiler,
+                "--packages=ocaml-option-flambda",
+                "--yes",
+                "--root",
+                self.opam_root.as_posix(),
             ]
         )
         opam_environment_variables = self.opam_environment_variables()
@@ -200,6 +209,25 @@ class Setup(NamedTuple):
 
         return opam_environment_variables
 
+    def set_opam_switch_and_install_dependencies(self) -> Mapping[str, str]:
+        self.run(
+            [
+                "opam",
+                "switch",
+                "set",
+                self.compiler,
+                "--root",
+                self.opam_root.as_posix(),
+            ]
+        )
+
+        opam_environment_variables = self.opam_environment_variables()
+        self.run(
+            ["opam", "install", "--yes"] + DEPENDENCIES,
+            add_environment_variables=opam_environment_variables,
+        )
+        return opam_environment_variables
+
     def full_setup(
         self,
         pyre_directory: Path,
@@ -210,7 +238,7 @@ class Setup(NamedTuple):
     ) -> None:
         self.produce_dune_file(pyre_directory, build_type_override)
 
-        opam_environment_variables = self.initialize_opam_switch()
+        opam_environment_variables = self.set_opam_switch_and_install_dependencies()
 
         if run_clean:
             self.run(
