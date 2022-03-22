@@ -573,7 +573,7 @@ let compute_fixpoint
         else
           "..."
       in
-      Log.log ~section:`Info "Iteration #%d. %d Target [%s]" iteration number_of_callables witnesses
+      Log.info "Iteration #%d. %d callables [%s]" iteration number_of_callables witnesses
     in
     if number_of_callables = 0 then (* Fixpoint. *)
       iteration
