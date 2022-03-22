@@ -1140,8 +1140,7 @@ let test_taint_in_taint_out_transform context =
           [
             Sources.Transform
               {
-                local =
-                  { TaintTransforms.empty with ordered = [TaintTransform.Named "TestTransform"] };
+                local = TaintTransforms.of_named_transforms [TaintTransform.Named "TestTransform"];
                 global = TaintTransforms.empty;
                 base = Sources.NamedSource "Test";
               };
@@ -1180,10 +1179,8 @@ let test_taint_in_taint_out_transform context =
           [
             Sources.Transform
               {
-                local =
-                  { TaintTransforms.empty with ordered = [TaintTransform.Named "DemoTransform"] };
-                global =
-                  { TaintTransforms.empty with ordered = [TaintTransform.Named "TestTransform"] };
+                local = TaintTransforms.of_named_transforms [TaintTransform.Named "DemoTransform"];
+                global = TaintTransforms.of_named_transforms [TaintTransform.Named "TestTransform"];
                 base = Sources.NamedSource "Test";
               };
           ]
@@ -1218,11 +1215,8 @@ let test_taint_in_taint_out_transform context =
             Sources.Transform
               {
                 local =
-                  {
-                    TaintTransforms.empty with
-                    ordered =
-                      [TaintTransform.Named "DemoTransform"; TaintTransform.Named "TestTransform"];
-                  };
+                  TaintTransforms.of_named_transforms
+                    [TaintTransform.Named "DemoTransform"; TaintTransform.Named "TestTransform"];
                 global = TaintTransforms.empty;
                 base = Sources.NamedSource "Test";
               };

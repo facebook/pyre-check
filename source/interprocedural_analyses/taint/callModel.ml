@@ -172,7 +172,7 @@ let taint_in_taint_out_mapping
           let tito_kind =
             Sinks.Transform
               {
-                local = { ordered = []; sanitize = sanitize_transforms };
+                local = TaintTransforms.of_sanitize_transforms sanitize_transforms;
                 global = TaintTransforms.empty;
                 base = Sinks.LocalReturn;
               }

@@ -322,7 +322,7 @@ let matching_kinds_from_rules rules =
               Sources.Transform
                 {
                   base;
-                  global = { TaintTransforms.empty with ordered = source_transforms };
+                  global = TaintTransforms.of_named_transforms source_transforms;
                   local = TaintTransforms.empty;
                 })
       in
@@ -334,7 +334,7 @@ let matching_kinds_from_rules rules =
               Sinks.Transform
                 {
                   base;
-                  global = { TaintTransforms.empty with ordered = sink_transforms };
+                  global = TaintTransforms.of_named_transforms sink_transforms;
                   local = TaintTransforms.empty;
                 })
       in

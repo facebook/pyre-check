@@ -60,7 +60,7 @@ let parse_tito ~allowed_transforms ?subkind name =
       Ok
         (Sinks.Transform
            {
-             local = { TaintTransforms.empty with ordered = [transform] };
+             local = TaintTransforms.of_named_transforms [transform];
              global = TaintTransforms.empty;
              base = Sinks.LocalReturn;
            })

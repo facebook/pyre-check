@@ -702,16 +702,15 @@ let source_can_match_rule = function
   | Sources.Transform { local; global; base = NamedSource name }
   | Sources.Transform { local; global; base = ParametricSource { source_name = name; _ } } -> (
       let { matching_sinks; _ } = TaintConfiguration.get () in
+      let transforms = TaintTransforms.merge ~local ~global in
       let source =
-        local.ordered @ global.ordered
-        |> List.filter ~f:TaintTransform.is_named_transform
-        |> function
+        match TaintTransforms.get_named_transforms transforms with
         | [] -> Sources.NamedSource name
-        | ordered ->
+        | named_transforms ->
             Sources.Transform
               {
                 local = TaintTransforms.empty;
-                global = { TaintTransforms.empty with ordered };
+                global = TaintTransforms.of_named_transforms named_transforms;
                 base = Sources.NamedSource name;
               }
       in
@@ -720,7 +719,7 @@ let source_can_match_rule = function
           (* TODO(T104600511): Filter out sources that are never used in any rule. *)
           false
       | Some sinks ->
-          SanitizeTransform.Set.union local.sanitize global.sanitize
+          TaintTransforms.get_sanitize_transforms transforms
           |> Sinks.extract_sanitized_sinks_from_transforms
           |> Sinks.Set.diff sinks
           |> Sinks.Set.is_empty
@@ -732,16 +731,15 @@ let sink_can_match_rule = function
   | Sinks.Transform { local; global; base = NamedSink name }
   | Sinks.Transform { local; global; base = ParametricSink { sink_name = name; _ } } -> (
       let { matching_sources; _ } = TaintConfiguration.get () in
+      let transforms = TaintTransforms.merge ~local ~global in
       let sink =
-        local.ordered @ global.ordered
-        |> List.filter ~f:TaintTransform.is_named_transform
-        |> function
+        match TaintTransforms.get_named_transforms transforms with
         | [] -> Sinks.NamedSink name
-        | ordered ->
+        | named_transforms ->
             Sinks.Transform
               {
                 local = TaintTransforms.empty;
-                global = { TaintTransforms.empty with ordered };
+                global = TaintTransforms.of_named_transforms named_transforms;
                 base = Sinks.NamedSink name;
               }
       in
@@ -750,7 +748,7 @@ let sink_can_match_rule = function
           (* TODO(T104600511): Filter out sinks that are never used in any rule. *)
           false
       | Some sources ->
-          SanitizeTransform.Set.union local.sanitize global.sanitize
+          TaintTransforms.get_sanitize_transforms transforms
           |> Sources.extract_sanitized_sources_from_transforms
           |> Sources.Set.diff sources
           |> Sources.Set.is_empty

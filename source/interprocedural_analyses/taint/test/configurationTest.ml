@@ -1041,10 +1041,8 @@ let test_matching_kinds _ =
       {
         base = Sources.NamedSource source_name;
         global =
-          {
-            TaintTransforms.empty with
-            ordered = List.map transform_names ~f:(fun name -> TaintTransform.Named name);
-          };
+          List.map transform_names ~f:(fun name -> TaintTransform.Named name)
+          |> TaintTransforms.of_named_transforms;
         local = TaintTransforms.empty;
       }
   in
@@ -1053,10 +1051,8 @@ let test_matching_kinds _ =
       {
         base = Sinks.NamedSink sink_name;
         global =
-          {
-            TaintTransforms.empty with
-            ordered = List.map transform_names ~f:(fun name -> TaintTransform.Named name);
-          };
+          List.map transform_names ~f:(fun name -> TaintTransform.Named name)
+          |> TaintTransforms.of_named_transforms;
         local = TaintTransforms.empty;
       }
   in

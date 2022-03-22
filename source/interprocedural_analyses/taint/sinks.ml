@@ -67,7 +67,7 @@ let ignore_kind_at_call = function
 let apply_call = function
   | Transform { local; global; base } ->
       Transform
-        { local = TaintTransforms.empty; global = TaintTransforms.concat local global; base }
+        { local = TaintTransforms.empty; global = TaintTransforms.merge ~local ~global; base }
   | sink -> sink
 
 
@@ -139,18 +139,13 @@ let discard_transforms = function
 
 
 let discard_sanitize_transforms = function
-  | Transform { base; local; global } -> (
-      let local_ordered = List.filter local.ordered ~f:TaintTransform.is_named_transform in
-      let global_ordered = List.filter global.ordered ~f:TaintTransform.is_named_transform in
-      match local_ordered, global_ordered with
-      | [], [] -> base
-      | _, _ ->
-          Transform
-            {
-              base;
-              local = { ordered = local_ordered; sanitize = SanitizeTransform.Set.empty };
-              global = { ordered = global_ordered; sanitize = SanitizeTransform.Set.empty };
-            })
+  | Transform { base; local; global } ->
+      let local = TaintTransforms.discard_sanitize_transforms local in
+      let global = TaintTransforms.discard_sanitize_transforms global in
+      if TaintTransforms.is_empty local && TaintTransforms.is_empty global then
+        base
+      else
+        Transform { base; local; global }
   | sink -> sink
 
 
@@ -164,7 +159,8 @@ let extract_sanitized_sinks_from_transforms transforms =
 
 
 let extract_sanitize_transforms = function
-  | Transform { local; global; _ } -> SanitizeTransform.Set.union local.sanitize global.sanitize
+  | Transform { local; global; _ } ->
+      TaintTransforms.merge ~local ~global |> TaintTransforms.get_sanitize_transforms
   | _ -> SanitizeTransform.Set.empty
 
 
@@ -187,18 +183,13 @@ let apply_sanitize_transforms transforms sink =
   | ParameterUpdate _ ->
       Transform
         {
-          local = { TaintTransforms.sanitize = transforms; ordered = [] };
+          local = TaintTransforms.of_sanitize_transforms transforms;
           global = TaintTransforms.empty;
           base = sink;
         }
   | Transform { local; global; base } ->
-      let transforms = SanitizeTransform.Set.diff transforms global.sanitize in
-      Transform
-        {
-          local = { local with sanitize = SanitizeTransform.Set.union local.sanitize transforms };
-          global;
-          base;
-        }
+      let transforms = SanitizeTransform.Set.diff transforms (extract_sanitize_transforms sink) in
+      Transform { local = TaintTransforms.add_sanitize_transforms local transforms; global; base }
 
 
 let apply_sanitize_sink_transforms transforms sink =
@@ -222,24 +213,19 @@ let apply_named_transforms transforms sink =
   | ParameterUpdate _ ->
       Transform
         {
-          local = { TaintTransforms.ordered = transforms; sanitize = SanitizeTransform.Set.empty };
+          local = TaintTransforms.of_named_transforms transforms;
           global = TaintTransforms.empty;
           base = sink;
         }
   | Transform { local; global; base } ->
-      Transform { local = { local with ordered = transforms @ local.ordered }; global; base }
+      Transform { local = TaintTransforms.add_named_transforms local transforms; global; base }
 
 
 let get_named_transforms = function
   | Transform { local; global; _ } ->
-      local.ordered @ global.ordered |> List.filter ~f:TaintTransform.is_named_transform
+      TaintTransforms.merge ~local ~global |> TaintTransforms.get_named_transforms
   | _ -> []
 
 
 let contains_sanitize_transform sink sanitize_transform =
-  match sink with
-  | Transform
-      { local = { sanitize = local_sanitize; _ }; global = { sanitize = global_sanitize; _ }; _ } ->
-      SanitizeTransform.Set.mem sanitize_transform local_sanitize
-      || SanitizeTransform.Set.mem sanitize_transform global_sanitize
-  | _ -> false
+  SanitizeTransform.Set.mem sanitize_transform (extract_sanitize_transforms sink)

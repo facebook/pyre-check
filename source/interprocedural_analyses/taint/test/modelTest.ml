@@ -1916,10 +1916,7 @@ let test_taint_in_taint_out_transform context =
                     Sinks.Transform
                       {
                         local =
-                          {
-                            ordered = [TaintTransform.Named "TestTransform"];
-                            sanitize = SanitizeTransform.Set.empty;
-                          };
+                          TaintTransforms.of_named_transforms [TaintTransform.Named "TestTransform"];
                         global = TaintTransforms.empty;
                         base = Sinks.LocalReturn;
                       };

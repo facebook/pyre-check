@@ -5,15 +5,27 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t = {
-  ordered: TaintTransform.t list;
-  sanitize: SanitizeTransform.Set.t;
-}
-[@@deriving compare, eq, hash, sexp]
+type t [@@deriving compare, eq, hash, sexp]
+
+val add_named_transforms : t -> TaintTransform.t list -> t
+
+val add_sanitize_transforms : t -> SanitizeTransform.Set.t -> t
+
+val discard_sanitize_transforms : t -> t
 
 val empty : t
 
-val concat : t -> t -> t
+val get_named_transforms : t -> TaintTransform.t list
+
+val get_sanitize_transforms : t -> SanitizeTransform.Set.t
+
+val is_empty : t -> bool
+
+val merge : local:t -> global:t -> t
+
+val of_named_transforms : TaintTransform.t list -> t
+
+val of_sanitize_transforms : SanitizeTransform.Set.t -> t
 
 val pp_kind
   :  formatter:Format.formatter ->
@@ -22,3 +34,5 @@ val pp_kind
   global:t ->
   base:'a ->
   unit
+
+val rev_add_named_transforms : t -> TaintTransform.t list -> t
