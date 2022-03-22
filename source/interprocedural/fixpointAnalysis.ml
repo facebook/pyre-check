@@ -655,6 +655,7 @@ let compute_fixpoint
           ~filtered_callables
           ~all_callables
       in
+      Memory.SharedMemory.collect `gentle;
       let () =
         Log.info
           "Iteration #%n, %d callables, heap size %.3fGB took %.2fs"
