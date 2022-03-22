@@ -2815,7 +2815,7 @@
               {
                 "return_paths": [ "" ],
                 "length": 1,
-                "kind": "NotSource[TestA]:NotSink[TestA]@LocalReturn"
+                "kind": "NotSink[TestA]:NotSource[TestA]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2939,7 +2939,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
-                "kind": "NotSink[TestA]:NotSink[TestB]@Test"
+                "kind": "NotSink[TestB]:NotSink[TestA]@Test"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -3694,7 +3694,7 @@
             "kinds": [
               {
                 "return_paths": [ "" ],
-                "kind": "NotSource[Cookies]:NotSink[SQL]@LocalReturn"
+                "kind": "NotSink[SQL]:NotSource[Cookies]@LocalReturn"
               }
             ],
             "decl": null
@@ -5048,7 +5048,7 @@
                 "leaves": [ { "name": "_rce" } ],
                 "length": 2,
                 "kind":
-                  "NotSource[Test]@NotSource[TestA]:NotSource[TestB]:RemoteCodeExecution"
+                  "NotSource[Test]@NotSource[TestB]:NotSource[TestA]:RemoteCodeExecution"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -5061,6 +5061,107 @@
                 "end": 40
               },
               "resolves_to": [ "sanitize.sink_taint_sanitize_a_sanitize_b" ],
+              "port": "formal(arg)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.sink_taint_sanitize_b",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_rce" } ],
+                "kind": "NotSource[TestB]@RemoteCodeExecution"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 911, "start": 33, "end": 36 } ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 912,
+              "start": 9,
+              "end": 12
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.sink_taint_sanitize_b_sanitize_a",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "leaves": [ { "name": "_rce" } ],
+                "length": 1,
+                "kind":
+                  "NotSource[TestA]@NotSource[TestB]:RemoteCodeExecution"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 916, "start": 33, "end": 36 } ],
+            "call": {
+              "position": {
+                "filename": "sanitize.py",
+                "line": 917,
+                "start": 26,
+                "end": 29
+              },
+              "resolves_to": [ "sanitize.sink_taint_sanitize_b" ],
+              "port": "formal(arg)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.sink_taint_sanitize_b_sanitize_a_santize_test",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "leaves": [ { "name": "_rce" } ],
+                "length": 2,
+                "kind":
+                  "NotSource[Test]@NotSource[TestA]:NotSource[TestB]:RemoteCodeExecution"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 921, "start": 36, "end": 39 } ],
+            "call": {
+              "position": {
+                "filename": "sanitize.py",
+                "line": 922,
+                "start": 37,
+                "end": 40
+              },
+              "resolves_to": [ "sanitize.sink_taint_sanitize_b_sanitize_a" ],
               "port": "formal(arg)"
             }
           }

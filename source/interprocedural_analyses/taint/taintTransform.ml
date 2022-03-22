@@ -23,3 +23,13 @@ let show = Format.asprintf "%a" pp
 let is_named_transform = function
   | Named _ -> true
   | Sanitize _ -> false
+
+
+let is_sanitize_transform = function
+  | Named _ -> false
+  | Sanitize _ -> true
+
+
+let get_sanitize_transform = function
+  | Named _ -> None
+  | Sanitize sanitize -> Some sanitize

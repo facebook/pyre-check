@@ -7,20 +7,11 @@
 
 open Core
 
-type t = {
-  ordered: TaintTransform.t list;
-  sanitize: SanitizeTransform.Set.t;
-}
-[@@deriving compare, eq, hash, sexp]
+type t = TaintTransform.t list [@@deriving compare, eq, hash, sexp]
 
-let empty = { ordered = []; sanitize = SanitizeTransform.Set.empty }
+let empty = []
 
-let add_transform { ordered; sanitize } transform =
-  match transform with
-  | TaintTransform.Named _ -> { ordered = transform :: ordered; sanitize }
-  | TaintTransform.Sanitize sanitize_transform ->
-      { ordered; sanitize = SanitizeTransform.Set.add sanitize_transform sanitize }
-
+let add_transform transforms transform = transform :: transforms
 
 let add_named_transforms init named_transforms =
   List.fold_right named_transforms ~init ~f:(fun named_transform sofar ->
@@ -32,45 +23,39 @@ let rev_add_named_transforms init named_transforms =
 
 
 let add_sanitize_transforms init sanitize_transforms =
+  let existing_sanitizers, rest = List.split_while init ~f:TaintTransform.is_sanitize_transform in
+  let existing_sanitizers =
+    List.filter_map existing_sanitizers ~f:TaintTransform.get_sanitize_transform
+    |> SanitizeTransform.Set.of_list
+  in
+  let sanitizers = SanitizeTransform.Set.union sanitize_transforms existing_sanitizers in
   SanitizeTransform.Set.fold
     (fun sanitize_transform sofar ->
       add_transform sofar (TaintTransform.Sanitize sanitize_transform))
-    sanitize_transforms
-    init
+    sanitizers
+    rest
 
 
 let of_named_transforms = add_named_transforms empty
 
 let of_sanitize_transforms = add_sanitize_transforms empty
 
-let is_empty { ordered; sanitize } =
-  List.is_empty ordered && SanitizeTransform.Set.is_empty sanitize
+let is_empty = List.is_empty
+
+let get_named_transforms = List.filter ~f:TaintTransform.is_named_transform
+
+let get_sanitize_transforms transforms =
+  List.take_while transforms ~f:TaintTransform.is_sanitize_transform
+  |> List.filter_map ~f:TaintTransform.get_sanitize_transform
+  |> SanitizeTransform.Set.of_list
 
 
-let get_named_transforms { ordered; _ } =
-  ordered |> List.filter ~f:TaintTransform.is_named_transform
+let discard_sanitize_transforms = List.filter ~f:TaintTransform.is_named_transform
 
+let merge ~local ~global = local @ global
 
-let get_sanitize_transforms { sanitize; _ } = sanitize
-
-let discard_sanitize_transforms { ordered; _ } =
-  {
-    ordered = List.filter ordered ~f:TaintTransform.is_named_transform;
-    sanitize = SanitizeTransform.Set.empty;
-  }
-
-
-let merge ~local ~global =
-  {
-    ordered = local.ordered @ global.ordered;
-    sanitize = SanitizeTransform.Set.union local.sanitize global.sanitize;
-  }
-
-
-let show_transforms { ordered; sanitize } =
-  (sanitize |> SanitizeTransform.Set.elements |> List.map ~f:SanitizeTransform.show)
-  @ (ordered |> List.map ~f:TaintTransform.show)
-  |> String.concat ~sep:":"
+let show_transforms transforms =
+  List.map transforms ~f:TaintTransform.show |> String.concat ~sep:":"
 
 
 let pp_transforms formatter transforms = Format.fprintf formatter "%s" (show_transforms transforms)

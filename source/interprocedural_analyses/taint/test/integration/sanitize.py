@@ -905,3 +905,18 @@ def sink_taint_sanitize_a_sanitize_b(arg):
 def sink_taint_sanitize_a_sanitize_b_santize_test(arg):
     arg = sanitize_test_source_tito(arg)
     sink_taint_sanitize_a_sanitize_b(arg)
+
+
+def sink_taint_sanitize_b(arg):
+    arg = sanitize_b_source_tito(arg)
+    _rce(arg)
+
+
+def sink_taint_sanitize_b_sanitize_a(arg):
+    arg = sanitize_a_source_tito(arg)
+    sink_taint_sanitize_b(arg)
+
+
+def sink_taint_sanitize_b_sanitize_a_santize_test(arg):
+    arg = sanitize_test_source_tito(arg)
+    sink_taint_sanitize_b_sanitize_a(arg)
