@@ -93,6 +93,8 @@ val update
   trigger ->
   UpdateResult.t
 
+val remove_sources : t -> Reference.t list -> unit
+
 val read_only : t -> ReadOnly.t
 
 val with_additional_preprocessing : additional_preprocessing:(Source.t -> Source.t) option -> t -> t

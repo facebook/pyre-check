@@ -600,6 +600,14 @@ let build_dependency_graph ~callables_with_dependency_information ~callgraph ~ov
   dependencies, callables_to_analyze, override_targets
 
 
+let purge_shared_memory ~environment ~qualifiers =
+  (* Aggressively remove things we do not need anymore from the shared memory. *)
+  let ast_environment = TypeEnvironment.ast_environment environment in
+  AstEnvironment.remove_sources ast_environment qualifiers;
+  Memory.SharedMemory.collect `aggressive;
+  ()
+
+
 let analyze
     ~scheduler
     ~analysis
@@ -628,7 +636,12 @@ let analyze
   Log.info "Computing overrides...";
   let timer = Timer.start () in
   let { DependencyGraphSharedMemory.overrides; skipped_overrides } =
-    record_overrides_for_qualifiers ~scheduler ~cache ~environment ~skip_overrides ~qualifiers
+    record_overrides_for_qualifiers
+      ~scheduler
+      ~cache
+      ~environment:(Analysis.TypeEnvironment.read_only environment)
+      ~skip_overrides
+      ~qualifiers
   in
   let override_dependencies = DependencyGraph.from_overrides overrides in
   Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
@@ -636,7 +649,12 @@ let analyze
   Log.info "Building call graph...";
   let timer = Timer.start () in
   let callgraph =
-    build_call_graph ~scheduler ~static_analysis_configuration ~cache ~environment ~qualifiers
+    build_call_graph
+      ~scheduler
+      ~static_analysis_configuration
+      ~cache
+      ~environment:(Analysis.TypeEnvironment.read_only environment)
+      ~qualifiers
   in
   Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
 
@@ -651,6 +669,11 @@ let analyze
     ~timer
     ();
 
+  Log.info "Purging shared memory...";
+  let timer = Timer.start () in
+  let () = purge_shared_memory ~environment ~qualifiers in
+  Statistics.performance ~name:"Purged shared memory" ~phase_name:"Purging shared memory" ~timer ();
+
   Log.info
     "Analysis fixpoint started for %d overrides and %d functions..."
     (List.length override_targets)
@@ -660,7 +683,7 @@ let analyze
   let compute_fixpoint () =
     Interprocedural.FixpointAnalysis.compute_fixpoint
       ~scheduler
-      ~environment
+      ~environment:(Analysis.TypeEnvironment.read_only environment)
       ~analysis
       ~dependencies
       ~filtered_callables
@@ -674,7 +697,7 @@ let analyze
     Interprocedural.FixpointAnalysis.report_results
       ~scheduler
       ~static_analysis_configuration
-      ~environment
+      ~environment:(Analysis.TypeEnvironment.read_only environment)
       ~filename_lookup
       ~analysis
       ~callables

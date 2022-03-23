@@ -518,6 +518,8 @@ module ReadOnly = struct
   let all_explicit_modules { all_explicit_modules; _ } = all_explicit_modules ()
 end
 
+let remove_sources = Raw.remove_sources
+
 let read_only ({ module_tracker; _ } as environment) =
   let get_processed_source ~track_dependency qualifier =
     let dependency =

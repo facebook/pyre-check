@@ -67,7 +67,7 @@ val analyze
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   cache:Cache.t ->
   filename_lookup:(Reference.t -> string option) ->
-  environment:TypeEnvironment.ReadOnly.t ->
+  environment:TypeEnvironment.t ->
   qualifiers:Reference.t list ->
   initial_callables:initial_callables ->
   initial_models:AnalysisResult.model_t Target.Map.t ->
