@@ -40,3 +40,11 @@ val compute_intervals : ClassHierarchyGraph.t -> t ClassHierarchyGraph.ClassName
 val show : t -> string
 
 val pp : Format.formatter -> t -> unit
+
+module SharedMemory : sig
+  val add : class_name:ClassHierarchyGraph.class_name -> interval:t -> unit
+
+  val get : class_name:ClassHierarchyGraph.class_name -> t option
+
+  val store : t ClassHierarchyGraph.ClassNameMap.t -> unit
+end

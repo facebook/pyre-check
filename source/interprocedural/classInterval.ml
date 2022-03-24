@@ -118,3 +118,26 @@ let compute_intervals class_hierarchy =
     ClassNameMap.add node interval accumulator
   in
   ClassNameMap.fold add_interval_with_cross_edges intervals ClassNameMap.empty
+
+
+module SharedMemory = struct
+  include
+    Memory.WithCache.Make
+      (Analysis.SharedMemoryKeys.StringKey)
+      (struct
+        type t = Interval.Int.t
+
+        let prefix = Prefix.make ()
+
+        let description = "class intervals of classes"
+
+        let unmarshall value = Marshal.from_string value 0
+      end)
+
+  let add ~class_name ~interval = add class_name interval
+
+  let get ~class_name = get class_name
+
+  let store intervals =
+    ClassNameMap.iter (fun class_name interval -> add ~class_name ~interval) intervals
+end
