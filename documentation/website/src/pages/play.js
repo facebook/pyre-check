@@ -59,16 +59,14 @@ function Results(props) {
     return null;
   }
 
-  var content = '';
-  if (results.errors !== undefined) {
-    content = results.errors.join('\n');
-  } else {
-    content = results.data.errors
-      .map(error => `${error.line}:${error.column}: ${error.description}`)
-      .join('\n');
-  }
+  let errors = results.data.errors;
+  let errorDivs = errors
+      .map(error => {
+        let message = `${error.line}:${error.column}: ${error.description}`;
+        return <div style = {{fontFamily: 'monospace'}} key={message}> {message}</div>
+      });
 
-  return <div style={{fontFamily: 'monospace'}}>{content}</div>;
+  return <div>{errorDivs}</div>;
 }
 
 function Playground() {
