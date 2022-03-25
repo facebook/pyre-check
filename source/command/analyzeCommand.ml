@@ -218,12 +218,21 @@ let run_taint_analysis
           |> Analysis.ModuleTracker.tracked_explicit_modules
         in
 
+        let read_only_environment = Analysis.TypeEnvironment.read_only environment in
+        let class_hierarchy_graph =
+          Service.StaticAnalysis.build_class_hierarchy_graph
+            ~scheduler
+            ~cache
+            ~environment:read_only_environment
+            ~qualifiers
+        in
+        let _ = Service.StaticAnalysis.build_class_intervals class_hierarchy_graph in
         let initial_callables =
           Service.StaticAnalysis.fetch_initial_callables
             ~scheduler
             ~configuration
             ~cache
-            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~environment:read_only_environment
             ~qualifiers
         in
 

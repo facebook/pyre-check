@@ -15,6 +15,7 @@ module AstEnvironment = Analysis.AstEnvironment
 module GlobalResolution = Analysis.GlobalResolution
 module DependencyGraph = Interprocedural.DependencyGraph
 module DependencyGraphSharedMemory = Interprocedural.DependencyGraphSharedMemory
+module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 
 (* The boolean indicated whether the callable is internal or not. *)
 type callable_with_dependency_information = Target.callable_t * bool
@@ -34,6 +35,24 @@ module InitialCallablesSharedMemory = Memory.Serializer (struct
     let prefix = Prefix.make ()
 
     let description = "Initial callables to analyze"
+
+    let unmarshall value = Marshal.from_string value 0
+  end
+
+  let serialize = Fn.id
+
+  let deserialize = Fn.id
+end)
+
+module ClassHierarchyGraphSharedMemory = Memory.Serializer (struct
+  type t = ClassHierarchyGraph.t
+
+  module Serialized = struct
+    type t = ClassHierarchyGraph.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Class hierarchy graph"
 
     let unmarshall value = Marshal.from_string value 0
   end
@@ -301,6 +320,39 @@ module Cache = struct
         let call_graph = f () in
         if save_cache then save_call_graph ~configuration ~call_graph |> ignore_result;
         call_graph
+
+
+  let load_class_hierarchy_graph () =
+    exception_to_error
+      ~error:LoadError
+      ~message:"loading class hierarchy graph from cache"
+      ~f:(fun () ->
+        let class_hierarchy_graph = ClassHierarchyGraphSharedMemory.load () in
+        Log.info "Loaded class hierarchy graph.";
+        Ok class_hierarchy_graph)
+
+
+  let save_class_hierarchy_graph ~class_hierarchy_graph =
+    exception_to_error ~error:() ~message:"saving class hierarchy graph to cache" ~f:(fun () ->
+        Memory.SharedMemory.collect `aggressive;
+        ClassHierarchyGraphSharedMemory.store class_hierarchy_graph;
+        Log.info "Saved class hierarchy graph to cache shared memory.";
+        Ok ())
+
+
+  let class_hierarchy_graph { cache; save_cache; _ } f =
+    let class_hierarchy_graph =
+      match cache with
+      | Ok _ -> load_class_hierarchy_graph () |> Result.ok
+      | _ -> None
+    in
+    match class_hierarchy_graph with
+    | Some class_hierarchy_graph -> class_hierarchy_graph
+    | None ->
+        let class_hierarchy_graph = f () in
+        if save_cache then
+          save_class_hierarchy_graph ~class_hierarchy_graph |> ignore_result;
+        class_hierarchy_graph
 end
 
 (* Perform a full type check and build a type environment. *)
@@ -477,6 +529,46 @@ let fetch_initial_callables ~scheduler ~configuration ~cache ~environment ~quali
         ~timer
         ();
       initial_callables)
+
+
+let build_class_hierarchy_graph ~scheduler ~cache ~environment ~qualifiers =
+  Cache.class_hierarchy_graph cache (fun () ->
+      let timer = Timer.start () in
+      let build_class_hierarchy_graph _ qualifiers =
+        List.fold qualifiers ~init:ClassHierarchyGraph.empty ~f:(fun accumulator qualifier ->
+            match get_source ~environment qualifier with
+            | Some source ->
+                let graph = ClassHierarchyGraph.from_source ~environment ~source in
+                ClassHierarchyGraph.join accumulator graph
+            | None -> accumulator)
+      in
+      let class_hierarchy_graph =
+        Scheduler.map_reduce
+          scheduler
+          ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+          ~initial:ClassHierarchyGraph.empty
+          ~map:build_class_hierarchy_graph
+          ~reduce:ClassHierarchyGraph.join
+          ~inputs:qualifiers
+          ()
+      in
+      Statistics.performance
+        ~name:"Computed class hierarchy graph"
+        ~phase_name:"Computing class hierarchy graph"
+        ~timer
+        ();
+      class_hierarchy_graph)
+
+
+let build_class_intervals class_hierarchy_graph =
+  let timer = Timer.start () in
+  Interprocedural.ClassInterval.compute_intervals class_hierarchy_graph
+  |> Interprocedural.ClassInterval.SharedMemory.store;
+  Statistics.performance
+    ~name:"Computed class intervals"
+    ~phase_name:"Computing class intervals"
+    ~timer
+    ()
 
 
 (* Compute the override graph, which maps overide_targets (parent methods which are overridden) to

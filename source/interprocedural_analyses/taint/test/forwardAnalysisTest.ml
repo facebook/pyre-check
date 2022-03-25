@@ -25,15 +25,14 @@ let assert_taint ?models ?models_source ~context source expect =
     let project = Test.ScratchProject.setup ~context sources in
     Test.ScratchProject.build_type_environment project
   in
+  let read_only_environment = TypeEnvironment.read_only environment in
   let source =
     AstEnvironment.ReadOnly.get_processed_source
       (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only)
       qualifier
     |> fun option -> Option.value_exn option
   in
-  let global_resolution =
-    TypeEnvironment.read_only environment |> TypeEnvironment.ReadOnly.global_resolution
-  in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution read_only_environment in
   models
   >>| Test.trim_extra_indentation
   >>| (fun model_source ->
@@ -57,14 +56,15 @@ let assert_taint ?models ?models_source ~context source expect =
   let analyze_and_store_in_order define =
     let call_target = Target.create define in
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
-    let environment = TypeEnvironment.read_only environment in
     let call_graph_of_define =
-      CallGraph.call_graph_of_define ~environment ~define:(Ast.Node.value define)
+      CallGraph.call_graph_of_define
+        ~environment:read_only_environment
+        ~define:(Ast.Node.value define)
     in
     let forward, _errors, _ =
       ForwardAnalysis.run
         ?profiler:None
-        ~environment
+        ~environment:read_only_environment
         ~qualifier
         ~define
         ~call_graph_of_define
@@ -76,7 +76,7 @@ let assert_taint ?models ?models_source ~context source expect =
     |> FixpointState.add_predefined FixpointState.Epoch.predefined call_target
   in
   let () = List.iter ~f:analyze_and_store_in_order defines in
-  List.iter ~f:(check_expectation ~environment:(TypeEnvironment.read_only environment)) expect;
+  List.iter ~f:(check_expectation ~environment:read_only_environment) expect;
   TypeEnvironment.invalidate environment [qualifier]
 
 

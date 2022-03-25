@@ -41,6 +41,8 @@ val show : t -> string
 
 val pp : Format.formatter -> t -> unit
 
+val top : t
+
 module SharedMemory : sig
   val add : class_name:ClassHierarchyGraph.class_name -> interval:t -> unit
 

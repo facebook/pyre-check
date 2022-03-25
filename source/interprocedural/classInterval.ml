@@ -17,6 +17,8 @@ let equal left right =
   Interval.Int.is_subset left ~of_:right && Interval.Int.is_subset right ~of_:left
 
 
+let top = create min_int max_int
+
 let pp formatter interval =
   let pp_interval formatter interval =
     if Interval.Int.is_empty interval then

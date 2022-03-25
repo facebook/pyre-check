@@ -61,6 +61,15 @@ val fetch_initial_callables
   qualifiers:Reference.t list ->
   initial_callables
 
+val build_class_hierarchy_graph
+  :  scheduler:Scheduler.t ->
+  cache:Cache.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
+  qualifiers:Reference.t list ->
+  ClassHierarchyGraph.t
+
+val build_class_intervals : ClassHierarchyGraph.t -> unit
+
 val analyze
   :  scheduler:Scheduler.t ->
   analysis:AnalysisKind.abstract ->
