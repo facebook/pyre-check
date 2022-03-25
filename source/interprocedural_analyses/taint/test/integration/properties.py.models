@@ -15,6 +15,7 @@
         "name": "forward",
         "roots": [
           {
+            "class_interval": [ { "lower": 22, "upper": 27 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -676,6 +677,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 5, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -789,6 +791,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 5, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -828,6 +831,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 5, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -875,6 +879,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 2, "upper": 7 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -891,6 +896,7 @@
             }
           },
           {
+            "class_interval": [ { "lower": 5, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -944,6 +950,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 4 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1029,6 +1036,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 5, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1435,6 +1443,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 2, "upper": 7 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1483,6 +1492,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 2, "upper": 7 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1500,6 +1510,7 @@
             }
           },
           {
+            "class_interval": [ { "lower": 5, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1533,6 +1544,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 5, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1603,6 +1615,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 4 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1710,6 +1723,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 5, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1738,6 +1752,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 5, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1797,6 +1812,7 @@
         "port": "result[x]",
         "taint": [
           {
+            "class_interval": [ { "lower": 12, "upper": 13 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2189,6 +2205,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 22, "upper": 27 } ],
             "kinds": [
               {
                 "leaves": [

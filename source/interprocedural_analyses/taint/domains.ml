@@ -169,6 +169,16 @@ module TraceLength = Abstract.SimpleDomain.Make (struct
   let show length = if Int.equal length max_int then "<bottom>" else string_of_int length
 end)
 
+module ClassIntervalDomain = struct
+  include Abstract.SimpleDomain.Make (struct
+    let name = "class interval"
+
+    include Interprocedural.ClassInterval
+  end)
+
+  let top = Interprocedural.ClassInterval.top
+end
+
 (* Represents a frame, i.e a single hop between functions. *)
 module Frame = struct
   module Slots = struct
@@ -371,9 +381,10 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb : Features.BreadcrumbSet.t slot
       | FirstIndex : Features.FirstIndexSet.t slot
       | FirstField : Features.FirstFieldSet.t slot
+      | ClassInterval : Interprocedural.ClassInterval.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 5
+    let slots = 6
 
     let slot_name (type a) (slot : a slot) =
       match slot with
@@ -382,6 +393,7 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb -> "Breadcrumb"
       | FirstIndex -> "FirstIndex"
       | FirstField -> "FirstField"
+      | ClassInterval -> "ClassInterval"
 
 
     let slot_domain (type a) (slot : a slot) =
@@ -391,11 +403,14 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb -> (module Features.BreadcrumbSet : Abstract.Domain.S with type t = a)
       | FirstIndex -> (module Features.FirstIndexSet : Abstract.Domain.S with type t = a)
       | FirstField -> (module Features.FirstFieldSet : Abstract.Domain.S with type t = a)
+      | ClassInterval -> (module ClassIntervalDomain : Abstract.Domain.S with type t = a)
 
 
     let strict (type a) (slot : a slot) =
       match slot with
-      | Kinds -> true
+      | Kinds
+      | ClassInterval ->
+          true
       | _ -> false
   end
 
@@ -406,8 +421,12 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
    * They can refer to the sets in `Frame` or in `LocalTaint`. *)
 
   let singleton kind frame =
-    bottom
-    |> update Slots.Kinds (KindTaintDomain.singleton kind frame)
+    (* Initialize strict slots first *)
+    create
+      [
+        Abstract.Domain.Part (KindTaintDomain.KeyValue, (kind, frame));
+        Abstract.Domain.Part (ClassIntervalDomain.Self, Interprocedural.ClassInterval.top);
+      ]
     |> update Slots.Breadcrumb Features.BreadcrumbSet.empty
 
 
@@ -576,7 +595,20 @@ end = struct
         |> List.map ~f:add_kind
       in
       let json = cons_if_non_empty "kinds" kinds json in
-
+      let json =
+        let interval = LocalTaintDomain.get LocalTaintDomain.Slots.ClassInterval local_taint in
+        if Interprocedural.ClassInterval.is_top interval then
+          json
+        else
+          let class_interval =
+            [
+              "lower", `Int (Interprocedural.ClassInterval.lower_bound_exn interval);
+              "upper", `Int (Interprocedural.ClassInterval.upper_bound_exn interval);
+            ]
+          in
+          let class_interval = `Assoc class_interval in
+          cons_if_non_empty "class_interval" [class_interval] json
+      in
       `Assoc json
     in
     (* Expand overrides into actual callables and dedup *)
@@ -982,6 +1014,24 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       taint
     else
       transform Taint.Self Map ~f:(Taint.apply_named_transforms transforms) taint
+
+
+  let intersect_class_interval ~interval taint =
+    let intersect_class_interval ~interval taint =
+      Taint.transform
+        ClassIntervalDomain.Self
+        Map
+        ~f:(fun old_interval -> Interprocedural.ClassInterval.meet interval old_interval)
+        taint
+    in
+    transform Taint.Self Map ~f:(intersect_class_interval ~interval) taint
+
+
+  let set_class_interval ~interval taint =
+    let set_class_interval ~interval taint =
+      Taint.transform ClassIntervalDomain.Self Map ~f:(fun _ -> interval) taint
+    in
+    transform Taint.Self Map ~f:(set_class_interval ~interval) taint
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct

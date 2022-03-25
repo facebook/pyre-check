@@ -629,4 +629,7 @@ let initialize
       ~call_graph:DependencyGraph.empty_callgraph
       ~source
   in
+  let class_hierarchy_graph = ClassHierarchyGraph.from_source ~environment ~source in
+  Interprocedural.ClassInterval.compute_intervals class_hierarchy_graph
+  |> Interprocedural.ClassInterval.SharedMemory.store;
   { callgraph; overrides; callables_to_analyze; initial_models_callables; environment }

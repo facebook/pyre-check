@@ -15,6 +15,7 @@ open Domains
 type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
 
 module CallGraph = Interprocedural.CallGraph
+module ClassInterval = Interprocedural.ClassInterval
 
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
@@ -32,6 +33,8 @@ module type FUNCTION_CONTEXT = sig
   val existing_model : Model.t
 
   val triggered_sinks : triggered_sinks
+
+  val current_class_interval : ClassInterval.t
 end
 
 let ( |>> ) (taint, state) f = f taint, state
@@ -258,7 +261,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          implicit_dunder_call;
          collapse_tito;
          index = _;
-         receiver_type = _;
+         receiver_type;
        } as call_target)
     =
     (* Add implicit self. *)
@@ -432,6 +435,46 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~callees:[target]
            ~arguments
            ~port:AccessPath.Root.LocalResult
+    in
+    let result_taint =
+      match target with
+      | `Function _
+      | `Object _ ->
+          ForwardState.Tree.set_class_interval
+            ~interval:FunctionContext.current_class_interval
+            result_taint
+      | `Method _
+      | `OverrideTarget _ ->
+          (* TODO(T114580705): Better precision when deciding if a call is on self *)
+          let is_self =
+            match callee.Node.value with
+            | Expression.Name
+                (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ })
+              ->
+                String.equal (Identifier.sanitized identifier) "self"
+            | _ -> false
+          in
+          if is_self then
+            result_taint
+            |> ForwardState.Tree.intersect_class_interval
+                 ~interval:FunctionContext.current_class_interval
+          else
+            let receiver_class_interval =
+              match receiver_type with
+              | Some (Type.Primitive class_name) ->
+                  ClassInterval.SharedMemory.get ~class_name
+                  |> Option.value ~default:ClassInterval.top
+              | _ -> ClassInterval.top
+            in
+            let result_taint =
+              if ClassInterval.is_top receiver_class_interval then
+                result_taint
+              else
+                result_taint
+                |> ForwardState.Tree.intersect_class_interval ~interval:receiver_class_interval
+            in
+            result_taint
+            |> ForwardState.Tree.set_class_interval ~interval:FunctionContext.current_class_interval
     in
     let tito = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
     (if not (Hash_set.is_empty triggered_sinks) then
@@ -2164,6 +2207,12 @@ let run
     let existing_model = existing_model
 
     let triggered_sinks = Location.Table.create ()
+
+    let current_class_interval =
+      match Interprocedural.Target.create definition |> Interprocedural.Target.class_name with
+      | Some class_name ->
+          ClassInterval.SharedMemory.get ~class_name |> Option.value ~default:ClassInterval.top
+      | None -> ClassInterval.top
   end
   in
   let module State = State (FunctionContext) in

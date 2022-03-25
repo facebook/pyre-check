@@ -25,6 +25,8 @@ type t
 
 val empty : t
 
+val is_empty : t -> bool
+
 val equal : t -> t -> bool
 
 (* Create a class interval that is representable as a single range. Multiple disjoint ranges can be
@@ -41,7 +43,17 @@ val show : t -> string
 
 val pp : Format.formatter -> t -> unit
 
+val bottom : t
+
+val less_or_equal : left:t -> right:t -> bool
+
 val top : t
+
+val is_top : t -> bool
+
+val lower_bound_exn : t -> int
+
+val upper_bound_exn : t -> int
 
 module SharedMemory : sig
   val add : class_name:ClassHierarchyGraph.class_name -> interval:t -> unit

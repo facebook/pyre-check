@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_interval.canonical_example",
-    "callable_line": 33,
+    "callable_line": 36,
     "code": 5002,
-    "line": 34,
+    "line": 37,
     "start": 9,
     "end": 23,
     "filename": "class_interval.py",
@@ -24,7 +24,7 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 34,
+              "line": 37,
               "start": 9,
               "end": 23
             }
@@ -46,7 +46,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 34,
+                "line": 37,
                 "start": 9,
                 "end": 23
               },
@@ -75,9 +75,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_interval.multiple_inheritance",
-    "callable_line": 101,
+    "callable_line": 104,
     "code": 5002,
-    "line": 102,
+    "line": 105,
     "start": 9,
     "end": 23,
     "filename": "class_interval.py",
@@ -96,7 +96,7 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 102,
+              "line": 105,
               "start": 9,
               "end": 23
             }
@@ -118,7 +118,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 102,
+                "line": 105,
                 "start": 9,
                 "end": 23
               },
@@ -147,9 +147,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_interval.sink_in_subclass",
-    "callable_line": 143,
+    "callable_line": 146,
     "code": 5002,
-    "line": 144,
+    "line": 147,
     "start": 9,
     "end": 23,
     "filename": "class_interval.py",
@@ -168,7 +168,7 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 144,
+              "line": 147,
               "start": 9,
               "end": 23
             }
@@ -190,7 +190,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 144,
+                "line": 147,
                 "start": 9,
                 "end": 23
               },
@@ -221,9 +221,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_interval.sink_two_hops",
-    "callable_line": 214,
+    "callable_line": 217,
     "code": 5002,
-    "line": 215,
+    "line": 218,
     "start": 9,
     "end": 23,
     "filename": "class_interval.py",
@@ -242,7 +242,7 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 215,
+              "line": 218,
               "start": 9,
               "end": 23
             }
@@ -264,7 +264,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 215,
+                "line": 218,
                 "start": 9,
                 "end": 23
               },
@@ -293,9 +293,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_interval.source_two_hops",
-    "callable_line": 179,
+    "callable_line": 182,
     "code": 5002,
-    "line": 180,
+    "line": 183,
     "start": 9,
     "end": 23,
     "filename": "class_interval.py",
@@ -314,7 +314,7 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 180,
+              "line": 183,
               "start": 9,
               "end": 23
             }
@@ -336,7 +336,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 180,
+                "line": 183,
                 "start": 9,
                 "end": 23
               },
@@ -565,6 +565,56 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{class_interval.A6::m0}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          },
+          {
+            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "class_interval.E6.m3" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{class_interval.B3::m0}",
     "sinks": [
       {
@@ -588,6 +638,56 @@
               },
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{class_interval.B6::m0}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          },
+          {
+            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "class_interval.E6.m3" ],
+              "port": "result"
             }
           }
         ]
@@ -844,7 +944,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 17,
+                "line": 18,
                 "start": 16,
                 "end": 17
               },
@@ -877,7 +977,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 46,
+                "line": 49,
                 "start": 16,
                 "end": 17
               },
@@ -910,7 +1010,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 80,
+                "line": 83,
                 "start": 16,
                 "end": 17
               },
@@ -943,7 +1043,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 116,
+                "line": 119,
                 "start": 16,
                 "end": 17
               },
@@ -976,7 +1076,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 158,
+                "line": 161,
                 "start": 16,
                 "end": 17
               },
@@ -1009,12 +1109,242 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 194,
+                "line": 197,
                 "start": 16,
                 "end": 17
               },
               "resolves_to": [ "class_interval.D5.m2" ],
               "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A6.m1",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "class_interval.py",
+                "line": 236,
+                "start": 15,
+                "end": 24
+              },
+              "resolves_to": [ "class_interval.B6.m0" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A7.bar",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A7.f",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 54, "upper": 55 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "class_interval.py",
+                "line": 288,
+                "start": 12,
+                "end": 19
+              },
+              "resolves_to": [ "class_interval.B7.foo" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A8.bar",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 56, "upper": 57 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "class_interval.py",
+                "line": 312,
+                "start": 19,
+                "end": 29
+              },
+              "resolves_to": [ "class_interval.A8.baz" ],
+              "port": "result"
+            }
+          },
+          {
+            "class_interval": [ { "lower": 56, "upper": 57 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "class_interval.py",
+                "line": 319,
+                "start": 19,
+                "end": 27
+              },
+              "resolves_to": [ "class_interval.B8.foo" ],
+              "port": "result"
+            }
+          },
+          {
+            "class_interval": [ { "lower": 56, "upper": 57 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "class_interval.py",
+                "line": 322,
+                "start": 19,
+                "end": 29
+              },
+              "resolves_to": [ "class_interval.A8.baz" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A8.baz",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 56, "upper": 57 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "class_interval.py",
+              "line": 327,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.A9.f",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 58, "upper": 59 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "class_interval.py",
+              "line": 332,
+              "start": 15,
+              "end": 29
             }
           }
         ]
@@ -1042,7 +1372,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 25,
+                "line": 28,
                 "start": 16,
                 "end": 17
               },
@@ -1075,7 +1405,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 88,
+                "line": 91,
                 "start": 16,
                 "end": 17
               },
@@ -1108,7 +1438,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 124,
+                "line": 127,
                 "start": 16,
                 "end": 17
               },
@@ -1141,7 +1471,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 166,
+                "line": 169,
                 "start": 16,
                 "end": 17
               },
@@ -1174,12 +1504,154 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 202,
+                "line": 205,
                 "start": 16,
                 "end": 17
               },
               "resolves_to": [ "class_interval.A5.m1" ],
               "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B6.m0",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "class_interval.py",
+              "line": 245,
+              "start": 19,
+              "end": 33
+            }
+          },
+          {
+            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "class_interval.py",
+                "line": 247,
+                "start": 19,
+                "end": 28
+              },
+              "resolves_to": [ "class_interval.E6.m3" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B7.bar",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 60, "upper": 61 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "class_interval.py",
+              "line": 280,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B7.foo",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 60, "upper": 61 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "class_interval.py",
+                "line": 277,
+                "start": 15,
+                "end": 25
+              },
+              "resolves_to": [ "class_interval.B7.bar" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.B8.foo",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 62, "upper": 63 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "class_interval.py",
+              "line": 301,
+              "start": 15,
+              "end": 29
             }
           }
         ]
@@ -1205,7 +1677,7 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 30,
+              "line": 33,
               "start": 19,
               "end": 20
             }
@@ -1233,7 +1705,7 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 62,
+              "line": 65,
               "start": 19,
               "end": 20
             }
@@ -1263,7 +1735,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 129,
+                "line": 132,
                 "start": 16,
                 "end": 17
               },
@@ -1294,7 +1766,7 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 132,
+              "line": 135,
               "start": 19,
               "end": 20
             }
@@ -1322,7 +1794,7 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 171,
+              "line": 174,
               "start": 19,
               "end": 20
             }
@@ -1350,7 +1822,7 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 98,
+              "line": 101,
               "start": 19,
               "end": 20
             }
@@ -1380,7 +1852,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 176,
+                "line": 179,
                 "start": 16,
                 "end": 17
               },
@@ -1411,9 +1883,71 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 211,
+              "line": 214,
               "start": 19,
               "end": 20
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.E6.m3",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 66, "upper": 67 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "class_interval.py",
+              "line": 262,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.call_method_via_class_name",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "class_interval.py",
+                "line": 336,
+                "start": 11,
+                "end": 18
+              },
+              "resolves_to": [ "class_interval.A9.f" ],
+              "port": "result"
             }
           }
         ]

@@ -235,6 +235,7 @@
         "port": "result[x]",
         "taint": [
           {
+            "class_interval": [ { "lower": 2, "upper": 5 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -250,6 +251,7 @@
             }
           },
           {
+            "class_interval": [ { "lower": 3, "upper": 4 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -347,6 +349,7 @@
         "port": "result[foo]",
         "taint": [
           {
+            "class_interval": [ { "lower": 6, "upper": 7 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -420,6 +423,7 @@
         "port": "result[x]",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 4 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -537,6 +541,7 @@
         "port": "result[x]",
         "taint": [
           {
+            "class_interval": [ { "lower": 16, "upper": 17 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -576,6 +581,7 @@
         "port": "result[x]",
         "taint": [
           {
+            "class_interval": [ { "lower": 2, "upper": 17 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -591,6 +597,7 @@
             }
           },
           {
+            "class_interval": [ { "lower": 3, "upper": 4 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -696,6 +703,7 @@
         "port": "result[foo]",
         "taint": [
           {
+            "class_interval": [ { "lower": 6, "upper": 7 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -769,6 +777,7 @@
         "port": "result[x]",
         "taint": [
           {
+            "class_interval": [ { "lower": 2, "upper": 5 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -847,6 +856,7 @@
         "port": "result[foo]",
         "taint": [
           {
+            "class_interval": [ { "lower": 6, "upper": 7 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -921,6 +931,7 @@
         "port": "result[x]",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 4 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1108,6 +1119,7 @@
         "port": "result[x]",
         "taint": [
           {
+            "class_interval": [ { "lower": 16, "upper": 17 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],

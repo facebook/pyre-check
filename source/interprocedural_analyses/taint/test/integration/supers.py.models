@@ -15,6 +15,7 @@
         "name": "forward",
         "roots": [
           {
+            "class_interval": [ { "lower": 3, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -316,6 +317,7 @@
         "port": "result[attribute]",
         "taint": [
           {
+            "class_interval": [ { "lower": 2, "upper": 11 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -355,6 +357,7 @@
         "port": "result[attribute]",
         "taint": [
           {
+            "class_interval": [ { "lower": 2, "upper": 11 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -450,6 +453,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -506,6 +510,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -661,6 +666,7 @@
         "port": "result[attribute]",
         "taint": [
           {
+            "class_interval": [ { "lower": 2, "upper": 11 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -756,6 +762,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 2, "upper": 11 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -784,6 +791,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -900,6 +908,7 @@
         "name": "forward",
         "roots": [
           {
+            "class_interval": [ { "lower": 3, "upper": 6 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
