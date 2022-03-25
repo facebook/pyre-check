@@ -7,7 +7,15 @@
 
 open Core
 
-type t = TaintTransform.t list [@@deriving compare, eq, hash, sexp]
+module T = struct
+  type t = TaintTransform.t list [@@deriving compare, eq, hash, sexp]
+end
+
+include T
+
+module Set = struct
+  include Stdlib.Set.Make (T)
+end
 
 let empty = []
 

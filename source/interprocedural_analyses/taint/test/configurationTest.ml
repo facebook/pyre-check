@@ -913,7 +913,7 @@ let test_implicit_sinks _ =
 
 
 let test_matching_kinds _ =
-  let assert_matching ~configuration ~matching_sources ~matching_sinks =
+  let assert_matching ~configuration ~matching_sources ~matching_sinks ~possible_tito_transforms =
     let configuration = assert_parse configuration in
     let matching_sources_printer matching =
       matching
@@ -940,7 +940,19 @@ let test_matching_kinds _ =
       ~printer:matching_sinks_printer
       ~cmp:(Sinks.Map.equal Sources.Set.equal)
       (Sinks.Map.of_alist_exn matching_sources)
-      configuration.matching_sources
+      configuration.matching_sources;
+    let possible_tito_transforms_printer possible =
+      possible
+      |> TaintTransforms.Set.elements
+      |> List.map ~f:TaintTransforms.show_transforms
+      |> String.concat ~sep:", "
+      |> Format.asprintf "{%s}"
+    in
+    assert_equal
+      ~printer:possible_tito_transforms_printer
+      ~cmp:TaintTransforms.Set.equal
+      (TaintTransforms.Set.of_list possible_tito_transforms)
+      configuration.possible_tito_transforms
   in
   assert_matching
     ~configuration:
@@ -970,7 +982,8 @@ let test_matching_kinds _ =
       [
         Sinks.NamedSink "C", Sources.Set.of_list [Sources.NamedSource "A"];
         Sinks.NamedSink "D", Sources.Set.of_list [Sources.NamedSource "A"];
-      ];
+      ]
+    ~possible_tito_transforms:[TaintTransforms.empty];
   assert_matching
     ~configuration:
       {|
@@ -999,7 +1012,8 @@ let test_matching_kinds _ =
         Sources.NamedSource "B", Sinks.Set.of_list [Sinks.NamedSink "D"];
       ]
     ~matching_sources:
-      [Sinks.NamedSink "D", Sources.Set.of_list [Sources.NamedSource "A"; Sources.NamedSource "B"]];
+      [Sinks.NamedSink "D", Sources.Set.of_list [Sources.NamedSource "A"; Sources.NamedSource "B"]]
+    ~possible_tito_transforms:[TaintTransforms.empty];
   assert_matching
     ~configuration:
       {|
@@ -1035,7 +1049,8 @@ let test_matching_kinds _ =
       [
         Sinks.NamedSink "C", Sources.Set.of_list [Sources.NamedSource "A"];
         Sinks.NamedSink "D", Sources.Set.of_list [Sources.NamedSource "A"];
-      ];
+      ]
+    ~possible_tito_transforms:[TaintTransforms.empty];
   let transformed_source transform_names source_name =
     Sources.Transform
       {
@@ -1100,6 +1115,13 @@ let test_matching_kinds _ =
         transformed_sink ["Y"] "D", Sources.Set.of_list [transformed_source ["X"] "A"];
         transformed_sink ["X"; "Y"] "C", Sources.Set.of_list [Sources.NamedSource "A"];
         transformed_sink ["X"; "Y"] "D", Sources.Set.of_list [Sources.NamedSource "A"];
+      ]
+    ~possible_tito_transforms:
+      [
+        TaintTransforms.empty;
+        TaintTransforms.of_named_transforms [TaintTransform.Named "X"];
+        TaintTransforms.of_named_transforms [TaintTransform.Named "X"; TaintTransform.Named "Y"];
+        TaintTransforms.of_named_transforms [TaintTransform.Named "Y"];
       ];
   ()
 

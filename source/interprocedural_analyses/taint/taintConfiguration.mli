@@ -65,6 +65,7 @@ type t = {
   partial_sink_labels: string list Core.String.Map.Tree.t;
   matching_sources: Sources.Set.t Sinks.Map.t;
   matching_sinks: Sinks.Set.t Sources.Map.t;
+  possible_tito_transforms: TaintTransforms.Set.t;
   find_missing_flows: missing_flows_kind option;
   dump_model_query_results_path: PyrePath.t option;
   analysis_model_constraints: analysis_model_constraints;

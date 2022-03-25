@@ -228,3 +228,12 @@ def ax_to_zb_no_issue():
 def issue_with_repeated_transforms():
     alpha = taint_with_transform_yx()
     sink_taint_with_transform_yz(alpha)
+
+
+def test_infinite_loop():
+    x = source_a()
+    while True:
+        x = tito_with_transform_x(x)
+
+        if x:
+            return x

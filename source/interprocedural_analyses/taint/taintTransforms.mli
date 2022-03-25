@@ -7,6 +7,10 @@
 
 type t [@@deriving compare, eq, hash, sexp]
 
+module Set : sig
+  include Stdlib.Set.S with type elt = t
+end
+
 val add_named_transforms : t -> TaintTransform.t list -> t
 
 val add_sanitize_transforms : t -> SanitizeTransform.Set.t -> t
@@ -36,3 +40,5 @@ val pp_kind
   unit
 
 val rev_add_named_transforms : t -> TaintTransform.t list -> t
+
+val show_transforms : t -> string

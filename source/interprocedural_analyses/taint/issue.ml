@@ -753,4 +753,10 @@ let sink_can_match_rule = function
           |> Sources.Set.diff sources
           |> Sources.Set.is_empty
           |> not)
+  | Sinks.Transform { local; global; base = LocalReturn } ->
+      let { possible_tito_transforms; _ } = TaintConfiguration.get () in
+      let transforms =
+        TaintTransforms.merge ~local ~global |> TaintTransforms.discard_sanitize_transforms
+      in
+      TaintTransforms.Set.mem transforms possible_tito_transforms
   | _ -> true

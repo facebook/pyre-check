@@ -32,6 +32,7 @@ taint_transform.taint_with_transform_x (fun) -> [taint_transform.source_a (fun) 
 taint_transform.taint_with_transform_x_obscure (fun) -> [taint_transform.source_a (fun) taint_transform.transform_x_obscure (fun)]
 taint_transform.taint_with_transform_x_skip_obscure (fun) -> [taint_transform.source_a (fun) taint_transform.transform_x_skip_obscure (fun)]
 taint_transform.taint_with_transform_yx (fun) -> [taint_transform.source_a (fun) taint_transform.transform_x (fun) taint_transform.transform_y (fun)]
+taint_transform.test_infinite_loop (fun) -> [taint_transform.source_a (fun) taint_transform.tito_with_transform_x (fun)]
 taint_transform.tito_with_transform_x (fun) -> [taint_transform.transform_x (fun)]
 taint_transform.tito_with_transform_yz (fun) -> [taint_transform.transform_y (fun) taint_transform.transform_z (fun)]
 taint_transform.transform_x (fun) -> []

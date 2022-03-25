@@ -88,6 +88,7 @@ type t = {
   partial_sink_labels: string list String.Map.Tree.t;
   matching_sources: Sources.Set.t Sinks.Map.t;
   matching_sinks: Sinks.Set.t Sources.Map.t;
+  possible_tito_transforms: TaintTransforms.Set.t;
   find_missing_flows: missing_flows_kind option;
   dump_model_query_results_path: PyrePath.t option;
   analysis_model_constraints: analysis_model_constraints;
@@ -107,6 +108,7 @@ let empty =
     partial_sink_labels = String.Map.Tree.empty;
     matching_sources = Sinks.Map.empty;
     matching_sinks = Sources.Map.empty;
+    possible_tito_transforms = TaintTransforms.Set.empty;
     find_missing_flows = None;
     dump_model_query_results_path = None;
     analysis_model_constraints = default_analysis_model_constraints;
@@ -343,6 +345,18 @@ let matching_kinds_from_rules rules =
     transform_splits transforms |> List.fold ~init:sofar ~f:update
   in
   List.fold ~f:add_rule ~init:(Sinks.Map.empty, Sources.Map.empty) rules
+
+
+(* For a TITO to extend to an actual issue, the transforms in it must be a substring (contiguous
+   subsequence) of transforms appearing in a rule. In addition to optimization, this is used for
+   ensuring termination. We do not consider arbitrarily long transform sequences in the analysis. *)
+let possible_tito_transforms_from_rules rules =
+  let rec suffixes l = l :: Option.value_map (List.tl l) ~default:[] ~f:suffixes in
+  let prefixes l = List.rev l |> suffixes |> List.map ~f:List.rev in
+  let substrings l = List.concat_map (prefixes l) ~f:suffixes in
+  List.concat_map rules ~f:(fun { Rule.transforms; _ } -> substrings transforms)
+  |> List.map ~f:TaintTransforms.of_named_transforms
+  |> TaintTransforms.Set.of_list
 
 
 module PartialSinkConverter = struct
@@ -807,6 +821,7 @@ let parse source_jsons =
   >>| fun lineage_analysis ->
   let rules = List.rev_append rules generated_combined_rules in
   let matching_sources, matching_sinks = matching_kinds_from_rules rules in
+  let possible_tito_transforms = possible_tito_transforms_from_rules rules in
   {
     sources;
     sinks;
@@ -819,6 +834,7 @@ let parse source_jsons =
     partial_sink_labels;
     matching_sources;
     matching_sinks;
+    possible_tito_transforms;
     find_missing_flows = None;
     dump_model_query_results_path = None;
     analysis_model_constraints =
@@ -1015,6 +1031,7 @@ let default =
     ]
   in
   let matching_sources, matching_sinks = matching_kinds_from_rules rules in
+  let possible_tito_transforms = possible_tito_transforms_from_rules rules in
   {
     sources;
     sinks;
@@ -1036,6 +1053,7 @@ let default =
     implicit_sources = empty_implicit_sources;
     matching_sources;
     matching_sinks;
+    possible_tito_transforms;
     find_missing_flows = None;
     dump_model_query_results_path = None;
     analysis_model_constraints = default_analysis_model_constraints;
