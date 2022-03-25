@@ -34,7 +34,7 @@ module type FUNCTION_CONTEXT = sig
 
   val triggered_sinks : triggered_sinks
 
-  val current_class_interval : ClassInterval.t
+  val caller_class_interval : ClassInterval.t
 end
 
 let ( |>> ) (taint, state) f = f taint, state
@@ -197,6 +197,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~callee:None
            ~arguments:[]
            ~port:AccessPath.Root.LocalResult
+           ~is_self_call:false
+           ~caller_class_interval:ClassInterval.top
+           ~receiver_class_interval:ClassInterval.top
     in
     let breadcrumbs_to_attach, via_features_to_attach =
       BackwardState.extract_features_to_attach
@@ -290,6 +293,20 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       arguments
       Model.pp
       taint_model;
+    let is_self_call =
+      (* TODO(T114580705): Better precision when deciding if an expression is self *)
+      match callee.Node.value with
+      | Expression.Name
+          (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
+          String.equal (Identifier.sanitized identifier) "self"
+      | _ -> false
+    in
+    let receiver_class_interval =
+      match receiver_type with
+      | Some (Type.Primitive class_name) ->
+          ClassInterval.SharedMemory.get ~class_name |> Option.value ~default:ClassInterval.top
+      | _ -> ClassInterval.top
+    in
     let convert_tito_path_to_taint
         ~argument
         ~argument_taint
@@ -377,6 +394,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~call_target
           ~arguments
           ~sink_matches
+          ~is_self_call
+          ~caller_class_interval:FunctionContext.caller_class_interval
+          ~receiver_class_interval
       in
       (* Compute triggered partial sinks, if any. *)
       let () =
@@ -435,46 +455,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~callee:(Some target)
            ~arguments
            ~port:AccessPath.Root.LocalResult
-    in
-    let result_taint =
-      match target with
-      | `Function _
-      | `Object _ ->
-          ForwardState.Tree.set_class_interval
-            ~interval:FunctionContext.current_class_interval
-            result_taint
-      | `Method _
-      | `OverrideTarget _ ->
-          (* TODO(T114580705): Better precision when deciding if a call is on self *)
-          let is_self =
-            match callee.Node.value with
-            | Expression.Name
-                (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ })
-              ->
-                String.equal (Identifier.sanitized identifier) "self"
-            | _ -> false
-          in
-          if is_self then
-            result_taint
-            |> ForwardState.Tree.intersect_class_interval
-                 ~interval:FunctionContext.current_class_interval
-          else
-            let receiver_class_interval =
-              match receiver_type with
-              | Some (Type.Primitive class_name) ->
-                  ClassInterval.SharedMemory.get ~class_name
-                  |> Option.value ~default:ClassInterval.top
-              | _ -> ClassInterval.top
-            in
-            let result_taint =
-              if ClassInterval.is_top receiver_class_interval then
-                result_taint
-              else
-                result_taint
-                |> ForwardState.Tree.intersect_class_interval ~interval:receiver_class_interval
-            in
-            result_taint
-            |> ForwardState.Tree.set_class_interval ~interval:FunctionContext.current_class_interval
+           ~is_self_call
+           ~caller_class_interval:FunctionContext.caller_class_interval
+           ~receiver_class_interval
     in
     let tito = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
     (if not (Hash_set.is_empty triggered_sinks) then
@@ -507,6 +490,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~call_graph:FunctionContext.call_graph_of_define
           ~qualifier:FunctionContext.qualifier
           ~expression:argument
+          ~interval:FunctionContext.caller_class_interval
         |> check_flow_to_global ~location:argument.Node.location ~source_tree;
         let access_path = AccessPath.of_expression argument in
         log
@@ -1370,6 +1354,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~call_graph:FunctionContext.call_graph_of_define
             ~qualifier:FunctionContext.qualifier
             ~expression:base
+            ~interval:FunctionContext.caller_class_interval
           |> check_flow_to_global ~location:base.Node.location ~source_tree:taint;
           let state =
             store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
@@ -1580,6 +1565,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~call_graph:FunctionContext.call_graph_of_define
               ~qualifier:FunctionContext.qualifier
               ~expression
+              ~interval:FunctionContext.caller_class_interval
           in
           let attribute_taint = GlobalModel.get_source global_model in
           let add_tito_features taint =
@@ -1907,6 +1893,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~call_graph:FunctionContext.call_graph_of_define
           ~qualifier:FunctionContext.qualifier
           ~expression:target
+          ~interval:FunctionContext.caller_class_interval
         |> check_flow_to_global ~location ~source_tree;
 
         (* Propagate taint. *)
@@ -1961,6 +1948,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~call_graph:FunctionContext.call_graph_of_define
             ~qualifier:FunctionContext.qualifier
             ~expression:target
+            ~interval:FunctionContext.caller_class_interval
         in
         if GlobalModel.is_sanitized target_global_model then
           analyze_expression ~resolution ~state ~expression:value |> snd
@@ -2067,6 +2055,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~callee:(Some (Interprocedural.Target.create FunctionContext.definition))
              ~arguments:[]
              ~port:parameter_root
+             ~is_self_call:false
+             ~caller_class_interval:FunctionContext.caller_class_interval
+             ~receiver_class_interval:ClassInterval.top
       in
       let default_value_taint, state =
         match value with
@@ -2208,7 +2199,7 @@ let run
 
     let triggered_sinks = Location.Table.create ()
 
-    let current_class_interval =
+    let caller_class_interval =
       match Interprocedural.Target.create definition |> Interprocedural.Target.class_name with
       | Some class_name ->
           ClassInterval.SharedMemory.get ~class_name |> Option.value ~default:ClassInterval.top

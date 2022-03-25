@@ -56,4 +56,7 @@ val sink_trees_of_argument
   call_target:CallGraph.CallTarget.t ->
   arguments:Expression.Call.Argument.t list ->
   sink_matches:AccessPath.argument_match list ->
+  is_self_call:bool ->
+  caller_class_interval:Interprocedural.ClassInterval.t ->
+  receiver_class_interval:Interprocedural.ClassInterval.t ->
   Issue.SinkTreeWithHandle.t list

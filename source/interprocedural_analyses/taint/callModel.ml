@@ -215,6 +215,9 @@ let sink_trees_of_argument
     ~call_target:({ CallGraph.CallTarget.target; _ } as call_target)
     ~arguments
     ~sink_matches
+    ~is_self_call
+    ~caller_class_interval
+    ~receiver_class_interval
   =
   let to_sink_tree_with_identifier { AccessPath.root; actual_path; formal_path } =
     let sink_tree =
@@ -225,6 +228,9 @@ let sink_trees_of_argument
            ~callee:(Some target)
            ~arguments
            ~port:root
+           ~is_self_call
+           ~caller_class_interval
+           ~receiver_class_interval
       |> BackwardState.Tree.read ~transform_non_leaves formal_path
       |> BackwardState.Tree.prepend actual_path
     in

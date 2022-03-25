@@ -334,3 +334,11 @@ class A9:
 
 def call_method_via_class_name(a: A9):
     return A9.f(a)
+
+
+class A10:
+    f: int = 0
+
+    def object_target(x):
+        a = A10()
+        a.f = x

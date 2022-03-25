@@ -36,6 +36,7 @@
         "name": "backward",
         "roots": [
           {
+            "class_interval": [ { "lower": 22, "upper": 27 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1248,6 +1249,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 22, "upper": 27 } ],
             "kinds": [
               {
                 "leaves": [
@@ -2148,6 +2150,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 22, "upper": 27 } ],
             "kinds": [
               {
                 "leaves": [

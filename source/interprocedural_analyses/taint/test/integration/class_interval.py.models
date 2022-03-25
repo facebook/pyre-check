@@ -364,6 +364,20 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Obj{class_interval.A10.f}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{class_interval.A0::m2}",
     "sinks": [
       {
@@ -571,7 +585,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "class_interval": [ { "lower": 49, "upper": 52 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -587,7 +601,7 @@
             }
           },
           {
-            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "class_interval": [ { "lower": 49, "upper": 52 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -654,7 +668,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "class_interval": [ { "lower": 49, "upper": 52 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -670,7 +684,7 @@
             }
           },
           {
-            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "class_interval": [ { "lower": 49, "upper": 52 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -993,6 +1007,33 @@
 {
   "kind": "model",
   "data": {
+    "callable": "class_interval.A10.object_target",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "Obj{class_interval.A10.f}" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "class_interval.py",
+              "line": 344,
+              "start": 8,
+              "end": 11
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "class_interval.A2.m1",
     "sinks": [
       {
@@ -1131,7 +1172,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "class_interval": [ { "lower": 49, "upper": 52 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1182,7 +1223,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 54, "upper": 55 } ],
+            "class_interval": [ { "lower": 56, "upper": 57 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1216,7 +1257,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 56, "upper": 57 } ],
+            "class_interval": [ { "lower": 58, "upper": 59 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1237,7 +1278,7 @@
             }
           },
           {
-            "class_interval": [ { "lower": 56, "upper": 57 } ],
+            "class_interval": [ { "lower": 58, "upper": 59 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1258,7 +1299,7 @@
             }
           },
           {
-            "class_interval": [ { "lower": 56, "upper": 57 } ],
+            "class_interval": [ { "lower": 58, "upper": 59 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1303,7 +1344,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 56, "upper": 57 } ],
+            "class_interval": [ { "lower": 58, "upper": 59 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1332,7 +1373,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 58, "upper": 59 } ],
+            "class_interval": [ { "lower": 60, "upper": 61 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1526,7 +1567,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "class_interval": [ { "lower": 49, "upper": 52 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1542,7 +1583,7 @@
             }
           },
           {
-            "class_interval": [ { "lower": 47, "upper": 50 } ],
+            "class_interval": [ { "lower": 49, "upper": 52 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1576,7 +1617,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 60, "upper": 61 } ],
+            "class_interval": [ { "lower": 62, "upper": 63 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1605,7 +1646,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 60, "upper": 61 } ],
+            "class_interval": [ { "lower": 62, "upper": 63 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1639,7 +1680,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 62, "upper": 63 } ],
+            "class_interval": [ { "lower": 64, "upper": 65 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1902,7 +1943,7 @@
         "port": "result",
         "taint": [
           {
-            "class_interval": [ { "lower": 66, "upper": 67 } ],
+            "class_interval": [ { "lower": 68, "upper": 69 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],

@@ -12,6 +12,7 @@ open Expression
 open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
+module ClassInterval = Interprocedural.ClassInterval
 
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
@@ -27,6 +28,8 @@ module type FUNCTION_CONTEXT = sig
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
   val triggered_sinks : ForwardAnalysis.triggered_sinks
+
+  val caller_class_interval : ClassInterval.t
 end
 
 module State (FunctionContext : FUNCTION_CONTEXT) = struct
@@ -302,6 +305,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~call_graph:FunctionContext.call_graph_of_define
           ~qualifier:FunctionContext.qualifier
           ~expression:argument
+          ~interval:FunctionContext.caller_class_interval
         |> GlobalModel.get_sinks
         |> Issue.SinkTreeWithHandle.join
       in
@@ -393,6 +397,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~call_target
           ~arguments
           ~sink_matches
+          ~is_self_call:false
+          ~caller_class_interval:Interprocedural.ClassInterval.top
+          ~receiver_class_interval:Interprocedural.ClassInterval.top
         |> Issue.SinkTreeWithHandle.join
       in
       let taint_in_taint_out =
@@ -835,6 +842,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~call_graph:FunctionContext.call_graph_of_define
               ~qualifier:FunctionContext.qualifier
               ~expression
+              ~interval:FunctionContext.caller_class_interval
           in
           let add_tito_features taint =
             let attribute_breadcrumbs =
@@ -1301,6 +1309,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~call_graph:FunctionContext.call_graph_of_define
               ~qualifier:FunctionContext.qualifier
               ~expression:base
+              ~interval:FunctionContext.caller_class_interval
             |> GlobalModel.get_sinks
             |> Issue.SinkTreeWithHandle.join
           in
@@ -1716,6 +1725,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~call_graph:FunctionContext.call_graph_of_define
               ~qualifier:FunctionContext.qualifier
               ~expression:target
+              ~interval:FunctionContext.caller_class_interval
             |> GlobalModel.get_sinks
             |> Issue.SinkTreeWithHandle.join
           in
@@ -1760,6 +1770,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~call_graph:FunctionContext.call_graph_of_define
             ~qualifier:FunctionContext.qualifier
             ~expression:target
+            ~interval:FunctionContext.caller_class_interval
         in
         if GlobalModel.is_sanitized target_global_model then
           analyze_expression ~resolution ~taint:BackwardState.Tree.bottom ~state ~expression:value
@@ -2016,6 +2027,8 @@ let run
     let call_graph_of_define = call_graph_of_define
 
     let triggered_sinks = triggered_sinks
+
+    let caller_class_interval = ClassInterval.top (* TODO: Update this in the next diff *)
   end
   in
   let module State = State (FunctionContext) in

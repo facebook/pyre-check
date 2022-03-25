@@ -312,6 +312,9 @@ module type TAINT_DOMAIN = sig
     port:AccessPath.Root.t ->
     path:Abstract.TreeDomain.Label.path ->
     element:t ->
+    is_self_call:bool ->
+    caller_class_interval:Interprocedural.ClassInterval.t ->
+    receiver_class_interval:Interprocedural.ClassInterval.t ->
     t
 
   (* Return the taint with only essential elements. *)
@@ -788,7 +791,18 @@ end = struct
       transform KindTaintDomain.Key Map ~f:(Kind.apply_named_transforms transforms) taint
 
 
-  let apply_call ~resolution ~location ~callee ~arguments ~port ~path ~element:taint =
+  let apply_call
+      ~resolution
+      ~location
+      ~callee
+      ~arguments
+      ~port
+      ~path
+      ~element:taint
+      ~is_self_call
+      ~caller_class_interval
+      ~receiver_class_interval
+    =
     let callees =
       match callee with
       | Some callee -> [callee]
@@ -840,6 +854,34 @@ end = struct
              ~f:(Features.FirstFieldSet.sequence_join local_first_fields)
       in
       let local_taint = LocalTaintDomain.transform Frame.Self Map ~f:apply_frame local_taint in
+      let local_taint =
+        match callee with
+        | None
+        | Some (`Object _)
+        | Some (`Function _) ->
+            LocalTaintDomain.update
+              LocalTaintDomain.Slots.ClassInterval
+              caller_class_interval
+              local_taint
+        | Some (`Method _)
+        | Some (`OverrideTarget _) ->
+            let open Interprocedural in
+            let old_interval =
+              LocalTaintDomain.get LocalTaintDomain.Slots.ClassInterval local_taint
+            in
+            if is_self_call then
+              let new_interval = ClassInterval.meet old_interval caller_class_interval in
+              LocalTaintDomain.update LocalTaintDomain.Slots.ClassInterval new_interval local_taint
+            else
+              let new_interval = ClassInterval.meet old_interval receiver_class_interval in
+              if ClassInterval.is_empty new_interval then
+                LocalTaintDomain.bottom
+              else
+                LocalTaintDomain.update
+                  LocalTaintDomain.Slots.ClassInterval
+                  caller_class_interval
+                  local_taint
+      in
       match call_info with
       | CallInfo.Origin _
       | CallInfo.CallSite _ ->
@@ -911,9 +953,30 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       (Taint)
       ()
 
-  let apply_call ~resolution ~location ~callee ~arguments ~port taint_tree =
+  let apply_call
+      ~resolution
+      ~location
+      ~callee
+      ~arguments
+      ~port
+      ~is_self_call
+      ~caller_class_interval
+      ~receiver_class_interval
+      taint_tree
+    =
     let transform_path (path, tip) =
-      path, Taint.apply_call ~resolution ~location ~callee ~arguments ~port ~path ~element:tip
+      ( path,
+        Taint.apply_call
+          ~resolution
+          ~location
+          ~callee
+          ~arguments
+          ~port
+          ~path
+          ~element:tip
+          ~is_self_call
+          ~caller_class_interval
+          ~receiver_class_interval )
     in
     transform Path Map ~f:transform_path taint_tree
 
@@ -1019,24 +1082,6 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       taint
     else
       transform Taint.Self Map ~f:(Taint.apply_named_transforms transforms) taint
-
-
-  let intersect_class_interval ~interval taint =
-    let intersect_class_interval ~interval taint =
-      Taint.transform
-        ClassIntervalDomain.Self
-        Map
-        ~f:(fun old_interval -> Interprocedural.ClassInterval.meet interval old_interval)
-        taint
-    in
-    transform Taint.Self Map ~f:(intersect_class_interval ~interval) taint
-
-
-  let set_class_interval ~interval taint =
-    let set_class_interval ~interval taint =
-      Taint.transform ClassIntervalDomain.Self Map ~f:(fun _ -> interval) taint
-    in
-    transform Taint.Self Map ~f:(set_class_interval ~interval) taint
 end
 
 module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct

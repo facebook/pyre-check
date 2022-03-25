@@ -908,6 +908,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 14, "upper": 15 } ],
             "kinds": [
               {
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
@@ -939,6 +940,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 2, "upper": 17 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1070,6 +1072,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 10, "upper": 11 } ],
             "kinds": [
               {
                 "leaves": [ { "name": "Obj{string_conversion.C.g}" } ],
@@ -1138,6 +1141,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 14, "upper": 15 } ],
             "kinds": [
               {
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
@@ -1169,6 +1173,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 16, "upper": 17 } ],
             "kinds": [
               {
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
@@ -1262,6 +1267,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 10, "upper": 11 } ],
             "kinds": [
               {
                 "leaves": [ { "name": "Obj{string_conversion.C.g}" } ],
@@ -1330,6 +1336,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 14, "upper": 15 } ],
             "kinds": [
               {
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],
@@ -1361,6 +1368,7 @@
         "port": "result",
         "taint": [
           {
+            "class_interval": [ { "lower": 16, "upper": 17 } ],
             "kinds": [
               {
                 "leaves": [ { "name": "Obj{django.http.Request.GET}" } ],

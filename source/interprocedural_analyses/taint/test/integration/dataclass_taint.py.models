@@ -524,6 +524,7 @@
         "port": "result[bad]",
         "taint": [
           {
+            "class_interval": [ { "lower": 14, "upper": 15 } ],
             "kinds": [
               {
                 "features": [
@@ -668,6 +669,7 @@
         "port": "result[bad]",
         "taint": [
           {
+            "class_interval": [ { "lower": 14, "upper": 15 } ],
             "kinds": [
               {
                 "features": [
@@ -995,6 +997,7 @@
         "port": "result[bad]",
         "taint": [
           {
+            "class_interval": [ { "lower": 14, "upper": 15 } ],
             "kinds": [
               {
                 "features": [

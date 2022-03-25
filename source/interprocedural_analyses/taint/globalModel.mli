@@ -16,6 +16,7 @@ val from_expression
   call_graph:CallGraph.DefineCallGraph.t ->
   qualifier:Reference.t ->
   expression:Expression.t ->
+  interval:ClassInterval.t ->
   t
 
 val get_source : t -> Domains.ForwardState.Tree.t
