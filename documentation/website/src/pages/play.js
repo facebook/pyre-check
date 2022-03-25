@@ -69,9 +69,29 @@ function Results(props) {
   return <div>{errorDivs}</div>;
 }
 
+/**
+ * Get a URL parameter, in a way that works in old versions of node where the
+ * URLSearchParams global may not exist.
+ */
+function getCodeFromURL() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('input');
+  }
+  catch (_) {
+    return null;
+  }
+}
+
+function getInitialCode() {
+  let codeFromUrl = getCodeFromURL();
+  return codeFromUrl == null ? 'reveal_type(1)' : codeFromUrl;
+}
+
 function Playground() {
+
   const [results, setResults] = useState(null);
-  const [code, setCode] = useState('reveal_type(1)');
+  const [code, setCode] = useState(getInitialCode());
   const [busy, setBusy] = useState(false);
 
   const check = () => {
