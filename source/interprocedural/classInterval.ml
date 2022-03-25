@@ -156,4 +156,17 @@ module SharedMemory = struct
 
   let store intervals =
     ClassNameMap.iter (fun class_name interval -> add ~class_name ~interval) intervals
+
+
+  let of_class class_name = get ~class_name |> Option.value ~default:top
+
+  let of_type = function
+    | Some (Type.Primitive class_name) -> of_class class_name
+    | _ -> top
+
+
+  let of_definition definition =
+    match Target.create definition |> Target.class_name with
+    | Some class_name -> of_class class_name
+    | None -> top
 end

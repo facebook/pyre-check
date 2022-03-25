@@ -293,20 +293,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       arguments
       Model.pp
       taint_model;
-    let is_self_call =
-      (* TODO(T114580705): Better precision when deciding if an expression is self *)
-      match callee.Node.value with
-      | Expression.Name
-          (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
-          String.equal (Identifier.sanitized identifier) "self"
-      | _ -> false
-    in
-    let receiver_class_interval =
-      match receiver_type with
-      | Some (Type.Primitive class_name) ->
-          ClassInterval.SharedMemory.get ~class_name |> Option.value ~default:ClassInterval.top
-      | _ -> ClassInterval.top
-    in
+    let is_self_call = Ast.Expression.is_self_call ~callee in
+    let receiver_class_interval = ClassInterval.SharedMemory.of_type receiver_type in
     let convert_tito_path_to_taint
         ~argument
         ~argument_taint
@@ -2199,11 +2187,7 @@ let run
 
     let triggered_sinks = Location.Table.create ()
 
-    let caller_class_interval =
-      match Interprocedural.Target.create definition |> Interprocedural.Target.class_name with
-      | Some class_name ->
-          ClassInterval.SharedMemory.get ~class_name |> Option.value ~default:ClassInterval.top
-      | None -> ClassInterval.top
+    let caller_class_interval = ClassInterval.SharedMemory.of_definition definition
   end
   in
   let module State = State (FunctionContext) in

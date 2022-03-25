@@ -61,4 +61,8 @@ module SharedMemory : sig
   val get : class_name:ClassHierarchyGraph.class_name -> t option
 
   val store : t ClassHierarchyGraph.ClassNameMap.t -> unit
+
+  val of_type : Type.t option -> t
+
+  val of_definition : Ast.Statement.Define.t Ast.Node.t -> t
 end

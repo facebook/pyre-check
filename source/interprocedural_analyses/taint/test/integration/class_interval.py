@@ -30,7 +30,7 @@ class B0(A0):
 
 class C0(A0):
     def m2(self, x):
-        _test_sink(x)  # Invalid issue
+        _test_sink(x)  # No issue
 
 
 def canonical_example(b: B0):
@@ -98,7 +98,7 @@ class C2(A2):
 
 class D2(B2, C2):
     def m2(self, x):
-        _test_sink(x)  # Valid issue
+        _test_sink(x)  # Issue here
 
 
 def multiple_inheritance(b: B2):
@@ -132,7 +132,7 @@ class C3(B3):
         self.m1(x)
 
     def m2(self, x):
-        _test_sink(x)  # Valid issue
+        _test_sink(x)  # Issue here
 
 
 class D3(B3):
@@ -171,7 +171,7 @@ class B4(A4):
 
 class C4(A4):
     def m3(self, x):
-        _test_sink(x)  # Invalid issue
+        _test_sink(x)  # No issue
 
 
 class D4(B4):
@@ -211,7 +211,7 @@ class C5(A5):
 
 class D5(C5):
     def m2(self, x):
-        _test_sink(x)  # Invalid issue
+        _test_sink(x)  # No issue
 
 
 def sink_two_hops(b: B5):

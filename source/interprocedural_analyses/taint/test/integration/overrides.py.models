@@ -629,6 +629,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 4 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -691,6 +692,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "class_interval": [ { "lower": 5, "upper": 12 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -776,6 +778,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "class_interval": [ { "lower": 5, "upper": 12 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -804,6 +807,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 10 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -906,6 +910,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "class_interval": [ { "lower": 7, "upper": 10 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -979,6 +984,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "class_interval": [ { "lower": 7, "upper": 10 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1100,6 +1106,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 4 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1164,6 +1171,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "class_interval": [ { "lower": 5, "upper": 12 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1319,6 +1327,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "class_interval": [ { "lower": 7, "upper": 10 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1376,6 +1385,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "class_interval": [ { "lower": 15, "upper": 16 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],

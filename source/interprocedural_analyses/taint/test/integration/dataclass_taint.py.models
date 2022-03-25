@@ -438,6 +438,7 @@
         "port": "formal(bad)",
         "taint": [
           {
+            "class_interval": [ { "lower": 4, "upper": 5 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -552,6 +553,7 @@
         "port": "formal(another)",
         "taint": [
           {
+            "class_interval": [ { "lower": 14, "upper": 15 } ],
             "kinds": [
               {
                 "leaves": [
@@ -697,6 +699,7 @@
         "port": "formal(another)",
         "taint": [
           {
+            "class_interval": [ { "lower": 14, "upper": 15 } ],
             "kinds": [
               {
                 "leaves": [
@@ -726,6 +729,7 @@
         "port": "formal(bad)",
         "taint": [
           {
+            "class_interval": [ { "lower": 4, "upper": 5 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -851,6 +855,7 @@
         "port": "formal(bad)",
         "taint": [
           {
+            "class_interval": [ { "lower": 4, "upper": 5 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1025,6 +1030,7 @@
         "port": "formal(another)",
         "taint": [
           {
+            "class_interval": [ { "lower": 14, "upper": 15 } ],
             "kinds": [
               {
                 "leaves": [

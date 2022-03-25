@@ -384,6 +384,7 @@
         "port": "formal(bad)",
         "taint": [
           {
+            "class_interval": [ { "lower": 6, "upper": 7 } ],
             "kinds": [
               {
                 "leaves": [
@@ -492,6 +493,7 @@
         "port": "formal(bad)",
         "taint": [
           {
+            "class_interval": [ { "lower": 6, "upper": 7 } ],
             "kinds": [
               {
                 "leaves": [
@@ -601,6 +603,7 @@
         "port": "formal(bad)",
         "taint": [
           {
+            "class_interval": [ { "lower": 6, "upper": 7 } ],
             "kinds": [
               {
                 "leaves": [

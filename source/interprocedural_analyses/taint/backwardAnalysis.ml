@@ -243,7 +243,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          implicit_dunder_call;
          collapse_tito = _;
          index = _;
-         receiver_type = _;
+         receiver_type;
        } as call_target)
     =
     let arguments =
@@ -381,6 +381,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> BackwardState.Tree.add_local_breadcrumb (Features.tito ())
       |> BackwardState.Tree.join taint_tree
     in
+    let is_self_call = Ast.Expression.is_self_call ~callee in
+    let receiver_class_interval = ClassInterval.SharedMemory.of_type receiver_type in
     let analyze_argument
         (arguments_taint, state)
         { CallModel.ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches }
@@ -397,9 +399,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~call_target
           ~arguments
           ~sink_matches
-          ~is_self_call:false
-          ~caller_class_interval:Interprocedural.ClassInterval.top
-          ~receiver_class_interval:Interprocedural.ClassInterval.top
+          ~is_self_call
+          ~caller_class_interval:FunctionContext.caller_class_interval
+          ~receiver_class_interval
         |> Issue.SinkTreeWithHandle.join
       in
       let taint_in_taint_out =
@@ -2028,7 +2030,7 @@ let run
 
     let triggered_sinks = triggered_sinks
 
-    let caller_class_interval = ClassInterval.top (* TODO: Update this in the next diff *)
+    let caller_class_interval = ClassInterval.SharedMemory.of_definition definition
   end
   in
   let module State = State (FunctionContext) in

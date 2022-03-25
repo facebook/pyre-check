@@ -2108,6 +2108,7 @@
         "port": "formal(value)",
         "taint": [
           {
+            "class_interval": [ { "lower": 10, "upper": 11 } ],
             "kinds": [
               {
                 "leaves": [
@@ -2287,6 +2288,7 @@
         "port": "formal(value)",
         "taint": [
           {
+            "class_interval": [ { "lower": 10, "upper": 11 } ],
             "kinds": [
               {
                 "leaves": [
@@ -2559,6 +2561,7 @@
         "port": "formal(value)",
         "taint": [
           {
+            "class_interval": [ { "lower": 10, "upper": 11 } ],
             "kinds": [
               {
                 "leaves": [
@@ -2575,6 +2578,7 @@
             }
           },
           {
+            "class_interval": [ { "lower": 10, "upper": 11 } ],
             "kinds": [
               {
                 "leaves": [

@@ -192,6 +192,7 @@
         "port": "formal(self)[_params]",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 4 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "c_feature" } ],
@@ -262,6 +263,7 @@
         "port": "formal(self)[_params]",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 4 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "c_feature" } ],
@@ -360,6 +362,7 @@
         "port": "formal(self)[_params]",
         "taint": [
           {
+            "class_interval": [ { "lower": 3, "upper": 4 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "c_feature" } ],

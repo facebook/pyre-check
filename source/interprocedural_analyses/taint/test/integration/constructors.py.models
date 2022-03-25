@@ -310,6 +310,7 @@
         "port": "formal(self)[foo]",
         "taint": [
           {
+            "class_interval": [ { "lower": 6, "upper": 7 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -378,6 +379,7 @@
         "port": "formal(input)",
         "taint": [
           {
+            "class_interval": [ { "lower": 11, "upper": 12 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -625,6 +627,7 @@
         "port": "formal(self)[foo]",
         "taint": [
           {
+            "class_interval": [ { "lower": 6, "upper": 7 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -732,6 +735,7 @@
         "port": "formal(input)",
         "taint": [
           {
+            "class_interval": [ { "lower": 11, "upper": 12 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -817,6 +821,7 @@
         "port": "formal(self)[foo]",
         "taint": [
           {
+            "class_interval": [ { "lower": 6, "upper": 7 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -885,6 +890,7 @@
         "port": "formal(input)",
         "taint": [
           {
+            "class_interval": [ { "lower": 11, "upper": 12 } ],
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1050,6 +1056,7 @@
         "port": "formal(self)[AUTHENTICATE_URL]",
         "taint": [
           {
+            "class_interval": [ { "lower": 14, "upper": 15 } ],
             "kinds": [
               {
                 "leaves": [ { "name": "eval" } ],
