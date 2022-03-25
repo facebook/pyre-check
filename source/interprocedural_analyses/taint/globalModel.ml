@@ -65,7 +65,7 @@ let get_source { models; resolution; location } =
     |> ForwardState.Tree.apply_call
          ~resolution
          ~location
-         ~callees:[target]
+         ~callee:(Some target)
          ~arguments:[]
          ~port:AccessPath.Root.LocalResult
     |> ForwardState.Tree.join existing
@@ -86,7 +86,7 @@ let get_sinks { models; resolution; location } =
       |> BackwardState.Tree.apply_call
            ~resolution
            ~location
-           ~callees:[target]
+           ~callee:(Some target)
            ~arguments:[]
            ~port:AccessPath.Root.LocalResult
     in

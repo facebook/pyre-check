@@ -194,7 +194,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> BackwardState.Tree.apply_call
            ~resolution
            ~location:return_location
-           ~callees:[]
+           ~callee:None
            ~arguments:[]
            ~port:AccessPath.Root.LocalResult
     in
@@ -432,7 +432,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~resolution
            ~location:
              (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
-           ~callees:[target]
+           ~callee:(Some target)
            ~arguments
            ~port:AccessPath.Root.LocalResult
     in
@@ -2064,7 +2064,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |> ForwardState.Tree.apply_call
              ~resolution
              ~location
-             ~callees:[Interprocedural.Target.create FunctionContext.definition]
+             ~callee:(Some (Interprocedural.Target.create FunctionContext.definition))
              ~arguments:[]
              ~port:parameter_root
       in

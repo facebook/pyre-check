@@ -219,7 +219,12 @@ let sink_trees_of_argument
   let to_sink_tree_with_identifier { AccessPath.root; actual_path; formal_path } =
     let sink_tree =
       BackwardState.read ~transform_non_leaves ~root ~path:[] backward.sink_taint
-      |> BackwardState.Tree.apply_call ~resolution ~location ~callees:[target] ~arguments ~port:root
+      |> BackwardState.Tree.apply_call
+           ~resolution
+           ~location
+           ~callee:(Some target)
+           ~arguments
+           ~port:root
       |> BackwardState.Tree.read ~transform_non_leaves formal_path
       |> BackwardState.Tree.prepend actual_path
     in

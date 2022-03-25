@@ -307,7 +307,7 @@ module type TAINT_DOMAIN = sig
   val apply_call
     :  resolution:Analysis.Resolution.t ->
     location:Location.WithModule.t ->
-    callees:Interprocedural.Target.t list ->
+    callee:Interprocedural.Target.t option ->
     arguments:Ast.Expression.Call.Argument.t list ->
     port:AccessPath.Root.t ->
     path:Abstract.TreeDomain.Label.path ->
@@ -788,7 +788,12 @@ end = struct
       transform KindTaintDomain.Key Map ~f:(Kind.apply_named_transforms transforms) taint
 
 
-  let apply_call ~resolution ~location ~callees ~arguments ~port ~path ~element:taint =
+  let apply_call ~resolution ~location ~callee ~arguments ~port ~path ~element:taint =
+    let callees =
+      match callee with
+      | Some callee -> [callee]
+      | None -> []
+    in
     let apply (call_info, local_taint) =
       let local_taint =
         local_taint
@@ -906,9 +911,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       (Taint)
       ()
 
-  let apply_call ~resolution ~location ~callees ~arguments ~port taint_tree =
+  let apply_call ~resolution ~location ~callee ~arguments ~port taint_tree =
     let transform_path (path, tip) =
-      path, Taint.apply_call ~resolution ~location ~callees ~arguments ~port ~path ~element:tip
+      path, Taint.apply_call ~resolution ~location ~callee ~arguments ~port ~path ~element:tip
     in
     transform Path Map ~f:transform_path taint_tree
 

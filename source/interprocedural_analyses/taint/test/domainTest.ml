@@ -24,11 +24,14 @@ let test_partition_call_map context =
       (module TypeCheck.DummyContext)
   in
   let taint = ForwardTaint.singleton (Sources.NamedSource "UserControlled") Frame.initial in
+  let callee =
+    Some (`Method { Interprocedural.Target.class_name = "test.Foo"; method_name = "bar" })
+  in
   let call_taint1 =
     ForwardTaint.apply_call
       ~resolution
       ~location:Location.WithModule.any
-      ~callees:[]
+      ~callee
       ~arguments:[]
       ~port:AccessPath.Root.LocalResult
       ~path:[Abstract.TreeDomain.Label.create_name_index "a"]
@@ -38,7 +41,7 @@ let test_partition_call_map context =
     ForwardTaint.apply_call
       ~resolution
       ~location:Location.WithModule.any
-      ~callees:[]
+      ~callee
       ~arguments:[]
       ~port:AccessPath.Root.LocalResult
       ~path:[]
