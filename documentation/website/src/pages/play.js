@@ -88,6 +88,12 @@ function getInitialCode() {
   return codeFromUrl == null ? 'reveal_type(1)' : codeFromUrl;
 }
 
+function encodeCodeAndSetURL(code) {
+  const encodedCode = encodeURIComponent(code);
+  window.history.pushState(code, 'unused', `/play?input=${encodedCode}`);
+  return encodedCode;
+}
+
 function Playground() {
 
   const [results, setResults] = useState(null);
@@ -96,7 +102,7 @@ function Playground() {
 
   const check = () => {
     setBusy(true);
-    const encodedCode = encodeURIComponent(code)
+    const encodedCode = encodeCodeAndSetURL(code);
     fetch(`https://play.pyre-check.org/check?input=${encodedCode}`, {
       method: 'GET',
       mode: 'cors',
