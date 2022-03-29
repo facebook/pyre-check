@@ -28,6 +28,7 @@
     "socket.io-client": "^4.3.2"
   },
   "resolutions": {
-    "shelljs": "^0.8.5"
+    "shelljs": "^0.8.5",
+    "ansi-html": "0.0.8"
   }
 }
