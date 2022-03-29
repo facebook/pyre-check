@@ -172,3 +172,7 @@ let remove_old callable_set =
 (* No old results. *)
 
 let is_initial_iteration { epoch = _; iteration } = iteration = 0
+
+let invalidate_model_cache = SharedModels.invalidate_cache
+
+let invalidate_result_cache = SharedResults.invalidate_cache

@@ -812,6 +812,7 @@ module type WithCache = sig
   include NoCache
   val write_through : key -> value -> unit
   val get_no_cache: key -> value option
+  val invalidate_cache : unit -> unit
 end
 
 (*****************************************************************************)
@@ -1175,6 +1176,8 @@ module WithCache (UserKeyType : UserKeyType) (Value:Value.Type) = struct
     (* Note that we do not need to do any cache invalidation here because
      * Direct.add is a no-op if the key already exists. *)
     Direct.add x y
+
+  let invalidate_cache = Cache.clear
 
   let log_hit_rate ~hit =
     Measure.sample (Value.description ^ " (cache hit rate)") (if hit then 1. else 0.);

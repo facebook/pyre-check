@@ -16,6 +16,7 @@ type t = {
   invalidate: Reference.t list -> unit;
   get_errors: Reference.t -> Error.t list;
   get_local_annotations: Reference.t -> LocalAnnotationMap.ReadOnly.t option;
+  invalidate_local_annotations_cache: unit -> unit;
 }
 
 let global_environment { global_environment; _ } = global_environment
@@ -37,6 +38,10 @@ let set_local_annotations { set_local_annotations; _ } = set_local_annotations
 let get_local_annotations { get_local_annotations; _ } = get_local_annotations
 
 let invalidate { invalidate; _ } = invalidate
+
+let invalidate_local_annotations_cache { invalidate_local_annotations_cache; _ } =
+  invalidate_local_annotations_cache ()
+
 
 module AnalysisErrorValue = struct
   type t = Error.t list
@@ -71,6 +76,7 @@ let create global_environment =
     RawErrors.KeySet.of_list qualifiers |> RawErrors.remove_batch;
     LocalAnnotations.KeySet.of_list qualifiers |> LocalAnnotations.remove_batch
   in
+  let invalidate_local_annotations_cache = LocalAnnotations.invalidate_cache in
   {
     global_environment;
     set_errors;
@@ -78,6 +84,7 @@ let create global_environment =
     invalidate;
     get_errors;
     get_local_annotations;
+    invalidate_local_annotations_cache;
   }
 
 
@@ -86,11 +93,16 @@ module ReadOnly = struct
     global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
     get_errors: Reference.t -> Error.t list;
     get_local_annotations: Reference.t -> LocalAnnotationMap.ReadOnly.t option;
+    invalidate_local_annotations_cache: unit -> unit;
   }
 
-  let create ?(get_errors = fun _ -> []) ?(get_local_annotations = fun _ -> None) global_environment
+  let create
+      ?(get_errors = fun _ -> [])
+      ?(get_local_annotations = fun _ -> None)
+      ?(invalidate_local_annotations_cache = fun () -> ())
+      global_environment
     =
-    { global_environment; get_errors; get_local_annotations }
+    { global_environment; get_errors; get_local_annotations; invalidate_local_annotations_cache }
 
 
   let global_environment { global_environment; _ } = global_environment
@@ -108,10 +120,16 @@ module ReadOnly = struct
   let get_errors { get_errors; _ } = get_errors
 
   let get_local_annotations { get_local_annotations; _ } = get_local_annotations
+
+  let invalidate_local_annotations_cache { invalidate_local_annotations_cache; _ } =
+    invalidate_local_annotations_cache ()
 end
 
-let read_only { global_environment; get_errors; get_local_annotations; _ } =
+let read_only
+    { global_environment; get_errors; get_local_annotations; invalidate_local_annotations_cache; _ }
+  =
   ReadOnly.create
     ~get_errors
     ~get_local_annotations
+    ~invalidate_local_annotations_cache
     (AnnotatedGlobalEnvironment.read_only global_environment)
