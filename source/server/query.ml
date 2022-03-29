@@ -646,7 +646,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         let ast_environment = TypeEnvironment.ReadOnly.ast_environment read_only_environment in
         let defines_of_module module_or_class_name =
           let module_name, filter_define =
-            if AstEnvironment.ReadOnly.is_module ast_environment module_or_class_name then
+            if AstEnvironment.ReadOnly.is_module_tracked ast_environment module_or_class_name then
               Some module_or_class_name, fun _ -> false
             else
               let filter
@@ -655,7 +655,7 @@ let rec process_request ~environment ~build_system ~configuration request =
                 not (Option.equal Reference.equal parent (Some module_or_class_name))
               in
               let rec find_module_name current_reference =
-                if AstEnvironment.ReadOnly.is_module ast_environment current_reference then
+                if AstEnvironment.ReadOnly.is_module_tracked ast_environment current_reference then
                   Some current_reference
                 else
                   Reference.prefix current_reference >>= find_module_name

@@ -28,7 +28,6 @@ module ReadOnly : sig
     :  ?get_processed_source:(track_dependency:bool -> Reference.t -> Source.t option) ->
     ?get_raw_source:(Reference.t -> (Source.t, ParserError.t) Result.t option) ->
     ?get_source_path:(Reference.t -> SourcePath.t option) ->
-    ?is_module:(Reference.t -> bool) ->
     ?all_explicit_modules:(unit -> Reference.t list) ->
     ?is_module_tracked:(Reference.t -> bool) ->
     unit ->
@@ -39,8 +38,6 @@ module ReadOnly : sig
   val get_raw_source : t -> Reference.t -> (Source.t, ParserError.t) Result.t option
 
   val get_source_path : t -> Reference.t -> SourcePath.t option
-
-  val is_module : t -> Reference.t -> bool
 
   val get_relative : t -> Reference.t -> string option
 

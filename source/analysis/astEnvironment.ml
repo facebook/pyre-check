@@ -459,7 +459,6 @@ module ReadOnly = struct
     get_processed_source: track_dependency:bool -> Reference.t -> Source.t option;
     get_raw_source: Reference.t -> (Source.t, ParserError.t) Result.t option;
     get_source_path: Reference.t -> SourcePath.t option;
-    is_module: Reference.t -> bool;
     all_explicit_modules: unit -> Reference.t list;
     is_module_tracked: Reference.t -> bool;
   }
@@ -468,7 +467,6 @@ module ReadOnly = struct
       ?(get_processed_source = fun ~track_dependency:_ _ -> None)
       ?(get_raw_source = fun _ -> None)
       ?(get_source_path = fun _ -> None)
-      ?(is_module = fun _ -> false)
       ?(all_explicit_modules = fun _ -> [])
       ?(is_module_tracked = fun _ -> false)
       ()
@@ -477,7 +475,6 @@ module ReadOnly = struct
       get_processed_source;
       get_raw_source;
       get_source_path;
-      is_module;
       all_explicit_modules;
       is_module_tracked;
     }
@@ -511,8 +508,6 @@ module ReadOnly = struct
     >>= fun path -> PyrePath.get_relative_to_root ~root:local_root ~path
 
 
-  let is_module { is_module; _ } = is_module
-
   let is_module_tracked { is_module_tracked; _ } = is_module_tracked
 
   let all_explicit_modules { all_explicit_modules; _ } = all_explicit_modules ()
@@ -532,14 +527,12 @@ let read_only ({ module_tracker; _ } as environment) =
     in
     get_and_preprocess_source ?dependency environment qualifier
   in
-  let is_module_tracked qualifier = ModuleTracker.is_module_tracked module_tracker qualifier in
   {
     ReadOnly.get_processed_source;
     get_raw_source = RawSources.get;
     get_source_path = get_source_path environment;
-    is_module = ModuleTracker.is_module_tracked module_tracker;
     all_explicit_modules = (fun () -> ModuleTracker.tracked_explicit_modules module_tracker);
-    is_module_tracked;
+    is_module_tracked = ModuleTracker.is_module_tracked module_tracker;
   }
 
 
