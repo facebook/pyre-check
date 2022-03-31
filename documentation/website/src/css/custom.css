@@ -53,6 +53,17 @@
   height: 100px !important;
 }
 
+.react-codemirror2 {
+  height: 100%;
+}
+.CodeMirror {
+  height: auto !important;
+}
+.CodeMirror-scroll {
+  min-height: 25vh;
+  max-height: 50vh;
+}
+
 /* Announcement banner */
 
 :root {
