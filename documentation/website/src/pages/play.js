@@ -11,10 +11,17 @@ import React, {useState} from 'react';
 import Layout from '@theme/Layout';
 import classnames from 'classnames';
 import Link from '@docusaurus/Link';
+import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 
 import {Controlled as CodeMirror} from 'react-codemirror2';
 import 'codemirror/lib/codemirror.css';
 import styles from './styles.module.css';
+
+if (ExecutionEnvironment.canUseDOM) {
+  require('codemirror/mode/python/python');
+}
+
+
 
 function Code(props) {
   return (
