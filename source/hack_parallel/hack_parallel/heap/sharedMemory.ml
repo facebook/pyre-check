@@ -1209,8 +1209,10 @@ module WithCache (UserKeyType : UserKeyType) (Value:Value.Type) = struct
     | Some x -> x
 
   let mem x =
-    match get x with
-    | None -> false
+    (* Explicitly avoid using `get`, as this would perform a full load of the stored
+     * object, i.e uncompressing and unmarshalling, which is costly. *)
+    match Cache.get x with
+    | None -> Direct.mem x
     | Some _ -> true
 
   let get_batch keys =
