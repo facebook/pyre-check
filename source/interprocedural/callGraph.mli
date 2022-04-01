@@ -10,6 +10,24 @@ open Analysis
 open Ast
 open Expression
 
+module ReturnType : sig
+  type t = {
+    is_boolean: bool;
+    is_integer: bool;
+    is_float: bool;
+    is_enumeration: bool;
+  }
+  [@@deriving eq, show]
+
+  val none : t
+
+  val bool : t
+
+  val integer : t
+
+  val from_annotation : resolution:GlobalResolution.t -> Type.t -> t
+end
+
 module CallTarget : sig
   type t = {
     target: Target.t;
@@ -44,7 +62,7 @@ module HigherOrderParameter : sig
   type t = {
     index: int;
     call_targets: CallTarget.t list;
-    return_type: Type.t;
+    return_type: ReturnType.t;
   }
   [@@deriving eq, show]
 end
@@ -59,7 +77,7 @@ module CallCallees : sig
     (* Call targets for calls to the `__init__` instance method. *)
     init_targets: CallTarget.t list;
     (* The return type of the call. *)
-    return_type: Type.t;
+    return_type: ReturnType.t;
     (* Information about an argument being a callable, and possibly called. *)
     higher_order_parameter: HigherOrderParameter.t option;
     (* True if at least one callee could not be resolved.
@@ -74,11 +92,11 @@ module CallCallees : sig
     ?init_targets:CallTarget.t list ->
     ?higher_order_parameter:HigherOrderParameter.t ->
     ?unresolved:bool ->
-    return_type:Type.t ->
+    ?return_type:ReturnType.t ->
     unit ->
     t
 
-  val create_unresolved : Type.t -> t
+  val create_unresolved : ReturnType.t -> t
 
   val is_partially_resolved : t -> bool
 
@@ -90,7 +108,7 @@ module AttributeAccessCallees : sig
   type t = {
     property_targets: CallTarget.t list;
     global_targets: CallTarget.t list;
-    return_type: Type.t;
+    return_type: ReturnType.t;
     (* True if the attribute access should also be considered a regular attribute.
      * For instance, if the object has type `Union[A, B]` where only `A` defines a property. *)
     is_attribute: bool;

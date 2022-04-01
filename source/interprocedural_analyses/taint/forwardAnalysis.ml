@@ -87,7 +87,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             FunctionContext.qualifier
             Location.pp
             location;
-          CallGraph.CallCallees.create_unresolved Type.Any
+          CallGraph.CallCallees.create_unresolved CallGraph.ReturnType.none
     in
     log
       "Resolved callees for call `%a` at %a:@,%a"
@@ -256,7 +256,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee_taint
       ~arguments
       ~arguments_taint
-      ~return_type_breadcrumbs
+      ~return_type
       ~state:initial_state
       ({
          CallGraph.CallTarget.target;
@@ -505,7 +505,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let returned_taint = ForwardState.Tree.join result_taint tito in
     let returned_taint =
       if Model.ModeSet.contains Obscure modes then
-        ForwardState.Tree.add_local_breadcrumbs (Lazy.force return_type_breadcrumbs) returned_taint
+        ForwardState.Tree.add_local_breadcrumbs
+          (Features.type_breadcrumbs return_type)
+          returned_taint
       else
         returned_taint
     in
@@ -554,7 +556,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments_taint
       ~new_targets
       ~init_targets
-      ~return_type_breadcrumbs
+      ~return_type
       ~state:initial_state
     =
     (* Call `__new__`. Add the `cls` implicit argument. *)
@@ -581,7 +583,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~callee_taint:None
                 ~arguments
                 ~arguments_taint
-                ~return_type_breadcrumbs
+                ~return_type
                 ~state:initial_state
                 target)
           |> List.fold
@@ -609,7 +611,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~callee_taint:None
                 ~arguments
                 ~arguments_taint
-                ~return_type_breadcrumbs
+                ~return_type
                 ~state
                 target)
           |> List.fold
@@ -679,12 +681,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> Option.some
     in
 
-    let return_type_breadcrumbs =
-      lazy
-        (let resolution = Resolution.global_resolution resolution in
-         Features.type_breadcrumbs ~resolution (Some return_type))
-    in
-
     (* Apply regular call targets. *)
     let taint, state =
       List.map
@@ -700,7 +696,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~callee_taint
              ~arguments
              ~arguments_taint
-             ~return_type_breadcrumbs
+             ~return_type
              ~state:initial_state)
       |> List.fold
            ~init:(ForwardState.Tree.empty, bottom)
@@ -735,7 +731,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~arguments_taint
               ~new_targets
               ~init_targets
-              ~return_type_breadcrumbs
+              ~return_type
               ~state:initial_state
           in
           ForwardState.Tree.join taint new_taint, join state new_state
@@ -1641,7 +1637,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~base_state
           =
           let callees =
-            CallGraph.CallCallees.create ~call_targets:[call_target] ~return_type:Type.string ()
+            CallGraph.CallCallees.create
+              ~call_targets:[call_target]
+              ~return_type:CallGraph.ReturnType.none
+              ()
           in
           let callee =
             let callee_from_method_name method_name =
@@ -2103,10 +2102,13 @@ let extract_source_model
     exit_taint
   =
   let { Statement.Define.signature = { return_annotation; name; parameters; _ }; _ } = define in
-  let return_annotation =
-    Option.map ~f:(GlobalResolution.parse_annotation resolution) return_annotation
+  let return_type_breadcrumbs =
+    return_annotation
+    >>| GlobalResolution.parse_annotation resolution
+    >>| CallGraph.ReturnType.from_annotation ~resolution
+    |> Option.value ~default:CallGraph.ReturnType.none
+    |> Features.type_breadcrumbs
   in
-  let return_type_breadcrumbs = Features.type_breadcrumbs ~resolution return_annotation in
   let {
     TaintConfiguration.analysis_model_constraints =
       { maximum_model_width; maximum_return_access_path_length; maximum_trace_length; _ };

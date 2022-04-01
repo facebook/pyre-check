@@ -81,7 +81,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             FunctionContext.qualifier
             Location.pp
             location;
-          CallGraph.CallCallees.create_unresolved Type.Any
+          CallGraph.CallCallees.create_unresolved CallGraph.ReturnType.none
     in
     log
       "Resolved callees for call `%a` at %a:@,%a"
@@ -234,7 +234,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~self
       ~callee
       ~arguments
-      ~return_type_breadcrumbs
+      ~return_type
       ~state:initial_state
       ~call_taint
       ({
@@ -294,7 +294,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let call_taint =
       if Model.ModeSet.contains Obscure modes then
-        BackwardState.Tree.add_local_breadcrumbs (Lazy.force return_type_breadcrumbs) call_taint
+        BackwardState.Tree.add_local_breadcrumbs (Features.type_breadcrumbs return_type) call_taint
       else
         call_taint
     in
@@ -498,7 +498,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments
       ~new_targets
       ~init_targets
-      ~return_type_breadcrumbs
+      ~return_type
       ~state:initial_state
       ~call_taint
     =
@@ -523,7 +523,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~self:(Some call_expression)
                 ~callee
                 ~arguments
-                ~return_type_breadcrumbs
+                ~return_type
                 ~state:initial_state
                 ~call_taint
                 target)
@@ -567,7 +567,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~self:(Some callee)
                   ~callee
                   ~arguments
-                  ~return_type_breadcrumbs
+                  ~return_type
                   ~state
                   ~call_taint:self_taint
                   target)
@@ -687,12 +687,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           |> Option.some
     in
 
-    let return_type_breadcrumbs =
-      lazy
-        (let resolution = Resolution.global_resolution resolution in
-         Features.type_breadcrumbs ~resolution (Some return_type))
-    in
-
     (* Apply regular call targets. *)
     let call_target_result =
       List.map
@@ -704,7 +698,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~self
              ~callee
              ~arguments
-             ~return_type_breadcrumbs
+             ~return_type
              ~state:initial_state
              ~call_taint)
       |> List.fold
@@ -739,7 +733,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~arguments
             ~new_targets
             ~init_targets
-            ~return_type_breadcrumbs
+            ~return_type
             ~state:initial_state
             ~call_taint
           |> join_call_target_results call_target_result
@@ -1505,7 +1499,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       =
       let { arguments_taint = _; self_taint; callee_taint; state = new_state } =
         let callees =
-          CallGraph.CallCallees.create ~call_targets:[call_target] ~return_type:Type.string ()
+          CallGraph.CallCallees.create
+            ~call_targets:[call_target]
+            ~return_type:CallGraph.ReturnType.none
+            ()
         in
         let callee =
           let callee_from_method_name method_name =
@@ -1894,8 +1891,13 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
   let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
   let simplify annotation tree =
-    let annotation = Option.map ~f:(GlobalResolution.parse_annotation resolution) annotation in
-    let type_breadcrumbs = Features.type_breadcrumbs ~resolution annotation in
+    let type_breadcrumbs =
+      annotation
+      >>| GlobalResolution.parse_annotation resolution
+      >>| CallGraph.ReturnType.from_annotation ~resolution
+      |> Option.value ~default:CallGraph.ReturnType.none
+      |> Features.type_breadcrumbs
+    in
 
     let essential =
       if is_constructor then

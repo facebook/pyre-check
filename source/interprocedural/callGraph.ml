@@ -12,6 +12,101 @@ open Statement
 open Expression
 open Pyre
 
+module ReturnType = struct
+  type t = {
+    is_boolean: bool;
+    is_integer: bool;
+    is_float: bool;
+    is_enumeration: bool;
+  }
+  [@@deriving eq]
+
+  let pp formatter { is_boolean; is_integer; is_float; is_enumeration } =
+    let add_if condition tag tags =
+      if condition then
+        tag :: tags
+      else
+        tags
+    in
+    []
+    |> add_if is_enumeration "enum"
+    |> add_if is_float "float"
+    |> add_if is_integer "int"
+    |> add_if is_boolean "bool"
+    |> String.concat ~sep:"|"
+    |> Format.fprintf formatter "{%s}"
+
+
+  let show = Format.asprintf "%a" pp
+
+  let none = { is_boolean = false; is_integer = false; is_float = false; is_enumeration = false }
+
+  let bool = { is_boolean = true; is_integer = false; is_float = false; is_enumeration = false }
+
+  let integer = { is_boolean = false; is_integer = true; is_float = true; is_enumeration = false }
+
+  let join
+      {
+        is_boolean = left_is_boolean;
+        is_integer = left_is_integer;
+        is_float = left_is_float;
+        is_enumeration = left_is_enumeration;
+      }
+      {
+        is_boolean = right_is_boolean;
+        is_integer = right_is_integer;
+        is_float = right_is_float;
+        is_enumeration = right_is_enumeration;
+      }
+    =
+    {
+      is_boolean = left_is_boolean || right_is_boolean;
+      is_integer = left_is_integer || right_is_integer;
+      is_float = left_is_float || right_is_float;
+      is_enumeration = left_is_enumeration || right_is_enumeration;
+    }
+
+
+  let from_annotation ~resolution annotation =
+    let matches_at_leaves ~f annotation =
+      let rec matches_at_leaves ~f annotation =
+        match annotation with
+        | Type.Any
+        | Type.Bottom ->
+            false
+        | Type.Union [Type.NoneType; annotation]
+        | Type.Union [annotation; Type.NoneType]
+        | Type.Parametric { name = "typing.Awaitable"; parameters = [Single annotation] } ->
+            matches_at_leaves ~f annotation
+        | Type.Tuple (Concatenation concatenation) ->
+            Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
+            >>| (fun element -> matches_at_leaves ~f element)
+            |> Option.value ~default:(f annotation)
+        | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
+            List.for_all annotations ~f:(matches_at_leaves ~f)
+        | annotation -> f annotation
+      in
+      matches_at_leaves ~f annotation
+    in
+    let is_boolean =
+      matches_at_leaves annotation ~f:(fun left ->
+          GlobalResolution.less_or_equal resolution ~left ~right:Type.bool)
+    in
+    let is_integer =
+      matches_at_leaves annotation ~f:(fun left ->
+          GlobalResolution.less_or_equal resolution ~left ~right:Type.integer)
+    in
+    let is_float =
+      matches_at_leaves annotation ~f:(fun left ->
+          GlobalResolution.less_or_equal resolution ~left ~right:Type.float)
+    in
+    let is_enumeration =
+      matches_at_leaves annotation ~f:(fun left ->
+          GlobalResolution.less_or_equal resolution ~left ~right:Type.enumeration)
+    in
+    { is_boolean; is_integer; is_float; is_enumeration }
+end
+
 module CallTarget = struct
   type t = {
     target: Target.t;
@@ -73,7 +168,7 @@ module HigherOrderParameter = struct
   type t = {
     index: int;
     call_targets: CallTarget.t list;
-    return_type: Type.t;
+    return_type: ReturnType.t;
   }
   [@@deriving eq, show { with_path = false }]
 
@@ -103,7 +198,7 @@ module CallCallees = struct
     call_targets: CallTarget.t list;
     new_targets: CallTarget.t list;
     init_targets: CallTarget.t list;
-    return_type: Type.t;
+    return_type: ReturnType.t;
     higher_order_parameter: HigherOrderParameter.t option;
     unresolved: bool;
   }
@@ -115,7 +210,7 @@ module CallCallees = struct
       ?(init_targets = [])
       ?higher_order_parameter
       ?(unresolved = false)
-      ~return_type
+      ?(return_type = ReturnType.none)
       ()
     =
     { call_targets; new_targets; init_targets; return_type; higher_order_parameter; unresolved }
@@ -149,7 +244,7 @@ module CallCallees = struct
         call_targets = left_call_targets;
         new_targets = left_new_targets;
         init_targets = left_init_targets;
-        return_type;
+        return_type = left_return_type;
         higher_order_parameter = left_higher_order_parameter;
         unresolved = left_unresolved;
       }
@@ -157,7 +252,7 @@ module CallCallees = struct
         call_targets = right_call_targets;
         new_targets = right_new_targets;
         init_targets = right_init_targets;
-        return_type = _;
+        return_type = right_return_type;
         higher_order_parameter = right_higher_order_parameter;
         unresolved = right_unresolved;
       }
@@ -165,6 +260,7 @@ module CallCallees = struct
     let call_targets = List.rev_append left_call_targets right_call_targets in
     let new_targets = List.rev_append left_new_targets right_new_targets in
     let init_targets = List.rev_append left_init_targets right_init_targets in
+    let return_type = ReturnType.join left_return_type right_return_type in
     let higher_order_parameter =
       HigherOrderParameter.join left_higher_order_parameter right_higher_order_parameter
     in
@@ -233,7 +329,7 @@ module AttributeAccessCallees = struct
   type t = {
     property_targets: CallTarget.t list;
     global_targets: CallTarget.t list;
-    return_type: Type.t;
+    return_type: ReturnType.t;
     is_attribute: bool;
   }
   [@@deriving eq, show { with_path = false }]
@@ -251,20 +347,20 @@ module AttributeAccessCallees = struct
       {
         property_targets = left_property_targets;
         global_targets = left_global_targets;
-        return_type;
+        return_type = left_return_type;
         is_attribute = left_is_attribute;
       }
       {
         property_targets = right_property_targets;
         global_targets = right_global_targets;
-        return_type = _;
+        return_type = right_return_type;
         is_attribute = right_is_attribute;
       }
     =
     {
       property_targets = List.rev_append left_property_targets right_property_targets;
       global_targets = List.rev_append left_global_targets right_global_targets;
-      return_type;
+      return_type = ReturnType.join left_return_type right_return_type;
       is_attribute = left_is_attribute || right_is_attribute;
     }
 
@@ -293,7 +389,12 @@ module AttributeAccessCallees = struct
 
 
   let empty =
-    { property_targets = []; global_targets = []; is_attribute = true; return_type = Type.none }
+    {
+      property_targets = [];
+      global_targets = [];
+      is_attribute = true;
+      return_type = ReturnType.none;
+    }
 
 
   let is_empty attribute_access_callees = equal_ignoring_types attribute_access_callees empty
@@ -1248,17 +1349,23 @@ let resolve_callees ~resolution ~call_indexer ~call:({ Call.callee; arguments } 
     Expression.Call call
     |> Node.create_with_default_location
     |> Resolution.resolve_expression_to_type resolution
+    |> ReturnType.from_annotation ~resolution:(Resolution.global_resolution resolution)
   in
   let higher_order_parameter =
     let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
       match
-        resolve_regular_callees ~resolution ~call_indexer ~return_type:Type.none ~callee:argument
+        resolve_regular_callees
+          ~resolution
+          ~call_indexer
+          ~return_type:ReturnType.none
+          ~callee:argument
       with
       | { CallCallees.call_targets = _ :: _ as regular_targets; _ } ->
           let return_type =
             Expression.Call { callee = argument; arguments = [] }
             |> Node.create_with_default_location
             |> Resolution.resolve_expression_to_type resolution
+            |> ReturnType.from_annotation ~resolution:(Resolution.global_resolution resolution)
           in
           Some { HigherOrderParameter.index; call_targets = regular_targets; return_type }
       | _ -> None
@@ -1425,11 +1532,12 @@ let resolve_attribute_access ~resolution ~call_indexer ~base ~attribute ~special
 
   let return_type =
     if setter then
-      Type.none
+      ReturnType.none
     else
       Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
       |> Node.create_with_default_location
       |> Resolution.resolve_expression_to_type resolution
+      |> ReturnType.from_annotation ~resolution:(Resolution.global_resolution resolution)
   in
   { AttributeAccessCallees.property_targets; global_targets; return_type; is_attribute }
 
@@ -1541,7 +1649,7 @@ struct
                       resolve_regular_callees
                         ~resolution
                         ~call_indexer
-                        ~return_type:Type.string
+                        ~return_type:ReturnType.none
                         ~callee
                     in
 

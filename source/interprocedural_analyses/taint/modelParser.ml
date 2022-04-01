@@ -1916,7 +1916,9 @@ let add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadc
             |> List.fold ~init:Features.BreadcrumbSet.bottom ~f:(fun sofar parameter ->
                    parameter
                    |> Type.Callable.Parameter.annotation
-                   |> Features.type_breadcrumbs ~resolution
+                   >>| CallGraph.ReturnType.from_annotation ~resolution
+                   |> Option.value ~default:CallGraph.ReturnType.none
+                   |> Features.type_breadcrumbs
                    |> Features.BreadcrumbSet.add_set ~to_add:sofar)
         | AccessPath.Root.NamedParameter { name; _ } ->
             parameters_of_callable_annotation callable_annotation
@@ -1932,13 +1934,17 @@ let add_signature_based_breadcrumbs ~resolution root ~callable_annotation breadc
             |> List.fold ~init:Features.BreadcrumbSet.bottom ~f:(fun sofar parameter ->
                    parameter
                    |> Type.Callable.Parameter.annotation
-                   |> Features.type_breadcrumbs ~resolution
+                   >>| CallGraph.ReturnType.from_annotation ~resolution
+                   |> Option.value ~default:CallGraph.ReturnType.none
+                   |> Features.type_breadcrumbs
                    |> Features.BreadcrumbSet.add_set ~to_add:sofar)
         | AccessPath.Root.LocalResult ->
             let { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ } =
               callable_annotation
             in
-            Features.type_breadcrumbs ~resolution (Some annotation)
+            annotation
+            |> CallGraph.ReturnType.from_annotation ~resolution
+            |> Features.type_breadcrumbs
         | _ -> Features.BreadcrumbSet.empty
       in
       List.rev_append (Features.BreadcrumbSet.to_approximation type_breadcrumbs) breadcrumbs

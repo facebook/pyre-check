@@ -429,43 +429,9 @@ let issue_broadening_set =
 
 let type_bool_scalar_set = memoize_breadcrumb_set [Breadcrumb.Type "scalar"; Breadcrumb.Type "bool"]
 
-let type_breadcrumbs ~resolution annotation =
-  let matches_at_leaves ~f annotation =
-    let rec matches_at_leaves ~f annotation =
-      match annotation with
-      | Type.Any
-      | Type.Bottom ->
-          false
-      | Type.Union [Type.NoneType; annotation]
-      | Type.Union [annotation; Type.NoneType]
-      | Type.Parametric { name = "typing.Awaitable"; parameters = [Single annotation] } ->
-          matches_at_leaves ~f annotation
-      | Type.Tuple (Concatenation concatenation) ->
-          Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
-          >>| (fun element -> matches_at_leaves ~f element)
-          |> Option.value ~default:(f annotation)
-      | Type.Tuple (Type.OrderedTypes.Concrete annotations) ->
-          List.for_all annotations ~f:(matches_at_leaves ~f)
-      | annotation -> f annotation
-    in
-    annotation >>| matches_at_leaves ~f |> Option.value ~default:false
-  in
-  let is_boolean =
-    matches_at_leaves annotation ~f:(fun left ->
-        GlobalResolution.less_or_equal resolution ~left ~right:Type.bool)
-  in
-  let is_integer =
-    matches_at_leaves annotation ~f:(fun left ->
-        GlobalResolution.less_or_equal resolution ~left ~right:Type.integer)
-  in
-  let is_float =
-    matches_at_leaves annotation ~f:(fun left ->
-        GlobalResolution.less_or_equal resolution ~left ~right:Type.float)
-  in
-  let is_enumeration =
-    matches_at_leaves annotation ~f:(fun left ->
-        GlobalResolution.less_or_equal resolution ~left ~right:Type.enumeration)
-  in
+let type_breadcrumbs
+    { Interprocedural.CallGraph.ReturnType.is_boolean; is_integer; is_float; is_enumeration }
+  =
   let is_scalar = is_boolean || is_integer || is_float || is_enumeration in
   let add_if condition breadcrumb features =
     if condition then
