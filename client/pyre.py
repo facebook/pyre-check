@@ -293,7 +293,7 @@ def pyre(
     number_of_workers: Optional[int],
     enable_hover: Optional[bool],
     enable_go_to_definition: Optional[bool],
-) -> int:
+) -> None:
     arguments = command_arguments.CommandArguments(
         local_configuration=None,
         version=version,
@@ -334,18 +334,8 @@ def pyre(
         use_buck2=None,
         enable_go_to_definition=enable_go_to_definition,
     )
-    if arguments.version:
-        show_pyre_version(arguments)
-        return commands.ExitCode.SUCCESS
-
     context.ensure_object(dict)
     context.obj["arguments"] = arguments
-
-    if context.invoked_subcommand is None:
-        return _run_default_command(arguments)
-
-    # This return value is not used anywhere.
-    return commands.ExitCode.SUCCESS
 
 
 @pyre.command()
@@ -1148,6 +1138,26 @@ def validate_models(context: click.Context) -> int:
     )
     start_logging_to_directory(configuration.log_directory)
     return commands.validate_models.run(configuration, output=command_argument.output)
+
+
+@pyre.result_callback()
+@click.pass_context
+def run_default_command(
+    context: click.Context,
+    value: Optional[commands.ExitCode],
+    *args: object,
+    **kwargs: object,
+) -> commands.ExitCode:
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    if command_argument.version:
+        show_pyre_version(command_argument)
+        return commands.ExitCode.SUCCESS
+    elif context.invoked_subcommand is None:
+        return _run_default_command(command_argument)
+    elif value is not None:
+        return value
+    else:
+        raise commands.ClientException("Non-default command did not return a value")
 
 
 # Need the default argument here since this is our entry point in setup.py
