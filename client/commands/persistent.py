@@ -1648,7 +1648,7 @@ class PyreServerHandler(connection.BackgroundTask):
                     "due to Buck failure. If you added or changed a target, "
                     "make sure the target file is parsable and the owning "
                     "targets are buildable by Buck. If you removed a target, "
-                    "makre sure that target is not explicitly referenced from the "
+                    "make sure that target is not explicitly referenced from the "
                     "Pyre configuration file of the containing project.",
                     level=lsp.MessageType.ERROR,
                 )
