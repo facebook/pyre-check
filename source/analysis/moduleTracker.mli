@@ -32,24 +32,8 @@ type t
 
 val create : Configuration.Analysis.t -> t
 
-val lookup : t -> Ast.Reference.t -> ModuleLookup.t option
-
-val lookup_source_path : t -> Ast.Reference.t -> Ast.SourcePath.t option
-
-val lookup_path : configuration:Configuration.Analysis.t -> t -> PyrePath.t -> PathLookup.t
-
-val source_paths : t -> Ast.SourcePath.t list
-
-(* This function returns all SourcePaths that are tracked, including the shadowed ones *)
+(* This function returns all SourcePaths that are tracked, including the shadowed ones. *)
 val all_source_paths : t -> Ast.SourcePath.t list
-
-(* This function returns all explicit modules (i.e. those backed up by a source path) that are
-   tracked *)
-val tracked_explicit_modules : t -> Ast.Reference.t list
-
-val is_module_tracked : t -> Ast.Reference.t -> bool
-
-val explicit_module_count : t -> int
 
 val update
   :  configuration:Configuration.Analysis.t ->
@@ -62,3 +46,19 @@ module SharedMemory : sig
 
   val load : unit -> t
 end
+
+val lookup : t -> Ast.Reference.t -> ModuleLookup.t option
+
+val lookup_source_path : t -> Ast.Reference.t -> Ast.SourcePath.t option
+
+val lookup_path : configuration:Configuration.Analysis.t -> t -> PyrePath.t -> PathLookup.t
+
+val source_paths : t -> Ast.SourcePath.t list
+
+(* This function returns all explicit modules (i.e. those backed up by a source path) that are
+   tracked *)
+val tracked_explicit_modules : t -> Ast.Reference.t list
+
+val is_module_tracked : t -> Ast.Reference.t -> bool
+
+val explicit_module_count : t -> int
