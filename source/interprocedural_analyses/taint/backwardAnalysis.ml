@@ -81,7 +81,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             FunctionContext.qualifier
             Location.pp
             location;
-          CallGraph.CallCallees.create_unresolved CallGraph.ReturnType.none
+          CallGraph.CallCallees.unresolved
     in
     log
       "Resolved callees for call `%a` at %a:@,%a"
@@ -234,7 +234,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~self
       ~callee
       ~arguments
-      ~return_type
       ~state:initial_state
       ~call_taint
       ({
@@ -243,6 +242,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          implicit_dunder_call;
          collapse_tito = _;
          index = _;
+         return_type;
          receiver_type;
        } as call_target)
     =
@@ -294,7 +294,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let call_taint =
       if Model.ModeSet.contains Obscure modes then
-        BackwardState.Tree.add_local_breadcrumbs (Features.type_breadcrumbs return_type) call_taint
+        BackwardState.Tree.add_local_breadcrumbs
+          (Features.type_breadcrumbs (Option.value_exn return_type))
+          call_taint
       else
         call_taint
     in
@@ -498,7 +500,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments
       ~new_targets
       ~init_targets
-      ~return_type
       ~state:initial_state
       ~call_taint
     =
@@ -523,7 +524,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~self:(Some call_expression)
                 ~callee
                 ~arguments
-                ~return_type
                 ~state:initial_state
                 ~call_taint
                 target)
@@ -567,7 +567,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   ~self:(Some callee)
                   ~callee
                   ~arguments
-                  ~return_type
                   ~state
                   ~call_taint:self_taint
                   target)
@@ -604,7 +603,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         CallGraph.CallCallees.call_targets;
         new_targets;
         init_targets;
-        return_type;
         higher_order_parameter = _;
         unresolved;
       }
@@ -698,7 +696,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~self
              ~callee
              ~arguments
-             ~return_type
              ~state:initial_state
              ~call_taint)
       |> List.fold
@@ -733,7 +730,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~arguments
             ~new_targets
             ~init_targets
-            ~return_type
             ~state:initial_state
             ~call_taint
           |> join_call_target_results call_target_result
@@ -812,7 +808,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     let base_taint_property_call, state_property_call =
       match attribute_access_callees with
-      | Some { property_targets = _ :: _ as property_targets; return_type; _ } ->
+      | Some { property_targets = _ :: _ as property_targets; _ } ->
           let { arguments_taint = _; self_taint; callee_taint = _; state } =
             apply_callees_and_return_arguments_taint
               ~resolution
@@ -821,7 +817,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~arguments:[]
               ~state
               ~call_taint:attribute_taint
-              (CallGraph.CallCallees.create ~call_targets:property_targets ~return_type ())
+              (CallGraph.CallCallees.create ~call_targets:property_targets ())
           in
           let base_taint = Option.value_exn self_taint in
           base_taint, state
@@ -904,7 +900,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~state
       ~lambda_argument:
         { Call.Argument.value = { location = lambda_location; _ } as lambda_callee; _ }
-      { CallGraph.HigherOrderParameter.index = lambda_index; call_targets; return_type }
+      { CallGraph.HigherOrderParameter.index = lambda_index; call_targets }
     =
     (* If we have a lambda `fn` getting passed into `hof`, we use the following strategy:
      * hof(q, fn, x, y) gets translated into (analyzed backwards)
@@ -951,7 +947,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~arguments
           ~call_taint:result_taint
           ~state
-          (CallGraph.CallCallees.create ~call_targets ~return_type ())
+          (CallGraph.CallCallees.create ~call_targets ())
       in
       let state =
         analyze_callee
@@ -1498,12 +1494,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~base_state
       =
       let { arguments_taint = _; self_taint; callee_taint; state = new_state } =
-        let callees =
-          CallGraph.CallCallees.create
-            ~call_targets:[call_target]
-            ~return_type:CallGraph.ReturnType.none
-            ()
-        in
+        let callees = CallGraph.CallCallees.create ~call_targets:[call_target] () in
         let callee =
           let callee_from_method_name method_name =
             {
@@ -1780,7 +1771,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
               let property_call_state =
                 match attribute_access_callees with
-                | Some { property_targets = _ :: _ as property_targets; return_type; _ } ->
+                | Some { property_targets = _ :: _ as property_targets; _ } ->
                     (* Treat `a.property = x` as `a = a.property(x)` *)
                     let taint = compute_assignment_taint ~resolution base state |> fst in
                     apply_callees
@@ -1791,7 +1782,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                       ~arguments:[{ name = None; value }]
                       ~state
                       ~call_taint:taint
-                      (CallGraph.CallCallees.create ~call_targets:property_targets ~return_type ())
+                      (CallGraph.CallCallees.create ~call_targets:property_targets ())
                 | _ -> bottom
               in
 
