@@ -37,14 +37,6 @@ let lookup_exn tracker reference =
       assert_failure message
 
 
-module ModuleStatus = struct
-  type t =
-    | Untracked
-    | Explicit
-    | Implicit
-  [@@deriving sexp, compare]
-end
-
 let test_creation context =
   let assert_create_fail ~configuration root relative =
     match create_source_path ~configuration root relative with
@@ -351,53 +343,7 @@ let test_creation context =
       ];
     List.iter ~f:(touch local_root) ["a.py"; "b/c.py"; "d/__init__.py"; "d/e/f.py"];
     List.iter ~f:(touch external_root) ["d/g.py"; "h/i/j/__init__.pyi"];
-    let module_tracker =
-      Configuration.Analysis.create
-        ~local_root
-        ~source_paths:[SearchPath.Root local_root]
-        ~search_paths:[SearchPath.Root external_root]
-        ~filter_directories:[local_root]
-        ()
-      |> ModuleTracker.create
-      |> ModuleTracker.read_only
-    in
-    let assert_module ~expected qualifier =
-      let actual =
-        match ModuleTracker.ReadOnly.lookup module_tracker qualifier with
-        | None -> ModuleStatus.Untracked
-        | Some (ModuleTracker.ModuleLookup.Explicit _) -> ModuleStatus.Explicit
-        | Some (ModuleTracker.ModuleLookup.Implicit _) -> ModuleStatus.Implicit
-      in
-      assert_equal
-        ~cmp:[%compare.equal: ModuleStatus.t]
-        ~printer:(fun status -> ModuleStatus.sexp_of_t status |> Sexp.to_string_hum)
-        expected
-        actual;
-
-      (* Also make sure `is_module_tracked` result is sensible *)
-      let expected_is_tracked =
-        match expected with
-        | ModuleStatus.Untracked -> false
-        | _ -> true
-      in
-      let actual_is_tracked = ModuleTracker.ReadOnly.is_module_tracked module_tracker qualifier in
-      assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_tracked actual_is_tracked
-    in
-    let open Test in
-    assert_module !&"a" ~expected:ModuleStatus.Explicit;
-    assert_module !&"a.b" ~expected:ModuleStatus.Untracked;
-    assert_module !&"b" ~expected:ModuleStatus.Implicit;
-    assert_module !&"b.c" ~expected:ModuleStatus.Explicit;
-    assert_module !&"b.d" ~expected:ModuleStatus.Untracked;
-    assert_module !&"d" ~expected:ModuleStatus.Explicit;
-    assert_module !&"d.e" ~expected:ModuleStatus.Implicit;
-    assert_module !&"d.g" ~expected:ModuleStatus.Explicit;
-    assert_module !&"d.e.f" ~expected:ModuleStatus.Explicit;
-    assert_module !&"d.e.g" ~expected:ModuleStatus.Untracked;
-    assert_module !&"h" ~expected:ModuleStatus.Implicit;
-    assert_module !&"h.i" ~expected:ModuleStatus.Implicit;
-    assert_module !&"h.i.j" ~expected:ModuleStatus.Explicit;
-    assert_module !&"h.i.j.k" ~expected:ModuleStatus.Untracked
+    ()
   in
   let test_search_path_subdirectory () =
     let local_root =

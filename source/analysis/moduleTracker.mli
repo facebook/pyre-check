@@ -13,13 +13,6 @@ module IncrementalUpdate : sig
   [@@deriving sexp, compare, eq]
 end
 
-module ModuleLookup : sig
-  type t =
-    | Explicit of Ast.SourcePath.t
-    | Implicit of Ast.Reference.t
-  [@@deriving sexp, compare, eq]
-end
-
 module PathLookup : sig
   type t =
     | Found of Ast.SourcePath.t
@@ -51,8 +44,6 @@ end
 
 module ReadOnly : sig
   type t
-
-  val lookup : t -> Ast.Reference.t -> ModuleLookup.t option
 
   val lookup_source_path : t -> Ast.Reference.t -> Ast.SourcePath.t option
 

@@ -9,13 +9,6 @@ open Core
 open Ast
 open Pyre
 
-module ModuleLookup = struct
-  type t =
-    | Explicit of Ast.SourcePath.t
-    | Implicit of Ast.Reference.t
-  [@@deriving sexp, compare, eq]
-end
-
 module PathLookup = struct
   type t =
     | Found of Ast.SourcePath.t
@@ -470,15 +463,6 @@ module ReadOnly = struct
               PathLookup.Found source_path
             else
               PathLookup.ShadowedBy source_path)
-
-
-  let lookup { module_to_files; submodule_refcounts } module_name =
-    match Hashtbl.find module_to_files module_name with
-    | Some (source_path :: _) -> Some (ModuleLookup.Explicit source_path)
-    | _ -> (
-        match Hashtbl.mem submodule_refcounts module_name with
-        | true -> Some (ModuleLookup.Implicit module_name)
-        | false -> None)
 
 
   let source_paths { module_to_files; _ } =
