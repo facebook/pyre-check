@@ -508,7 +508,7 @@ end
 
 let rec process_request ~environment ~build_system ~configuration request =
   let process_request () =
-    let module_tracker = TypeEnvironment.module_tracker environment in
+    let module_tracker = TypeEnvironment.module_tracker environment |> ModuleTracker.read_only in
     let read_only_environment = TypeEnvironment.read_only environment in
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution read_only_environment in
     let order = GlobalResolution.class_hierarchy global_resolution in
@@ -727,7 +727,7 @@ let rec process_request ~environment ~build_system ~configuration request =
           >>| List.map ~f:callees
           |> Option.value ~default:[]
         in
-        let qualifiers = ModuleTracker.tracked_explicit_modules module_tracker in
+        let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
         Single (Base.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
     | Help help_list -> Single (Base.Help help_list)
     | InlineDecorators { function_reference; decorators_to_skip } ->
@@ -749,7 +749,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         |> fun result -> Single (Base.Compatibility { actual = left; expected = right; result })
     | ModulesOfPath path ->
         let module_of_path path =
-          match ModuleTracker.lookup_path ~configuration module_tracker path with
+          match ModuleTracker.ReadOnly.lookup_path ~configuration module_tracker path with
           | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } -> Some qualifier
           | ShadowedBy _
           | NotFound ->
@@ -770,7 +770,7 @@ let rec process_request ~environment ~build_system ~configuration request =
           in
           match
             BuildSystem.lookup_artifact build_system relative_path
-            |> List.map ~f:(ModuleTracker.lookup_path ~configuration module_tracker)
+            |> List.map ~f:(ModuleTracker.ReadOnly.lookup_path ~configuration module_tracker)
           with
           | [ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ }] -> Some qualifier
           | _ -> None
@@ -813,7 +813,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         |> Option.to_list
         |> fun definitions -> Single (Base.FoundLocationsOfDefinitions definitions)
     | PathOfModule module_name ->
-        ModuleTracker.lookup_source_path module_tracker module_name
+        ModuleTracker.ReadOnly.lookup_source_path module_tracker module_name
         >>= (fun source_path ->
               let path = SourcePath.full_path ~configuration source_path |> PyrePath.absolute in
               Some (Single (Base.FoundPath path)))

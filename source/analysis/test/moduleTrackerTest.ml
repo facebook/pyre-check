@@ -28,7 +28,7 @@ let create_source_path_exn ~configuration root relative =
 
 
 let lookup_exn tracker reference =
-  match ModuleTracker.lookup_source_path tracker reference with
+  match ModuleTracker.ReadOnly.lookup_source_path tracker reference with
   | Some source_path -> source_path
   | None ->
       let message =
@@ -286,7 +286,7 @@ let test_creation context =
     assert_same_module_greater extension_py extension_first;
 
     (* ModuleTracker initialization test *)
-    let tracker = ModuleTracker.create configuration in
+    let tracker = ModuleTracker.create configuration |> ModuleTracker.read_only in
     assert_source_path
       (lookup_exn tracker (Reference.create "a"))
       ~search_root:external_root
@@ -359,10 +359,11 @@ let test_creation context =
         ~filter_directories:[local_root]
         ()
       |> ModuleTracker.create
+      |> ModuleTracker.read_only
     in
     let assert_module ~expected qualifier =
       let actual =
-        match ModuleTracker.lookup module_tracker qualifier with
+        match ModuleTracker.ReadOnly.lookup module_tracker qualifier with
         | None -> ModuleStatus.Untracked
         | Some (ModuleTracker.ModuleLookup.Explicit _) -> ModuleStatus.Explicit
         | Some (ModuleTracker.ModuleLookup.Implicit _) -> ModuleStatus.Implicit
@@ -379,7 +380,7 @@ let test_creation context =
         | ModuleStatus.Untracked -> false
         | _ -> true
       in
-      let actual_is_tracked = ModuleTracker.is_module_tracked module_tracker qualifier in
+      let actual_is_tracked = ModuleTracker.ReadOnly.is_module_tracked module_tracker qualifier in
       assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_tracked actual_is_tracked
     in
     let open Test in
@@ -484,7 +485,7 @@ let test_creation context =
           ~is_init:false);
 
     (* ModuleTracker initialization test *)
-    let tracker = ModuleTracker.create configuration in
+    let tracker = ModuleTracker.create configuration |> ModuleTracker.read_only in
     assert_source_path
       (lookup_exn tracker (Reference.create "a"))
       ~search_root:external_root0
@@ -571,7 +572,7 @@ let test_creation context =
           ~is_init:false);
 
     (* ModuleTracker initialization test *)
-    let tracker = ModuleTracker.create configuration in
+    let tracker = ModuleTracker.create configuration |> ModuleTracker.read_only in
     assert_source_path
       (lookup_exn tracker (Reference.create "a"))
       ~search_root:source_root0
@@ -1098,12 +1099,13 @@ let test_creation context =
         ~filter_directories:[local_root]
         ()
       |> ModuleTracker.create
+      |> ModuleTracker.read_only
     in
     assert_equal
       ~cmp:Int.equal
       ~printer:Int.to_string
       0
-      (ModuleTracker.explicit_module_count module_tracker)
+      (ModuleTracker.ReadOnly.explicit_module_count module_tracker)
   in
   let test_hidden_files2 () =
     let local_root =
@@ -1120,12 +1122,12 @@ let test_creation context =
     in
     let create_exn = create_source_path_exn ~configuration in
     let assert_source_path = assert_source_path ~configuration in
-    let module_tracker = ModuleTracker.create configuration in
+    let module_tracker = ModuleTracker.create configuration |> ModuleTracker.read_only in
     assert_equal
       ~cmp:Int.equal
       ~printer:Int.to_string
       1
-      (ModuleTracker.explicit_module_count module_tracker);
+      (ModuleTracker.ReadOnly.explicit_module_count module_tracker);
     assert_source_path
       (create_exn local_root "b.py")
       ~search_root:local_root

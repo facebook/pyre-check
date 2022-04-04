@@ -10,7 +10,7 @@ open Ast
 open Analysis
 
 let module_of_path ~configuration ~module_tracker path =
-  match ModuleTracker.lookup_path ~configuration module_tracker path with
+  match ModuleTracker.ReadOnly.lookup_path ~configuration module_tracker path with
   | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } -> Some qualifier
   | _ -> None
 
@@ -70,7 +70,8 @@ let process_display_type_error_request
                  reconsider how this is handled in the future. *)
               module_of_path
                 ~configuration
-                ~module_tracker:(TypeEnvironment.module_tracker type_environment)
+                ~module_tracker:
+                  (TypeEnvironment.module_tracker type_environment |> ModuleTracker.read_only)
                 artifact_path
         in
         List.filter_map paths ~f:get_module_for_source_path

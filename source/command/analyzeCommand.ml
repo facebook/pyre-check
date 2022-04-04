@@ -215,7 +215,8 @@ let run_taint_analysis
 
         let qualifiers =
           Analysis.TypeEnvironment.module_tracker environment
-          |> Analysis.ModuleTracker.tracked_explicit_modules
+          |> Analysis.ModuleTracker.read_only
+          |> Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules
         in
 
         let read_only_environment = Analysis.TypeEnvironment.read_only environment in

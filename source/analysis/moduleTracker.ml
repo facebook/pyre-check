@@ -162,6 +162,8 @@ let create configuration =
 
 let all_source_paths { module_to_files; _ } = Hashtbl.data module_to_files |> List.concat
 
+let source_paths { module_to_files; _ } = Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
+
 module FileSystemEvent = struct
   type t =
     | Update of PyrePath.t
@@ -443,44 +445,56 @@ module SharedMemory = Memory.Serializer (struct
     }
 end)
 
-let lookup_source_path { module_to_files; _ } module_name =
-  match Hashtbl.find module_to_files module_name with
-  | Some (source_path :: _) -> Some source_path
-  | _ -> None
+module ReadOnly = struct
+  type t = {
+    module_to_files: SourcePath.t list Reference.Table.t;
+    submodule_refcounts: int Reference.Table.t;
+  }
+
+  let lookup_source_path { module_to_files; _ } module_name =
+    match Hashtbl.find module_to_files module_name with
+    | Some (source_path :: _) -> Some source_path
+    | _ -> None
 
 
-let lookup_path ~configuration tracker path =
-  match SourcePath.create ~configuration path with
-  | None -> PathLookup.NotFound
-  | Some { SourcePath.relative; priority; qualifier; _ } -> (
-      match lookup_source_path tracker qualifier with
-      | None -> PathLookup.NotFound
-      | Some
-          ({ SourcePath.relative = tracked_relative; priority = tracked_priority; _ } as
-          source_path) ->
-          if String.equal relative tracked_relative && Int.equal priority tracked_priority then
-            PathLookup.Found source_path
-          else
-            PathLookup.ShadowedBy source_path)
+  let lookup_path ~configuration tracker path =
+    match SourcePath.create ~configuration path with
+    | None -> PathLookup.NotFound
+    | Some { SourcePath.relative; priority; qualifier; _ } -> (
+        match lookup_source_path tracker qualifier with
+        | None -> PathLookup.NotFound
+        | Some
+            ({ SourcePath.relative = tracked_relative; priority = tracked_priority; _ } as
+            source_path) ->
+            if String.equal relative tracked_relative && Int.equal priority tracked_priority then
+              PathLookup.Found source_path
+            else
+              PathLookup.ShadowedBy source_path)
 
 
-let lookup { module_to_files; submodule_refcounts } module_name =
-  match Hashtbl.find module_to_files module_name with
-  | Some (source_path :: _) -> Some (ModuleLookup.Explicit source_path)
-  | _ -> (
-      match Hashtbl.mem submodule_refcounts module_name with
-      | true -> Some (ModuleLookup.Implicit module_name)
-      | false -> None)
+  let lookup { module_to_files; submodule_refcounts } module_name =
+    match Hashtbl.find module_to_files module_name with
+    | Some (source_path :: _) -> Some (ModuleLookup.Explicit source_path)
+    | _ -> (
+        match Hashtbl.mem submodule_refcounts module_name with
+        | true -> Some (ModuleLookup.Implicit module_name)
+        | false -> None)
 
 
-let source_paths { module_to_files; _ } = Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
-
-let tracked_explicit_modules tracker =
-  source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+  let source_paths { module_to_files; _ } =
+    Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
 
 
-let is_module_tracked { module_to_files; submodule_refcounts } qualifier =
-  Hashtbl.mem module_to_files qualifier || Hashtbl.mem submodule_refcounts qualifier
+  let tracked_explicit_modules tracker =
+    source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
 
 
-let explicit_module_count { module_to_files; _ } = Hashtbl.length module_to_files
+  let is_module_tracked { module_to_files; submodule_refcounts } qualifier =
+    Hashtbl.mem module_to_files qualifier || Hashtbl.mem submodule_refcounts qualifier
+
+
+  let explicit_module_count { module_to_files; _ } = Hashtbl.length module_to_files
+end
+
+let read_only { module_to_files; submodule_refcounts } =
+  { ReadOnly.module_to_files; ReadOnly.submodule_refcounts }

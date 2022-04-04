@@ -365,8 +365,11 @@ type trigger =
 let update
     ~configuration:({ Configuration.Analysis.incremental_style; _ } as configuration)
     ~scheduler
-    ({ module_tracker; _ } as ast_environment)
-  = function
+    ({ module_tracker = upstream_tracker; _ } as ast_environment)
+    trigger
+  =
+  let module_tracker = ModuleTracker.read_only upstream_tracker in
+  match trigger with
   | Update module_updates -> (
       let reparse_source_paths, removed_modules, updated_submodules =
         let categorize = function
@@ -428,10 +431,10 @@ let update
       let timer = Timer.start () in
       Log.info
         "Parsing %d stubs and sources..."
-        (ModuleTracker.explicit_module_count module_tracker);
-      let ast_environment = create module_tracker in
+        (ModuleTracker.ReadOnly.explicit_module_count module_tracker);
+      let ast_environment = create upstream_tracker in
       let parsed =
-        ModuleTracker.source_paths module_tracker
+        ModuleTracker.ReadOnly.source_paths module_tracker
         |> parse_sources ~configuration ~scheduler ~ast_environment
       in
       Statistics.performance
@@ -445,8 +448,6 @@ let update
       }
 
 
-let get_source_path { module_tracker; _ } = ModuleTracker.lookup_source_path module_tracker
-
 (* Both `load` and `store` are no-ops here since `Sources` and `WildcardExports` are in shared
    memory, and `Memory.load_shared_memory`/`Memory.save_shared_memory` will take care of the
    (de-)serialization for us. *)
@@ -456,28 +457,30 @@ let load = create ?additional_preprocessing:None
 
 module ReadOnly = struct
   type t = {
+    module_tracker: ModuleTracker.ReadOnly.t;
     get_processed_source: track_dependency:bool -> Reference.t -> Source.t option;
     get_raw_source: Reference.t -> (Source.t, ParserError.t) Result.t option;
-    get_source_path: Reference.t -> SourcePath.t option;
-    all_explicit_modules: unit -> Reference.t list;
-    is_module_tracked: Reference.t -> bool;
   }
 
   let create
+      ~module_tracker
       ?(get_processed_source = fun ~track_dependency:_ _ -> None)
       ?(get_raw_source = fun _ -> None)
-      ?(get_source_path = fun _ -> None)
-      ?(all_explicit_modules = fun _ -> [])
-      ?(is_module_tracked = fun _ -> false)
       ()
     =
-    {
-      get_processed_source;
-      get_raw_source;
-      get_source_path;
-      all_explicit_modules;
-      is_module_tracked;
-    }
+    { module_tracker; get_processed_source; get_raw_source }
+
+
+  let get_source_path { module_tracker; _ } =
+    ModuleTracker.ReadOnly.lookup_source_path module_tracker
+
+
+  let is_module_tracked { module_tracker; _ } =
+    ModuleTracker.ReadOnly.is_module_tracked module_tracker
+
+
+  let all_explicit_modules { module_tracker; _ } =
+    ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
 
 
   let get_processed_source { get_processed_source; _ } ?(track_dependency = false) =
@@ -485,8 +488,6 @@ module ReadOnly = struct
 
 
   let get_raw_source { get_raw_source; _ } = get_raw_source
-
-  let get_source_path { get_source_path; _ } = get_source_path
 
   let get_relative read_only qualifier =
     let open Option in
@@ -506,11 +507,6 @@ module ReadOnly = struct
        subdirectory. Instead, find the real filesystem relative path for the qualifier. *)
     get_real_path ~configuration read_only qualifier
     >>= fun path -> PyrePath.get_relative_to_root ~root:local_root ~path
-
-
-  let is_module_tracked { is_module_tracked; _ } = is_module_tracked
-
-  let all_explicit_modules { all_explicit_modules; _ } = all_explicit_modules ()
 end
 
 let remove_sources = Raw.remove_sources
@@ -528,11 +524,9 @@ let read_only ({ module_tracker; _ } as environment) =
     get_and_preprocess_source ?dependency environment qualifier
   in
   {
+    module_tracker = ModuleTracker.read_only module_tracker;
     ReadOnly.get_processed_source;
     get_raw_source = RawSources.get;
-    get_source_path = get_source_path environment;
-    all_explicit_modules = (fun () -> ModuleTracker.tracked_explicit_modules module_tracker);
-    is_module_tracked = ModuleTracker.is_module_tracked module_tracker;
   }
 
 

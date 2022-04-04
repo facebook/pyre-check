@@ -25,11 +25,9 @@ module ReadOnly : sig
   type t
 
   val create
-    :  ?get_processed_source:(track_dependency:bool -> Reference.t -> Source.t option) ->
+    :  module_tracker:ModuleTracker.ReadOnly.t ->
+    ?get_processed_source:(track_dependency:bool -> Reference.t -> Source.t option) ->
     ?get_raw_source:(Reference.t -> (Source.t, ParserError.t) Result.t option) ->
-    ?get_source_path:(Reference.t -> SourcePath.t option) ->
-    ?all_explicit_modules:(unit -> Reference.t list) ->
-    ?is_module_tracked:(Reference.t -> bool) ->
     unit ->
     t
 
