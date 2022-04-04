@@ -56,8 +56,6 @@ module ReadOnly : sig
   val tracked_explicit_modules : t -> Ast.Reference.t list
 
   val is_module_tracked : t -> Ast.Reference.t -> bool
-
-  val explicit_module_count : t -> int
 end
 
 val read_only : t -> ReadOnly.t

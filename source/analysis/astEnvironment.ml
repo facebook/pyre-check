@@ -429,14 +429,10 @@ let update
           { UpdateResult.triggered_dependencies; invalidated_modules })
   | ColdStart ->
       let timer = Timer.start () in
-      Log.info
-        "Parsing %d stubs and sources..."
-        (ModuleTracker.ReadOnly.explicit_module_count module_tracker);
+      let source_paths = ModuleTracker.ReadOnly.source_paths module_tracker in
+      Log.info "Parsing %d stubs and sources..." (List.length source_paths);
       let ast_environment = create upstream_tracker in
-      let parsed =
-        ModuleTracker.ReadOnly.source_paths module_tracker
-        |> parse_sources ~configuration ~scheduler ~ast_environment
-      in
+      let parsed = parse_sources ~configuration ~scheduler ~ast_environment source_paths in
       Statistics.performance
         ~name:"sources parsed"
         ~phase_name:"Parsing and preprocessing"

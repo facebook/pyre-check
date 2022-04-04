@@ -468,9 +468,6 @@ module ReadOnly = struct
 
   let tracked_explicit_modules tracker =
     source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
-
-
-  let explicit_module_count { source_paths; _ } = source_paths () |> List.length
 end
 
 let read_only ({ module_to_files; submodule_refcounts } as tracker) =

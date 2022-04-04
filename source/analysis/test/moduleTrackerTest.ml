@@ -1051,7 +1051,7 @@ let test_creation context =
       ~cmp:Int.equal
       ~printer:Int.to_string
       0
-      (ModuleTracker.ReadOnly.explicit_module_count module_tracker)
+      (ModuleTracker.ReadOnly.source_paths module_tracker |> List.length)
   in
   let test_hidden_files2 () =
     let local_root =
@@ -1073,7 +1073,7 @@ let test_creation context =
       ~cmp:Int.equal
       ~printer:Int.to_string
       1
-      (ModuleTracker.ReadOnly.explicit_module_count module_tracker);
+      (ModuleTracker.ReadOnly.source_paths module_tracker |> List.length);
     assert_source_path
       (create_exn local_root "b.py")
       ~search_root:local_root
