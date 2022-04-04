@@ -349,14 +349,6 @@ include Taint.Result.Register (struct
     result, model
 
 
-  let invalidate_caches ~environment =
-    (* To preserve memory, let's flush shared memory caches. *)
-    Interprocedural.FixpointState.invalidate_model_cache ();
-    Interprocedural.FixpointState.invalidate_result_cache ();
-    Analysis.TypeEnvironment.ReadOnly.invalidate_local_annotations_cache environment;
-    ()
-
-
   let analyze
       ~environment
       ~callable
@@ -365,7 +357,6 @@ include Taint.Result.Register (struct
         ({ Ast.Node.value = { Ast.Statement.Define.signature = { name; _ }; _ }; _ } as define)
       ~existing
     =
-    invalidate_caches ~environment;
     let define_qualifier = Ast.Reference.delocalize name in
     let open Analysis in
     let open Ast in

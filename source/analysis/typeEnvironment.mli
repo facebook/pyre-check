@@ -14,7 +14,6 @@ module ReadOnly : sig
   val create
     :  ?get_errors:(Reference.t -> Error.t list) ->
     ?get_local_annotations:(Reference.t -> LocalAnnotationMap.ReadOnly.t option) ->
-    ?invalidate_local_annotations_cache:(unit -> unit) ->
     AnnotatedGlobalEnvironment.ReadOnly.t ->
     t
 
@@ -29,8 +28,6 @@ module ReadOnly : sig
   val get_errors : t -> Reference.t -> Error.t list
 
   val get_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
-
-  val invalidate_local_annotations_cache : t -> unit
 end
 
 type t
@@ -54,5 +51,3 @@ val set_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t ->
 val invalidate : t -> Reference.t list -> unit
 
 val read_only : t -> ReadOnly.t
-
-val invalidate_local_annotations_cache : t -> unit

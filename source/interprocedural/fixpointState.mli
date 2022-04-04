@@ -76,7 +76,3 @@ val remove_new : KeySet.t -> unit
 val remove_old : KeySet.t -> unit
 
 val is_initial_iteration : step -> bool
-
-val invalidate_model_cache : unit -> unit
-
-val invalidate_result_cache : unit -> unit

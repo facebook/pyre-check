@@ -196,7 +196,6 @@ module type WithCache = sig
   include NoCache
   val write_through : key -> value -> unit
   val get_no_cache: key -> value option
-  val invalidate_cache : unit -> unit
 end
 
 module type UserKeyType = sig
