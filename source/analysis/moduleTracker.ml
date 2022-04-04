@@ -440,15 +440,16 @@ end)
 
 module ReadOnly = struct
   type t = {
-    module_to_files: SourcePath.t list Reference.Table.t;
-    submodule_refcounts: int Reference.Table.t;
+    lookup_source_path: Reference.t -> SourcePath.t option;
+    is_module_tracked: Reference.t -> bool;
+    source_paths: unit -> SourcePath.t list;
   }
 
-  let lookup_source_path { module_to_files; _ } module_name =
-    match Hashtbl.find module_to_files module_name with
-    | Some (source_path :: _) -> Some source_path
-    | _ -> None
+  let lookup_source_path { lookup_source_path; _ } = lookup_source_path
 
+  let source_paths { source_paths; _ } = source_paths ()
+
+  let is_module_tracked { is_module_tracked; _ } = is_module_tracked
 
   let lookup_path ~configuration tracker path =
     match SourcePath.create ~configuration path with
@@ -465,20 +466,24 @@ module ReadOnly = struct
               PathLookup.ShadowedBy source_path)
 
 
-  let source_paths { module_to_files; _ } =
-    Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
-
-
   let tracked_explicit_modules tracker =
     source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
 
 
-  let is_module_tracked { module_to_files; submodule_refcounts } qualifier =
-    Hashtbl.mem module_to_files qualifier || Hashtbl.mem submodule_refcounts qualifier
-
-
-  let explicit_module_count { module_to_files; _ } = Hashtbl.length module_to_files
+  let explicit_module_count { source_paths; _ } = source_paths () |> List.length
 end
 
-let read_only { module_to_files; submodule_refcounts } =
-  { ReadOnly.module_to_files; ReadOnly.submodule_refcounts }
+let read_only ({ module_to_files; submodule_refcounts } as tracker) =
+  let lookup_source_path module_name =
+    match Hashtbl.find module_to_files module_name with
+    | Some (source_path :: _) -> Some source_path
+    | _ -> None
+  in
+  let is_module_tracked qualifier =
+    Hashtbl.mem module_to_files qualifier || Hashtbl.mem submodule_refcounts qualifier
+  in
+  {
+    ReadOnly.lookup_source_path;
+    is_module_tracked;
+    source_paths = (fun () -> source_paths tracker);
+  }
