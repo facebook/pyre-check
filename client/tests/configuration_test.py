@@ -12,35 +12,35 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 import testslide
 
 from .. import (
     command_arguments,
-    find_directories,
     configuration as configuration_module,
+    find_directories,
 )
 from ..configuration import (
-    PythonVersion,
-    IdeFeatures,
-    InvalidPythonVersion,
-    PlatformAware,
-    SharedMemory,
+    check_nested_local_configuration,
     Configuration,
+    create_configuration,
+    create_search_paths,
     ExtensionElement,
+    get_site_roots,
+    IdeFeatures,
     InvalidConfiguration,
+    InvalidPythonVersion,
+    merge_partial_configurations,
     PartialConfiguration,
+    PlatformAware,
+    PythonVersion,
+    SharedMemory,
     SimpleSearchPathElement,
     SitePackageSearchPathElement,
     SubdirectorySearchPathElement,
-    UnwatchedFiles,
     UnwatchedDependency,
-    check_nested_local_configuration,
-    create_configuration,
-    create_search_paths,
-    merge_partial_configurations,
-    get_site_roots,
+    UnwatchedFiles,
 )
 from ..find_directories import BINARY_NAME
 from .setup import (

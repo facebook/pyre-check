@@ -6,7 +6,7 @@
 
 # pyre-strict
 
-from typing import Generic, List, Sequence, Tuple, TypeVar, Union, overload
+from typing import Generic, List, overload, Sequence, Tuple, TypeVar, Union
 
 from pyre_extensions import TypeVarTuple
 from pyre_extensions.type_variable_operators import Concatenate

@@ -8,7 +8,7 @@ import asyncio
 import logging
 import sys
 from pathlib import Path
-from typing import AsyncIterator, Tuple, Optional, List
+from typing import AsyncIterator, List, Optional, Tuple
 
 if sys.version_info >= (3, 7):
     from contextlib import asynccontextmanager

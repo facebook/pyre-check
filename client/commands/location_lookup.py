@@ -4,13 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import logging
-from typing import (
-    Generic,
-    Iterable,
-    Optional,
-    Tuple,
-    TypeVar,
-)
+from typing import Generic, Iterable, Optional, Tuple, TypeVar
 
 import intervaltree
 

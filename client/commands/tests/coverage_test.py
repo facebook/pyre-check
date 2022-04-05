@@ -12,7 +12,7 @@ import testslide
 from ... import configuration
 from ...coverage_collector import FileCoverage
 from ...tests import setup
-from ..coverage import find_root_path, collect_coverage_for_paths
+from ..coverage import collect_coverage_for_paths, find_root_path
 
 
 class CoverageTest(testslide.TestCase):

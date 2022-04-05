@@ -6,7 +6,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Tuple, Set, List
+from typing import List, Set, Tuple
 
 import libcst as cst
 from libcst.metadata import CodeRange

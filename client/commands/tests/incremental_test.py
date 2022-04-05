@@ -12,8 +12,8 @@ import testslide
 
 from ...error import Error
 from ..incremental import (
-    InvalidServerResponse,
     compute_error_statistics_per_code,
+    InvalidServerResponse,
     parse_type_error_response,
 )
 

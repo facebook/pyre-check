@@ -8,7 +8,7 @@ import dataclasses
 from collections import defaultdict
 from enum import Enum
 from re import compile
-from typing import Iterable, Any, Dict, List, Pattern, Sequence
+from typing import Any, Dict, Iterable, List, Pattern, Sequence
 
 import libcst as cst
 from libcst.metadata import CodeRange, PositionProvider

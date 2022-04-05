@@ -9,7 +9,7 @@ from typing import Iterable, Tuple
 
 import testslide
 
-from ... import configuration, command_arguments
+from ... import command_arguments, configuration
 from ...tests import setup
 from .. import backend_arguments
 from ..analyze import Arguments, create_analyze_arguments

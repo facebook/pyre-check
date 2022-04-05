@@ -9,14 +9,10 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import Sequence, Dict, Any, Iterator, List
+from typing import Any, Dict, Iterator, List, Sequence
 
-from .. import (
-    command_arguments,
-    configuration as configuration_module,
-    error,
-)
-from . import commands, remote_logging, backend_arguments, start, incremental
+from .. import command_arguments, configuration as configuration_module, error
+from . import backend_arguments, commands, incremental, remote_logging, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

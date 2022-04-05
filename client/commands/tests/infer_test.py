@@ -7,33 +7,33 @@ import dataclasses
 import tempfile
 import textwrap
 from pathlib import Path
-from typing import Any, Iterable, Tuple, Dict, List, Optional, Set
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 import testslide
 
-from ... import configuration, command_arguments
+from ... import command_arguments, configuration
 from ...tests import setup
 from .. import backend_arguments
 from ..infer import (
     AnnotateModuleInPlace,
     Arguments,
+    AttributeAnnotation,
     create_infer_arguments,
     create_module_annotations,
-    should_annotate_in_place,
+    FunctionAnnotation,
+    GlobalAnnotation,
+    MethodAnnotation,
+    ModuleAnnotations,
     RawAnnotationLocation,
-    RawGlobalAnnotation,
     RawAttributeAnnotation,
-    RawParameter,
     RawDefineAnnotation,
+    RawGlobalAnnotation,
     RawInferOutput,
     RawInferOutputForPath,
+    RawParameter,
+    should_annotate_in_place,
     StubGenerationOptions,
     TypeAnnotation,
-    FunctionAnnotation,
-    MethodAnnotation,
-    GlobalAnnotation,
-    AttributeAnnotation,
-    ModuleAnnotations,
 )
 
 

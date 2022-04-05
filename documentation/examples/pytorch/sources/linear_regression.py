@@ -13,7 +13,7 @@ from typing import Sequence, Tuple, TypeVar
 
 import _torch as torch
 import _torch.nn.functional as F
-from _torch import Tensor, float32
+from _torch import float32, Tensor
 from typing_extensions import Literal
 
 

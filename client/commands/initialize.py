@@ -17,11 +17,11 @@ from .. import log
 from ..find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
-    LOCAL_CONFIGURATION_FILE,
     find_global_root,
     find_parent_directory_containing_file,
     find_taint_models_directory,
     find_typeshed,
+    LOCAL_CONFIGURATION_FILE,
 )
 from . import commands
 

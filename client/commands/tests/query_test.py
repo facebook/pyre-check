@@ -5,7 +5,7 @@
 
 import testslide
 
-from ..query import parse_query_response, Response, InvalidQueryResponse
+from ..query import InvalidQueryResponse, parse_query_response, Response
 
 
 class QueryTest(testslide.TestCase):

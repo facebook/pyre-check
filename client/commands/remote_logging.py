@@ -12,12 +12,7 @@ from pyre_extensions import ParameterSpecification
 from pyre_extensions.type_variable_operators import Concatenate
 from typing_extensions import Protocol
 
-from .. import (
-    configuration as configuration_module,
-    statistics_logger,
-    timer,
-    version,
-)
+from .. import configuration as configuration_module, statistics_logger, timer, version
 from . import commands
 
 TParams = ParameterSpecification("TParams")

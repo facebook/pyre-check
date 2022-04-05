@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Any, Generic, Tuple, TypeVar, overload
+from typing import Any, Generic, overload, Tuple, TypeVar
 
 from pyre_extensions import Add, TypeVarTuple
 from pyre_extensions.type_variable_operators import Concatenate

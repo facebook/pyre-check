@@ -8,7 +8,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Optional, Iterable, List
+from typing import Iterable, List, Optional
 
 from .. import (
     configuration as configuration_module,

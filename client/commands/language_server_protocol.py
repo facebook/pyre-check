@@ -9,13 +9,7 @@ import enum
 import logging
 import urllib
 from pathlib import Path
-from typing import (
-    Iterable,
-    Optional,
-    List,
-    Type,
-    TypeVar,
-)
+from typing import Iterable, List, Optional, Type, TypeVar
 
 import dataclasses_json
 

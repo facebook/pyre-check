@@ -7,7 +7,7 @@ import dataclasses
 import enum
 import json
 from pathlib import Path
-from typing import List, Optional, Union, IO
+from typing import IO, List, Optional, Union
 
 from . import async_server_connection
 

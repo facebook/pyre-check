@@ -9,11 +9,11 @@ from ..profile import (
     CounterEvent,
     DurationEvent,
     EventMetadata,
+    parse_event,
     StatisticsOverTime,
     TableStatistics,
-    parse_event,
-    to_incremental_updates,
     to_cold_start_phases,
+    to_incremental_updates,
 )
 
 

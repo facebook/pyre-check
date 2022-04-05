@@ -9,7 +9,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, Sequence, Union, Optional, List
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import click
 

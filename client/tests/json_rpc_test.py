@@ -10,17 +10,17 @@ import unittest
 from typing import Type
 
 from ..json_rpc import (
+    ByNameParameters,
+    ByPositionParameters,
+    ErrorResponse,
+    InvalidParameterError,
+    InvalidRequestError,
+    JSON,
+    JSONRPCException,
+    ParseError,
     Request,
     Response,
     SuccessResponse,
-    ErrorResponse,
-    ByNameParameters,
-    ByPositionParameters,
-    JSONRPCException,
-    JSON,
-    ParseError,
-    InvalidRequestError,
-    InvalidParameterError,
 )
 
 

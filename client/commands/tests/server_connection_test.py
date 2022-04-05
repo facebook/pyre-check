@@ -11,11 +11,7 @@ from pathlib import Path
 import testslide
 
 from ...tests import setup
-from ..server_connection import (
-    connect,
-    connect_in_text_mode,
-    get_socket_path,
-)
+from ..server_connection import connect, connect_in_text_mode, get_socket_path
 
 
 class SocketTest(testslide.TestCase):

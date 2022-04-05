@@ -13,10 +13,10 @@ import testslide
 from ...tests import setup
 from ..servers import (
     AllServerStatus,
-    RunningServerStatus,
     DefunctServerStatus,
-    InvalidServerResponse,
     find_all_servers,
+    InvalidServerResponse,
+    RunningServerStatus,
 )
 
 

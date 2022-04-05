@@ -6,7 +6,7 @@
 import logging
 
 from .. import command_arguments, configuration as configuration_module
-from . import commands, incremental, stop, remote_logging
+from . import commands, incremental, remote_logging, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

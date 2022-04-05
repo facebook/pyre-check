@@ -15,8 +15,8 @@ from ..error import (
     Error,
     ErrorParsingFailure,
     LegacyError,
-    TaintConfigurationError,
     ModelVerificationError,
+    TaintConfigurationError,
 )
 
 

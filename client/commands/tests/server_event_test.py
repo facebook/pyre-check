@@ -12,14 +12,14 @@ import testslide
 from ...tests import setup
 from ..async_server_connection import create_memory_text_reader
 from ..server_event import (
+    create_from_string,
     ErrorKind,
+    EventParsingException,
     ServerException,
     ServerInitialized,
-    SocketCreated,
-    create_from_string,
-    Waiter,
-    EventParsingException,
     ServerStartException,
+    SocketCreated,
+    Waiter,
 )
 
 

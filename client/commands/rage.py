@@ -11,15 +11,10 @@ import logging
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional, TextIO, Sequence, List, Tuple
+from typing import List, Optional, Sequence, TextIO, Tuple
 
-from .. import (
-    command_arguments,
-    configuration as configuration_module,
-    log,
-    version,
-)
-from . import commands, start, remote_logging
+from .. import command_arguments, configuration as configuration_module, log, version
+from . import commands, remote_logging, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

@@ -16,7 +16,7 @@ from .. import (
     find_directories,
     recently_used_configurations,
 )
-from . import commands, remote_logging, servers, server_connection, stop
+from . import commands, remote_logging, server_connection, servers, stop
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

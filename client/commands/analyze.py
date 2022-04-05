@@ -9,7 +9,7 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import Optional, Sequence, Dict, Any, Iterator, List
+from typing import Any, Dict, Iterator, List, Optional, Sequence
 
 from .. import (
     command_arguments,

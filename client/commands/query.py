@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TextIO
 
 from .. import configuration as configuration_module, log
-from . import commands, server_connection, remote_logging
+from . import commands, remote_logging, server_connection
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

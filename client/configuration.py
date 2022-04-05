@@ -44,9 +44,9 @@ from .filesystem import assert_readable_directory, expand_relative_path
 from .find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
+    get_relative_local_root,
     LOCAL_CONFIGURATION_FILE,
     LOG_DIRECTORY,
-    get_relative_local_root,
 )
 
 

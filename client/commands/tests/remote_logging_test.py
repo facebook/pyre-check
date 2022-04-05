@@ -4,16 +4,16 @@
 # LICENSE file in the root directory of this source tree.
 
 from pathlib import Path
-from typing import Optional, Dict, Callable, TypeVar
+from typing import Callable, Dict, Optional, TypeVar
 
 import testslide
 
-from ... import statistics_logger, configuration as configuration_module
+from ... import configuration as configuration_module, statistics_logger
 from .. import commands
 from ..remote_logging import (
+    ExitCodeWithAdditionalLogging,
     log_usage,
     log_usage_with_additional_info,
-    ExitCodeWithAdditionalLogging,
 )
 
 # Type signature of `statistics_logger.log`

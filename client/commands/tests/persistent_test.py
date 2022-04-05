@@ -8,57 +8,57 @@ import json
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, Sequence, Iterable, Optional
-from unittest.mock import patch, CallableMixin
+from typing import Iterable, Iterator, Optional, Sequence
+from unittest.mock import CallableMixin, patch
 
 import testslide
-from libcst.metadata import CodeRange, CodePosition
+from libcst.metadata import CodePosition, CodeRange
 
-from ... import json_rpc, error, configuration as configuration_module
+from ... import configuration as configuration_module, error, json_rpc
 from ...coverage_collector import CoveredAndUncoveredLines
 from ...tests import setup
 from .. import (
+    async_server_connection,
+    backend_arguments,
     language_server_protocol as lsp,
     start,
-    backend_arguments,
-    async_server_connection,
 )
 from ..async_server_connection import (
-    TextReader,
-    TextWriter,
-    MemoryBytesReader,
-    MemoryBytesWriter,
-    create_memory_text_writer,
-    create_memory_text_reader,
     BackgroundTask,
     BackgroundTaskManager,
+    create_memory_text_reader,
+    create_memory_text_writer,
+    MemoryBytesReader,
+    MemoryBytesWriter,
+    TextReader,
+    TextWriter,
 )
 from ..incremental import InvalidServerResponse
 from ..persistent import (
-    try_initialize,
+    CONSECUTIVE_START_ATTEMPT_THRESHOLD,
     DefinitionLocationQuery,
-    InitializationSuccess,
-    InitializationFailure,
     InitializationExit,
+    InitializationFailure,
+    InitializationSuccess,
     LocationTypeLookup,
-    PyreServer,
-    PyreServerStartOptions,
-    PyreServerStartOptionsReader,
+    parse_subscription_response,
     PyreQueryHandler,
     PyreQueryState,
+    PyreServer,
+    PyreServerHandler,
+    PyreServerStartOptions,
+    PyreServerStartOptionsReader,
     ServerState,
-    parse_subscription_response,
-    TypeErrorSubscription,
-    TypeCoverageQuery,
-    TypesQuery,
     StatusUpdateSubscription,
     SubscriptionResponse,
+    to_coverage_result,
+    try_initialize,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
+    TypeCoverageQuery,
+    TypeErrorSubscription,
+    TypesQuery,
     uncovered_range_to_diagnostic,
-    to_coverage_result,
-    PyreServerHandler,
-    CONSECUTIVE_START_ATTEMPT_THRESHOLD,
 )
 
 

@@ -14,43 +14,43 @@ import tempfile
 import traceback
 from pathlib import Path
 from typing import (
-    TypeVar,
-    Type,
-    Union,
-    Optional,
     AsyncIterator,
-    Set,
-    List,
-    Sequence,
-    Dict,
     Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    TypeVar,
+    Union,
 )
 
 import dataclasses_json
 from libcst.metadata import CodeRange
 
 from .. import (
-    log,
-    json_rpc,
-    error,
-    version,
     command_arguments,
     configuration as configuration_module,
+    error,
+    json_rpc,
+    log,
     statistics_logger,
     timer,
+    version,
 )
 from ..coverage_collector import coverage_collector_for_module, CoveredAndUncoveredLines
 from . import (
+    async_server_connection as connection,
     backend_arguments,
     commands,
-    language_server_protocol as lsp,
-    server_connection,
-    async_server_connection as connection,
-    start,
     incremental,
+    language_server_protocol as lsp,
     location_lookup,
     query,
+    server_connection,
     server_event,
+    start,
     statistics,
 )
 

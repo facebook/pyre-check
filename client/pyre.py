@@ -15,11 +15,11 @@ import click
 
 from . import (
     command_arguments,
+    commands,
     configuration as configuration_module,
     filesystem,
     log,
 )
-from . import commands
 from .version import __version__
 
 

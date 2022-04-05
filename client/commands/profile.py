@@ -9,12 +9,12 @@ import logging
 import subprocess
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Tuple, Any, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from typing_extensions import Final
 
 from .. import command_arguments, configuration as configuration_module
-from . import commands, remote_logging, backend_arguments
+from . import backend_arguments, commands, remote_logging
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

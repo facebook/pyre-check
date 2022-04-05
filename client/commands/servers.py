@@ -7,12 +7,12 @@ import dataclasses
 import json
 import logging
 from pathlib import Path
-from typing import Optional, List, Dict, Iterable, Sequence, Any
+from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 import tabulate
 from typing_extensions import TypedDict
 
-from .. import log, command_arguments
+from .. import command_arguments, log
 from . import commands, server_connection, stop
 
 

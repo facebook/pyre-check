@@ -9,16 +9,16 @@ from pathlib import Path
 
 import testslide
 
-from ... import configuration, command_arguments
+from ... import command_arguments, configuration
 from ...tests import setup
 from ..statistics import (
-    find_roots,
-    find_paths_to_parse,
-    parse_text_to_module,
-    parse_path_to_module,
-    collect_statistics,
     aggregate_statistics,
     AggregatedStatisticsData,
+    collect_statistics,
+    find_paths_to_parse,
+    find_roots,
+    parse_path_to_module,
+    parse_text_to_module,
 )
 
 

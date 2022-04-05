@@ -10,16 +10,16 @@ import logging
 import re
 import time
 from pathlib import Path
-from typing import Sequence, Callable, Dict, Iterable, Optional, Union
+from typing import Callable, Dict, Iterable, Optional, Sequence, Union
 
 import libcst as cst
 
 from .. import (
     command_arguments,
     configuration as configuration_module,
+    log,
     statistics_collectors as collectors,
     statistics_logger,
-    log,
 )
 from . import commands, remote_logging
 

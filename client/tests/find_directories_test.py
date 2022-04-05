@@ -12,13 +12,13 @@ from typing import Iterable, Optional, Tuple, Union
 import testslide
 
 from ..find_directories import (
-    FoundRoot,
     find_global_and_local_root,
     find_global_root,
-    find_parent_directory_containing_directory,
     find_outermost_directory_containing_file,
+    find_parent_directory_containing_directory,
     find_parent_directory_containing_file,
     find_typeshed_search_paths,
+    FoundRoot,
     get_relative_local_root,
 )
 from .setup import ensure_directories_exists, ensure_files_exist

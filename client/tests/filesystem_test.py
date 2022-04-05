@@ -12,11 +12,9 @@ import os
 import pathlib  # noqa
 import tempfile
 import unittest
-from unittest.mock import MagicMock, Mock, call, patch
+from unittest.mock import call, MagicMock, Mock, patch
 
-from .. import (
-    filesystem,
-)
+from .. import filesystem
 from ..filesystem import (
     _delete_symbolic_link,
     acquire_lock,

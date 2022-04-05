@@ -13,7 +13,6 @@ import subprocess
 import tempfile
 from pathlib import Path
 from typing import (
-    TextIO,
     Any,
     Dict,
     Iterator,
@@ -21,6 +20,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    TextIO,
     Tuple,
     Union,
 )
@@ -34,10 +34,10 @@ from .. import (
 from . import (
     backend_arguments,
     commands,
+    remote_logging,
     server_connection,
     server_event,
     stop,
-    remote_logging,
 )
 
 

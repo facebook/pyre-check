@@ -17,8 +17,8 @@ from .. import backend_arguments
 from ..check import (
     Arguments,
     create_check_arguments,
-    parse_type_error_response,
     InvalidCheckResponse,
+    parse_type_error_response,
 )
 
 

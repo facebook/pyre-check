@@ -6,37 +6,37 @@
 import functools
 import json
 from pathlib import Path
-from typing import Mapping, Optional, TypeVar, Callable
+from typing import Callable, Mapping, Optional, TypeVar
 
 import testslide
 
 from ... import json_rpc
 from ...tests import setup
 from ..async_server_connection import (
-    TextWriter,
-    MemoryBytesWriter,
     create_memory_text_reader,
+    MemoryBytesWriter,
+    TextWriter,
 )
 from ..language_server_protocol import (
-    read_json_rpc,
-    write_json_rpc,
-    InitializeParameters,
-    Info,
     ClientCapabilities,
-    ShowStatusRequestClientCapabilities,
-    WindowClientCapabilities,
-    TextDocumentClientCapabilities,
-    TextDocumentSyncClientCapabilities,
+    DiagnosticTag,
+    DidCloseTextDocumentParameters,
+    DidOpenTextDocumentParameters,
+    DidSaveTextDocumentParameters,
+    DocumentUri,
+    Info,
+    InitializationOptions,
+    InitializeParameters,
     PublishDiagnosticsClientCapabilities,
     PublishDiagnosticsClientTagSupport,
-    DiagnosticTag,
-    DocumentUri,
-    DidOpenTextDocumentParameters,
-    TextDocumentItem,
-    DidCloseTextDocumentParameters,
+    read_json_rpc,
+    ShowStatusRequestClientCapabilities,
+    TextDocumentClientCapabilities,
     TextDocumentIdentifier,
-    DidSaveTextDocumentParameters,
-    InitializationOptions,
+    TextDocumentItem,
+    TextDocumentSyncClientCapabilities,
+    WindowClientCapabilities,
+    write_json_rpc,
 )
 
 T = TypeVar("T")

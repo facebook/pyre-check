@@ -6,7 +6,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Iterable, Dict, Sequence, List, Optional
+from typing import Dict, Iterable, List, Optional, Sequence
 
 from .. import (
     command_arguments,
@@ -15,12 +15,12 @@ from .. import (
     statistics_logger,
 )
 from . import (
+    backend_arguments,
     commands,
+    remote_logging as remote_logging_module,
     server_connection,
     server_event,
     start,
-    remote_logging as remote_logging_module,
-    backend_arguments,
 )
 
 

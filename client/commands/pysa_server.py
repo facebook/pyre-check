@@ -14,26 +14,21 @@ import json
 import logging
 from typing import Union
 
-from .. import (
-    json_rpc,
-    log,
-    command_arguments,
-    configuration as configuration_module,
-)
+from .. import command_arguments, configuration as configuration_module, json_rpc, log
 from . import (
+    async_server_connection as connection,
     commands,
     language_server_protocol as lsp,
-    async_server_connection as connection,
     start,
 )
 from .persistent import (
-    LSPEvent,
-    _read_lsp_request,
     _log_lsp_event,
-    InitializationSuccess,
-    InitializationFailure,
-    InitializationExit,
+    _read_lsp_request,
     _wait_for_exit,
+    InitializationExit,
+    InitializationFailure,
+    InitializationSuccess,
+    LSPEvent,
     process_initialize_request,
 )
 

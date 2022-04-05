@@ -11,7 +11,7 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Optional, Dict, List, Union, Sequence, Set, IO, Iterator, Any
+from typing import Any, Dict, IO, Iterator, List, Optional, Sequence, Set, Union
 
 from typing_extensions import Protocol
 

@@ -10,12 +10,12 @@ import testslide
 
 from ...tests import setup
 from ..async_server_connection import (
+    BackgroundTask,
+    BackgroundTaskManager,
     connect,
     connect_in_text_mode,
     MemoryBytesReader,
     MemoryBytesWriter,
-    BackgroundTaskManager,
-    BackgroundTask,
 )
 from .server_connection_test import EchoServerRequestHandler
 

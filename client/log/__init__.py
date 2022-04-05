@@ -4,20 +4,20 @@
 # LICENSE file in the root directory of this source tree.
 
 from .log import (  # noqa: F401
-    PERFORMANCE,
-    PROMPT,
-    SUCCESS,
-    Color,
-    Format,
-    StreamLogger,
     cleanup,
+    Color,
     configured_logger,
+    enable_file_logging,
     file_tailer,
+    Format,
     get_input,
     get_optional_input,
     get_yes_no_input,
     initialize,
-    enable_file_logging,
+    PERFORMANCE,
+    PROMPT,
     stdout,
+    StreamLogger,
+    SUCCESS,
     truncate,
 )

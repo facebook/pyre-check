@@ -19,7 +19,7 @@ from ...tests.setup import (
     switch_working_directory,
 )
 from .. import initialize
-from ..initialize import log, _create_source_directory_element
+from ..initialize import _create_source_directory_element, log
 
 
 class InitializeTest(unittest.TestCase):

@@ -6,7 +6,7 @@
 
 # pyre-strict
 
-from _torch import Tensor, float32, int32, mm
+from _torch import float32, int32, mm, Tensor
 from typing_extensions import Literal
 
 

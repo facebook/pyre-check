@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import unittest
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import call, MagicMock, patch
 
 from .. import connection, query
 
