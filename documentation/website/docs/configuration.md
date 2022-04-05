@@ -139,7 +139,7 @@ configuration.
 logging output and adds colors for a more streamlined user experience.
 Non-interactive mode ensures all terminal output remains visible.
 
-- `--output {text, json}`: Formatting for error return values. Defaults to text.
+- `--output {text, json, sarif}`: Formatting for error return values. Defaults to text.
 
 - `--search-path SEARCH_PATH`: Provide additional stubs or modules external to the project
 being type-checked. Can also be set in `.pyre_configuration`.
