@@ -158,9 +158,7 @@ module UpdateDependencyTest = struct
     let update _ = List.iter specification ~f:setup_new_state in
     let keys = List.map specification ~f:(fun { key; _ } -> key) |> TableB.KeySet.of_list in
     let _, actual =
-      StringDependencyKey.Transaction.empty
-        ~scheduler:(Test.mock_scheduler ())
-        ~configuration:(Configuration.Analysis.create ~source_paths:[] ())
+      StringDependencyKey.Transaction.empty ~scheduler:(Test.mock_scheduler ())
       |> TableA.add_to_transaction ~keys
       |> StringDependencyKey.Transaction.execute ~update
     in

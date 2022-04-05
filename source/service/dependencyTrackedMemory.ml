@@ -82,15 +82,13 @@ module DependencyKey = struct
     module Transaction : sig
       type t
 
-      val empty : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> t
+      val empty : scheduler:Scheduler.t -> t
 
       val add : t -> RegisteredSet.t transaction_element -> t
 
       val execute : t -> update:(unit -> 'a) -> 'a * RegisteredSet.t
 
       val scheduler : t -> Scheduler.t
-
-      val configuration : t -> Configuration.Analysis.t
     end
   end
 
@@ -134,10 +132,9 @@ module DependencyKey = struct
       type t = {
         elements: RegisteredSet.t transaction_element list;
         scheduler: Scheduler.t;
-        configuration: Configuration.Analysis.t;
       }
 
-      let empty ~scheduler ~configuration = { elements = []; scheduler; configuration }
+      let empty ~scheduler = { elements = []; scheduler }
 
       let add ({ elements = existing; _ } as transaction) element =
         { transaction with elements = element :: existing }
@@ -151,8 +148,6 @@ module DependencyKey = struct
 
 
       let scheduler { scheduler; _ } = scheduler
-
-      let configuration { configuration; _ } = configuration
     end
   end
 end
@@ -208,7 +203,7 @@ module DependencyTracking = struct
 
     let deprecate_keys = Table.oldify_batch
 
-    let dependencies_since_last_deprecate keys ~scheduler:_ ~configuration:_ =
+    let dependencies_since_last_deprecate keys ~scheduler:_ =
       let add_dependencies init keys =
         let add_dependency sofar key =
           let value_has_changed, presence_has_changed =
@@ -242,12 +237,11 @@ module DependencyTracking = struct
 
     let add_to_transaction transaction ~keys =
       let scheduler = DependencyKey.Transaction.scheduler transaction in
-      let configuration = DependencyKey.Transaction.configuration transaction in
       DependencyKey.Transaction.add
         transaction
         {
           before = (fun () -> deprecate_keys keys);
-          after = (fun () -> dependencies_since_last_deprecate keys ~scheduler ~configuration);
+          after = (fun () -> dependencies_since_last_deprecate keys ~scheduler);
         }
 
 

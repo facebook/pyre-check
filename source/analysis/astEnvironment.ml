@@ -97,9 +97,9 @@ module Raw = struct
     RawSources.add qualifier (Result.Error error)
 
 
-  let update_and_compute_dependencies _ ~update ~scheduler ~configuration qualifiers =
+  let update_and_compute_dependencies _ ~update ~scheduler qualifiers =
     let keys = RawSources.KeySet.of_list qualifiers in
-    SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler ~configuration
+    SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler
     |> RawSources.add_to_transaction ~keys
     |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
 
@@ -411,8 +411,7 @@ let update
                   ast_environment
                   changed_modules
                   ~update:update_raw_sources
-                  ~scheduler
-                  ~configuration)
+                  ~scheduler)
           in
           let invalidated_modules =
             let fold_key registered sofar =

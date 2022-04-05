@@ -43,15 +43,13 @@ module DependencyKey : sig
     module Transaction : sig
       type t
 
-      val empty : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> t
+      val empty : scheduler:Scheduler.t -> t
 
       val add : t -> RegisteredSet.t transaction_element -> t
 
       val execute : t -> update:(unit -> 'a) -> 'a * RegisteredSet.t
 
       val scheduler : t -> Scheduler.t
-
-      val configuration : t -> Configuration.Analysis.t
     end
   end
 

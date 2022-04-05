@@ -298,9 +298,7 @@ module EnvironmentTable = struct
                     |> List.map ~f:In.convert_trigger
                     |> Table.KeySet.of_list
                   in
-                  let transaction =
-                    SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler ~configuration
-                  in
+                  let transaction = SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler in
                   if In.lazy_incremental then
                     Table.add_pessimistic_transaction ~keys transaction
                     |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update:(fun () -> ())

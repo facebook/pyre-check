@@ -981,7 +981,7 @@ let update_this_and_all_preceding_environments { ast_environment } ~scheduler ~c
           "TableUpdate(Unannotated globals)"
           ~f:(fun _ ->
             let (), mutation_triggers =
-              DependencyKey.Transaction.empty ~scheduler ~configuration
+              DependencyKey.Transaction.empty ~scheduler
               |> WriteOnly.add_to_transaction
                    ~previous_classes_list
                    ~previous_unannotated_globals_list
