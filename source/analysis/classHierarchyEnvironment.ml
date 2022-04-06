@@ -254,6 +254,8 @@ let create ast_environment = { edges = Edges.create ast_environment }
 
 let ast_environment { edges } = Edges.ast_environment edges
 
+let configuration { edges } = Edges.configuration edges
+
 let read_only { edges } = Edges.read_only edges
 
 let update_this_and_all_preceding_environments

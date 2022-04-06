@@ -30,6 +30,8 @@ val all_source_paths : t -> Ast.SourcePath.t list
 
 val source_paths : t -> Ast.SourcePath.t list
 
+val configuration : t -> Configuration.Analysis.t
+
 val update : paths:PyrePath.t list -> t -> IncrementalUpdate.t list
 
 module Serializer : sig

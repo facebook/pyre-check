@@ -171,6 +171,8 @@ let source_paths { layouts = { module_to_files; _ }; _ } =
   Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
 
 
+let configuration { configuration; _ } = configuration
+
 module FileSystemEvent = struct
   type t =
     | Update of PyrePath.t

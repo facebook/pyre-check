@@ -525,5 +525,7 @@ let read_only ({ module_tracker; _ } as environment) =
 
 let module_tracker { module_tracker; _ } = module_tracker
 
+let configuration { module_tracker; _ } = ModuleTracker.configuration module_tracker
+
 let with_additional_preprocessing ~additional_preprocessing environment =
   { environment with additional_preprocessing }

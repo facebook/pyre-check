@@ -50,6 +50,8 @@ end
 
 val module_tracker : t -> ModuleTracker.t
 
+val configuration : t -> Configuration.Analysis.t
+
 (* Store the environment to saved-state *)
 val store : t -> unit
 

@@ -44,6 +44,8 @@ module type PreviousEnvironment = sig
 
   val ast_environment : t -> AstEnvironment.t
 
+  val configuration : t -> Configuration.Analysis.t
+
   val read_only : t -> ReadOnly.t
 
   val update_this_and_all_preceding_environments
@@ -66,6 +68,8 @@ module type S = sig
   val create : AstEnvironment.t -> t
 
   val ast_environment : t -> AstEnvironment.t
+
+  val configuration : t -> Configuration.Analysis.t
 
   val read_only : t -> ReadOnly.t
 
@@ -151,6 +155,8 @@ module EnvironmentTable : sig
     val create : AstEnvironment.t -> t
 
     val ast_environment : t -> AstEnvironment.t
+
+    val configuration : t -> Configuration.Analysis.t
 
     val read_only : t -> ReadOnly.t
 

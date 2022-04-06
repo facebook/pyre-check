@@ -928,6 +928,8 @@ let create ast_environment = { ast_environment }
 
 let ast_environment { ast_environment } = ast_environment
 
+let configuration { ast_environment; _ } = AstEnvironment.configuration ast_environment
+
 let read_only { ast_environment } =
   let ast_environment = AstEnvironment.read_only ast_environment in
   WriteOnly.read_only ~ast_environment
