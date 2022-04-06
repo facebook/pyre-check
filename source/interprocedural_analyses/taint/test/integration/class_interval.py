@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from abc import abstractmethod
 from builtins import _test_sink, _test_source
 from typing import Union
 
@@ -342,3 +343,51 @@ class A10:
     def object_target(x):
         a = A10()
         a.f = x
+
+
+class A12:
+    def f(self):
+        return self.g()  # Pyre reports a type error here
+
+
+class B12(A12):
+    def g(self):
+        return 0
+
+
+class C12(A12):
+    def g(self):
+        return _test_source()
+
+
+def undetected_issue(c: C12):
+    x = c.f()
+    # TODO(T116242472): Should detect an issue here, but this may not need to
+    # be addressed because Pyre reports a type error above
+    _test_sink(x)
+
+
+class A13:
+    def f(self):
+        return self.g()
+
+    @abstractmethod
+    def g(self):
+        pass
+
+
+class B13(A13):
+    def g(self):
+        return 0
+
+
+class C13(A13):
+    def g(self):
+        return _test_source()
+
+
+def abstract_method(b: B13, c: C13):
+    x = c.f()
+    _test_sink(x)  # Issue here
+    y = b.f()
+    _test_sink(y)  # No issue here
