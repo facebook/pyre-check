@@ -252,18 +252,11 @@ module EnvironmentTable = struct
 
     module UpdateResult = UpdateResult.Make (In.PreviousEnvironment) (ReadOnly)
 
-    let read_only_from_update previous_update_result =
-      {
-        ReadOnly.upstream_environment =
-          In.PreviousEnvironment.UpdateResult.read_only previous_update_result;
-      }
-
-
     module TriggerMap = Map.Make (struct
       type t = In.trigger [@@deriving sexp, compare]
     end)
 
-    let update_only_this_environment ~scheduler ~configuration upstream_update =
+    let update_only_this_environment ~scheduler this_environment upstream_update =
       Log.log ~section:`Environment "Updating %s Environment" In.Value.description;
       let update ~names_to_update () =
         let register () =
@@ -293,7 +286,7 @@ module EnvironmentTable = struct
         in
         ()
       in
-      match configuration with
+      match configuration this_environment with
       | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
           let triggered_dependencies =
             let name = Format.sprintf "TableUpdate(%s)" In.Value.description in
@@ -346,7 +339,7 @@ module EnvironmentTable = struct
           {
             UpdateResult.triggered_dependencies;
             upstream = upstream_update;
-            read_only = read_only_from_update upstream_update;
+            read_only = read_only this_environment;
           }
       | _ ->
           let _ =
@@ -366,12 +359,12 @@ module EnvironmentTable = struct
           {
             UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
             upstream = upstream_update;
-            read_only = read_only_from_update upstream_update;
+            read_only = read_only this_environment;
           }
 
 
     let update_this_and_all_preceding_environments
-        { upstream_environment }
+        ({ upstream_environment } as this_environment)
         ~scheduler
         ~configuration
         ast_environment_trigger
@@ -381,7 +374,7 @@ module EnvironmentTable = struct
         ~scheduler
         ~configuration
         ast_environment_trigger
-      |> update_only_this_environment ~scheduler ~configuration
+      |> update_only_this_environment this_environment ~scheduler
   end
 
   module WithCache (In : In) =

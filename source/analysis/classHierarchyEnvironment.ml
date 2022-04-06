@@ -259,11 +259,12 @@ let configuration { edges } = Edges.configuration edges
 let read_only { edges } = Edges.read_only edges
 
 let update_this_and_all_preceding_environments
-    { edges }
+    ({ edges } as this_environment)
     ~scheduler
-    ~configuration:({ Configuration.Analysis.debug; _ } as configuration)
+    ~configuration:_
     ast_environment_trigger
   =
+  let ({ Configuration.Analysis.debug; _ } as configuration) = configuration this_environment in
   let result =
     Edges.update_this_and_all_preceding_environments
       edges
