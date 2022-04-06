@@ -211,6 +211,20 @@ module EnvironmentTable = struct
 
     module In = In
 
+    type t = { upstream_environment: In.PreviousEnvironment.t }
+
+    let create ast_environment =
+      { upstream_environment = In.PreviousEnvironment.create ast_environment }
+
+
+    let ast_environment { upstream_environment } =
+      In.PreviousEnvironment.ast_environment upstream_environment
+
+
+    let configuration { upstream_environment } =
+      In.PreviousEnvironment.configuration upstream_environment
+
+
     module ReadOnly = struct
       type t = { upstream_environment: In.PreviousEnvironment.ReadOnly.t }
 
@@ -232,9 +246,13 @@ module EnvironmentTable = struct
         In.PreviousEnvironment.ReadOnly.unannotated_global_environment upstream_environment
     end
 
+    let read_only { upstream_environment } =
+      { ReadOnly.upstream_environment = In.PreviousEnvironment.read_only upstream_environment }
+
+
     module UpdateResult = UpdateResult.Make (In.PreviousEnvironment) (ReadOnly)
 
-    let read_only previous_update_result =
+    let read_only_from_update previous_update_result =
       {
         ReadOnly.upstream_environment =
           In.PreviousEnvironment.UpdateResult.read_only previous_update_result;
@@ -328,7 +346,7 @@ module EnvironmentTable = struct
           {
             UpdateResult.triggered_dependencies;
             upstream = upstream_update;
-            read_only = read_only upstream_update;
+            read_only = read_only_from_update upstream_update;
           }
       | _ ->
           let _ =
@@ -348,26 +366,8 @@ module EnvironmentTable = struct
           {
             UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
             upstream = upstream_update;
-            read_only = read_only upstream_update;
+            read_only = read_only_from_update upstream_update;
           }
-
-
-    type t = { upstream_environment: In.PreviousEnvironment.t }
-
-    let create ast_environment =
-      { upstream_environment = In.PreviousEnvironment.create ast_environment }
-
-
-    let ast_environment { upstream_environment } =
-      In.PreviousEnvironment.ast_environment upstream_environment
-
-
-    let configuration { upstream_environment } =
-      In.PreviousEnvironment.configuration upstream_environment
-
-
-    let read_only { upstream_environment } =
-      { ReadOnly.upstream_environment = In.PreviousEnvironment.read_only upstream_environment }
 
 
     let update_this_and_all_preceding_environments
