@@ -58,7 +58,6 @@ let check
       AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
         global_environment
         ~scheduler
-        ~configuration
         ColdStart
     in
     Statistics.performance ~name:"full environment built" ~timer ();

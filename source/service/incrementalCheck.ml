@@ -34,7 +34,6 @@ let recheck
     let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
     AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
       annotated_global_environment
-      ~configuration
       ~scheduler
       (Update module_updates)
   in

@@ -23,7 +23,6 @@ let test_simple_registration context =
       ClassMetadataEnvironment.update_this_and_all_preceding_environments
         class_metadata_environment
         ~scheduler:(mock_scheduler ())
-        ~configuration:(ScratchProject.configuration_of project)
         ColdStart
     in
     let read_only = ClassMetadataEnvironment.UpdateResult.read_only update_result in
@@ -146,7 +145,6 @@ let test_updates context =
       ClassMetadataEnvironment.update_this_and_all_preceding_environments
         class_metadata_environment
         ~scheduler
-        ~configuration
         trigger
     in
     let update_result = update ColdStart in

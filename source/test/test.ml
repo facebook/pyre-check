@@ -2668,18 +2668,12 @@ let mock_scheduler () =
   Scheduler.create_sequential ()
 
 
-let update_environments
-    ?(scheduler = mock_scheduler ())
-    ~configuration
-    ~ast_environment
-    ast_environment_trigger
-  =
+let update_environments ?(scheduler = mock_scheduler ()) ~ast_environment ast_environment_trigger =
   let environment = AnnotatedGlobalEnvironment.create ast_environment in
   ( environment,
     AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
       environment
       ~scheduler
-      ~configuration
       ast_environment_trigger )
 
 
@@ -2820,11 +2814,9 @@ module ScratchProject = struct
     ast_environment, ast_environment_update_result
 
 
-  let build_global_environment ({ configuration; _ } as project) =
+  let build_global_environment project =
     let ast_environment = build_ast_environment project in
-    let global_environment, update_result =
-      update_environments ~ast_environment ~configuration ColdStart
-    in
+    let global_environment, update_result = update_environments ~ast_environment ColdStart in
     let sources =
       AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
       |> AstEnvironment.UpdateResult.invalidated_modules

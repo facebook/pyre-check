@@ -532,12 +532,7 @@ let test_connect_type_order context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let _, update_result =
-    update_environments
-      ~ast_environment
-      ~configuration:(ScratchProject.configuration_of project)
-      ColdStart
-  in
+  let _, update_result = update_environments ~ast_environment ColdStart in
   let environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
   let order = class_hierarchy environment in
   let assert_successors annotation successors =
@@ -1141,12 +1136,7 @@ let test_connect_annotations_to_top context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let _, update_result =
-    update_environments
-      ~ast_environment
-      ~configuration:(ScratchProject.configuration_of project)
-      ColdStart
-  in
+  let _, update_result = update_environments ~ast_environment ColdStart in
   let order = class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result) in
   assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"]
 
@@ -1169,12 +1159,7 @@ let test_deduplicate context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let _, update_result =
-    update_environments
-      ~ast_environment
-      ~configuration:(ScratchProject.configuration_of project)
-      ColdStart
-  in
+  let _, update_result = update_environments ~ast_environment ColdStart in
   let (module Handler) =
     class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
   in
@@ -1220,12 +1205,7 @@ let test_remove_extra_edges_to_object context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let _, update_result =
-    update_environments
-      ~ast_environment
-      ~configuration:(ScratchProject.configuration_of project)
-      ColdStart
-  in
+  let _, update_result = update_environments ~ast_environment ColdStart in
   let (module Handler) =
     class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
   in
@@ -1305,9 +1285,7 @@ let test_update_and_compute_dependencies context =
         let module_tracker = AstEnvironment.module_tracker ast_environment in
         ModuleTracker.update ~paths:[path] module_tracker
         |> (fun updates -> AstEnvironment.Update updates)
-        |> update_environments
-             ~ast_environment
-             ~configuration:(ScratchProject.configuration_of project)
+        |> update_environments ~ast_environment
       in
       AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
       |> List.fold

@@ -40,7 +40,6 @@ let build_environment_data
       AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
         annotated_global_environment
         ~scheduler
-        ~configuration
         ColdStart
     in
     let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in

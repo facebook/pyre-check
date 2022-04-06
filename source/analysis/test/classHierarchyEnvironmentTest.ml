@@ -16,14 +16,12 @@ let test_simple_registration context =
   let assert_registers sources name ~expected_edges ~expected_extends_placeholder_stub =
     let project = ScratchProject.setup sources ~include_typeshed_stubs:false ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
-    let configuration = ScratchProject.configuration_of project in
     let class_hierarchy_environment = ClassHierarchyEnvironment.create ast_environment in
     let update_result =
       let scheduler = Test.mock_scheduler () in
       ClassHierarchyEnvironment.update_this_and_all_preceding_environments
         class_hierarchy_environment
         ~scheduler
-        ~configuration
         ColdStart
     in
     let read_only = ClassHierarchyEnvironment.UpdateResult.read_only update_result in
@@ -128,8 +126,7 @@ let test_inferred_generic_base context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~context ~incremental_style:Shallow in
     let ast_environment = ScratchProject.build_ast_environment project in
-    let configuration = ScratchProject.configuration_of project in
-    let _, update_result = Test.update_environments ~ast_environment ~configuration ColdStart in
+    let _, update_result = Test.update_environments ~ast_environment ColdStart in
     let read_only =
       AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
       |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
@@ -241,7 +238,6 @@ let test_updates context =
       ClassHierarchyEnvironment.update_this_and_all_preceding_environments
         class_hierarchy_environment
         ~scheduler
-        ~configuration
         trigger
     in
     let update_result = update ColdStart in

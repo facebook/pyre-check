@@ -31,7 +31,6 @@ let test_global_registration context =
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         unannotated_global_environment
         ~scheduler:(mock_scheduler ())
-        ~configuration:(ScratchProject.configuration_of project)
         ColdStart
     in
     let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
@@ -57,7 +56,6 @@ let test_define_registration context =
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         unannotated_global_environment
         ~scheduler:(mock_scheduler ())
-        ~configuration:(ScratchProject.configuration_of project)
         ColdStart
     in
     let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
@@ -259,7 +257,6 @@ let test_simple_global_registration context =
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         unannotated_global_environment
         ~scheduler:(mock_scheduler ())
-        ~configuration:(ScratchProject.configuration_of project)
         ColdStart
     in
     let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
@@ -382,7 +379,6 @@ let test_updates context =
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         unannotated_global_environment
         ~scheduler:(mock_scheduler ())
-        ~configuration
         ColdStart
     in
     let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
@@ -487,7 +483,6 @@ let test_updates context =
       |> UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
            unannotated_global_environment
            ~scheduler:(mock_scheduler ())
-           ~configuration
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set
@@ -1791,7 +1786,7 @@ let test_updates context =
 
 let test_builtin_modules context =
   let ast_environment =
-    let configuration, ast_environment =
+    let ast_environment =
       let sources = ["builtins.py", "foo: int = 42"] in
       let project =
         ScratchProject.setup
@@ -1800,14 +1795,13 @@ let test_builtin_modules context =
           ~include_helper_builtins:false
           sources
       in
-      ScratchProject.configuration_of project, ScratchProject.build_ast_environment project
+      ScratchProject.build_ast_environment project
     in
     let update_result =
       let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         unannotated_global_environment
         ~scheduler:(mock_scheduler ())
-        ~configuration
         ColdStart
     in
     UnannotatedGlobalEnvironment.UpdateResult.read_only update_result
@@ -1848,7 +1842,7 @@ let test_resolve_exports context =
   let open UnannotatedGlobalEnvironment in
   let assert_resolved ?(include_typeshed = false) ~expected ?from ~reference sources =
     Memory.reset_shared_memory ();
-    let configuration, ast_environment =
+    let ast_environment =
       let project =
         if include_typeshed then
           ScratchProject.setup ~context sources
@@ -1860,14 +1854,13 @@ let test_resolve_exports context =
             ~external_sources:["builtins.py", ""]
             sources
       in
-      ScratchProject.configuration_of project, ScratchProject.build_ast_environment project
+      ScratchProject.build_ast_environment project
     in
     let update_result =
       let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         unannotated_global_environment
         ~scheduler:(mock_scheduler ())
-        ~configuration
         ColdStart
     in
     let unannotated_global_environment = UpdateResult.read_only update_result in

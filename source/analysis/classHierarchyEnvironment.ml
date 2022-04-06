@@ -261,16 +261,11 @@ let read_only { edges } = Edges.read_only edges
 let update_this_and_all_preceding_environments
     ({ edges } as this_environment)
     ~scheduler
-    ~configuration:_
     ast_environment_trigger
   =
-  let ({ Configuration.Analysis.debug; _ } as configuration) = configuration this_environment in
+  let { Configuration.Analysis.debug; _ } = configuration this_environment in
   let result =
-    Edges.update_this_and_all_preceding_environments
-      edges
-      ~scheduler
-      ~configuration
-      ast_environment_trigger
+    Edges.update_this_and_all_preceding_environments edges ~scheduler ast_environment_trigger
   in
   let read_only = Edges.UpdateResult.read_only result in
   if debug then

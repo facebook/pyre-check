@@ -85,7 +85,7 @@ module Make (In : In) = struct
 
   include EnvironmentTable
 
-  let update_this_and_all_preceding_environments this_environment ~scheduler ~configuration:_ =
+  let update_this_and_all_preceding_environments this_environment ~scheduler =
     let configuration = configuration this_environment in
     let () =
       match configuration with
@@ -99,7 +99,7 @@ module Make (In : In) = struct
     in
     (* In both cases we need to produce a UpdateResult, but in the legacy case this will be a
        basically a no-op because of all_keys = []. *)
-    update_this_and_all_preceding_environments this_environment ~scheduler ~configuration
+    update_this_and_all_preceding_environments this_environment ~scheduler
 
 
   module ReadOnly = struct

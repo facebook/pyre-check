@@ -938,7 +938,6 @@ let read_only { ast_environment } =
 let update_this_and_all_preceding_environments
     ({ ast_environment } as this_environment)
     ~scheduler
-    ~configuration:_
     trigger
   =
   let upstream = AstEnvironment.update ~scheduler ast_environment trigger in

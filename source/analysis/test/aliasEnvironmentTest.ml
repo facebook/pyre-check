@@ -21,7 +21,6 @@ let test_simple_registration context =
       AliasEnvironment.update_this_and_all_preceding_environments
         alias_environment
         ~scheduler:(mock_scheduler ())
-        ~configuration:(ScratchProject.configuration_of project)
         ColdStart
     in
     let read_only = AliasEnvironment.UpdateResult.read_only update_result in
@@ -70,7 +69,6 @@ let test_harder_registrations context =
       AliasEnvironment.update_this_and_all_preceding_environments
         alias_environment
         ~scheduler:(mock_scheduler ())
-        ~configuration:(ScratchProject.configuration_of project)
         ColdStart
     in
     let read_only = AliasEnvironment.UpdateResult.read_only update_result in
@@ -325,7 +323,6 @@ let test_updates context =
       AliasEnvironment.update_this_and_all_preceding_environments
         alias_environment
         ~scheduler
-        ~configuration
         trigger
     in
     let update_result = update ColdStart in

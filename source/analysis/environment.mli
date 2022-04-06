@@ -51,7 +51,6 @@ module type PreviousEnvironment = sig
   val update_this_and_all_preceding_environments
     :  t ->
     scheduler:Scheduler.t ->
-    configuration:Configuration.Analysis.t ->
     AstEnvironment.trigger ->
     UpdateResult.t
 end
@@ -76,7 +75,6 @@ module type S = sig
   val update_this_and_all_preceding_environments
     :  t ->
     scheduler:Scheduler.t ->
-    configuration:Configuration.Analysis.t ->
     AstEnvironment.trigger ->
     UpdateResult.t
 end
@@ -163,7 +161,6 @@ module EnvironmentTable : sig
     val update_this_and_all_preceding_environments
       :  t ->
       scheduler:Scheduler.t ->
-      configuration:Configuration.Analysis.t ->
       AstEnvironment.trigger ->
       UpdateResult.t
   end

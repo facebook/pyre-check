@@ -16,12 +16,7 @@ let test_simple_registration context =
   let assert_registers source name ?original expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
-    let _, update_result =
-      update_environments
-        ~ast_environment
-        ~configuration:(ScratchProject.configuration_of project)
-        ColdStart
-    in
+    let _, update_result = update_environments ~ast_environment ColdStart in
     let read_only =
       AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
       |> AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution
@@ -90,12 +85,7 @@ let test_updates context =
         ~context
     in
     let ast_environment = ScratchProject.build_ast_environment project in
-    let _, update_result =
-      update_environments
-        ~ast_environment
-        ~configuration:(ScratchProject.configuration_of project)
-        ColdStart
-    in
+    let _, update_result = update_environments ~ast_environment ColdStart in
     let configuration = ScratchProject.configuration_of project in
     let read_only =
       AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
@@ -142,9 +132,7 @@ let test_updates context =
     let _, update_result =
       ModuleTracker.update ~paths:[path] module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
-      |> update_environments
-           ~ast_environment
-           ~configuration:(ScratchProject.configuration_of project)
+      |> update_environments ~ast_environment
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set
