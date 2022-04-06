@@ -1,5 +1,8 @@
 @generated
 Call dependencies
 overloads.$toplevel (fun) -> []
+overloads.A::$class_toplevel (method) -> []
+overloads.A::call_me (method) -> [_test_sink (fun)]
 overloads.call_me (fun) -> [_test_sink (fun)]
 overloads.f (fun) -> [overloads.call_me (fun)]
+overloads.g (fun) -> [_test_source (fun) isinstance (fun) overloads.A::call_me (method)]

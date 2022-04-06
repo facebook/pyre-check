@@ -1,5 +1,106 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "overloads.g",
+    "callable_line": 45,
+    "code": 5002,
+    "line": 48,
+    "start": 18,
+    "end": 19,
+    "filename": "overloads.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "overloads.py",
+              "line": 46,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overloads.py",
+                "line": 48,
+                "start": 18,
+                "end": 19
+              },
+              "resolves_to": [ "overloads.A.call_me" ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overloads.A.call_me",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle":
+      "overloads.g:5002:0:Call|overloads.A.call_me|0|formal(x):6da1ae844af9a4d7bba8b27d3391213c"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "overloads.A.call_me",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "class_interval": [ { "lower": 2, "upper": 3 } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "overloads.py",
+              "line": 32,
+              "start": 19,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "overloads.call_me",
@@ -17,7 +118,7 @@
             ],
             "root": {
               "filename": "overloads.py",
-              "line": 26,
+              "line": 27,
               "start": 15,
               "end": 16
             }
@@ -47,7 +148,7 @@
             "call": {
               "position": {
                 "filename": "overloads.py",
-                "line": 22,
+                "line": 23,
                 "start": 12,
                 "end": 13
               },
