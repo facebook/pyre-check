@@ -11,7 +11,11 @@ open Pyre
 open Expression
 module PreviousEnvironment = EmptyStubEnvironment
 
-let preprocess_alias_value value = Preprocessing.expand_strings_in_annotation_expression value
+let preprocess_alias_value value =
+  value
+  |> Preprocessing.replace_union_shorthand_in_annotation_expression
+  |> Preprocessing.expand_strings_in_annotation_expression
+
 
 module AliasValue = struct
   type t = Type.alias option

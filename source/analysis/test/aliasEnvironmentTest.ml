@@ -293,6 +293,10 @@ let test_harder_registrations context =
   |}
     "test.F"
     ~expected_alias:(Some (Type.TypeAlias (Type.Callable.create ~annotation:Type.integer ())));
+  (* Allow the union syntax in type aliases. *)
+  parsed_assert_registers {|
+    X = int | str
+  |} "test.X" (Some "typing.Union[int, str]");
   ()
 
 
