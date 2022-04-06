@@ -36,10 +36,10 @@ val update
   t ->
   IncrementalUpdate.t list
 
-module SharedMemory : sig
-  val store : t -> unit
+module Serializer : sig
+  val store_layouts : t -> unit
 
-  val load : unit -> t
+  val from_stored_layouts : unit -> t
 end
 
 module ReadOnly : sig

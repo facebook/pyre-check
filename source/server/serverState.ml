@@ -78,7 +78,7 @@ end)
 let load_stored_configuration = StoredConfiguration.load
 
 let load ~build_system () =
-  let module_tracker = Analysis.ModuleTracker.SharedMemory.load () in
+  let module_tracker = Analysis.ModuleTracker.Serializer.from_stored_layouts () in
   let ast_environment = Analysis.AstEnvironment.load module_tracker in
   let type_environment =
     Analysis.AnnotatedGlobalEnvironment.create ast_environment |> Analysis.TypeEnvironment.create
@@ -91,7 +91,7 @@ let load ~build_system () =
 let store ~path ~configuration { type_environment; error_table; build_system; _ } =
   Memory.SharedMemory.collect `aggressive;
   Analysis.TypeEnvironment.module_tracker type_environment
-  |> Analysis.ModuleTracker.SharedMemory.store;
+  |> Analysis.ModuleTracker.Serializer.store_layouts;
   Analysis.TypeEnvironment.ast_environment type_environment |> Analysis.AstEnvironment.store;
   StoredConfiguration.store configuration;
   ServerErrors.store error_table;

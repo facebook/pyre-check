@@ -124,7 +124,7 @@ module Cache = struct
     let open Result in
     Log.info "Determining if source files have changed since cache was created.";
     exception_to_error ~error:LoadError ~message:"loading module tracker from cache" ~f:(fun () ->
-        Ok (Analysis.ModuleTracker.SharedMemory.load ()))
+        Ok (Analysis.ModuleTracker.Serializer.from_stored_layouts ()))
     >>= fun old_module_tracker ->
     let new_module_tracker = Analysis.ModuleTracker.create configuration in
     let changed_paths =
@@ -180,7 +180,7 @@ module Cache = struct
         let module_tracker = TypeEnvironment.module_tracker environment in
         let ast_environment = TypeEnvironment.ast_environment environment in
         ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;
-        Analysis.ModuleTracker.SharedMemory.store module_tracker;
+        Analysis.ModuleTracker.Serializer.store_layouts module_tracker;
         AstEnvironment.store ast_environment;
         Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
         Log.info "Saved type environment to cache shared memory.";

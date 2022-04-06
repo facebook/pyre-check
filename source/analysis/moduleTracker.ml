@@ -17,10 +17,12 @@ module PathLookup = struct
   [@@deriving sexp, compare]
 end
 
-type t = {
+type layouts = {
   module_to_files: SourcePath.t list Reference.Table.t;
   submodule_refcounts: int Reference.Table.t;
 }
+
+type t = { layouts: layouts }
 
 let insert_source_path ~configuration ~inserted existing_files =
   let rec insert sofar = function
@@ -144,7 +146,7 @@ let create_submodule_refcounts module_to_files =
   submodule_refcounts
 
 
-let create configuration =
+let create_layouts configuration =
   let timer = Timer.start () in
   Log.info "Building module tracker...";
   let module_to_files = create_module_to_files configuration in
@@ -153,9 +155,18 @@ let create configuration =
   { module_to_files; submodule_refcounts }
 
 
-let all_source_paths { module_to_files; _ } = Hashtbl.data module_to_files |> List.concat
+let create configuration =
+  let layouts = create_layouts configuration in
+  { layouts }
 
-let source_paths { module_to_files; _ } = Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
+
+let all_source_paths { layouts = { module_to_files; _ }; _ } =
+  Hashtbl.data module_to_files |> List.concat
+
+
+let source_paths { layouts = { module_to_files; _ }; _ } =
+  Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
+
 
 module FileSystemEvent = struct
   type t =
@@ -366,8 +377,7 @@ let update_submodules ~events submodule_refcounts =
   aggregate_updates events |> commit_updates
 
 
-let update ~configuration ~paths { module_to_files; submodule_refcounts } =
-  let timer = Timer.start () in
+let update_layouts ~configuration ~paths { module_to_files; submodule_refcounts } =
   let explicit_updates = update_explicit_modules module_to_files ~configuration ~paths in
   let implicit_updates = update_submodules submodule_refcounts ~events:explicit_updates in
   (* Explicit updates should shadow implicit updates *)
@@ -410,33 +420,47 @@ let update ~configuration ~paths { module_to_files; submodule_refcounts } =
     Sexp.pp
     [%message (implicit_updates : IncrementalImplicitUpdate.t list)];
   let result = merge_updates explicit_updates implicit_updates in
+  result
+
+
+let update ~configuration ~paths { layouts; _ } =
+  let timer = Timer.start () in
+  let result = update_layouts ~configuration ~paths layouts in
   Statistics.performance ~name:"module tracker updated" ~timer ~phase_name:"Module tracking" ();
   result
 
 
-module SharedMemory = Memory.Serializer (struct
-  type nonrec t = t
+module Serializer = struct
+  module Layouts = Memory.Serializer (struct
+    type nonrec t = layouts
 
-  module Serialized = struct
-    type t = (Reference.t * SourcePath.t list) list * (Reference.t * int) list
+    module Serialized = struct
+      type t = (Reference.t * SourcePath.t list) list * (Reference.t * int) list
 
-    let prefix = Prefix.make ()
+      let prefix = Prefix.make ()
 
-    let description = "Module tracker"
+      let description = "Module tracker"
 
-    let unmarshall value = Marshal.from_string value 0
-  end
+      let unmarshall value = Marshal.from_string value 0
+    end
 
-  let serialize { module_to_files; submodule_refcounts } =
-    Hashtbl.to_alist module_to_files, Hashtbl.to_alist submodule_refcounts
+    let serialize { module_to_files; submodule_refcounts } =
+      Hashtbl.to_alist module_to_files, Hashtbl.to_alist submodule_refcounts
 
 
-  let deserialize (module_data, submodule_data) =
-    {
-      module_to_files = Reference.Table.of_alist_exn module_data;
-      submodule_refcounts = Reference.Table.of_alist_exn submodule_data;
-    }
-end)
+    let deserialize (module_data, submodule_data) =
+      {
+        module_to_files = Reference.Table.of_alist_exn module_data;
+        submodule_refcounts = Reference.Table.of_alist_exn submodule_data;
+      }
+  end)
+
+  let store_layouts { layouts } = Layouts.store layouts
+
+  let from_stored_layouts () =
+    let layouts = Layouts.load () in
+    { layouts }
+end
 
 module ReadOnly = struct
   type t = {
@@ -470,7 +494,7 @@ module ReadOnly = struct
     source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
 end
 
-let read_only ({ module_to_files; submodule_refcounts } as tracker) =
+let read_only ({ layouts = { module_to_files; submodule_refcounts }; _ } as tracker) =
   let lookup_source_path module_name =
     match Hashtbl.find module_to_files module_name with
     | Some (source_path :: _) -> Some source_path
