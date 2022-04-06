@@ -182,7 +182,7 @@ let test_parse_sources context =
     in
     let module_tracker = Analysis.ModuleTracker.create configuration in
     let ast_environment = Analysis.AstEnvironment.create module_tracker in
-    let update_result = AstEnvironment.update ~scheduler ~configuration ast_environment ColdStart in
+    let update_result = AstEnvironment.update ~scheduler ast_environment ColdStart in
     let sources =
       AstEnvironment.UpdateResult.invalidated_modules update_result
       |> List.filter_map
@@ -239,7 +239,7 @@ let test_parse_sources context =
           ]
         module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
-      |> AstEnvironment.update ~configuration ~scheduler:(mock_scheduler ()) ast_environment
+      |> AstEnvironment.update ~scheduler:(mock_scheduler ()) ast_environment
     in
     let sources =
       AstEnvironment.UpdateResult.invalidated_modules update_result
@@ -726,7 +726,6 @@ module IncrementalTest = struct
     let module_tracker_updates = ModuleTracker.update ~paths module_tracker in
     let update_result =
       AstEnvironment.update
-        ~configuration
         ~scheduler:(Test.mock_scheduler ())
         ast_environment
         (Update module_tracker_updates)

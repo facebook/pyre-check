@@ -108,11 +108,7 @@ let run_infer_local ~configuration ~build_system ~paths_to_modify () =
           let ast_environment =
             Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
           in
-          Server.RequestHandler.instantiate_path
-            ~build_system
-            ~configuration
-            ~ast_environment
-            qualifier
+          Server.RequestHandler.instantiate_path ~build_system ~ast_environment qualifier
         in
         Service.Infer.run_infer
           ~configuration

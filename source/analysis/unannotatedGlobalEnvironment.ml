@@ -935,7 +935,7 @@ let read_only { ast_environment } =
 
 let update_this_and_all_preceding_environments { ast_environment } ~scheduler ~configuration trigger
   =
-  let upstream = AstEnvironment.update ~configuration ~scheduler ast_environment trigger in
+  let upstream = AstEnvironment.update ~scheduler ast_environment trigger in
   let ast_environment = AstEnvironment.read_only ast_environment in
   let map sources =
     let register qualifier =
@@ -975,7 +975,7 @@ let update_this_and_all_preceding_environments { ast_environment } ~scheduler ~c
   |> KeyTracker.UnannotatedGlobalKeys.remove_batch;
   KeyTracker.FunctionKeys.KeySet.of_list modified_qualifiers |> KeyTracker.FunctionKeys.remove_batch;
   match configuration with
-  | { incremental_style = FineGrained; _ } ->
+  | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
       let define_additions, triggered_dependencies =
         Profiling.track_duration_and_shared_memory_with_dynamic_tags
           "TableUpdate(Unannotated globals)"

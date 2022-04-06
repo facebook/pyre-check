@@ -119,10 +119,7 @@ module State (Context : Context) = struct
               let lookup reference =
                 GlobalResolution.ast_environment global_resolution
                 |> fun ast_environment ->
-                AstEnvironment.ReadOnly.get_real_path_relative
-                  ~configuration:Context.configuration
-                  ast_environment
-                  reference
+                AstEnvironment.ReadOnly.get_real_path_relative ast_environment reference
               in
               Error.instantiate ~show_error_traces:true ~lookup error
             in

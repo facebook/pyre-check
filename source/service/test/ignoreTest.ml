@@ -13,21 +13,18 @@ open TypeCheck
 
 let ignore_lines_test context =
   let assert_errors ?(show_error_traces = false) input_source expected_errors =
-    let configuration, ast_environment, type_errors =
+    let ast_environment, type_errors =
       let project = ScratchProject.setup ~context ["test.py", input_source] in
       let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, type_errors =
         ScratchProject.build_type_environment_and_postprocess project
       in
-      let configuration = ScratchProject.configuration_of project in
-      ( configuration,
-        TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only,
-        type_errors )
+      TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only, type_errors
     in
     let descriptions =
       List.map type_errors ~f:(fun error ->
           Error.instantiate
             ~show_error_traces
-            ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
+            ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ast_environment)
             error
           |> Error.Instantiated.description)
     in

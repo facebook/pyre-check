@@ -362,13 +362,11 @@ type trigger =
   | Update of ModuleTracker.IncrementalUpdate.t list
   | ColdStart
 
-let update
-    ~configuration:({ Configuration.Analysis.incremental_style; _ } as configuration)
-    ~scheduler
-    ({ module_tracker = upstream_tracker; _ } as ast_environment)
-    trigger
-  =
+let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environment) trigger =
   let module_tracker = ModuleTracker.read_only upstream_tracker in
+  let ({ Configuration.Analysis.incremental_style; _ } as configuration) =
+    ModuleTracker.ReadOnly.configuration module_tracker
+  in
   match trigger with
   | Update module_updates -> (
       let reparse_source_paths, removed_modules, updated_submodules =
@@ -466,6 +464,8 @@ module ReadOnly = struct
     { module_tracker; get_processed_source; get_raw_source }
 
 
+  let configuration { module_tracker; _ } = ModuleTracker.ReadOnly.configuration module_tracker
+
   let get_source_path { module_tracker; _ } =
     ModuleTracker.ReadOnly.lookup_source_path module_tracker
 
@@ -489,18 +489,16 @@ module ReadOnly = struct
     get_source_path read_only qualifier >>| fun { SourcePath.relative; _ } -> relative
 
 
-  let get_real_path ~configuration read_only qualifier =
+  let get_real_path read_only qualifier =
+    let configuration = configuration read_only in
     get_source_path read_only qualifier >>| SourcePath.full_path ~configuration
 
 
-  let get_real_path_relative
-      ~configuration:({ Configuration.Analysis.local_root; _ } as configuration)
-      read_only
-      qualifier
-    =
+  let get_real_path_relative read_only qualifier =
     (* SourcePath.relative refers to the renamed path when search paths are provided with a root and
        subdirectory. Instead, find the real filesystem relative path for the qualifier. *)
-    get_real_path ~configuration read_only qualifier
+    let { Configuration.Analysis.local_root; _ } = configuration read_only in
+    get_real_path read_only qualifier
     >>= fun path -> PyrePath.get_relative_to_root ~root:local_root ~path
 end
 

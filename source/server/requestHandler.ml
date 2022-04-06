@@ -15,8 +15,8 @@ let module_of_path ~module_tracker path =
   | _ -> None
 
 
-let instantiate_path ~build_system ~configuration ~ast_environment qualifier =
-  match AstEnvironment.ReadOnly.get_real_path ~configuration ast_environment qualifier with
+let instantiate_path ~build_system ~ast_environment qualifier =
+  match AstEnvironment.ReadOnly.get_real_path ast_environment qualifier with
   | None -> None
   | Some artifact_path ->
       let path =
@@ -34,13 +34,13 @@ let instantiate_path ~build_system ~configuration ~ast_environment qualifier =
 
 let instantiate_error
     ~build_system
-    ~configuration:({ Configuration.Analysis.show_error_traces; _ } as configuration)
+    ~configuration:{ Configuration.Analysis.show_error_traces; _ }
     ~ast_environment
     error
   =
   AnalysisError.instantiate
     ~show_error_traces
-    ~lookup:(instantiate_path ~build_system ~configuration ~ast_environment)
+    ~lookup:(instantiate_path ~build_system ~ast_environment)
     error
 
 

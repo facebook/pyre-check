@@ -7,7 +7,6 @@
 
 val instantiate_path
   :  build_system:BuildSystem.t ->
-  configuration:Configuration.Analysis.t ->
   ast_environment:Analysis.AstEnvironment.ReadOnly.t ->
   Ast.Reference.t ->
   string option

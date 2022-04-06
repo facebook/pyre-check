@@ -256,11 +256,7 @@ let run_taint_analysis
         in
         let filename_lookup path_reference =
           match
-            Server.RequestHandler.instantiate_path
-              ~build_system
-              ~configuration
-              ~ast_environment
-              path_reference
+            Server.RequestHandler.instantiate_path ~build_system ~ast_environment path_reference
           with
           | None -> None
           | Some full_path ->

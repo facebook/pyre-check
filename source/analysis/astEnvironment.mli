@@ -39,17 +39,9 @@ module ReadOnly : sig
 
   val get_relative : t -> Reference.t -> string option
 
-  val get_real_path
-    :  configuration:Configuration.Analysis.t ->
-    t ->
-    Reference.t ->
-    PyrePath.t option
+  val get_real_path : t -> Reference.t -> PyrePath.t option
 
-  val get_real_path_relative
-    :  configuration:Configuration.Analysis.t ->
-    t ->
-    Reference.t ->
-    string option
+  val get_real_path_relative : t -> Reference.t -> string option
 
   val all_explicit_modules : t -> Reference.t list
 
@@ -81,12 +73,7 @@ type trigger =
   | Update of ModuleTracker.IncrementalUpdate.t list
   | ColdStart
 
-val update
-  :  configuration:Configuration.Analysis.t ->
-  scheduler:Scheduler.t ->
-  t ->
-  trigger ->
-  UpdateResult.t
+val update : scheduler:Scheduler.t -> t -> trigger -> UpdateResult.t
 
 val remove_sources : t -> Reference.t list -> unit
 

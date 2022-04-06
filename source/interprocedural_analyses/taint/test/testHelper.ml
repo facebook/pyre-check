@@ -504,8 +504,7 @@ let initialize
        |> List.map ~f:(fun error ->
               AnalysisError.instantiate
                 ~show_error_traces:false
-                ~lookup:
-                  (AstEnvironment.ReadOnly.get_real_path_relative ~configuration ast_environment)
+                ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ast_environment)
                 error
               |> AnalysisError.Instantiated.description)
        |> String.concat ~sep:"\n"

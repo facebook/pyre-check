@@ -632,7 +632,6 @@ let rec process_request ~environment ~build_system ~configuration request =
           Location.WithModule.instantiate
             ~lookup:
               (AstEnvironment.ReadOnly.get_real_path_relative
-                 ~configuration
                  (TypeEnvironment.ReadOnly.ast_environment read_only_environment))
         in
         let callees =
@@ -713,7 +712,6 @@ let rec process_request ~environment ~build_system ~configuration request =
               Location.WithModule.instantiate
                 ~lookup:
                   (AstEnvironment.ReadOnly.get_real_path_relative
-                     ~configuration
                      (TypeEnvironment.ReadOnly.ast_environment read_only_environment))
             in
             Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
@@ -786,7 +784,6 @@ let rec process_request ~environment ~build_system ~configuration request =
           =
           let module_to_absolute_path reference =
             AstEnvironment.ReadOnly.get_real_path
-              ~configuration
               (TypeEnvironment.ReadOnly.ast_environment read_only_environment)
               reference
             >>| PyrePath.absolute
