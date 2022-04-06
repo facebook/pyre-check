@@ -272,11 +272,30 @@ let test_sanitize _ =
       }
 
 
+let test_call_info_interval _ =
+  let assert_equal_interval ~actual ~expected =
+    assert_equal ~printer:CallInfoInterval.show actual expected
+  in
+  assert_equal_interval
+    ~actual:(CallInfoInterval.join CallInfoInterval.top CallInfoInterval.bottom)
+    ~expected:CallInfoInterval.top;
+  assert_equal_interval
+    ~actual:(CallInfoInterval.meet CallInfoInterval.top CallInfoInterval.bottom)
+    ~expected:CallInfoInterval.bottom;
+  assert_equal
+    (CallInfoInterval.less_or_equal ~left:CallInfoInterval.top ~right:CallInfoInterval.bottom)
+    false;
+  assert_equal
+    (CallInfoInterval.less_or_equal ~left:CallInfoInterval.bottom ~right:CallInfoInterval.top)
+    true
+
+
 let () =
   "taint_domain"
   >::: [
          "partition_call_map" >:: test_partition_call_map;
          "approximate_return_access_paths" >:: test_approximate_return_access_paths;
          "sanitize" >:: test_sanitize;
+         "call_info_interval" >:: test_call_info_interval;
        ]
   |> Test.run

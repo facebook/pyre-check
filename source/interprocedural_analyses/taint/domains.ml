@@ -169,6 +169,123 @@ module TraceLength = Abstract.SimpleDomain.Make (struct
   let show length = if Int.equal length max_int then "<bottom>" else string_of_int length
 end)
 
+(* This should be associated with every call site *)
+module CallInfoInterval = struct
+  type interval = Interprocedural.ClassInterval.t
+
+  type t = {
+    (* The interval of the class that literally contains this call site *)
+    caller_interval: interval;
+    (* The interval of the receiver object for this call site *)
+    receiver_interval: interval;
+    (* Whether this call site is a call on `self` *)
+    is_self_call: bool;
+  }
+
+  (* If we are not sure if a call is on `self`, then we should treat it as a call not on `self`,
+     such that SAPP will not intersect class intervals. *)
+  let top =
+    {
+      caller_interval = Interprocedural.ClassInterval.top;
+      receiver_interval = Interprocedural.ClassInterval.top;
+      is_self_call = false;
+    }
+
+
+  let bottom =
+    {
+      caller_interval = Interprocedural.ClassInterval.bottom;
+      receiver_interval = Interprocedural.ClassInterval.bottom;
+      is_self_call = true;
+    }
+
+
+  let is_top { caller_interval; receiver_interval; is_self_call } =
+    Interprocedural.ClassInterval.is_top caller_interval
+    && Interprocedural.ClassInterval.is_top receiver_interval
+    && is_self_call == false
+
+
+  let pp formatter { caller_interval; receiver_interval; is_self_call } =
+    Format.fprintf
+      formatter
+      "@[caller_interval: [%a] receiver_interval: [%a] is_self_call: [%b]@]"
+      Interprocedural.ClassInterval.pp_interval
+      caller_interval
+      Interprocedural.ClassInterval.pp_interval
+      receiver_interval
+      is_self_call
+
+
+  let show = Format.asprintf "%a" pp
+
+  let less_or_equal
+      ~left:
+        {
+          caller_interval = caller_interval_left;
+          receiver_interval = receiver_interval_left;
+          is_self_call = is_self_call_left;
+        }
+      ~right:
+        {
+          caller_interval = caller_interval_right;
+          receiver_interval = receiver_interval_right;
+          is_self_call = is_self_call_right;
+        }
+    =
+    Interprocedural.ClassInterval.less_or_equal
+      ~left:caller_interval_left
+      ~right:caller_interval_right
+    && Interprocedural.ClassInterval.less_or_equal
+         ~left:receiver_interval_left
+         ~right:receiver_interval_right
+    && not ((not is_self_call_left) && is_self_call_right)
+
+
+  let join
+      {
+        caller_interval = caller_interval_left;
+        receiver_interval = receiver_interval_left;
+        is_self_call = is_self_call_left;
+      }
+      {
+        caller_interval = caller_interval_right;
+        receiver_interval = receiver_interval_right;
+        is_self_call = is_self_call_right;
+      }
+    =
+    {
+      caller_interval =
+        Interprocedural.ClassInterval.join caller_interval_left caller_interval_right;
+      receiver_interval =
+        Interprocedural.ClassInterval.join receiver_interval_left receiver_interval_right;
+      (* The result of joining two calls is a call on `self` iff. both calls are on `self`. *)
+      is_self_call = is_self_call_left && is_self_call_right;
+    }
+
+
+  let meet
+      {
+        caller_interval = caller_interval_left;
+        receiver_interval = receiver_interval_left;
+        is_self_call = is_self_call_left;
+      }
+      {
+        caller_interval = caller_interval_right;
+        receiver_interval = receiver_interval_right;
+        is_self_call = is_self_call_right;
+      }
+    =
+    {
+      caller_interval =
+        Interprocedural.ClassInterval.meet caller_interval_left caller_interval_right;
+      receiver_interval =
+        Interprocedural.ClassInterval.meet receiver_interval_left receiver_interval_right;
+      (* The result of meeting two calls is a call on `self` iff. one of the calls is on `self`. *)
+      is_self_call = is_self_call_left || is_self_call_right;
+    }
+end
+
 module ClassIntervalDomain = struct
   include Abstract.SimpleDomain.Make (struct
     let name = "class interval"

@@ -43,6 +43,8 @@ val show : t -> string
 
 val pp : Format.formatter -> t -> unit
 
+val pp_interval : Format.formatter -> t -> unit
+
 val bottom : t
 
 val less_or_equal : left:t -> right:t -> bool

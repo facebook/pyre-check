@@ -33,19 +33,18 @@ let is_top interval =
 
 let less_or_equal ~left ~right = Interval.Int.is_subset left ~of_:right
 
-let pp formatter interval =
-  let pp_interval formatter interval =
-    if Interval.Int.is_empty interval then
-      Format.fprintf formatter ""
-    else
-      Format.fprintf
-        formatter
-        "%d,%d"
-        (Option.value_exn (Interval.Int.lbound interval))
-        (Option.value_exn (Interval.Int.ubound interval))
-  in
-  Format.fprintf formatter "@[[%a]@]" pp_interval interval
+let pp_interval formatter interval =
+  if Interval.Int.is_empty interval then
+    Format.fprintf formatter ""
+  else
+    Format.fprintf
+      formatter
+      "%d,%d"
+      (Option.value_exn (Interval.Int.lbound interval))
+      (Option.value_exn (Interval.Int.ubound interval))
 
+
+let pp formatter interval = Format.fprintf formatter "@[[%a]@]" pp_interval interval
 
 let show = Format.asprintf "%a" pp
 
