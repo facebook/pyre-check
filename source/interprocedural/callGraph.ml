@@ -981,11 +981,14 @@ let rec resolve_callees_from_type
       | Type.Top ->
           CallCallees.unresolved
       (* Callable protocol. *)
-      | Type.Callable { kind = Anonymous; _ } ->
+      | Type.Callable { kind = Anonymous; _ } as resolved_dunder_call ->
           Type.primitive_name callable_type
           >>| (fun primitive_callable_name ->
                 let return_type =
-                  ReturnType.from_callable_with_fallback ~resolution ~callable_type ~return_type
+                  ReturnType.from_callable_with_fallback
+                    ~resolution
+                    ~callable_type:resolved_dunder_call
+                    ~return_type
                 in
                 let target =
                   `Method { Target.class_name = primitive_callable_name; method_name = "__call__" }
