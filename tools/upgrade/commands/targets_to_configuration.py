@@ -15,14 +15,14 @@ from typing_extensions import Final
 from ..configuration import Configuration
 from ..errors import Errors
 from ..filesystem import (
-    LocalMode,
-    Target,
     add_local_mode,
     find_directories,
     find_files,
     find_targets,
     get_filesystem,
+    LocalMode,
     remove_non_pyre_ignores,
+    Target,
 )
 from ..repository import Repository
 from .command import CommandArguments, ErrorSuppressingCommand

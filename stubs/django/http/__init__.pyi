@@ -5,9 +5,9 @@
 
 from django.http.cookie import SimpleCookie as SimpleCookie
 from django.http.request import (
+    build_request_repr as build_request_repr,
     HttpRequest as HttpRequest,
     QueryDict as QueryDict,
-    build_request_repr as build_request_repr,
 )
 from django.http.response import (
     Http404 as Http404,

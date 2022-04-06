@@ -11,20 +11,20 @@ import unittest
 from typing import Dict, List, Optional, Tuple
 from unittest.mock import call, patch
 
-from .. import UserError, errors
+from .. import errors, UserError
 from ..ast import UnstableAST
 from ..errors import (
+    _get_unused_ignore_codes,
+    _line_ranges_spanned_by_format_strings,
+    _map_line_to_start_of_range,
+    _relocate_errors,
+    _remove_unused_ignores,
+    _suppress_errors,
     Errors,
     LineBreakParsingException,
     PartialErrorSuppression,
     SkippingGeneratedFileException,
     SkippingUnparseableFileException,
-    _map_line_to_start_of_range,
-    _get_unused_ignore_codes,
-    _line_ranges_spanned_by_format_strings,
-    _remove_unused_ignores,
-    _relocate_errors,
-    _suppress_errors,
 )
 
 

@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_source
-from typing import Any, Dict, List, cast
+from typing import Any, cast, Dict, List
 
 
 class RecordSchema:

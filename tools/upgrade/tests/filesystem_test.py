@@ -9,15 +9,15 @@ import unittest
 from pathlib import Path
 from textwrap import dedent
 from typing import List
-from unittest.mock import call, patch, MagicMock
+from unittest.mock import call, MagicMock, patch
 
 from ..filesystem import (
     add_local_mode,
+    Filesystem,
     LocalMode,
+    MercurialBackedFilesystem,
     Target,
     TargetCollector,
-    Filesystem,
-    MercurialBackedFilesystem,
 )
 
 

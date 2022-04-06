@@ -8,16 +8,16 @@ from typing import Dict, List
 
 from ...api.query import Annotation, Position
 from ..shape_type_coverage import (
-    _is_tensor,
-    _is_precise_tensor,
-    ParametricType,
-    _parametric_type,
-    ShapeAnnotations,
     _collect_shape_types,
-    _extract_substring,
     _extract_multiline_text,
+    _extract_substring,
+    _is_precise_tensor,
     _is_precise_tensor_dimension,
+    _is_tensor,
+    _parametric_type,
     _split_list,
+    ParametricType,
+    ShapeAnnotations,
 )
 
 

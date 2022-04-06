@@ -5,7 +5,7 @@
 
 # flake8: noqa
 
-from builtins import _test_source, _test_sink
+from builtins import _test_sink, _test_source
 
 
 def create_zipped_source():

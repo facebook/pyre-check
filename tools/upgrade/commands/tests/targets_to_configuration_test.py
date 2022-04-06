@@ -9,7 +9,7 @@ import json
 import unittest
 from pathlib import Path
 from textwrap import dedent
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import call, MagicMock, mock_open, patch
 
 import libcst
 

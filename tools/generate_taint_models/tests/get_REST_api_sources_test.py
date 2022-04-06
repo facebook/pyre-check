@@ -11,8 +11,8 @@ from unittest.mock import MagicMock
 from ..generator_specifications import (
     AllParametersAnnotation,
     AnnotationSpecification,
-    WhitelistSpecification,
     default_entrypoint_taint,
+    WhitelistSpecification,
 )
 from ..get_REST_api_sources import RESTApiSourceGenerator
 from .test_functions import __name__ as qualifier, all_functions

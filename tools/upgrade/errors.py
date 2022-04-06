@@ -10,12 +10,12 @@ import re
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union, cast
+from typing import Any, cast, Dict, Iterable, List, Optional, Tuple, Union
 
 import libcst
 import libcst.matchers as libcst_matchers
 
-from . import UserError, ast
+from . import ast, UserError
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

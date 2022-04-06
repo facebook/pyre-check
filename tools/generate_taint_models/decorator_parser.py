@@ -6,7 +6,7 @@
 import ast
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Set, Tuple, Union, cast
+from typing import cast, List, Optional, Set, Tuple, Union
 
 from typing_extensions import Final
 

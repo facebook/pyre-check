@@ -7,10 +7,7 @@ import ast
 import logging
 from typing import Dict, Iterable, List
 
-from .annotated_function_generator import (
-    AnnotatedFunctionGenerator,
-    FunctionVisitor,
-)
+from .annotated_function_generator import AnnotatedFunctionGenerator, FunctionVisitor
 from .decorator_parser import DecoratorParser
 from .generator_specifications import DecoratorAnnotationSpecification
 from .model import FunctionDefinitionModel

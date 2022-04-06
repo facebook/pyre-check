@@ -8,7 +8,7 @@
 import inspect
 import logging
 from importlib import import_module
-from typing import Any, Callable, Iterable, NamedTuple, Type, List
+from typing import Any, Callable, Iterable, List, NamedTuple, Type
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

@@ -12,10 +12,10 @@ from typing import Any, Dict, Iterable, List
 
 from .environment import Environment
 from .runner import (
-    ProfileLogs,
-    ResultComparison,
     benchmark_server,
     compare_server_to_full,
+    ProfileLogs,
+    ResultComparison,
 )
 from .specification import Specification
 

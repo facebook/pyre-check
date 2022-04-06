@@ -6,9 +6,7 @@
 import unittest
 from pathlib import Path
 
-from ..commands.support_sqlalchemy import (
-    SupportSqlalchemy,
-)
+from ..commands.support_sqlalchemy import SupportSqlalchemy
 
 
 class SupportSqlalchemyTest(unittest.TestCase):

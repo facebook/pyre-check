@@ -7,9 +7,9 @@ from typing import Any, List, Optional
 
 # Lazy hack to not have to stub those out.
 from lxml.unstubbed import (
+    _Element as _Element,
     Element as Element,
     SubElement as SubElement,
-    _Element as _Element,
 )
 
 def parse(source, parser=..., base_url=...): ...

@@ -18,9 +18,7 @@ from graphql3 import (
     GraphQLType,
 )
 
-from ...generate_taint_models.get_graphql_sources import (
-    GraphQLSourceGenerator,
-)
+from ...generate_taint_models.get_graphql_sources import GraphQLSourceGenerator
 from .test_functions import __name__ as qualifier, all_functions
 
 

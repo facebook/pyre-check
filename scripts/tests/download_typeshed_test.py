@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from typing import List
 
-from ..download_typeshed import FileEntry, _find_entry, _entry_path_to_patch_path
+from ..download_typeshed import _entry_path_to_patch_path, _find_entry, FileEntry
 
 
 class EntryPathToPatchPathTest(unittest.TestCase):

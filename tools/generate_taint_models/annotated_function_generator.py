@@ -10,19 +10,11 @@ import logging
 import re
 from abc import abstractmethod
 from collections import defaultdict
-from typing import (
-    Callable,
-    Iterable,
-    Optional,
-    List,
-    Set,
-    Dict,
-    Union,
-)
+from typing import Callable, Dict, Iterable, List, Optional, Set, Union
 
 from .generator_specifications import DecoratorAnnotationSpecification
 from .model import FunctionDefinitionModel
-from .model_generator import qualifier, ModelGenerator
+from .model_generator import ModelGenerator, qualifier
 from .module_loader import find_all_paths, load_module
 
 LOG: logging.Logger = logging.getLogger(__name__)

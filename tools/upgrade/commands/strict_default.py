@@ -10,8 +10,8 @@ from typing import Optional
 
 from ....client.find_directories import (
     CONFIGURATION_FILE,
-    LOCAL_CONFIGURATION_FILE,
     find_global_and_local_root,
+    LOCAL_CONFIGURATION_FILE,
 )
 from .. import UserError
 from ..configuration import Configuration

@@ -11,8 +11,8 @@ from typing import Callable, Iterable, List, Optional
 from .function_tainter import taint_callable_functions
 from .generator_specifications import (
     AnnotationSpecification,
-    WhitelistSpecification,
     default_entrypoint_taint,
+    WhitelistSpecification,
 )
 from .model import CallableModel
 from .model_generator import ModelGenerator

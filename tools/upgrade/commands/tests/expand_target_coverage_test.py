@@ -8,7 +8,7 @@
 import json
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import call, MagicMock, mock_open, patch
 
 from ...repository import Repository
 from .. import expand_target_coverage

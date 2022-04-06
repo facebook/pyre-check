@@ -20,11 +20,11 @@ from .conf import include as include, path as path, re_path as re_path
 from .converters import register_converter as register_converter
 from .exceptions import NoReverseMatch as NoReverseMatch, Resolver404 as Resolver404
 from .resolvers import (
+    get_ns_resolver as get_ns_resolver,
+    get_resolver as get_resolver,
     LocalePrefixPattern as LocalePrefixPattern,
     ResolverMatch as ResolverMatch,
     URLPattern as URLPattern,
     URLResolver as URLResolver,
-    get_ns_resolver as get_ns_resolver,
-    get_resolver as get_resolver,
 )
 from .utils import get_callable as get_callable, get_mod_func as get_mod_func

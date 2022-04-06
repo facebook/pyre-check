@@ -11,7 +11,7 @@ from typing import Optional
 from typing_extensions import Final
 
 from ..configuration import Configuration
-from ..filesystem import LocalMode, find_files, path_exists
+from ..filesystem import find_files, LocalMode, path_exists
 from ..repository import Repository
 from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
 

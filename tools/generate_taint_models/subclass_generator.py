@@ -6,7 +6,7 @@
 # pyre-strict
 
 import logging
-from typing import TypeVar, Type, Dict, Iterable, List, Optional, Set
+from typing import Dict, Iterable, List, Optional, Set, Type, TypeVar
 
 from ...api import query
 from ...api.connection import PyreConnection

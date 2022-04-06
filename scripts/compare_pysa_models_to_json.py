@@ -10,7 +10,7 @@ import logging
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Pattern, Set, TypedDict, Tuple
+from typing import Any, Dict, List, Optional, Pattern, Set, Tuple, TypedDict
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

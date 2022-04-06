@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import List, Tuple, Optional, Sequence
+from typing import List, Optional, Sequence, Tuple
 
 # just validate that it's available, but we don't invoke it directly
 import wheel as _wheel  # noqa

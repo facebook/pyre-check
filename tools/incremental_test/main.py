@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from . import report
-from .batch import RunnerResult, run_batch_benchmark, run_batch_test
+from .batch import run_batch_benchmark, run_batch_test, RunnerResult
 from .environment import SubprocessEnvironment
 from .specification import InvalidSpecificationException, Specification
 

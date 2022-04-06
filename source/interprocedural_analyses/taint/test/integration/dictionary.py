@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-from typing import Any, Dict, Generic, Iterable, Mapping, Optional, TypeVar, cast
+from typing import Any, cast, Dict, Generic, Iterable, Mapping, Optional, TypeVar
 
 
 def dictionary_source():

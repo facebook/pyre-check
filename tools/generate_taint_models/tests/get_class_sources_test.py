@@ -8,7 +8,7 @@
 import unittest
 
 from ..get_class_sources import ClassSourceGenerator
-from .test_functions import TestChildClassB, TestGrandChildClassA, __name__ as qualifier
+from .test_functions import __name__ as qualifier, TestChildClassB, TestGrandChildClassA
 
 
 class GetClassSourcesTest(unittest.TestCase):

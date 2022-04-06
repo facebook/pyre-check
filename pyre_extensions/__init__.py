@@ -12,7 +12,7 @@ from typing_extensions import Protocol
 # in their own environment
 from . import safe_json, tests, type_variable_operators
 from .generic import Generic
-from .refinement import none_throws, assert_is_instance, safe_cast
+from .refinement import assert_is_instance, none_throws, safe_cast
 
 
 __all__ = [

@@ -9,7 +9,7 @@ import argparse
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import call, MagicMock, patch
 
 from ...errors import Errors, PartialErrorSuppression
 from ...filesystem import LocalMode

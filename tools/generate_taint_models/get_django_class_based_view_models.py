@@ -13,8 +13,8 @@ from ...api.connection import PyreConnection
 from ...api.query import PyreCache
 from .generator_specifications import (
     AnnotationSpecification,
-    WhitelistSpecification,
     default_entrypoint_taint,
+    WhitelistSpecification,
 )
 from .get_methods_of_subclasses import MethodsOfSubclassesGenerator
 from .get_models_filtered_by_callable import ModelsFilteredByCallableGenerator

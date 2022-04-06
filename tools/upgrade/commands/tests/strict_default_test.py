@@ -14,10 +14,10 @@ from unittest.mock import MagicMock, mock_open, patch
 from ...repository import Repository
 from .. import strict_default
 from ..strict_default import (
+    _get_configuration_path,
     Configuration,
     ErrorSuppressingCommand,
     StrictDefault,
-    _get_configuration_path,
 )
 
 

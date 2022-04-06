@@ -7,7 +7,7 @@ import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Dict, Iterable
+from typing import Dict, Iterable, List, Optional
 
 from ..api.connection import PyreConnection
 from ..api.query import Annotation, get_types, Position

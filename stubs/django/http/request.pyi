@@ -14,11 +14,11 @@ from typing import (
     Iterator,
     List,
     Optional,
+    overload,
     Tuple,
     Type,
     TypeVar,
     Union,
-    overload,
 )
 
 from django.contrib.sessions.backends.base import SessionBase

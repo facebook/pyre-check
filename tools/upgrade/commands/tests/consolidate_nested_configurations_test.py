@@ -10,14 +10,14 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import call, MagicMock, patch
 
 from ... import errors
 from ...repository import Repository
 from .. import consolidate_nested_configurations
 from ..consolidate_nested_configurations import (
-    ConsolidateNestedConfigurations,
     consolidate_nested,
+    ConsolidateNestedConfigurations,
 )
 
 

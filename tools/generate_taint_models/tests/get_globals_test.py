@@ -8,10 +8,10 @@
 import os  # noqa
 import textwrap
 import unittest
-from typing import IO, Any, Callable, Dict, Iterable, Optional, Set
+from typing import Any, Callable, Dict, IO, Iterable, Optional, Set
 from unittest.mock import call, mock_open, patch
 
-from ..get_globals import GlobalModelGenerator, __name__ as get_globals_name
+from ..get_globals import __name__ as get_globals_name, GlobalModelGenerator
 
 
 def _open_implementation(path_to_content: Dict[str, str]) -> Callable[[str, str], Any]:

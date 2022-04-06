@@ -11,11 +11,11 @@ from unittest.mock import MagicMock, patch
 from ..generator_specifications import AllParametersAnnotation
 from ..get_REST_api_sources import RESTApiSourceGenerator
 from ..get_undecorated_sources import (
-    UndecoratedSourceGenerator,
     __name__ as undecorated_source_name,
+    UndecoratedSourceGenerator,
 )
 from ..model import CallableModel, FunctionDefinitionModel
-from .test_functions import TestClass, all_functions, testA, testB
+from .test_functions import all_functions, testA, testB, TestClass
 
 
 class GetUndecoratedSourcesTest(unittest.TestCase):

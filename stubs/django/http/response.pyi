@@ -5,7 +5,7 @@
 
 # pyre-unsafe
 
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Union, overload
+from typing import Any, Dict, Iterable, Iterator, List, Optional, overload, Union
 
 class HttpResponseBase(Iterator[bytes]):
     status_code: int

@@ -7,7 +7,7 @@
 
 import json
 import sys
-from typing import Any, Dict, List, Type, TypeVar, cast, IO, Union
+from typing import Any, cast, Dict, IO, List, Type, TypeVar, Union
 
 if sys.version_info[:2] >= (3, 9):
     # pyre-fixme[21]: Could not find name `_TypedDictMeta` in `typing`.

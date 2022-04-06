@@ -11,10 +11,10 @@ from typing import List, Optional
 from unittest.mock import MagicMock, patch
 
 from ..runner import (
+    compare_server_to_full,
     InconsistentOutput,
     PyreError,
     ResultComparison,
-    compare_server_to_full,
 )
 from ..specification import Specification
 from .test_environment import (

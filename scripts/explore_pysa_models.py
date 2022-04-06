@@ -11,7 +11,7 @@ import re
 import subprocess
 import textwrap
 from pathlib import Path
-from typing import Optional, Any, Dict, List, Tuple, Iterable, NamedTuple, Callable
+from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple
 
 
 class FilePosition(NamedTuple):

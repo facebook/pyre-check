@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
 
 class Token:

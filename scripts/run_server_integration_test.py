@@ -19,7 +19,7 @@ import tempfile
 from argparse import Namespace
 from contextlib import contextmanager
 from logging import Logger
-from typing import Tuple, Generator, Optional
+from typing import Generator, Optional, Tuple
 from zipfile import ZipFile
 
 

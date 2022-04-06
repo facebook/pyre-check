@@ -13,7 +13,7 @@ import sys
 import time
 from dataclasses import dataclass
 from itertools import chain
-from typing import Dict, List, Optional, Set, Mapping, AbstractSet
+from typing import AbstractSet, Dict, List, Mapping, Optional, Set
 
 from typing_extensions import Final
 
@@ -21,8 +21,8 @@ from ...api.connection import PyreConnection
 from ...client import statistics_logger
 from .annotated_function_generator import (  # noqa
     AnnotatedFunctionGenerator,
-    FunctionVisitor,
     FunctionDefinition,
+    FunctionVisitor,
 )
 from .generator_specifications import DecoratorAnnotationSpecification  # noqa
 from .get_annotated_free_functions_with_decorator import (  # noqa

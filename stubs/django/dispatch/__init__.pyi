@@ -3,4 +3,4 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from django.dispatch.dispatcher import Signal as Signal, receiver as receiver
+from django.dispatch.dispatcher import receiver as receiver, Signal as Signal

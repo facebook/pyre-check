@@ -10,12 +10,12 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from ..build_pypi_package import (
-    MODULE_NAME,
     _add_init_files,
     _patch_version,
     _sync_pysa_stubs,
     _sync_python_files,
     _validate_version,
+    MODULE_NAME,
 )
 
 

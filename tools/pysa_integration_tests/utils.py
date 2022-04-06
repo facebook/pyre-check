@@ -10,7 +10,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import final, Sequence, Optional
+from typing import final, Optional, Sequence
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

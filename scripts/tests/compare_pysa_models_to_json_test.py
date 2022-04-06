@@ -8,13 +8,13 @@ import unittest
 from unittest.mock import mock_open, patch
 
 from ..compare_pysa_models_to_json import (
-    TargetModel,
-    make_default_target_model,
-    make_default_taint_model,
-    parse_kinds,
-    json_to_parsed_model,
     get_models_from_json_file,
     get_models_from_pysa_file,
+    json_to_parsed_model,
+    make_default_taint_model,
+    make_default_target_model,
+    parse_kinds,
+    TargetModel,
 )
 
 

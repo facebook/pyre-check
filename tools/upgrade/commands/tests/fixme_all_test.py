@@ -9,7 +9,7 @@ import json
 import subprocess
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import call, MagicMock, mock_open, patch
 
 from ... import upgrade
 from ...repository import Repository

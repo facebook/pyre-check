@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from time import sleep
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Tuple, overload
+from typing import Any, Dict, Iterator, List, Mapping, Optional, overload, Tuple
 
 from typing_extensions import Final, Literal
 

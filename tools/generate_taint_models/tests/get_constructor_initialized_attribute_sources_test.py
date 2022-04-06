@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 from ..get_constructor_initialized_attribute_sources import (
     ConstructorInitializedAttributeSourceGenerator,
 )
-from .test_functions import TestChildClassB, TestGrandChildClassA, __name__ as qualifier
+from .test_functions import __name__ as qualifier, TestChildClassB, TestGrandChildClassA
 
 
 class ConstructorInitializedAttributeSourceGeneratorTest(unittest.TestCase):
