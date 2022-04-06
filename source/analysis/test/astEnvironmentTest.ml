@@ -232,7 +232,6 @@ let test_parse_sources context =
     let update_result =
       let { Configuration.Analysis.local_root; _ } = configuration in
       ModuleTracker.update
-        ~configuration
         ~paths:
           [
             PyrePath.create_relative ~root:local_root ~relative:"a.py";
@@ -724,7 +723,7 @@ module IncrementalTest = struct
     (* Update filesystem *)
     let paths = update_filesystem_state configuration in
     (* Compute the dependencies *)
-    let module_tracker_updates = ModuleTracker.update ~configuration ~paths module_tracker in
+    let module_tracker_updates = ModuleTracker.update ~paths module_tracker in
     let update_result =
       AstEnvironment.update
         ~configuration

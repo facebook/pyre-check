@@ -1303,7 +1303,7 @@ let test_update_and_compute_dependencies context =
         let path = PyrePath.create_relative ~root:local_root ~relative:"source.py" in
         let ast_environment = AnnotatedGlobalEnvironment.ast_environment environment in
         let module_tracker = AstEnvironment.module_tracker ast_environment in
-        ModuleTracker.update ~configuration ~paths:[path] module_tracker
+        ModuleTracker.update ~paths:[path] module_tracker
         |> (fun updates -> AstEnvironment.Update updates)
         |> update_environments
              ~ast_environment

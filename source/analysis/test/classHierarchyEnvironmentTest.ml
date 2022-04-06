@@ -295,7 +295,7 @@ let test_updates context =
         List.map ["test.py", ()] ~f:(fun (relative, _) ->
             PyrePath.create_relative ~root:local_root ~relative)
       in
-      ModuleTracker.update ~configuration ~paths module_tracker
+      ModuleTracker.update ~paths module_tracker
       |> fun updates -> AstEnvironment.Update updates |> update
     in
     let printer set =

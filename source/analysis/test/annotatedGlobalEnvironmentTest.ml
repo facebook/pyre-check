@@ -140,7 +140,7 @@ let test_updates context =
     let { Configuration.Analysis.local_root; _ } = configuration in
     let path = PyrePath.create_relative ~root:local_root ~relative:"test.py" in
     let _, update_result =
-      ModuleTracker.update ~configuration ~paths:[path] module_tracker
+      ModuleTracker.update ~paths:[path] module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
       |> update_environments
            ~ast_environment

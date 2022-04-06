@@ -1168,7 +1168,7 @@ module IncrementalTest = struct
     in
     (* Compute the updates *)
     let paths = update_filesystem_state configuration in
-    let updates = ModuleTracker.update ~configuration ~paths module_tracker in
+    let updates = ModuleTracker.update ~paths module_tracker in
     let actual =
       let create_event = function
         | ModuleTracker.IncrementalUpdate.NewExplicit { SourcePath.relative; is_external; _ } ->

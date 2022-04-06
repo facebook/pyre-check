@@ -23,7 +23,7 @@ let recheck
   let timer = Timer.start () in
   let ast_environment = TypeEnvironment.ast_environment environment in
   let module_tracker = AstEnvironment.module_tracker ast_environment in
-  let module_updates = ModuleTracker.update module_tracker ~configuration ~paths in
+  let module_updates = ModuleTracker.update module_tracker ~paths in
   Scheduler.once_per_worker scheduler ~configuration ~f:SharedMemory.invalidate_caches;
   SharedMemory.invalidate_caches ();
   SharedMemory.collect `aggressive;

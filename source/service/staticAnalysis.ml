@@ -124,7 +124,7 @@ module Cache = struct
     let open Result in
     Log.info "Determining if source files have changed since cache was created.";
     exception_to_error ~error:LoadError ~message:"loading module tracker from cache" ~f:(fun () ->
-        Ok (Analysis.ModuleTracker.Serializer.from_stored_layouts ()))
+        Ok (Analysis.ModuleTracker.Serializer.from_stored_layouts ~configuration ()))
     >>= fun old_module_tracker ->
     let new_module_tracker = Analysis.ModuleTracker.create configuration in
     let changed_paths =

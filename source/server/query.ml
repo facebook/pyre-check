@@ -749,7 +749,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         |> fun result -> Single (Base.Compatibility { actual = left; expected = right; result })
     | ModulesOfPath path ->
         let module_of_path path =
-          match ModuleTracker.ReadOnly.lookup_path ~configuration module_tracker path with
+          match ModuleTracker.ReadOnly.lookup_path module_tracker path with
           | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } -> Some qualifier
           | ShadowedBy _
           | NotFound ->
@@ -770,7 +770,7 @@ let rec process_request ~environment ~build_system ~configuration request =
           in
           match
             BuildSystem.lookup_artifact build_system relative_path
-            |> List.map ~f:(ModuleTracker.ReadOnly.lookup_path ~configuration module_tracker)
+            |> List.map ~f:(ModuleTracker.ReadOnly.lookup_path module_tracker)
           with
           | [ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ }] -> Some qualifier
           | _ -> None

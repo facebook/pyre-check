@@ -22,7 +22,10 @@ type layouts = {
   submodule_refcounts: int Reference.Table.t;
 }
 
-type t = { layouts: layouts }
+type t = {
+  layouts: layouts;
+  configuration: Configuration.Analysis.t;
+}
 
 let insert_source_path ~configuration ~inserted existing_files =
   let rec insert sofar = function
@@ -157,7 +160,7 @@ let create_layouts configuration =
 
 let create configuration =
   let layouts = create_layouts configuration in
-  { layouts }
+  { layouts; configuration }
 
 
 let all_source_paths { layouts = { module_to_files; _ }; _ } =
@@ -423,7 +426,7 @@ let update_layouts ~configuration ~paths { module_to_files; submodule_refcounts 
   result
 
 
-let update ~configuration ~paths { layouts; _ } =
+let update ~paths { layouts; configuration } =
   let timer = Timer.start () in
   let result = update_layouts ~configuration ~paths layouts in
   Statistics.performance ~name:"module tracker updated" ~timer ~phase_name:"Module tracking" ();
@@ -455,11 +458,11 @@ module Serializer = struct
       }
   end)
 
-  let store_layouts { layouts } = Layouts.store layouts
+  let store_layouts { layouts; _ } = Layouts.store layouts
 
-  let from_stored_layouts () =
+  let from_stored_layouts ~configuration () =
     let layouts = Layouts.load () in
-    { layouts }
+    { layouts; configuration }
 end
 
 module ReadOnly = struct
@@ -467,7 +470,10 @@ module ReadOnly = struct
     lookup_source_path: Reference.t -> SourcePath.t option;
     is_module_tracked: Reference.t -> bool;
     source_paths: unit -> SourcePath.t list;
+    configuration: unit -> Configuration.Analysis.t;
   }
+
+  let configuration { configuration; _ } = configuration ()
 
   let lookup_source_path { lookup_source_path; _ } = lookup_source_path
 
@@ -475,7 +481,8 @@ module ReadOnly = struct
 
   let is_module_tracked { is_module_tracked; _ } = is_module_tracked
 
-  let lookup_path ~configuration tracker path =
+  let lookup_path tracker path =
+    let configuration = configuration tracker in
     match SourcePath.create ~configuration path with
     | None -> PathLookup.NotFound
     | Some { SourcePath.relative; priority; qualifier; _ } -> (
@@ -494,7 +501,7 @@ module ReadOnly = struct
     source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
 end
 
-let read_only ({ layouts = { module_to_files; submodule_refcounts }; _ } as tracker) =
+let read_only ({ layouts = { module_to_files; submodule_refcounts }; configuration } as tracker) =
   let lookup_source_path module_name =
     match Hashtbl.find module_to_files module_name with
     | Some (source_path :: _) -> Some source_path
@@ -507,4 +514,5 @@ let read_only ({ layouts = { module_to_files; submodule_refcounts }; _ } as trac
     ReadOnly.lookup_source_path;
     is_module_tracked;
     source_paths = (fun () -> source_paths tracker);
+    configuration = (fun () -> configuration);
   }

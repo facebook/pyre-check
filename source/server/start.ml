@@ -404,7 +404,7 @@ let initialize_server_state
                 let open Lwt.Infix in
                 BuildSystem.Initializer.load build_system_initializer
                 >>= fun build_system ->
-                let loaded_state = ServerState.load ~build_system () in
+                let loaded_state = ServerState.load ~configuration ~build_system () in
                 Log.info "Processing recent updates not included in saved state...";
                 Statistics.event ~name:"saved state success" ();
                 Request.IncrementalUpdate (List.map changed_files ~f:PyrePath.absolute)

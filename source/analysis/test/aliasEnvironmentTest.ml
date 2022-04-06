@@ -368,7 +368,7 @@ let test_updates context =
         List.map new_sources ~f:(fun (relative, _) ->
             PyrePath.create_relative ~root:local_root ~relative)
       in
-      ModuleTracker.update ~configuration ~paths module_tracker
+      ModuleTracker.update ~paths module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
       |> update
     in

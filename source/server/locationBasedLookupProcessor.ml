@@ -38,7 +38,7 @@ let get_lookup ~configuration ~build_system ~environment path =
       (* If a source path corresponds to multiple artifacts, randomly pick an artifact and compute
          results for it. *)
       let module_tracker = TypeEnvironment.module_tracker environment |> ModuleTracker.read_only in
-      match ModuleTracker.ReadOnly.lookup_path ~configuration module_tracker artifact_path with
+      match ModuleTracker.ReadOnly.lookup_path module_tracker artifact_path with
       | ModuleTracker.PathLookup.Found source_path -> generate_lookup_for_existent_path source_path
       | ModuleTracker.PathLookup.ShadowedBy _ -> generate_lookup_for_nonexistent_path StubShadowing
       | ModuleTracker.PathLookup.NotFound -> generate_lookup_for_nonexistent_path FileNotFound)

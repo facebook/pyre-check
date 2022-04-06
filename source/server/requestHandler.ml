@@ -9,8 +9,8 @@ open Core
 open Ast
 open Analysis
 
-let module_of_path ~configuration ~module_tracker path =
-  match ModuleTracker.ReadOnly.lookup_path ~configuration module_tracker path with
+let module_of_path ~module_tracker path =
+  match ModuleTracker.ReadOnly.lookup_path module_tracker path with
   | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } -> Some qualifier
   | _ -> None
 
@@ -69,7 +69,6 @@ let process_display_type_error_request
                  NOTE (grievejia): It is possible for the type errors to differ. We may need to
                  reconsider how this is handled in the future. *)
               module_of_path
-                ~configuration
                 ~module_tracker:
                   (TypeEnvironment.module_tracker type_environment |> ModuleTracker.read_only)
                 artifact_path
