@@ -26,6 +26,12 @@ type missing_annotation = {
 }
 [@@deriving compare, sexp, show, hash]
 
+type revealed_local = {
+  name: Reference.t;
+  annotation: Annotation.t;
+}
+[@@deriving compare, sexp, show, hash]
+
 type class_kind =
   | Class
   | Enumeration
@@ -371,6 +377,7 @@ and kind =
       is_shadowed_class_imported: bool;
     }
   | RedundantCast of Type.t
+  | RevealedLocals of revealed_local list
   | RevealedType of {
       expression: Expression.t;
       annotation: Annotation.t;
@@ -445,6 +452,7 @@ and kind =
 [@@deriving compare, sexp, show, hash]
 
 let code_of_kind = function
+  | RevealedLocals _ -> -2
   | RevealedType _ -> -1
   | UnusedIgnore _ -> 0
   | Top -> 1
@@ -558,6 +566,7 @@ let name_of_kind = function
   | ProhibitedAny _ -> "Prohibited any"
   | RedefinedClass _ -> "Redefined class"
   | RedundantCast _ -> "Redundant cast"
+  | RevealedLocals _ -> "Revealed locals"
   | RevealedType _ -> "Revealed type"
   | TooManyArguments _ -> "Too many arguments"
   | Top -> "Undefined error"
@@ -2026,6 +2035,18 @@ let rec messages ~concise ~signature location kind =
   | RedundantCast _ when concise -> ["The cast is redundant."]
   | RedundantCast annotation ->
       [Format.asprintf "The value being cast is already of type `%a`." pp_type annotation]
+  | RevealedLocals revealed_locals ->
+      let show_revealed_local { name; annotation } =
+        Format.asprintf
+          "    %s: %s"
+          (Reference.show_sanitized name)
+          (Annotation.display_as_revealed_type annotation)
+      in
+      [
+        Format.asprintf
+          "Revealed local types are:\n%s"
+          (List.map revealed_locals ~f:show_revealed_local |> String.concat ~sep:"\n");
+      ]
   | RevealedType { expression; annotation; _ } ->
       [
         Format.asprintf
@@ -2655,6 +2676,7 @@ let due_to_analysis_limitations { kind; _ } =
   | TypedDictionaryInitializationError _
   | Unpack _
   | RedefinedClass _
+  | RevealedLocals _
   | RevealedType _
   | UnsafeCast _
   | UnawaitedAwaitable _
@@ -2827,6 +2849,28 @@ let less_or_equal ~resolution left right =
   | NotCallable left, NotCallable right -> GlobalResolution.less_or_equal resolution ~left ~right
   | RedundantCast left, RedundantCast right ->
       GlobalResolution.less_or_equal resolution ~left ~right
+  | RevealedLocals left, RevealedLocals right when List.length left == List.length right ->
+      let all =
+        List.fold_until
+          ~init:true
+          ~f:(fun _ x ->
+            if not x then
+              Stop x
+            else
+              Continue x)
+          ~finish:(fun _ -> true)
+      in
+      let revealed_local_less_or_equal
+          { name = left_name; annotation = left_annotation }
+          { name = right_name; annotation = right_annotation }
+        =
+        [%compare.equal: Reference.t] left_name right_name
+        && Annotation.less_or_equal
+             ~type_less_or_equal:(GlobalResolution.less_or_equal resolution)
+             ~left:left_annotation
+             ~right:right_annotation
+      in
+      all (List.rev_map2_exn left right ~f:revealed_local_less_or_equal)
   | RevealedType left, RevealedType right ->
       [%compare.equal: Expression.t] left.expression right.expression
       && Annotation.less_or_equal
@@ -2976,6 +3020,7 @@ let less_or_equal ~resolution left right =
   | ProhibitedAny _, _
   | RedefinedClass _, _
   | RedundantCast _, _
+  | RevealedLocals _, _
   | RevealedType _, _
   | UnsafeCast _, _
   | TooManyArguments _, _
@@ -3120,6 +3165,26 @@ let join ~resolution left right =
           }
     | RedundantCast left, RedundantCast right ->
         RedundantCast (GlobalResolution.join resolution left right)
+    | RevealedLocals left, RevealedLocals right
+      when List.equal
+             (fun { name = left_name; annotation = _ } { name = right_name; annotation = _ } ->
+               [%compare.equal: Reference.t] left_name right_name)
+             left
+             right ->
+        let revealed_local_join
+            { name = left_name; annotation = left_annotation }
+            { name = _; annotation = right_annotation }
+          =
+          {
+            name = left_name;
+            annotation =
+              Annotation.join
+                ~type_join:(GlobalResolution.join resolution)
+                left_annotation
+                right_annotation;
+          }
+        in
+        RevealedLocals (List.map2_exn ~f:revealed_local_join left right)
     | ( RevealedType
           { annotation = left_annotation; expression = left_expression; qualify = left_qualify },
         RevealedType
@@ -3432,6 +3497,7 @@ let join ~resolution left right =
     | ProhibitedAny _, _
     | RedefinedClass _, _
     | RedundantCast _, _
+    | RevealedLocals _, _
     | RevealedType _, _
     | UnsafeCast _, _
     | TooManyArguments _, _
@@ -3722,6 +3788,7 @@ let suppress ~mode ~ignore_codes error =
     | Unpack { unpack_problem = UnacceptableType Type.Top; _ } ->
         true
     | UndefinedImport _ -> false
+    | RevealedLocals _ -> false
     | RevealedType _ -> false
     | UnsafeCast _ -> false
     | IncompatibleReturnType { is_unimplemented = true; _ } -> true
@@ -3949,6 +4016,11 @@ let dequalify
           }
     | RedefinedClass redefined_class -> RedefinedClass redefined_class
     | RedundantCast annotation -> RedundantCast (dequalify annotation)
+    | RevealedLocals revealed_locals ->
+        let dequalify_reveal_local { name; annotation } =
+          { name; annotation = dequalify_annotation annotation }
+        in
+        RevealedLocals (List.map revealed_locals ~f:dequalify_reveal_local)
     | RevealedType { expression; annotation; qualify } ->
         let annotation = if qualify then annotation else dequalify_annotation annotation in
         RevealedType { expression; annotation; qualify }

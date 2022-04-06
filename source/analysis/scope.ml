@@ -634,6 +634,7 @@ module Builtins = struct
     | "BoundMethod"
     | "pyre_dump"
     | "reveal_type"
+    | "reveal_locals"
     (* Builtins recognized by Python *)
     | "__build_class__"
     | "__builtins__"

@@ -1863,6 +1863,22 @@ module State (Context : Context) = struct
         (* Resolve `type()` calls. *)
         let resolved = resolve_expression_type ~resolution value |> Type.meta in
         { resolution; errors = []; resolved; resolved_annotation = None; base = None }
+    | Call { callee = { Node.location; value = Name (Name.Identifier "reveal_locals") }; _ } ->
+        (* Special case reveal_locals(). *)
+        let from_annotation (reference, unit) =
+          let name = reference in
+          let annotation =
+            Option.value ~default:(Annotation.create_mutable Type.Any) (Refinement.Unit.base unit)
+          in
+          { Error.name; annotation }
+        in
+        let annotations = Map.to_alist (Resolution.annotation_store resolution).annotations in
+        let temporary_annotations =
+          Map.to_alist (Resolution.annotation_store resolution).temporary_annotations
+        in
+        let revealed_locals = List.map ~f:from_annotation (temporary_annotations @ annotations) in
+        let errors = emit_error ~errors:[] ~location ~kind:(Error.RevealedLocals revealed_locals) in
+        { resolution; errors; resolved = Type.none; resolved_annotation = None; base = None }
     | Call
         {
           callee = { Node.location; value = Name (Name.Identifier "reveal_type") };
