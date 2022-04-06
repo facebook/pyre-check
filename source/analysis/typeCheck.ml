@@ -6828,7 +6828,7 @@ let check_define
     ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
   try
-    let errors, local_annotations, callees =
+    let type_errors, local_annotations, callees =
       let module Context = struct
         let qualifier = qualifier
 
@@ -6847,6 +6847,12 @@ let check_define
       in
       exit_state ~resolution (module Context)
     in
+    let uninitialized_local_errors =
+      if Define.is_toplevel define then
+        []
+      else
+        UninitializedLocalCheck.run_on_define ~qualifier define_node
+    in
     (if not (Define.is_overloaded_function define) then
        let caller =
          if Define.is_property_setter define then
@@ -6855,7 +6861,7 @@ let check_define
            Callgraph.FunctionCaller name
        in
        Option.iter callees ~f:(fun callees -> Callgraph.set ~caller ~callees));
-    { CheckResult.errors; local_annotations }
+    { CheckResult.errors = List.append uninitialized_local_errors type_errors; local_annotations }
   with
   | ClassHierarchy.Untracked annotation ->
       Statistics.event
@@ -6968,18 +6974,10 @@ let run_on_define ~configuration ~environment ?call_graph_builder (name, depende
   let resolution = resolution global_resolution (module DummyContext) in
   match GlobalResolution.function_definition global_resolution name with
   | None -> ()
-  | Some ({ FunctionDefinition.qualifier; _ } as definition) ->
+  | Some definition ->
       let { CheckResult.errors; local_annotations } =
         check_function_definition ~configuration ~resolution ~name ?call_graph_builder definition
       in
-      let uninitialized_local_errors =
-        definition
-        |> FunctionDefinition.all_bodies
-        |> List.filter ~f:(fun { Node.value; _ } -> not (Define.is_toplevel value))
-        |> List.map ~f:(UninitializedLocalCheck.run_on_define ~qualifier)
-        |> List.concat
-      in
-      let errors = errors @ uninitialized_local_errors in
       let () =
         if configuration.store_type_check_resolution then
           (* Write fixpoint type resolutions to shared memory *)
