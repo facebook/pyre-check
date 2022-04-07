@@ -38,6 +38,8 @@ module type SET = sig
 
   val diff : t -> t -> t
 
+  val equal : t -> t -> bool
+
   val map : (element -> element) -> t -> t
 
   val filter : (element -> bool) -> t -> t

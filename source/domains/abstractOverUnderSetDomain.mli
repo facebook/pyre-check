@@ -36,6 +36,6 @@ module type S = sig
   val sequence_join : t -> t -> t
 end
 
-module Make (Element : AbstractSetDomain.ELEMENT) : sig
-  include S with type element = Element.t
-end
+module MakeWithSet (Set : AbstractSetDomain.SET) : S with type element = Set.element
+
+module Make (Element : AbstractSetDomain.ELEMENT) : S with type element = Element.t
