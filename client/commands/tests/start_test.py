@@ -9,7 +9,7 @@ from typing import Iterable, Tuple
 
 import testslide
 
-from ... import command_arguments, configuration
+from ... import command_arguments, configuration, search_path
 from ...tests import setup
 from .. import backend_arguments
 from ..start import (
@@ -91,7 +91,7 @@ class ArgumentTest(testslide.TestCase):
                     log_path="foo",
                     global_root="bar",
                     source_paths=backend_arguments.SimpleSourcePath(
-                        [configuration.SimpleSearchPathElement("source")]
+                        [search_path.SimpleElement("source")]
                     ),
                 ),
                 taint_models_path=["/taint/model"],
@@ -340,16 +340,10 @@ class StartTest(testslide.TestCase):
                         parallel=True,
                         python_version=server_configuration.get_python_version(),
                         search_paths=[
-                            configuration.SimpleSearchPathElement(
-                                str(root_path / "search")
-                            )
+                            search_path.SimpleElement(str(root_path / "search"))
                         ],
                         source_paths=backend_arguments.SimpleSourcePath(
-                            [
-                                configuration.SimpleSearchPathElement(
-                                    str(root_path / "local/src")
-                                )
-                            ]
+                            [search_path.SimpleElement(str(root_path / "local/src"))]
                         ),
                     ),
                     additional_logging_sections=["server"],

@@ -11,7 +11,7 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 import testslide
 
-from ... import command_arguments, configuration
+from ... import command_arguments, configuration, search_path
 from ...tests import setup
 from .. import backend_arguments
 from ..infer import (
@@ -55,7 +55,7 @@ class ArgumentTest(testslide.TestCase):
                     log_path="/log",
                     global_root="/project",
                     source_paths=backend_arguments.SimpleSourcePath(
-                        [configuration.SimpleSearchPathElement("source")]
+                        [search_path.SimpleElement("source")]
                     ),
                 ),
                 ignore_infer=["/ignore"],
@@ -131,16 +131,10 @@ class InferTest(testslide.TestCase):
                         parallel=True,
                         python_version=infer_configuration.get_python_version(),
                         search_paths=[
-                            configuration.SimpleSearchPathElement(
-                                str(root_path / "search")
-                            )
+                            search_path.SimpleElement(str(root_path / "search"))
                         ],
                         source_paths=backend_arguments.SimpleSourcePath(
-                            [
-                                configuration.SimpleSearchPathElement(
-                                    str(root_path / "local/src")
-                                )
-                            ]
+                            [search_path.SimpleElement(str(root_path / "local/src"))]
                         ),
                     ),
                     ignore_infer=[str(root_path / "ignores")],

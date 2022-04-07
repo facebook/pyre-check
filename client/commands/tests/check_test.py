@@ -10,7 +10,7 @@ from typing import Iterable, Tuple
 
 import testslide
 
-from ... import command_arguments, configuration
+from ... import command_arguments, configuration, search_path
 from ...error import Error
 from ...tests import setup
 from .. import backend_arguments
@@ -40,7 +40,7 @@ class ArgumentTest(testslide.TestCase):
                     log_path="/log",
                     global_root="/project",
                     source_paths=backend_arguments.SimpleSourcePath(
-                        [configuration.SimpleSearchPathElement("source")]
+                        [search_path.SimpleElement("source")]
                     ),
                 ),
                 additional_logging_sections=["foo", "bar"],
@@ -114,16 +114,10 @@ class CheckTest(testslide.TestCase):
                         parallel=True,
                         python_version=check_configuration.get_python_version(),
                         search_paths=[
-                            configuration.SimpleSearchPathElement(
-                                str(root_path / "search")
-                            )
+                            search_path.SimpleElement(str(root_path / "search"))
                         ],
                         source_paths=backend_arguments.SimpleSourcePath(
-                            [
-                                configuration.SimpleSearchPathElement(
-                                    str(root_path / "local/src")
-                                )
-                            ]
+                            [search_path.SimpleElement(str(root_path / "local/src"))]
                         ),
                     ),
                     show_error_traces=True,

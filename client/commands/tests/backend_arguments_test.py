@@ -9,7 +9,7 @@ from typing import Iterable, Tuple
 
 import testslide
 
-from ... import command_arguments, configuration
+from ... import command_arguments, configuration, search_path
 from ...tests import setup
 from ..backend_arguments import (
     BaseArguments,
@@ -56,8 +56,8 @@ class ArgumentsTest(testslide.TestCase):
         self.assertDictEqual(
             SimpleSourcePath(
                 [
-                    configuration.SimpleSearchPathElement("/source0"),
-                    configuration.SimpleSearchPathElement("/source1"),
+                    search_path.SimpleElement("/source0"),
+                    search_path.SimpleElement("/source1"),
                 ]
             ).serialize(),
             {"kind": "simple", "paths": ["/source0", "/source1"]},
@@ -73,8 +73,8 @@ class ArgumentsTest(testslide.TestCase):
                     ),
                 ),
                 elements=[
-                    configuration.SimpleSearchPathElement("/source0"),
-                    configuration.SimpleSearchPathElement("/source1"),
+                    search_path.SimpleElement("/source0"),
+                    search_path.SimpleElement("/source1"),
                 ],
             ).serialize(),
             {
@@ -137,9 +137,7 @@ class ArgumentsTest(testslide.TestCase):
             BaseArguments(
                 log_path="foo",
                 global_root="bar",
-                source_paths=SimpleSourcePath(
-                    [configuration.SimpleSearchPathElement("source")]
-                ),
+                source_paths=SimpleSourcePath([search_path.SimpleElement("source")]),
             ),
             [
                 ("log_path", "foo"),
@@ -285,7 +283,7 @@ class ArgumentsTest(testslide.TestCase):
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre", "src"])
-            element = configuration.SimpleSearchPathElement(str(root_path / "src"))
+            element = search_path.SimpleElement(str(root_path / "src"))
             self.assertEqual(
                 get_source_path(
                     configuration.Configuration(
@@ -302,7 +300,7 @@ class ArgumentsTest(testslide.TestCase):
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre"])
-            element = configuration.SimpleSearchPathElement(str(root_path / "src"))
+            element = search_path.SimpleElement(str(root_path / "src"))
             self.assertEqual(
                 get_source_path(
                     configuration.Configuration(
@@ -322,7 +320,7 @@ class ArgumentsTest(testslide.TestCase):
             setup.ensure_files_exist(
                 root_path, ["src/indicator", "unwatched_root/CHECKSUMS"]
             )
-            element = configuration.SimpleSearchPathElement(str(root_path / "src"))
+            element = search_path.SimpleElement(str(root_path / "src"))
             unwatched_dependency = configuration.UnwatchedDependency(
                 change_indicator="indicator",
                 files=configuration.UnwatchedFiles(
@@ -352,7 +350,7 @@ class ArgumentsTest(testslide.TestCase):
             root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre", "project"])
             setup.ensure_files_exist(root_path, ["src/indicator"])
-            element = configuration.SimpleSearchPathElement(str(root_path / "src"))
+            element = search_path.SimpleElement(str(root_path / "src"))
             unwatched_dependency = configuration.UnwatchedDependency(
                 change_indicator="indicator",
                 files=configuration.UnwatchedFiles(
@@ -512,16 +510,16 @@ class ArgumentsTest(testslide.TestCase):
                 configuration.Configuration(
                     project_root="project",
                     dot_pyre_directory=Path(".pyre"),
-                    source_directories=[configuration.SimpleSearchPathElement("src")],
+                    source_directories=[search_path.SimpleElement("src")],
                     targets=["//ct:ayla"],
                 ).expand_and_filter_nonexistent_paths(),
                 artifact_root_name="irrelevant",
             )
 
     def test_get_checked_directory_for_simple_source_path(self) -> None:
-        element0 = configuration.SimpleSearchPathElement("ozzie")
-        element1 = configuration.SubdirectorySearchPathElement("diva", "flea")
-        element2 = configuration.SitePackageSearchPathElement("super", "slash")
+        element0 = search_path.SimpleElement("ozzie")
+        element1 = search_path.SubdirectoryElement("diva", "flea")
+        element2 = search_path.SitePackageElement("super", "slash")
         self.assertCountEqual(
             SimpleSourcePath(
                 [element0, element1, element2, element0]
@@ -563,7 +561,7 @@ class ArgumentsTest(testslide.TestCase):
             self.assertCountEqual(
                 get_checked_directory_allowlist(
                     test_configuration,
-                    SimpleSourcePath([configuration.SimpleSearchPathElement("source")]),
+                    SimpleSourcePath([search_path.SimpleElement("source")]),
                 ),
                 [
                     str(root_path / "a"),
@@ -584,9 +582,7 @@ class ArgumentsTest(testslide.TestCase):
             self.assertCountEqual(
                 get_checked_directory_allowlist(
                     test_configuration,
-                    SimpleSourcePath(
-                        [configuration.SimpleSearchPathElement(str(root_path))]
-                    ),
+                    SimpleSourcePath([search_path.SimpleElement(str(root_path))]),
                 ),
                 [
                     str(root_path / "a"),
@@ -602,9 +598,7 @@ class ArgumentsTest(testslide.TestCase):
             self.assertCountEqual(
                 get_checked_directory_allowlist(
                     test_configuration,
-                    SimpleSourcePath(
-                        [configuration.SimpleSearchPathElement(str(root_path))]
-                    ),
+                    SimpleSourcePath([search_path.SimpleElement(str(root_path))]),
                 ),
                 [str(root_path)],
             )

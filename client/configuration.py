@@ -5,7 +5,7 @@
 
 # pyre-unsafe
 
-import abc
+
 import dataclasses
 import glob
 import json
@@ -38,7 +38,7 @@ from typing import (
     Union,
 )
 
-from . import command_arguments, find_directories
+from . import command_arguments, find_directories, search_path as search_path_module
 from .filesystem import expand_relative_path, expand_global_root
 from .find_directories import (
     BINARY_NAME,
@@ -51,12 +51,6 @@ from .find_directories import (
 
 LOG: Logger = logging.getLogger(__name__)
 T = TypeVar("T")
-
-
-def _expand_relative_root(path: str, relative_root: str) -> str:
-    if not path.startswith("//"):
-        return expand_relative_path(relative_root, path)
-    return path
 
 
 def _get_optional_value(source: Optional[T], default: T) -> T:
@@ -92,125 +86,6 @@ class InvalidConfiguration(Exception):
 class InvalidPythonVersion(InvalidConfiguration):
     def __init__(self, message: str) -> None:
         super().__init__(message)
-
-
-class SearchPathElement(abc.ABC):
-    @abc.abstractmethod
-    def path(self) -> str:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def get_root(self) -> str:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def command_line_argument(self) -> str:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def expand_global_root(self, global_root: str) -> "SearchPathElement":
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def expand_relative_root(self, relative_root: str) -> "SearchPathElement":
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def expand_glob(self) -> List["SearchPathElement"]:
-        raise NotImplementedError
-
-
-@dataclasses.dataclass(frozen=True)
-class SimpleSearchPathElement(SearchPathElement):
-    root: str
-
-    def path(self) -> str:
-        return self.root
-
-    def get_root(self) -> str:
-        return self.root
-
-    def command_line_argument(self) -> str:
-        return self.root
-
-    def expand_global_root(self, global_root: str) -> SearchPathElement:
-        return SimpleSearchPathElement(
-            expand_global_root(self.root, global_root=global_root)
-        )
-
-    def expand_relative_root(self, relative_root: str) -> SearchPathElement:
-        return SimpleSearchPathElement(
-            _expand_relative_root(self.root, relative_root=relative_root)
-        )
-
-    def expand_glob(self) -> List[SearchPathElement]:
-        expanded = sorted(glob.glob(self.get_root()))
-        if expanded:
-            return [SimpleSearchPathElement(path) for path in expanded]
-        else:
-            LOG.warning(f"'{self.path()}' does not match any paths.")
-            return []
-
-
-@dataclasses.dataclass(frozen=True)
-class SubdirectorySearchPathElement(SearchPathElement):
-    root: str
-    subdirectory: str
-
-    def path(self) -> str:
-        return os.path.join(self.root, self.subdirectory)
-
-    def get_root(self) -> str:
-        return self.root
-
-    def command_line_argument(self) -> str:
-        return self.root + "$" + self.subdirectory
-
-    def expand_global_root(self, global_root: str) -> SearchPathElement:
-        return SubdirectorySearchPathElement(
-            root=expand_global_root(self.root, global_root=global_root),
-            subdirectory=self.subdirectory,
-        )
-
-    def expand_relative_root(self, relative_root: str) -> SearchPathElement:
-        return SubdirectorySearchPathElement(
-            root=_expand_relative_root(self.root, relative_root=relative_root),
-            subdirectory=self.subdirectory,
-        )
-
-    def expand_glob(self) -> List["SearchPathElement"]:
-        return [self]
-
-
-@dataclasses.dataclass(frozen=True)
-class SitePackageSearchPathElement(SearchPathElement):
-    site_root: str
-    package_name: str
-    is_toplevel_module: bool = False
-
-    def package_path(self) -> str:
-        module_suffix = ".py" if self.is_toplevel_module else ""
-        return self.package_name + module_suffix
-
-    def path(self) -> str:
-        return os.path.join(self.site_root, self.package_path())
-
-    def get_root(self) -> str:
-        return self.site_root
-
-    def command_line_argument(self) -> str:
-        return self.site_root + "$" + self.package_path()
-
-    def expand_global_root(self, global_root: str) -> SearchPathElement:
-        # Site package does not participate in root expansion.
-        return self
-
-    def expand_relative_root(self, relative_root: str) -> SearchPathElement:
-        # Site package does not participate in root expansion.
-        return self
-
-    def expand_glob(self) -> List["SearchPathElement"]:
-        return [self]
 
 
 @dataclasses.dataclass
@@ -264,19 +139,19 @@ def get_site_roots() -> List[str]:
 
 def create_search_paths(
     json: Union[str, Dict[str, Union[str, bool]]], site_roots: Iterable[str]
-) -> List[SearchPathElement]:
+) -> List[search_path_module.Element]:
     if isinstance(json, str):
-        return [SimpleSearchPathElement(json)]
+        return [search_path_module.SimpleElement(json)]
     elif isinstance(json, dict):
         if "root" in json and "subdirectory" in json:
             return [
-                SubdirectorySearchPathElement(
+                search_path_module.SubdirectoryElement(
                     root=str(json["root"]), subdirectory=str(json["subdirectory"])
                 )
             ]
         if "import_root" in json and "source" in json:
             return [
-                SubdirectorySearchPathElement(
+                search_path_module.SubdirectoryElement(
                     root=str(json["import_root"]), subdirectory=str(json["source"])
                 )
             ]
@@ -285,7 +160,7 @@ def create_search_paths(
                 "is_toplevel_module" in json and json["is_toplevel_module"]
             )
             return [
-                SitePackageSearchPathElement(
+                search_path_module.SitePackageElement(
                     site_root=root,
                     package_name=str(json["site-package"]),
                     is_toplevel_module=bool(is_toplevel_module),
@@ -304,8 +179,8 @@ def _in_virtual_environment(override: Optional[bool] = None) -> bool:
 
 
 def _expand_and_get_existent_paths(
-    paths: Sequence[SearchPathElement],
-) -> List[SearchPathElement]:
+    paths: Sequence[search_path_module.Element],
+) -> List[search_path_module.Element]:
     expanded_search_paths = [
         expanded_path
         for search_path_element in paths
@@ -591,8 +466,8 @@ class PartialConfiguration:
     pysa_version_hash: Optional[str] = None
     python_version: Optional[PythonVersion] = None
     shared_memory: SharedMemory = SharedMemory()
-    search_path: Sequence[SearchPathElement] = field(default_factory=list)
-    source_directories: Optional[Sequence[SearchPathElement]] = None
+    search_path: Sequence[search_path_module.Element] = field(default_factory=list)
+    source_directories: Optional[Sequence[search_path_module.Element]] = None
     strict: Optional[bool] = None
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
@@ -621,7 +496,8 @@ class PartialConfiguration:
     ) -> "PartialConfiguration":
         strict: Optional[bool] = True if arguments.strict else None
         source_directories = [
-            SimpleSearchPathElement(element) for element in arguments.source_directories
+            search_path_module.SimpleElement(element)
+            for element in arguments.source_directories
         ] or None
         targets: Optional[List[str]] = (
             arguments.targets if len(arguments.targets) > 0 else None
@@ -664,7 +540,8 @@ class PartialConfiguration:
                 hash_table_power=arguments.shared_memory_hash_table_power,
             ),
             search_path=[
-                SimpleSearchPathElement(element) for element in arguments.search_path
+                search_path_module.SimpleElement(element)
+                for element in arguments.search_path
             ],
             source_directories=source_directories,
             strict=strict,
@@ -1118,8 +995,8 @@ class Configuration:
     python_version: Optional[PythonVersion] = None
     shared_memory: SharedMemory = SharedMemory()
     relative_local_root: Optional[str] = None
-    search_path: Sequence[SearchPathElement] = field(default_factory=list)
-    source_directories: Optional[Sequence[SearchPathElement]] = None
+    search_path: Sequence[search_path_module.Element] = field(default_factory=list)
+    source_directories: Optional[Sequence[search_path_module.Element]] = None
     strict: bool = False
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
@@ -1138,7 +1015,9 @@ class Configuration:
         search_path = partial_configuration.search_path
         if len(search_path) == 0 and _in_virtual_environment(in_virtual_environment):
             LOG.warning("Using virtual environment site-packages in search path...")
-            search_path = [SimpleSearchPathElement(root) for root in get_site_roots()]
+            search_path = [
+                search_path_module.SimpleElement(root) for root in get_site_roots()
+            ]
 
         return Configuration(
             project_root=str(project_root),
@@ -1268,7 +1147,7 @@ class Configuration:
             **({"version_hash": version_hash} if version_hash is not None else {}),
         }
 
-    def get_source_directories(self) -> List[SearchPathElement]:
+    def get_source_directories(self) -> List[search_path_module.Element]:
         return list(self.source_directories or [])
 
     def get_existent_unwatched_dependency(
@@ -1299,7 +1178,7 @@ class Configuration:
 
     # Expansion and validation of search paths cannot happen at Configuration creation
     # because link trees need to be built first.
-    def expand_and_get_existent_search_paths(self) -> List[SearchPathElement]:
+    def expand_and_get_existent_search_paths(self) -> List[search_path_module.Element]:
         existent_paths = _expand_and_get_existent_paths(self.search_path)
 
         typeshed_root = self.get_typeshed_respecting_override()
@@ -1307,7 +1186,7 @@ class Configuration:
             []
             if typeshed_root is None
             else [
-                SimpleSearchPathElement(str(element))
+                search_path_module.SimpleElement(str(element))
                 for element in find_directories.find_typeshed_search_paths(
                     Path(typeshed_root)
                 )
@@ -1315,8 +1194,8 @@ class Configuration:
         )
 
         # pyre-ignore: Unsupported operand [58]: `+` is not supported for
-        # operand types `List[SearchPathElement]` and `Union[List[typing.Any],
-        # List[SimpleSearchPathElement]]`
+        # operand types `List[search_path_module.Element]` and `Union[List[typing.Any],
+        # List[search_path_module.SimpleElement]]`
         return existent_paths + typeshed_paths
 
     def expand_and_filter_nonexistent_paths(self) -> "Configuration":

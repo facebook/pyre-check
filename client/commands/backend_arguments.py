@@ -15,7 +15,7 @@ from typing import Any, Dict, IO, Iterator, List, Optional, Sequence, Set, Union
 
 from typing_extensions import Protocol
 
-from .. import configuration as configuration_module, find_directories
+from .. import configuration as configuration_module, find_directories, search_path
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -43,9 +43,7 @@ class RemoteLogging:
 
 @dataclasses.dataclass(frozen=True)
 class SimpleSourcePath:
-    elements: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
-        default_factory=list
-    )
+    elements: Sequence[search_path.Element] = dataclasses.field(default_factory=list)
 
     def serialize(self) -> Dict[str, object]:
         return {
@@ -64,9 +62,7 @@ class SimpleSourcePath:
 class WithUnwatchedDependencySourcePath:
     change_indicator_root: Path
     unwatched_dependency: configuration_module.UnwatchedDependency
-    elements: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
-        default_factory=list
-    )
+    elements: Sequence[search_path.Element] = dataclasses.field(default_factory=list)
 
     def serialize(self) -> Dict[str, object]:
         return {
@@ -156,7 +152,7 @@ class BaseArguments:
         configuration_module.SharedMemory()
     )
     remote_logging: Optional[RemoteLogging] = None
-    search_paths: Sequence[configuration_module.SearchPathElement] = dataclasses.field(
+    search_paths: Sequence[search_path.Element] = dataclasses.field(
         default_factory=list
     )
 
@@ -255,9 +251,7 @@ def get_source_path(
     buck_mode = configuration.buck_mode.get() if configuration.buck_mode else None
 
     if source_directories is not None and targets is None:
-        elements: Sequence[
-            configuration_module.SearchPathElement
-        ] = configuration.get_source_directories()
+        elements: Sequence[search_path.Element] = configuration.get_source_directories()
         if len(elements) == 0:
             LOG.warning("Pyre did not find an existent source directory.")
 
