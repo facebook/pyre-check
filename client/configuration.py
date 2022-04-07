@@ -39,8 +39,7 @@ from typing import (
 )
 
 from . import command_arguments, find_directories
-from .exceptions import EnvironmentException
-from .filesystem import assert_readable_directory, expand_relative_path
+from .filesystem import expand_relative_path
 from .find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
@@ -301,15 +300,6 @@ def create_search_paths(
             ]
 
     raise InvalidConfiguration(f"Invalid search path element: {json}")
-
-
-def assert_readable_directory_in_configuration(
-    directory: str, field_name: str = ""
-) -> None:
-    try:
-        assert_readable_directory(directory, error_message_prefix=f"{field_name} ")
-    except EnvironmentException as error:
-        raise InvalidConfiguration(str(error))
 
 
 def _in_virtual_environment(override: Optional[bool] = None) -> bool:
