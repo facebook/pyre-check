@@ -14,14 +14,6 @@ JSON: str = "json"
 SARIF: str = "sarif"
 
 
-class IncrementalStyle(enum.Enum):
-    SHALLOW = "shallow"
-    FINE_GRAINED = "fine_grained"
-
-    def __str__(self) -> str:
-        return self.value
-
-
 class ProfileOutput(enum.Enum):
     TRACE_EVENT: str = "trace_event"
     COLD_START_PHASES: str = "cold_start_phases"

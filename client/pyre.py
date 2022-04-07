@@ -86,7 +86,6 @@ def _run_check_command(
 
 def _run_incremental_command(
     arguments: command_arguments.CommandArguments,
-    incremental_style: command_arguments.IncrementalStyle,
     no_start_server: bool,
     no_watchman: bool,
 ) -> commands.ExitCode:
@@ -128,7 +127,6 @@ def _run_default_command(
     if shutil.which("watchman"):
         return _run_incremental_command(
             arguments=arguments,
-            incremental_style=command_arguments.IncrementalStyle.FINE_GRAINED,
             no_start_server=False,
             no_watchman=False,
         )
@@ -477,24 +475,12 @@ def check(context: click.Context) -> int:
 
 
 @pyre.command()
-@click.option(
-    "--incremental-style",
-    type=click.Choice(
-        [
-            str(command_arguments.IncrementalStyle.SHALLOW),
-            str(command_arguments.IncrementalStyle.FINE_GRAINED),
-        ]
-    ),
-    default=str(command_arguments.IncrementalStyle.FINE_GRAINED),
-    help="[DEPRECATED] How to approach doing incremental checks.",
-)
 @click.option("--no-start", is_flag=True, default=False, hidden=True)
 # This is mostly to allow `restart` to pass on the flag to `start`.
 @click.option("--no-watchman", is_flag=True, default=False, hidden=True)
 @click.pass_context
 def incremental(
     context: click.Context,
-    incremental_style: str,
     no_start: bool,
     no_watchman: bool,
 ) -> int:
@@ -506,9 +492,6 @@ def incremental(
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     return _run_incremental_command(
         arguments=command_argument,
-        incremental_style=command_arguments.IncrementalStyle.SHALLOW
-        if incremental_style == str(command_arguments.IncrementalStyle.SHALLOW)
-        else command_arguments.IncrementalStyle.FINE_GRAINED,
         no_start_server=no_start,
         no_watchman=no_watchman,
     )
@@ -866,24 +849,12 @@ def rage(
     default=False,
     help="Do not spawn a watchman client in the background.",
 )
-@click.option(
-    "--incremental-style",
-    type=click.Choice(
-        [
-            str(command_arguments.IncrementalStyle.SHALLOW),
-            str(command_arguments.IncrementalStyle.FINE_GRAINED),
-        ]
-    ),
-    default=str(command_arguments.IncrementalStyle.FINE_GRAINED),
-    help="[DEPRECATED] How to approach doing incremental checks.",
-)
 @click.pass_context
 def restart(
     context: click.Context,
     terminal: bool,
     store_type_check_resolution: bool,
     no_watchman: bool,
-    incremental_style: str,
 ) -> int:
     """
     Restarts a server. Equivalent to `pyre stop && pyre`.
@@ -974,17 +945,6 @@ def servers_stop(context: click.Context) -> int:
     help="Do not spawn a watchman client in the background.",
 )
 @click.option(
-    "--incremental-style",
-    type=click.Choice(
-        [
-            str(command_arguments.IncrementalStyle.SHALLOW),
-            str(command_arguments.IncrementalStyle.FINE_GRAINED),
-        ]
-    ),
-    default=str(command_arguments.IncrementalStyle.FINE_GRAINED),
-    help="[DEPRECATED] How to approach doing incremental checks.",
-)
-@click.option(
     "--wait-on-initialization/--no-wait-on-initialization",
     default=False,
     hidden=True,
@@ -996,7 +956,6 @@ def start(
     terminal: bool,
     store_type_check_resolution: bool,
     no_watchman: bool,
-    incremental_style: str,
     wait_on_initialization: bool,
 ) -> int:
     """

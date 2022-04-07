@@ -226,7 +226,6 @@ def run_integration_test(
                     "--logging-sections",
                     "server",
                     "start",
-                    "--incremental-style=fine_grained",
                 )
                 for commit in repository:
                     (actual_error, expected_error) = repository.get_pyre_errors()
