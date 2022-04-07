@@ -10,10 +10,12 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator, Optional
 
-from .exceptions import EnvironmentException
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+class EnvironmentException(Exception):
+    pass
 
 
 def readable_directory(directory: str) -> str:
