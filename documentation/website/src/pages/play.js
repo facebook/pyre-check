@@ -81,13 +81,11 @@ function Results(props) {
  * URLSearchParams global may not exist.
  */
 function getCodeFromURL() {
-  try {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('input');
+  if (ExecutionEnvironment.canUseDOM) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('input');
   }
-  catch (_) {
-    return null;
-  }
+  return null;
 }
 
 function getInitialCode() {
