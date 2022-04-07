@@ -405,6 +405,8 @@
         "name": "backward",
         "roots": [
           {
+            "receiver_interval": { "lower": 2, "upper": 3 },
+            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -506,7 +508,8 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "class_interval": [ { "lower": 2, "upper": 3 } ],
+            "caller_interval": { "lower": 2, "upper": 3 },
+            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -535,7 +538,8 @@
         "port": "formal(self)",
         "taint": [
           {
-            "class_interval": [ { "lower": 2, "upper": 3 } ],
+            "caller_interval": { "lower": 2, "upper": 3 },
+            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -694,6 +698,8 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "receiver_interval": { "lower": 2, "upper": 3 },
+            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],

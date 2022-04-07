@@ -316,6 +316,8 @@
         "port": "result",
         "taint": [
           {
+            "receiver_interval": { "lower": 2, "upper": 3 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [

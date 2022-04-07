@@ -384,7 +384,8 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "class_interval": [ { "lower": 6, "upper": 7 } ],
+            "caller_interval": { "lower": 6, "upper": 7 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -493,7 +494,8 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "class_interval": [ { "lower": 6, "upper": 7 } ],
+            "caller_interval": { "lower": 6, "upper": 7 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -603,7 +605,8 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "class_interval": [ { "lower": 6, "upper": 7 } ],
+            "caller_interval": { "lower": 6, "upper": 7 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [

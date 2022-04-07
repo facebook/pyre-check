@@ -528,6 +528,8 @@
         "port": "formal(vc)",
         "taint": [
           {
+            "receiver_interval": { "lower": 2, "upper": 3 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [ { "name": "multiple_sources.Node.send" } ],
@@ -555,6 +557,8 @@
         "port": "formal(id)",
         "taint": [
           {
+            "receiver_interval": { "lower": 2, "upper": 3 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [ { "name": "multiple_sources.Node.send" } ],

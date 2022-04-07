@@ -170,14 +170,12 @@ module TraceLength = Abstract.SimpleDomain.Make (struct
 end)
 
 (* This should be associated with every call site *)
-module CallInfoInterval = struct
-  type interval = Interprocedural.ClassInterval.t
-
-  type t = {
+module CallInfoIntervals = struct
+  type call_info_intervals = {
     (* The interval of the class that literally contains this call site *)
-    caller_interval: interval;
+    caller_interval: Interprocedural.ClassInterval.t;
     (* The interval of the receiver object for this call site *)
-    receiver_interval: interval;
+    receiver_interval: Interprocedural.ClassInterval.t;
     (* Whether this call site is a call on `self` *)
     is_self_call: bool;
   }
@@ -192,108 +190,136 @@ module CallInfoInterval = struct
     }
 
 
-  let bottom =
-    {
-      caller_interval = Interprocedural.ClassInterval.bottom;
-      receiver_interval = Interprocedural.ClassInterval.bottom;
-      is_self_call = true;
-    }
-
-
   let is_top { caller_interval; receiver_interval; is_self_call } =
     Interprocedural.ClassInterval.is_top caller_interval
     && Interprocedural.ClassInterval.is_top receiver_interval
     && is_self_call == false
 
 
-  let pp formatter { caller_interval; receiver_interval; is_self_call } =
-    Format.fprintf
-      formatter
-      "@[caller_interval: [%a] receiver_interval: [%a] is_self_call: [%b]@]"
-      Interprocedural.ClassInterval.pp_interval
-      caller_interval
-      Interprocedural.ClassInterval.pp_interval
-      receiver_interval
-      is_self_call
+  let to_json { caller_interval; receiver_interval; is_self_call } =
+    let list = ["is_self_call", `Bool is_self_call] in
+    let list =
+      if Interprocedural.ClassInterval.is_top receiver_interval then
+        list
+      else (* Output for SAPP to use *)
+        ( "receiver_interval",
+          `Assoc
+            [
+              "lower", `Int (Interprocedural.ClassInterval.lower_bound_exn receiver_interval);
+              "upper", `Int (Interprocedural.ClassInterval.upper_bound_exn receiver_interval);
+            ] )
+        :: list
+    in
+    let list =
+      if
+        Interprocedural.ClassInterval.is_empty caller_interval
+        || Interprocedural.ClassInterval.is_top caller_interval
+      then
+        list
+      else (* Output for debug purposes *)
+        ( "caller_interval",
+          `Assoc
+            [
+              "lower", `Int (Interprocedural.ClassInterval.lower_bound_exn caller_interval);
+              "upper", `Int (Interprocedural.ClassInterval.upper_bound_exn caller_interval);
+            ] )
+        :: list
+    in
+    list
 
 
-  let show = Format.asprintf "%a" pp
+  include Abstract.SimpleDomain.Make (struct
+    let name = "intervals at call sites"
 
-  let less_or_equal
-      ~left:
+    type t = call_info_intervals
+
+    let bottom =
+      {
+        caller_interval = Interprocedural.ClassInterval.bottom;
+        receiver_interval = Interprocedural.ClassInterval.bottom;
+        is_self_call = true;
+      }
+
+
+    let pp formatter { caller_interval; receiver_interval; is_self_call } =
+      Format.fprintf
+        formatter
+        "@[caller_interval: [%a] receiver_interval: [%a] is_self_call: [%b]@]"
+        Interprocedural.ClassInterval.pp_interval
+        caller_interval
+        Interprocedural.ClassInterval.pp_interval
+        receiver_interval
+        is_self_call
+
+
+    let show = Format.asprintf "%a" pp
+
+    let less_or_equal
+        ~left:
+          {
+            caller_interval = caller_interval_left;
+            receiver_interval = receiver_interval_left;
+            is_self_call = is_self_call_left;
+          }
+        ~right:
+          {
+            caller_interval = caller_interval_right;
+            receiver_interval = receiver_interval_right;
+            is_self_call = is_self_call_right;
+          }
+      =
+      Interprocedural.ClassInterval.less_or_equal
+        ~left:caller_interval_left
+        ~right:caller_interval_right
+      && Interprocedural.ClassInterval.less_or_equal
+           ~left:receiver_interval_left
+           ~right:receiver_interval_right
+      && not ((not is_self_call_left) && is_self_call_right)
+
+
+    let join
         {
           caller_interval = caller_interval_left;
           receiver_interval = receiver_interval_left;
           is_self_call = is_self_call_left;
         }
-      ~right:
         {
           caller_interval = caller_interval_right;
           receiver_interval = receiver_interval_right;
           is_self_call = is_self_call_right;
         }
-    =
-    Interprocedural.ClassInterval.less_or_equal
-      ~left:caller_interval_left
-      ~right:caller_interval_right
-    && Interprocedural.ClassInterval.less_or_equal
-         ~left:receiver_interval_left
-         ~right:receiver_interval_right
-    && not ((not is_self_call_left) && is_self_call_right)
-
-
-  let join
+      =
       {
-        caller_interval = caller_interval_left;
-        receiver_interval = receiver_interval_left;
-        is_self_call = is_self_call_left;
+        caller_interval =
+          Interprocedural.ClassInterval.join caller_interval_left caller_interval_right;
+        receiver_interval =
+          Interprocedural.ClassInterval.join receiver_interval_left receiver_interval_right;
+        (* The result of joining two calls is a call on `self` iff. both calls are on `self`. *)
+        is_self_call = is_self_call_left && is_self_call_right;
       }
+
+
+    let meet
+        {
+          caller_interval = caller_interval_left;
+          receiver_interval = receiver_interval_left;
+          is_self_call = is_self_call_left;
+        }
+        {
+          caller_interval = caller_interval_right;
+          receiver_interval = receiver_interval_right;
+          is_self_call = is_self_call_right;
+        }
+      =
       {
-        caller_interval = caller_interval_right;
-        receiver_interval = receiver_interval_right;
-        is_self_call = is_self_call_right;
+        caller_interval =
+          Interprocedural.ClassInterval.meet caller_interval_left caller_interval_right;
+        receiver_interval =
+          Interprocedural.ClassInterval.meet receiver_interval_left receiver_interval_right;
+        (* The result of meeting two calls is a call on `self` iff. one of the calls is on `self`. *)
+        is_self_call = is_self_call_left || is_self_call_right;
       }
-    =
-    {
-      caller_interval =
-        Interprocedural.ClassInterval.join caller_interval_left caller_interval_right;
-      receiver_interval =
-        Interprocedural.ClassInterval.join receiver_interval_left receiver_interval_right;
-      (* The result of joining two calls is a call on `self` iff. both calls are on `self`. *)
-      is_self_call = is_self_call_left && is_self_call_right;
-    }
-
-
-  let meet
-      {
-        caller_interval = caller_interval_left;
-        receiver_interval = receiver_interval_left;
-        is_self_call = is_self_call_left;
-      }
-      {
-        caller_interval = caller_interval_right;
-        receiver_interval = receiver_interval_right;
-        is_self_call = is_self_call_right;
-      }
-    =
-    {
-      caller_interval =
-        Interprocedural.ClassInterval.meet caller_interval_left caller_interval_right;
-      receiver_interval =
-        Interprocedural.ClassInterval.meet receiver_interval_left receiver_interval_right;
-      (* The result of meeting two calls is a call on `self` iff. one of the calls is on `self`. *)
-      is_self_call = is_self_call_left || is_self_call_right;
-    }
-end
-
-module ClassIntervalDomain = struct
-  include Abstract.SimpleDomain.Make (struct
-    let name = "class interval"
-
-    include Interprocedural.ClassInterval
   end)
-
-  let top = Interprocedural.ClassInterval.top
 end
 
 (* Represents a frame, i.e a single hop between functions. *)
@@ -501,7 +527,7 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb : Features.BreadcrumbSet.t slot
       | FirstIndex : Features.FirstIndexSet.t slot
       | FirstField : Features.FirstFieldSet.t slot
-      | ClassInterval : Interprocedural.ClassInterval.t slot
+      | CallInfoIntervals : CallInfoIntervals.t slot
 
     (* Must be consistent with above variants *)
     let slots = 6
@@ -513,7 +539,7 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb -> "Breadcrumb"
       | FirstIndex -> "FirstIndex"
       | FirstField -> "FirstField"
-      | ClassInterval -> "ClassInterval"
+      | CallInfoIntervals -> "CallInfoIntervals"
 
 
     let slot_domain (type a) (slot : a slot) =
@@ -523,13 +549,13 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb -> (module Features.BreadcrumbSet : Abstract.Domain.S with type t = a)
       | FirstIndex -> (module Features.FirstIndexSet : Abstract.Domain.S with type t = a)
       | FirstField -> (module Features.FirstFieldSet : Abstract.Domain.S with type t = a)
-      | ClassInterval -> (module ClassIntervalDomain : Abstract.Domain.S with type t = a)
+      | CallInfoIntervals -> (module CallInfoIntervals : Abstract.Domain.S with type t = a)
 
 
     let strict (type a) (slot : a slot) =
       match slot with
       | Kinds
-      | ClassInterval ->
+      | CallInfoIntervals ->
           true
       | _ -> false
   end
@@ -545,7 +571,7 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
     create
       [
         Abstract.Domain.Part (KindTaintDomain.KeyValue, (kind, frame));
-        Abstract.Domain.Part (ClassIntervalDomain.Self, Interprocedural.ClassInterval.top);
+        Abstract.Domain.Part (CallInfoIntervals.Self, CallInfoIntervals.top);
       ]
     |> update Slots.Breadcrumb Features.BreadcrumbSet.empty
 
@@ -716,18 +742,14 @@ end = struct
       in
       let json = cons_if_non_empty "kinds" kinds json in
       let json =
-        let interval = LocalTaintDomain.get LocalTaintDomain.Slots.ClassInterval local_taint in
-        if Interprocedural.ClassInterval.is_top interval then
+        let call_info_intervals =
+          LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
+        in
+        if CallInfoIntervals.is_top call_info_intervals then
           json
         else
-          let class_interval =
-            [
-              "lower", `Int (Interprocedural.ClassInterval.lower_bound_exn interval);
-              "upper", `Int (Interprocedural.ClassInterval.upper_bound_exn interval);
-            ]
-          in
-          let class_interval = `Assoc class_interval in
-          cons_if_non_empty "class_interval" [class_interval] json
+          let call_info_intervals = CallInfoIntervals.to_json call_info_intervals in
+          List.append call_info_intervals json
       in
       `Assoc json
     in
@@ -977,26 +999,44 @@ end = struct
         | Some (`Object _)
         | Some (`Function _) ->
             LocalTaintDomain.update
-              LocalTaintDomain.Slots.ClassInterval
-              caller_class_interval
+              LocalTaintDomain.Slots.CallInfoIntervals
+              {
+                CallInfoIntervals.caller_interval = caller_class_interval;
+                receiver_interval = receiver_class_interval;
+                is_self_call;
+              }
               local_taint
         | Some (`Method _)
         | Some (`OverrideTarget _) ->
             let open Interprocedural in
-            let old_interval =
-              LocalTaintDomain.get LocalTaintDomain.Slots.ClassInterval local_taint
+            let { CallInfoIntervals.caller_interval = callee_class_interval; _ } =
+              LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
             in
             if is_self_call then
-              let new_interval = ClassInterval.meet old_interval caller_class_interval in
-              LocalTaintDomain.update LocalTaintDomain.Slots.ClassInterval new_interval local_taint
-            else
-              let new_interval = ClassInterval.meet old_interval receiver_class_interval in
+              let new_interval = ClassInterval.meet callee_class_interval caller_class_interval in
               if ClassInterval.is_empty new_interval then
                 LocalTaintDomain.bottom
               else
                 LocalTaintDomain.update
-                  LocalTaintDomain.Slots.ClassInterval
-                  caller_class_interval
+                  LocalTaintDomain.Slots.CallInfoIntervals
+                  {
+                    CallInfoIntervals.caller_interval = new_interval;
+                    receiver_interval = receiver_class_interval;
+                    is_self_call;
+                  }
+                  local_taint
+            else
+              let new_interval = ClassInterval.meet callee_class_interval receiver_class_interval in
+              if ClassInterval.is_empty new_interval then
+                LocalTaintDomain.bottom
+              else
+                LocalTaintDomain.update
+                  LocalTaintDomain.Slots.CallInfoIntervals
+                  {
+                    CallInfoIntervals.caller_interval = caller_class_interval;
+                    receiver_interval = receiver_class_interval;
+                    is_self_call;
+                  }
                   local_taint
       in
       match call_info with

@@ -274,19 +274,19 @@ let test_sanitize _ =
 
 let test_call_info_interval _ =
   let assert_equal_interval ~actual ~expected =
-    assert_equal ~printer:CallInfoInterval.show actual expected
+    assert_equal ~printer:CallInfoIntervals.show actual expected
   in
   assert_equal_interval
-    ~actual:(CallInfoInterval.join CallInfoInterval.top CallInfoInterval.bottom)
-    ~expected:CallInfoInterval.top;
+    ~actual:(CallInfoIntervals.join CallInfoIntervals.top CallInfoIntervals.bottom)
+    ~expected:CallInfoIntervals.top;
   assert_equal_interval
-    ~actual:(CallInfoInterval.meet CallInfoInterval.top CallInfoInterval.bottom)
-    ~expected:CallInfoInterval.bottom;
+    ~actual:(CallInfoIntervals.meet CallInfoIntervals.top CallInfoIntervals.bottom)
+    ~expected:CallInfoIntervals.bottom;
   assert_equal
-    (CallInfoInterval.less_or_equal ~left:CallInfoInterval.top ~right:CallInfoInterval.bottom)
+    (CallInfoIntervals.less_or_equal ~left:CallInfoIntervals.top ~right:CallInfoIntervals.bottom)
     false;
   assert_equal
-    (CallInfoInterval.less_or_equal ~left:CallInfoInterval.bottom ~right:CallInfoInterval.top)
+    (CallInfoIntervals.less_or_equal ~left:CallInfoIntervals.bottom ~right:CallInfoIntervals.top)
     true
 
 

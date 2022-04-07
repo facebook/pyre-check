@@ -97,6 +97,8 @@
         "port": "formal(parameter)",
         "taint": [
           {
+            "receiver_interval": { "lower": 2, "upper": 5 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [

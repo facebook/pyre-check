@@ -153,6 +153,8 @@
         "port": "result",
         "taint": [
           {
+            "receiver_interval": { "lower": 6, "upper": 7 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -183,6 +185,8 @@
         "port": "result",
         "taint": [
           {
+            "receiver_interval": { "lower": 2, "upper": 3 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [ { "name": "callable_classes.P.__call__" } ],

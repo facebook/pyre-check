@@ -2108,7 +2108,8 @@
         "port": "formal(value)",
         "taint": [
           {
-            "class_interval": [ { "lower": 10, "upper": 11 } ],
+            "caller_interval": { "lower": 10, "upper": 11 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -2288,7 +2289,8 @@
         "port": "formal(value)",
         "taint": [
           {
-            "class_interval": [ { "lower": 10, "upper": 11 } ],
+            "caller_interval": { "lower": 10, "upper": 11 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -2561,7 +2563,8 @@
         "port": "formal(value)",
         "taint": [
           {
-            "class_interval": [ { "lower": 10, "upper": 11 } ],
+            "caller_interval": { "lower": 10, "upper": 11 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -2578,7 +2581,8 @@
             }
           },
           {
-            "class_interval": [ { "lower": 10, "upper": 11 } ],
+            "caller_interval": { "lower": 10, "upper": 11 },
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
