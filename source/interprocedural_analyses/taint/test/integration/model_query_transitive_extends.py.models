@@ -544,11 +544,11 @@
                 "leaves": [
                   {
                     "name":
-                      "Obj{model_query_transitive_extends.Test1_C.instance}"
+                      "Obj{model_query_transitive_extends.Test1_C1.instance}"
                   },
                   {
                     "name":
-                      "Obj{model_query_transitive_extends.Test1_C1.instance}"
+                      "Obj{model_query_transitive_extends.Test1_C.instance}"
                   }
                 ],
                 "kind": "Test"
@@ -644,15 +644,15 @@
                 "leaves": [
                   {
                     "name":
-                      "Obj{model_query_transitive_extends.Test1_C2.attribute}"
-                  },
-                  {
-                    "name":
                       "Obj{model_query_transitive_extends.Test1_C1.attribute}"
                   },
                   {
                     "name":
                       "Obj{model_query_transitive_extends.Test1_C.attribute}"
+                  },
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C2.attribute}"
                   }
                 ],
                 "kind": "Test"
@@ -748,15 +748,15 @@
                 "leaves": [
                   {
                     "name":
-                      "Obj{model_query_transitive_extends.Test1_C.instance}"
-                  },
-                  {
-                    "name":
                       "Obj{model_query_transitive_extends.Test1_C1.instance}"
                   },
                   {
                     "name":
                       "Obj{model_query_transitive_extends.Test1_C2.instance}"
+                  },
+                  {
+                    "name":
+                      "Obj{model_query_transitive_extends.Test1_C.instance}"
                   }
                 ],
                 "kind": "Test"

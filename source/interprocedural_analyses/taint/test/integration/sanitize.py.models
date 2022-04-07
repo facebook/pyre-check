@@ -2113,8 +2113,8 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{sanitize.C_sanitized_all_sinks.instance}" },
-                  { "name": "Obj{sanitize.C_sanitized_all_sinks.attribute}" }
+                  { "name": "Obj{sanitize.C_sanitized_all_sinks.attribute}" },
+                  { "name": "Obj{sanitize.C_sanitized_all_sinks.instance}" }
                 ],
                 "kind": "Test"
               }
@@ -2294,8 +2294,8 @@
             "kinds": [
               {
                 "leaves": [
-                  { "name": "Obj{sanitize.C_sanitized_all_sinks.instance}" },
-                  { "name": "Obj{sanitize.C_sanitized_all_sinks.attribute}" }
+                  { "name": "Obj{sanitize.C_sanitized_all_sinks.attribute}" },
+                  { "name": "Obj{sanitize.C_sanitized_all_sinks.instance}" }
                 ],
                 "kind": "Test"
               }

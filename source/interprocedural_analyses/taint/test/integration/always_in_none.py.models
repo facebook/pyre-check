@@ -45,8 +45,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "string_concat_rhs" }
             ],
             "tito": [
               { "line": 21, "start": 17, "end": 36 },

@@ -39,8 +39,8 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "app_id" },
               { "first-index": "timestamp" },
+              { "first-index": "app_id" },
               { "always-via": "tito" }
             ],
             "decl": null
@@ -114,8 +114,8 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "app_id" },
               { "first-index": "timestamp" },
+              { "first-index": "app_id" },
               { "always-via": "tito" }
             ],
             "decl": null
@@ -189,8 +189,8 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "app_id" },
               { "first-index": "timestamp" },
+              { "first-index": "app_id" },
               { "always-via": "tito" }
             ],
             "tito": [
@@ -264,8 +264,8 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "via": "obscure:model" }
             ],
             "tito": [
               { "line": 24, "start": 19, "end": 25 },
@@ -290,9 +290,9 @@
               }
             ],
             "local_features": [
+              { "always-via": "tito" },
               { "always-type": "integer" },
-              { "always-type": "scalar" },
-              { "always-via": "tito" }
+              { "always-type": "scalar" }
             ],
             "tito": [ { "line": 31, "start": 19, "end": 21 } ],
             "decl": null

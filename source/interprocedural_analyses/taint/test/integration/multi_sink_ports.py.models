@@ -38,18 +38,18 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "d_feature" },
-                  { "via": "b_feature" },
-                  { "via": "c_feature" },
                   { "via": "tito" },
+                  { "via": "d_feature" },
+                  { "via": "a_feature" },
+                  { "via": "c_feature" },
                   { "via": "split" },
-                  { "via": "a_feature" }
+                  { "via": "b_feature" }
                 ],
                 "leaves": [
+                  { "name": "multi_sink_ports.sinkA" },
                   { "name": "multi_sink_ports.sinkC" },
                   { "name": "multi_sink_ports.sinkB" },
-                  { "name": "multi_sink_ports.sinkD" },
-                  { "name": "multi_sink_ports.sinkA" }
+                  { "name": "multi_sink_ports.sinkD" }
                 ],
                 "length": 1,
                 "kind": "Test"
@@ -70,12 +70,12 @@
       }
     ],
     "features": [
-      { "via": "d_feature" },
-      { "via": "b_feature" },
-      { "via": "c_feature" },
       { "via": "tito" },
+      { "via": "d_feature" },
+      { "always-via": "a_feature" },
+      { "via": "c_feature" },
       { "via": "split" },
-      { "always-via": "a_feature" }
+      { "via": "b_feature" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -132,18 +132,18 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "d_feature" },
-                  { "via": "b_feature" },
-                  { "via": "c_feature" },
                   { "via": "tito" },
+                  { "via": "d_feature" },
+                  { "via": "a_feature" },
+                  { "via": "c_feature" },
                   { "via": "split" },
-                  { "via": "a_feature" }
+                  { "via": "b_feature" }
                 ],
                 "leaves": [
+                  { "name": "multi_sink_ports.sinkA" },
                   { "name": "multi_sink_ports.sinkC" },
                   { "name": "multi_sink_ports.sinkB" },
-                  { "name": "multi_sink_ports.sinkD" },
-                  { "name": "multi_sink_ports.sinkA" }
+                  { "name": "multi_sink_ports.sinkD" }
                 ],
                 "length": 2,
                 "kind": "Test"
@@ -164,14 +164,14 @@
       }
     ],
     "features": [
-      { "via": "d_feature" },
-      { "via": "b_feature" },
-      { "via": "c_feature" },
       { "always-via": "tito" },
+      { "via": "d_feature" },
+      { "always-via": "a_feature" },
       { "always-via": "broadening" },
       { "always-via": "issue-broadening" },
+      { "via": "c_feature" },
       { "via": "split" },
-      { "always-via": "a_feature" }
+      { "via": "b_feature" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -210,8 +210,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "b_feature" },
-                  { "via": "c_feature" }
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },
@@ -282,8 +282,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "b_feature" },
-                  { "via": "c_feature" }
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },
@@ -382,8 +382,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "b_feature" },
-                  { "via": "c_feature" }
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },
@@ -718,8 +718,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "b_feature" },
-                  { "via": "c_feature" }
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },
@@ -808,8 +808,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "b_feature" },
-                  { "via": "c_feature" }
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },
@@ -908,8 +908,8 @@
               {
                 "features": [
                   { "via": "d_feature" },
-                  { "via": "b_feature" },
-                  { "via": "c_feature" }
+                  { "via": "c_feature" },
+                  { "via": "b_feature" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkC" },

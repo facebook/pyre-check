@@ -63,8 +63,8 @@
     ],
     "features": [
       { "always-via": "broadening" },
-      { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
+      { "always-via": "issue-broadening" },
       { "always-via": "special_sink" }
     ],
     "sink_handle": {

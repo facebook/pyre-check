@@ -25,9 +25,9 @@
             "local_features": [
               { "has": "first-field" },
               { "first-field": "x" },
+              { "always-via": "tito" },
               { "always-via": "obscure:model" },
-              { "always-via-type": "int" },
-              { "always-via": "tito" }
+              { "always-via-type": "int" }
             ],
             "tito": [ { "line": 19, "start": 16, "end": 30 } ],
             "root": {
@@ -63,11 +63,11 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "x" },
-      { "always-via": "obscure:model" },
-      { "always-via-type": "int" },
       { "always-via": "tito" },
+      { "always-via": "obscure:model" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via-type": "int" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -105,9 +105,9 @@
             "local_features": [
               { "has": "first-field" },
               { "first-field": "y" },
+              { "always-via": "tito" },
               { "always-via-type": "str" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "obscure:model" }
             ],
             "tito": [ { "line": 25, "start": 16, "end": 30 } ],
             "root": {
@@ -143,9 +143,9 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "y" },
+      { "always-via": "tito" },
       { "always-via-type": "str" },
       { "always-via": "obscure:model" },
-      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
@@ -185,9 +185,9 @@
             "local_features": [
               { "has": "first-field" },
               { "first-field": "z" },
+              { "always-via": "tito" },
               { "always-via": "obscure:model" },
-              { "always-via-type": "typing.Annotated[str]" },
-              { "always-via": "tito" }
+              { "always-via-type": "typing.Annotated[str]" }
             ],
             "tito": [ { "line": 31, "start": 16, "end": 30 } ],
             "root": {
@@ -223,9 +223,9 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "z" },
+      { "always-via": "tito" },
       { "always-via": "obscure:model" },
       { "always-via-type": "typing.Annotated[str]" },
-      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
@@ -264,14 +264,14 @@
             ],
             "local_features": [
               { "has": "first-field" },
-              { "first-field": "y" },
-              { "first-field": "z" },
               { "first-field": "x" },
+              { "first-field": "z" },
+              { "first-field": "y" },
+              { "always-via": "tito" },
               { "via-type": "str" },
               { "always-via": "obscure:model" },
-              { "via-type": "int" },
               { "via-type": "typing.Annotated[str]" },
-              { "always-via": "tito" }
+              { "via-type": "int" }
             ],
             "tito": [ { "line": 37, "start": 16, "end": 30 } ],
             "root": {
@@ -306,16 +306,16 @@
     ],
     "features": [
       { "has": "first-field" },
-      { "first-field": "y" },
-      { "first-field": "z" },
       { "first-field": "x" },
+      { "first-field": "z" },
+      { "first-field": "y" },
+      { "always-via": "tito" },
       { "via-type": "str" },
       { "always-via": "obscure:model" },
-      { "via-type": "int" },
       { "via-type": "typing.Annotated[str]" },
-      { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "via-type": "int" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -353,8 +353,8 @@
             "local_features": [
               { "has": "first-field" },
               { "first-field": "x" },
-              { "always-via": "obscure:model" },
               { "always-via": "tito" },
+              { "always-via": "obscure:model" },
               { "always-via-type": "typing.Dict[str, int]" }
             ],
             "tito": [ { "line": 54, "start": 16, "end": 30 } ],
@@ -391,11 +391,11 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "x" },
-      { "always-via": "obscure:model" },
       { "always-via": "tito" },
+      { "always-via": "obscure:model" },
       { "always-via": "special_source" },
-      { "always-via-type": "typing.Dict[str, int]" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via-type": "typing.Dict[str, int]" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -433,8 +433,8 @@
             "local_features": [
               { "has": "first-field" },
               { "first-field": "y" },
-              { "always-via": "obscure:model" },
               { "always-via": "tito" },
+              { "always-via": "obscure:model" },
               { "always-via-type": "typing.List[str]" }
             ],
             "tito": [ { "line": 60, "start": 16, "end": 30 } ],
@@ -471,11 +471,11 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "y" },
-      { "always-via": "obscure:model" },
       { "always-via": "tito" },
-      { "always-via-type": "typing.List[str]" },
+      { "always-via": "obscure:model" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via-type": "typing.List[str]" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -513,9 +513,9 @@
             "local_features": [
               { "has": "first-field" },
               { "first-field": "z" },
+              { "always-via": "tito" },
               { "always-via": "obscure:model" },
-              { "always-via-type": "typing.Annotated[float]" },
-              { "always-via": "tito" }
+              { "always-via-type": "typing.Annotated[float]" }
             ],
             "tito": [ { "line": 66, "start": 16, "end": 30 } ],
             "root": {
@@ -551,9 +551,9 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "z" },
+      { "always-via": "tito" },
       { "always-via": "obscure:model" },
       { "always-via-type": "typing.Annotated[float]" },
-      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
@@ -592,12 +592,12 @@
             ],
             "local_features": [
               { "has": "first-field" },
-              { "first-field": "y" },
-              { "first-field": "z" },
               { "first-field": "x" },
+              { "first-field": "z" },
+              { "first-field": "y" },
+              { "always-via": "tito" },
               { "always-via": "obscure:model" },
               { "via-type": "typing.Annotated[float]" },
-              { "always-via": "tito" },
               { "via-type": "typing.List[str]" },
               { "via-type": "typing.Dict[str, int]" }
             ],
@@ -634,16 +634,16 @@
     ],
     "features": [
       { "has": "first-field" },
-      { "first-field": "y" },
-      { "first-field": "z" },
       { "first-field": "x" },
+      { "first-field": "z" },
+      { "first-field": "y" },
+      { "always-via": "tito" },
       { "always-via": "obscure:model" },
       { "via-type": "typing.Annotated[float]" },
-      { "always-via": "tito" },
-      { "via-type": "typing.List[str]" },
       { "always-via": "special_source" },
-      { "via-type": "typing.Dict[str, int]" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "via-type": "typing.List[str]" },
+      { "via-type": "typing.Dict[str, int]" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -841,8 +841,8 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via-type": "object" }
+      { "always-via-type": "object" },
+      { "always-via": "special_source" }
     ],
     "sink_handle": {
       "kind": "Global",
@@ -1366,8 +1366,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "typing.Dict[str, typing.List[int]]" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via-type": "typing.Dict[str, typing.List[int]]" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1463,8 +1463,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "via_type_of.Test3_Foo" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via-type": "via_type_of.Test3_Foo" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1563,10 +1563,10 @@
       }
     ],
     "features": [
+      { "always-via": "special_sink" },
       {
         "always-via-type": "typing.Annotated[typing.List[typing.List[str]]]"
-      },
-      { "always-via": "special_sink" }
+      }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1739,10 +1739,10 @@
       }
     ],
     "features": [
-      { "via-type": "via_type_of.Test3_Foo" },
-      { "via-type": "typing.Annotated[typing.List[typing.List[str]]]" },
+      { "always-via": "special_sink" },
       { "via-type": "typing.Dict[str, typing.List[int]]" },
-      { "always-via": "special_sink" }
+      { "via-type": "typing.Annotated[typing.List[typing.List[str]]]" },
+      { "via-type": "via_type_of.Test3_Foo" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1767,8 +1767,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via-type": "str" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via-type": "str" }
             ],
             "tito": [ { "line": 181, "start": 16, "end": 25 } ],
             "decl": null

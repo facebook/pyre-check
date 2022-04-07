@@ -240,9 +240,9 @@
       }
     ],
     "features": [
+      { "always-via": "special_sink" },
       { "always-type": "integer" },
-      { "always-type": "scalar" },
-      { "always-via": "special_sink" }
+      { "always-type": "scalar" }
     ],
     "sink_handle": {
       "kind": "Call",

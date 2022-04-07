@@ -58,8 +58,8 @@
     ],
     "features": [
       { "always-via": "broadening" },
-      { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
+      { "always-via": "issue-broadening" },
       { "always-via": "special_sink" }
     ],
     "sink_handle": {
@@ -98,9 +98,9 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "b" },
-              { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" }
+              { "always-via": "broadening" },
+              { "always-via": "tito-broadening" }
             ],
             "tito": [ { "line": 20, "start": 13, "end": 14 } ],
             "root": {
@@ -136,11 +136,11 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "b" },
-      { "always-via": "tito-broadening" },
       { "always-via": "tito" },
       { "always-via": "broadening" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "tito-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -803,9 +803,9 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "b" },
-              { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" }
+              { "always-via": "broadening" },
+              { "always-via": "tito-broadening" }
             ],
             "tito": [ { "line": 25, "start": 13, "end": 14 } ],
             "root": {
@@ -837,9 +837,9 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" }
+              { "always-via": "broadening" },
+              { "always-via": "tito-broadening" }
             ],
             "tito": [ { "line": 31, "start": 16, "end": 17 } ],
             "root": {

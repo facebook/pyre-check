@@ -130,8 +130,8 @@
     ],
     "features": [
       { "always-via": "broadening" },
-      { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
+      { "always-via": "issue-broadening" },
       { "always-via": "special_sink" }
     ],
     "sink_handle": {
@@ -284,8 +284,8 @@
     "features": [
       { "always-via": "tito" },
       { "always-via": "broadening" },
-      { "always-via": "issue-broadening" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -633,8 +633,8 @@
     ],
     "features": [
       { "always-via": "broadening" },
-      { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
+      { "always-via": "issue-broadening" },
       { "always-via": "special_sink" }
     ],
     "sink_handle": {
@@ -706,8 +706,8 @@
     ],
     "features": [
       { "always-via": "broadening" },
-      { "always-via": "issue-broadening" },
       { "always-via": "special_source" },
+      { "always-via": "issue-broadening" },
       { "always-via": "special_sink" }
     ],
     "sink_handle": {
@@ -744,8 +744,8 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "via": "obscure:model" }
             ],
             "tito": [ { "line": 290, "start": 38, "end": 52 } ],
             "root": {
@@ -779,8 +779,8 @@
       }
     ],
     "features": [
-      { "via": "obscure:model" },
       { "always-via": "tito" },
+      { "via": "obscure:model" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
@@ -818,8 +818,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "obscure:model" }
             ],
             "tito": [ { "line": 295, "start": 41, "end": 55 } ],
             "root": {
@@ -853,8 +853,8 @@
       }
     ],
     "features": [
-      { "always-via": "obscure:model" },
       { "always-via": "tito" },
+      { "always-via": "obscure:model" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
@@ -996,8 +996,8 @@
     ],
     "features": [
       { "always-via": "broadening" },
-      { "always-via": "issue-broadening" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Global",
@@ -1134,8 +1134,8 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
-              { "via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "via": "obscure:model" }
             ],
             "tito": [
               { "line": 282, "start": 16, "end": 58 },
@@ -1159,8 +1159,8 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "via": "tito" }
+              { "via": "tito" },
+              { "via": "obscure:model" }
             ],
             "tito": [ { "line": 279, "start": 30, "end": 33 } ],
             "decl": null
@@ -1185,8 +1185,8 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "obscure:model" }
             ],
             "tito": [
               { "line": 285, "start": 15, "end": 65 },
@@ -2157,8 +2157,8 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "obscure:model" }
             ],
             "tito": [ { "line": 358, "start": 15, "end": 16 } ],
             "root": {

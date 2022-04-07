@@ -157,8 +157,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "obscure:model" }
             ],
             "tito": [ { "line": 59, "start": 18, "end": 19 } ],
             "decl": null

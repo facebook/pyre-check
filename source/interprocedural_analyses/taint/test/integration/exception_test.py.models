@@ -294,8 +294,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "obscure:model" }
             ],
             "tito": [ { "line": 10, "start": 15, "end": 17 } ],
             "decl": null

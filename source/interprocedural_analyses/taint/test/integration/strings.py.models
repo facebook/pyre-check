@@ -23,8 +23,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "string_concat_lhs" }
             ],
             "tito": [ { "line": 18, "start": 24, "end": 38 } ],
             "root": {
@@ -58,8 +58,8 @@
       }
     ],
     "features": [
-      { "always-via": "string_concat_lhs" },
       { "always-via": "tito" },
+      { "always-via": "string_concat_lhs" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
@@ -97,8 +97,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "string_concat_rhs" }
             ],
             "tito": [ { "line": 23, "start": 24, "end": 38 } ],
             "root": {
@@ -132,10 +132,10 @@
       }
     ],
     "features": [
-      { "always-via": "string_concat_rhs" },
       { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "string_concat_rhs" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -171,8 +171,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "string_concat_lhs" }
             ],
             "tito": [ { "line": 29, "start": 28, "end": 42 } ],
             "root": {
@@ -191,8 +191,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "string_concat_rhs" }
             ],
             "tito": [ { "line": 31, "start": 28, "end": 42 } ],
             "root": {
@@ -226,11 +226,11 @@
       }
     ],
     "features": [
-      { "via": "string_concat_rhs" },
-      { "via": "string_concat_lhs" },
       { "always-via": "tito" },
+      { "via": "string_concat_lhs" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "via": "string_concat_rhs" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -266,8 +266,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "string_concat_lhs" }
             ],
             "tito": [ { "line": 37, "start": 28, "end": 42 } ],
             "root": {
@@ -316,8 +316,8 @@
       }
     ],
     "features": [
-      { "via": "string_concat_lhs" },
       { "via": "tito" },
+      { "via": "string_concat_lhs" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" }
     ],
@@ -370,8 +370,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "string_concat_rhs" }
             ],
             "tito": [ { "line": 47, "start": 28, "end": 42 } ],
             "root": {
@@ -405,10 +405,10 @@
       }
     ],
     "features": [
-      { "via": "string_concat_rhs" },
       { "via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "via": "string_concat_rhs" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -444,8 +444,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "string_concat_rhs" }
             ],
             "tito": [ { "line": 54, "start": 9, "end": 10 } ],
             "root": {
@@ -479,10 +479,10 @@
       }
     ],
     "features": [
-      { "always-via": "string_concat_rhs" },
       { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "string_concat_rhs" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -545,8 +545,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "string_concat_lhs" }
             ],
             "tito": [ { "line": 10, "start": 11, "end": 17 } ],
             "decl": null
@@ -569,8 +569,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "string_concat_rhs" }
             ],
             "tito": [ { "line": 14, "start": 17, "end": 23 } ],
             "decl": null
@@ -597,9 +597,9 @@
               }
             ],
             "local_features": [
+              { "always-via": "tito" },
               { "always-via": "obscure:model" },
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }
             ],
             "tito": [ { "line": 68, "start": 22, "end": 23 } ],
             "root": {
@@ -631,9 +631,9 @@
               }
             ],
             "local_features": [
+              { "always-via": "tito" },
               { "always-via": "obscure:model" },
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }
             ],
             "tito": [ { "line": 64, "start": 25, "end": 26 } ],
             "root": {
@@ -661,9 +661,9 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
+              { "always-via": "tito" },
               { "always-via": "obscure:model" },
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }
             ],
             "tito": [ { "line": 59, "start": 25, "end": 26 } ],
             "decl": null

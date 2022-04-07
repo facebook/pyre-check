@@ -59,8 +59,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -132,8 +132,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -205,8 +205,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -278,8 +278,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -351,8 +351,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -424,8 +424,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "typing.Annotated[typing.Optional[float]]" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via-type": "typing.Annotated[typing.Optional[float]]" }
     ],
     "sink_handle": {
       "kind": "Call",

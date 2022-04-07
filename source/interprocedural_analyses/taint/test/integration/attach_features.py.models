@@ -12,8 +12,8 @@
               {
                 "features": [
                   { "always-type": "integer" },
-                  { "always-via": "string_concat_rhs" },
-                  { "always-type": "scalar" }
+                  { "always-type": "scalar" },
+                  { "always-via": "string_concat_rhs" }
                 ],
                 "kind": "Attach"
               }
@@ -32,8 +32,8 @@
             ],
             "local_features": [
               { "always-type": "integer" },
-              { "always-via": "string_concat_rhs" },
-              { "always-type": "scalar" }
+              { "always-type": "scalar" },
+              { "always-via": "string_concat_rhs" }
             ],
             "root": {
               "filename": "attach_features.py",
@@ -305,8 +305,8 @@
               {
                 "features": [
                   { "always-type": "integer" },
-                  { "always-via": "string_concat_rhs" },
-                  { "always-type": "scalar" }
+                  { "always-type": "scalar" },
+                  { "always-via": "string_concat_rhs" }
                 ],
                 "kind": "Attach"
               }
@@ -323,8 +323,8 @@
             ],
             "local_features": [
               { "always-type": "integer" },
-              { "always-via": "string_concat_rhs" },
-              { "always-type": "scalar" }
+              { "always-type": "scalar" },
+              { "always-via": "string_concat_rhs" }
             ],
             "root": {
               "filename": "attach_features.py",
@@ -516,8 +516,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "via": "string_concat_lhs" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "via": "string_concat_lhs" }
             ],
             "tito": [ { "line": 42, "start": 30, "end": 33 } ],
             "decl": null

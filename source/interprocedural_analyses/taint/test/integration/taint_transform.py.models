@@ -998,8 +998,8 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "via": "obscure:model" }
             ],
             "tito": [ { "line": 47, "start": 31, "end": 36 } ],
             "root": {

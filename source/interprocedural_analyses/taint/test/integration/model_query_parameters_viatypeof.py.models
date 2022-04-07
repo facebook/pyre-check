@@ -195,8 +195,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "int" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via-type": "int" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -485,8 +485,8 @@
       }
     ],
     "features": [
-      { "always-via-type": "int" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via-type": "int" }
     ],
     "sink_handle": {
       "kind": "Call",

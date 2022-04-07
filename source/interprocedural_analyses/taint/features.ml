@@ -41,6 +41,21 @@ struct
   let show id = id |> unintern |> T.show
 end
 
+module MakeAbstractSetFromInterner (Interner : sig
+  val name : string
+
+  val show : int -> string
+end) =
+struct
+  include Abstract.SetDomain.MakeWithSet (struct
+    include Data_structures.PatriciaTreeSet.PatriciaTreeIntSet
+
+    let show_element = Interner.show
+
+    let element_name = Interner.name
+  end)
+end
+
 module First (Kind : sig
   val kind : string
 end) =
@@ -67,7 +82,7 @@ end)
 module FirstIndexInterned = MakeInterner (FirstIndex)
 
 module FirstIndexSet = struct
-  include Abstract.SetDomain.Make (FirstIndexInterned)
+  include MakeAbstractSetFromInterner (FirstIndexInterned)
 
   let number_regexp = Str.regexp "[0-9]+"
 
@@ -102,7 +117,7 @@ end)
 module FirstFieldInterned = MakeInterner (FirstField)
 
 module FirstFieldSet = struct
-  include Abstract.SetDomain.Make (FirstFieldInterned)
+  include MakeAbstractSetFromInterner (FirstFieldInterned)
 
   let add_first field fields =
     if is_bottom fields then
@@ -155,7 +170,7 @@ module LeafName = struct
 end
 
 module LeafNameInterned = MakeInterner (LeafName)
-module LeafNameSet = Abstract.SetDomain.Make (LeafNameInterned)
+module LeafNameSet = MakeAbstractSetFromInterner (LeafNameInterned)
 
 module Breadcrumb = struct
   let name = "breadcrumbs"
@@ -239,7 +254,14 @@ module Breadcrumb = struct
 end
 
 module BreadcrumbInterned = MakeInterner (Breadcrumb)
-module BreadcrumbSet = Abstract.OverUnderSetDomain.Make (BreadcrumbInterned)
+
+module BreadcrumbSet = Abstract.OverUnderSetDomain.MakeWithSet (struct
+  include Data_structures.PatriciaTreeSet.PatriciaTreeIntSet
+
+  let show_element = BreadcrumbInterned.show
+
+  let element_name = BreadcrumbInterned.name
+end)
 
 module ViaFeature = struct
   let name = "via features"

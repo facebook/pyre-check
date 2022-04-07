@@ -72,8 +72,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "obscure:model" }
             ],
             "tito": [ { "line": 33, "start": 20, "end": 34 } ],
             "root": {
