@@ -39,7 +39,7 @@ from typing import (
 )
 
 from . import command_arguments, find_directories
-from .filesystem import expand_relative_path
+from .filesystem import expand_relative_path, expand_global_root
 from .find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
@@ -51,12 +51,6 @@ from .find_directories import (
 
 LOG: Logger = logging.getLogger(__name__)
 T = TypeVar("T")
-
-
-def _expand_global_root(path: str, global_root: str) -> str:
-    if path.startswith("//"):
-        return expand_relative_path(global_root, path[2:])
-    return path
 
 
 def _expand_relative_root(path: str, relative_root: str) -> str:
@@ -74,7 +68,7 @@ def _expand_and_get_existent_ignore_all_errors_path(
 ) -> List[str]:
     expanded_ignore_paths = []
     for path in ignore_all_errors:
-        expanded = glob.glob(_expand_global_root(path, global_root=project_root))
+        expanded = glob.glob(expand_global_root(path, global_root=project_root))
         if not expanded:
             expanded_ignore_paths.append(path)
         else:
@@ -141,7 +135,7 @@ class SimpleSearchPathElement(SearchPathElement):
 
     def expand_global_root(self, global_root: str) -> SearchPathElement:
         return SimpleSearchPathElement(
-            _expand_global_root(self.root, global_root=global_root)
+            expand_global_root(self.root, global_root=global_root)
         )
 
     def expand_relative_root(self, relative_root: str) -> SearchPathElement:
@@ -174,7 +168,7 @@ class SubdirectorySearchPathElement(SearchPathElement):
 
     def expand_global_root(self, global_root: str) -> SearchPathElement:
         return SubdirectorySearchPathElement(
-            root=_expand_global_root(self.root, global_root=global_root),
+            root=expand_global_root(self.root, global_root=global_root),
             subdirectory=self.subdirectory,
         )
 
@@ -1378,7 +1372,7 @@ class Configuration:
         constructed.
         """
         ignore_paths = [
-            _expand_global_root(path, global_root=self.project_root)
+            expand_global_root(path, global_root=self.project_root)
             for path in self.do_not_ignore_errors_in
         ]
         paths = []

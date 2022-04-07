@@ -46,6 +46,12 @@ def expand_relative_path(root: str, path: str) -> str:
         return str(Path(root) / expanded_path)
 
 
+def expand_global_root(path: str, global_root: str) -> str:
+    if path.startswith("//"):
+        return expand_relative_path(global_root, path[2:])
+    return path
+
+
 def file_or_directory_exists(path: str) -> str:
     if os.path.isdir(path) or os.path.isfile(path):
         return path
