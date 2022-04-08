@@ -269,3 +269,281 @@ def sanitize_a_transform_x_sanitize_c_transform_y(arg):
     beta = sanitize_source_c_tito(alpha)
     gamma = transform_y(beta)
     return gamma
+
+
+# ... -> source sanitizer -> ... (no transforms)
+
+
+def c_to_sanitize_c_to_d_no_issue():
+    alpha = source_c()
+    beta = sanitize_source_c_tito(alpha)
+    sink_d(beta)
+
+
+# ... -> transforms -> source sanitizer -> ...
+
+
+def a_to_x_to_sanitize_a_to_b_issue():
+    alpha = source_a()
+    beta = transform_x(alpha)
+    gamma = sanitize_source_a_tito(beta)
+    sink_b(gamma)
+
+
+def transform_x_sanitize_a_tito(arg):
+    alpha = transform_x(arg)
+    beta = sanitize_source_a_tito(alpha)
+    return beta
+
+
+def a_to_x_sanitize_a_to_b_issue():
+    alpha = source_a()
+    beta = transform_x_sanitize_a_tito(alpha)
+    sink_b(beta)
+
+
+def sanitize_a_sink_b_taint(arg):
+    alpha = sanitize_source_a_tito(arg)
+    sink_b(alpha)
+
+
+def a_to_x_to_sanitize_a_b_issue():
+    alpha = source_a()
+    beta = transform_x(alpha)
+    sanitize_a_sink_b_taint(beta)
+
+
+def ax_to_sanitize_a_b_issue():
+    alpha = taint_with_transform_x()
+    sanitize_a_sink_b_taint(alpha)
+
+
+def transform_x_sanitize_a_sink_b_taint(arg):
+    alpha = transform_x(arg)
+    beta = sanitize_source_a_tito(alpha)
+    sink_b(beta)
+
+
+def a_to_x_sanitize_a_b_issue():
+    alpha = source_a()
+    transform_x_sanitize_a_sink_b_taint(alpha)
+
+
+# ... -> source sanitizer -> transforms -> ...
+
+
+def a_to_sanitize_a_to_x_to_b_no_issue():
+    alpha = source_a()
+    beta = sanitize_source_a_tito(alpha)
+    gamma = transform_x(beta)
+    sink_b(gamma)
+
+
+def sanitize_a_transform_x_tito(arg):
+    alpha = sanitize_source_a_tito(arg)
+    beta = transform_x(alpha)
+    return beta
+
+
+def a_to_sanitize_a_x_to_b_no_issue():
+    alpha = source_a()
+    beta = sanitize_a_transform_x_tito(alpha)
+    sink_b(beta)
+
+
+def sanitize_a_transform_x_sink_b_no_taint(arg):
+    alpha = sanitize_source_a_tito(arg)
+    beta = transform_x(alpha)
+    sink_b(beta)
+
+
+def sanitize_a_to_y_to_z_to_b_taint(arg):
+    alpha = sanitize_source_a_tito(arg)
+    beta = transform_y(alpha)
+    gamma = transform_z(beta)
+    sink_b(gamma)
+
+
+def a_to_sanitize_a_yzb_no_issue(arg):
+    alpha = source_a()
+    sanitize_a_to_y_to_z_to_b_taint(alpha)
+
+
+def axy_to_sanitize_a_yzb_issue(arg):
+    alpha = taint_with_transform_yx()
+    sanitize_a_to_y_to_z_to_b_taint(alpha)
+
+
+# ... -> sink sanitizer -> ... (no transforms)
+
+
+def c_to_sanitize_d_to_d_no_issue():
+    alpha = source_c()
+    beta = sanitize_sink_d_tito(alpha)
+    sink_d(beta)
+
+
+# ... -> transforms -> sink sanitizer -> ...
+
+
+def a_to_x_to_sanitize_b_to_b_no_issue():
+    alpha = source_a()
+    beta = transform_x(alpha)
+    gamma = sanitize_sink_b_tito(beta)
+    sink_b(gamma)
+
+
+def transform_x_sanitize_b_tito(arg):
+    alpha = transform_x(arg)
+    beta = sanitize_sink_b_tito(alpha)
+    return beta
+
+
+def a_to_x_sanitize_b_to_b_no_issue():
+    alpha = source_a()
+    beta = transform_x_sanitize_b_tito(alpha)
+    sink_b(beta)
+
+
+def source_a_transform_x_sanitize_b_taint():
+    alpha = source_a()
+    beta = transform_x(alpha)
+    gamma = sanitize_sink_b_tito(beta)
+    return gamma
+
+
+def a_x_sanitize_b_to_b_no_issue():
+    alpha = source_a_transform_x_sanitize_b_taint()
+    sink_b(alpha)
+
+
+def source_a_transform_y_transform_z_sanitize_b_no_taint():
+    alpha = source_a()
+    beta = transform_y(alpha)
+    gamma = transform_z(beta)
+    delta = sanitize_sink_b_tito(gamma)
+    return delta
+
+
+# ... -> sink sanitizer -> transforms -> ...
+
+
+def a_to_sanitize_b_to_x_to_b_issue():
+    alpha = source_a()
+    beta = sanitize_sink_b_tito(alpha)
+    gamma = transform_x(beta)
+    sink_b(gamma)
+
+
+def sanitize_b_transform_x_tito(arg):
+    alpha = sanitize_sink_b_tito(arg)
+    beta = transform_x(alpha)
+    return beta
+
+
+def a_to_sanitize_b_x_to_b_issue():
+    alpha = source_a()
+    beta = sanitize_b_transform_x_tito(alpha)
+    sink_b(beta)
+
+
+def source_a_sanitize_b_taint():
+    alpha = source_a()
+    beta = sanitize_sink_b_tito(alpha)
+    return beta
+
+
+def a_sanitize_b_to_x_to_b_issue():
+    alpha = source_a_sanitize_b_taint()
+    beta = transform_x(alpha)
+    sink_b(beta)
+
+
+def a_sanitize_b_to_xb_issue():
+    alpha = source_a_sanitize_b_taint()
+    sink_taint_with_transform_x(alpha)
+
+
+def source_a_sanitize_b_transform_x_taint():
+    alpha = source_a()
+    beta = sanitize_sink_b_tito(alpha)
+    gamma = transform_x(beta)
+    return gamma
+
+
+def a_sanitize_b_x_to_b_issue():
+    alpha = source_a_sanitize_b_transform_x_taint()
+    sink_b(alpha)
+
+
+# additional sanitize propagation with transform tests
+
+
+def tito_propagation_source_sanitizer_1(arg):
+    alpha = sanitize_a_transform_x_tito(arg)
+    beta = sanitize_source_c_tito(alpha)
+    return beta
+
+
+def tito_propagation_source_sanitizer_2(arg):
+    alpha = sanitize_source_c_tito(arg)
+    beta = sanitize_a_transform_x_tito(alpha)
+    return beta
+
+
+def tito_propagation_source_sanitizer_3(arg):
+    alpha = transform_x_sanitize_a_tito(arg)
+    beta = sanitize_source_c_tito(alpha)
+    return beta
+
+
+def tito_propagation_source_sanitizer_4(arg):
+    alpha = sanitize_source_c_tito(arg)
+    beta = transform_x_sanitize_a_tito(alpha)
+    return beta
+
+
+def tito_propagation_sink_sanitizer_1(arg):
+    alpha = sanitize_b_transform_x_tito(arg)
+    beta = sanitize_sink_d_tito(alpha)
+    return beta
+
+
+def tito_propagation_sink_sanitizer_2(arg):
+    alpha = sanitize_sink_d_tito(arg)
+    beta = sanitize_b_transform_x_tito(alpha)
+    return beta
+
+
+def tito_propagation_sink_sanitizer_3(arg):
+    alpha = transform_x_sanitize_b_tito(arg)
+    beta = sanitize_sink_d_tito(alpha)
+    return beta
+
+
+def tito_propagation_sink_sanitizer_4(arg):
+    alpha = sanitize_sink_d_tito(arg)
+    beta = transform_x_sanitize_b_tito(alpha)
+    return beta
+
+
+def transform_y_sanitize_b_tito(arg):
+    alpha = transform_y(arg)
+    beta = sanitize_sink_b_tito(alpha)
+    return beta
+
+
+def tito_propagation_source_sink_sanitizers_mixed_1(arg):
+    alpha = sanitize_a_transform_x_tito(arg)
+    beta = sanitize_source_c_tito(alpha)
+    gamma = sanitize_sink_d_tito(beta)
+    delta = transform_y_sanitize_b_tito(gamma)
+    return delta
+
+
+def tito_propagation_source_sink_sanitizers_mixed_2(arg):
+    alpha = sanitize_source_c_tito(arg)
+    beta = transform_y_sanitize_b_tito(alpha)
+    gamma = sanitize_a_transform_x_tito(beta)
+    delta = sanitize_sink_d_tito(gamma)
+    return delta

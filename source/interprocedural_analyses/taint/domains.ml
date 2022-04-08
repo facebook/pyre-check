@@ -484,7 +484,7 @@ module type KIND_ARG = sig
 
   val discard_subkind : t -> t
 
-  val discard_transforms : t -> t
+  val discard_sanitize_transforms : t -> t
 
   val apply_sanitize_transforms : SanitizeTransform.Set.t -> t -> t
 
@@ -904,7 +904,7 @@ end = struct
         KindTaintDomain.Key
         Filter
         ~f:(fun kind ->
-          let kind = kind |> Kind.discard_transforms |> Kind.discard_subkind in
+          let kind = kind |> Kind.discard_sanitize_transforms |> Kind.discard_subkind in
           not (Kind.Set.mem kind sanitized_kinds))
         taint
 

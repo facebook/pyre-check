@@ -372,7 +372,7 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
       (* If all sources have the same base, we can remove sink flows that sanitize
        * that base (and vice versa). *)
       let gather_base_sources kind sofar =
-        Sources.Set.add (Sources.discard_transforms kind) sofar
+        Sources.Set.add (Sources.discard_sanitize_transforms kind) sofar
       in
       let single_base_source =
         ForwardTaint.fold
@@ -394,7 +394,9 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
         | _ -> sink_taint
       in
 
-      let gather_base_sinks kind sofar = Sinks.Set.add (Sinks.discard_transforms kind) sofar in
+      let gather_base_sinks kind sofar =
+        Sinks.Set.add (Sinks.discard_sanitize_transforms kind) sofar
+      in
       let single_base_sink =
         BackwardTaint.fold BackwardTaint.kind ~init:Sinks.Set.empty ~f:gather_base_sinks sink_taint
         |> Sinks.Set.as_singleton
@@ -426,9 +428,7 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
           ~previous_single_base_sink:single_base_sink
           { source_taint; sink_taint }
     in
-    let partition_flow = apply_sanitizers { source_taint; sink_taint } in
-    let apply_named_transforms { Flow.source_taint; sink_taint } =
-      (* TODO(T90698159): Handle interaction with sanitizing transforms *)
+    let apply_transforms { Flow.source_taint; sink_taint } =
       let taint_by_source_transforms =
         ForwardTaint.partition ForwardTaint.kind By source_taint ~f:Sources.get_named_transforms
       in
@@ -441,13 +441,14 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
         Map.Poly.find taint_by_sink_transforms sink_transforms
         >>| fun sink_taint -> { Flow.source_taint; sink_taint }
       in
-      let add_flow sofar (source_transforms, sink_transforms) =
+      let add_and_sanitize_flow sofar (source_transforms, sink_transforms) =
         find_flow source_transforms sink_transforms
+        >>| apply_sanitizers
         |> Option.value_map ~default:sofar ~f:(Flow.join sofar)
       in
-      transform_splits transforms |> List.fold ~init:Flow.bottom ~f:add_flow
+      transform_splits transforms |> List.fold ~init:Flow.bottom ~f:add_and_sanitize_flow
     in
-    let partition_flow = apply_named_transforms partition_flow in
+    let partition_flow = apply_transforms { source_taint; sink_taint } in
     if Flow.is_bottom partition_flow then
       None
     else

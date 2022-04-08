@@ -133,7 +133,6 @@ let discard_subkind = function
 
 
 let discard_transforms = function
-  (* TODO(T90698159): Assumes only sanitizing transforms present, revisit. *)
   | Transform { base; _ } -> base
   | sink -> sink
 
