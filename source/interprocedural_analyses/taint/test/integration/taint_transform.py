@@ -237,3 +237,35 @@ def test_infinite_loop():
 
         if x:
             return x
+
+
+# Sanitizers and transforms interaction tests
+
+
+def sanitize_source_a_tito(arg):
+    return arg
+
+
+def sanitize_source_c_tito(arg):
+    return arg
+
+
+def sanitize_sink_b_tito(arg):
+    return arg
+
+
+def sanitize_sink_d_tito(arg):
+    return arg
+
+
+def sanitize_a_transform_x(arg):
+    alpha = sanitize_source_a_tito(arg)
+    beta = transform_x(alpha)
+    return beta
+
+
+def sanitize_a_transform_x_sanitize_c_transform_y(arg):
+    alpha = sanitize_a_transform_x(arg)
+    beta = sanitize_source_c_tito(alpha)
+    gamma = transform_y(beta)
+    return gamma
