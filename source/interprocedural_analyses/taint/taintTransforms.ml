@@ -12,10 +12,7 @@ module T = struct
 end
 
 include T
-
-module Set = struct
-  include Stdlib.Set.Make (T)
-end
+module Set = Stdlib.Set.Make (T)
 
 let empty = []
 
@@ -30,16 +27,25 @@ let rev_add_named_transforms init named_transforms =
   List.fold_left named_transforms ~init ~f:add_transform
 
 
-let add_sanitize_transforms init sanitize_transforms =
-  let existing_sanitizers, rest = List.split_while init ~f:TaintTransform.is_sanitize_transform in
-  let existing_sanitizers =
-    List.filter_map existing_sanitizers ~f:TaintTransform.get_sanitize_transform
-    |> SanitizeTransform.Set.of_list
+(* Split a list of transforms into sanitizers present at the beginning and the rest. *)
+let split_sanitizers transforms =
+  let rec split sanitizers transforms =
+    match transforms with
+    | []
+    | TaintTransform.Named _ :: _ ->
+        sanitizers, transforms
+    | TaintTransform.Sanitize sanitizer :: tail ->
+        let sanitizers = SanitizeTransform.Set.add sanitizer sanitizers in
+        split sanitizers tail
   in
-  let sanitizers = SanitizeTransform.Set.union sanitize_transforms existing_sanitizers in
+  split SanitizeTransform.Set.empty transforms
+
+
+let add_sanitize_transforms transforms sanitizers =
+  let existing_sanitizers, rest = split_sanitizers transforms in
+  let sanitizers = SanitizeTransform.Set.union sanitizers existing_sanitizers in
   SanitizeTransform.Set.fold
-    (fun sanitize_transform sofar ->
-      add_transform sofar (TaintTransform.Sanitize sanitize_transform))
+    (fun sanitizer transforms -> TaintTransform.Sanitize sanitizer :: transforms)
     sanitizers
     rest
 
@@ -52,11 +58,7 @@ let is_empty = List.is_empty
 
 let get_named_transforms = List.filter ~f:TaintTransform.is_named_transform
 
-let get_sanitize_transforms transforms =
-  List.take_while transforms ~f:TaintTransform.is_sanitize_transform
-  |> List.filter_map ~f:TaintTransform.get_sanitize_transform
-  |> SanitizeTransform.Set.of_list
-
+let get_sanitize_transforms transforms = fst (split_sanitizers transforms)
 
 let discard_sanitize_transforms = List.filter ~f:TaintTransform.is_named_transform
 

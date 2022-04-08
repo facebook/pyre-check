@@ -7,9 +7,7 @@
 
 type t [@@deriving compare, eq, hash, sexp]
 
-module Set : sig
-  include Stdlib.Set.S with type elt = t
-end
+module Set : Stdlib.Set.S with type elt = t
 
 val add_named_transforms : t -> TaintTransform.t list -> t
 
