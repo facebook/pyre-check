@@ -22,6 +22,16 @@ if (ExecutionEnvironment.canUseDOM) {
 }
 
 
+const DEFAULT_INITIAL_CODE = `# Pyre is being run in strict mode: https://www.internalfb.com/intern/staticdocs/pyre/docs/types-in-python#strict-mode
+# Use the pyre-unsafe header to run in unsafe mode.
+
+from typing import *
+
+# reveal_type will produce a type error that tells you the type Pyre has
+# computed for the argument (in this case, int)
+reveal_type(1)
+`
+
 
 function Code(props) {
   return (
@@ -90,7 +100,7 @@ function getCodeFromURL() {
 
 function getInitialCode() {
   let codeFromUrl = getCodeFromURL();
-  return codeFromUrl == null ? 'reveal_type(1)' : codeFromUrl;
+  return codeFromUrl == null ? DEFAULT_INITIAL_CODE : codeFromUrl;
 }
 
 function encodeCodeAndSetURL(code) {
