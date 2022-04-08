@@ -11,36 +11,38 @@ open Analysis
 open Test
 open TypeCheck
 
-let ignore_lines_test context =
-  let assert_errors ?(show_error_traces = false) input_source expected_errors =
-    let ast_environment, type_errors =
-      let project = ScratchProject.setup ~context ["test.py", input_source] in
-      let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, type_errors =
-        ScratchProject.build_type_environment_and_postprocess project
-      in
-      TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only, type_errors
+let assert_errors ?(show_error_traces = false) ~context input_source expected_errors =
+  let ast_environment, type_errors =
+    let project = ScratchProject.setup ~context ["test.py", input_source] in
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, type_errors =
+      ScratchProject.build_type_environment_and_postprocess project
     in
-    let descriptions =
-      List.map type_errors ~f:(fun error ->
-          Error.instantiate
-            ~show_error_traces
-            ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ast_environment)
-            error
-          |> Error.Instantiated.description)
-    in
-    let description_list_to_string descriptions =
-      Format.asprintf "%a" Sexp.pp [%message (descriptions : string list)]
-    in
-    assert_equal
-      ~cmp:(List.equal String.equal)
-      ~printer:description_list_to_string
-      ~pp_diff:
-        (diff ~print:(fun format expected_errors ->
-             Format.fprintf format "%s" (description_list_to_string expected_errors)))
-      expected_errors
-      descriptions;
-    Memory.reset_shared_memory ()
+    TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only, type_errors
   in
+  let descriptions =
+    List.map type_errors ~f:(fun error ->
+        Error.instantiate
+          ~show_error_traces
+          ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ast_environment)
+          error
+        |> Error.Instantiated.description)
+  in
+  let description_list_to_string descriptions =
+    Format.asprintf "%a" Sexp.pp [%message (descriptions : string list)]
+  in
+  assert_equal
+    ~cmp:(List.equal String.equal)
+    ~printer:description_list_to_string
+    ~pp_diff:
+      (diff ~print:(fun format expected_errors ->
+           Format.fprintf format "%s" (description_list_to_string expected_errors)))
+    expected_errors
+    descriptions;
+  Memory.reset_shared_memory ()
+
+
+let ignore_lines_test context =
+  let assert_errors = assert_errors ~context in
   assert_errors {|
         def foo() -> int:
           return 1.0  # pyre-ignore
@@ -189,7 +191,25 @@ let ignore_lines_test context =
         # pyre-fixme[51]
         # pyre-ignore-all-errors
       |}
-    []
+    [];
+  ()
 
 
-let () = "typeChecker" >::: ["ignore_lines" >:: ignore_lines_test] |> Test.run
+let bad_ignore_comments context =
+  let assert_errors = assert_errors ~context in
+  (* We use a hacky regex to get multiple error codes within square brackets. This barfed when there
+     was a comma outside the brackets, when the ignore statement was `pyre-ignore-all-errors`. *)
+  assert_errors
+    {|
+        # pyre-ignore-all-errors[2]: Yes, this single comma used to be a problem.
+        def foo() -> int:
+          return 1.0
+      |}
+    ["Incompatible return type [7]: Expected `int` but got `float`."];
+  ()
+
+
+let () =
+  "ignore"
+  >::: ["ignore_lines" >:: ignore_lines_test; "bad_ignore_comments" >:: bad_ignore_comments]
+  |> Test.run

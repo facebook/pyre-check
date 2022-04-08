@@ -60,7 +60,7 @@ module Metadata = struct
     Str.string_match comment_regex line 0
 
 
-  let parse ~qualifier:_ lines =
+  let parse ~qualifier lines =
     let is_strict = is_pyre_comment "pyre-strict" in
     let is_unsafe = is_pyre_comment "pyre-unsafe" in
     (* We do not fall back to declarative mode on a typo when attempting to only suppress certain
@@ -165,10 +165,21 @@ module Metadata = struct
       in
       let ignore_codes =
         if is_default_with_suppress line then
+          let safe_int_of_string s =
+            try Some (int_of_string s) with
+            | _ ->
+                Log.warning
+                  "Parsing ignore comment: `int_of_string` failed on string `%s` in module `%s`.\n\
+                   The full line was `%s`."
+                  s
+                  (Reference.show qualifier)
+                  line;
+                None
+          in
           let suppressed_codes =
             Str.global_substitute (Str.regexp "[^,0-9]+") (fun _ -> "") line
             |> String.split_on_chars ~on:[',']
-            |> List.map ~f:int_of_string
+            |> List.filter_map ~f:safe_int_of_string
           in
           suppressed_codes @ ignore_codes
         else
