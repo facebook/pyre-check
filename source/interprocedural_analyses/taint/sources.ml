@@ -162,19 +162,34 @@ let apply_sanitize_transforms transforms source =
 
 let apply_sanitize_sink_transforms = apply_sanitize_transforms
 
-let apply_named_transforms transforms source =
+let apply_transforms transforms order source =
   match source with
   | Attach -> Attach
   | NamedSource _
   | ParametricSource _ ->
       Transform
         {
-          local = TaintTransforms.rev_add_named_transforms TaintTransforms.empty transforms;
+          local =
+            TaintTransforms.add_transforms
+              ~transforms:TaintTransforms.empty
+              ~order:TaintTransforms.Order.Forward
+              ~to_add:transforms
+              ~to_add_order:order;
           global = TaintTransforms.empty;
           base = source;
         }
   | Transform { local; global; base } ->
-      Transform { local = TaintTransforms.rev_add_named_transforms local transforms; global; base }
+      Transform
+        {
+          local =
+            TaintTransforms.add_transforms
+              ~transforms:local
+              ~order:TaintTransforms.Order.Forward
+              ~to_add:transforms
+              ~to_add_order:order;
+          global;
+          base;
+        }
 
 
 let get_named_transforms = function

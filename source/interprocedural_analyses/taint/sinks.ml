@@ -200,7 +200,7 @@ let apply_sanitize_sink_transforms transforms sink =
   | _ -> sink
 
 
-let apply_named_transforms transforms sink =
+let apply_transforms transforms order sink =
   match sink with
   | Attach
   | AddFeatureToArgument ->
@@ -213,12 +213,27 @@ let apply_named_transforms transforms sink =
   | ParameterUpdate _ ->
       Transform
         {
-          local = TaintTransforms.of_named_transforms transforms;
+          local =
+            TaintTransforms.add_transforms
+              ~transforms:TaintTransforms.empty
+              ~order:TaintTransforms.Order.Backward
+              ~to_add:transforms
+              ~to_add_order:order;
           global = TaintTransforms.empty;
           base = sink;
         }
   | Transform { local; global; base } ->
-      Transform { local = TaintTransforms.add_named_transforms local transforms; global; base }
+      Transform
+        {
+          local =
+            TaintTransforms.add_transforms
+              ~transforms:local
+              ~order:TaintTransforms.Order.Backward
+              ~to_add:transforms
+              ~to_add_order:order;
+          global;
+          base;
+        }
 
 
 let get_named_transforms = function

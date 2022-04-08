@@ -14,18 +14,18 @@ end
 include T
 module Set = Stdlib.Set.Make (T)
 
+module Order = struct
+  type t =
+    (* A:B:C represents the transforms for x in `x = A(B(C(taint)))` *)
+    | Forward
+    (* A:B:C represents the transforms for x in `taint = C(B(A(x)))` *)
+    | Backward
+  [@@deriving show]
+end
+
 let empty = []
 
-let add_transform transforms transform = transform :: transforms
-
-let add_named_transforms init named_transforms =
-  List.fold_right named_transforms ~init ~f:(fun named_transform sofar ->
-      add_transform sofar named_transform)
-
-
-let rev_add_named_transforms init named_transforms =
-  List.fold_left named_transforms ~init ~f:add_transform
-
+let add_named_transform transforms named_transform = named_transform :: transforms
 
 (* Split a list of transforms into sanitizers present at the beginning and the rest. *)
 let split_sanitizers transforms =
@@ -50,7 +50,36 @@ let add_sanitize_transforms transforms sanitizers =
     rest
 
 
-let of_named_transforms = add_named_transforms empty
+let rec add_backward_into_forward_transforms ~transforms ~to_add =
+  let sanitizers, rest = split_sanitizers to_add in
+  let transforms = add_sanitize_transforms transforms sanitizers in
+  match rest with
+  | [] -> transforms
+  | (TaintTransform.Named _ as named_transform) :: tail ->
+      let transforms = add_named_transform transforms named_transform in
+      add_backward_into_forward_transforms ~transforms ~to_add:tail
+  | TaintTransform.Sanitize _ :: _ -> failwith "unreachable"
+
+
+(* This is equivalent. *)
+let add_forward_into_backward_transforms = add_backward_into_forward_transforms
+
+let add_transforms ~transforms ~order ~to_add ~to_add_order =
+  match order, to_add_order with
+  | Order.Forward, Order.Backward -> add_backward_into_forward_transforms ~transforms ~to_add
+  | Order.Backward, Order.Backward ->
+      add_forward_into_backward_transforms ~transforms ~to_add:(List.rev to_add)
+  | _ ->
+      Format.asprintf
+        "unsupported: add_transforms ~order:%a ~to_add_order:%a"
+        Order.pp
+        order
+        Order.pp
+        to_add_order
+      |> failwith
+
+
+let of_named_transforms transforms = transforms
 
 let of_sanitize_transforms = add_sanitize_transforms empty
 
@@ -58,8 +87,10 @@ let is_empty = List.is_empty
 
 let get_named_transforms = List.filter ~f:TaintTransform.is_named_transform
 
+(* This only returns sanitizers that are still valid (i.e, before a named transform. *)
 let get_sanitize_transforms transforms = fst (split_sanitizers transforms)
 
+(* This discards all sanitizers, regardless of whether they are still valid or not. *)
 let discard_sanitize_transforms = List.filter ~f:TaintTransform.is_named_transform
 
 let merge ~local ~global = local @ global

@@ -336,7 +336,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (* Apply tito transforms and source- and sink-specific sanitizers. *)
             let transforms = TaintTransforms.merge ~local ~global in
             let sanitize_transforms = TaintTransforms.get_sanitize_transforms transforms in
-            let named_transforms = TaintTransforms.get_named_transforms transforms in
+            let named_transforms =
+              TaintTransforms.get_named_transforms transforms |> TaintTransforms.of_named_transforms
+            in
             let sanitized_tito_sinks =
               Sinks.extract_sanitized_sinks_from_transforms sanitize_transforms
             in
@@ -348,7 +350,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             |> BackwardState.Tree.sanitize sanitized_tito_sinks
             |> BackwardState.Tree.apply_sanitize_transforms sanitized_tito_sources
             |> BackwardState.Tree.apply_sanitize_sink_transforms sanitized_tito_sinks_transforms
-            |> BackwardState.Tree.apply_named_transforms named_transforms
+            |> BackwardState.Tree.apply_transforms named_transforms TaintTransforms.Order.Backward
             |> BackwardState.Tree.transform BackwardTaint.kind Filter ~f:Issue.sink_can_match_rule
         | _ -> taint_to_propagate
       in
