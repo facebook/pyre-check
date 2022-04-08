@@ -32,6 +32,10 @@ val get_sanitize_transforms : t -> SanitizeTransform.Set.t
 (* This discards all sanitizers, regardless of whether they are still valid or not. *)
 val discard_sanitize_transforms : t -> t
 
+val discard_sanitize_source_transforms : t -> t
+
+val discard_sanitize_sink_transforms : t -> t
+
 val is_empty : t -> bool
 
 val merge : local:t -> global:t -> t

@@ -201,7 +201,16 @@ let apply_sanitize_sink_transforms transforms sink =
 
 
 let apply_transforms transforms order sink =
+  (* We should only apply sink sanitizers on tito. *)
+  let transforms =
+    match sink with
+    | LocalReturn
+    | Transform { base = LocalReturn; _ } ->
+        transforms
+    | _ -> TaintTransforms.discard_sanitize_sink_transforms transforms
+  in
   match sink with
+  | _ when TaintTransforms.is_empty transforms -> sink
   | Attach
   | AddFeatureToArgument ->
       sink

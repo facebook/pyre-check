@@ -18,4 +18,8 @@ val is_named_transform : t -> bool
 
 val is_sanitize_transform : t -> bool
 
+val is_sanitize_source_transform : t -> bool
+
+val is_sanitize_sink_transform : t -> bool
+
 val get_sanitize_transform : t -> SanitizeTransform.t option

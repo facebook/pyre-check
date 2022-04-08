@@ -710,7 +710,7 @@
                 "return_paths": [ "" ],
                 "length": 2,
                 "kind":
-                  "TransformX:NotSource[SourceC]:NotSource[SourceA]:TransformY@LocalReturn"
+                  "NotSource[SourceA]:TransformX:NotSource[SourceC]:TransformY@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],

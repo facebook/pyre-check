@@ -93,6 +93,14 @@ let get_sanitize_transforms transforms = fst (split_sanitizers transforms)
 (* This discards all sanitizers, regardless of whether they are still valid or not. *)
 let discard_sanitize_transforms = List.filter ~f:TaintTransform.is_named_transform
 
+let discard_sanitize_source_transforms =
+  List.filter ~f:(fun transform -> not (TaintTransform.is_sanitize_source_transform transform))
+
+
+let discard_sanitize_sink_transforms =
+  List.filter ~f:(fun transform -> not (TaintTransform.is_sanitize_sink_transform transform))
+
+
 let merge ~local ~global = local @ global
 
 let show_transforms transforms =

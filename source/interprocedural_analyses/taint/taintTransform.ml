@@ -30,6 +30,16 @@ let is_sanitize_transform = function
   | Sanitize _ -> true
 
 
+let is_sanitize_source_transform = function
+  | Sanitize (SanitizeTransform.NamedSource _) -> true
+  | _ -> false
+
+
+let is_sanitize_sink_transform = function
+  | Sanitize (SanitizeTransform.NamedSink _) -> true
+  | _ -> false
+
+
 let get_sanitize_transform = function
   | Named _ -> None
   | Sanitize sanitize -> Some sanitize
