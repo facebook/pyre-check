@@ -1602,21 +1602,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
     let value_taint =
       let literal_string_regular_expressions = TaintConfiguration.literal_string_sources () in
-      if List.is_empty literal_string_regular_expressions then
-        ForwardState.Tree.empty
-      else
-        let add_matching_source_kind tree { TaintConfiguration.pattern; source_kind = kind } =
-          if Re2.matches pattern value then
-            ForwardTaint.singleton ~location kind Frame.initial
-            |> ForwardState.Tree.create_leaf
-            |> ForwardState.Tree.join tree
-          else
-            tree
-        in
-        List.fold
-          literal_string_regular_expressions
-          ~init:ForwardState.Tree.empty
-          ~f:add_matching_source_kind
+      let add_matching_source_kind tree { TaintConfiguration.pattern; source_kind = kind } =
+        if Re2.matches pattern value then
+          ForwardTaint.singleton ~location kind Frame.initial
+          |> ForwardState.Tree.create_leaf
+          |> ForwardState.Tree.join tree
+        else
+          tree
+      in
+      List.fold
+        literal_string_regular_expressions
+        ~init:ForwardState.Tree.empty
+        ~f:add_matching_source_kind
     in
     match nested_expressions with
     | [] -> value_taint, state
