@@ -9,11 +9,7 @@ open Core
 module Gc = Caml.Gc
 module Set = Caml.Set
 
-module type KeyType = sig
-  include SharedMemory.UserKeyType
-
-  val from_string : string -> t
-end
+module type KeyType = SharedMemory.UserKeyType
 
 module type ValueType = sig
   include Value.Type
@@ -229,7 +225,7 @@ let reset_shared_memory () =
   pyre_reset ()
 
 
-module SingletonKey = struct
+module IntKey = struct
   type t = int
 
   let to_string = Int.to_string
@@ -237,6 +233,10 @@ module SingletonKey = struct
   let compare = Int.compare
 
   let from_string = Int.of_string
+end
+
+module SingletonKey = struct
+  include IntKey
 
   let key = 0
 end
@@ -279,7 +279,7 @@ end
 
 (* Provide a unique integer for a given value. *)
 module Interner (Value : InternerValueType) = struct
-  module Table = SharedMemory.WithCache (Int) (Value)
+  module Table = SharedMemory.WithCache (IntKey) (Value)
 
   type t = int
 

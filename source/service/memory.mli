@@ -9,11 +9,7 @@ open Core
 module Set = Caml.Set
 module SharedMemory = Hack_parallel.Std.SharedMemory
 
-module type KeyType = sig
-  include SharedMemory.UserKeyType
-
-  val from_string : string -> t
-end
+module type KeyType = SharedMemory.UserKeyType
 
 module type ValueType = sig
   include Value.Type
