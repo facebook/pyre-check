@@ -20,8 +20,6 @@ module EmptyStubCache = ManagedCache.Make (struct
 
     let description = "is from empty stub result"
 
-    let unmarshall value = Marshal.from_string value 0
-
     let compare = Bool.compare
   end
 

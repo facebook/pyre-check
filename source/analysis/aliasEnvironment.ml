@@ -24,8 +24,6 @@ module AliasValue = struct
 
   let description = "Alias"
 
-  let unmarshall value = Marshal.from_string value 0
-
   let compare = Option.compare Type.compare_alias
 end
 

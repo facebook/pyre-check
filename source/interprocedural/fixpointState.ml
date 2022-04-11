@@ -39,8 +39,6 @@ module SharedModels =
       let prefix = Prefix.make ()
 
       let description = "InterproceduralFixpointModel"
-
-      let unmarshall value = Marshal.from_string value 0
     end)
 
 module SharedResults =
@@ -52,8 +50,6 @@ module SharedResults =
       let prefix = Prefix.make ()
 
       let description = "InterproceduralFixpointResults"
-
-      let unmarshall value = Marshal.from_string value 0
     end)
 
 type meta_data = {
@@ -71,8 +67,6 @@ module SharedFixpoint =
       let prefix = Prefix.make ()
 
       let description = "InterproceduralFixpointMetadata"
-
-      let unmarshall value = Marshal.from_string value 0
     end)
 
 module KeySet = SharedModels.KeySet

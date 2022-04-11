@@ -140,8 +140,6 @@ module In = struct
       module Serialized = struct
         type nonrec t = key list
 
-        let unmarshall value = Marshal.from_string value 0
-
         let prefix = Prefix.make ()
 
         let description = "Decoder storage"

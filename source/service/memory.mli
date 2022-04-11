@@ -11,11 +11,7 @@ module SharedMemory = Hack_parallel.Std.SharedMemory
 
 module type KeyType = SharedMemory.UserKeyType
 
-module type ValueType = sig
-  include Value.Type
-
-  val unmarshall : string -> t
-end
+module type ValueType = Value.Type
 
 module NoCache : sig
   module type S = sig

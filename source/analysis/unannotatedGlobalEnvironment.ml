@@ -287,8 +287,6 @@ module KeyTracker = struct
     let prefix = Prefix.make ()
 
     let description = "Class keys"
-
-    let unmarshall value = Marshal.from_string value 0
   end
 
   module UnannotatedGlobalKeyValue = struct
@@ -297,8 +295,6 @@ module KeyTracker = struct
     let prefix = Prefix.make ()
 
     let description = "Class keys"
-
-    let unmarshall value = Marshal.from_string value 0
   end
 
   module FunctionKeyValue = struct
@@ -307,8 +303,6 @@ module KeyTracker = struct
     let prefix = Prefix.make ()
 
     let description = "TypeCheckUnit keys"
-
-    let unmarshall value = Marshal.from_string value 0
   end
 
   module ClassKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ClassKeyValue)
@@ -381,8 +375,6 @@ end = struct
 
     let description = "ClassSummary"
 
-    let unmarshall value = Marshal.from_string value 0
-
     let compare = Node.compare ClassSummary.compare
   end
 
@@ -398,8 +390,6 @@ end = struct
     let prefix = Prefix.make ()
 
     let description = "UnannotatedGlobal"
-
-    let unmarshall value = Marshal.from_string value 0
 
     let compare = UnannotatedGlobal.compare
   end
@@ -417,8 +407,6 @@ end = struct
 
     let prefix = Prefix.make ()
 
-    let unmarshall value = Marshal.from_string value 0
-
     let compare = FunctionDefinition.compare
   end
 
@@ -434,8 +422,6 @@ end = struct
     let prefix = Prefix.make ()
 
     let description = "Module"
-
-    let unmarshall value = Marshal.from_string value 0
 
     let compare = Module.compare
   end

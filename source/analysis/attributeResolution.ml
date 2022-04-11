@@ -4615,8 +4615,6 @@ module ParseAnnotationCache = struct
       let prefix = Prefix.make ()
 
       let description = "parse annotation"
-
-      let unmarshall value = Marshal.from_string value 0
     end
 
     module KeySet = SharedMemoryKeys.ParseAnnotationKey.Set
@@ -4679,8 +4677,6 @@ module MetaclassCache = struct
       let prefix = Prefix.make ()
 
       let description = "metaclasses"
-
-      let unmarshall value = Marshal.from_string value 0
     end
 
     module KeySet = String.Set
@@ -4733,8 +4729,6 @@ module AttributeCache = struct
       let prefix = Prefix.make ()
 
       let description = "attributes"
-
-      let unmarshall value = Marshal.from_string value 0
     end
 
     module KeySet = SharedMemoryKeys.AttributeTableKey.Set
@@ -4835,8 +4829,6 @@ module GlobalAnnotationCache = struct
       let prefix = Prefix.make ()
 
       let description = "Global"
-
-      let unmarshall value = Marshal.from_string value 0
 
       let compare = Option.compare Global.compare
     end

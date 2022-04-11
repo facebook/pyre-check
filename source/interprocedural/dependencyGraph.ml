@@ -24,8 +24,6 @@ module CallGraphSharedMemory = Memory.Serializer (struct
     let prefix = Prefix.make ()
 
     let description = "Call graph"
-
-    let unmarshall value = Marshal.from_string value 0
   end
 
   let serialize = Fn.id
@@ -44,8 +42,6 @@ module OverridesSharedMemory = Memory.Serializer (struct
     let prefix = Prefix.make ()
 
     let description = "Overrides"
-
-    let unmarshall value = Marshal.from_string value 0
   end
 
   let serialize = Fn.id

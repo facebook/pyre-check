@@ -17,8 +17,6 @@ module GlobalLocationValue = struct
 
   let description = "Global Locations"
 
-  let unmarshall value = Marshal.from_string value 0
-
   let compare = Option.compare Location.WithModule.compare
 end
 

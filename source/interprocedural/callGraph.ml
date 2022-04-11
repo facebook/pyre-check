@@ -1934,8 +1934,6 @@ module SharedMemory = struct
         let prefix = Prefix.make ()
 
         let description = "call graphs of defines"
-
-        let unmarshall value = Marshal.from_string value 0
       end)
 
   let add ~callable ~call_graph = add callable (Location.Map.to_tree call_graph)

@@ -82,8 +82,6 @@ module CalleeValue = struct
   let prefix = Prefix.make ()
 
   let description = "Reference List"
-
-  let unmarshall value = Marshal.from_string value 0
 end
 
 module CallerKey = struct

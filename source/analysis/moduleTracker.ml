@@ -456,8 +456,6 @@ module Serializer = struct
       let prefix = Prefix.make ()
 
       let description = "Module tracker"
-
-      let unmarshall value = Marshal.from_string value 0
     end
 
     let serialize { Layouts.module_to_files; submodule_refcounts } =

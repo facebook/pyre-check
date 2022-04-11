@@ -28,8 +28,6 @@ struct
     let prefix = Prefix.make ()
 
     let description = T.name
-
-    let unmarshall value = Marshal.from_string value 0
   end
 
   include Memory.Interner (Value)

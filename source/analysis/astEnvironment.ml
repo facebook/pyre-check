@@ -33,8 +33,6 @@ module RawSourceValue = struct
   let description = "Unprocessed source"
 
   let compare = Result.compare Source.compare ParserError.compare
-
-  let unmarshall value = Marshal.from_string value 0
 end
 
 module RawSources =

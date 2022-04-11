@@ -32,8 +32,6 @@ module EdgesValue = struct
 
   let description = "Edges"
 
-  let unmarshall value = Marshal.from_string value 0
-
   let compare = Option.compare compare_edges
 end
 

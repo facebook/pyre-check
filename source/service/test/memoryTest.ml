@@ -23,9 +23,6 @@ module MockAnnotationValue = struct
   let prefix = Prefix.make ()
 
   let description = "Annotations"
-
-  (* Shared memory does not marshall strings *)
-  let unmarshall value = value
 end
 
 module MockAnnotations = Memory.WithCache.Make (IntKey) (MockAnnotationValue)
@@ -55,8 +52,6 @@ let test_interner _ =
     include String
 
     let to_string x = x
-
-    let unmarshall x = x
 
     let prefix = Prefix.make ()
 

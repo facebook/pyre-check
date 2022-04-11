@@ -56,9 +56,6 @@ module StringValue = struct
   let description = "Test1"
 
   let compare = String.compare
-
-  (* Strings are not marshalled by shared memory *)
-  let unmarshall value = value
 end
 
 module OtherStringValue = struct
@@ -69,9 +66,6 @@ module OtherStringValue = struct
   let description = "Test2"
 
   let compare = String.compare
-
-  (* Strings are not marshalled by shared memory *)
-  let unmarshall value = value
 end
 
 module TableA =

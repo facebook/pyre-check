@@ -95,8 +95,6 @@ module BuckBuildSystem = struct
       let prefix = Prefix.make ()
 
       let description = "Buck Builder States"
-
-      let unmarshall value = Marshal.from_string value 0
     end
 
     let serialize = Fn.id

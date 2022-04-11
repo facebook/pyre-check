@@ -44,8 +44,6 @@ module AnalysisErrorValue = struct
   let prefix = Prefix.make ()
 
   let description = "Raw analysis errors"
-
-  let unmarshall value = Marshal.from_string value 0
 end
 
 module LocalAnnotationsValue = struct
@@ -54,8 +52,6 @@ module LocalAnnotationsValue = struct
   let prefix = Prefix.make ()
 
   let description = "Node type resolution"
-
-  let unmarshall value = Marshal.from_string value 0
 end
 
 module RawErrors = Memory.NoCache.Make (SharedMemoryKeys.ReferenceKey) (AnalysisErrorValue)

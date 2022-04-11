@@ -11,11 +11,7 @@ module Set = Caml.Set
 
 module type KeyType = SharedMemory.UserKeyType
 
-module type ValueType = sig
-  include Value.Type
-
-  val unmarshall : string -> t
-end
+module type ValueType = Value.Type
 
 module NoCache = struct
   module type S = sig

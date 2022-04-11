@@ -35,8 +35,6 @@ module InitialCallablesSharedMemory = Memory.Serializer (struct
     let prefix = Prefix.make ()
 
     let description = "Initial callables to analyze"
-
-    let unmarshall value = Marshal.from_string value 0
   end
 
   let serialize = Fn.id
@@ -53,8 +51,6 @@ module ClassHierarchyGraphSharedMemory = Memory.Serializer (struct
     let prefix = Prefix.make ()
 
     let description = "Class hierarchy graph"
-
-    let unmarshall value = Marshal.from_string value 0
   end
 
   let serialize = Fn.id

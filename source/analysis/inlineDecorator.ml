@@ -18,8 +18,6 @@ module BooleanValue = struct
   let prefix = Prefix.make ()
 
   let description = "Whether decorators should be inlined."
-
-  let unmarshall value = Marshal.from_string value 0
 end
 
 module ShouldInlineDecorators = Memory.WithCache.Make (SharedMemoryKeys.StringKey) (BooleanValue)
@@ -77,8 +75,6 @@ module DecoratorModuleValue = struct
   let prefix = Prefix.make ()
 
   let description = "Module for a decorator that has been inlined."
-
-  let unmarshall value = Marshal.from_string value 0
 end
 
 module Decorators = struct
@@ -87,8 +83,6 @@ module Decorators = struct
   let prefix = Prefix.make ()
 
   let description = "Decorators from a module."
-
-  let unmarshall value = Marshal.from_string value 0
 end
 
 module ModuleDecorators = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (Decorators)

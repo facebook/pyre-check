@@ -28,8 +28,6 @@ module ClassMetadataValue = struct
 
   let description = "Class metadata"
 
-  let unmarshall value = Marshal.from_string value 0
-
   let compare = Option.compare compare_class_metadata
 end
 
