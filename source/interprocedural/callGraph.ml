@@ -828,8 +828,28 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
         (* case c *)
         let keep_subtypes candidate =
           let candidate_type = get_class_type candidate in
-          GlobalResolution.less_or_equal global_resolution ~left:candidate_type ~right:receiver_type
+          try
+            GlobalResolution.less_or_equal
+              global_resolution
+              ~left:candidate_type
+              ~right:receiver_type
+          with
+          | Analysis.ClassHierarchy.Untracked untracked_type ->
+              Log.error
+                "Found untracked type `%s` when comparing `%a` and `%a`. The class `%a` will be \
+                 considered a subclass of `%a`, which could lead to false positives."
+                untracked_type
+                Type.pp
+                candidate_type
+                Type.pp
+                receiver_type
+                Type.pp
+                candidate_type
+                Type.pp
+                receiver_type;
+              true
         in
+
         let override_targets =
           let create_override_target class_name =
             let method_name = Reference.last implementation_target in
