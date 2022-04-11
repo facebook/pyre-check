@@ -441,9 +441,6 @@ module type TAINT_DOMAIN = sig
 
   val apply_sanitize_transforms : SanitizeTransform.Set.t -> t -> t
 
-  (* Apply sanitize transforms only to the special `LocalReturn` sink. *)
-  val apply_sanitize_sink_transforms : SanitizeTransform.Set.t -> t -> t
-
   val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t
 
   (* Add trace info at call-site *)
@@ -487,8 +484,6 @@ module type KIND_ARG = sig
   val discard_sanitize_transforms : t -> t
 
   val apply_sanitize_transforms : SanitizeTransform.Set.t -> t -> t
-
-  val apply_sanitize_sink_transforms : SanitizeTransform.Set.t -> t -> t
 
   val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t
 
@@ -916,13 +911,6 @@ end = struct
       transform KindTaintDomain.Key Map ~f:(Kind.apply_sanitize_transforms transforms) taint
 
 
-  let apply_sanitize_sink_transforms transforms taint =
-    if SanitizeTransform.Set.is_empty transforms then
-      taint
-    else
-      transform KindTaintDomain.Key Map ~f:(Kind.apply_sanitize_sink_transforms transforms) taint
-
-
   let apply_transforms transforms order taint =
     if TaintTransforms.is_empty transforms then
       taint
@@ -1225,13 +1213,6 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       taint
     else
       transform Taint.Self Map ~f:(Taint.apply_sanitize_transforms transforms) taint
-
-
-  let apply_sanitize_sink_transforms transforms taint =
-    if SanitizeTransform.Set.is_empty transforms then
-      taint
-    else
-      transform Taint.Self Map ~f:(Taint.apply_sanitize_sink_transforms transforms) taint
 
 
   let apply_transforms transforms order taint =

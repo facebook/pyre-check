@@ -160,8 +160,6 @@ let apply_sanitize_transforms transforms source =
       Transform { local = TaintTransforms.add_sanitize_transforms local transforms; global; base }
 
 
-let apply_sanitize_sink_transforms = apply_sanitize_transforms
-
 let apply_transforms transforms order source =
   match source with
   | Attach -> Attach

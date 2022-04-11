@@ -848,7 +848,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   in
                   taint
                   |> BackwardState.Tree.sanitize sanitized_sinks
-                  |> BackwardState.Tree.apply_sanitize_sink_transforms sanitized_sinks_transforms
+                  |> BackwardState.Tree.apply_sanitize_transforms sanitized_sinks_transforms
               | _ -> taint
             in
             let taint =

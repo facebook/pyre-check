@@ -170,7 +170,16 @@ let rec extract_partial_sink = function
 
 
 let apply_sanitize_transforms transforms sink =
+  (* We should only apply sink sanitizers on tito. *)
+  let transforms =
+    match sink with
+    | LocalReturn
+    | Transform { base = LocalReturn; _ } ->
+        transforms
+    | _ -> SanitizeTransform.Set.filter_sources transforms
+  in
   match sink with
+  | _ when SanitizeTransform.Set.is_empty transforms -> sink
   | Attach
   | AddFeatureToArgument ->
       sink
@@ -189,14 +198,6 @@ let apply_sanitize_transforms transforms sink =
   | Transform { local; global; base } ->
       let transforms = SanitizeTransform.Set.diff transforms (extract_sanitize_transforms sink) in
       Transform { local = TaintTransforms.add_sanitize_transforms local transforms; global; base }
-
-
-let apply_sanitize_sink_transforms transforms sink =
-  match sink with
-  | LocalReturn
-  | Transform { base = LocalReturn; _ } ->
-      apply_sanitize_transforms transforms sink
-  | _ -> sink
 
 
 let apply_transforms transforms order sink =
