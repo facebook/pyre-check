@@ -9,43 +9,12 @@ open Core
 module Gc = Caml.Gc
 module Set = Caml.Set
 
-module type KeyType = SharedMemory.UserKeyType
+module type KeyType = SharedMemory.KeyType
 
-module type ValueType = Value.Type
+module type ValueType = SharedMemory.ValueType
 
-module NoCache = struct
-  module type S = sig
-    include SharedMemory.NoCache
-  end
-
-  module Make (Key : KeyType) (Value : ValueType) : sig
-    include
-      S
-        with type value = Value.t
-         and type key = Key.t
-         and module KeySet = Set.Make(Key)
-         and module KeyMap = MyMap.Make(Key)
-  end = struct
-    include SharedMemory.NoCache (Key) (Value)
-  end
-end
-
-module WithCache = struct
-  module type S = sig
-    include SharedMemory.WithCache
-  end
-
-  module Make (Key : KeyType) (Value : ValueType) : sig
-    include
-      S
-        with type value = Value.t
-         and type key = Key.t
-         and module KeySet = Set.Make(Key)
-         and module KeyMap = MyMap.Make(Key)
-  end = struct
-    include SharedMemory.WithCache (Key) (Value)
-  end
-end
+module NoCache = SharedMemory.NoCache
+module WithCache = SharedMemory.WithCache
 
 type bytes = int
 
@@ -275,7 +244,7 @@ end
 
 (* Provide a unique integer for a given value. *)
 module Interner (Value : InternerValueType) = struct
-  module Table = SharedMemory.WithCache (IntKey) (Value)
+  module Table = SharedMemory.WithCache.Make (IntKey) (Value)
 
   type t = int
 

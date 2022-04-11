@@ -342,6 +342,24 @@ end
 
 let value_size = HeapSize.size
 
+
+(*****************************************************************************)
+(* The interfaces for keys and values of shared memory tables *)
+(*****************************************************************************)
+
+module type KeyType = sig
+  type t
+  val to_string : t -> string
+  val from_string : string -> t
+  val compare : t -> t -> int
+end
+
+module type ValueType = sig
+  type t
+  val prefix: Prefix.t
+  val description: string
+end
+
 (*****************************************************************************)
 (* Module returning the MD5 of the key. It's because the code in C land
  * expects this format. I prefer to make it an abstract type to make sure
@@ -377,12 +395,10 @@ module type Key = sig
   val string_of_md5 : md5 -> string
 end
 
-module KeyFunctor (UserKeyType : sig
-    type t
-    val to_string : t -> string
-  end) : Key with type userkey = UserKeyType.t = struct
+module KeyFunctor (KeyType : KeyType) : Key
+    with type userkey = KeyType.t = struct
 
-  type userkey = UserKeyType.t
+  type userkey = KeyType.t
   type t       = string
   type old     = string
   type md5     = string
@@ -393,9 +409,9 @@ module KeyFunctor (UserKeyType : sig
   *)
   let old_prefix = "old_"
 
-  let make prefix x = Prefix.make_key prefix (UserKeyType.to_string x)
+  let make prefix x = Prefix.make_key prefix (KeyType.to_string x)
   let make_old prefix x =
-    old_prefix^Prefix.make_key prefix (UserKeyType.to_string x)
+    old_prefix^Prefix.make_key prefix (KeyType.to_string x)
 
   let to_old x = old_prefix^x
 
@@ -414,7 +430,7 @@ end
  * representation).
 *)
 (*****************************************************************************)
-module Raw (Key: Key) (Value:Value.Type): sig
+module Raw (Key: Key) (Value : ValueType): sig
   val add    : Key.md5 -> Value.t -> unit
   val mem    : Key.md5 -> bool
   val get    : Key.md5 -> Value.t
@@ -681,7 +697,7 @@ end
 *)
 (*****************************************************************************)
 
-module New : functor (Key : Key) -> functor(Value: Value.Type) -> sig
+module New : functor (Key : Key) -> functor(Value : ValueType) -> sig
 
   (* Adds a binding to the table, the table is left unchanged if the
    * key was already bound.
@@ -702,7 +718,7 @@ module New : functor (Key : Key) -> functor(Value: Value.Type) -> sig
 
   module Raw: module type of Raw (Key) (Value)
 
-end = functor (Key : Key) -> functor (Value : Value.Type) -> struct
+end = functor (Key : Key) -> functor (Value  : ValueType) -> struct
 
   module Raw = Raw (Key) (Value)
 
@@ -738,7 +754,7 @@ end = functor (Key : Key) -> functor (Value : Value.Type) -> struct
 end
 
 (* Same as new, but for old values *)
-module Old : functor (Key : Key) -> functor (Value : Value.Type) ->
+module Old : functor (Key : Key) -> functor (Value : ValueType) ->
   functor (_ : module type of Raw (Key) (Value)) -> sig
 
     val get         : Key.old -> Value.t option
@@ -747,7 +763,7 @@ module Old : functor (Key : Key) -> functor (Value : Value.Type) ->
     (* Takes an old value and moves it back to a "new" one *)
     val revive      : Key.old -> unit
 
-  end = functor (Key : Key) -> functor (Value: Value.Type) ->
+  end = functor (Key : Key) -> functor (Value : ValueType) ->
   functor (Raw : module type of Raw (Key) (Value)) -> struct
 
     let get key =
@@ -777,147 +793,132 @@ module Old : functor (Key : Key) -> functor (Value : Value.Type) ->
 (* The signatures of what we are actually going to expose to the user *)
 (*****************************************************************************)
 
-module type NoCache = sig
-  type key
-  type value
-  module KeySet : Set.S with type elt = key
-  module KeyMap : MyMap.S with type key = key
 
-  val add              : key -> value -> unit
-  val get              : key -> value option
-  val get_old          : key -> value option
-  val get_old_batch    : KeySet.t -> value option KeyMap.t
-  val remove_old_batch : KeySet.t -> unit
-  val find_unsafe      : key -> value
-  val get_batch        : KeySet.t -> value option KeyMap.t
-  val remove_batch     : KeySet.t -> unit
-  val string_of_key    : key -> string
-  val mem              : key -> bool
-  val mem_old          : key -> bool
-  val oldify_batch     : KeySet.t -> unit
-  val revive_batch     : KeySet.t -> unit
+(*****************************************************************************)
+(* A shared memory table with no process-local caching of reads *)
+(*****************************************************************************)
+module NoCache = struct
+  module type S = sig
+    type key
+    type value
+    module KeySet : Set.S with type elt = key
+    module KeyMap : MyMap.S with type key = key
 
-  module LocalChanges : sig
-    val has_local_changes : unit -> bool
-    val push_stack : unit -> unit
-    val pop_stack : unit -> unit
-    val revert_batch : KeySet.t -> unit
-    val commit_batch : KeySet.t -> unit
-    val revert_all : unit -> unit
-    val commit_all : unit -> unit
+    val add              : key -> value -> unit
+    val get              : key -> value option
+    val get_old          : key -> value option
+    val get_old_batch    : KeySet.t -> value option KeyMap.t
+    val remove_old_batch : KeySet.t -> unit
+    val find_unsafe      : key -> value
+    val get_batch        : KeySet.t -> value option KeyMap.t
+    val remove_batch     : KeySet.t -> unit
+    val string_of_key    : key -> string
+    val mem              : key -> bool
+    val mem_old          : key -> bool
+    val oldify_batch     : KeySet.t -> unit
+    val revive_batch     : KeySet.t -> unit
+
+    module LocalChanges : sig
+      val has_local_changes : unit -> bool
+      val push_stack : unit -> unit
+      val pop_stack : unit -> unit
+      val revert_batch : KeySet.t -> unit
+      val commit_batch : KeySet.t -> unit
+      val revert_all : unit -> unit
+      val commit_all : unit -> unit
+    end
   end
-end
 
-module type WithCache = sig
-  include NoCache
-  val write_through : key -> value -> unit
-  val get_no_cache: key -> value option
-end
+  module Make (KeyType : KeyType) (Value : ValueType) = struct
 
-(*****************************************************************************)
-(* The interface that all keys need to implement *)
-(*****************************************************************************)
+    module Key = KeyFunctor (KeyType)
+    module New = New (Key) (Value)
+    module Old = Old (Key) (Value) (New.Raw)
+    module KeySet = Set.Make (KeyType)
+    module KeyMap = MyMap.Make (KeyType)
 
-module type UserKeyType = sig
-  type t
-  val to_string : t -> string
-  val from_string : string -> t
-  val compare : t -> t -> int
-end
+    type key = KeyType.t
+    type value = Value.t
 
-(*****************************************************************************)
-(* A functor returning an implementation of the S module without caching. *)
-(*****************************************************************************)
+    let string_of_key key =
+      key |> Key.make Value.prefix |> Key.md5 |> Key.string_of_md5;;
 
-module NoCache (UserKeyType : UserKeyType) (Value : Value.Type) = struct
+    let add x y = New.add (Key.make Value.prefix x) y
+    let find_unsafe x = New.find_unsafe (Key.make Value.prefix x)
 
-  module Key = KeyFunctor (UserKeyType)
-  module New = New (Key) (Value)
-  module Old = Old (Key) (Value) (New.Raw)
-  module KeySet = Set.Make (UserKeyType)
-  module KeyMap = MyMap.Make (UserKeyType)
+    let get x =
+      try Some (find_unsafe x) with Not_found -> None
 
-  type key = UserKeyType.t
-  type value = Value.t
+    let get_old x =
+      let key = Key.make_old Value.prefix x in
+      Old.get key
 
-  let string_of_key key =
-    key |> Key.make Value.prefix |> Key.md5 |> Key.string_of_md5;;
-
-  let add x y = New.add (Key.make Value.prefix x) y
-  let find_unsafe x = New.find_unsafe (Key.make Value.prefix x)
-
-  let get x =
-    try Some (find_unsafe x) with Not_found -> None
-
-  let get_old x =
-    let key = Key.make_old Value.prefix x in
-    Old.get key
-
-  let get_old_batch xs =
-    KeySet.fold begin fun str_key acc ->
-      let key = Key.make_old Value.prefix str_key in
-      KeyMap.add str_key (Old.get key) acc
-    end xs KeyMap.empty
-
-  let remove_batch xs =
-    KeySet.iter begin fun str_key ->
-      let key = Key.make Value.prefix str_key in
-      New.remove key
-    end xs
-
-  let oldify_batch xs =
-    KeySet.iter begin fun str_key ->
-      let key = Key.make Value.prefix str_key in
-      if New.mem key
-      then
-        New.oldify key
-      else
+    let get_old_batch xs =
+      KeySet.fold begin fun str_key acc ->
         let key = Key.make_old Value.prefix str_key in
-        Old.remove key
-    end xs
+        KeyMap.add str_key (Old.get key) acc
+      end xs KeyMap.empty
 
-  let revive_batch xs =
-    KeySet.iter begin fun str_key ->
-      let old_key = Key.make_old Value.prefix str_key in
-      if Old.mem old_key
-      then
-        Old.revive old_key
-      else
+    let remove_batch xs =
+      KeySet.iter begin fun str_key ->
         let key = Key.make Value.prefix str_key in
         New.remove key
-    end xs
+      end xs
 
-  let get_batch xs =
-    KeySet.fold begin fun str_key acc ->
-      let key = Key.make Value.prefix str_key in
-      match New.get key with
-      | None -> KeyMap.add str_key None acc
-      | Some data -> KeyMap.add str_key (Some data) acc
-    end xs KeyMap.empty
-
-  let mem x = New.mem (Key.make Value.prefix x)
-
-  let mem_old x = Old.mem (Key.make_old Value.prefix x)
-
-  let remove_old_batch xs =
-    KeySet.iter begin fun str_key ->
-      let key = Key.make_old Value.prefix str_key in
-      Old.remove key
-    end xs
-
-  module LocalChanges = struct
-    include New.Raw.LocalChanges
-    let revert_batch keys =
+    let oldify_batch xs =
       KeySet.iter begin fun str_key ->
         let key = Key.make Value.prefix str_key in
-        revert (Key.md5 key)
-      end keys
+        if New.mem key
+        then
+          New.oldify key
+        else
+          let key = Key.make_old Value.prefix str_key in
+          Old.remove key
+      end xs
 
-    let commit_batch keys =
+    let revive_batch xs =
       KeySet.iter begin fun str_key ->
+        let old_key = Key.make_old Value.prefix str_key in
+        if Old.mem old_key
+        then
+          Old.revive old_key
+        else
+          let key = Key.make Value.prefix str_key in
+          New.remove key
+      end xs
+
+    let get_batch xs =
+      KeySet.fold begin fun str_key acc ->
         let key = Key.make Value.prefix str_key in
-        commit (Key.md5 key)
-      end keys
+        match New.get key with
+        | None -> KeyMap.add str_key None acc
+        | Some data -> KeyMap.add str_key (Some data) acc
+      end xs KeyMap.empty
+
+    let mem x = New.mem (Key.make Value.prefix x)
+
+    let mem_old x = Old.mem (Key.make_old Value.prefix x)
+
+    let remove_old_batch xs =
+      KeySet.iter begin fun str_key ->
+        let key = Key.make_old Value.prefix str_key in
+        Old.remove key
+      end xs
+
+    module LocalChanges = struct
+      include New.Raw.LocalChanges
+      let revert_batch keys =
+        KeySet.iter begin fun str_key ->
+          let key = Key.make Value.prefix str_key in
+          revert (Key.md5 key)
+        end keys
+
+      let commit_batch keys =
+        KeySet.iter begin fun str_key ->
+          let key = Key.make Value.prefix str_key in
+          commit (Key.md5 key)
+        end keys
+    end
   end
 end
 
@@ -1093,9 +1094,9 @@ let invalidate_callback_list = ref []
 let invalidate_caches () =
   List.iter !invalidate_callback_list ~f:begin fun callback -> callback() end
 
-module LocalCache (UserKeyType : UserKeyType) (Value : Value.Type) = struct
+module LocalCache (KeyType : KeyType) (Value : ValueType) = struct
 
-  type key = UserKeyType.t
+  type key = KeyType.t
   type value = Value.t
 
   module ConfValue = struct
@@ -1104,9 +1105,9 @@ module LocalCache (UserKeyType : UserKeyType) (Value : Value.Type) = struct
   end
 
   (* Young values cache *)
-  module L1 = OrderedCache (UserKeyType) (ConfValue)
+  module L1 = OrderedCache (KeyType) (ConfValue)
   (* Frequent values cache *)
-  module L2 = FreqCache (UserKeyType) (ConfValue)
+  module L2 = FreqCache (KeyType) (ConfValue)
 
   let string_of_key _key =
     failwith "LocalCache does not support 'string_of_key'"
@@ -1146,124 +1147,132 @@ module LocalCache (UserKeyType : UserKeyType) (Value : Value.Type) = struct
 end
 
 (*****************************************************************************)
-(* A functor returning an implementation of the S module with caching.
- * We need to avoid constantly deserializing types, because it costs us too
- * much time. The caches keep a deserialized version of the types.
-*)
+(* A shared memory table with process-local caches of reads. We use the cache
+ * to avoid paying the deserialization cost in duplicate reads within process.
+ *)
 (*****************************************************************************)
-module WithCache (UserKeyType : UserKeyType) (Value:Value.Type) = struct
+module WithCache = struct
 
-  module Direct = NoCache (UserKeyType) (Value)
+  module type S = sig
+    include NoCache.S
+    val write_through : key -> value -> unit
+    val get_no_cache: key -> value option
+  end
 
-  type key = Direct.key
-  type value = Direct.value
+  module Make (KeyType : KeyType) (Value : ValueType) = struct
 
-  module KeySet = Direct.KeySet
-  module KeyMap = Direct.KeyMap
+    module Direct = NoCache.Make (KeyType) (Value)
 
-  module Cache = LocalCache (UserKeyType) (Value)
+    type key = Direct.key
+    type value = Direct.value
 
-  let string_of_key key =
-    Direct.string_of_key key
+    module KeySet = Direct.KeySet
+    module KeyMap = Direct.KeyMap
 
-  let add x y =
-    Direct.add x y;
-    Cache.add x y
+    module Cache = LocalCache (KeyType) (Value)
 
-  let get_no_cache = Direct.get
+    let string_of_key key =
+      Direct.string_of_key key
 
-  let write_through x y =
-    (* Note that we do not need to do any cache invalidation here because
-     * Direct.add is a no-op if the key already exists. *)
-    Direct.add x y
+    let add x y =
+      Direct.add x y;
+      Cache.add x y
 
-  let log_hit_rate ~hit =
-    Measure.sample (Value.description ^ " (cache hit rate)") (if hit then 1. else 0.);
-    Measure.sample ("(ALL cache hit rate)") (if hit then 1. else 0.)
+    let get_no_cache = Direct.get
 
-  let get x =
-    match Cache.get x with
-    | None ->
-        let result = (match Direct.get x with
-            | None -> None
-            | Some v as result ->
-                Cache.add x v;
-                result
-          ) in
-        if hh_log_level () > 0 then log_hit_rate ~hit:false;
-        result
-    | Some _ as result ->
-        if hh_log_level () > 0 then log_hit_rate ~hit:true;
-        result
+    let write_through x y =
+      (* Note that we do not need to do any cache invalidation here because
+      * Direct.add is a no-op if the key already exists. *)
+      Direct.add x y
 
-  (* We don't cache old objects, they are not accessed often enough. *)
-  let get_old = Direct.get_old
-  let get_old_batch = Direct.get_old_batch
-  let mem_old = Direct.mem_old
+    let log_hit_rate ~hit =
+      Measure.sample (Value.description ^ " (cache hit rate)") (if hit then 1. else 0.);
+      Measure.sample ("(ALL cache hit rate)") (if hit then 1. else 0.)
 
-  let find_unsafe x =
-    match get x with
-    | None -> raise Not_found
-    | Some x -> x
+    let get x =
+      match Cache.get x with
+      | None ->
+          let result = (match Direct.get x with
+              | None -> None
+              | Some v as result ->
+                  Cache.add x v;
+                  result
+            ) in
+          if hh_log_level () > 0 then log_hit_rate ~hit:false;
+          result
+      | Some _ as result ->
+          if hh_log_level () > 0 then log_hit_rate ~hit:true;
+          result
 
-  let mem x =
-    (* Explicitly avoid using `get`, as this would perform a full load of the stored
-     * object, i.e uncompressing and unmarshalling, which is costly. *)
-    match Cache.get x with
-    | None -> Direct.mem x
-    | Some _ -> true
+    (* We don't cache old objects, they are not accessed often enough. *)
+    let get_old = Direct.get_old
+    let get_old_batch = Direct.get_old_batch
+    let mem_old = Direct.mem_old
 
-  let get_batch keys =
-    KeySet.fold begin fun key acc ->
-      KeyMap.add key (get key) acc
-    end keys KeyMap.empty
+    let find_unsafe x =
+      match get x with
+      | None -> raise Not_found
+      | Some x -> x
 
-  let oldify_batch keys =
-    Direct.oldify_batch keys;
-    KeySet.iter Cache.remove keys
+    let mem x =
+      (* Explicitly avoid using `get`, as this would perform a full load of the stored
+      * object, i.e uncompressing and unmarshalling, which is costly. *)
+      match Cache.get x with
+      | None -> Direct.mem x
+      | Some _ -> true
 
-  let revive_batch keys =
-    Direct.revive_batch keys;
-    KeySet.iter Cache.remove keys
+    let get_batch keys =
+      KeySet.fold begin fun key acc ->
+        KeyMap.add key (get key) acc
+      end keys KeyMap.empty
 
-  let remove_batch xs =
-    Direct.remove_batch xs;
-    KeySet.iter Cache.remove xs
-
-  let () =
-    invalidate_callback_list := begin fun () ->
-      Cache.clear()
-    end :: !invalidate_callback_list
-
-  let remove_old_batch = Direct.remove_old_batch
-
-  module LocalChanges = struct
-
-    let push_stack () =
-      Direct.LocalChanges.push_stack ();
-      Cache.clear ()
-
-    let pop_stack () =
-      Direct.LocalChanges.pop_stack ();
-      Cache.clear ()
-
-    let revert_batch keys =
-      Direct.LocalChanges.revert_batch keys;
+    let oldify_batch keys =
+      Direct.oldify_batch keys;
       KeySet.iter Cache.remove keys
 
-    let commit_batch keys =
-      Direct.LocalChanges.commit_batch keys;
+    let revive_batch keys =
+      Direct.revive_batch keys;
       KeySet.iter Cache.remove keys
 
-    let revert_all () =
-      Direct.LocalChanges.revert_all ();
-      Cache.clear ()
+    let remove_batch xs =
+      Direct.remove_batch xs;
+      KeySet.iter Cache.remove xs
 
-    let commit_all () =
-      Direct.LocalChanges.commit_all ();
-      Cache.clear ()
+    let () =
+      invalidate_callback_list := begin fun () ->
+        Cache.clear()
+      end :: !invalidate_callback_list
 
-    let has_local_changes () =
-      Direct.LocalChanges.has_local_changes ()
+    let remove_old_batch = Direct.remove_old_batch
+
+    module LocalChanges = struct
+
+      let push_stack () =
+        Direct.LocalChanges.push_stack ();
+        Cache.clear ()
+
+      let pop_stack () =
+        Direct.LocalChanges.pop_stack ();
+        Cache.clear ()
+
+      let revert_batch keys =
+        Direct.LocalChanges.revert_batch keys;
+        KeySet.iter Cache.remove keys
+
+      let commit_batch keys =
+        Direct.LocalChanges.commit_batch keys;
+        KeySet.iter Cache.remove keys
+
+      let revert_all () =
+        Direct.LocalChanges.revert_all ();
+        Cache.clear ()
+
+      let commit_all () =
+        Direct.LocalChanges.commit_all ();
+        Cache.clear ()
+
+      let has_local_changes () =
+        Direct.LocalChanges.has_local_changes ()
+    end
   end
 end

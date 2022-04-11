@@ -9,39 +9,12 @@ open Core
 module Set = Caml.Set
 module SharedMemory = Hack_parallel.Std.SharedMemory
 
-module type KeyType = SharedMemory.UserKeyType
+module type KeyType = SharedMemory.KeyType
 
-module type ValueType = Value.Type
+module type ValueType = SharedMemory.ValueType
 
-module NoCache : sig
-  module type S = sig
-    include SharedMemory.NoCache
-  end
-
-  module Make (Key : KeyType) (Value : ValueType) : sig
-    include
-      S
-        with type value = Value.t
-         and type key = Key.t
-         and module KeySet = Set.Make(Key)
-         and module KeyMap = MyMap.Make(Key)
-  end
-end
-
-module WithCache : sig
-  module type S = sig
-    include SharedMemory.WithCache
-  end
-
-  module Make (Key : KeyType) (Value : ValueType) : sig
-    include
-      S
-        with type value = Value.t
-         and type key = Key.t
-         and module KeySet = Set.Make(Key)
-         and module KeyMap = MyMap.Make(Key)
-  end
-end
+module NoCache = SharedMemory.NoCache
+module WithCache = SharedMemory.WithCache
 
 val initialize_for_tests : unit -> unit
 

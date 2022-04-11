@@ -137,89 +137,112 @@ val invalidate_caches: unit -> unit
 val value_size: Obj.t -> int
 
 (*****************************************************************************)
-(* The signature of a shared memory hashtable.
- * To create one: SharedMem.NoCache(struct type = my_type_of_value end).
- * The call to Make will create a hashtable in shared memory (visible to
- * all the workers).
- * Use NoCache/WithCache if you want caching or not.
- * If you do, bear in mind that the cache must be maintained by the caller.
- * So you will have to invalidate the caches yourself.
+(* The signatures of shared memory hashtables
+ *
+ * Use NoCache/WithCache if you want caching or not. If you do, bear in mind
+ * that the cache must be maintained by the caller, so you will have to
+ * invalidate the caches yourself.
 *)
 (*****************************************************************************)
 
-module type NoCache = sig
-  type key
-  type value
-  module KeySet : Set.S with type elt = key
-  module KeyMap : MyMap.S with type key = key
 
-  (* Safe for concurrent writes, the first writer wins, the second write
-   * is dismissed.
-  *)
-  val add              : key -> value -> unit
-  (* Safe for concurrent reads. Safe for interleaved reads and mutations,
-   * provided the code runs on Intel architectures.
-  *)
-  val get              : key -> value option
-  val get_old          : key -> value option
-  val get_old_batch    : KeySet.t -> value option KeyMap.t
-  val remove_old_batch : KeySet.t -> unit
-  val find_unsafe      : key -> value
-  val get_batch        : KeySet.t -> value option KeyMap.t
-  val remove_batch     : KeySet.t -> unit
-  val string_of_key    : key -> string
-  (* Safe for concurrent access. *)
-  val mem              : key -> bool
-  val mem_old          : key -> bool
-  (* This function takes the elements present in the set and keep the "old"
-   * version in a separate heap. This is useful when we want to compare
-   * what has changed. We will be in a situation for type-checking
-   * (cf typing/typing_redecl_service.ml) where we want to compare the type
-   * of a class in the previous environment vs the current type.
-  *)
-  val oldify_batch     : KeySet.t -> unit
-  (* Reverse operation of oldify *)
-  val revive_batch     : KeySet.t -> unit
+(*****************************************************************************)
+(* The interfaces for keys and values of shared memory tables *)
+(*****************************************************************************)
 
-  module LocalChanges : sig
-    val has_local_changes : unit -> bool
-    val push_stack : unit -> unit
-    val pop_stack : unit -> unit
-    val revert_batch : KeySet.t -> unit
-    val commit_batch : KeySet.t -> unit
-    val revert_all : unit -> unit
-    val commit_all : unit -> unit
-  end
-end
 
-module type WithCache = sig
-  include NoCache
-  val write_through : key -> value -> unit
-  val get_no_cache: key -> value option
-end
-
-module type UserKeyType = sig
+module type KeyType = sig
   type t
   val to_string : t -> string
   val from_string : string -> t
   val compare : t -> t -> int
 end
 
-module NoCache :
-  functor (UserKeyType : UserKeyType) ->
-  functor (Value:Value.Type) ->
-    NoCache with type value = Value.t
-             and type key = UserKeyType.t
-             and module KeySet = Set.Make (UserKeyType)
-             and module KeyMap = MyMap.Make (UserKeyType)
+module type ValueType = sig
+  type t
+  val prefix: Prefix.t
+  val description: string
+end
 
-module WithCache :
-  functor (UserKeyType : UserKeyType) ->
-  functor (Value:Value.Type) ->
-    WithCache with type value = Value.t
-               and type key = UserKeyType.t
-               and module KeySet = Set.Make (UserKeyType)
-               and module KeyMap = MyMap.Make (UserKeyType)
+(*****************************************************************************)
+(* A shared memory table with no process-local caching of reads *)
+(*****************************************************************************)
+module NoCache : sig
+  module type S = sig
+    type key
+    type value
+    module KeySet : Set.S with type elt = key
+    module KeyMap : MyMap.S with type key = key
+
+    (* Safe for concurrent writes, the first writer wins, the second write
+    * is dismissed.
+    *)
+    val add              : key -> value -> unit
+    (* Safe for concurrent reads. Safe for interleaved reads and mutations,
+    * provided the code runs on Intel architectures.
+    *)
+    val get              : key -> value option
+    val get_old          : key -> value option
+    val get_old_batch    : KeySet.t -> value option KeyMap.t
+    val remove_old_batch : KeySet.t -> unit
+    val find_unsafe      : key -> value
+    val get_batch        : KeySet.t -> value option KeyMap.t
+    val remove_batch     : KeySet.t -> unit
+    val string_of_key    : key -> string
+    (* Safe for concurrent access. *)
+    val mem              : key -> bool
+    val mem_old          : key -> bool
+    (* This function takes the elements present in the set and keep the "old"
+    * version in a separate heap. This is useful when we want to compare
+    * what has changed. We will be in a situation for type-checking
+    * (cf typing/typing_redecl_service.ml) where we want to compare the type
+    * of a class in the previous environment vs the current type.
+    *)
+    val oldify_batch     : KeySet.t -> unit
+    (* Reverse operation of oldify *)
+    val revive_batch     : KeySet.t -> unit
+
+    module LocalChanges : sig
+      val has_local_changes : unit -> bool
+      val push_stack : unit -> unit
+      val pop_stack : unit -> unit
+      val revert_batch : KeySet.t -> unit
+      val commit_batch : KeySet.t -> unit
+      val revert_all : unit -> unit
+      val commit_all : unit -> unit
+    end
+  end
+
+
+  module Make :
+    functor (KeyType : KeyType) ->
+    functor (Value : ValueType) ->
+      S with type value = Value.t
+              and type key = KeyType.t
+              and module KeySet = Set.Make (KeyType)
+              and module KeyMap = MyMap.Make (KeyType)
+end
+
+(*****************************************************************************)
+(* A shared memory table with process-local caches of reads. We use the cache
+ * to avoid paying the deserialization cost in duplicate reads within process.
+ *)
+(*****************************************************************************)
+module WithCache : sig
+  module type S = sig
+    include NoCache.S
+    val write_through : key -> value -> unit
+    val get_no_cache: key -> value option
+  end
+
+  module Make :
+    functor (KeyType : KeyType) ->
+    functor (Value : ValueType) ->
+      S with type value = Value.t
+                and type key = KeyType.t
+                and module KeySet = Set.Make (KeyType)
+                and module KeyMap = MyMap.Make (KeyType)
+end
 
 module type CacheType = sig
   type key
@@ -235,7 +258,7 @@ module type CacheType = sig
 end
 
 module LocalCache :
-  functor (UserKeyType : UserKeyType) ->
-  functor (Value : Value.Type) ->
-    CacheType with type key = UserKeyType.t
+  functor (KeyType : KeyType) ->
+  functor (Value : ValueType) ->
+    CacheType with type key = KeyType.t
                and type value = Value.t
