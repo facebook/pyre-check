@@ -91,7 +91,6 @@ module DependencyTrackedTableWithCache
     Memory.WithCache.S
       with type value = Value.t
        and type key = Key.t
-       and type key_out = Key.out
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 
@@ -122,7 +121,6 @@ module DependencyTrackedTableNoCache
     Memory.NoCache.S
       with type value = Value.t
        and type key = Key.t
-       and type key_out = Key.out
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 

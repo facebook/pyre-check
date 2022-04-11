@@ -12,9 +12,7 @@ module SharedMemory = Hack_parallel.Std.SharedMemory
 module type KeyType = sig
   include SharedMemory.UserKeyType
 
-  type out
-
-  val from_string : string -> out
+  val from_string : string -> t
 end
 
 module type ValueType = sig
@@ -26,8 +24,6 @@ end
 module NoCache : sig
   module type S = sig
     include SharedMemory.NoCache
-
-    type key_out
   end
 
   module Make (Key : KeyType) (Value : ValueType) : sig
@@ -35,7 +31,6 @@ module NoCache : sig
       S
         with type value = Value.t
          and type key = Key.t
-         and type key_out = Key.out
          and module KeySet = Set.Make(Key)
          and module KeyMap = MyMap.Make(Key)
   end
@@ -44,8 +39,6 @@ end
 module WithCache : sig
   module type S = sig
     include SharedMemory.WithCache
-
-    type key_out
   end
 
   module Make (Key : KeyType) (Value : ValueType) : sig
@@ -53,7 +46,6 @@ module WithCache : sig
       S
         with type value = Value.t
          and type key = Key.t
-         and type key_out = Key.out
          and module KeySet = Set.Make(Key)
          and module KeyMap = MyMap.Make(Key)
   end
@@ -78,7 +70,7 @@ val load_shared_memory : path:string -> configuration:Configuration.Analysis.t -
 val reset_shared_memory : unit -> unit
 
 module SingletonKey : sig
-  include KeyType with type out = int
+  include KeyType with type t = int
 
   val key : t
 end

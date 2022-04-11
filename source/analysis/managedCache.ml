@@ -12,9 +12,7 @@ module type SexpableKeyType = sig
 
   val to_string : t -> string
 
-  type out
-
-  val from_string : string -> out
+  val from_string : string -> t
 end
 
 module type In = sig

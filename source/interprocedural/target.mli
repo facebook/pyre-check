@@ -96,37 +96,31 @@ val override_to_method : [< t ] -> t
 module Key : sig
   type nonrec t = t
 
-  val to_string : t -> string
-
   val compare : t -> t -> int
 
-  type out = string
+  val to_string : t -> string
 
-  val from_string : string -> out
+  val from_string : string -> t
 end
 
 module OverrideKey : sig
   type t = override_t
 
-  val to_string : t -> string
-
   val compare : t -> t -> int
 
-  type out = string
+  val to_string : t -> string
 
-  val from_string : string -> out
+  val from_string : string -> t
 end
 
 module CallableKey : sig
   type t = callable_t
 
-  val to_string : t -> string
-
   val compare : t -> t -> int
 
-  type out = string
+  val to_string : t -> string
 
-  val from_string : string -> out
+  val from_string : string -> t
 end
 
 val get_module_and_definition

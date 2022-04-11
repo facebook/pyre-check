@@ -93,8 +93,6 @@ module CallerKey = struct
 
   let compare = compare_caller
 
-  type out = caller
-
   let from_string caller = Sexp.of_string caller |> caller_of_sexp
 end
 

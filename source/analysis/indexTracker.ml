@@ -16,8 +16,6 @@ module IndexKey = struct
 
   let compare = compare
 
-  type out = t
-
   let from_string = Int.of_string
 end
 

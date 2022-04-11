@@ -26,8 +26,6 @@ module StringKey = struct
 
   let compare = String.compare
 
-  type out = string
-
   let from_string x = x
 
   module Registry = struct

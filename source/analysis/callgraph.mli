@@ -40,13 +40,12 @@ type caller =
 
 module CalleeValue : Memory.ValueType with type t = callee_with_locations list
 
-module CallerKey : Memory.KeyType with type t = caller and type out = caller
+module CallerKey : Memory.KeyType with type t = caller
 
 module SharedMemory :
   Memory.WithCache.S
     with type value = CalleeValue.t
      and type key = caller
-     and type key_out = caller
      and module KeySet = Caml.Set.Make(CallerKey)
      and module KeyMap = MyMap.Make(CallerKey)
 

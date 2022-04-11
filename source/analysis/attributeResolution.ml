@@ -4670,8 +4670,6 @@ module MetaclassCache = struct
 
       let compare = compare
 
-      type out = t
-
       let from_string = Fn.id
     end
 

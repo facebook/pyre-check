@@ -7,14 +7,14 @@
 
 open Ast
 
-module IntKey : Memory.KeyType with type t = int and type out = int
+module IntKey : Memory.KeyType with type t = int
 
-module StringKey : Memory.KeyType with type t = string and type out = string
+module StringKey : Memory.KeyType with type t = string
 
 module ReferenceKey : sig
   type t = Reference.t [@@deriving sexp]
 
-  include Memory.KeyType with type t := Reference.t and type out = Reference.t
+  include Memory.KeyType with type t := Reference.t
 end
 
 module AttributeTableKey : sig

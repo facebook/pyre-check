@@ -128,7 +128,7 @@ module EnvironmentTable : sig
 
     val serialize_value : Value.t -> string
 
-    val show_key : Key.out -> string
+    val show_key : Key.t -> string
 
     val equal_value : Value.t -> Value.t -> bool
   end

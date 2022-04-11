@@ -14,8 +14,6 @@ module IntKey = struct
 
   let compare = Int.compare
 
-  type out = int
-
   let from_string = Core.Int.of_string
 end
 

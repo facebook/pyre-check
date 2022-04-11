@@ -142,7 +142,7 @@ module EnvironmentTable = struct
 
     val serialize_value : Value.t -> string
 
-    val show_key : Key.out -> string
+    val show_key : Key.t -> string
 
     val equal_value : Value.t -> Value.t -> bool
   end
@@ -197,12 +197,7 @@ module EnvironmentTable = struct
       UpdateResult.t
   end
 
-  module Make
-      (In : In)
-      (Table : Table
-                 with type value = In.Value.t
-                  and type key = In.Key.t
-                  and type key_out = In.Key.out) =
+  module Make (In : In) (Table : Table with type value = In.Value.t and type key = In.Key.t) =
   struct
     let _ = Table.mem
 

@@ -130,37 +130,31 @@ module Key = struct
 
   let hash_fold_t = hash_fold_t
 
-  let to_string = show
-
   let compare = compare
 
-  type out = string
+  let to_string key = sexp_of_t key |> Sexp.to_string
 
-  let from_string = ident
+  let from_string sexp_string = Sexp.of_string sexp_string |> t_of_sexp
 end
 
 module CallableKey = struct
   type t = callable_t [@@deriving sexp, hash]
 
-  let to_string = show_callable_t
-
   let compare = compare_callable_t
 
-  type out = string
+  let to_string key = sexp_of_callable_t key |> Sexp.to_string
 
-  let from_string = ident
+  let from_string sexp_string = Sexp.of_string sexp_string |> callable_t_of_sexp
 end
 
 module OverrideKey = struct
   type t = override_t [@@deriving sexp, hash]
 
-  let to_string = show_override_t
-
   let compare = compare_override_t
 
-  type out = string
+  let to_string key = sexp_of_override_t key |> Sexp.to_string
 
-  let from_string = ident
+  let from_string sexp_string = Sexp.of_string sexp_string |> override_t_of_sexp
 end
 
 module Map = Core.Map.Make (Key)

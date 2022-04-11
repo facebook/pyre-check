@@ -16,8 +16,6 @@ module IntKey = struct
 
   let compare = Int.compare
 
-  type out = int
-
   let from_string = Core.Int.of_string
 end
 
@@ -28,8 +26,6 @@ module StringKey = struct
 
   let compare = String.compare
 
-  type out = string
-
   let from_string x = x
 end
 
@@ -37,8 +33,6 @@ module ReferenceKey = struct
   type t = Reference.t [@@deriving compare, sexp]
 
   let to_string = Reference.show
-
-  type out = Reference.t
 
   let from_string name = Reference.create name
 end
@@ -58,8 +52,6 @@ module AttributeTableKey = struct
   include Hashable.Make (T)
 
   let to_string key = sexp_of_t key |> Sexp.to_string
-
-  type out = t
 
   let from_string sexp = Sexp.of_string sexp |> t_of_sexp
 end
@@ -84,8 +76,6 @@ module ParseAnnotationKey = struct
   include Hashable.Make (T)
 
   let to_string key = sexp_of_t key |> Sexp.to_string
-
-  type out = t
 
   let from_string sexp = Sexp.of_string sexp |> t_of_sexp
 end
@@ -247,11 +237,9 @@ end
 module LocationKey = struct
   type t = Location.t
 
-  let to_string = Location.show
+  let to_string key = Location.sexp_of_t key |> Sexp.to_string
 
   let compare = Location.compare
 
-  type out = string
-
-  let from_string = Fn.id
+  let from_string sexp_string = Sexp.of_string sexp_string |> Location.t_of_sexp
 end
