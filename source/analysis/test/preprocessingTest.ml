@@ -20,11 +20,11 @@ let legacy_parse ~handle source =
   let lines = String.split (Test.trim_extra_indentation source) ~on:'\n' in
   match Parser.parse ~relative:handle lines with
   | Result.Ok statements ->
-      let metadata =
+      let typecheck_flags =
         let qualifier = SourcePath.qualifier_of_relative handle in
-        Source.Metadata.parse ~qualifier lines
+        Source.TypecheckFlags.parse ~qualifier lines
       in
-      Source.create ~metadata ~relative:handle statements
+      Source.create ~typecheck_flags ~relative:handle statements
   | Result.Error { Parser.Error.location = { Location.start = { Location.line; column }; _ }; _ } ->
       let error =
         Format.asprintf

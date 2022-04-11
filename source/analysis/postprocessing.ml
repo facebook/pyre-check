@@ -15,7 +15,11 @@ module Error = AnalysisError
    remove the used codes from the map of unused ignores. Since the hash tables are initialized with
    only the sources we're considering, this is sufficient to determine all ignored errors and unused
    ignores. *)
-let ignore ~qualifier { Source.metadata = { Source.Metadata.ignore_lines; _ }; _ } errors =
+let ignore
+    ~qualifier
+    { Source.typecheck_flags = { Source.TypecheckFlags.ignore_lines; _ }; _ }
+    errors
+  =
   let unused_ignores, ignore_lookup =
     let unused_ignores = Location.Table.create () in
     let ignore_lookup = Int.Table.create () in
@@ -92,7 +96,8 @@ let ignore ~qualifier { Source.metadata = { Source.Metadata.ignore_lines; _ }; _
 let add_local_mode_errors
     ~define
     {
-      Source.metadata = { Source.Metadata.unused_local_modes; local_mode = actual_mode; _ };
+      Source.typecheck_flags =
+        { Source.TypecheckFlags.unused_local_modes; local_mode = actual_mode; _ };
       source_path = { SourcePath.qualifier; _ };
       _;
     }
@@ -116,7 +121,7 @@ let add_local_mode_errors
 let filter_errors
     ~configuration
     ~global_resolution
-    ~metadata:{ Source.Metadata.local_mode; ignore_codes; _ }
+    ~typecheck_flags:{ Source.TypecheckFlags.local_mode; ignore_codes; _ }
     errors_by_define
   =
   let mode = Source.mode ~configuration ~local_mode in
@@ -129,15 +134,15 @@ let filter_errors
   |> Error.join_at_source ~resolution:global_resolution
 
 
-(* TODO: Take `Source.Metadata.t` instead of `Source.t` to prevent this function from relying on the
-   actual AST. *)
+(* TODO: Take `Source.TypecheckFlags.t` instead of `Source.t` to prevent this function from relying
+   on the actual AST. *)
 let run_on_source
     ~configuration
     ~global_resolution
-    ~source:({ Source.metadata; source_path = { SourcePath.qualifier; _ }; _ } as source)
+    ~source:({ Source.typecheck_flags; source_path = { SourcePath.qualifier; _ }; _ } as source)
     errors_by_define
   =
-  filter_errors ~configuration ~global_resolution ~metadata errors_by_define
+  filter_errors ~configuration ~global_resolution ~typecheck_flags errors_by_define
   |> add_local_mode_errors ~define:(Source.top_level_define_node source) source
   |> ignore ~qualifier source
   |> List.map
@@ -189,9 +194,9 @@ let run ~scheduler ~configuration ~environment sources =
       | Some
           (Result.Ok
             {
-              Source.metadata =
+              Source.typecheck_flags =
                 {
-                  Source.Metadata.local_mode = Some { Node.value = Source.Declare; _ };
+                  Source.TypecheckFlags.local_mode = Some { Node.value = Source.Declare; _ };
                   unused_local_modes = [];
                   _;
                 };

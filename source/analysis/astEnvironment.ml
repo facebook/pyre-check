@@ -115,10 +115,10 @@ type parse_result =
       is_suppressed: bool;
     }
 
-let create_source ~metadata ~source_path statements =
+let create_source ~typecheck_flags ~source_path statements =
   Source.create_from_source_path
     ~collect_format_strings_with_ignores:Visit.collect_format_strings_with_ignores
-    ~metadata
+    ~typecheck_flags
     ~source_path
     statements
 
@@ -129,12 +129,12 @@ let parse_source
     ({ SourcePath.qualifier; _ } as source_path)
   =
   let parse content =
-    let metadata = Source.Metadata.parse ~qualifier (String.split content ~on:'\n') in
+    let typecheck_flags = Source.TypecheckFlags.parse ~qualifier (String.split content ~on:'\n') in
     match PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context content with
-    | Ok statements -> Success (create_source ~metadata ~source_path statements)
+    | Ok statements -> Success (create_source ~typecheck_flags ~source_path statements)
     | Error { PyreNewParser.Error.line; column; end_line; end_column; message } ->
         let is_suppressed =
-          let { Source.Metadata.local_mode; ignore_codes; _ } = metadata in
+          let { Source.TypecheckFlags.local_mode; ignore_codes; _ } = typecheck_flags in
           match Source.mode ~configuration ~local_mode with
           | Source.Declare -> true
           | _ ->
@@ -329,9 +329,9 @@ let get_and_preprocess_source
       { ParserError.source_path = { SourcePath.qualifier; relative; _ } as source_path; _ } ->
       (* Files that have parser errors fall back into getattr-any. *)
       let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
-      let metadata = Source.Metadata.parse ~qualifier fallback_source in
+      let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
       let statements = Parser.parse_exn ~relative fallback_source in
-      create_source ~metadata ~source_path statements |> preprocessing
+      create_source ~typecheck_flags ~source_path statements |> preprocessing
 
 
 let parse_sources ~configuration ~scheduler ~ast_environment source_paths =

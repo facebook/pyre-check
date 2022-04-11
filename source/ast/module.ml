@@ -104,7 +104,7 @@ let create
     ({
        Source.source_path = { SourcePath.is_stub; qualifier; _ } as source_path;
        statements;
-       metadata = { Source.Metadata.local_mode; _ };
+       typecheck_flags = { Source.TypecheckFlags.local_mode; _ };
        _;
      } as source)
   =
@@ -215,7 +215,7 @@ let create
     {
       exports;
       legacy_aliased_exports;
-      empty_stub = is_stub && Source.Metadata.is_placeholder_stub local_mode;
+      empty_stub = is_stub && Source.TypecheckFlags.is_placeholder_stub local_mode;
     }
 
 

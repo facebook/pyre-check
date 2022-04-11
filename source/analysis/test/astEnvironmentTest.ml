@@ -281,7 +281,7 @@ let test_ast_change _ =
     (* This is not guaranteed to be the case in theory, but collisions should be rare in practice *)
     assert_equal ~cmp:Bool.equal ~printer:(Format.sprintf "hash changed = %b") expected hash_changed
   in
-  (* Metadata *)
+  (* TypecheckFlags *)
   assert_ast_changed ~old_source:"# pyre-strict" ~new_source:"# pyre-strict" ~expected:false;
   assert_ast_changed ~old_source:"# pyre-strict" ~new_source:"" ~expected:true;
   assert_ast_changed
@@ -559,7 +559,7 @@ let test_ast_change _ =
 
   (* Trailing comment/spaces/empty lines shouldn't matter as they don't affect any AST locations. *)
   (* They may affect line counts and raw hashes, but they are ignored by the
-     Source.Metadata.compare/hash *)
+     Source.TypecheckFlags.compare/hash *)
   assert_ast_changed
     ~old_source:{|
     def foo() -> int:

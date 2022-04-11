@@ -252,7 +252,7 @@ let test_collect_non_generic_type_names _ =
 
 let test_collect_format_strings_with_ignores _ =
   let assert_format_strings_with_ignores source expected =
-    let ({ Source.metadata = { ignore_lines; _ }; _ } as source) = parse source in
+    let ({ Source.typecheck_flags = { ignore_lines; _ }; _ } as source) = parse source in
     let ignore_line_map =
       List.map ignore_lines ~f:(fun ({ Ignore.ignored_line; _ } as ignore) -> ignored_line, ignore)
       |> Int.Map.of_alist_multi

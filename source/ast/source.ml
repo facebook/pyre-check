@@ -22,7 +22,7 @@ type local_mode =
   | PlaceholderStub
 [@@deriving compare, show, sexp, hash]
 
-module Metadata = struct
+module TypecheckFlags = struct
   type t = {
     local_mode: local_mode Node.t option;
     unused_local_modes: local_mode Node.t list;
@@ -200,7 +200,7 @@ module Metadata = struct
 end
 
 type t = {
-  metadata: Metadata.t;
+  typecheck_flags: TypecheckFlags.t;
   source_path: SourcePath.t;
   top_level_unbound_names: Statement.Define.NameAccess.t list;
   statements: Statement.t list;
@@ -215,7 +215,7 @@ let pp format { statements; _ } =
 let pp_all format source = Sexp.pp_hum format (sexp_of_t source)
 
 let location_insensitive_compare left right =
-  match Metadata.compare left.metadata right.metadata with
+  match TypecheckFlags.compare left.typecheck_flags right.typecheck_flags with
   | x when x <> 0 -> x
   | _ -> (
       match SourcePath.compare left.source_path right.source_path with
@@ -262,7 +262,7 @@ let noop_collect_format_strings ~ignore_line_map:_ _ = []
 
 let ignored_lines_including_format_strings
     ?(collect_format_strings_with_ignores = noop_collect_format_strings)
-    ({ metadata = { Metadata.ignore_lines; _ }; _ } as source)
+    ({ typecheck_flags = { TypecheckFlags.ignore_lines; _ }; _ } as source)
   =
   let ignore_line_map =
     List.map ignore_lines ~f:(fun ({ Ignore.ignored_line; _ } as ignore) -> ignored_line, ignore)
@@ -276,13 +276,18 @@ let ignored_lines_including_format_strings
   |> List.concat_map ~f:(List.dedup_and_sort ~compare:Ignore.compare)
 
 
-let create_from_source_path ?collect_format_strings_with_ignores ~metadata ~source_path statements =
-  let source = { metadata; source_path; top_level_unbound_names = []; statements } in
+let create_from_source_path
+    ?collect_format_strings_with_ignores
+    ~typecheck_flags
+    ~source_path
+    statements
+  =
+  let source = { typecheck_flags; source_path; top_level_unbound_names = []; statements } in
   {
     source with
-    metadata =
+    typecheck_flags =
       {
-        metadata with
+        typecheck_flags with
         ignore_lines =
           ignored_lines_including_format_strings ?collect_format_strings_with_ignores source;
       };
@@ -290,17 +295,17 @@ let create_from_source_path ?collect_format_strings_with_ignores ~metadata ~sour
 
 
 let create
-    ?(metadata = Metadata.create_for_testing ())
+    ?(typecheck_flags = TypecheckFlags.create_for_testing ())
     ?(relative = "")
     ?(is_external = false)
     ?(priority = 0)
     statements
   =
   let source_path = SourcePath.create_for_testing ~relative ~is_external ~priority in
-  create_from_source_path ~metadata ~source_path statements
+  create_from_source_path ~typecheck_flags ~source_path statements
 
 
-let ignore_lines { metadata = { Metadata.ignore_lines; _ }; _ } = ignore_lines
+let ignore_lines { typecheck_flags = { TypecheckFlags.ignore_lines; _ }; _ } = ignore_lines
 
 let statements { statements; _ } = statements
 

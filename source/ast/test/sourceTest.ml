@@ -24,7 +24,7 @@ let create_ignore ignored_line codes kind start_line start_column end_line end_c
 let test_parse _ =
   let qualifier = !&"test" in
   let assert_mode line expected_mode =
-    let { Source.Metadata.local_mode; _ } = Source.Metadata.parse ~qualifier [line] in
+    let { Source.TypecheckFlags.local_mode; _ } = Source.TypecheckFlags.parse ~qualifier [line] in
     let show_local_mode = function
       | Some { Node.value = mode; _ } -> Source.show_local_mode mode
       | None -> "None"
@@ -57,7 +57,9 @@ let test_parse _ =
   assert_mode " # pyre-ignore-all-errors[42, 7,   15] " None;
 
   let assert_mode_errors lines expected_mode_errors =
-    let { Source.Metadata.unused_local_modes; _ } = Source.Metadata.parse ~qualifier lines in
+    let { Source.TypecheckFlags.unused_local_modes; _ } =
+      Source.TypecheckFlags.parse ~qualifier lines
+    in
     assert_equal unused_local_modes expected_mode_errors
   in
   assert_mode_errors ["# pyre-strict"; "# derp"] [];
@@ -66,7 +68,7 @@ let test_parse _ =
   assert_mode_errors ["# pyre-strict"; "derp"; "# pyre-unsafe"] [create_mode 3 0 13 Source.Unsafe];
 
   let assert_ignore_codes line expected_codes =
-    let { Source.Metadata.ignore_codes; _ } = Source.Metadata.parse ~qualifier [line] in
+    let { Source.TypecheckFlags.ignore_codes; _ } = Source.TypecheckFlags.parse ~qualifier [line] in
     assert_equal ignore_codes expected_codes
   in
   assert_ignore_codes " # pyre-ignore-all-errors[42, 7,   15] " [42; 7; 15];
@@ -75,7 +77,7 @@ let test_parse _ =
   (* Prevent typos from being treated as error suppressors. *)
   assert_ignore_codes " # pyre-ignore-all-errors[42, 7,   15" [];
   let assert_ignore lines expected_ignore_lines =
-    let { Source.Metadata.ignore_lines; _ } = Source.Metadata.parse ~qualifier lines in
+    let { Source.TypecheckFlags.ignore_lines; _ } = Source.TypecheckFlags.parse ~qualifier lines in
     assert_equal
       ~printer:(fun ignores -> List.to_string ~f:show ignores)
       expected_ignore_lines

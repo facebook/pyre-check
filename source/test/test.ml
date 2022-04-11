@@ -91,11 +91,11 @@ let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
   let do_parse context =
     match PyreNewParser.parse_module ~context ~enable_type_comment:true source with
     | Result.Ok statements ->
-        let metadata =
+        let typecheck_flags =
           let qualifier = SourcePath.qualifier_of_relative handle in
-          Source.Metadata.parse ~qualifier (String.split source ~on:'\n')
+          Source.TypecheckFlags.parse ~qualifier (String.split source ~on:'\n')
         in
-        let source = Source.create ~metadata ~relative:handle statements in
+        let source = Source.create ~typecheck_flags ~relative:handle statements in
         let coerce_special_methods =
           if coerce_special_methods then coerce_special_methods_source else Fn.id
         in
@@ -254,9 +254,9 @@ let node ~start:(start_line, start_column) ~stop:(stop_line, stop_column) =
 
 
 let assert_source_equal ?(location_insensitive = false) left right =
-  let metadata = Source.Metadata.create_for_testing () in
-  let left = { left with Source.metadata } in
-  let right = { right with Source.metadata } in
+  let typecheck_flags = Source.TypecheckFlags.create_for_testing () in
+  let left = { left with Source.typecheck_flags } in
+  let right = { right with Source.typecheck_flags } in
   let cmp =
     if location_insensitive then
       fun left right -> Source.location_insensitive_compare left right = 0
