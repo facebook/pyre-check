@@ -310,24 +310,24 @@ module KeyTracker = struct
     Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (UnannotatedGlobalKeyValue)
   module FunctionKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (FunctionKeyValue)
 
-  let get_keys keys =
-    ClassKeys.KeySet.of_list keys
+  let get_class_keys qualifiers =
+    ClassKeys.KeySet.of_list qualifiers
     |> ClassKeys.get_batch
     |> ClassKeys.KeyMap.values
     |> List.filter_map ~f:Fn.id
     |> List.concat
 
 
-  let get_unannotated_global_keys keys =
-    UnannotatedGlobalKeys.KeySet.of_list keys
+  let get_unannotated_global_keys qualifiers =
+    UnannotatedGlobalKeys.KeySet.of_list qualifiers
     |> UnannotatedGlobalKeys.get_batch
     |> UnannotatedGlobalKeys.KeyMap.values
     |> List.filter_map ~f:Fn.id
     |> List.concat
 
 
-  let get_define_body_keys keys =
-    FunctionKeys.KeySet.of_list keys
+  let get_define_body_keys qualifiers =
+    FunctionKeys.KeySet.of_list qualifiers
     |> FunctionKeys.get_batch
     |> FunctionKeys.KeyMap.values
     |> List.filter_map ~f:Fn.id
@@ -487,7 +487,7 @@ end = struct
 
   let read_only ~ast_environment =
     let all_classes () =
-      AstEnvironment.ReadOnly.all_explicit_modules ast_environment |> KeyTracker.get_keys
+      AstEnvironment.ReadOnly.all_explicit_modules ast_environment |> KeyTracker.get_class_keys
     in
     let all_indices () =
       all_classes ()
@@ -953,7 +953,7 @@ let update_this_and_all_preceding_environments
       ~f:map
       ~inputs:modified_qualifiers
   in
-  let previous_classes_list = KeyTracker.get_keys modified_qualifiers in
+  let previous_classes_list = KeyTracker.get_class_keys modified_qualifiers in
   let previous_classes = Type.Primitive.Set.of_list previous_classes_list in
   let previous_unannotated_globals_list =
     KeyTracker.get_unannotated_global_keys modified_qualifiers
@@ -981,7 +981,7 @@ let update_this_and_all_preceding_environments
               |> DependencyKey.Transaction.execute ~update
             in
             let current_classes =
-              KeyTracker.get_keys modified_qualifiers |> Type.Primitive.Set.of_list
+              KeyTracker.get_class_keys modified_qualifiers |> Type.Primitive.Set.of_list
             in
             let current_unannotated_globals =
               KeyTracker.get_unannotated_global_keys modified_qualifiers |> Reference.Set.of_list
