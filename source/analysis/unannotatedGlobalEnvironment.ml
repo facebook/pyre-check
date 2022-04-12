@@ -274,284 +274,21 @@ module ReadOnly = struct
     first_matching_class_decorator read_only ?dependency ~names class_summary |> Option.is_some
 end
 
-(* The key tracking is necessary because there is no empirical way to determine which classes exist
-   for a given class. This "fan-out" necessitates internal tracking. However, this module need not
-   be sealed to ensure write only-ness since we're not dependency tracking this, since it's only
-   used internally for doing our dependency analysis, and for all_classes, which is only used for
-   all-or-nothing operations like validating the class hierarchy and printing it for debugging
-   purposes *)
-module KeyTracker = struct
-  module ClassKeyValue = struct
-    type t = Identifier.t list [@@deriving compare]
-
-    let prefix = Prefix.make ()
-
-    let description = "Class keys"
-  end
-
-  module UnannotatedGlobalKeyValue = struct
-    type t = Reference.t list [@@deriving compare]
-
-    let prefix = Prefix.make ()
-
-    let description = "Class keys"
-  end
-
-  module FunctionKeyValue = struct
-    type t = Reference.t list [@@deriving compare]
-
-    let prefix = Prefix.make ()
-
-    let description = "TypeCheckUnit keys"
-  end
-
-  module ClassKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ClassKeyValue)
-  module UnannotatedGlobalKeys =
-    Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (UnannotatedGlobalKeyValue)
-  module FunctionKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (FunctionKeyValue)
-
-  let get_class_keys qualifiers =
-    ClassKeys.KeySet.of_list qualifiers
-    |> ClassKeys.get_batch
-    |> ClassKeys.KeyMap.values
-    |> List.filter_map ~f:Fn.id
-    |> List.concat
-
-
-  let get_unannotated_global_keys qualifiers =
-    UnannotatedGlobalKeys.KeySet.of_list qualifiers
-    |> UnannotatedGlobalKeys.get_batch
-    |> UnannotatedGlobalKeys.KeyMap.values
-    |> List.filter_map ~f:Fn.id
-    |> List.concat
-
-
-  let get_define_body_keys qualifiers =
-    FunctionKeys.KeySet.of_list qualifiers
-    |> FunctionKeys.get_batch
-    |> FunctionKeys.KeyMap.values
-    |> List.filter_map ~f:Fn.id
-    |> List.concat
-end
-
-(* We want to ensure that we are only writing to this table in this phase, not creating internal
-   dependencies with self-reads. Accordingly read_only should only be called by downstream clients *)
-module WriteOnly : sig
-  val set_class_definition : name:string -> definition:ClassSummary.t Node.t -> unit
-
-  val add_to_transaction
-    :  DependencyKey.Transaction.t ->
-    previous_classes_list:string list ->
-    previous_unannotated_globals_list:Reference.t list ->
-    previous_defines_list:Reference.t list ->
-    previous_modules_list:Reference.t list ->
-    DependencyKey.Transaction.t
-
-  val get_all_dependents
-    :  class_additions:string list ->
-    unannotated_global_additions:Reference.t list ->
-    define_additions:Reference.t list ->
-    DependencyKey.RegisteredSet.t
-
-  val direct_data_purge
-    :  previous_classes_list:Type.Primitive.t list ->
-    previous_unannotated_globals_list:Reference.t list ->
-    previous_defines_list:Reference.t list ->
-    previous_modules_list:Reference.t list ->
-    unit
-
-  val set_unannotated_global : target:Reference.t -> UnannotatedGlobal.t -> unit
-
-  val set_define : name:Reference.t -> FunctionDefinition.t -> unit
-
-  val set_module_metadata : qualifier:Reference.t -> Module.t -> unit
-
-  val read_only : ast_environment:AstEnvironment.ReadOnly.t -> ReadOnly.t
-end = struct
-  module ClassSummaryValue = struct
-    type t = ClassSummary.t Node.t
-
-    let prefix = Prefix.make ()
-
-    let description = "ClassSummary"
-
-    let compare = Node.compare ClassSummary.compare
-  end
-
-  module ClassSummaries =
-    DependencyTrackedMemory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.StringKey)
-      (DependencyKey)
-      (ClassSummaryValue)
-
-  module UnannotatedGlobalValue = struct
-    type t = UnannotatedGlobal.t
-
-    let prefix = Prefix.make ()
-
-    let description = "UnannotatedGlobal"
-
-    let compare = UnannotatedGlobal.compare
-  end
-
-  module UnannotatedGlobals =
-    DependencyTrackedMemory.DependencyTrackedTableNoCache
-      (SharedMemoryKeys.ReferenceKey)
-      (DependencyKey)
-      (UnannotatedGlobalValue)
-
-  module FunctionDefinitionValue = struct
-    type t = FunctionDefinition.t
-
-    let description = "FunctionDefinition"
-
-    let prefix = Prefix.make ()
-
-    let compare = FunctionDefinition.compare
-  end
-
-  module FunctionDefinitions =
-    DependencyTrackedMemory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.ReferenceKey)
-      (DependencyKey)
-      (FunctionDefinitionValue)
-
-  module ModuleValue = struct
-    type t = Module.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Module"
-
-    let compare = Module.compare
-  end
-
-  module Modules =
-    DependencyTrackedMemory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.ReferenceKey)
-      (SharedMemoryKeys.DependencyKey)
-      (ModuleValue)
-
-  let set_unannotated_global ~target = UnannotatedGlobals.add target
-
-  let set_class_definition ~name ~definition = ClassSummaries.write_through name definition
-
-  let set_define ~name definitions = FunctionDefinitions.write_through name definitions
-
-  let set_module_metadata ~qualifier = Modules.add qualifier
-
-  let add_to_transaction
-      transaction
-      ~previous_classes_list
-      ~previous_unannotated_globals_list
-      ~previous_defines_list
-      ~previous_modules_list
-    =
-    let class_keys = ClassSummaries.KeySet.of_list previous_classes_list in
-    let unannotated_globals_keys =
-      UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
-    in
-    let defines_keys = FunctionDefinitions.KeySet.of_list previous_defines_list in
-    let module_keys = Modules.KeySet.of_list previous_modules_list in
-    ClassSummaries.add_to_transaction ~keys:class_keys transaction
-    |> UnannotatedGlobals.add_to_transaction ~keys:unannotated_globals_keys
-    |> FunctionDefinitions.add_to_transaction ~keys:defines_keys
-    |> Modules.add_to_transaction ~keys:module_keys
-
-
-  let get_all_dependents ~class_additions ~unannotated_global_additions ~define_additions =
-    let function_and_class_dependents =
-      DependencyKey.RegisteredSet.union
-        (ClassSummaries.KeySet.of_list class_additions |> ClassSummaries.get_all_dependents)
-        (FunctionDefinitions.KeySet.of_list define_additions
-        |> FunctionDefinitions.get_all_dependents)
-    in
-    DependencyKey.RegisteredSet.union
-      function_and_class_dependents
-      (UnannotatedGlobals.KeySet.of_list unannotated_global_additions
-      |> UnannotatedGlobals.get_all_dependents)
-
-
-  let direct_data_purge
-      ~previous_classes_list
-      ~previous_unannotated_globals_list
-      ~previous_defines_list
-      ~previous_modules_list
-    =
-    ClassSummaries.KeySet.of_list previous_classes_list |> ClassSummaries.remove_batch;
-    UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
-    |> UnannotatedGlobals.remove_batch;
-    FunctionDefinitions.KeySet.of_list previous_defines_list |> FunctionDefinitions.remove_batch;
-    Modules.KeySet.of_list previous_modules_list |> Modules.remove_batch
-
-
-  let read_only ~ast_environment =
-    let all_classes () =
-      AstEnvironment.ReadOnly.all_explicit_modules ast_environment |> KeyTracker.get_class_keys
-    in
-    let all_indices () =
-      all_classes ()
-      |> Type.Primitive.Set.of_list
-      |> IndexTracker.indices
-      |> IndexTracker.Set.to_list
-    in
-    let all_unannotated_globals () =
-      AstEnvironment.ReadOnly.all_explicit_modules ast_environment
-      |> KeyTracker.get_unannotated_global_keys
-    in
-    let all_defines () =
-      AstEnvironment.ReadOnly.all_explicit_modules ast_environment
-      |> KeyTracker.get_define_body_keys
-    in
-    let class_exists ?dependency name = ClassSummaries.mem ?dependency name in
-    let get_define = FunctionDefinitions.get in
-    let get_define_body ?dependency key =
-      FunctionDefinitions.get ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
-    in
-    let all_defines_in_module qualifier = KeyTracker.get_define_body_keys [qualifier] in
-    let get_module_metadata ?dependency qualifier =
-      let qualifier =
-        match Reference.as_list qualifier with
-        | ["future"; "builtins"]
-        | ["builtins"] ->
-            Reference.empty
-        | _ -> qualifier
-      in
-      match Modules.get ?dependency qualifier with
-      | Some _ as result -> result
-      | None -> (
-          match AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier with
-          | true -> Some (Module.create_implicit ())
-          | false -> None)
-    in
-    let module_exists ?dependency qualifier =
-      let qualifier =
-        match Reference.as_list qualifier with
-        | ["future"; "builtins"]
-        | ["builtins"] ->
-            Reference.empty
-        | _ -> qualifier
-      in
-      match Modules.mem ?dependency qualifier with
-      | true -> true
-      | false -> AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier
-    in
+let missing_builtin_globals =
+  let assign name annotation =
     {
-      ast_environment;
-      ReadOnly.get_class_definition = ClassSummaries.get;
-      all_classes;
-      all_indices;
-      all_defines;
-      class_exists;
-      get_unannotated_global = UnannotatedGlobals.get;
-      get_define;
-      get_define_body;
-      all_defines_in_module;
-      all_unannotated_globals;
-      get_module_metadata;
-      module_exists;
+      UnannotatedGlobal.Collector.Result.name;
+      unannotated_global =
+        UnannotatedGlobal.SimpleAssign
+          {
+            explicit_annotation = Some (Type.expression annotation);
+            target_location = Location.WithModule.any;
+            value = Node.create_with_default_location (Expression.Constant Constant.Ellipsis);
+          };
     }
-end
+  in
+  [assign "..." Type.Any; assign "__debug__" Type.bool]
+
 
 let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_classes =
   let make ?(bases = []) ?(metaclasses = []) ?(body = []) name =
@@ -753,122 +490,388 @@ let missing_builtin_classes, missing_typing_classes, missing_typing_extensions_c
   builtin_classes, typing_classes, typing_extension_classes
 
 
-let register_class_definitions ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-  (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
-  let module ClassCollector = Visit.MakeStatementVisitor (struct
-    type t = Class.t Node.t list
+(* The key tracking is necessary because there is no empirical way to determine which classes exist
+   for a given class. This "fan-out" necessitates internal tracking. However, this module need not
+   be sealed to ensure write only-ness since we're not dependency tracking this, since it's only
+   used internally for doing our dependency analysis, and for all_classes, which is only used for
+   all-or-nothing operations like validating the class hierarchy and printing it for debugging
+   purposes *)
+module KeyTracker = struct
+  module ClassKeyValue = struct
+    type t = Identifier.t list [@@deriving compare]
 
-    let visit_children _ = true
+    let prefix = Prefix.make ()
 
-    let statement _ sofar = function
-      | { Node.location; value = Statement.Class definition } ->
-          { Node.location; value = definition } :: sofar
-      | _ -> sofar
-  end)
-  in
-  let classes = ClassCollector.visit [] source in
-  let classes =
-    match Reference.as_list qualifier with
-    | [] -> classes @ missing_builtin_classes
-    | ["typing"] -> classes @ missing_typing_classes
-    | ["typing_extensions"] -> classes @ missing_typing_extensions_classes
-    | _ -> classes
-  in
-  let register new_annotations { Node.location; value = { Class.name; _ } as definition } =
-    let primitive = Reference.show name in
-    let definition =
-      match primitive with
-      | "type" ->
-          let value =
-            Type.expression (Type.parametric "typing.Generic" [Single (Type.variable "typing._T")])
-          in
-          { definition with Class.base_arguments = [{ name = None; value }] }
-      | _ -> definition
+    let description = "Class keys"
+  end
+
+  module UnannotatedGlobalKeyValue = struct
+    type t = Reference.t list [@@deriving compare]
+
+    let prefix = Prefix.make ()
+
+    let description = "Class keys"
+  end
+
+  module FunctionKeyValue = struct
+    type t = Reference.t list [@@deriving compare]
+
+    let prefix = Prefix.make ()
+
+    let description = "TypeCheckUnit keys"
+  end
+
+  module ClassKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ClassKeyValue)
+  module UnannotatedGlobalKeys =
+    Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (UnannotatedGlobalKeyValue)
+  module FunctionKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (FunctionKeyValue)
+
+  let get_class_keys qualifiers =
+    ClassKeys.KeySet.of_list qualifiers
+    |> ClassKeys.get_batch
+    |> ClassKeys.KeyMap.values
+    |> List.filter_map ~f:Fn.id
+    |> List.concat
+
+
+  let get_unannotated_global_keys qualifiers =
+    UnannotatedGlobalKeys.KeySet.of_list qualifiers
+    |> UnannotatedGlobalKeys.get_batch
+    |> UnannotatedGlobalKeys.KeyMap.values
+    |> List.filter_map ~f:Fn.id
+    |> List.concat
+
+
+  let get_define_body_keys qualifiers =
+    FunctionKeys.KeySet.of_list qualifiers
+    |> FunctionKeys.get_batch
+    |> FunctionKeys.KeyMap.values
+    |> List.filter_map ~f:Fn.id
+    |> List.concat
+end
+
+(* We want to ensure that we are only writing to this table in this phase, not creating internal
+   dependencies with self-reads. Accordingly read_only should only be called by downstream clients *)
+module WriteOnly : sig
+  val add_to_transaction
+    :  DependencyKey.Transaction.t ->
+    previous_classes_list:string list ->
+    previous_unannotated_globals_list:Reference.t list ->
+    previous_defines_list:Reference.t list ->
+    previous_modules_list:Reference.t list ->
+    DependencyKey.Transaction.t
+
+  val get_all_dependents
+    :  class_additions:string list ->
+    unannotated_global_additions:Reference.t list ->
+    define_additions:Reference.t list ->
+    DependencyKey.RegisteredSet.t
+
+  val direct_data_purge
+    :  previous_classes_list:Type.Primitive.t list ->
+    previous_unannotated_globals_list:Reference.t list ->
+    previous_defines_list:Reference.t list ->
+    previous_modules_list:Reference.t list ->
+    unit
+
+  val set_module_data : Source.t -> unit
+
+  val read_only : ast_environment:AstEnvironment.ReadOnly.t -> ReadOnly.t
+end = struct
+  module ClassSummaryValue = struct
+    type t = ClassSummary.t Node.t
+
+    let prefix = Prefix.make ()
+
+    let description = "ClassSummary"
+
+    let compare = Node.compare ClassSummary.compare
+  end
+
+  module ClassSummaries =
+    DependencyTrackedMemory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.StringKey)
+      (DependencyKey)
+      (ClassSummaryValue)
+
+  module UnannotatedGlobalValue = struct
+    type t = UnannotatedGlobal.t
+
+    let prefix = Prefix.make ()
+
+    let description = "UnannotatedGlobal"
+
+    let compare = UnannotatedGlobal.compare
+  end
+
+  module UnannotatedGlobals =
+    DependencyTrackedMemory.DependencyTrackedTableNoCache
+      (SharedMemoryKeys.ReferenceKey)
+      (DependencyKey)
+      (UnannotatedGlobalValue)
+
+  module FunctionDefinitionValue = struct
+    type t = FunctionDefinition.t
+
+    let description = "FunctionDefinition"
+
+    let prefix = Prefix.make ()
+
+    let compare = FunctionDefinition.compare
+  end
+
+  module FunctionDefinitions =
+    DependencyTrackedMemory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.ReferenceKey)
+      (DependencyKey)
+      (FunctionDefinitionValue)
+
+  module ModuleValue = struct
+    type t = Module.t
+
+    let prefix = Prefix.make ()
+
+    let description = "Module"
+
+    let compare = Module.compare
+  end
+
+  module Modules =
+    DependencyTrackedMemory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.ReferenceKey)
+      (SharedMemoryKeys.DependencyKey)
+      (ModuleValue)
+
+  let set_unannotated_global ~target = UnannotatedGlobals.add target
+
+  let set_class_definition ~name ~definition = ClassSummaries.write_through name definition
+
+  let set_define ~name definitions = FunctionDefinitions.write_through name definitions
+
+  let set_module ~qualifier = Modules.add qualifier
+
+  let set_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+    let write { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
+      let target = Reference.create name |> Reference.combine qualifier in
+      set_unannotated_global ~target unannotated_global;
+      target
     in
-    WriteOnly.set_class_definition
-      ~name:primitive
-      ~definition:{ Node.location; value = ClassSummary.create ~qualifier definition };
-    Set.add new_annotations primitive
-  in
-  List.fold classes ~init:Type.Primitive.Set.empty ~f:register
-  |> Set.to_list
-  |> KeyTracker.ClassKeys.add qualifier
-
-
-let missing_builtin_globals =
-  let assign name annotation =
-    {
-      UnannotatedGlobal.Collector.Result.name;
-      unannotated_global =
-        UnannotatedGlobal.SimpleAssign
-          {
-            explicit_annotation = Some (Type.expression annotation);
-            target_location = Location.WithModule.any;
-            value = Node.create_with_default_location (Expression.Constant Constant.Ellipsis);
-          };
-    }
-  in
-  [assign "..." Type.Any; assign "__debug__" Type.bool]
-
-
-let collect_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-  let write { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
-    let target = Reference.create name |> Reference.combine qualifier in
-    WriteOnly.set_unannotated_global ~target unannotated_global;
-    target
-  in
-  let merge_defines unannotated_globals_alist =
-    let not_defines, defines =
-      List.partition_map unannotated_globals_alist ~f:(function
-          | { UnannotatedGlobal.Collector.Result.name; unannotated_global = Define defines } ->
-              Either.Second (name, defines)
-          | x -> Either.First x)
-    in
-    let add_to_map sofar (name, defines) =
-      let merge_with_existing to_merge = function
-        | None -> Some to_merge
-        | Some existing -> Some (to_merge @ existing)
+    let merge_defines unannotated_globals_alist =
+      let not_defines, defines =
+        List.partition_map unannotated_globals_alist ~f:(function
+            | { UnannotatedGlobal.Collector.Result.name; unannotated_global = Define defines } ->
+                Either.Second (name, defines)
+            | x -> Either.First x)
       in
-      Map.change sofar name ~f:(merge_with_existing defines)
+      let add_to_map sofar (name, defines) =
+        let merge_with_existing to_merge = function
+          | None -> Some to_merge
+          | Some existing -> Some (to_merge @ existing)
+        in
+        Map.change sofar name ~f:(merge_with_existing defines)
+      in
+      List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
+      |> Identifier.Map.to_alist
+      |> List.map ~f:(fun (name, defines) ->
+             {
+               UnannotatedGlobal.Collector.Result.name;
+               unannotated_global = Define (List.rev defines);
+             })
+      |> fun defines -> List.append defines not_defines
     in
-    List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
-    |> Identifier.Map.to_alist
-    |> List.map ~f:(fun (name, defines) ->
-           {
-             UnannotatedGlobal.Collector.Result.name;
-             unannotated_global = Define (List.rev defines);
-           })
-    |> fun defines -> List.append defines not_defines
-  in
-  let drop_classes unannotated_globals =
-    let is_not_class = function
-      | { UnannotatedGlobal.Collector.Result.unannotated_global = Class; _ } -> false
-      | _ -> true
+    let drop_classes unannotated_globals =
+      let is_not_class = function
+        | { UnannotatedGlobal.Collector.Result.unannotated_global = Class; _ } -> false
+        | _ -> true
+      in
+      List.filter unannotated_globals ~f:is_not_class
     in
-    List.filter unannotated_globals ~f:is_not_class
-  in
-  let globals = UnannotatedGlobal.Collector.from_source source |> merge_defines |> drop_classes in
-  let globals =
-    match Reference.as_list qualifier with
-    | [] -> globals @ missing_builtin_globals
-    | _ -> globals
-  in
-  globals |> List.map ~f:write |> KeyTracker.UnannotatedGlobalKeys.add qualifier
+    let globals = UnannotatedGlobal.Collector.from_source source |> merge_defines |> drop_classes in
+    let globals =
+      match Reference.as_list qualifier with
+      | [] -> globals @ missing_builtin_globals
+      | _ -> globals
+    in
+    globals |> List.map ~f:write |> KeyTracker.UnannotatedGlobalKeys.add qualifier
 
 
-let collect_defines ({ Source.source_path = { SourcePath.qualifier; is_external; _ }; _ } as source)
-  =
-  match is_external with
-  | true ->
-      (* Do not collect function bodies for external sources as they won't get type checked *)
-      ()
-  | false ->
-      let definitions = FunctionDefinition.collect_defines source in
-      List.iter definitions ~f:(fun (name, definition) -> WriteOnly.set_define ~name definition);
-      KeyTracker.FunctionKeys.add
-        qualifier
-        (List.map definitions ~f:fst |> List.sort ~compare:Reference.compare)
+  let set_class_definitions ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+    (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
+    let module ClassCollector = Visit.MakeStatementVisitor (struct
+      type t = Class.t Node.t list
 
+      let visit_children _ = true
+
+      let statement _ sofar = function
+        | { Node.location; value = Statement.Class definition } ->
+            { Node.location; value = definition } :: sofar
+        | _ -> sofar
+    end)
+    in
+    let classes = ClassCollector.visit [] source in
+    let classes =
+      match Reference.as_list qualifier with
+      | [] -> classes @ missing_builtin_classes
+      | ["typing"] -> classes @ missing_typing_classes
+      | ["typing_extensions"] -> classes @ missing_typing_extensions_classes
+      | _ -> classes
+    in
+    let register new_annotations { Node.location; value = { Class.name; _ } as definition } =
+      let primitive = Reference.show name in
+      let definition =
+        match primitive with
+        | "type" ->
+            let value =
+              Type.expression
+                (Type.parametric "typing.Generic" [Single (Type.variable "typing._T")])
+            in
+            { definition with Class.base_arguments = [{ name = None; value }] }
+        | _ -> definition
+      in
+      set_class_definition
+        ~name:primitive
+        ~definition:{ Node.location; value = ClassSummary.create ~qualifier definition };
+      Set.add new_annotations primitive
+    in
+    List.fold classes ~init:Type.Primitive.Set.empty ~f:register
+    |> Set.to_list
+    |> KeyTracker.ClassKeys.add qualifier
+
+
+  let set_function_definitions
+      ({ Source.source_path = { SourcePath.qualifier; is_external; _ }; _ } as source)
+    =
+    match is_external with
+    | true ->
+        (* Do not collect function bodies for external sources as they won't get type checked *)
+        ()
+    | false ->
+        let definitions = FunctionDefinition.collect_defines source in
+        List.iter definitions ~f:(fun (name, definition) -> set_define ~name definition);
+        KeyTracker.FunctionKeys.add
+          qualifier
+          (List.map definitions ~f:fst |> List.sort ~compare:Reference.compare)
+
+
+  let set_module_data ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+    set_module ~qualifier (Module.create source);
+    set_unannotated_globals source;
+    set_class_definitions source;
+    set_function_definitions source
+
+
+  let add_to_transaction
+      transaction
+      ~previous_classes_list
+      ~previous_unannotated_globals_list
+      ~previous_defines_list
+      ~previous_modules_list
+    =
+    let class_keys = ClassSummaries.KeySet.of_list previous_classes_list in
+    let unannotated_globals_keys =
+      UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
+    in
+    let defines_keys = FunctionDefinitions.KeySet.of_list previous_defines_list in
+    let module_keys = Modules.KeySet.of_list previous_modules_list in
+    ClassSummaries.add_to_transaction ~keys:class_keys transaction
+    |> UnannotatedGlobals.add_to_transaction ~keys:unannotated_globals_keys
+    |> FunctionDefinitions.add_to_transaction ~keys:defines_keys
+    |> Modules.add_to_transaction ~keys:module_keys
+
+
+  let get_all_dependents ~class_additions ~unannotated_global_additions ~define_additions =
+    let function_and_class_dependents =
+      DependencyKey.RegisteredSet.union
+        (ClassSummaries.KeySet.of_list class_additions |> ClassSummaries.get_all_dependents)
+        (FunctionDefinitions.KeySet.of_list define_additions
+        |> FunctionDefinitions.get_all_dependents)
+    in
+    DependencyKey.RegisteredSet.union
+      function_and_class_dependents
+      (UnannotatedGlobals.KeySet.of_list unannotated_global_additions
+      |> UnannotatedGlobals.get_all_dependents)
+
+
+  let direct_data_purge
+      ~previous_classes_list
+      ~previous_unannotated_globals_list
+      ~previous_defines_list
+      ~previous_modules_list
+    =
+    ClassSummaries.KeySet.of_list previous_classes_list |> ClassSummaries.remove_batch;
+    UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
+    |> UnannotatedGlobals.remove_batch;
+    FunctionDefinitions.KeySet.of_list previous_defines_list |> FunctionDefinitions.remove_batch;
+    Modules.KeySet.of_list previous_modules_list |> Modules.remove_batch
+
+
+  let read_only ~ast_environment =
+    let all_classes () =
+      AstEnvironment.ReadOnly.all_explicit_modules ast_environment |> KeyTracker.get_class_keys
+    in
+    let all_indices () =
+      all_classes ()
+      |> Type.Primitive.Set.of_list
+      |> IndexTracker.indices
+      |> IndexTracker.Set.to_list
+    in
+    let all_unannotated_globals () =
+      AstEnvironment.ReadOnly.all_explicit_modules ast_environment
+      |> KeyTracker.get_unannotated_global_keys
+    in
+    let all_defines () =
+      AstEnvironment.ReadOnly.all_explicit_modules ast_environment
+      |> KeyTracker.get_define_body_keys
+    in
+    let class_exists ?dependency name = ClassSummaries.mem ?dependency name in
+    let get_define = FunctionDefinitions.get in
+    let get_define_body ?dependency key =
+      FunctionDefinitions.get ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
+    in
+    let all_defines_in_module qualifier = KeyTracker.get_define_body_keys [qualifier] in
+    let get_module_metadata ?dependency qualifier =
+      let qualifier =
+        match Reference.as_list qualifier with
+        | ["future"; "builtins"]
+        | ["builtins"] ->
+            Reference.empty
+        | _ -> qualifier
+      in
+      match Modules.get ?dependency qualifier with
+      | Some _ as result -> result
+      | None -> (
+          match AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier with
+          | true -> Some (Module.create_implicit ())
+          | false -> None)
+    in
+    let module_exists ?dependency qualifier =
+      let qualifier =
+        match Reference.as_list qualifier with
+        | ["future"; "builtins"]
+        | ["builtins"] ->
+            Reference.empty
+        | _ -> qualifier
+      in
+      match Modules.mem ?dependency qualifier with
+      | true -> true
+      | false -> AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier
+    in
+    {
+      ast_environment;
+      ReadOnly.get_class_definition = ClassSummaries.get;
+      all_classes;
+      all_indices;
+      all_defines;
+      class_exists;
+      get_unannotated_global = UnannotatedGlobals.get;
+      get_define;
+      get_define_body;
+      all_defines_in_module;
+      all_unannotated_globals;
+      get_module_metadata;
+      module_exists;
+    }
+end
 
 module UpdateResult = struct
   type t = {
@@ -931,11 +934,7 @@ let update_this_and_all_preceding_environments
   let map sources =
     let register qualifier =
       AstEnvironment.ReadOnly.get_processed_source ~track_dependency:true ast_environment qualifier
-      >>| (fun source ->
-            WriteOnly.set_module_metadata ~qualifier (Module.create source);
-            register_class_definitions source;
-            collect_unannotated_globals source;
-            collect_defines source)
+      >>| WriteOnly.set_module_data
       |> Option.value ~default:()
     in
     List.iter sources ~f:register
