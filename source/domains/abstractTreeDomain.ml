@@ -870,7 +870,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
   let limit_to ?(transform = Fn.id) ~width tree =
     let rec compute_max_depth ~depth leaves_left roots =
       if roots = [] then
-        raise Exit (* tree does not exceed leaf limit *)
+        raise_notrace Exit (* tree does not exceed leaf limit *)
       else if leaves_left < List.length roots then
         depth - 1
       else

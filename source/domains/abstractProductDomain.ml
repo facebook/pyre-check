@@ -116,7 +116,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
     let check_strict (Slot slot) =
       let module D = (val Config.slot_domain slot) in
       let value = get slot result in
-      if D.is_bottom value then raise Strict
+      if D.is_bottom value then raise_notrace Strict
     in
     try
       Array.iter check_strict strict_slots;
@@ -155,7 +155,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
       let is_bottom_slot (Slot slot) =
         let module D = (val Config.slot_domain slot) in
         let v = get slot product in
-        if not (D.is_bottom v) then raise Exit
+        if not (D.is_bottom v) then raise_notrace Exit
       in
       if product == bottom then
         true
@@ -198,7 +198,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
         let module D = (val Config.slot_domain slot) in
         let left = get slot left in
         let right = get slot right in
-        if not (D.less_or_equal ~left ~right) then raise Exit
+        if not (D.less_or_equal ~left ~right) then raise_notrace Exit
       in
       try
         Array.iter less_or_equal_slot slots;
@@ -214,7 +214,7 @@ module Make (Config : PRODUCT_CONFIG) = struct
         let right = get slot right in
         let result = D.meet left right in
         if Config.strict slot && D.is_bottom result then
-          raise Strict
+          raise_notrace Strict
         else
           Element result
       in
@@ -270,9 +270,9 @@ module Make (Config : PRODUCT_CONFIG) = struct
             | AllBottom -> SingleStrict (slot, result)
             | _ ->
                 (* multiple slots are non-bottom *)
-                raise Exit
+                raise_notrace Exit
           else (* non-strict slot non-bottom *)
-            raise Exit
+            raise_notrace Exit
         in
         try
           match Array.fold_left find_single_strict_slot AllBottom slots with

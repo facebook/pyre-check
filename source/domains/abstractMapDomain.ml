@@ -131,11 +131,12 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
       else
         let find_witness ~key:_ ~data =
           match data with
-          | `Both (left, right) -> if not (Element.less_or_equal ~left ~right) then raise Exit
+          | `Both (left, right) ->
+              if not (Element.less_or_equal ~left ~right) then raise_notrace Exit
           | `Left _ ->
               (* If absence_implicitly_maps_to_bottom, then left is not bottom, so in either case,
                  the relation does not hold. *)
-              raise Exit
+              raise_notrace Exit
           | `Right _ ->
               (* An absent key is less than a present key in either case. *)
               ()
