@@ -377,33 +377,37 @@ module Layouts = struct
     let explicit_updates = update_explicit_modules module_to_files ~configuration ~paths in
     let implicit_updates = update_submodules submodule_refcounts ~events:explicit_updates in
     (* Explicit updates should shadow implicit updates *)
-    let merge_updates explicits implicits =
+    let updates =
       let new_qualifiers = Reference.Hash_set.create () in
       let deleted_qualifiers = Reference.Hash_set.create () in
-      let process_explicit = function
-        | IncrementalExplicitUpdate.New ({ SourcePath.qualifier; _ } as source_path)
-        | IncrementalExplicitUpdate.Changed ({ SourcePath.qualifier; _ } as source_path) ->
-            Hash_set.add new_qualifiers qualifier;
-            IncrementalUpdate.NewExplicit source_path
-        | IncrementalExplicitUpdate.Delete qualifier ->
-            Hash_set.add deleted_qualifiers qualifier;
-            IncrementalUpdate.Delete qualifier
+      let explicits =
+        let process_explicit_update = function
+          | IncrementalExplicitUpdate.New ({ SourcePath.qualifier; _ } as source_path)
+          | IncrementalExplicitUpdate.Changed ({ SourcePath.qualifier; _ } as source_path) ->
+              Hash_set.add new_qualifiers qualifier;
+              IncrementalUpdate.NewExplicit source_path
+          | IncrementalExplicitUpdate.Delete qualifier ->
+              Hash_set.add deleted_qualifiers qualifier;
+              IncrementalUpdate.Delete qualifier
+        in
+        List.map explicit_updates ~f:process_explicit_update
       in
-      let process_implicit = function
-        | IncrementalImplicitUpdate.New qualifier ->
-            if Hash_set.mem new_qualifiers qualifier then
-              None
-            else
-              Some (IncrementalUpdate.NewImplicit qualifier)
-        | IncrementalImplicitUpdate.Delete qualifier ->
-            if Hash_set.mem deleted_qualifiers qualifier then
-              None
-            else
-              Some (IncrementalUpdate.Delete qualifier)
+      let implicits =
+        let process_implicit_update = function
+          | IncrementalImplicitUpdate.New qualifier ->
+              if Hash_set.mem new_qualifiers qualifier then
+                None
+              else
+                Some (IncrementalUpdate.NewImplicit qualifier)
+          | IncrementalImplicitUpdate.Delete qualifier ->
+              if Hash_set.mem deleted_qualifiers qualifier then
+                None
+              else
+                Some (IncrementalUpdate.Delete qualifier)
+        in
+        List.filter_map implicit_updates ~f:process_implicit_update
       in
-      let explicit_updates = List.map explicits ~f:process_explicit in
-      let implicit_updates = List.filter_map implicits ~f:process_implicit in
-      List.append explicit_updates implicit_updates
+      List.append explicits implicits
     in
     Log.log
       ~section:`Server
@@ -415,8 +419,7 @@ module Layouts = struct
       "Implicit Module Update: %a"
       Sexp.pp
       [%message (implicit_updates : IncrementalImplicitUpdate.t list)];
-    let result = merge_updates explicit_updates implicit_updates in
-    result
+    updates
 end
 
 type t = {
