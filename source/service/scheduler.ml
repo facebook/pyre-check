@@ -125,12 +125,9 @@ let with_scheduler ~configuration ~f =
 
 
 let run_process process =
-  try
-    let result = process () in
-    Statistics.flush ();
-    result
-  with
-  | error -> raise error
+  let result = process () in
+  Statistics.flush ();
+  result
 
 
 let map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs () =
