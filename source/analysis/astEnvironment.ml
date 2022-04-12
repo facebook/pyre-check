@@ -126,11 +126,14 @@ let create_source ~typecheck_flags ~source_path statements =
 let parse_source
     ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
     ~context
+    ~module_tracker
     ({ SourcePath.qualifier; _ } as source_path)
   =
-  let parse content =
-    let typecheck_flags = Source.TypecheckFlags.parse ~qualifier (String.split content ~on:'\n') in
-    match PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context content with
+  let parse raw_code =
+    let typecheck_flags = Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n') in
+    match
+      PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context raw_code
+    with
     | Ok statements -> Success (create_source ~typecheck_flags ~source_path statements)
     | Error { PyreNewParser.Error.line; column; end_line; end_column; message } ->
         let is_suppressed =
@@ -164,10 +167,9 @@ let parse_source
         in
         Error { location; message; is_suppressed }
   in
-  let path = SourcePath.full_path ~configuration source_path in
-  try File.content_exn (File.create path) |> parse with
-  | Sys_error error ->
-      let message = Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.pp path error in
+  match ModuleTracker.ReadOnly.get_raw_code module_tracker source_path with
+  | Ok raw_code -> parse raw_code
+  | Error message ->
       Error
         {
           location =
@@ -180,10 +182,16 @@ let parse_source
         }
 
 
-let parse_raw_sources ~configuration ~scheduler ~ast_environment source_paths =
+let parse_raw_sources
+    ~configuration
+    ~scheduler
+    ~ast_environment:({ module_tracker; _ } as ast_environment)
+    source_paths
+  =
+  let module_tracker = ModuleTracker.read_only module_tracker in
   let parse_and_categorize result source_path =
     let do_parse context =
-      match parse_source ~configuration ~context source_path with
+      match parse_source ~configuration ~context ~module_tracker source_path with
       | Success ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) ->
           let source =
             let {

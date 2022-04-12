@@ -513,6 +513,13 @@ module ReadOnly = struct
 
   let tracked_explicit_modules tracker =
     source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+
+
+  let get_raw_code tracker source_path =
+    let path = SourcePath.full_path ~configuration:(configuration tracker) source_path in
+    try Ok (File.content_exn (File.create path)) with
+    | Sys_error error ->
+        Error (Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.pp path error)
 end
 
 let read_only ({ layouts = { module_to_files; submodule_refcounts }; configuration } as tracker) =
