@@ -367,7 +367,7 @@ let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environme
   in
   match trigger with
   | Update module_updates -> (
-      let reparse_source_paths, removed_modules, updated_submodules =
+      let reparse_source_paths, removed_modules, new_submodules =
         let categorize = function
           | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
           | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
@@ -386,14 +386,14 @@ let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environme
           in
           {
             UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
-            invalidated_modules = List.append updated_submodules parsed;
+            invalidated_modules = List.append new_submodules parsed;
           }
       | Configuration.Analysis.FineGrained ->
           let changed_modules =
             let reparse_modules =
               List.map reparse_source_paths ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
             in
-            List.concat [removed_modules; updated_submodules; reparse_modules]
+            List.concat [removed_modules; new_submodules; reparse_modules]
           in
           let update_raw_sources () =
             parse_raw_sources ~configuration ~scheduler ~ast_environment reparse_source_paths
