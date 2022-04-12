@@ -17,6 +17,10 @@
 
 exception Worker_exited_abnormally of int * Unix.process_status
 
+(** Worker exited with the given exception, as a string (because marshal-ing on
+ * exceptions is not safe). *)
+exception Worker_exception of string * Printexc.raw_backtrace
+
 (** Worker killed by Out Of Memory. *)
 exception Worker_oomed
 
