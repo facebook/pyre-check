@@ -422,3 +422,7 @@ let kill w =
     | None -> ()
     | Some handle -> Daemon.kill_and_wait handle
   end
+
+let exception_backtrace = function
+  | Worker_exception (_, backtrace) -> backtrace
+  | _ -> Printexc.get_raw_backtrace ()

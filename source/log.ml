@@ -133,7 +133,13 @@ let log_unix_error ?(section = `Error) (error_kind, name, parameters) =
   log ~section "Unix error %s: %s(%s)" (Unix.error_message error_kind) name parameters
 
 
-let log_exception exception_to_log = error "Uncaught exception: %s" (Exn.to_string exception_to_log)
+let log_exception message exception_to_log backtrace =
+  error
+    "%s\nException: %s\nBacktrace:\n%s"
+    message
+    (Exn.to_string exception_to_log)
+    (Caml.Printexc.raw_backtrace_to_string backtrace)
+
 
 module Color = struct
   let cyan string = Format.asprintf "\027[36m%s\027[0m" string

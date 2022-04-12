@@ -84,3 +84,5 @@ val kill: t -> unit
 
 (* Return the id of the worker to which the current process belong. 0 means the master process *)
 val current_worker_id: unit -> int
+
+val exception_backtrace: exn -> Printexc.raw_backtrace

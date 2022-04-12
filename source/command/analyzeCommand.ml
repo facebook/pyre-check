@@ -280,10 +280,7 @@ let run_taint_analysis
         | exn ->
             (* The backtrace is lost if the exception is caught at the top level, because of `Lwt`.
              * Let's print the exception here to ease debugging. *)
-            Log.error
-              "Taint analysis failed.\nException: %s\nBacktrace: %s"
-              (Exn.to_string exn)
-              (Printexc.get_backtrace ());
+            Log.log_exception "Taint analysis failed." exn (Worker.exception_backtrace exn);
             raise exn)
   in
   with_performance_tracking run

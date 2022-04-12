@@ -77,13 +77,14 @@ let record_initial_models ~callables ~stubs models =
 
 let analysis_failed step ~exn callable ~message =
   let callable = (callable :> Target.t) in
-  Log.error
-    "%s in step %s while analyzing %s.\nException: %s\nBacktrace: %s"
-    message
-    (FixpointState.show_step step)
-    (Target.show callable)
-    (Exn.to_string exn)
-    (Printexc.get_backtrace ());
+  let message =
+    Format.sprintf
+      "%s in step %s while analyzing %s."
+      message
+      (FixpointState.show_step step)
+      (Target.show callable)
+  in
+  Log.log_exception message exn (Worker.exception_backtrace exn);
   raise exn
 
 
@@ -700,10 +701,7 @@ let compute_fixpoint
     iterations
   with
   | exn ->
-      Log.error
-        "Fixpoint iteration failed.\nException: %s\nBacktrace: %s"
-        (Exn.to_string exn)
-        (Printexc.get_backtrace ());
+      Log.log_exception "Fixpoint iteration failed." exn (Worker.exception_backtrace exn);
       raise exn
 
 
