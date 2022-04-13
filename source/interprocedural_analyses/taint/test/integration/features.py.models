@@ -605,6 +605,32 @@
 {
   "kind": "model",
   "data": {
+    "callable": "features.model_missing_feature",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "string_concat_lhs" },
+                  { "via": "string_concat_rhs" }
+                ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "features.named",
     "tito": [
       {
