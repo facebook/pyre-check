@@ -38,43 +38,20 @@ from ..configuration import (
     IdeFeatures,
     merge_partial_configurations,
     PartialConfiguration,
-    PythonVersion,
     SharedMemory,
     UnwatchedDependency,
     UnwatchedFiles,
 )
 from ..exceptions import (
     InvalidConfiguration,
-    InvalidPythonVersion,
 )
 from ..platform_aware import PlatformAware
+from ..python_version import PythonVersion
 from ..search_path import (
     SimpleElement,
     SitePackageElement,
     SubdirectoryElement,
 )
-
-
-class PythonVersionTest(unittest.TestCase):
-    def test_from_string(self) -> None:
-        def assert_parsed(input: str, expected: PythonVersion) -> None:
-            self.assertEqual(PythonVersion.from_string(input), expected)
-
-        def assert_not_parsed(input: str) -> None:
-            with self.assertRaises(InvalidPythonVersion):
-                PythonVersion.from_string(input)
-
-        assert_not_parsed("")
-        assert_not_parsed("derp")
-        assert_not_parsed("123abc")
-        assert_not_parsed("1.a")
-        assert_not_parsed("1.2.a")
-        assert_not_parsed(".1")
-        assert_not_parsed("1.2.3.4")
-
-        assert_parsed("3", PythonVersion(major=3))
-        assert_parsed("3.6", PythonVersion(major=3, minor=6))
-        assert_parsed("3.6.7", PythonVersion(major=3, minor=6, micro=7))
 
 
 class UnwatchedDependencyTest(unittest.TestCase):

@@ -6,7 +6,6 @@
 from . import search_path  # noqa: F401
 from .configuration import (  # noqa: F401
     ExtensionElement,
-    PythonVersion,
     SharedMemory,
     IdeFeatures,
     UnwatchedFiles,
@@ -20,3 +19,4 @@ from .exceptions import (  # noqa: F401
     InvalidPythonVersion,
 )
 from .platform_aware import PlatformAware  # noqa: F401
+from .python_version import PythonVersion  # noqa: F401

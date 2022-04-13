@@ -42,7 +42,12 @@ from ..find_directories import (
     LOCAL_CONFIGURATION_FILE,
     LOG_DIRECTORY,
 )
-from . import search_path as search_path_module, exceptions, platform_aware
+from . import (
+    search_path as search_path_module,
+    exceptions,
+    platform_aware,
+    python_version as python_version_module,
+)
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -179,35 +184,6 @@ def _expand_and_get_existent_paths(
         else:
             LOG.warning(f"Path does not exist: {search_path}")
     return existent_paths
-
-
-@dataclass(frozen=True)
-class PythonVersion:
-    major: int
-    minor: int = 0
-    micro: int = 0
-
-    @staticmethod
-    def from_string(input: str) -> "PythonVersion":
-        try:
-            splits = input.split(".")
-            if len(splits) == 1:
-                return PythonVersion(major=int(splits[0]))
-            elif len(splits) == 2:
-                return PythonVersion(major=int(splits[0]), minor=int(splits[1]))
-            elif len(splits) == 3:
-                return PythonVersion(
-                    major=int(splits[0]), minor=int(splits[1]), micro=int(splits[2])
-                )
-            raise exceptions.InvalidPythonVersion(
-                "Version string is expected to have the form of 'X.Y.Z' but got "
-                + f"'{input}'"
-            )
-        except ValueError as error:
-            raise exceptions.InvalidPythonVersion(str(error))
-
-    def to_string(self) -> str:
-        return f"{self.major}.{self.minor}.{self.micro}"
 
 
 @dataclass(frozen=True)
@@ -364,7 +340,7 @@ class PartialConfiguration:
     oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
     pysa_version_hash: Optional[str] = None
-    python_version: Optional[PythonVersion] = None
+    python_version: Optional[python_version_module.PythonVersion] = None
     shared_memory: SharedMemory = SharedMemory()
     search_path: Sequence[search_path_module.Element] = field(default_factory=list)
     source_directories: Optional[Sequence[search_path_module.Element]] = None
@@ -432,7 +408,7 @@ class PartialConfiguration:
             other_critical_files=[],
             pysa_version_hash=None,
             python_version=(
-                PythonVersion.from_string(python_version_string)
+                python_version_module.PythonVersion.from_string(python_version_string)
                 if python_version_string is not None
                 else None
             ),
@@ -555,7 +531,9 @@ class PartialConfiguration:
             if python_version_json is None:
                 python_version = None
             elif isinstance(python_version_json, str):
-                python_version = PythonVersion.from_string(python_version_json)
+                python_version = python_version_module.PythonVersion.from_string(
+                    python_version_json
+                )
             else:
                 raise exceptions.InvalidConfiguration(
                     "Expect python version to be a string but got"
@@ -896,7 +874,7 @@ class Configuration:
     oncall: Optional[str] = None
     other_critical_files: Sequence[str] = field(default_factory=list)
     pysa_version_hash: Optional[str] = None
-    python_version: Optional[PythonVersion] = None
+    python_version: Optional[python_version_module.PythonVersion] = None
     shared_memory: SharedMemory = SharedMemory()
     relative_local_root: Optional[str] = None
     search_path: Sequence[search_path_module.Element] = field(default_factory=list)
@@ -1275,13 +1253,13 @@ class Configuration:
         override `isolation_prefix` as `""` in a local configuration."""
         return None if self.isolation_prefix == "" else self.isolation_prefix
 
-    def get_python_version(self) -> PythonVersion:
+    def get_python_version(self) -> python_version_module.PythonVersion:
         python_version = self.python_version
         if python_version is not None:
             return python_version
         else:
             version_info = sys.version_info
-            return PythonVersion(
+            return python_version_module.PythonVersion(
                 major=version_info.major,
                 minor=version_info.minor,
                 micro=version_info.micro,
