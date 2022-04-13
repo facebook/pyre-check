@@ -36,8 +36,6 @@ from ..configuration import (
     ExtensionElement,
     get_site_roots,
     IdeFeatures,
-    InvalidConfiguration,
-    InvalidPythonVersion,
     merge_partial_configurations,
     PartialConfiguration,
     PlatformAware,
@@ -45,6 +43,10 @@ from ..configuration import (
     SharedMemory,
     UnwatchedDependency,
     UnwatchedFiles,
+)
+from ..exceptions import (
+    InvalidConfiguration,
+    InvalidPythonVersion,
 )
 from ..search_path import (
     SimpleElement,

@@ -11,7 +11,8 @@ import testslide
 from ...tests.setup import (
     ensure_directories_exists,
 )
-from ..configuration import create_search_paths, InvalidConfiguration
+from ..configuration import create_search_paths
+from ..exceptions import InvalidConfiguration
 from ..search_path import SimpleElement, SubdirectoryElement, SitePackageElement
 
 

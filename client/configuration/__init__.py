@@ -5,8 +5,6 @@
 
 from . import search_path  # noqa: F401
 from .configuration import (  # noqa: F401
-    InvalidConfiguration,
-    InvalidPythonVersion,
     ExtensionElement,
     PlatformAware,
     PythonVersion,
@@ -17,4 +15,8 @@ from .configuration import (  # noqa: F401
     Configuration,
     create_configuration,
     check_nested_local_configuration,
+)
+from .exceptions import (  # noqa: F401
+    InvalidConfiguration,
+    InvalidPythonVersion,
 )

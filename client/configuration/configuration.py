@@ -45,7 +45,7 @@ from ..find_directories import (
     LOCAL_CONFIGURATION_FILE,
     LOG_DIRECTORY,
 )
-from . import search_path as search_path_module
+from . import search_path as search_path_module, exceptions
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -74,17 +74,6 @@ def _expand_and_get_existent_ignore_all_errors_path(
         else:
             LOG.warning(f"Nonexistent paths passed in to `ignore_all_errors`: `{path}`")
     return paths
-
-
-class InvalidConfiguration(Exception):
-    def __init__(self, message: str) -> None:
-        self.message = f"Invalid configuration: {message}"
-        super().__init__(self.message)
-
-
-class InvalidPythonVersion(InvalidConfiguration):
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
 
 
 @dataclasses.dataclass
@@ -118,7 +107,7 @@ class ExtensionElement:
                         include_suffix_in_module_qualifier=include_suffix_in_module_qualifier,
                     )
 
-        raise InvalidConfiguration(f"Invalid extension element: {json}")
+        raise exceptions.InvalidConfiguration(f"Invalid extension element: {json}")
 
 
 def get_site_roots() -> List[str]:
@@ -167,7 +156,7 @@ def create_search_paths(
                 for root in site_roots
             ]
 
-    raise InvalidConfiguration(f"Invalid search path element: {json}")
+    raise exceptions.InvalidConfiguration(f"Invalid search path element: {json}")
 
 
 def _in_virtual_environment(override: Optional[bool] = None) -> bool:
@@ -222,7 +211,7 @@ class PlatformAware(Generic[T]):
 
             invalid_keys = value.keys() - PLATFORM_MAPPING.values()
             if not len(invalid_keys) == 0:
-                raise InvalidConfiguration(
+                raise exceptions.InvalidConfiguration(
                     f"Configuration `{field_name}` only supports platforms: "
                     f"{PLATFORM_MAPPING.values()} but got: `{invalid_keys}`."
                 )
@@ -302,12 +291,12 @@ class PythonVersion:
                 return PythonVersion(
                     major=int(splits[0]), minor=int(splits[1]), micro=int(splits[2])
                 )
-            raise InvalidPythonVersion(
+            raise exceptions.InvalidPythonVersion(
                 "Version string is expected to have the form of 'X.Y.Z' but got "
                 + f"'{input}'"
             )
         except ValueError as error:
-            raise InvalidPythonVersion(str(error))
+            raise exceptions.InvalidPythonVersion(str(error))
 
     def to_string(self) -> str:
         return f"{self.major}.{self.minor}.{self.micro}"
@@ -383,19 +372,21 @@ class UnwatchedFiles:
     def from_json(json: Dict[str, object]) -> "UnwatchedFiles":
         root = json.get("root", None)
         if root is None:
-            raise InvalidConfiguration("Missing `root` field in UnwatchedFiles")
+            raise exceptions.InvalidConfiguration(
+                "Missing `root` field in UnwatchedFiles"
+            )
         if not isinstance(root, str):
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 "`root` field in UnwatchedFiles must be a string"
             )
 
         checksum_path = json.get("checksum_path", None)
         if checksum_path is None:
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 "Missing `checksum_path` field in UnwatchedFiles"
             )
         if not isinstance(checksum_path, str):
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 "`checksum_path` field in UnwatchedFiles must be a string"
             )
 
@@ -417,19 +408,21 @@ class UnwatchedDependency:
     def from_json(json: Dict[str, object]) -> "UnwatchedDependency":
         change_indicator = json.get("change_indicator", None)
         if change_indicator is None:
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 "Missing `change_indicator` field in UnwatchedDependency"
             )
         if not isinstance(change_indicator, str):
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 "`change_indicator` field in UnwatchedDependency must be a string"
             )
 
         files_json = json.get("files", None)
         if files_json is None:
-            raise InvalidConfiguration("Missing `files` field in UnwatchedDependency")
+            raise exceptions.InvalidConfiguration(
+                "Missing `files` field in UnwatchedDependency"
+            )
         if not isinstance(files_json, dict):
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 "`files` field in UnwatchedDependency must be a dict"
             )
 
@@ -567,7 +560,7 @@ class PartialConfiguration:
                 return None
             elif isinstance(result, expected_type):
                 return result
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 f"Configuration `{name}` is expected to have type "
                 f"{expected_type} but got: `{json}`."
             )
@@ -583,12 +576,12 @@ class PartialConfiguration:
             elif isinstance(result, Dict):
                 for value in result.values():
                     if not isinstance(value, str):
-                        raise InvalidConfiguration(
+                        raise exceptions.InvalidConfiguration(
                             f"Configuration `{name}` is expected to be a "
                             + f"dict of strings but got `{json}`."
                         )
                 return result
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 f"Configuration `{name}` is expected to be a string or a "
                 + f"dict of strings but got `{json}`."
             )
@@ -601,7 +594,7 @@ class PartialConfiguration:
                 return None
             elif is_list_of_string(result):
                 return result
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 f"Configuration `{name}` is expected to be a list of "
                 + f"strings but got `{json}`."
             )
@@ -614,7 +607,7 @@ class PartialConfiguration:
                 result = [result]
             if is_list_of_string(result):
                 return result
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 f"Configuration `{name}` is expected to be a list of "
                 + f"strings but got `{json}`."
             )
@@ -623,7 +616,7 @@ class PartialConfiguration:
             result = json.pop(name, [])
             if isinstance(result, list):
                 return result
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 f"Configuration `{name}` is expected to be a list but got `{json}`."
             )
 
@@ -654,7 +647,7 @@ class PartialConfiguration:
             elif isinstance(python_version_json, str):
                 python_version = PythonVersion.from_string(python_version_json)
             else:
-                raise InvalidConfiguration(
+                raise exceptions.InvalidConfiguration(
                     "Expect python version to be a string but got"
                     + f"'{python_version_json}'"
                 )
@@ -792,7 +785,7 @@ class PartialConfiguration:
 
             return partial_configuration
         except json.JSONDecodeError as error:
-            raise InvalidConfiguration(f"Invalid JSON file: {error}")
+            raise exceptions.InvalidConfiguration(f"Invalid JSON file: {error}")
 
     @staticmethod
     def from_file(path: Path) -> "PartialConfiguration":
@@ -800,7 +793,7 @@ class PartialConfiguration:
             contents = path.read_text(encoding="utf-8")
             return PartialConfiguration.from_string(contents)
         except OSError as error:
-            raise InvalidConfiguration(f"Error when reading {path}: {error}")
+            raise exceptions.InvalidConfiguration(f"Error when reading {path}: {error}")
 
     def expand_relative_paths(self, root: str) -> "PartialConfiguration":
         binary = self.binary
@@ -900,7 +893,7 @@ def merge_partial_configurations(
         elif override is None:
             return base
         else:
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 f"Configuration option `{name}` cannot be overridden."
             )
 
@@ -1398,13 +1391,13 @@ def create_configuration(
     # error instead of falling back to current directory.
     if local_root_argument is not None:
         if found_root is None:
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 "A local configuration path was explicitly specified, but no"
                 + f" {CONFIGURATION_FILE} file was found in {search_base}"
                 + " or its parents."
             )
         elif found_root.local_root is None:
-            raise InvalidConfiguration(
+            raise exceptions.InvalidConfiguration(
                 "A local configuration path was explicitly specified, but no"
                 + f" {LOCAL_CONFIGURATION_FILE} file was found in {search_base}"
                 + " or its parents."
@@ -1486,5 +1479,5 @@ def check_nested_local_configuration(configuration: Configuration) -> None:
                 "into a single configuration, or split the parent configuration to "
                 "avoid inconsistent errors."
             )
-            raise InvalidConfiguration(error_message)
+            raise exceptions.InvalidConfiguration(error_message)
         current_directory = nesting_local_root.parent
