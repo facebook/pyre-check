@@ -444,16 +444,9 @@ class PartialConfiguration:
             if ide_features_json is None:
                 ide_features = None
             else:
-                ide_features = ide_features_module.IdeFeatures(
-                    hover_enabled=ensure_option_type(
-                        ide_features_json, "hover_enabled", bool
-                    ),
-                    go_to_definition_enabled=ensure_option_type(
-                        ide_features_json, "go_to_definition_enabled", bool
-                    ),
+                ide_features = ide_features_module.IdeFeatures.create_from_json(
+                    ide_features_json
                 )
-                for unrecognized_key in ide_features_json:
-                    LOG.warning(f"Unrecognized configuration item: {unrecognized_key}")
 
             unwatched_dependency_json = ensure_option_type(
                 configuration_json, "unwatched_dependency", dict

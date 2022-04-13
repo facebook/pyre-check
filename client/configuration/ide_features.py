@@ -6,7 +6,15 @@
 import dataclasses
 from typing import ClassVar, Dict, Optional
 
+import dataclasses_json
 
+from . import exceptions
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.SNAKE,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
 @dataclasses.dataclass(frozen=True)
 class IdeFeatures:
     hover_enabled: Optional[bool] = None
@@ -36,6 +44,21 @@ class IdeFeatures:
         if base is None:
             return override
         return IdeFeatures.merge(base, override)
+
+    @staticmethod
+    def create_from_json(input: object) -> "IdeFeatures":
+        try:
+            # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
+            return IdeFeatures.schema().load(input)
+        except (
+            TypeError,
+            KeyError,
+            ValueError,
+            dataclasses_json.mm.ValidationError,
+        ) as error:
+            raise exceptions.InvalidConfiguration(
+                f"Invalid JSON for `IdeFeatures`: {str(error)}"
+            )
 
     def to_json(self) -> Dict[str, int]:
         return {
