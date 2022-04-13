@@ -21,7 +21,6 @@ from logging import Logger
 from pathlib import Path
 from typing import (
     Any,
-    ClassVar,
     Dict,
     Iterable,
     List,
@@ -48,6 +47,7 @@ from . import (
     platform_aware,
     python_version as python_version_module,
     shared_memory as shared_memory_module,
+    ide_features as ide_features_module,
 )
 
 
@@ -188,42 +188,6 @@ def _expand_and_get_existent_paths(
 
 
 @dataclass(frozen=True)
-class IdeFeatures:
-    hover_enabled: Optional[bool] = None
-    DEFAULT_HOVER_ENABLED: ClassVar[bool] = False
-    go_to_definition_enabled: Optional[bool] = None
-    DEFAULT_GO_TO_DEFINITION_ENABLED: ClassVar[bool] = False
-
-    def to_json(self) -> Dict[str, int]:
-        return {
-            **(
-                {"hover_enabled": self.hover_enabled}
-                if self.hover_enabled is not None
-                else {}
-            ),
-            **(
-                {"go_to_definition_enabled": self.go_to_definition_enabled}
-                if self.go_to_definition_enabled is not None
-                else {}
-            ),
-        }
-
-    def is_hover_enabled(self) -> bool:
-        return (
-            self.hover_enabled
-            if self.hover_enabled is not None
-            else self.DEFAULT_HOVER_ENABLED
-        )
-
-    def is_go_to_definition_enabled(self) -> bool:
-        return (
-            self.go_to_definition_enabled
-            if self.go_to_definition_enabled is not None
-            else self.DEFAULT_GO_TO_DEFINITION_ENABLED
-        )
-
-
-@dataclass(frozen=True)
 class UnwatchedFiles:
     root: str
     checksum_path: str
@@ -307,7 +271,7 @@ class PartialConfiguration:
     dot_pyre_directory: Optional[Path] = None
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
-    ide_features: Optional[IdeFeatures] = None
+    ide_features: Optional[ide_features_module.IdeFeatures] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
@@ -358,7 +322,7 @@ class PartialConfiguration:
         )
         python_version_string = arguments.python_version
         ide_features = (
-            IdeFeatures(
+            ide_features_module.IdeFeatures(
                 hover_enabled=arguments.enable_hover,
                 go_to_definition_enabled=arguments.enable_go_to_definition,
             )
@@ -556,7 +520,7 @@ class PartialConfiguration:
             if ide_features_json is None:
                 ide_features = None
             else:
-                ide_features = IdeFeatures(
+                ide_features = ide_features_module.IdeFeatures(
                     hover_enabled=ensure_option_type(
                         ide_features_json, "hover_enabled", bool
                     ),
@@ -735,13 +699,14 @@ def merge_partial_configurations(
         return base if override is None else override
 
     def overwrite_base_ide_features(
-        base: Optional[IdeFeatures], override: Optional[IdeFeatures]
-    ) -> Optional[IdeFeatures]:
+        base: Optional[ide_features_module.IdeFeatures],
+        override: Optional[ide_features_module.IdeFeatures],
+    ) -> Optional[ide_features_module.IdeFeatures]:
         if override is None:
             return base
         if base is None:
             return override
-        return IdeFeatures(
+        return ide_features_module.IdeFeatures(
             hover_enabled=overwrite_base(base.hover_enabled, override.hover_enabled),
             go_to_definition_enabled=overwrite_base(
                 base.go_to_definition_enabled, override.go_to_definition_enabled
@@ -843,7 +808,7 @@ class Configuration:
     do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
-    ide_features: Optional[IdeFeatures] = None
+    ide_features: Optional[ide_features_module.IdeFeatures] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     ignore_infer: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
@@ -1204,12 +1169,12 @@ class Configuration:
 
     def is_hover_enabled(self) -> bool:
         if self.ide_features is None:
-            return IdeFeatures.DEFAULT_HOVER_ENABLED
+            return ide_features_module.IdeFeatures.DEFAULT_HOVER_ENABLED
         return self.ide_features.is_hover_enabled()
 
     def is_go_to_definition_enabled(self) -> bool:
         if self.ide_features is None:
-            return IdeFeatures.DEFAULT_GO_TO_DEFINITION_ENABLED
+            return ide_features_module.IdeFeatures.DEFAULT_GO_TO_DEFINITION_ENABLED
         return self.ide_features.is_go_to_definition_enabled()
 
     def get_valid_extension_suffixes(self) -> List[str]:
