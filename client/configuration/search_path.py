@@ -8,11 +8,10 @@ import dataclasses
 import glob
 import logging
 import os
-from typing import (
-    List,
-)
+from typing import Dict, Iterable, List, Union
 
 from .. import filesystem
+from . import exceptions
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -140,3 +139,37 @@ class SitePackageElement(Element):
 
     def expand_glob(self) -> List["Element"]:
         return [self]
+
+
+def create(
+    json: Union[str, Dict[str, Union[str, bool]]], site_roots: Iterable[str]
+) -> List[Element]:
+    if isinstance(json, str):
+        return [SimpleElement(json)]
+    elif isinstance(json, dict):
+        if "root" in json and "subdirectory" in json:
+            return [
+                SubdirectoryElement(
+                    root=str(json["root"]), subdirectory=str(json["subdirectory"])
+                )
+            ]
+        if "import_root" in json and "source" in json:
+            return [
+                SubdirectoryElement(
+                    root=str(json["import_root"]), subdirectory=str(json["source"])
+                )
+            ]
+        elif "site-package" in json:
+            is_toplevel_module = (
+                "is_toplevel_module" in json and json["is_toplevel_module"]
+            )
+            return [
+                SitePackageElement(
+                    site_root=root,
+                    package_name=str(json["site-package"]),
+                    is_toplevel_module=bool(is_toplevel_module),
+                )
+                for root in site_roots
+            ]
+
+    raise exceptions.InvalidConfiguration(f"Invalid search path element: {json}")

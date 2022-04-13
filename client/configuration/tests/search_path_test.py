@@ -11,37 +11,33 @@ import testslide
 from ...tests.setup import (
     ensure_directories_exists,
 )
-from ..configuration import create_search_paths
 from ..exceptions import InvalidConfiguration
+from ..search_path import create
 from ..search_path import SimpleElement, SubdirectoryElement, SitePackageElement
 
 
 class SearchPathTest(testslide.TestCase):
     def test_create(self) -> None:
+        self.assertListEqual(create("foo", site_roots=[]), [SimpleElement("foo")])
         self.assertListEqual(
-            create_search_paths("foo", site_roots=[]), [SimpleElement("foo")]
-        )
-        self.assertListEqual(
-            create_search_paths({"root": "foo", "subdirectory": "bar"}, site_roots=[]),
+            create({"root": "foo", "subdirectory": "bar"}, site_roots=[]),
             [SubdirectoryElement("foo", "bar")],
         )
         self.assertListEqual(
-            create_search_paths({"import_root": "foo", "source": "bar"}, site_roots=[]),
+            create({"import_root": "foo", "source": "bar"}, site_roots=[]),
             [SubdirectoryElement("foo", "bar")],
         )
+        self.assertListEqual(create({"site-package": "foo"}, site_roots=[]), [])
         self.assertListEqual(
-            create_search_paths({"site-package": "foo"}, site_roots=[]), []
-        )
-        self.assertListEqual(
-            create_search_paths({"site-package": "foo"}, site_roots=["site0"]),
+            create({"site-package": "foo"}, site_roots=["site0"]),
             [SitePackageElement("site0", "foo")],
         )
         self.assertListEqual(
-            create_search_paths({"site-package": "foo"}, site_roots=["site1"]),
+            create({"site-package": "foo"}, site_roots=["site1"]),
             [SitePackageElement("site1", "foo")],
         )
         self.assertListEqual(
-            create_search_paths(
+            create(
                 {"site-package": "foo", "is_toplevel_module": "true"},
                 site_roots=["site1"],
             ),
@@ -49,11 +45,11 @@ class SearchPathTest(testslide.TestCase):
         )
 
         with self.assertRaises(InvalidConfiguration):
-            create_search_paths({}, site_roots=[])
+            create({}, site_roots=[])
         with self.assertRaises(InvalidConfiguration):
-            create_search_paths({"foo": "bar"}, site_roots=[])
+            create({"foo": "bar"}, site_roots=[])
         with self.assertRaises(InvalidConfiguration):
-            create_search_paths({"root": "foo"}, site_roots=[])
+            create({"root": "foo"}, site_roots=[])
 
     def test_path(self) -> None:
         self.assertEqual(SimpleElement("foo").path(), "foo")

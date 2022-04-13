@@ -127,40 +127,6 @@ def get_site_roots() -> List[str]:
         return []
 
 
-def create_search_paths(
-    json: Union[str, Dict[str, Union[str, bool]]], site_roots: Iterable[str]
-) -> List[search_path_module.Element]:
-    if isinstance(json, str):
-        return [search_path_module.SimpleElement(json)]
-    elif isinstance(json, dict):
-        if "root" in json and "subdirectory" in json:
-            return [
-                search_path_module.SubdirectoryElement(
-                    root=str(json["root"]), subdirectory=str(json["subdirectory"])
-                )
-            ]
-        if "import_root" in json and "source" in json:
-            return [
-                search_path_module.SubdirectoryElement(
-                    root=str(json["import_root"]), subdirectory=str(json["source"])
-                )
-            ]
-        elif "site-package" in json:
-            is_toplevel_module = (
-                "is_toplevel_module" in json and json["is_toplevel_module"]
-            )
-            return [
-                search_path_module.SitePackageElement(
-                    site_root=root,
-                    package_name=str(json["site-package"]),
-                    is_toplevel_module=bool(is_toplevel_module),
-                )
-                for root in site_roots
-            ]
-
-    raise exceptions.InvalidConfiguration(f"Invalid search path element: {json}")
-
-
 def _in_virtual_environment(override: Optional[bool] = None) -> bool:
     if override is not None:
         return override
@@ -384,12 +350,12 @@ class PartialConfiguration:
                 search_path = [
                     element
                     for json in search_path_json
-                    for element in create_search_paths(
+                    for element in search_path_module.create(
                         json, site_roots=get_site_roots()
                     )
                 ]
             else:
-                search_path = create_search_paths(
+                search_path = search_path_module.create(
                     search_path_json, site_roots=get_site_roots()
                 )
 
@@ -431,7 +397,7 @@ class PartialConfiguration:
                 source_directories = [
                     element
                     for json in source_directories_json
-                    for element in create_search_paths(
+                    for element in search_path_module.create(
                         json, site_roots=get_site_roots()
                     )
                 ]
