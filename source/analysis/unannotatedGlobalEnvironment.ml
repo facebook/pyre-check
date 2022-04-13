@@ -642,19 +642,23 @@ end = struct
       (SharedMemoryKeys.DependencyKey)
       (ModuleValue)
 
-  let set_unannotated_global ~target = UnannotatedGlobals.add target
+  let set_module ~qualifier module_ = Modules.add qualifier module_
 
-  let set_class_summary ~name ~definition = ClassSummaries.write_through name definition
+  let set_unannotated_global ~name unannotated_global =
+    UnannotatedGlobals.add name unannotated_global
 
-  let set_define ~name definitions = FunctionDefinitions.write_through name definitions
 
-  let set_module ~qualifier = Modules.add qualifier
+  let set_class_summary ~name class_summary = ClassSummaries.write_through name class_summary
+
+  let set_function_definition ~name function_definition =
+    FunctionDefinitions.write_through name function_definition
+
 
   let set_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
     let write { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
-      let target = Reference.create name |> Reference.combine qualifier in
-      set_unannotated_global ~target unannotated_global;
-      target
+      let name = Reference.create name |> Reference.combine qualifier in
+      set_unannotated_global ~name unannotated_global;
+      name
     in
     let merge_defines unannotated_globals_alist =
       let not_defines, defines =
@@ -730,7 +734,7 @@ end = struct
       in
       set_class_summary
         ~name:primitive
-        ~definition:{ Node.location; value = ClassSummary.create ~qualifier definition };
+        { Node.location; value = ClassSummary.create ~qualifier definition };
       Set.add new_annotations primitive
     in
     List.fold classes ~init:Type.Primitive.Set.empty ~f:register
@@ -746,11 +750,14 @@ end = struct
         (* Do not collect function bodies for external sources as they won't get type checked *)
         ()
     | false ->
-        let definitions = FunctionDefinition.collect_defines source in
-        List.iter definitions ~f:(fun (name, definition) -> set_define ~name definition);
-        KeyTracker.FunctionKeys.add
-          qualifier
-          (List.map definitions ~f:fst |> List.sort ~compare:Reference.compare)
+        let function_definitions = FunctionDefinition.collect_defines source in
+        let register (name, function_definition) =
+          set_function_definition ~name function_definition;
+          name
+        in
+        List.map function_definitions ~f:register
+        |> List.sort ~compare:Reference.compare
+        |> KeyTracker.FunctionKeys.add qualifier
 
 
   let set_module_data ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
