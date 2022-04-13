@@ -48,6 +48,7 @@ from . import (
     python_version as python_version_module,
     shared_memory as shared_memory_module,
     ide_features as ide_features_module,
+    unwatched,
 )
 
 
@@ -188,81 +189,6 @@ def _expand_and_get_existent_paths(
 
 
 @dataclass(frozen=True)
-class UnwatchedFiles:
-    root: str
-    checksum_path: str
-
-    @staticmethod
-    def from_json(json: Dict[str, object]) -> "UnwatchedFiles":
-        root = json.get("root", None)
-        if root is None:
-            raise exceptions.InvalidConfiguration(
-                "Missing `root` field in UnwatchedFiles"
-            )
-        if not isinstance(root, str):
-            raise exceptions.InvalidConfiguration(
-                "`root` field in UnwatchedFiles must be a string"
-            )
-
-        checksum_path = json.get("checksum_path", None)
-        if checksum_path is None:
-            raise exceptions.InvalidConfiguration(
-                "Missing `checksum_path` field in UnwatchedFiles"
-            )
-        if not isinstance(checksum_path, str):
-            raise exceptions.InvalidConfiguration(
-                "`checksum_path` field in UnwatchedFiles must be a string"
-            )
-
-        return UnwatchedFiles(root=root, checksum_path=checksum_path)
-
-    def to_json(self) -> Dict[str, str]:
-        return {
-            "root": self.root,
-            "checksum_path": self.checksum_path,
-        }
-
-
-@dataclass(frozen=True)
-class UnwatchedDependency:
-    change_indicator: str
-    files: UnwatchedFiles
-
-    @staticmethod
-    def from_json(json: Dict[str, object]) -> "UnwatchedDependency":
-        change_indicator = json.get("change_indicator", None)
-        if change_indicator is None:
-            raise exceptions.InvalidConfiguration(
-                "Missing `change_indicator` field in UnwatchedDependency"
-            )
-        if not isinstance(change_indicator, str):
-            raise exceptions.InvalidConfiguration(
-                "`change_indicator` field in UnwatchedDependency must be a string"
-            )
-
-        files_json = json.get("files", None)
-        if files_json is None:
-            raise exceptions.InvalidConfiguration(
-                "Missing `files` field in UnwatchedDependency"
-            )
-        if not isinstance(files_json, dict):
-            raise exceptions.InvalidConfiguration(
-                "`files` field in UnwatchedDependency must be a dict"
-            )
-
-        return UnwatchedDependency(
-            change_indicator=change_indicator,
-            files=UnwatchedFiles.from_json(files_json),
-        )
-
-    def to_json(self) -> Dict[str, object]:
-        return {
-            "change_indicator": str(self.change_indicator),
-            "files": self.files.to_json(),
-        }
-
-
-@dataclass(frozen=True)
 class PartialConfiguration:
     binary: Optional[str] = None
     buck_mode: Optional[platform_aware.PlatformAware[str]] = None
@@ -290,7 +216,7 @@ class PartialConfiguration:
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
-    unwatched_dependency: Optional[UnwatchedDependency] = None
+    unwatched_dependency: Optional[unwatched.UnwatchedDependency] = None
     use_buck2: Optional[bool] = None
     version_hash: Optional[str] = None
 
@@ -537,7 +463,7 @@ class PartialConfiguration:
             if unwatched_dependency_json is None:
                 unwatched_dependency = None
             else:
-                unwatched_dependency = UnwatchedDependency.from_json(
+                unwatched_dependency = unwatched.UnwatchedDependency.from_json(
                     unwatched_dependency_json
                 )
 
@@ -643,9 +569,9 @@ class PartialConfiguration:
         unwatched_dependency = self.unwatched_dependency
         if unwatched_dependency is not None:
             files = unwatched_dependency.files
-            unwatched_dependency = UnwatchedDependency(
+            unwatched_dependency = unwatched.UnwatchedDependency(
                 change_indicator=unwatched_dependency.change_indicator,
-                files=UnwatchedFiles(
+                files=unwatched.UnwatchedFiles(
                     root=expand_relative_path(root, files.root),
                     checksum_path=files.checksum_path,
                 ),
@@ -828,7 +754,7 @@ class Configuration:
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
     typeshed: Optional[str] = None
-    unwatched_dependency: Optional[UnwatchedDependency] = None
+    unwatched_dependency: Optional[unwatched.UnwatchedDependency] = None
     use_buck2: bool = False
     version_hash: Optional[str] = None
 
@@ -979,7 +905,7 @@ class Configuration:
 
     def get_existent_unwatched_dependency(
         self,
-    ) -> Optional[UnwatchedDependency]:
+    ) -> Optional[unwatched.UnwatchedDependency]:
         unwatched_dependency = self.unwatched_dependency
         if unwatched_dependency is None:
             return None
