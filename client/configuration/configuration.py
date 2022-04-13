@@ -3,8 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-# pyre-unsafe
-
 
 import dataclasses
 import glob
@@ -366,7 +364,7 @@ class PartialConfiguration:
                 + f"strings but got `{json}`."
             )
 
-        def ensure_list(json: Dict[str, Any], name: str) -> List[Any]:
+        def ensure_list(json: Dict[str, object], name: str) -> List[object]:
             result = json.pop(name, [])
             if isinstance(result, list):
                 return result
@@ -486,6 +484,7 @@ class PartialConfiguration:
                     configuration_json, "exclude", allow_single_string=True
                 ),
                 extensions=[
+                    # pyre-fixme[6]: we did not fully verify the type of `json`
                     ExtensionElement.from_json(json)
                     for json in ensure_list(configuration_json, "extensions")
                 ],
