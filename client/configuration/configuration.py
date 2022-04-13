@@ -47,6 +47,7 @@ from . import (
     exceptions,
     platform_aware,
     python_version as python_version_module,
+    shared_memory as shared_memory_module,
 )
 
 
@@ -187,31 +188,6 @@ def _expand_and_get_existent_paths(
 
 
 @dataclass(frozen=True)
-class SharedMemory:
-    heap_size: Optional[int] = None
-    dependency_table_power: Optional[int] = None
-    hash_table_power: Optional[int] = None
-
-    def to_json(self) -> Dict[str, int]:
-        heap_size = self.heap_size
-        dependency_table_power = self.dependency_table_power
-        hash_table_power = self.hash_table_power
-        return {
-            **({"heap_size": heap_size} if heap_size is not None else {}),
-            **(
-                {"dependency_table_power": dependency_table_power}
-                if dependency_table_power is not None
-                else {}
-            ),
-            **(
-                {"hash_table_power": hash_table_power}
-                if hash_table_power is not None
-                else {}
-            ),
-        }
-
-
-@dataclass(frozen=True)
 class IdeFeatures:
     hover_enabled: Optional[bool] = None
     DEFAULT_HOVER_ENABLED: ClassVar[bool] = False
@@ -341,7 +317,9 @@ class PartialConfiguration:
     other_critical_files: Sequence[str] = field(default_factory=list)
     pysa_version_hash: Optional[str] = None
     python_version: Optional[python_version_module.PythonVersion] = None
-    shared_memory: SharedMemory = SharedMemory()
+    shared_memory: shared_memory_module.SharedMemory = (
+        shared_memory_module.SharedMemory()
+    )
     search_path: Sequence[search_path_module.Element] = field(default_factory=list)
     source_directories: Optional[Sequence[search_path_module.Element]] = None
     strict: Optional[bool] = None
@@ -412,7 +390,7 @@ class PartialConfiguration:
                 if python_version_string is not None
                 else None
             ),
-            shared_memory=SharedMemory(
+            shared_memory=shared_memory_module.SharedMemory(
                 heap_size=arguments.shared_memory_heap_size,
                 dependency_table_power=arguments.shared_memory_dependency_table_power,
                 hash_table_power=arguments.shared_memory_hash_table_power,
@@ -544,9 +522,9 @@ class PartialConfiguration:
                 configuration_json, "shared_memory", dict
             )
             if shared_memory_json is None:
-                shared_memory = SharedMemory()
+                shared_memory = shared_memory_module.SharedMemory()
             else:
-                shared_memory = SharedMemory(
+                shared_memory = shared_memory_module.SharedMemory(
                     heap_size=ensure_option_type(shared_memory_json, "heap_size", int),
                     dependency_table_power=ensure_option_type(
                         shared_memory_json, "dependency_table_power", int
@@ -821,7 +799,7 @@ def merge_partial_configurations(
             base.pysa_version_hash, override.pysa_version_hash
         ),
         python_version=overwrite_base(base.python_version, override.python_version),
-        shared_memory=SharedMemory(
+        shared_memory=shared_memory_module.SharedMemory(
             heap_size=overwrite_base(
                 base.shared_memory.heap_size, override.shared_memory.heap_size
             ),
@@ -875,7 +853,9 @@ class Configuration:
     other_critical_files: Sequence[str] = field(default_factory=list)
     pysa_version_hash: Optional[str] = None
     python_version: Optional[python_version_module.PythonVersion] = None
-    shared_memory: SharedMemory = SharedMemory()
+    shared_memory: shared_memory_module.SharedMemory = (
+        shared_memory_module.SharedMemory()
+    )
     relative_local_root: Optional[str] = None
     search_path: Sequence[search_path_module.Element] = field(default_factory=list)
     source_directories: Optional[Sequence[search_path_module.Element]] = None
@@ -1002,7 +982,7 @@ class Configuration:
             ),
             **(
                 {"shared_memory": self.shared_memory.to_json()}
-                if self.shared_memory != SharedMemory()
+                if self.shared_memory != shared_memory_module.SharedMemory()
                 else {}
             ),
             **(

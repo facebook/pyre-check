@@ -38,7 +38,6 @@ from ..configuration import (
     IdeFeatures,
     merge_partial_configurations,
     PartialConfiguration,
-    SharedMemory,
     UnwatchedDependency,
     UnwatchedFiles,
 )
@@ -52,6 +51,7 @@ from ..search_path import (
     SitePackageElement,
     SubdirectoryElement,
 )
+from ..shared_memory import SharedMemory
 
 
 class UnwatchedDependencyTest(unittest.TestCase):
