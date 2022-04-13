@@ -14,6 +14,29 @@ class IdeFeatures:
     go_to_definition_enabled: Optional[bool] = None
     DEFAULT_GO_TO_DEFINITION_ENABLED: ClassVar[bool] = False
 
+    @staticmethod
+    def merge(base: "IdeFeatures", override: "IdeFeatures") -> "IdeFeatures":
+        override_hover_enabled = override.hover_enabled
+        override_go_to_definition_enabled = override.go_to_definition_enabled
+        return IdeFeatures(
+            hover_enabled=override_hover_enabled
+            if override_hover_enabled is not None
+            else base.hover_enabled,
+            go_to_definition_enabled=override_go_to_definition_enabled
+            if override_go_to_definition_enabled is not None
+            else base.go_to_definition_enabled,
+        )
+
+    @staticmethod
+    def merge_optional(
+        base: "Optional[IdeFeatures]", override: "Optional[IdeFeatures]"
+    ) -> "Optional[IdeFeatures]":
+        if override is None:
+            return base
+        if base is None:
+            return override
+        return IdeFeatures.merge(base, override)
+
     def to_json(self) -> Dict[str, int]:
         return {
             **(

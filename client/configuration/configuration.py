@@ -623,21 +623,6 @@ def merge_partial_configurations(
     def overwrite_base(base: Optional[T], override: Optional[T]) -> Optional[T]:
         return base if override is None else override
 
-    def overwrite_base_ide_features(
-        base: Optional[ide_features_module.IdeFeatures],
-        override: Optional[ide_features_module.IdeFeatures],
-    ) -> Optional[ide_features_module.IdeFeatures]:
-        if override is None:
-            return base
-        if base is None:
-            return override
-        return ide_features_module.IdeFeatures(
-            hover_enabled=overwrite_base(base.hover_enabled, override.hover_enabled),
-            go_to_definition_enabled=overwrite_base(
-                base.go_to_definition_enabled, override.go_to_definition_enabled
-            ),
-        )
-
     def prepend_base(base: Sequence[T], override: Sequence[T]) -> Sequence[T]:
         return list(override) + list(base)
 
@@ -667,7 +652,7 @@ def merge_partial_configurations(
         ),
         excludes=prepend_base(base.excludes, override.excludes),
         extensions=prepend_base(base.extensions, override.extensions),
-        ide_features=overwrite_base_ide_features(
+        ide_features=ide_features_module.IdeFeatures.merge_optional(
             base.ide_features, override.ide_features
         ),
         ignore_all_errors=prepend_base(

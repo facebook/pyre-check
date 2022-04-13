@@ -8,7 +8,7 @@ from typing import Optional
 
 import testslide
 
-from ..configuration import PartialConfiguration, merge_partial_configurations
+from ..configuration import PartialConfiguration
 from ..exceptions import InvalidConfiguration
 from ..ide_features import IdeFeatures
 
@@ -51,10 +51,10 @@ class IdeFeaturesTest(testslide.TestCase):
             expected: Optional[IdeFeatures],
         ) -> None:
             self.assertEqual(
-                merge_partial_configurations(
-                    base=PartialConfiguration(ide_features=base_ide_features),
-                    override=PartialConfiguration(ide_features=override_ide_features),
-                ).ide_features,
+                IdeFeatures.merge_optional(
+                    base_ide_features,
+                    override_ide_features,
+                ),
                 expected,
             )
 
