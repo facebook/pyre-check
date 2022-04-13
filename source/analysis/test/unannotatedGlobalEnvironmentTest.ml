@@ -424,7 +424,10 @@ let test_updates context =
           |> assert_equal ~cmp ~printer expectation
       | `Define (define_name, dependency, expectation) ->
           let actual =
-            UnannotatedGlobalEnvironment.ReadOnly.get_define read_only define_name ~dependency
+            UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
+              read_only
+              define_name
+              ~dependency
           in
           let cmp left right = Int.equal 0 (Option.compare FunctionDefinition.compare left right) in
           let print format definition =

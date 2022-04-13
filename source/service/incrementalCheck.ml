@@ -101,7 +101,7 @@ let recheck
                   unannotated_global_environment_update_result
               in
               match
-                UnannotatedGlobalEnvironment.ReadOnly.get_define
+                UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
                   unannotated_global_environment
                   define_name
               with

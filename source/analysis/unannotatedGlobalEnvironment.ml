@@ -46,7 +46,8 @@ module ReadOnly = struct
       ?dependency:DependencyKey.registered -> string -> ClassSummary.t Node.t option;
     get_unannotated_global:
       ?dependency:DependencyKey.registered -> Reference.t -> UnannotatedGlobal.t option;
-    get_define: ?dependency:DependencyKey.registered -> Reference.t -> FunctionDefinition.t option;
+    get_function_definition:
+      ?dependency:DependencyKey.registered -> Reference.t -> FunctionDefinition.t option;
     get_define_body: ?dependency:DependencyKey.registered -> Reference.t -> Define.t Node.t option;
     get_module_metadata: ?dependency:DependencyKey.registered -> Reference.t -> Module.t option;
     module_exists: ?dependency:SharedMemoryKeys.DependencyKey.registered -> Reference.t -> bool;
@@ -70,7 +71,7 @@ module ReadOnly = struct
 
   let get_unannotated_global { get_unannotated_global; _ } = get_unannotated_global
 
-  let get_define { get_define; _ } = get_define
+  let get_function_definition { get_function_definition; _ } = get_function_definition
 
   let get_define_body { get_define_body; _ } = get_define_body
 
@@ -831,7 +832,7 @@ end = struct
       |> KeyTracker.get_define_body_keys
     in
     let class_exists ?dependency name = ClassSummaries.mem ?dependency name in
-    let get_define = FunctionDefinitions.get in
+    let get_function_definition = FunctionDefinitions.get in
     let get_define_body ?dependency key =
       FunctionDefinitions.get ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
     in
@@ -871,7 +872,7 @@ end = struct
       all_defines;
       class_exists;
       get_unannotated_global = UnannotatedGlobals.get;
-      get_define;
+      get_function_definition;
       get_define_body;
       all_defines_in_module;
       all_unannotated_globals;

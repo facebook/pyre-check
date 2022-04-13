@@ -459,7 +459,7 @@ module ClassDecorators = struct
     let get_dataclass_transform_decorator_with_default decorator =
       let decorator_reference { Decorator.name = { Node.value; _ }; _ } = value in
       let lookup_function reference =
-        UnannotatedGlobalEnvironment.ReadOnly.get_define
+        UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
           (unannotated_global_environment class_metadata_environment)
           ?dependency
           reference

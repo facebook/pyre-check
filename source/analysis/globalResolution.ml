@@ -90,7 +90,7 @@ let define_body ({ dependency; _ } as resolution) =
 
 
 let function_definition ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.get_define
+  UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
     ?dependency
     (unannotated_global_environment resolution)
 
@@ -133,7 +133,7 @@ let get_module_metadata ({ dependency; _ } as resolution) =
 
 let function_definitions ({ dependency; _ } as resolution) reference =
   let unannotated_global_environment = unannotated_global_environment resolution in
-  UnannotatedGlobalEnvironment.ReadOnly.get_define
+  UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
     unannotated_global_environment
     reference
     ?dependency
@@ -597,7 +597,7 @@ let overrides class_name ~resolution ~name =
 
 let define resolution decorator_name =
   (* Nested function bodies are empty by default. We have to fill them in. *)
-  let rec get_define define_name =
+  let rec get_function_definition define_name =
     function_definition resolution define_name
     >>| FunctionDefinition.all_bodies
     >>= function
@@ -607,7 +607,7 @@ let define resolution decorator_name =
               Node.value = Statement.Define { body = []; signature = { name = define_name; _ }; _ };
               _;
             } as statement ->
-              get_define define_name
+              get_function_definition define_name
               >>| (fun define -> { Node.value = Statement.Define define; location })
               |> Option.value ~default:statement
           | statement -> statement
@@ -616,7 +616,7 @@ let define resolution decorator_name =
     (* Ignore functions that have overloads. *)
     | _ -> None
   in
-  get_define decorator_name
+  get_function_definition decorator_name
 
 
 let refine ~global_resolution annotation refined_type =

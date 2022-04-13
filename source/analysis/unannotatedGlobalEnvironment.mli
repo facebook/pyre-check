@@ -66,7 +66,7 @@ module ReadOnly : sig
     Reference.t ->
     UnannotatedGlobal.t option
 
-  val get_define
+  val get_function_definition
     :  t ->
     ?dependency:DependencyKey.registered ->
     Reference.t ->
