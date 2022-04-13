@@ -38,7 +38,6 @@ from ..configuration import (
     IdeFeatures,
     merge_partial_configurations,
     PartialConfiguration,
-    PlatformAware,
     PythonVersion,
     SharedMemory,
     UnwatchedDependency,
@@ -48,6 +47,7 @@ from ..exceptions import (
     InvalidConfiguration,
     InvalidPythonVersion,
 )
+from ..platform_aware import PlatformAware
 from ..search_path import (
     SimpleElement,
     SitePackageElement,
