@@ -13,12 +13,10 @@ import logging
 import multiprocessing
 import os
 import platform
-import re
 import shutil
 import site
 import subprocess
 import sys
-import textwrap
 from dataclasses import dataclass, field
 from logging import Logger
 from pathlib import Path
@@ -1489,28 +1487,3 @@ def check_nested_local_configuration(configuration: Configuration) -> None:
             )
             raise InvalidConfiguration(error_message)
         current_directory = nesting_local_root.parent
-
-
-def check_open_source_version(configuration: Configuration) -> None:
-    """
-    Check if version specified in configuration matches running version and warn
-    if it does not.
-    """
-    expected_version = configuration.version_hash
-    if expected_version is None or not re.match(r"\d+\.\d+\.\d+", expected_version):
-        return
-
-    try:
-        # pyre-ignore[21]: dynamic import
-        from pyre_check import __version__ as actual_version
-
-        if expected_version != actual_version:
-            LOG.warning(
-                textwrap.dedent(
-                    f"""\
-                    Your running version does not match the configured version for this
-                    project (running {actual_version}, expected {expected_version})."""
-                )
-            )
-    except ImportError:
-        pass

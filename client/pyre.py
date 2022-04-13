@@ -6,8 +6,10 @@
 import json
 import logging
 import os
+import re
 import shutil
 import sys
+import textwrap
 from pathlib import Path
 from typing import Iterable, List, Optional
 
@@ -68,7 +70,7 @@ def _run_check_command(
     arguments: command_arguments.CommandArguments,
 ) -> commands.ExitCode:
     configuration = configuration_module.create_configuration(arguments, Path("."))
-    _check_configuration(configuration)
+    _check_open_source_version(configuration)
     start_logging_to_directory(configuration.log_directory)
     check_arguments = command_arguments.CheckArguments(
         debug=arguments.debug,
@@ -90,7 +92,7 @@ def _run_incremental_command(
     no_watchman: bool,
 ) -> commands.ExitCode:
     configuration = configuration_module.create_configuration(arguments, Path("."))
-    _check_configuration(configuration)
+    _check_open_source_version(configuration)
     start_logging_to_directory(configuration.log_directory)
     start_arguments = command_arguments.StartArguments(
         changed_files_path=arguments.changed_files_path,
@@ -141,8 +143,30 @@ def _run_default_command(
         return _run_check_command(arguments)
 
 
-def _check_configuration(configuration: configuration_module.Configuration) -> None:
-    configuration_module.check_open_source_version(configuration)
+def _check_open_source_version(
+    configuration: configuration_module.Configuration,
+) -> None:
+    """
+    Check if version specified in configuration matches running version and warn
+    if it does not.
+    """
+    expected_version = configuration.version_hash
+    if expected_version is None or not re.match(r"\d+\.\d+\.\d+", expected_version):
+        return
+
+    try:
+        from .version import __version__ as actual_version
+
+        if expected_version != actual_version:
+            LOG.warning(
+                textwrap.dedent(
+                    f"""\
+                    Your running version does not match the configured version for this
+                    project (running {actual_version}, expected {expected_version})."""
+                )
+            )
+    except ImportError:
+        pass
 
 
 @click.group(
@@ -436,7 +460,7 @@ def analyze(
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    _check_configuration(configuration)
+    _check_open_source_version(configuration)
     start_logging_to_directory(configuration.log_directory)
     return commands.analyze.run(
         configuration,
@@ -863,7 +887,7 @@ def restart(
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    _check_configuration(configuration)
+    _check_open_source_version(configuration)
     start_logging_to_directory(configuration.log_directory)
     start_arguments = command_arguments.StartArguments(
         changed_files_path=command_argument.changed_files_path,
@@ -965,7 +989,7 @@ def start(
     configuration = configuration_module.create_configuration(
         command_argument, Path(".")
     )
-    _check_configuration(configuration)
+    _check_open_source_version(configuration)
     start_logging_to_directory(configuration.log_directory)
     return commands.start.run(
         configuration,
