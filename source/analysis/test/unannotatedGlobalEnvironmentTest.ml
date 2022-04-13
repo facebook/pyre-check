@@ -354,155 +354,533 @@ let test_simple_global_registration context =
   ()
 
 
-let test_updates context =
-  let assert_updates
-      ?original_source
-      ?new_source
-      ~middle_actions
-      ~expected_triggers
-      ?post_actions
-      ()
-    =
-    Memory.reset_shared_memory ();
-    let sources = original_source >>| (fun source -> "test.py", source) |> Option.to_list in
-    let project =
-      ScratchProject.setup
-        ~include_typeshed_stubs:false
-        ~incremental_style:FineGrained
-        sources
-        ~context
+let test_builtin_modules context =
+  let ast_environment =
+    let ast_environment =
+      let sources = ["builtins.py", "foo: int = 42"] in
+      let project =
+        ScratchProject.setup
+          ~context
+          ~include_typeshed_stubs:false
+          ~include_helper_builtins:false
+          sources
+      in
+      ScratchProject.build_ast_environment project
     in
-    let ast_environment = ScratchProject.build_ast_environment project in
-    let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
-    let configuration = ScratchProject.configuration_of project in
     let update_result =
+      let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
       UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
         unannotated_global_environment
         ~scheduler:(mock_scheduler ())
         ColdStart
     in
-    let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
-    let execute_action = function
-      | `Get (class_name, dependency, expected_number_of_statements) ->
-          let printer number =
-            number >>| Format.sprintf "number of attributes: %d" |> Option.value ~default:"No class"
-          in
-          UnannotatedGlobalEnvironment.ReadOnly.get_class_summary read_only ~dependency class_name
-          >>| Node.value
-          >>| ClassSummary.attributes
-          >>| Identifier.SerializableMap.bindings
-          >>| List.length
-          |> assert_equal ~printer expected_number_of_statements
-      | `Mem (class_name, dependency, expectation) ->
-          UnannotatedGlobalEnvironment.ReadOnly.class_exists read_only ~dependency class_name
-          |> assert_equal expectation
-      | `AllClasses expectation ->
-          UnannotatedGlobalEnvironment.ReadOnly.all_classes read_only
-          |> assert_equal ~printer:(List.to_string ~f:Fn.id) expectation
-      | `Global (global_name, dependency, expectation) ->
-          let printer optional =
-            optional
-            >>| UnannotatedGlobal.sexp_of_t
-            >>| Sexp.to_string_hum
-            |> Option.value ~default:"none"
-          in
-          let cmp left right = Option.compare UnannotatedGlobal.compare left right = 0 in
-          let remove_target_location = function
-            | UnannotatedGlobal.SimpleAssign assign ->
-                UnannotatedGlobal.SimpleAssign
-                  { assign with target_location = Location.WithModule.any }
-            | UnannotatedGlobal.TupleAssign assign ->
-                UnannotatedGlobal.TupleAssign
-                  { assign with target_location = Location.WithModule.any }
-            | global -> global
-          in
-          UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-            read_only
-            global_name
-            ~dependency
-          >>| remove_target_location
-          |> assert_equal ~cmp ~printer expectation
-      | `Define (define_name, dependency, expectation) ->
-          let actual =
-            UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
-              read_only
-              define_name
-              ~dependency
-          in
-          let cmp left right = Int.equal 0 (Option.compare FunctionDefinition.compare left right) in
-          let print format definition =
-            Format.fprintf
-              format
-              "%s"
-              (Sexp.to_string_hum [%message (definition : FunctionDefinition.t option)])
-          in
-          assert_equal
-            ~cmp
-            ~printer:(fun definition ->
-              Sexp.to_string_hum [%message (definition : FunctionDefinition.t option)])
-            ~pp_diff:(diff ~print)
-            expectation
-            actual
-      | `DefineBody (define_name, dependency, expectation) ->
-          let actual =
-            UnannotatedGlobalEnvironment.ReadOnly.get_define_body read_only define_name ~dependency
-          in
-          let cmp = [%compare.equal: Statement.Define.t Node.t option] in
-          assert_equal
-            ~cmp
-            ~printer:(fun bodies ->
-              Sexp.to_string_hum [%message (bodies : Statement.Define.t Node.t option)])
-            expectation
-            actual
+    UnannotatedGlobalEnvironment.UpdateResult.read_only update_result
+  in
+  assert_bool
+    "empty qualifier module exists"
+    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment Reference.empty);
+  assert_bool
+    "random qualifier doesn't exist"
+    (not (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"derp"));
+  assert_bool
+    "`builtins` exists"
+    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"builtins");
+  assert_bool
+    "`future.builtins` exists"
+    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"future.builtins");
+
+  let assert_nonempty qualifier =
+    match UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata ast_environment qualifier with
+    | None -> assert_failure "Module does not exist"
+    | Some metadata ->
+        assert_bool "empty stub not expected" (not (Module.empty_stub metadata));
+        assert_bool "implicit module not expected" (not (Module.is_implicit metadata));
+        assert_equal
+          ~ctxt:context
+          ~cmp:[%compare.equal: Module.Export.t option]
+          ~printer:(fun export -> Sexp.to_string_hum [%message (export : Module.Export.t option)])
+          (Some Module.Export.(Name GlobalVariable))
+          (Module.get_export metadata "foo")
+  in
+  assert_nonempty Reference.empty;
+  assert_nonempty !&"builtins";
+  assert_nonempty !&"future.builtins";
+  ()
+
+
+let test_resolve_exports context =
+  let open UnannotatedGlobalEnvironment in
+  let assert_resolved ?(include_typeshed = false) ~expected ?from ~reference sources =
+    Memory.reset_shared_memory ();
+    let ast_environment =
+      let project =
+        if include_typeshed then
+          ScratchProject.setup ~context sources
+        else
+          ScratchProject.setup
+            ~context
+            ~include_typeshed_stubs:false
+            ~include_helper_builtins:false
+            ~external_sources:["builtins.py", ""]
+            sources
+      in
+      ScratchProject.build_ast_environment project
     in
-    List.iter middle_actions ~f:execute_action;
-    let add_file
-        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
-        content
-        ~relative
-      =
-      let content = trim_extra_indentation content in
-      let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
-      File.write file
-    in
-    let delete_file
-        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
-        relative
-      =
-      PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
-    in
-    if Option.is_some original_source then
-      delete_file project "test.py";
-    new_source >>| add_file project ~relative:"test.py" |> Option.value ~default:();
-    let { ScratchProject.module_tracker; _ } = project in
-    let { Configuration.Analysis.local_root; _ } = configuration in
-    let path = PyrePath.create_relative ~root:local_root ~relative:"test.py" in
     let update_result =
-      ModuleTracker.update ~paths:[path] module_tracker
-      |> (fun updates -> AstEnvironment.Update updates)
-      |> UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-           unannotated_global_environment
-           ~scheduler:(mock_scheduler ())
+      let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
+      UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
+        unannotated_global_environment
+        ~scheduler:(mock_scheduler ())
+        ColdStart
     in
-    let printer set =
-      SharedMemoryKeys.DependencyKey.RegisteredSet.elements set
-      |> List.map ~f:SharedMemoryKeys.DependencyKey.get_key
-      |> List.to_string ~f:SharedMemoryKeys.show_dependency
-    in
-    let expected_triggers =
-      SharedMemoryKeys.DependencyKey.RegisteredSet.of_list expected_triggers
-    in
-    post_actions >>| List.iter ~f:execute_action |> Option.value ~default:();
+    let unannotated_global_environment = UpdateResult.read_only update_result in
+    let actual = ReadOnly.resolve_exports unannotated_global_environment ?from reference in
     assert_equal
-      ~cmp:SharedMemoryKeys.DependencyKey.RegisteredSet.equal
-      ~printer
-      expected_triggers
-      (UnannotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies update_result)
+      ~ctxt:context
+      ~cmp:[%compare.equal: ResolvedReference.t option]
+      ~printer:(fun result -> Sexp.to_string_hum [%message (result : ResolvedReference.t option)])
+      expected
+      actual
   in
-  let dependency =
-    SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "dep"))
+  let resolved_module name = ResolvedReference.Module name in
+  let resolved_attribute ?(remaining = []) ?export from name =
+    let export =
+      match export with
+      | None -> ResolvedReference.FromModuleGetattr
+      | Some export -> ResolvedReference.Exported export
+    in
+    ResolvedReference.ModuleAttribute { from; name; export; remaining }
   in
-  (* get_class_summary *)
+  let resolved_placeholder_stub ?(remaining = []) stub_module =
+    ResolvedReference.PlaceholderStub { stub_module; remaining }
+  in
+
+  let open Module in
+  assert_resolved [] ~reference:!&"derp" ~expected:None;
+  assert_resolved ["derp.py", ""] ~reference:!&"derp" ~expected:(Some (resolved_module !&"derp"));
+  assert_resolved ["derp.py", ""] ~reference:!&"derp.foo" ~expected:None;
+  assert_resolved
+    ["derp.pyi", "# pyre-placeholder-stub"]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_placeholder_stub !&"derp" ~remaining:["foo"]));
+  assert_resolved
+    ["derp/foo.pyi", "# pyre-placeholder-stub"]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_placeholder_stub !&"derp.foo"));
+  assert_resolved
+    ["derp/foo.py", ""]
+    ~reference:!&"derp"
+    ~expected:(Some (resolved_module !&"derp"));
+  assert_resolved
+    ["derp/foo.py", ""]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_module !&"derp.foo"));
+  assert_resolved ["derp/foo.py", ""] ~reference:!&"derp.foo.bar" ~expected:None;
+  assert_resolved
+    ["derp/__init__.py", ""; "derp/foo.py", ""]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_module !&"derp.foo"));
+  assert_resolved
+    ["derp/__init__.py", "foo = 1"]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.GlobalVariable));
+  assert_resolved
+    ["derp.py", "foo = 1"]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.GlobalVariable));
+  assert_resolved
+    ["derp.py", "def foo(): pass"]
+    ~reference:!&"derp.foo"
+    ~expected:
+      (Some
+         (resolved_attribute !&"derp" "foo" ~export:(Export.Name.Define { is_getattr_any = false })));
+  assert_resolved
+    ["derp.py", "class foo: pass"]
+    ~reference:!&"derp.foo"
+    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.Class));
+  assert_resolved
+    ["derp.py", "class foo: pass"]
+    ~reference:!&"derp.foo.bar.baz"
+    ~expected:
+      (Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.Class ~remaining:["bar"; "baz"]));
+
+  assert_resolved ["a.py", "import b"] ~reference:!&"a.b" ~expected:None;
+  assert_resolved
+    ["a.py", "import b"; "b.py", ""]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_module !&"b"));
+  assert_resolved
+    ["a.py", "import b"; "b/c.py", ""]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_module !&"b"));
+  assert_resolved
+    ["a.py", "import b"; "b/c.py", ""]
+    ~reference:!&"a.b.c"
+    ~expected:(Some (resolved_module !&"b.c"));
+  assert_resolved
+    ["a.py", "import b as c"; "b.py", ""]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_module !&"b"));
+  assert_resolved ["a.py", "from b import c"] ~reference:!&"a.c" ~expected:None;
+  assert_resolved ["a.py", "from b import c"; "b.py", ""] ~reference:!&"a.c" ~expected:None;
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "import c"; "c.py", ""]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_module !&"c"));
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "import c"; "c.py", ""]
+    ~reference:!&"a.c.d"
+    ~expected:None;
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "c = 42"]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable));
+  assert_resolved
+    ["a.py", "from b import c as d"; "b.py", "c = 42"]
+    ~reference:!&"a.d"
+    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable));
+  assert_resolved
+    ["a.py", "from b import c as d"; "b.py", "c = 42"]
+    ~reference:!&"a.d.e"
+    ~expected:
+      (Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable ~remaining:["e"]));
+
+  (* Transitive import tests *)
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "from d import c"; "d.py", "c = 42"]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_attribute !&"d" "c" ~export:Export.Name.GlobalVariable));
+  assert_resolved
+    [
+      "a.py", "from b import c";
+      "b.py", "from d import c";
+      "d.py", "from e import f as c";
+      "e.py", "f = 42";
+    ]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_attribute !&"e" "f" ~export:Export.Name.GlobalVariable));
+  assert_resolved
+    [
+      "a.py", "from b import foo";
+      "b.py", "from c import bar as foo";
+      "c.py", "from d import cow as bar";
+      "d.py", "cow = 1";
+    ]
+    ~reference:!&"a.foo"
+    ~expected:(Some (resolved_attribute !&"d" "cow" ~export:Export.Name.GlobalVariable));
+
+  (* Getattr-any tests *)
+  assert_resolved
+    ["a.py", "from typing import Any\nb = 42\ndef __getattr__(name) -> Any: ..."]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_attribute !&"a" "b" ~export:Export.Name.GlobalVariable));
+  assert_resolved
+    ["a.py", "from typing import Any\nb = 42\ndef __getattr__(name) -> Any: ..."]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_attribute !&"a" "c"));
+  assert_resolved
+    ["a.py", "from typing import Any\nb = 42\ndef __getattr__(name) -> Any: ..."]
+    ~reference:!&"a.c.d"
+    ~expected:(Some (resolved_attribute !&"a" "c" ~remaining:["d"]));
+  assert_resolved
+    [
+      "a.py", "from b import c";
+      "b.py", "from typing import Any\nc = 42\ndef __getattr__(name) -> Any: ...";
+    ]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable));
+  assert_resolved
+    [
+      "a.py", "from b import d";
+      "b.py", "from typing import Any\nc = 42\ndef __getattr__(name) -> Any: ...";
+    ]
+    ~reference:!&"a.d"
+    ~expected:(Some (resolved_attribute !&"b" "d"));
+  assert_resolved
+    [
+      "a.py", "from b import d";
+      "b.py", "from typing import Any\nc = 42\ndef __getattr__(name) -> Any: ...";
+    ]
+    ~reference:!&"a.d.e"
+    ~expected:(Some (resolved_attribute !&"b" "d" ~remaining:["e"]));
+
+  (* Access into placeholder stub *)
+  assert_resolved
+    ["a.py", "from b import c"; "b.pyi", "# pyre-placeholder-stub"]
+    ~reference:!&"a.c.d"
+    ~expected:(Some (resolved_placeholder_stub !&"b" ~remaining:["c"; "d"]));
+  (* Cyclic imports *)
+  assert_resolved ["a.py", "from a import b"] ~reference:!&"a.b" ~expected:None;
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "from a import c"]
+    ~reference:!&"a.c"
+    ~expected:None;
+  assert_resolved
+    ["a.py", "from b import c"; "b.py", "from d import c"; "d.py", "from b import c"]
+    ~reference:!&"a.c"
+    ~expected:None;
+  (* Self-cycle is OK in certain circumstances. *)
+  assert_resolved ["a/__init__.py", "from a import b"] ~reference:!&"a.b" ~expected:None;
+  assert_resolved
+    ["a/__init__.py", "from a import b"; "a/b.py", ""]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_module !&"a.b"));
+  assert_resolved
+    ["a/__init__.py", "from a import b as c"; "a/b.py", ""]
+    ~reference:!&"a.c"
+    ~expected:(Some (resolved_module !&"a.b"));
+  (* TODO: We might want to ban this in the future since it is technically not OK at runtime. *)
+  assert_resolved
+    ["a.py", "from a import b"; "a/b.py", ""]
+    ~reference:!&"a.b"
+    ~expected:(Some (resolved_module !&"a.b"));
+  (* This is technically OK at runtime but we don't want to support it. *)
+  assert_resolved ["a.py", "b = 1\nfrom a import b"] ~reference:!&"a.b" ~expected:None;
+  (* Runtime does not allow `from X import ...` when `X` is itself a module alias. *)
+  assert_resolved
+    ["a.py", "from b.c import d"; "b.py", "import c"; "c.py", "d = 42"]
+    ~reference:!&"a.d"
+    ~expected:None;
+  (* ... but we do pretend placeholder stubs exist. *)
+  assert_resolved
+    ["a.py", "from b.nonexistent import foo"; "b.pyi", "# pyre-placeholder-stub"]
+    ~reference:!&"a.foo"
+    ~expected:(Some (resolved_placeholder_stub !&"b" ~remaining:["nonexistent"; "foo"]));
+  (* Package takes precedence over module of the same name. *)
+  assert_resolved
+    [
+      "qualifier.py", "from qualifier.foo import foo";
+      "qualifier/__init__.py", "";
+      "qualifier/foo/__init__.py", "foo = 1";
+    ]
+    ~reference:!&"qualifier.foo.foo"
+    ~expected:(Some (resolved_attribute !&"qualifier.foo" "foo" ~export:Export.Name.GlobalVariable));
+
+  (* Illustrate why the `from` argument matters. *)
+  assert_resolved
+    [
+      "qualifier/__init__.py", "from qualifier.a import bar as a";
+      "qualifier/a.py", "foo = 1\nbar = 1";
+    ]
+    ~reference:!&"qualifier.a"
+    ~expected:(Some (resolved_attribute !&"qualifier.a" "bar" ~export:Export.Name.GlobalVariable));
+  assert_resolved
+    [
+      "qualifier/__init__.py", "from qualifier.a import bar as a";
+      "qualifier/a.py", "foo = 1\nbar = 1";
+    ]
+    ~reference:!&"qualifier.a.foo"
+    ~expected:
+      (Some
+         (resolved_attribute
+            !&"qualifier.a"
+            "bar"
+            ~export:Export.Name.GlobalVariable
+            ~remaining:["foo"]));
+  assert_resolved
+    [
+      "qualifier/__init__.py", "from qualifier.a import bar as a";
+      "qualifier/a.py", "foo = 1\nbar = 1";
+    ]
+    ~from:!&"qualifier.a"
+    ~reference:!&"foo"
+    ~expected:(Some (resolved_attribute !&"qualifier.a" "foo" ~export:Export.Name.GlobalVariable));
+
+  (* Special attribute tests. *)
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__doc__"
+    ~expected:(Some (resolved_attribute !&"foo" "__doc__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__file__"
+    ~expected:(Some (resolved_attribute !&"foo" "__file__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__name__"
+    ~expected:(Some (resolved_attribute !&"foo" "__name__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__package__"
+    ~expected:(Some (resolved_attribute !&"foo" "__package__" ~export:GlobalVariable));
+  (* FIXME(grievejia): This is not 100% correct. `__path__` only exists if the containing module is
+     `__init__`. *)
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__path__"
+    ~expected:(Some (resolved_attribute !&"foo" "__path__" ~export:GlobalVariable));
+  assert_resolved
+    ["foo.py", ""]
+    ~reference:!&"foo.__dict__"
+    ~expected:(Some (resolved_attribute !&"foo" "__dict__" ~export:GlobalVariable));
+  (* Implicit modules also contain speical attributes. *)
+  assert_resolved
+    ["foo/bar.py", ""]
+    ~reference:!&"foo.__name__"
+    ~expected:(Some (resolved_attribute !&"foo" "__name__" ~export:GlobalVariable));
+  (* Explicitly defined special attributes take precedence over the default ones. *)
+  assert_resolved
+    ["foo.py", "from bar import __name__"; "bar.py", ""]
+    ~reference:!&"foo.__name__"
+    ~expected:(Some (resolved_attribute !&"bar" "__name__" ~export:GlobalVariable));
+  ()
+
+
+let assert_updates
+    ~context
+    ?original_source
+    ?new_source
+    ~middle_actions
+    ~expected_triggers
+    ?post_actions
+    ()
+  =
+  Memory.reset_shared_memory ();
+  let sources = original_source >>| (fun source -> "test.py", source) |> Option.to_list in
+  let project =
+    ScratchProject.setup
+      ~include_typeshed_stubs:false
+      ~incremental_style:FineGrained
+      sources
+      ~context
+  in
+  let ast_environment = ScratchProject.build_ast_environment project in
+  let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
+  let configuration = ScratchProject.configuration_of project in
+  let update_result =
+    UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
+      unannotated_global_environment
+      ~scheduler:(mock_scheduler ())
+      ColdStart
+  in
+  let read_only = UnannotatedGlobalEnvironment.UpdateResult.read_only update_result in
+  let execute_action = function
+    | `Get (class_name, dependency, expected_number_of_statements) ->
+        let printer number =
+          number >>| Format.sprintf "number of attributes: %d" |> Option.value ~default:"No class"
+        in
+        UnannotatedGlobalEnvironment.ReadOnly.get_class_summary read_only ~dependency class_name
+        >>| Node.value
+        >>| ClassSummary.attributes
+        >>| Identifier.SerializableMap.bindings
+        >>| List.length
+        |> assert_equal ~printer expected_number_of_statements
+    | `Mem (class_name, dependency, expectation) ->
+        UnannotatedGlobalEnvironment.ReadOnly.class_exists read_only ~dependency class_name
+        |> assert_equal expectation
+    | `AllClasses expectation ->
+        UnannotatedGlobalEnvironment.ReadOnly.all_classes read_only
+        |> assert_equal ~printer:(List.to_string ~f:Fn.id) expectation
+    | `Global (global_name, dependency, expectation) ->
+        let printer optional =
+          optional
+          >>| UnannotatedGlobal.sexp_of_t
+          >>| Sexp.to_string_hum
+          |> Option.value ~default:"none"
+        in
+        let cmp left right = Option.compare UnannotatedGlobal.compare left right = 0 in
+        let remove_target_location = function
+          | UnannotatedGlobal.SimpleAssign assign ->
+              UnannotatedGlobal.SimpleAssign
+                { assign with target_location = Location.WithModule.any }
+          | UnannotatedGlobal.TupleAssign assign ->
+              UnannotatedGlobal.TupleAssign
+                { assign with target_location = Location.WithModule.any }
+          | global -> global
+        in
+        UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+          read_only
+          global_name
+          ~dependency
+        >>| remove_target_location
+        |> assert_equal ~cmp ~printer expectation
+    | `Define (define_name, dependency, expectation) ->
+        let actual =
+          UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
+            read_only
+            define_name
+            ~dependency
+        in
+        let cmp left right = Int.equal 0 (Option.compare FunctionDefinition.compare left right) in
+        let print format definition =
+          Format.fprintf
+            format
+            "%s"
+            (Sexp.to_string_hum [%message (definition : FunctionDefinition.t option)])
+        in
+        assert_equal
+          ~cmp
+          ~printer:(fun definition ->
+            Sexp.to_string_hum [%message (definition : FunctionDefinition.t option)])
+          ~pp_diff:(diff ~print)
+          expectation
+          actual
+    | `DefineBody (define_name, dependency, expectation) ->
+        let actual =
+          UnannotatedGlobalEnvironment.ReadOnly.get_define_body read_only define_name ~dependency
+        in
+        let cmp = [%compare.equal: Statement.Define.t Node.t option] in
+        assert_equal
+          ~cmp
+          ~printer:(fun bodies ->
+            Sexp.to_string_hum [%message (bodies : Statement.Define.t Node.t option)])
+          expectation
+          actual
+  in
+  List.iter middle_actions ~f:execute_action;
+  let add_file
+      { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
+      content
+      ~relative
+    =
+    let content = trim_extra_indentation content in
+    let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
+    File.write file
+  in
+  let delete_file
+      { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
+      relative
+    =
+    PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
+  in
+  if Option.is_some original_source then
+    delete_file project "test.py";
+  new_source >>| add_file project ~relative:"test.py" |> Option.value ~default:();
+  let { ScratchProject.module_tracker; _ } = project in
+  let { Configuration.Analysis.local_root; _ } = configuration in
+  let path = PyrePath.create_relative ~root:local_root ~relative:"test.py" in
+  let update_result =
+    ModuleTracker.update ~paths:[path] module_tracker
+    |> (fun updates -> AstEnvironment.Update updates)
+    |> UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
+         unannotated_global_environment
+         ~scheduler:(mock_scheduler ())
+  in
+  let printer set =
+    SharedMemoryKeys.DependencyKey.RegisteredSet.elements set
+    |> List.map ~f:SharedMemoryKeys.DependencyKey.get_key
+    |> List.to_string ~f:SharedMemoryKeys.show_dependency
+  in
+  let expected_triggers = SharedMemoryKeys.DependencyKey.RegisteredSet.of_list expected_triggers in
+  post_actions >>| List.iter ~f:execute_action |> Option.value ~default:();
+  assert_equal
+    ~cmp:SharedMemoryKeys.DependencyKey.RegisteredSet.equal
+    ~printer
+    expected_triggers
+    (UnannotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies update_result)
+
+
+let type_check_dependency =
+  SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "test"))
+
+
+let alias_dependency =
+  SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "dep"))
+
+
+let test_get_class_summary context =
+  let assert_updates = assert_updates ~context in
+  let dependency = type_check_dependency in
   assert_updates
     ~original_source:{|
       class Foo:
@@ -560,9 +938,49 @@ let test_updates context =
     |}
     ~middle_actions:[`Get ("test.Foo", dependency, Some 2)]
     ~expected_triggers:[dependency]
+    ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
     ();
+  assert_updates
+    ~original_source:
+      {|
+      class Foo:
+        def method(self) -> None:
+         print("hello")
+    |}
+    ~new_source:{|
+      class Foo:
+        def method(self) -> int:
+          return 1
+    |}
+    ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
+    ();
+  assert_updates
+    ~original_source:
+      {|
+      class Foo:
+        def method(self) -> None:
+         print("hellobo")
+    |}
+    ~new_source:
+      {|
+      class Foo:
+        def method(self) -> None:
+         print("goodbye")
+    |}
+    ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
+    ~expected_triggers:[]
+    ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
+    ();
+  ()
 
-  (* class_exists *)
+
+let test_class_exists_and_all_classes context =
+  let assert_updates = assert_updates ~context in
+  let dependency = type_check_dependency in
+
+  (* class exists *)
   assert_updates
     ~new_source:{|
       class Foo:
@@ -621,11 +1039,13 @@ let test_updates context =
     ~expected_triggers:[]
     ~post_actions:[`AllClasses ["test.Foo"]]
     ();
+  ()
 
-  (* get_unannotated_global *)
-  let dependency =
-    SharedMemoryKeys.DependencyKey.Registry.register (AliasRegister (Reference.create "dep"))
-  in
+
+let test_get_unannotated_global context =
+  let assert_updates = assert_updates ~context in
+  let dependency = alias_dependency in
+
   assert_updates
     ~original_source:{|
       x: int = 7
@@ -851,86 +1271,7 @@ let test_updates context =
     ~expected_triggers:[]
     ();
 
-  (* Keep different dependencies straight *)
-  let alias_dependency =
-    SharedMemoryKeys.DependencyKey.Registry.register
-      (SharedMemoryKeys.AliasRegister (Reference.create "same_dep"))
-  in
-  let check_dependency =
-    SharedMemoryKeys.DependencyKey.Registry.register
-      (SharedMemoryKeys.TypeCheckDefine (Reference.create "same_dep"))
-  in
-  assert_updates
-    ~original_source:{|
-      class Foo:
-        x: int
-    |}
-    ~new_source:{|
-      class Foo:
-        x: str
-    |}
-    ~middle_actions:
-      [`Get ("test.Foo", alias_dependency, Some 1); `Get ("test.Foo", check_dependency, Some 1)]
-    ~expected_triggers:[alias_dependency; check_dependency]
-    ();
-
-  (* Addition should trigger previous failed reads *)
-  assert_updates
-    ~original_source:{|
-    |}
-    ~new_source:{|
-      x: int = 9
-    |}
-    ~middle_actions:[`Global (Reference.create "test.x", dependency, None)]
-    ~expected_triggers:[dependency]
-    ~post_actions:
-      [
-        `Global
-          ( Reference.create "test.x",
-            dependency,
-            Some
-              (UnannotatedGlobal.SimpleAssign
-                 {
-                   explicit_annotation =
-                     Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
-                   value = { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
-                   target_location = Location.WithModule.any;
-                 }) );
-      ]
-    ();
-  assert_updates
-    ~original_source:
-      {|
-      class Foo:
-        def method(self) -> None:
-         print("hello")
-    |}
-    ~new_source:{|
-      class Foo:
-        def method(self) -> int:
-          return 1
-    |}
-    ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
-    ~expected_triggers:[dependency]
-    ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
-    ();
-  assert_updates
-    ~original_source:
-      {|
-      class Foo:
-        def method(self) -> None:
-         print("hellobo")
-    |}
-    ~new_source:
-      {|
-      class Foo:
-        def method(self) -> None:
-         print("goodbye")
-    |}
-    ~middle_actions:[`Get ("test.Foo", dependency, Some 1)]
-    ~expected_triggers:[]
-    ~post_actions:[`Get ("test.Foo", dependency, Some 1)]
-    ();
+  (* get defines *)
   let create_simple_signature
       ~start:(start_line, start_column)
       ~stop:(stop_line, stop_column)
@@ -1007,11 +1348,61 @@ let test_updates context =
                  ]) );
       ]
     ();
+  ()
 
-  (* Get typecheck unit *)
-  let dependency =
-    SharedMemoryKeys.DependencyKey.Registry.register (SharedMemoryKeys.TypeCheckDefine !&"test")
-  in
+
+let test_dependencies_and_new_values context =
+  let assert_updates = assert_updates ~context in
+
+  (* we should be able to keep different dependencies straight *)
+  assert_updates
+    ~original_source:{|
+      class Foo:
+        x: int
+    |}
+    ~new_source:{|
+      class Foo:2376
+        x: str
+    |}
+    ~middle_actions:
+      [
+        `Get ("test.Foo", alias_dependency, Some 1); `Get ("test.Foo", type_check_dependency, Some 1);
+      ]
+    ~expected_triggers:[alias_dependency; type_check_dependency]
+    ();
+
+  (* Addition should add values when previously they were missing *)
+  assert_updates
+    ~original_source:{|
+    |}
+    ~new_source:{|
+      x: int = 9
+    |}
+    ~middle_actions:[`Global (Reference.create "test.x", alias_dependency, None)]
+    ~expected_triggers:[alias_dependency]
+    ~post_actions:
+      [
+        `Global
+          ( Reference.create "test.x",
+            alias_dependency,
+            Some
+              (UnannotatedGlobal.SimpleAssign
+                 {
+                   explicit_annotation =
+                     Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
+                   value = { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
+                   target_location = Location.WithModule.any;
+                 }) );
+      ]
+    ();
+  ()
+
+
+let test_get_define_body context =
+  let assert_updates = assert_updates ~context in
+  let dependency = type_check_dependency in
+  let open Statement in
+  let open Expression in
   let create_simple_return ~start ~stop expression =
     node
       ~start
@@ -1784,386 +2175,20 @@ let test_updates context =
   ()
 
 
-let test_builtin_modules context =
-  let ast_environment =
-    let ast_environment =
-      let sources = ["builtins.py", "foo: int = 42"] in
-      let project =
-        ScratchProject.setup
-          ~context
-          ~include_typeshed_stubs:false
-          ~include_helper_builtins:false
-          sources
-      in
-      ScratchProject.build_ast_environment project
-    in
-    let update_result =
-      let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
-      UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        unannotated_global_environment
-        ~scheduler:(mock_scheduler ())
-        ColdStart
-    in
-    UnannotatedGlobalEnvironment.UpdateResult.read_only update_result
-  in
-  assert_bool
-    "empty qualifier module exists"
-    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment Reference.empty);
-  assert_bool
-    "random qualifier doesn't exist"
-    (not (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"derp"));
-  assert_bool
-    "`builtins` exists"
-    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"builtins");
-  assert_bool
-    "`future.builtins` exists"
-    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"future.builtins");
-
-  let assert_nonempty qualifier =
-    match UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata ast_environment qualifier with
-    | None -> assert_failure "Module does not exist"
-    | Some metadata ->
-        assert_bool "empty stub not expected" (not (Module.empty_stub metadata));
-        assert_bool "implicit module not expected" (not (Module.is_implicit metadata));
-        assert_equal
-          ~ctxt:context
-          ~cmp:[%compare.equal: Module.Export.t option]
-          ~printer:(fun export -> Sexp.to_string_hum [%message (export : Module.Export.t option)])
-          (Some Module.Export.(Name GlobalVariable))
-          (Module.get_export metadata "foo")
-  in
-  assert_nonempty Reference.empty;
-  assert_nonempty !&"builtins";
-  assert_nonempty !&"future.builtins";
-  ()
-
-
-let test_resolve_exports context =
-  let open UnannotatedGlobalEnvironment in
-  let assert_resolved ?(include_typeshed = false) ~expected ?from ~reference sources =
-    Memory.reset_shared_memory ();
-    let ast_environment =
-      let project =
-        if include_typeshed then
-          ScratchProject.setup ~context sources
-        else
-          ScratchProject.setup
-            ~context
-            ~include_typeshed_stubs:false
-            ~include_helper_builtins:false
-            ~external_sources:["builtins.py", ""]
-            sources
-      in
-      ScratchProject.build_ast_environment project
-    in
-    let update_result =
-      let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
-      UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        unannotated_global_environment
-        ~scheduler:(mock_scheduler ())
-        ColdStart
-    in
-    let unannotated_global_environment = UpdateResult.read_only update_result in
-    let actual = ReadOnly.resolve_exports unannotated_global_environment ?from reference in
-    assert_equal
-      ~ctxt:context
-      ~cmp:[%compare.equal: ResolvedReference.t option]
-      ~printer:(fun result -> Sexp.to_string_hum [%message (result : ResolvedReference.t option)])
-      expected
-      actual
-  in
-  let resolved_module name = ResolvedReference.Module name in
-  let resolved_attribute ?(remaining = []) ?export from name =
-    let export =
-      match export with
-      | None -> ResolvedReference.FromModuleGetattr
-      | Some export -> ResolvedReference.Exported export
-    in
-    ResolvedReference.ModuleAttribute { from; name; export; remaining }
-  in
-  let resolved_placeholder_stub ?(remaining = []) stub_module =
-    ResolvedReference.PlaceholderStub { stub_module; remaining }
-  in
-
-  let open Module in
-  assert_resolved [] ~reference:!&"derp" ~expected:None;
-  assert_resolved ["derp.py", ""] ~reference:!&"derp" ~expected:(Some (resolved_module !&"derp"));
-  assert_resolved ["derp.py", ""] ~reference:!&"derp.foo" ~expected:None;
-  assert_resolved
-    ["derp.pyi", "# pyre-placeholder-stub"]
-    ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_placeholder_stub !&"derp" ~remaining:["foo"]));
-  assert_resolved
-    ["derp/foo.pyi", "# pyre-placeholder-stub"]
-    ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_placeholder_stub !&"derp.foo"));
-  assert_resolved
-    ["derp/foo.py", ""]
-    ~reference:!&"derp"
-    ~expected:(Some (resolved_module !&"derp"));
-  assert_resolved
-    ["derp/foo.py", ""]
-    ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_module !&"derp.foo"));
-  assert_resolved ["derp/foo.py", ""] ~reference:!&"derp.foo.bar" ~expected:None;
-  assert_resolved
-    ["derp/__init__.py", ""; "derp/foo.py", ""]
-    ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_module !&"derp.foo"));
-  assert_resolved
-    ["derp/__init__.py", "foo = 1"]
-    ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.GlobalVariable));
-  assert_resolved
-    ["derp.py", "foo = 1"]
-    ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.GlobalVariable));
-  assert_resolved
-    ["derp.py", "def foo(): pass"]
-    ~reference:!&"derp.foo"
-    ~expected:
-      (Some
-         (resolved_attribute !&"derp" "foo" ~export:(Export.Name.Define { is_getattr_any = false })));
-  assert_resolved
-    ["derp.py", "class foo: pass"]
-    ~reference:!&"derp.foo"
-    ~expected:(Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.Class));
-  assert_resolved
-    ["derp.py", "class foo: pass"]
-    ~reference:!&"derp.foo.bar.baz"
-    ~expected:
-      (Some (resolved_attribute !&"derp" "foo" ~export:Export.Name.Class ~remaining:["bar"; "baz"]));
-
-  assert_resolved ["a.py", "import b"] ~reference:!&"a.b" ~expected:None;
-  assert_resolved
-    ["a.py", "import b"; "b.py", ""]
-    ~reference:!&"a.b"
-    ~expected:(Some (resolved_module !&"b"));
-  assert_resolved
-    ["a.py", "import b"; "b/c.py", ""]
-    ~reference:!&"a.b"
-    ~expected:(Some (resolved_module !&"b"));
-  assert_resolved
-    ["a.py", "import b"; "b/c.py", ""]
-    ~reference:!&"a.b.c"
-    ~expected:(Some (resolved_module !&"b.c"));
-  assert_resolved
-    ["a.py", "import b as c"; "b.py", ""]
-    ~reference:!&"a.c"
-    ~expected:(Some (resolved_module !&"b"));
-  assert_resolved ["a.py", "from b import c"] ~reference:!&"a.c" ~expected:None;
-  assert_resolved ["a.py", "from b import c"; "b.py", ""] ~reference:!&"a.c" ~expected:None;
-  assert_resolved
-    ["a.py", "from b import c"; "b.py", "import c"; "c.py", ""]
-    ~reference:!&"a.c"
-    ~expected:(Some (resolved_module !&"c"));
-  assert_resolved
-    ["a.py", "from b import c"; "b.py", "import c"; "c.py", ""]
-    ~reference:!&"a.c.d"
-    ~expected:None;
-  assert_resolved
-    ["a.py", "from b import c"; "b.py", "c = 42"]
-    ~reference:!&"a.c"
-    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable));
-  assert_resolved
-    ["a.py", "from b import c as d"; "b.py", "c = 42"]
-    ~reference:!&"a.d"
-    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable));
-  assert_resolved
-    ["a.py", "from b import c as d"; "b.py", "c = 42"]
-    ~reference:!&"a.d.e"
-    ~expected:
-      (Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable ~remaining:["e"]));
-
-  (* Transitive import tests *)
-  assert_resolved
-    ["a.py", "from b import c"; "b.py", "from d import c"; "d.py", "c = 42"]
-    ~reference:!&"a.c"
-    ~expected:(Some (resolved_attribute !&"d" "c" ~export:Export.Name.GlobalVariable));
-  assert_resolved
-    [
-      "a.py", "from b import c";
-      "b.py", "from d import c";
-      "d.py", "from e import f as c";
-      "e.py", "f = 42";
-    ]
-    ~reference:!&"a.c"
-    ~expected:(Some (resolved_attribute !&"e" "f" ~export:Export.Name.GlobalVariable));
-  assert_resolved
-    [
-      "a.py", "from b import foo";
-      "b.py", "from c import bar as foo";
-      "c.py", "from d import cow as bar";
-      "d.py", "cow = 1";
-    ]
-    ~reference:!&"a.foo"
-    ~expected:(Some (resolved_attribute !&"d" "cow" ~export:Export.Name.GlobalVariable));
-
-  (* Getattr-any tests *)
-  assert_resolved
-    ["a.py", "from typing import Any\nb = 42\ndef __getattr__(name) -> Any: ..."]
-    ~reference:!&"a.b"
-    ~expected:(Some (resolved_attribute !&"a" "b" ~export:Export.Name.GlobalVariable));
-  assert_resolved
-    ["a.py", "from typing import Any\nb = 42\ndef __getattr__(name) -> Any: ..."]
-    ~reference:!&"a.c"
-    ~expected:(Some (resolved_attribute !&"a" "c"));
-  assert_resolved
-    ["a.py", "from typing import Any\nb = 42\ndef __getattr__(name) -> Any: ..."]
-    ~reference:!&"a.c.d"
-    ~expected:(Some (resolved_attribute !&"a" "c" ~remaining:["d"]));
-  assert_resolved
-    [
-      "a.py", "from b import c";
-      "b.py", "from typing import Any\nc = 42\ndef __getattr__(name) -> Any: ...";
-    ]
-    ~reference:!&"a.c"
-    ~expected:(Some (resolved_attribute !&"b" "c" ~export:Export.Name.GlobalVariable));
-  assert_resolved
-    [
-      "a.py", "from b import d";
-      "b.py", "from typing import Any\nc = 42\ndef __getattr__(name) -> Any: ...";
-    ]
-    ~reference:!&"a.d"
-    ~expected:(Some (resolved_attribute !&"b" "d"));
-  assert_resolved
-    [
-      "a.py", "from b import d";
-      "b.py", "from typing import Any\nc = 42\ndef __getattr__(name) -> Any: ...";
-    ]
-    ~reference:!&"a.d.e"
-    ~expected:(Some (resolved_attribute !&"b" "d" ~remaining:["e"]));
-
-  (* Access into placeholder stub *)
-  assert_resolved
-    ["a.py", "from b import c"; "b.pyi", "# pyre-placeholder-stub"]
-    ~reference:!&"a.c.d"
-    ~expected:(Some (resolved_placeholder_stub !&"b" ~remaining:["c"; "d"]));
-  (* Cyclic imports *)
-  assert_resolved ["a.py", "from a import b"] ~reference:!&"a.b" ~expected:None;
-  assert_resolved
-    ["a.py", "from b import c"; "b.py", "from a import c"]
-    ~reference:!&"a.c"
-    ~expected:None;
-  assert_resolved
-    ["a.py", "from b import c"; "b.py", "from d import c"; "d.py", "from b import c"]
-    ~reference:!&"a.c"
-    ~expected:None;
-  (* Self-cycle is OK in certain circumstances. *)
-  assert_resolved ["a/__init__.py", "from a import b"] ~reference:!&"a.b" ~expected:None;
-  assert_resolved
-    ["a/__init__.py", "from a import b"; "a/b.py", ""]
-    ~reference:!&"a.b"
-    ~expected:(Some (resolved_module !&"a.b"));
-  assert_resolved
-    ["a/__init__.py", "from a import b as c"; "a/b.py", ""]
-    ~reference:!&"a.c"
-    ~expected:(Some (resolved_module !&"a.b"));
-  (* TODO: We might want to ban this in the future since it is technically not OK at runtime. *)
-  assert_resolved
-    ["a.py", "from a import b"; "a/b.py", ""]
-    ~reference:!&"a.b"
-    ~expected:(Some (resolved_module !&"a.b"));
-  (* This is technically OK at runtime but we don't want to support it. *)
-  assert_resolved ["a.py", "b = 1\nfrom a import b"] ~reference:!&"a.b" ~expected:None;
-  (* Runtime does not allow `from X import ...` when `X` is itself a module alias. *)
-  assert_resolved
-    ["a.py", "from b.c import d"; "b.py", "import c"; "c.py", "d = 42"]
-    ~reference:!&"a.d"
-    ~expected:None;
-  (* ... but we do pretend placeholder stubs exist. *)
-  assert_resolved
-    ["a.py", "from b.nonexistent import foo"; "b.pyi", "# pyre-placeholder-stub"]
-    ~reference:!&"a.foo"
-    ~expected:(Some (resolved_placeholder_stub !&"b" ~remaining:["nonexistent"; "foo"]));
-  (* Package takes precedence over module of the same name. *)
-  assert_resolved
-    [
-      "qualifier.py", "from qualifier.foo import foo";
-      "qualifier/__init__.py", "";
-      "qualifier/foo/__init__.py", "foo = 1";
-    ]
-    ~reference:!&"qualifier.foo.foo"
-    ~expected:(Some (resolved_attribute !&"qualifier.foo" "foo" ~export:Export.Name.GlobalVariable));
-
-  (* Illustrate why the `from` argument matters. *)
-  assert_resolved
-    [
-      "qualifier/__init__.py", "from qualifier.a import bar as a";
-      "qualifier/a.py", "foo = 1\nbar = 1";
-    ]
-    ~reference:!&"qualifier.a"
-    ~expected:(Some (resolved_attribute !&"qualifier.a" "bar" ~export:Export.Name.GlobalVariable));
-  assert_resolved
-    [
-      "qualifier/__init__.py", "from qualifier.a import bar as a";
-      "qualifier/a.py", "foo = 1\nbar = 1";
-    ]
-    ~reference:!&"qualifier.a.foo"
-    ~expected:
-      (Some
-         (resolved_attribute
-            !&"qualifier.a"
-            "bar"
-            ~export:Export.Name.GlobalVariable
-            ~remaining:["foo"]));
-  assert_resolved
-    [
-      "qualifier/__init__.py", "from qualifier.a import bar as a";
-      "qualifier/a.py", "foo = 1\nbar = 1";
-    ]
-    ~from:!&"qualifier.a"
-    ~reference:!&"foo"
-    ~expected:(Some (resolved_attribute !&"qualifier.a" "foo" ~export:Export.Name.GlobalVariable));
-
-  (* Special attribute tests. *)
-  assert_resolved
-    ["foo.py", ""]
-    ~reference:!&"foo.__doc__"
-    ~expected:(Some (resolved_attribute !&"foo" "__doc__" ~export:GlobalVariable));
-  assert_resolved
-    ["foo.py", ""]
-    ~reference:!&"foo.__file__"
-    ~expected:(Some (resolved_attribute !&"foo" "__file__" ~export:GlobalVariable));
-  assert_resolved
-    ["foo.py", ""]
-    ~reference:!&"foo.__name__"
-    ~expected:(Some (resolved_attribute !&"foo" "__name__" ~export:GlobalVariable));
-  assert_resolved
-    ["foo.py", ""]
-    ~reference:!&"foo.__package__"
-    ~expected:(Some (resolved_attribute !&"foo" "__package__" ~export:GlobalVariable));
-  (* FIXME(grievejia): This is not 100% correct. `__path__` only exists if the containing module is
-     `__init__`. *)
-  assert_resolved
-    ["foo.py", ""]
-    ~reference:!&"foo.__path__"
-    ~expected:(Some (resolved_attribute !&"foo" "__path__" ~export:GlobalVariable));
-  assert_resolved
-    ["foo.py", ""]
-    ~reference:!&"foo.__dict__"
-    ~expected:(Some (resolved_attribute !&"foo" "__dict__" ~export:GlobalVariable));
-  (* Implicit modules also contain speical attributes. *)
-  assert_resolved
-    ["foo/bar.py", ""]
-    ~reference:!&"foo.__name__"
-    ~expected:(Some (resolved_attribute !&"foo" "__name__" ~export:GlobalVariable));
-  (* Explicitly defined special attributes take precedence over the default ones. *)
-  assert_resolved
-    ["foo.py", "from bar import __name__"; "bar.py", ""]
-    ~reference:!&"foo.__name__"
-    ~expected:(Some (resolved_attribute !&"bar" "__name__" ~export:GlobalVariable));
-  ()
-
-
 let () =
   "environment"
   >::: [
+         (* Simple tests *)
          "global_registration" >:: test_global_registration;
          "define_registration" >:: test_define_registration;
          "simple_globals" >:: test_simple_global_registration;
          "builtins" >:: test_builtin_modules;
          "resolve_exports" >:: test_resolve_exports;
-         "updates" >:: test_updates;
+         (* Update tests *)
+         "get_class_summary" >:: test_get_class_summary;
+         "class_exists_and_all_classes" >:: test_class_exists_and_all_classes;
+         "get_unannotated_global" >:: test_get_unannotated_global;
+         "dependencies_and_new_values" >:: test_dependencies_and_new_values;
+         "get_define_body" >:: test_get_define_body;
        ]
   |> Test.run
