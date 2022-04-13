@@ -76,9 +76,9 @@ let primitive_name annotation =
   Type.primitive_name primitive
 
 
-let class_definition ({ dependency; _ } as resolution) annotation =
+let class_summary ({ dependency; _ } as resolution) annotation =
   primitive_name annotation
-  >>= UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+  >>= UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
         (unannotated_global_environment resolution)
         ?dependency
 
@@ -244,7 +244,7 @@ let attribute_from_class_name
     | Some attribute -> Some attribute
     | None -> (
         match
-          UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+          UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
             (unannotated_global_environment resolution)
             ?dependency
             class_name

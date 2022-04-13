@@ -45,7 +45,7 @@ let containing_source ~resolution reference =
   |> AstEnvironment.ReadOnly.get_processed_source ast_environment
 
 
-let class_definitions ~resolution reference =
+let class_summaries ~resolution reference =
   match ClassDefinitionsCache.get reference with
   | Some result -> result
   | None ->
@@ -85,7 +85,7 @@ let find_method_definitions ~resolution ?(predicate = fun _ -> true) name =
     | _ -> None
   in
   Reference.prefix name
-  >>= class_definitions ~resolution
+  >>= class_summaries ~resolution
   >>= List.hd
   >>| (fun definition -> definition.Node.value.Class.body)
   >>| List.filter_map ~f:get_matching_define
@@ -373,7 +373,7 @@ let verify_global ~path ~location ~resolution ~name =
         Reference.prefix name
         >>| Reference.show
         >>| (fun class_name -> Type.Primitive class_name)
-        >>= GlobalResolution.class_definition global_resolution
+        >>= GlobalResolution.class_summary global_resolution
         >>| Node.value
       in
       match class_summary, global with

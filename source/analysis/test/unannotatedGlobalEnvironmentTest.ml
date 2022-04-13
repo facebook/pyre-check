@@ -387,10 +387,7 @@ let test_updates context =
           let printer number =
             number >>| Format.sprintf "number of attributes: %d" |> Option.value ~default:"No class"
           in
-          UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-            read_only
-            ~dependency
-            class_name
+          UnannotatedGlobalEnvironment.ReadOnly.get_class_summary read_only ~dependency class_name
           >>| Node.value
           >>| ClassSummary.attributes
           >>| Identifier.SerializableMap.bindings
@@ -502,7 +499,7 @@ let test_updates context =
   let dependency =
     SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "dep"))
   in
-  (* get_class_definition *)
+  (* get_class_summary *)
   assert_updates
     ~original_source:{|
       class Foo:

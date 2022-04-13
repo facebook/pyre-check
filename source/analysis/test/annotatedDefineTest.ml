@@ -16,7 +16,7 @@ module StatementDefine = Define
 module Define = Annotated.Define
 
 let test_parent_definition context =
-  let parent_class_definition environment name parent =
+  let parent_class_summary environment name parent =
     {
       StatementDefine.signature =
         {
@@ -42,7 +42,7 @@ let test_parent_definition context =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let actual =
-      parent_class_definition (AnnotatedGlobalEnvironment.read_only global_environment) name parent
+      parent_class_summary (AnnotatedGlobalEnvironment.read_only global_environment) name parent
       >>| Node.value
       >>| ClassSummary.name
     in

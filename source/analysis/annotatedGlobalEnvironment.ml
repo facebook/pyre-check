@@ -44,7 +44,7 @@ let produce_global_location attribute_resolution name ~dependency =
   in
   let class_location =
     Reference.show name
-    |> UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+    |> UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
          unannotated_global_environment
          ?dependency
     >>| fun { Node.location; value = { ClassSummary.qualifier; _ } } ->

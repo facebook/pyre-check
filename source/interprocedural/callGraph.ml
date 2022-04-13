@@ -763,7 +763,7 @@ let rec callee_kind ~resolution callee callee_type =
           let parent_type = resolve_ignoring_optional ~resolution base in
           let is_class () =
             parent_type
-            |> GlobalResolution.class_definition (Resolution.global_resolution resolution)
+            |> GlobalResolution.class_summary (Resolution.global_resolution resolution)
             |> Option.is_some
           in
           if Type.is_meta parent_type then
@@ -1304,7 +1304,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
               _;
             }) -> (
           let class_name = Reference.create ~prefix:from name |> Reference.show in
-          GlobalResolution.class_definition global_resolution (Type.Primitive class_name)
+          GlobalResolution.class_summary global_resolution (Type.Primitive class_name)
           >>| Node.value
           >>| ClassSummary.attributes
           >>= Identifier.SerializableMap.find_opt attribute
@@ -1326,7 +1326,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
       match resolve_ignoring_optional ~resolution base with
       | Type.Primitive class_name
       | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] } -> (
-          GlobalResolution.class_definition global_resolution (Type.Primitive class_name)
+          GlobalResolution.class_summary global_resolution (Type.Primitive class_name)
           >>| Node.value
           >>| ClassSummary.attributes
           >>= Identifier.SerializableMap.find_opt attribute

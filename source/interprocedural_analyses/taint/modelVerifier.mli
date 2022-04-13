@@ -13,10 +13,7 @@ module ClassDefinitionsCache : sig
   val invalidate : unit -> unit
 end
 
-val class_definitions
-  :  resolution:Resolution.t ->
-  Reference.t ->
-  Statement.Class.t Node.t list option
+val class_summaries : resolution:Resolution.t -> Reference.t -> Statement.Class.t Node.t list option
 
 val find_method_definitions
   :  resolution:Resolution.t ->

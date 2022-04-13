@@ -24,7 +24,7 @@ let field_annotations ~global_resolution annotation =
   match class_name with
   | Some class_name ->
       let field_names =
-        GlobalResolution.class_definition global_resolution (Primitive class_name)
+        GlobalResolution.class_summary global_resolution (Primitive class_name)
         >>| Node.value
         >>| fun summary -> ClassSummary.fields_tuple_value summary |> Option.value ~default:[]
       in

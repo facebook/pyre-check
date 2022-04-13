@@ -1033,7 +1033,7 @@ module State (Context : Context) = struct
         in
         let source_path_of_parent_module class_type =
           let ast_environment = GlobalResolution.ast_environment global_resolution in
-          GlobalResolution.class_definition global_resolution class_type
+          GlobalResolution.class_summary global_resolution class_type
           >>| Node.value
           >>= fun { ClassSummary.qualifier; _ } ->
           AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
@@ -1437,7 +1437,7 @@ module State (Context : Context) = struct
               | _ ->
                   let class_module =
                     let ast_environment = GlobalResolution.ast_environment global_resolution in
-                    GlobalResolution.class_definition global_resolution target
+                    GlobalResolution.class_summary global_resolution target
                     >>| Node.value
                     >>= fun { ClassSummary.qualifier; _ } ->
                     AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
@@ -4036,7 +4036,7 @@ module State (Context : Context) = struct
                                 let ast_environment =
                                   GlobalResolution.ast_environment global_resolution
                                 in
-                                GlobalResolution.class_definition global_resolution parent
+                                GlobalResolution.class_summary global_resolution parent
                                 >>| Node.value
                                 >>= fun { ClassSummary.qualifier; _ } ->
                                 AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
@@ -6471,7 +6471,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         override_errors @ errors
       in
       let name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
-      GlobalResolution.class_definition global_resolution (Type.Primitive name)
+      GlobalResolution.class_summary global_resolution (Type.Primitive name)
       >>| Node.value
       >>| (fun definition ->
             errors

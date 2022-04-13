@@ -54,7 +54,7 @@ module ReadOnly : sig
 
   val all_defines_in_module : t -> Reference.t -> Reference.t list
 
-  val get_class_definition
+  val get_class_summary
     :  t ->
     ?dependency:DependencyKey.registered ->
     string ->

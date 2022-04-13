@@ -270,11 +270,11 @@ let unannotated_global_environment class_metadata_environment =
   |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
 
-let class_definition class_metadata_environment annotation ~dependency =
+let class_summary class_metadata_environment annotation ~dependency =
   Type.split annotation
   |> fst
   |> Type.primitive_name
-  >>= UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+  >>= UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
         (unannotated_global_environment class_metadata_environment)
         ?dependency
 
@@ -503,7 +503,7 @@ module ClassDecorators = struct
     let get_dataclass_transform_default name =
       let class_decorators { ClassSummary.decorators; _ } = decorators in
       name
-      |> UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      |> UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
            (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
               class_metadata_environment)
            ?dependency
@@ -551,8 +551,8 @@ module ClassDecorators = struct
     let open Expression in
     let { Node.value = { ClassSummary.name; _ }; _ } = definition in
     let parent_dataclasses =
-      let class_definition =
-        UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      let class_summary =
+        UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
           (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
              class_metadata_environment)
           ?dependency
@@ -561,7 +561,7 @@ module ClassDecorators = struct
         class_metadata_environment
         ?dependency
         (Reference.show name)
-      |> List.filter_map ~f:class_definition
+      |> List.filter_map ~f:class_summary
     in
     let generate_attributes ~options =
       let already_in_table name =
@@ -2447,8 +2447,8 @@ class base class_metadata_environment dependency =
       in
       let add_constructor table =
         let successor_definitions =
-          let class_definition =
-            UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+          let class_summary =
+            UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
               (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
                  class_metadata_environment)
               ?dependency
@@ -2457,7 +2457,7 @@ class base class_metadata_environment dependency =
             class_metadata_environment
             ?dependency
             class_name
-          |> List.filter_map ~f:class_definition
+          |> List.filter_map ~f:class_summary
         in
         let name_annotation_pairs =
           let name_annotation_pair attribute =
@@ -2565,8 +2565,8 @@ class base class_metadata_environment dependency =
         ({ Node.value = { ClassSummary.name; _ }; _ } as parent_definition) =
       let table = UninstantiatedAttributeTable.create () in
       let add_special_methods () =
-        let class_definition =
-          UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+        let class_summary =
+          UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
             (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
                class_metadata_environment)
             ?dependency
@@ -2576,7 +2576,7 @@ class base class_metadata_environment dependency =
             class_metadata_environment
             ?dependency
             (Reference.show name)
-          |> List.filter_map ~f:class_definition
+          |> List.filter_map ~f:class_summary
         in
         let total =
           ClassHierarchy.is_total_typed_dictionary
@@ -2587,7 +2587,7 @@ class base class_metadata_environment dependency =
             class_name
         in
         let base_typed_dictionary_definition =
-          match class_definition (Type.TypedDictionary.class_name ~total) with
+          match class_summary (Type.TypedDictionary.class_name ~total) with
           | Some definition -> definition
           | None -> failwith "Expected to find TypedDictionary"
         in
@@ -2792,7 +2792,7 @@ class base class_metadata_environment dependency =
         table
       in
       match
-        ( UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+        ( UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
             (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
                class_metadata_environment)
             ?dependency
@@ -3674,7 +3674,7 @@ class base class_metadata_environment dependency =
               in
               base_classes
               |> List.map ~f:base_to_class
-              |> List.filter_map ~f:(class_definition class_metadata_environment ~dependency)
+              |> List.filter_map ~f:(class_summary class_metadata_environment ~dependency)
               |> List.filter ~f:(fun base_class ->
                      not ([%compare.equal: ClassSummary.t Node.t] base_class original))
             in
@@ -3712,7 +3712,7 @@ class base class_metadata_environment dependency =
                 first
             | _ -> candidate)
       in
-      UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+      UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
         (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
            class_metadata_environment)
         ?dependency
@@ -3759,7 +3759,7 @@ class base class_metadata_environment dependency =
       let open Ast.Expression in
       let is_concrete_class class_type =
         class_type
-        |> class_definition class_metadata_environment ~dependency
+        |> class_summary class_metadata_environment ~dependency
         >>| (fun { Node.value = { name; _ }; _ } -> Reference.show name)
         >>= ClassHierarchyEnvironment.ReadOnly.variables
               (class_hierarchy_environment class_metadata_environment)

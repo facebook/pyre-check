@@ -103,7 +103,7 @@ let get_parents alias_environment name ~dependency =
     | filtered -> filtered
   in
   match
-    UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+    UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
       ?dependency
       (unannotated_global_environment alias_environment)
       name
@@ -215,9 +215,7 @@ module ReadOnly = struct
         let extends_placeholder_stub = extends_placeholder_stub read_only ?dependency:None
 
         let contains key =
-          UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
-            unannotated_global_environment
-            key
+          UnannotatedGlobalEnvironment.ReadOnly.get_class_summary unannotated_global_environment key
           |> Option.is_some
       end : ClassHierarchy.Handler)
     in

@@ -597,7 +597,7 @@ let apply_attribute_query_rule
 
 let get_class_attributes ~global_resolution ~class_name =
   let class_summary =
-    GlobalResolution.class_definition global_resolution (Type.Primitive class_name) >>| Node.value
+    GlobalResolution.class_summary global_resolution (Type.Primitive class_name) >>| Node.value
   in
   match class_summary with
   | None -> []

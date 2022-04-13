@@ -23,7 +23,7 @@ val parse_annotation
   Expression.t ->
   Type.t
 
-val class_definition : t -> Type.t -> ClassSummary.t Node.t option
+val class_summary : t -> Type.t -> ClassSummary.t Node.t option
 
 val define_body : t -> Reference.t -> Define.t Node.t option
 

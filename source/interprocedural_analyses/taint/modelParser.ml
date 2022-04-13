@@ -2438,7 +2438,7 @@ let parse_statement ~resolution ~path ~configuration statement =
       let class_candidate =
         Reference.prefix name
         |> Option.map ~f:(GlobalResolution.parse_reference global_resolution)
-        |> Option.bind ~f:(GlobalResolution.class_definition global_resolution)
+        |> Option.bind ~f:(GlobalResolution.class_summary global_resolution)
       in
       let call_target =
         match class_candidate with
@@ -2502,7 +2502,7 @@ let parse_statement ~resolution ~path ~configuration statement =
         || (not (List.is_empty source_annotations))
         || not (List.is_empty extra_decorators)
       then
-        ModelVerifier.class_definitions ~resolution name
+        ModelVerifier.class_summaries ~resolution name
         |> Option.bind ~f:List.hd
         |> Option.map ~f:(fun { Node.value = { Class.body; _ }; _ } ->
                let signature { Node.value; location } =

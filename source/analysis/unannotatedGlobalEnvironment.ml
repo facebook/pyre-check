@@ -42,7 +42,7 @@ module ReadOnly = struct
     all_unannotated_globals: unit -> Reference.t list;
     all_defines: unit -> Reference.t list;
     all_defines_in_module: Reference.t -> Reference.t list;
-    get_class_definition:
+    get_class_summary:
       ?dependency:DependencyKey.registered -> string -> ClassSummary.t Node.t option;
     get_unannotated_global:
       ?dependency:DependencyKey.registered -> Reference.t -> UnannotatedGlobal.t option;
@@ -66,7 +66,7 @@ module ReadOnly = struct
 
   let all_unannotated_globals { all_unannotated_globals; _ } = all_unannotated_globals ()
 
-  let get_class_definition { get_class_definition; _ } = get_class_definition
+  let get_class_summary { get_class_summary; _ } = get_class_summary
 
   let get_unannotated_global { get_unannotated_global; _ } = get_unannotated_global
 
@@ -81,9 +81,9 @@ module ReadOnly = struct
     Type.primitive_name primitive
 
 
-  let is_protocol { get_class_definition; _ } ?dependency annotation =
+  let is_protocol { get_class_summary; _ } ?dependency annotation =
     primitive_name annotation
-    >>= get_class_definition ?dependency
+    >>= get_class_summary ?dependency
     >>| Node.value
     >>| ClassSummary.is_protocol
     |> Option.value ~default:false
@@ -644,7 +644,7 @@ end = struct
 
   let set_unannotated_global ~target = UnannotatedGlobals.add target
 
-  let set_class_definition ~name ~definition = ClassSummaries.write_through name definition
+  let set_class_summary ~name ~definition = ClassSummaries.write_through name definition
 
   let set_define ~name definitions = FunctionDefinitions.write_through name definitions
 
@@ -695,7 +695,7 @@ end = struct
     globals |> List.map ~f:write |> KeyTracker.UnannotatedGlobalKeys.add qualifier
 
 
-  let set_class_definitions ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+  let set_class_summaries ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
     (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
     let module ClassCollector = Visit.MakeStatementVisitor (struct
       type t = Class.t Node.t list
@@ -728,7 +728,7 @@ end = struct
             { definition with Class.base_arguments = [{ name = None; value }] }
         | _ -> definition
       in
-      set_class_definition
+      set_class_summary
         ~name:primitive
         ~definition:{ Node.location; value = ClassSummary.create ~qualifier definition };
       Set.add new_annotations primitive
@@ -756,7 +756,7 @@ end = struct
   let set_module_data ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
     set_module ~qualifier (Module.create source);
     set_unannotated_globals source;
-    set_class_definitions source;
+    set_class_summaries source;
     set_function_definitions source
 
 
@@ -858,7 +858,7 @@ end = struct
     in
     {
       ast_environment;
-      ReadOnly.get_class_definition = ClassSummaries.get;
+      ReadOnly.get_class_summary = ClassSummaries.get;
       all_classes;
       all_indices;
       all_defines;

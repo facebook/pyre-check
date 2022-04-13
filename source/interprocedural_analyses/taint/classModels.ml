@@ -124,7 +124,7 @@ let infer ~environment ~user_models =
       []
   in
   let inferred_models class_name =
-    GlobalResolution.class_definition global_resolution (Type.Primitive class_name)
+    GlobalResolution.class_summary global_resolution (Type.Primitive class_name)
     >>| compute_models class_name
     |> Option.value ~default:[]
   in

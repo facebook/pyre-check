@@ -83,7 +83,7 @@ let produce_class_metadata class_hierarchy_environment class_name ~dependency =
       is_typed_dictionary;
     }
   in
-  UnannotatedGlobalEnvironment.ReadOnly.get_class_definition
+  UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
     unannotated_global_environment
     class_name
     ?dependency
