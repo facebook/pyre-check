@@ -10,7 +10,8 @@ from typing import Iterable, Tuple
 
 import testslide
 
-from ... import command_arguments, configuration, search_path
+from ... import command_arguments, configuration
+from ...configuration import search_path
 from ...error import Error
 from ...tests import setup
 from .. import backend_arguments

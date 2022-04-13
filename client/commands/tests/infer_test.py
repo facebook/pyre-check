@@ -11,7 +11,8 @@ from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 import testslide
 
-from ... import command_arguments, configuration, search_path
+from ... import command_arguments, configuration
+from ...configuration import search_path
 from ...tests import setup
 from .. import backend_arguments
 from ..infer import (

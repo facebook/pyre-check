@@ -16,11 +16,19 @@ from typing import Dict, Optional
 
 import testslide
 
-from .. import (
+from ... import (
     command_arguments,
-    configuration as configuration_module,
     find_directories,
 )
+from ...find_directories import BINARY_NAME
+from ...tests.setup import (
+    ensure_directories_exists,
+    ensure_files_exist,
+    switch_environment,
+    switch_working_directory,
+    write_configuration_file,
+)
+from .. import configuration as configuration_module
 from ..configuration import (
     check_nested_local_configuration,
     Configuration,
@@ -38,18 +46,10 @@ from ..configuration import (
     UnwatchedDependency,
     UnwatchedFiles,
 )
-from ..find_directories import BINARY_NAME
 from ..search_path import (
     SimpleElement,
     SitePackageElement,
     SubdirectoryElement,
-)
-from .setup import (
-    ensure_directories_exists,
-    ensure_files_exist,
-    switch_environment,
-    switch_working_directory,
-    write_configuration_file,
 )
 
 

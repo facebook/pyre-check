@@ -36,15 +36,16 @@ from typing import (
     Union,
 )
 
-from . import command_arguments, find_directories, search_path as search_path_module
-from .filesystem import expand_relative_path, expand_global_root
-from .find_directories import (
+from .. import command_arguments, find_directories
+from ..filesystem import expand_relative_path, expand_global_root
+from ..find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
     get_relative_local_root,
     LOCAL_CONFIGURATION_FILE,
     LOG_DIRECTORY,
 )
+from . import search_path as search_path_module
 
 
 LOG: Logger = logging.getLogger(__name__)

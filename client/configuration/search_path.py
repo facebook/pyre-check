@@ -12,7 +12,7 @@ from typing import (
     List,
 )
 
-from . import filesystem
+from .. import filesystem
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
