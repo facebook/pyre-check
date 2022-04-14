@@ -38,7 +38,7 @@ class SearchPathTest(testslide.TestCase):
         )
         self.assertListEqual(
             create(
-                {"site-package": "foo", "is_toplevel_module": "true"},
+                {"site-package": "foo", "is_toplevel_module": True},
                 site_roots=["site1"],
             ),
             [SitePackageElement("site1", "foo", True)],
@@ -50,6 +50,21 @@ class SearchPathTest(testslide.TestCase):
             create({"foo": "bar"}, site_roots=[])
         with self.assertRaises(InvalidConfiguration):
             create({"root": "foo"}, site_roots=[])
+        with self.assertRaises(InvalidConfiguration):
+            create({"root": 42, "subdirectory": "bar"}, site_roots=[])
+        with self.assertRaises(InvalidConfiguration):
+            create({"root": "foo", "subdirectory": []}, site_roots=[])
+        with self.assertRaises(InvalidConfiguration):
+            create({"import_root": 4.2, "source": "bar"}, site_roots=[])
+        with self.assertRaises(InvalidConfiguration):
+            create({"import_root": "foo", "source": False}, site_roots=[])
+        with self.assertRaises(InvalidConfiguration):
+            create({"site-package": {}}, site_roots=["site0"])
+        with self.assertRaises(InvalidConfiguration):
+            create(
+                {"site-package": "foo", "is_toplevel_module": "derp"},
+                site_roots=["site0"],
+            )
 
     def test_path(self) -> None:
         self.assertEqual(SimpleElement("foo").path(), "foo")

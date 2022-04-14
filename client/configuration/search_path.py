@@ -129,34 +129,54 @@ class SitePackageElement(Element):
 
 
 def create(
-    json: Union[str, Dict[str, Union[str, bool]]], site_roots: Iterable[str]
+    json: Union[str, Dict[str, object]], site_roots: Iterable[str]
 ) -> List[Element]:
     if isinstance(json, str):
         return [SimpleElement(json)]
     elif isinstance(json, dict):
+
+        def assert_string_item(input: Dict[str, object], name: str) -> str:
+            value = input.get(name, None)
+            if not isinstance(value, str):
+                raise exceptions.InvalidConfiguration(
+                    "Invalid search path element. "
+                    f"Expected item `{name}` to be a string but got {value}"
+                )
+            return value
+
         if "root" in json and "subdirectory" in json:
             return [
                 SubdirectoryElement(
-                    root=str(json["root"]), subdirectory=str(json["subdirectory"])
+                    root=assert_string_item(json, "root"),
+                    subdirectory=assert_string_item(json, "subdirectory"),
                 )
             ]
         if "import_root" in json and "source" in json:
             return [
                 SubdirectoryElement(
-                    root=str(json["import_root"]), subdirectory=str(json["source"])
+                    root=assert_string_item(json, "import_root"),
+                    subdirectory=assert_string_item(json, "source"),
                 )
             ]
         elif "site-package" in json:
             is_toplevel_module = (
                 "is_toplevel_module" in json and json["is_toplevel_module"]
             )
+            if not isinstance(is_toplevel_module, bool):
+                raise exceptions.InvalidConfiguration(
+                    "Invalid search path element. "
+                    "Expected `is_toplevel_module` to be a boolean but "
+                    f"got {is_toplevel_module}"
+                )
             return [
                 SitePackageElement(
                     site_root=root,
-                    package_name=str(json["site-package"]),
+                    package_name=assert_string_item(json, "site-package"),
                     is_toplevel_module=bool(is_toplevel_module),
                 )
                 for root in site_roots
             ]
 
-    raise exceptions.InvalidConfiguration(f"Invalid search path element: {json}")
+    raise exceptions.InvalidConfiguration(
+        f"Invalid JSON format for search path element: {json}"
+    )
