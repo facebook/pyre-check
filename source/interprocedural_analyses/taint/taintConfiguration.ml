@@ -7,7 +7,6 @@
 
 open Core
 open Pyre
-module SharedMemory = Memory
 module Json = Yojson.Safe
 
 module Rule = struct
@@ -117,8 +116,8 @@ let empty =
 
 
 module ConfigurationSharedMemory =
-  SharedMemory.WithCache.Make
-    (SharedMemory.SingletonKey)
+  Memory.WithCache.Make
+    (Memory.SingletonKey)
     (struct
       type nonrec t = t
 
@@ -899,7 +898,7 @@ let exception_on_error = function
 
 
 let register configuration =
-  let key = SharedMemory.SingletonKey.key in
+  let key = Memory.SingletonKey.key in
   let () =
     if ConfigurationSharedMemory.mem key then
       ConfigurationSharedMemory.remove_batch (ConfigurationSharedMemory.KeySet.singleton key)
@@ -1101,7 +1100,7 @@ let apply_missing_flows configuration = function
 
 
 let get () =
-  match ConfigurationSharedMemory.get SharedMemory.SingletonKey.key with
+  match ConfigurationSharedMemory.get Memory.SingletonKey.key with
   | None -> default
   | Some configuration -> configuration
 

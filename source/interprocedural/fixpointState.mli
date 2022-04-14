@@ -12,7 +12,6 @@
    cheaply. *)
 
 open Core
-module SharedMemory = Memory
 
 module Epoch : sig
   type t = int [@@deriving show]

@@ -6,7 +6,6 @@
  *)
 
 open Core
-module SharedMemory = Memory
 
 module Epoch = struct
   type t = int [@@deriving show]
@@ -31,7 +30,7 @@ type t = {
 }
 
 module SharedModels =
-  SharedMemory.WithCache.Make
+  Memory.WithCache.Make
     (Target.Key)
     (struct
       type t = AnalysisResult.model_t
@@ -42,7 +41,7 @@ module SharedModels =
     end)
 
 module SharedResults =
-  SharedMemory.WithCache.Make
+  Memory.WithCache.Make
     (Target.Key)
     (struct
       type t = AnalysisResult.result_t
@@ -59,7 +58,7 @@ type meta_data = {
 
 (* Caches the fixpoint state (is_partial) of a call model. *)
 module SharedFixpoint =
-  SharedMemory.WithCache.Make
+  Memory.WithCache.Make
     (Target.Key)
     (struct
       type t = meta_data
