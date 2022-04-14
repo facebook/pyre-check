@@ -3275,23 +3275,6 @@ let test_call_graph_of_define context =
   ()
 
 
-let test_resolve_ignoring_optional context =
-  let assert_resolved_without_optional ~source ~expression ~expected =
-    let resolution =
-      ScratchProject.setup ~context ["x.py", source] |> ScratchProject.build_resolution
-    in
-    CallGraph.resolve_ignoring_optional ~resolution (Test.parse_single_expression expression)
-    |> assert_equal ~printer:Type.show expected
-  in
-  assert_resolved_without_optional
-    ~source:{|
-    class Data:
-      def __init__(self, x: int) -> None: ...
-  |}
-    ~expression:"x.Data()"
-    ~expected:(Type.Primitive "x.Data")
-
-
 let test_return_type_from_annotation context =
   let project = Test.ScratchProject.setup ~context [] in
   let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
@@ -3352,7 +3335,6 @@ let () =
   "interproceduralCallGraph"
   >::: [
          "call_graph_of_define" >:: test_call_graph_of_define;
-         "resolve_ignoring_optional" >:: test_resolve_ignoring_optional;
          "return_type_from_annotation" >:: test_return_type_from_annotation;
        ]
   |> Test.run

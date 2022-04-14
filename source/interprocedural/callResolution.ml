@@ -53,3 +53,88 @@ let is_super ~resolution ~define expression =
         | _ -> false
       else
         false
+
+
+let resolve_ignoring_untracked ~resolution expression =
+  try Resolution.resolve_expression_to_type resolution expression with
+  | Analysis.ClassHierarchy.Untracked untracked_type ->
+      Log.warning
+        "Found untracked type `%s` when resolving the type of `%a`. This could lead to false \
+         negatives."
+        untracked_type
+        Expression.pp
+        expression;
+      Type.Any
+
+
+let resolve_attribute_access_ignoring_untracked ~resolution ~base_type ~attribute =
+  try Resolution.resolve_attribute_access resolution ~base_type ~attribute with
+  | Analysis.ClassHierarchy.Untracked untracked_type ->
+      Log.warning
+        "Found untracked type `%s` when resolving the type of attribute `%s` in `%a`. This could \
+         lead to false negatives."
+        untracked_type
+        attribute
+        Type.pp
+        base_type;
+      Type.Any
+
+
+let defining_attribute ~resolution parent_type attribute =
+  let global_resolution = Resolution.global_resolution resolution in
+  Type.split parent_type
+  |> fst
+  |> Type.primitive_name
+  >>= fun class_name ->
+  let instantiated_attribute =
+    try
+      GlobalResolution.attribute_from_class_name
+        ~transitive:true
+        ~resolution:global_resolution
+        ~name:attribute
+        ~instantiated:parent_type
+        class_name
+    with
+    | Analysis.ClassHierarchy.Untracked untracked_type ->
+        Log.warning
+          "Found untracked type `%s` when checking for attribute `%s` of `%a`. The attribute will \
+           be considered having type `Any`, which could lead to false negatives if it is a \
+           property."
+          untracked_type
+          attribute
+          Type.pp
+          parent_type;
+        None
+  in
+  instantiated_attribute
+  >>= fun instantiated_attribute ->
+  if Annotated.Attribute.defined instantiated_attribute then
+    Some instantiated_attribute
+  else
+    Resolution.fallback_attribute ~resolution ~name:attribute class_name
+
+
+let rec resolve_ignoring_optional ~resolution expression =
+  let resolve_expression_to_type expression =
+    match resolve_ignoring_untracked ~resolution expression, Node.value expression with
+    | ( Type.Callable ({ Type.Callable.kind = Anonymous; _ } as callable),
+        Expression.Name (Name.Identifier function_name) )
+      when function_name |> String.is_prefix ~prefix:"$local_" ->
+        (* Treat nested functions as named callables. *)
+        Type.Callable { callable with kind = Named (Reference.create function_name) }
+    | annotation, _ -> annotation
+  in
+  let annotation =
+    match Node.value expression with
+    | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
+        let base_type =
+          resolve_ignoring_optional ~resolution base
+          |> fun annotation -> Type.optional_value annotation |> Option.value ~default:annotation
+        in
+        match defining_attribute ~resolution base_type attribute with
+        | Some _ -> resolve_attribute_access_ignoring_untracked ~resolution ~base_type ~attribute
+        | None -> resolve_expression_to_type expression
+        (* Lookup the base_type for the attribute you were interested in *))
+    | _ -> resolve_expression_to_type expression
+  in
+  Type.optional_value annotation |> Option.value ~default:annotation

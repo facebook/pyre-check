@@ -68,23 +68,33 @@ module ReturnType = struct
       in
       matches_at_leaves ~f annotation
     in
-    let is_boolean =
-      matches_at_leaves annotation ~f:(fun left ->
-          GlobalResolution.less_or_equal resolution ~left ~right:Type.bool)
-    in
-    let is_integer =
-      matches_at_leaves annotation ~f:(fun left ->
-          GlobalResolution.less_or_equal resolution ~left ~right:Type.integer)
-    in
-    let is_float =
-      matches_at_leaves annotation ~f:(fun left ->
-          GlobalResolution.less_or_equal resolution ~left ~right:Type.float)
-    in
-    let is_enumeration =
-      matches_at_leaves annotation ~f:(fun left ->
-          GlobalResolution.less_or_equal resolution ~left ~right:Type.enumeration)
-    in
-    { is_boolean; is_integer; is_float; is_enumeration }
+    try
+      let is_boolean =
+        matches_at_leaves annotation ~f:(fun left ->
+            GlobalResolution.less_or_equal resolution ~left ~right:Type.bool)
+      in
+      let is_integer =
+        matches_at_leaves annotation ~f:(fun left ->
+            GlobalResolution.less_or_equal resolution ~left ~right:Type.integer)
+      in
+      let is_float =
+        matches_at_leaves annotation ~f:(fun left ->
+            GlobalResolution.less_or_equal resolution ~left ~right:Type.float)
+      in
+      let is_enumeration =
+        matches_at_leaves annotation ~f:(fun left ->
+            GlobalResolution.less_or_equal resolution ~left ~right:Type.enumeration)
+      in
+      { is_boolean; is_integer; is_float; is_enumeration }
+    with
+    | Analysis.ClassHierarchy.Untracked untracked_type ->
+        Log.warning
+          "Found untracked type `%s` when checking the return type `%a` of a call. The return type \
+           will NOT be considered a scalar, which could lead to missing breadcrumbs."
+          untracked_type
+          Type.pp
+          annotation;
+        none
 
 
   (* Try to infer the return type from the callable type, otherwise lazily fallback
@@ -684,51 +694,6 @@ module CallTargetIndexer = struct
     }
 end
 
-let defining_attribute ~resolution parent_type attribute =
-  let global_resolution = Resolution.global_resolution resolution in
-  Type.split parent_type
-  |> fst
-  |> Type.primitive_name
-  >>= fun class_name ->
-  GlobalResolution.attribute_from_class_name
-    ~transitive:true
-    ~resolution:global_resolution
-    ~name:attribute
-    ~instantiated:parent_type
-    class_name
-  >>= fun instantiated_attribute ->
-  if Annotated.Attribute.defined instantiated_attribute then
-    Some instantiated_attribute
-  else
-    Resolution.fallback_attribute ~resolution ~name:attribute class_name
-
-
-let rec resolve_ignoring_optional ~resolution expression =
-  let resolve_expression_to_type expression =
-    match Resolution.resolve_expression_to_type resolution expression, Node.value expression with
-    | ( Type.Callable ({ Type.Callable.kind = Anonymous; _ } as callable),
-        Expression.Name (Name.Identifier function_name) )
-      when function_name |> String.is_prefix ~prefix:"$local_" ->
-        (* Treat nested functions as named callables. *)
-        Type.Callable { callable with kind = Named (Reference.create function_name) }
-    | annotation, _ -> annotation
-  in
-  let annotation =
-    match Node.value expression with
-    | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
-        let base_type =
-          resolve_ignoring_optional ~resolution base
-          |> fun annotation -> Type.optional_value annotation |> Option.value ~default:annotation
-        in
-        match defining_attribute ~resolution base_type attribute with
-        | Some _ -> Resolution.resolve_attribute_access resolution ~base_type ~attribute
-        | None -> resolve_expression_to_type expression
-        (* Lookup the base_type for the attribute you were interested in *))
-    | _ -> resolve_expression_to_type expression
-  in
-  Type.optional_value annotation |> Option.value ~default:annotation
-
-
 type callee_kind =
   | Method of { is_direct_call: bool }
   | Function
@@ -760,7 +725,7 @@ let rec callee_kind ~resolution callee callee_type =
   | Type.Callable _ -> (
       match Node.value callee with
       | Expression.Name (Name.Attribute { base; _ }) ->
-          let parent_type = resolve_ignoring_optional ~resolution base in
+          let parent_type = CallResolution.resolve_ignoring_optional ~resolution base in
           let is_class () =
             parent_type
             |> GlobalResolution.class_summary (Resolution.global_resolution resolution)
@@ -835,7 +800,7 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
               ~right:receiver_type
           with
           | Analysis.ClassHierarchy.Untracked untracked_type ->
-              Log.error
+              Log.warning
                 "Found untracked type `%s` when comparing `%a` and `%a`. The class `%a` will be \
                  considered a subclass of `%a`, which could lead to false positives."
                 untracked_type
@@ -884,9 +849,7 @@ let collapse_tito ~resolution ~callee ~callable_type =
             (Expression.Name
                (Name.Attribute { base = callee; attribute = "__call__"; special = true }))
         in
-        Resolution.resolve_expression resolution to_simulate
-        |> snd
-        |> function
+        match CallResolution.resolve_ignoring_untracked ~resolution to_simulate with
         | Type.Callable { Type.Callable.implementation; _ } ->
             Type.Callable.Overload.return_annotation implementation
         | _ -> Type.Top
@@ -992,8 +955,8 @@ let rec resolve_callees_from_type
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
          ignore it for now to make sure our constructor logic via `cls()` still works. *)
       match
-        Resolution.resolve_attribute_access
-          resolution
+        CallResolution.resolve_attribute_access_ignoring_untracked
+          ~resolution
           ~base_type:callable_type
           ~attribute:"__call__"
       with
@@ -1044,8 +1007,14 @@ let rec resolve_callees_from_type
 and resolve_constructor_callee ~resolution ~call_indexer class_type =
   let meta_type = Type.meta class_type in
   match
-    ( Resolution.resolve_attribute_access resolution ~base_type:meta_type ~attribute:"__new__",
-      Resolution.resolve_attribute_access resolution ~base_type:meta_type ~attribute:"__init__" )
+    ( CallResolution.resolve_attribute_access_ignoring_untracked
+        ~resolution
+        ~base_type:meta_type
+        ~attribute:"__new__",
+      CallResolution.resolve_attribute_access_ignoring_untracked
+        ~resolution
+        ~base_type:meta_type
+        ~attribute:"__init__" )
   with
   | Type.Any, _
   | Type.Top, _
@@ -1234,7 +1203,7 @@ let resolve_recognized_callees ~resolution ~call_indexer ~callee ~return_type ~c
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
       (* Because of the special class, we don't get a bound method & lose the self argument for
          non-classmethod LRU cache wrappers. Reconstruct self in this case. *)
-      resolve_ignoring_optional ~resolution base
+      CallResolution.resolve_ignoring_optional ~resolution base
       |> fun implementing_class ->
       resolve_callee_from_defining_expression
         ~resolution
@@ -1323,7 +1292,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
       | _ -> None)
   | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
       (* Resolve `base.attribute` by looking up the type of `base`. *)
-      match resolve_ignoring_optional ~resolution base with
+      match CallResolution.resolve_ignoring_optional ~resolution base with
       | Type.Primitive class_name
       | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] } -> (
           GlobalResolution.class_summary global_resolution (Type.Primitive class_name)
@@ -1347,7 +1316,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
 
 
 let resolve_regular_callees ~resolution ~call_indexer ~return_type ~callee =
-  let callee_type = resolve_ignoring_optional ~resolution callee in
+  let callee_type = CallResolution.resolve_ignoring_optional ~resolution callee in
   let recognized_callees =
     resolve_recognized_callees ~resolution ~call_indexer ~callee ~return_type ~callee_type
     |> Option.value ~default:CallCallees.unresolved
@@ -1386,7 +1355,7 @@ let resolve_callees ~resolution ~call_indexer ~call:({ Call.callee; arguments } 
         lazy
           (Expression.Call { callee = argument; arguments = [] }
           |> Node.create_with_default_location
-          |> Resolution.resolve_expression_to_type resolution)
+          |> CallResolution.resolve_ignoring_untracked ~resolution)
       in
       match resolve_regular_callees ~resolution ~call_indexer ~return_type ~callee:argument with
       | { CallCallees.call_targets = _ :: _ as regular_targets; _ } ->
@@ -1402,7 +1371,7 @@ let resolve_callees ~resolution ~call_indexer ~call:({ Call.callee; arguments } 
     lazy
       (Expression.Call call
       |> Node.create_with_default_location
-      |> Resolution.resolve_expression_to_type resolution)
+      |> CallResolution.resolve_ignoring_untracked ~resolution)
   in
   let regular_callees = resolve_regular_callees ~resolution ~call_indexer ~return_type ~callee in
   { regular_callees with higher_order_parameter }
@@ -1414,7 +1383,7 @@ let get_defining_attributes ~resolution ~base_annotation ~attribute =
     | Type.Union annotations
     | Type.Variable { Type.Variable.Unary.constraints = Type.Variable.Explicit annotations; _ } ->
         List.concat_map annotations ~f:get_defining_parents
-    | _ -> [defining_attribute ~resolution annotation attribute]
+    | _ -> [CallResolution.defining_attribute ~resolution annotation attribute]
   in
   base_annotation |> strip_meta |> strip_optional |> get_defining_parents
 
@@ -1558,7 +1527,7 @@ let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~
 
 
 let resolve_attribute_access ~resolution ~call_indexer ~base ~attribute ~special ~setter =
-  let base_annotation = resolve_ignoring_optional ~resolution base in
+  let base_annotation = CallResolution.resolve_ignoring_optional ~resolution base in
 
   let { property_targets; is_attribute } =
     resolve_attribute_access_properties

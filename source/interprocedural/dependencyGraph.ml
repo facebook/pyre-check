@@ -219,7 +219,21 @@ let create_overrides ~environment ~source =
     let class_method_overrides { Node.value = { Class.body; name = class_name; _ }; _ } =
       let get_method_overrides child_method =
         let method_name = Define.unqualified_name child_method in
-        GlobalResolution.overrides (Reference.show class_name) ~name:method_name ~resolution
+        let ancestor =
+          try
+            GlobalResolution.overrides (Reference.show class_name) ~name:method_name ~resolution
+          with
+          | Analysis.ClassHierarchy.Untracked untracked_type ->
+              Log.warning
+                "Found untracked type `%s` when looking for a parent of `%a.%s`. The method will \
+                 be considered has having no parent, which could lead to false negatives."
+                untracked_type
+                Reference.pp
+                class_name
+                method_name;
+              None
+        in
+        ancestor
         >>= fun ancestor ->
         let parent_annotation = Annotated.Attribute.parent ancestor in
         let ancestor_parent =

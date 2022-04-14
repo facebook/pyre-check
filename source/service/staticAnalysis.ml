@@ -574,24 +574,15 @@ let record_overrides_for_qualifiers ~scheduler ~cache ~environment ~skip_overrid
     Cache.overrides cache (fun () ->
         let combine ~key:_ left right = List.rev_append left right in
         let build_overrides overrides qualifier =
-          try
-            match get_source ~environment qualifier with
-            | None -> overrides
-            | Some source ->
-                let new_overrides =
-                  DependencyGraph.create_overrides ~environment ~source
-                  |> Reference.Map.filter_keys ~f:(fun override ->
-                         not (Reference.Set.mem skip_overrides override))
-                in
-                Map.merge_skewed overrides new_overrides ~combine
-          with
-          | Analysis.ClassHierarchy.Untracked untracked_type ->
-              Log.warning
-                "Error building overrides in path %a for untracked type %s"
-                Reference.pp
-                qualifier
-                untracked_type;
-              overrides
+          match get_source ~environment qualifier with
+          | None -> overrides
+          | Some source ->
+              let new_overrides =
+                DependencyGraph.create_overrides ~environment ~source
+                |> Reference.Map.filter_keys ~f:(fun override ->
+                       not (Reference.Set.mem skip_overrides override))
+              in
+              Map.merge_skewed overrides new_overrides ~combine
         in
         Scheduler.map_reduce
           scheduler
@@ -624,18 +615,9 @@ let build_call_graph ~scheduler ~static_analysis_configuration ~cache ~environme
   let call_graph =
     Cache.call_graph cache (fun () ->
         let build_call_graph call_graph qualifier =
-          try
-            get_source ~environment qualifier
-            >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
-            |> Option.value ~default:call_graph
-          with
-          | Analysis.ClassHierarchy.Untracked untracked_type ->
-              Log.info
-                "Error building call graph in path %a for untracked type %s"
-                Reference.pp
-                qualifier
-                untracked_type;
-              call_graph
+          get_source ~environment qualifier
+          >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
+          |> Option.value ~default:call_graph
         in
         Scheduler.map_reduce
           scheduler

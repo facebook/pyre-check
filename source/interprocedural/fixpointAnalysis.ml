@@ -279,14 +279,7 @@ let widen_if_necessary step callable ~old_model ~new_model result =
     FixpointState.{ is_partial = true; model; result }
 
 
-let analyze_define
-    step
-    abstract_analysis
-    callable
-    environment
-    qualifier
-    ({ Node.value = { Define.signature = { name; _ }; _ }; _ } as define)
-  =
+let analyze_define step abstract_analysis callable environment qualifier define =
   let () = Log.log ~section:`Interprocedural "Analyzing %a" Target.pp_callable_t callable in
   let old_model =
     match FixpointState.get_old_model callable with
@@ -315,14 +308,6 @@ let analyze_define
       ( Kind.Map.add abstract_kind (Pkg { kind = ModelPart kind; value = model }) Kind.Map.empty,
         Kind.Map.add abstract_kind (Pkg { kind = ResultPart kind; value = result }) Kind.Map.empty )
     with
-    | Analysis.ClassHierarchy.Untracked annotation ->
-        Log.log
-          ~section:`Info
-          "Could not generate model for `%a` due to invalid annotation `%s`"
-          Reference.pp
-          name
-          annotation;
-        AnalysisResult.Kind.Map.empty, AnalysisResult.Kind.Map.empty
     | Sys.Break as exn -> analysis_failed step ~exn ~message:"Hit Ctrl+C" callable
     | _ as exn -> analysis_failed step ~exn ~message:"Analysis failed" callable
   in

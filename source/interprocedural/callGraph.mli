@@ -194,8 +194,6 @@ val call_graph_of_define
   define:Ast.Statement.Define.t ->
   DefineCallGraph.t
 
-val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
-
 val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
 
 module SharedMemory : sig

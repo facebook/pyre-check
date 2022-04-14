@@ -15,6 +15,7 @@ open Domains
 type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
 
 module CallGraph = Interprocedural.CallGraph
+module CallResolution = Interprocedural.CallResolution
 module ClassInterval = Interprocedural.ClassInterval
 
 module type FUNCTION_CONTEXT = sig
@@ -1126,7 +1127,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let label =
             (* For dictionaries, the default iterator is keys. *)
             if
-              Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+              CallResolution.resolve_ignoring_untracked ~resolution base
+              |> Type.is_dictionary_or_mapping
             then
               AccessPath.dictionary_keys
             else
@@ -1268,14 +1270,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (* dictionary .keys(), .values() and .items() functions are special, as they require handling
          of dictionary_keys taint. *)
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ }; _ }
-        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
-        ->
+        when CallResolution.resolve_ignoring_untracked ~resolution base
+             |> Type.is_dictionary_or_mapping ->
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
-        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
-        ->
+        when CallResolution.resolve_ignoring_untracked ~resolution base
+             |> Type.is_dictionary_or_mapping ->
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [AccessPath.dictionary_keys]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
@@ -1301,7 +1303,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            };
          ];
       }
-        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+        when CallResolution.resolve_ignoring_untracked ~resolution base
+             |> Type.is_dictionary_or_mapping
              && Option.is_some (Dictionary.string_literal_keys entries) ->
           let entries = Option.value_exn (Dictionary.string_literal_keys entries) in
           let taint =
@@ -1359,8 +1362,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            };
          ];
       }
-        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
-        ->
+        when CallResolution.resolve_ignoring_untracked ~resolution base
+             |> Type.is_dictionary_or_mapping ->
           let taint =
             ForwardState.read ~root:(AccessPath.Root.Variable identifier) ~path:[] state.taint
           in
@@ -1377,8 +1380,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let key_taint = ForwardState.Tree.read [Abstract.TreeDomain.Label.Index value] taint in
           key_taint, new_state
       | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
-        when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
-        ->
+        when CallResolution.resolve_ignoring_untracked ~resolution base
+             |> Type.is_dictionary_or_mapping ->
           let taint, state = analyze_expression ~resolution ~state ~expression:base in
           let taint =
             let key_taint = ForwardState.Tree.read [AccessPath.dictionary_keys] taint in
@@ -1440,7 +1443,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             Location.WithModule.pp
             location
             (Transform.sanitize_expression expression |> Expression.show)
-            (Resolution.resolve_expression_to_type resolution expression |> Type.show);
+            (CallResolution.resolve_ignoring_untracked ~resolution expression |> Type.show);
           ForwardState.Tree.bottom, state
       | _ ->
           let call = { Call.callee; arguments } in

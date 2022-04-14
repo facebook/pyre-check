@@ -321,8 +321,7 @@ module ViaFeature = struct
   let via_type_of_breadcrumb ?tag ~resolution ~argument =
     let feature =
       argument
-      >>| Resolution.resolve_expression resolution
-      >>| snd
+      >>| Interprocedural.CallResolution.resolve_ignoring_untracked ~resolution
       >>| Type.weaken_literals
       |> Option.value ~default:Type.Top
       |> Type.show

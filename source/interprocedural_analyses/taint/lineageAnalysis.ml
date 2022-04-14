@@ -17,7 +17,9 @@ type panda_type = DataFrame
 let get_panda_type resolution = function
   | { Node.value = Expression.Name (Name.Attribute { base; _ }); _ } -> (
       let class_name =
-        Resolution.resolve_expression_to_type resolution base |> Type.class_name |> Reference.last
+        Interprocedural.CallResolution.resolve_ignoring_untracked ~resolution base
+        |> Type.class_name
+        |> Reference.last
       in
       match class_name with
       | "DataFrame" -> Some DataFrame

@@ -12,6 +12,7 @@ open Expression
 open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
+module CallResolution = Interprocedural.CallResolution
 module ClassInterval = Interprocedural.ClassInterval
 
 module type FUNCTION_CONTEXT = sig
@@ -1159,7 +1160,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     } ->
         let label =
           (* For dictionaries, the default iterator is keys. *)
-          if Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+          if
+            CallResolution.resolve_ignoring_untracked ~resolution base
+            |> Type.is_dictionary_or_mapping
           then
             AccessPath.dictionary_keys
           else
@@ -1245,7 +1248,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* dictionary .keys(), .values() and .items() functions are special, as they require handling of
        DictionaryKeys taint. *)
     | { callee = { Node.value = Name (Name.Attribute { base; attribute = "values"; _ }); _ }; _ }
-      when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping ->
+      when CallResolution.resolve_ignoring_untracked ~resolution base
+           |> Type.is_dictionary_or_mapping ->
         let taint =
           taint
           |> BackwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
@@ -1253,7 +1257,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         analyze_expression ~resolution ~taint ~state ~expression:base
     | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
-      when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping ->
+      when CallResolution.resolve_ignoring_untracked ~resolution base
+           |> Type.is_dictionary_or_mapping ->
         let taint =
           taint
           |> BackwardState.Tree.read [AccessPath.dictionary_keys]
@@ -1282,7 +1287,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          };
        ];
     }
-      when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping
+      when CallResolution.resolve_ignoring_untracked ~resolution base
+           |> Type.is_dictionary_or_mapping
            && Option.is_some (Dictionary.string_literal_keys entries) ->
         let entries = Option.value_exn (Dictionary.string_literal_keys entries) in
         let access_path =
@@ -1343,7 +1349,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          };
        ];
     }
-      when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping ->
+      when CallResolution.resolve_ignoring_untracked ~resolution base
+           |> Type.is_dictionary_or_mapping ->
         let access_path =
           Some { AccessPath.root = AccessPath.Root.Variable identifier; path = [] }
         in
@@ -1356,7 +1363,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         store_taint ~root:(AccessPath.Root.Variable identifier) ~path:[] new_taint state
     | { callee = { Node.value = Name (Name.Attribute { base; attribute = "items"; _ }); _ }; _ }
-      when Resolution.resolve_expression_to_type resolution base |> Type.is_dictionary_or_mapping ->
+      when CallResolution.resolve_ignoring_untracked ~resolution base
+           |> Type.is_dictionary_or_mapping ->
         (* When we're faced with an assign of the form `k, v = d.items().__iter__().__next__()`, the
            taint we analyze d.items() under will be {* -> {0 -> k, 1 -> v} }. We want to analyze d
            itself under the taint of `{* -> v, $keys -> k}`. *)
