@@ -330,16 +330,11 @@ class PartialConfiguration:
             search_path_json = configuration_json.pop("search_path", [])
             if isinstance(search_path_json, list):
                 search_path = [
-                    element
+                    search_path_module.create_raw_element(json)
                     for json in search_path_json
-                    for element in search_path_module.create_raw_elements(
-                        json, site_roots=get_site_roots()
-                    )
                 ]
             else:
-                search_path = search_path_module.create_raw_elements(
-                    search_path_json, site_roots=get_site_roots()
-                )
+                search_path = [search_path_module.create_raw_element(search_path_json)]
 
             python_version_json = configuration_json.pop("python_version", None)
             if python_version_json is None:
@@ -377,11 +372,8 @@ class PartialConfiguration:
             )
             if isinstance(source_directories_json, list):
                 source_directories = [
-                    element
+                    search_path_module.create_raw_element(json)
                     for json in source_directories_json
-                    for element in search_path_module.create_raw_elements(
-                        json, site_roots=get_site_roots()
-                    )
                 ]
             else:
                 source_directories = None
@@ -856,7 +848,9 @@ class Configuration:
     def expand_and_get_existent_search_paths(
         self,
     ) -> List[search_path_module.Element]:
-        existent_paths = search_path_module.process_raw_elements(self.search_path)
+        existent_paths = search_path_module.process_raw_elements(
+            self.search_path, get_site_roots()
+        )
 
         typeshed_root = self.get_typeshed_respecting_override()
         if typeshed_root is None:
@@ -876,7 +870,9 @@ class Configuration:
     ) -> List[search_path_module.Element]:
         source_directories = self.source_directories
         if source_directories is not None:
-            return search_path_module.process_raw_elements(source_directories)
+            return search_path_module.process_raw_elements(
+                source_directories, get_site_roots()
+            )
         else:
             return []
 

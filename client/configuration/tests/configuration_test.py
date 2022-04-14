@@ -639,7 +639,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 search_path=[
                     SimpleRawElement("foo"),
                     SubdirectoryRawElement("bar", "baz"),
-                    SitePackageRawElement("site", "package"),
+                    SitePackageRawElement("package"),
                 ]
             )
             .expand_relative_paths("root")
@@ -647,7 +647,7 @@ class PartialConfigurationTest(unittest.TestCase):
             [
                 SimpleRawElement("root/foo"),
                 SubdirectoryRawElement("root/bar", "baz"),
-                SitePackageRawElement("site", "package"),
+                SitePackageRawElement("package"),
             ],
         )
         self.assertEqual(

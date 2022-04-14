@@ -8,7 +8,7 @@ import dataclasses
 import glob
 import logging
 import os
-from typing import Dict, Iterable, List, Union
+from typing import Dict, Iterable, List, Sequence, Union
 
 from .. import filesystem
 from . import exceptions
@@ -85,10 +85,6 @@ class RawElement(abc.ABC):
     def expand_glob(self) -> List["RawElement"]:
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def to_element(self) -> Element:
-        raise NotImplementedError
-
 
 @dataclasses.dataclass(frozen=True)
 class SimpleRawElement(RawElement):
@@ -142,7 +138,6 @@ class SubdirectoryRawElement(RawElement):
 
 @dataclasses.dataclass(frozen=True)
 class SitePackageRawElement(RawElement):
-    site_root: str
     package_name: str
     is_toplevel_module: bool = False
 
@@ -161,17 +156,13 @@ class SitePackageRawElement(RawElement):
     def expand_glob(self) -> List["RawElement"]:
         return [self]
 
-    def to_element(self) -> SitePackageElement:
-        return SitePackageElement(
-            self.site_root, self.package_name, self.is_toplevel_module
-        )
+    def to_element(self, site_root: str) -> SitePackageElement:
+        return SitePackageElement(site_root, self.package_name, self.is_toplevel_module)
 
 
-def create_raw_elements(
-    json: Union[str, Dict[str, object]], site_roots: Iterable[str]
-) -> List[RawElement]:
+def create_raw_element(json: Union[str, Dict[str, object]]) -> RawElement:
     if isinstance(json, str):
-        return [SimpleRawElement(json)]
+        return SimpleRawElement(json)
     elif isinstance(json, dict):
 
         def assert_string_item(input: Dict[str, object], name: str) -> str:
@@ -184,19 +175,15 @@ def create_raw_elements(
             return value
 
         if "root" in json and "subdirectory" in json:
-            return [
-                SubdirectoryRawElement(
-                    root=assert_string_item(json, "root"),
-                    subdirectory=assert_string_item(json, "subdirectory"),
-                )
-            ]
+            return SubdirectoryRawElement(
+                root=assert_string_item(json, "root"),
+                subdirectory=assert_string_item(json, "subdirectory"),
+            )
         if "import_root" in json and "source" in json:
-            return [
-                SubdirectoryRawElement(
-                    root=assert_string_item(json, "import_root"),
-                    subdirectory=assert_string_item(json, "source"),
-                )
-            ]
+            return SubdirectoryRawElement(
+                root=assert_string_item(json, "import_root"),
+                subdirectory=assert_string_item(json, "source"),
+            )
         elif "site-package" in json:
             is_toplevel_module = (
                 "is_toplevel_module" in json and json["is_toplevel_module"]
@@ -207,14 +194,10 @@ def create_raw_elements(
                     "Expected `is_toplevel_module` to be a boolean but "
                     f"got {is_toplevel_module}"
                 )
-            return [
-                SitePackageRawElement(
-                    site_root=root,
-                    package_name=assert_string_item(json, "site-package"),
-                    is_toplevel_module=bool(is_toplevel_module),
-                )
-                for root in site_roots
-            ]
+            return SitePackageRawElement(
+                package_name=assert_string_item(json, "site-package"),
+                is_toplevel_module=bool(is_toplevel_module),
+            )
 
     raise exceptions.InvalidConfiguration(
         f"Invalid JSON format for search path element: {json}"
@@ -222,14 +205,28 @@ def create_raw_elements(
 
 
 def process_raw_elements(
-    raw_elements: Iterable[RawElement],
+    raw_elements: Iterable[RawElement], site_roots: Sequence[str]
 ) -> List[Element]:
-    elements = []
+    elements: List[Element] = []
+
+    def add_if_exists(element: Element) -> None:
+        if os.path.exists(element.path()):
+            elements.append(element)
+        else:
+            LOG.warning(f"Path does not exist for search path: {element}")
+
     for raw_element in raw_elements:
         for expanded_raw_element in raw_element.expand_glob():
-            element = expanded_raw_element.to_element()
-            if os.path.exists(element.path()):
-                elements.append(element)
+            if isinstance(expanded_raw_element, SitePackageRawElement):
+                for site_root in site_roots:
+                    add_if_exists(expanded_raw_element.to_element(site_root))
+            elif isinstance(
+                expanded_raw_element, (SimpleRawElement, SubdirectoryRawElement)
+            ):
+                add_if_exists(expanded_raw_element.to_element())
             else:
-                LOG.warning(f"Path does not exist for search path: {element}")
+                raise RuntimeError(
+                    f"Unhandled raw search path element type: {expanded_raw_element}"
+                )
+
     return elements

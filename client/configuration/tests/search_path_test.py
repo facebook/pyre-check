@@ -12,7 +12,7 @@ from ...tests.setup import (
     ensure_directories_exists,
 )
 from ..exceptions import InvalidConfiguration
-from ..search_path import create_raw_elements
+from ..search_path import create_raw_element
 from ..search_path import (
     SimpleElement,
     SubdirectoryElement,
@@ -25,57 +25,50 @@ from ..search_path import (
 
 
 class SearchPathTest(testslide.TestCase):
-    def test_create_raw_elements(self) -> None:
-        self.assertListEqual(
-            create_raw_elements("foo", site_roots=[]), [SimpleRawElement("foo")]
+    def test_create_raw_element(self) -> None:
+        self.assertEqual(create_raw_element("foo"), SimpleRawElement("foo"))
+        self.assertEqual(
+            create_raw_element({"root": "foo", "subdirectory": "bar"}),
+            SubdirectoryRawElement("foo", "bar"),
         )
-        self.assertListEqual(
-            create_raw_elements({"root": "foo", "subdirectory": "bar"}, site_roots=[]),
-            [SubdirectoryRawElement("foo", "bar")],
+        self.assertEqual(
+            create_raw_element({"import_root": "foo", "source": "bar"}),
+            SubdirectoryRawElement("foo", "bar"),
         )
-        self.assertListEqual(
-            create_raw_elements({"import_root": "foo", "source": "bar"}, site_roots=[]),
-            [SubdirectoryRawElement("foo", "bar")],
+        self.assertEqual(
+            create_raw_element({"site-package": "foo"}),
+            SitePackageRawElement("foo"),
         )
-        self.assertListEqual(
-            create_raw_elements({"site-package": "foo"}, site_roots=[]), []
+        self.assertEqual(
+            create_raw_element({"site-package": "foo"}),
+            SitePackageRawElement("foo"),
         )
-        self.assertListEqual(
-            create_raw_elements({"site-package": "foo"}, site_roots=["site0"]),
-            [SitePackageRawElement("site0", "foo")],
-        )
-        self.assertListEqual(
-            create_raw_elements({"site-package": "foo"}, site_roots=["site1"]),
-            [SitePackageRawElement("site1", "foo")],
-        )
-        self.assertListEqual(
-            create_raw_elements(
+        self.assertEqual(
+            create_raw_element(
                 {"site-package": "foo", "is_toplevel_module": True},
-                site_roots=["site1"],
             ),
-            [SitePackageRawElement("site1", "foo", True)],
+            SitePackageRawElement("foo", True),
         )
 
         with self.assertRaises(InvalidConfiguration):
-            create_raw_elements({}, site_roots=[])
+            create_raw_element({})
         with self.assertRaises(InvalidConfiguration):
-            create_raw_elements({"foo": "bar"}, site_roots=[])
+            create_raw_element({"foo": "bar"})
         with self.assertRaises(InvalidConfiguration):
-            create_raw_elements({"root": "foo"}, site_roots=[])
+            create_raw_element({"root": "foo"})
         with self.assertRaises(InvalidConfiguration):
-            create_raw_elements({"root": 42, "subdirectory": "bar"}, site_roots=[])
+            create_raw_element({"root": 42, "subdirectory": "bar"})
         with self.assertRaises(InvalidConfiguration):
-            create_raw_elements({"root": "foo", "subdirectory": []}, site_roots=[])
+            create_raw_element({"root": "foo", "subdirectory": []})
         with self.assertRaises(InvalidConfiguration):
-            create_raw_elements({"import_root": 4.2, "source": "bar"}, site_roots=[])
+            create_raw_element({"import_root": 4.2, "source": "bar"})
         with self.assertRaises(InvalidConfiguration):
-            create_raw_elements({"import_root": "foo", "source": False}, site_roots=[])
+            create_raw_element({"import_root": "foo", "source": False})
         with self.assertRaises(InvalidConfiguration):
-            create_raw_elements({"site-package": {}}, site_roots=["site0"])
+            create_raw_element({"site-package": {}})
         with self.assertRaises(InvalidConfiguration):
-            create_raw_elements(
+            create_raw_element(
                 {"site-package": "foo", "is_toplevel_module": "derp"},
-                site_roots=["site0"],
             )
 
     def test_path(self) -> None:
@@ -108,8 +101,8 @@ class SearchPathTest(testslide.TestCase):
             SubdirectoryRawElement("root/path", "sub"),
         )
         self.assertEqual(
-            SitePackageRawElement("//site_root", "package").expand_global_root("root"),
-            SitePackageRawElement("//site_root", "package"),
+            SitePackageRawElement("package").expand_global_root("root"),
+            SitePackageRawElement("package"),
         )
 
     def test_expand_relative_root(self) -> None:
@@ -124,10 +117,8 @@ class SearchPathTest(testslide.TestCase):
             SubdirectoryRawElement("root/local_project/path", "sub"),
         )
         self.assertEqual(
-            SitePackageRawElement("site_root", "package").expand_relative_root(
-                "root/local_project"
-            ),
-            SitePackageRawElement("site_root", "package"),
+            SitePackageRawElement("package").expand_relative_root("root/local_project"),
+            SitePackageRawElement("package"),
         )
 
     def test_expand_glob(self) -> None:
@@ -150,7 +141,9 @@ class SearchPathTest(testslide.TestCase):
             root_path = Path(root).resolve()
             ensure_directories_exists(root_path, ["a1", "a2", "b"])
             self.assertListEqual(
-                process_raw_elements([SimpleRawElement(str(root_path / "a?"))]),
+                process_raw_elements(
+                    [SimpleRawElement(str(root_path / "a?"))], site_roots=[]
+                ),
                 [
                     SimpleElement(str(root_path / "a1")),
                     SimpleElement(str(root_path / "a2")),
@@ -175,13 +168,10 @@ class SearchPathTest(testslide.TestCase):
                         SubdirectoryRawElement(
                             root=str(root_path / "y"), subdirectory="z"
                         ),
-                        SitePackageRawElement(
-                            site_root=str(root_path / "d/e"), package_name="f"
-                        ),
-                        SitePackageRawElement(
-                            site_root=str(root_path / "u/v"), package_name="w"
-                        ),
-                    ]
+                        SitePackageRawElement(package_name="f"),
+                        SitePackageRawElement(package_name="w"),
+                    ],
+                    site_roots=[str(root_path / "d/e"), str(root_path / "u/v")],
                 ),
                 [
                     SimpleElement(str(root_path / "a")),
