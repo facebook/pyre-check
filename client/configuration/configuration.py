@@ -112,7 +112,7 @@ class ExtensionElement:
         raise exceptions.InvalidConfiguration(f"Invalid extension element: {json}")
 
 
-def get_site_roots() -> List[str]:
+def get_default_site_roots() -> List[str]:
     try:
         return [site.getusersitepackages()] + site.getsitepackages()
     except AttributeError:
@@ -121,8 +121,8 @@ def get_site_roots() -> List[str]:
         LOG.warning(
             "Either `site.getusersitepackages()` or `site.getsitepackages()` "
             + "is not available in your virtualenv. This is a known virtualenv "
-            + 'bug and as a workaround please avoid using `"site-package"` in '
-            + "your search path configuration."
+            + 'bug and as a workaround please explicitly specify `"site_root"` '
+            + "in your Pyre configuration."
         )
         return []
 
@@ -153,10 +153,11 @@ class PartialConfiguration:
     other_critical_files: Sequence[str] = field(default_factory=list)
     pysa_version_hash: Optional[str] = None
     python_version: Optional[python_version_module.PythonVersion] = None
+    search_path: Sequence[search_path_module.RawElement] = field(default_factory=list)
     shared_memory: shared_memory_module.SharedMemory = (
         shared_memory_module.SharedMemory()
     )
-    search_path: Sequence[search_path_module.RawElement] = field(default_factory=list)
+    site_roots: Optional[Sequence[str]] = None
     source_directories: Optional[Sequence[search_path_module.RawElement]] = None
     strict: Optional[bool] = None
     taint_models_path: Sequence[str] = field(default_factory=list)
@@ -226,15 +227,16 @@ class PartialConfiguration:
                 if python_version_string is not None
                 else None
             ),
+            search_path=[
+                search_path_module.SimpleRawElement(element)
+                for element in arguments.search_path
+            ],
             shared_memory=shared_memory_module.SharedMemory(
                 heap_size=arguments.shared_memory_heap_size,
                 dependency_table_power=arguments.shared_memory_dependency_table_power,
                 hash_table_power=arguments.shared_memory_hash_table_power,
             ),
-            search_path=[
-                search_path_module.SimpleRawElement(element)
-                for element in arguments.search_path
-            ],
+            site_roots=None,
             source_directories=source_directories,
             strict=strict,
             taint_models_path=[],
@@ -441,8 +443,11 @@ class PartialConfiguration:
                     configuration_json, "pysa_version", str
                 ),
                 python_version=python_version,
-                shared_memory=shared_memory,
                 search_path=search_path,
+                shared_memory=shared_memory,
+                site_roots=ensure_optional_string_list(
+                    configuration_json, "site_roots"
+                ),
                 source_directories=source_directories,
                 strict=ensure_option_type(configuration_json, "strict", bool),
                 taint_models_path=ensure_string_list(
@@ -535,8 +540,9 @@ class PartialConfiguration:
             ],
             pysa_version_hash=self.pysa_version_hash,
             python_version=self.python_version,
-            shared_memory=self.shared_memory,
             search_path=[path.expand_relative_root(root) for path in self.search_path],
+            shared_memory=self.shared_memory,
+            site_roots=self.site_roots,
             source_directories=source_directories,
             strict=self.strict,
             taint_models_path=[
@@ -607,6 +613,7 @@ def merge_partial_configurations(
             base.pysa_version_hash, override.pysa_version_hash
         ),
         python_version=overwrite_base(base.python_version, override.python_version),
+        search_path=prepend_base(base.search_path, override.search_path),
         shared_memory=shared_memory_module.SharedMemory(
             heap_size=overwrite_base(
                 base.shared_memory.heap_size, override.shared_memory.heap_size
@@ -620,7 +627,7 @@ def merge_partial_configurations(
                 override.shared_memory.hash_table_power,
             ),
         ),
-        search_path=prepend_base(base.search_path, override.search_path),
+        site_roots=overwrite_base(base.site_roots, override.site_roots),
         source_directories=raise_when_overridden(
             base.source_directories,
             override.source_directories,
@@ -661,11 +668,12 @@ class Configuration:
     other_critical_files: Sequence[str] = field(default_factory=list)
     pysa_version_hash: Optional[str] = None
     python_version: Optional[python_version_module.PythonVersion] = None
+    relative_local_root: Optional[str] = None
+    search_path: Sequence[search_path_module.RawElement] = field(default_factory=list)
     shared_memory: shared_memory_module.SharedMemory = (
         shared_memory_module.SharedMemory()
     )
-    relative_local_root: Optional[str] = None
-    search_path: Sequence[search_path_module.RawElement] = field(default_factory=list)
+    site_roots: Optional[Sequence[str]] = None
     source_directories: Optional[Sequence[search_path_module.RawElement]] = None
     strict: bool = False
     taint_models_path: Sequence[str] = field(default_factory=list)
@@ -686,7 +694,8 @@ class Configuration:
         if len(search_path) == 0 and _in_virtual_environment(in_virtual_environment):
             LOG.warning("Using virtual environment site-packages in search path...")
             search_path = [
-                search_path_module.SimpleRawElement(root) for root in get_site_roots()
+                search_path_module.SimpleRawElement(root)
+                for root in get_default_site_roots()
             ]
 
         return Configuration(
@@ -710,11 +719,12 @@ class Configuration:
             other_critical_files=partial_configuration.other_critical_files,
             pysa_version_hash=partial_configuration.pysa_version_hash,
             python_version=partial_configuration.python_version,
-            shared_memory=partial_configuration.shared_memory,
             relative_local_root=relative_local_root,
             search_path=[
                 path.expand_global_root(str(project_root)) for path in search_path
             ],
+            shared_memory=partial_configuration.shared_memory,
+            site_roots=partial_configuration.site_roots,
             source_directories=partial_configuration.source_directories,
             strict=_get_optional_value(partial_configuration.strict, default=False),
             taint_models_path=partial_configuration.taint_models_path,
@@ -754,6 +764,7 @@ class Configuration:
         python_version = self.python_version
         relative_local_root = self.relative_local_root
         source_directories = self.source_directories
+        site_roots = self.site_roots
         targets = self.targets
         typeshed = self.typeshed
         unwatched_dependency = self.unwatched_dependency
@@ -789,16 +800,17 @@ class Configuration:
                 else {}
             ),
             **(
-                {"shared_memory": self.shared_memory.to_json()}
-                if self.shared_memory != shared_memory_module.SharedMemory()
-                else {}
-            ),
-            **(
                 {"relative_local_root": relative_local_root}
                 if relative_local_root is not None
                 else {}
             ),
             "search_path": [str(path) for path in self.search_path],
+            **(
+                {"shared_memory": self.shared_memory.to_json()}
+                if self.shared_memory != shared_memory_module.SharedMemory()
+                else {}
+            ),
+            "site_roots": site_roots if site_roots is not None else [],
             **(
                 {"source_directories": [str(path) for path in source_directories]}
                 if source_directories is not None
@@ -843,13 +855,19 @@ class Configuration:
             LOG.warning(str(error))
             return None
 
+    def get_site_roots(self) -> Sequence[str]:
+        site_roots = self.site_roots
+        if site_roots is not None:
+            return site_roots
+        return get_default_site_roots()
+
     # Expansion and validation of search paths cannot happen at Configuration creation
     # because link trees need to be built first.
     def expand_and_get_existent_search_paths(
         self,
     ) -> List[search_path_module.Element]:
         existent_paths = search_path_module.process_raw_elements(
-            self.search_path, get_site_roots()
+            self.search_path, self.get_site_roots()
         )
 
         typeshed_root = self.get_typeshed_respecting_override()
@@ -871,7 +889,7 @@ class Configuration:
         source_directories = self.source_directories
         if source_directories is not None:
             return search_path_module.process_raw_elements(
-                source_directories, get_site_roots()
+                source_directories, self.get_site_roots()
             )
         else:
             return []

@@ -34,7 +34,7 @@ from ..configuration import (
     Configuration,
     create_configuration,
     ExtensionElement,
-    get_site_roots,
+    get_default_site_roots,
     merge_partial_configurations,
     PartialConfiguration,
 )
@@ -98,6 +98,7 @@ class PartialConfigurationTest(unittest.TestCase):
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
         self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=42))
+        self.assertEqual(configuration.site_roots, None)
         self.assertEqual(configuration.number_of_workers, 43)
         self.assertEqual(configuration.use_buck2, True)
 
@@ -363,14 +364,16 @@ class PartialConfigurationTest(unittest.TestCase):
             [SimpleRawElement("foo"), SimpleRawElement("bar")],
         )
 
-        source_directories = PartialConfiguration.from_string(
-            json.dumps({"source_directories": ["foo"]})
-        ).source_directories
-        self.assertIsNotNone(source_directories)
+        self.assertIsNone(PartialConfiguration.from_string(json.dumps({})).site_roots)
+        site_roots = PartialConfiguration.from_string(
+            json.dumps({"site_roots": ["foo", "bar"]})
+        ).site_roots
+        self.assertIsNotNone(site_roots)
         self.assertListEqual(
-            list(source_directories),
-            [SimpleRawElement("foo")],
+            list(site_roots),
+            ["foo", "bar"],
         )
+
         source_directories = PartialConfiguration.from_string(
             json.dumps(
                 {
@@ -477,6 +480,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"python_version": 42}))
         assert_raises(json.dumps({"shared_memory": "abc"}))
         assert_raises(json.dumps({"shared_memory": {"heap_size": "abc"}}))
+        assert_raises(json.dumps({"site_roots": 42}))
         assert_raises(json.dumps({"unwatched_dependency": {"change_indicator": "abc"}}))
         assert_raises(json.dumps({"use_buck2": {}}))
 
@@ -588,6 +592,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_prepended("other_critical_files")
         assert_overwritten("python_version")
         assert_prepended("search_path")
+        assert_overwritten("site_roots")
         assert_raise_when_overridden("source_directories")
         assert_overwritten("strict")
         assert_prepended("taint_models_path")
@@ -721,8 +726,9 @@ class ConfigurationTest(testslide.TestCase):
                 oncall="oncall",
                 other_critical_files=["critical"],
                 python_version=PythonVersion(major=3, minor=6, micro=7),
-                shared_memory=SharedMemory(heap_size=1024),
                 search_path=[SimpleRawElement("search_path")],
+                shared_memory=SharedMemory(heap_size=1024),
+                site_roots=["site_root"],
                 source_directories=None,
                 strict=None,
                 taint_models_path=["taint"],
@@ -760,8 +766,9 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
-        self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=1024))
         self.assertEqual(configuration.source_directories, None)
+        self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=1024))
+        self.assertEqual(configuration.site_roots, ["site_root"])
         self.assertEqual(configuration.strict, False)
         self.assertEqual(configuration.taint_models_path, ["taint"])
         self.assertEqual(configuration.targets, None)
@@ -770,7 +777,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.use_buck2, False)
         self.assertEqual(configuration.version_hash, "abc")
 
-    def test_get_site_roots(self) -> None:
+    def test_get_default_site_roots(self) -> None:
         global_site_package = "/venv/lib/pythonX/site-packages"
         user_site_package = "/user/lib/pythonX/site-packages"
         self.mock_callable(site, "getsitepackages").to_return_value(
@@ -779,7 +786,9 @@ class ConfigurationTest(testslide.TestCase):
         self.mock_callable(site, "getusersitepackages").to_return_value(
             user_site_package
         ).and_assert_called_once()
-        self.assertListEqual(get_site_roots(), [user_site_package, global_site_package])
+        self.assertListEqual(
+            get_default_site_roots(), [user_site_package, global_site_package]
+        )
 
     def test_from_partial_configuration_in_virtual_environment(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -787,9 +796,9 @@ class ConfigurationTest(testslide.TestCase):
             ensure_directories_exists(root_path, ["venv/lib/pythonX/site-packages"])
 
             site_packages = str(root_path / "venv/lib/pythonX/site-packages")
-            self.mock_callable(configuration_module, "get_site_roots").to_return_value(
-                [site_packages]
-            ).and_assert_called_once()
+            self.mock_callable(
+                configuration_module, "get_default_site_roots"
+            ).to_return_value([site_packages]).and_assert_called_once()
 
             configuration = Configuration.from_partial_configuration(
                 project_root=Path("root"),
