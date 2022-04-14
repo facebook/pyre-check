@@ -511,9 +511,7 @@ module ReadOnly = struct
               PathLookup.ShadowedBy source_path)
 
 
-  let tracked_explicit_modules tracker =
-    source_paths tracker |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
-
+  let tracked_explicit_modules tracker = source_paths tracker |> List.map ~f:SourcePath.qualifier
 
   let get_raw_code tracker source_path =
     let path = SourcePath.full_path ~configuration:(configuration tracker) source_path in

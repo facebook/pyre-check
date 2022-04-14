@@ -131,6 +131,10 @@ let create ~configuration:({ Configuration.Analysis.excludes; _ } as configurati
   | _ -> None
 
 
+let qualifier { qualifier; _ } = qualifier
+
+let is_in_project { is_external; _ } = not is_external
+
 let create_for_testing ~relative ~is_external ~priority =
   let qualifier = qualifier_of_relative relative in
   let is_stub = PyrePath.is_path_python_stub relative in

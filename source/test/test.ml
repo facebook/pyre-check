@@ -2701,7 +2701,7 @@ module ScratchProject = struct
   let clean_ast_shared_memory module_tracker ast_environment =
     let deletions =
       ModuleTracker.source_paths module_tracker
-      |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+      |> List.map ~f:SourcePath.qualifier
       |> List.map ~f:(fun qualifier -> ModuleTracker.IncrementalUpdate.Delete qualifier)
     in
     AstEnvironment.update ~scheduler:(mock_scheduler ()) ast_environment (Update deletions)
@@ -2786,8 +2786,7 @@ module ScratchProject = struct
   let source_paths_of { module_tracker; _ } = ModuleTracker.source_paths module_tracker
 
   let qualifiers_of { module_tracker; _ } =
-    ModuleTracker.source_paths module_tracker
-    |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+    ModuleTracker.source_paths module_tracker |> List.map ~f:SourcePath.qualifier
 
 
   let build_ast_environment { context; module_tracker; _ } =

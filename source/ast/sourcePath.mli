@@ -19,6 +19,10 @@ val pp : Format.formatter -> t -> unit
 
 val create : configuration:Configuration.Analysis.t -> PyrePath.t -> t option
 
+val qualifier : t -> Reference.t
+
+val is_in_project : t -> bool
+
 val create_for_testing : relative:string -> is_external:bool -> priority:int -> t
 
 val qualifier_of_relative : string -> Reference.t
