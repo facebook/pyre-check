@@ -28,10 +28,6 @@ class Element(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_root(self) -> str:
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def command_line_argument(self) -> str:
         raise NotImplementedError
 
@@ -55,9 +51,6 @@ class SimpleElement(Element):
     def path(self) -> str:
         return self.root
 
-    def get_root(self) -> str:
-        return self.root
-
     def command_line_argument(self) -> str:
         return self.root
 
@@ -72,7 +65,7 @@ class SimpleElement(Element):
         )
 
     def expand_glob(self) -> List[Element]:
-        expanded = sorted(glob.glob(self.get_root()))
+        expanded = sorted(glob.glob(self.root))
         if expanded:
             return [SimpleElement(path) for path in expanded]
         else:
@@ -87,9 +80,6 @@ class SubdirectoryElement(Element):
 
     def path(self) -> str:
         return os.path.join(self.root, self.subdirectory)
-
-    def get_root(self) -> str:
-        return self.root
 
     def command_line_argument(self) -> str:
         return self.root + "$" + self.subdirectory
@@ -122,9 +112,6 @@ class SitePackageElement(Element):
 
     def path(self) -> str:
         return os.path.join(self.site_root, self.package_path())
-
-    def get_root(self) -> str:
-        return self.site_root
 
     def command_line_argument(self) -> str:
         return self.site_root + "$" + self.package_path()

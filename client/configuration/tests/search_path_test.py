@@ -56,11 +56,6 @@ class SearchPathTest(testslide.TestCase):
         self.assertEqual(SubdirectoryElement("foo", "bar").path(), "foo/bar")
         self.assertEqual(SitePackageElement("foo", "bar").path(), "foo/bar")
 
-    def test_get_root(self) -> None:
-        self.assertEqual(SimpleElement("foo").get_root(), "foo")
-        self.assertEqual(SubdirectoryElement("foo", "bar").get_root(), "foo")
-        self.assertEqual(SitePackageElement("foo", "bar").get_root(), "foo")
-
     def test_command_line_argument(self) -> None:
         self.assertEqual(SimpleElement("foo").command_line_argument(), "foo")
         self.assertEqual(
