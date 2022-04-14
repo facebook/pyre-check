@@ -358,6 +358,22 @@ let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environme
     ModuleTracker.ReadOnly.configuration module_tracker
   in
   match trigger with
+  | ColdStart ->
+      let timer = Timer.start () in
+      let source_paths = ModuleTracker.ReadOnly.source_paths module_tracker in
+      Log.info "Parsing %d stubs and sources..." (List.length source_paths);
+      let ast_environment = create upstream_tracker in
+      load_raw_sources ~scheduler ~ast_environment source_paths;
+      Statistics.performance
+        ~name:"sources parsed"
+        ~phase_name:"Parsing and preprocessing"
+        ~timer
+        ();
+      {
+        UpdateResult.invalidated_modules =
+          source_paths |> List.map ~f:SourcePath.qualifier |> List.sort ~compare:Reference.compare;
+        triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
+      }
   | Update module_updates -> (
       let reparse_source_paths, removed_modules, new_implicits =
         let categorize = function
@@ -413,22 +429,6 @@ let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environme
             |> RawSources.KeySet.elements
           in
           { UpdateResult.triggered_dependencies; invalidated_modules })
-  | ColdStart ->
-      let timer = Timer.start () in
-      let source_paths = ModuleTracker.ReadOnly.source_paths module_tracker in
-      Log.info "Parsing %d stubs and sources..." (List.length source_paths);
-      let ast_environment = create upstream_tracker in
-      load_raw_sources ~scheduler ~ast_environment source_paths;
-      Statistics.performance
-        ~name:"sources parsed"
-        ~phase_name:"Parsing and preprocessing"
-        ~timer
-        ();
-      {
-        UpdateResult.invalidated_modules =
-          source_paths |> List.map ~f:SourcePath.qualifier |> List.sort ~compare:Reference.compare;
-        triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
-      }
 
 
 (* Both `load` and `store` are no-ops here since `Sources` and `WildcardExports` are in shared
