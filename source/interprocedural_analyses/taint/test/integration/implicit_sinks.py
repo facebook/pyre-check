@@ -8,23 +8,33 @@
 from builtins import _test_source
 
 
-def propagate_sink(a):
+def propagate_sink_format_string(a):
     f"<{a}>"
 
 
-def inline_issue():
+def inline_issue_format_string():
     a = _test_source()
     f"<{a}>"
     f"{a}"
 
 
-def str_format():
+def propagate_sink_dot_format(a):
+    # TODO(T88183535): Should be propogated, but isn't
+    "<{}>".format(a)
+
+
+def inline_issue_dot_format():
     a = _test_source()
     # TODO(T88183535): Should be caught, but isn't
     "<{}>".format(a)
 
 
-def percent_format():
+def propagate_sink_percent_format(a):
+    # TODO(T88183535): Should be propogated, but isn't
+    "<%s>" % (a,)
+
+
+def inline_issue_percent_format():
     a = _test_source()
     # TODO(T88183535): Should be caught, but isn't
     "<%s>" % (a,)
