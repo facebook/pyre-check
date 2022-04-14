@@ -181,3 +181,26 @@ class SearchPathTest(testslide.TestCase):
                     ),
                 ],
             )
+
+    def test_process_raw_elements_site_root_priority(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            ensure_directories_exists(root_path, ["system/foo", "user/foo", "derp"])
+
+            self.assertListEqual(
+                process_raw_elements(
+                    [
+                        SitePackageRawElement(package_name="foo"),
+                    ],
+                    site_roots=[
+                        str(root_path / "derp"),
+                        str(root_path / "user"),
+                        str(root_path / "system"),
+                    ],
+                ),
+                [
+                    SitePackageElement(
+                        site_root=str(root_path / "user"), package_name="foo"
+                    ),
+                ],
+            )

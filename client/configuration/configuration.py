@@ -114,7 +114,7 @@ class ExtensionElement:
 
 def get_site_roots() -> List[str]:
     try:
-        return site.getsitepackages() + [site.getusersitepackages()]
+        return [site.getusersitepackages()] + site.getsitepackages()
     except AttributeError:
         # There are a few Python versions that ship with a broken venv,
         # where `getsitepackages` is not available.

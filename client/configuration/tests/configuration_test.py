@@ -779,7 +779,7 @@ class ConfigurationTest(testslide.TestCase):
         self.mock_callable(site, "getusersitepackages").to_return_value(
             user_site_package
         ).and_assert_called_once()
-        self.assertListEqual(get_site_roots(), [global_site_package, user_site_package])
+        self.assertListEqual(get_site_roots(), [user_site_package, global_site_package])
 
     def test_from_partial_configuration_in_virtual_environment(self) -> None:
         with tempfile.TemporaryDirectory() as root:

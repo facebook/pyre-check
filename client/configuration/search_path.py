@@ -209,21 +209,31 @@ def process_raw_elements(
 ) -> List[Element]:
     elements: List[Element] = []
 
-    def add_if_exists(element: Element) -> None:
+    def add_if_exists(element: Element) -> bool:
         if os.path.exists(element.path()):
             elements.append(element)
-        else:
-            LOG.warning(f"Path does not exist for search path: {element}")
+            return True
+        return False
 
     for raw_element in raw_elements:
         for expanded_raw_element in raw_element.expand_glob():
             if isinstance(expanded_raw_element, SitePackageRawElement):
-                for site_root in site_roots:
+                added = any(
                     add_if_exists(expanded_raw_element.to_element(site_root))
+                    for site_root in site_roots
+                )
+                if not added:
+                    LOG.warning(
+                        "Site package does not exist: "
+                        f"`{expanded_raw_element.package_name}`"
+                    )
             elif isinstance(
                 expanded_raw_element, (SimpleRawElement, SubdirectoryRawElement)
             ):
-                add_if_exists(expanded_raw_element.to_element())
+                element = expanded_raw_element.to_element()
+                added = add_if_exists(element)
+                if not added:
+                    LOG.warning(f"Path does not exist for search path: {element}")
             else:
                 raise RuntimeError(
                     f"Unhandled raw search path element type: {expanded_raw_element}"
