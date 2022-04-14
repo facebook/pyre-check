@@ -252,7 +252,9 @@ def get_source_path(
     buck_mode = configuration.buck_mode.get() if configuration.buck_mode else None
 
     if source_directories is not None and targets is None:
-        elements: Sequence[search_path.Element] = configuration.get_source_directories()
+        elements: Sequence[
+            search_path.Element
+        ] = configuration.expand_and_get_existent_source_directories()
         if len(elements) == 0:
             LOG.warning("Pyre did not find an existent source directory.")
 

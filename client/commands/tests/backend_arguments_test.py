@@ -291,7 +291,7 @@ class ArgumentsTest(testslide.TestCase):
                         project_root=str(root_path / "project"),
                         dot_pyre_directory=(root_path / ".pyre"),
                         source_directories=[element],
-                    ).expand_and_filter_nonexistent_paths(),
+                    ),
                     artifact_root_name="irrelevant",
                 ),
                 SimpleSourcePath([element]),
@@ -308,7 +308,7 @@ class ArgumentsTest(testslide.TestCase):
                         project_root=str(root_path / "project"),
                         dot_pyre_directory=(root_path / ".pyre"),
                         source_directories=[element],
-                    ).expand_and_filter_nonexistent_paths(),
+                    ),
                     artifact_root_name="irrelevant",
                 ),
                 SimpleSourcePath([]),
@@ -336,7 +336,7 @@ class ArgumentsTest(testslide.TestCase):
                         dot_pyre_directory=(root_path / ".pyre"),
                         source_directories=[element],
                         unwatched_dependency=unwatched_dependency,
-                    ).expand_and_filter_nonexistent_paths(),
+                    ),
                     artifact_root_name="irrelevant",
                 ),
                 WithUnwatchedDependencySourcePath(
@@ -365,7 +365,7 @@ class ArgumentsTest(testslide.TestCase):
                         dot_pyre_directory=(root_path / ".pyre"),
                         source_directories=[element],
                         unwatched_dependency=unwatched_dependency,
-                    ).expand_and_filter_nonexistent_paths(),
+                    ),
                     artifact_root_name="irrelevant",
                 ),
                 SimpleSourcePath(
@@ -489,7 +489,7 @@ class ArgumentsTest(testslide.TestCase):
                         project_root=str(root_path / "project"),
                         dot_pyre_directory=(root_path / ".pyre"),
                         targets=["//ct:frog"],
-                    ).expand_and_filter_nonexistent_paths(),
+                    ),
                     artifact_root_name="irrelevant",
                 )
 
@@ -501,7 +501,7 @@ class ArgumentsTest(testslide.TestCase):
                     dot_pyre_directory=Path(".pyre"),
                     source_directories=None,
                     targets=None,
-                ).expand_and_filter_nonexistent_paths(),
+                ),
                 artifact_root_name="irrelevant",
             )
 
@@ -513,7 +513,7 @@ class ArgumentsTest(testslide.TestCase):
                     dot_pyre_directory=Path(".pyre"),
                     source_directories=[search_path.SimpleElement("src")],
                     targets=["//ct:ayla"],
-                ).expand_and_filter_nonexistent_paths(),
+                ),
                 artifact_root_name="irrelevant",
             )
 

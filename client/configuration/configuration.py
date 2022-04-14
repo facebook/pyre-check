@@ -843,9 +843,6 @@ class Configuration:
             **({"version_hash": version_hash} if version_hash is not None else {}),
         }
 
-    def get_source_directories(self) -> List[search_path_module.Element]:
-        return list(self.source_directories or [])
-
     def get_existent_unwatched_dependency(
         self,
     ) -> Optional[unwatched.UnwatchedDependency]:
@@ -894,42 +891,14 @@ class Configuration:
         # List[search_path_module.SimpleElement]]`
         return existent_paths + typeshed_paths
 
-    def expand_and_filter_nonexistent_paths(self) -> "Configuration":
+    def expand_and_get_existent_source_directories(
+        self,
+    ) -> List[search_path_module.Element]:
         source_directories = self.source_directories
-
-        return Configuration(
-            project_root=self.project_root,
-            dot_pyre_directory=self.dot_pyre_directory,
-            binary=self.binary,
-            buck_mode=self.buck_mode,
-            disabled=self.disabled,
-            do_not_ignore_errors_in=self.do_not_ignore_errors_in,
-            excludes=self.excludes,
-            extensions=self.extensions,
-            ide_features=self.ide_features,
-            ignore_all_errors=self.ignore_all_errors,
-            ignore_infer=self.ignore_infer,
-            isolation_prefix=self.isolation_prefix,
-            logger=self.logger,
-            number_of_workers=self.number_of_workers,
-            oncall=self.oncall,
-            other_critical_files=self.other_critical_files,
-            pysa_version_hash=self.pysa_version_hash,
-            python_version=self.python_version,
-            shared_memory=self.shared_memory,
-            relative_local_root=self.relative_local_root,
-            search_path=self.search_path,
-            source_directories=_expand_and_get_existent_paths(source_directories)
-            if source_directories
-            else None,
-            strict=self.strict,
-            taint_models_path=self.taint_models_path,
-            targets=self.targets,
-            typeshed=self.typeshed,
-            unwatched_dependency=self.unwatched_dependency,
-            use_buck2=self.use_buck2,
-            version_hash=self.version_hash,
-        )
+        if source_directories is not None:
+            return _expand_and_get_existent_paths(source_directories)
+        else:
+            return []
 
     def get_existent_ignore_infer_paths(self) -> List[str]:
         existent_paths = []
@@ -1134,10 +1103,9 @@ def create_configuration(
             override=command_argument_configuration,
         )
 
-    configuration = Configuration.from_partial_configuration(
+    return Configuration.from_partial_configuration(
         project_root, relative_local_root, partial_configuration
     )
-    return configuration.expand_and_filter_nonexistent_paths()
 
 
 def check_nested_local_configuration(configuration: Configuration) -> None:

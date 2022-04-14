@@ -1543,18 +1543,14 @@ class ConfigurationTest(testslide.TestCase):
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
             ensure_directories_exists(root_path, ["a1", "a2", "b", "c"])
-            source_directories = (
-                Configuration(
-                    project_root="irrelevant",
-                    dot_pyre_directory=Path(".pyre"),
-                    source_directories=[
-                        SimpleElement(str(root_path / "a*")),
-                        SimpleElement(str(root_path / "b")),
-                    ],
-                )
-                .expand_and_filter_nonexistent_paths()
-                .source_directories
-            )
+            source_directories = Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                source_directories=[
+                    SimpleElement(str(root_path / "a*")),
+                    SimpleElement(str(root_path / "b")),
+                ],
+            ).expand_and_get_existent_source_directories()
             self.assertIsNotNone(source_directories)
             self.assertListEqual(
                 list(source_directories),
