@@ -134,24 +134,6 @@ def _in_virtual_environment(override: Optional[bool] = None) -> bool:
     return sys.prefix != sys.base_prefix
 
 
-def _expand_and_get_existent_paths(
-    paths: Sequence[search_path_module.Element],
-) -> List[search_path_module.Element]:
-    expanded_search_paths = [
-        expanded_path
-        for search_path_element in paths
-        for expanded_path in search_path_element.expand_glob()
-    ]
-    existent_paths = []
-    for search_path_element in expanded_search_paths:
-        search_path = search_path_element.path()
-        if os.path.exists(search_path):
-            existent_paths.append(search_path_element)
-        else:
-            LOG.warning(f"Path does not exist: {search_path}")
-    return existent_paths
-
-
 @dataclass(frozen=True)
 class PartialConfiguration:
     binary: Optional[str] = None
@@ -174,8 +156,8 @@ class PartialConfiguration:
     shared_memory: shared_memory_module.SharedMemory = (
         shared_memory_module.SharedMemory()
     )
-    search_path: Sequence[search_path_module.Element] = field(default_factory=list)
-    source_directories: Optional[Sequence[search_path_module.Element]] = None
+    search_path: Sequence[search_path_module.RawElement] = field(default_factory=list)
+    source_directories: Optional[Sequence[search_path_module.RawElement]] = None
     strict: Optional[bool] = None
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
@@ -204,7 +186,7 @@ class PartialConfiguration:
     ) -> "PartialConfiguration":
         strict: Optional[bool] = True if arguments.strict else None
         source_directories = [
-            search_path_module.SimpleElement(element)
+            search_path_module.SimpleRawElement(element)
             for element in arguments.source_directories
         ] or None
         targets: Optional[List[str]] = (
@@ -250,7 +232,7 @@ class PartialConfiguration:
                 hash_table_power=arguments.shared_memory_hash_table_power,
             ),
             search_path=[
-                search_path_module.SimpleElement(element)
+                search_path_module.SimpleRawElement(element)
                 for element in arguments.search_path
             ],
             source_directories=source_directories,
@@ -350,12 +332,12 @@ class PartialConfiguration:
                 search_path = [
                     element
                     for json in search_path_json
-                    for element in search_path_module.create(
+                    for element in search_path_module.create_raw_elements(
                         json, site_roots=get_site_roots()
                     )
                 ]
             else:
-                search_path = search_path_module.create(
+                search_path = search_path_module.create_raw_elements(
                     search_path_json, site_roots=get_site_roots()
                 )
 
@@ -397,7 +379,7 @@ class PartialConfiguration:
                 source_directories = [
                     element
                     for json in source_directories_json
-                    for element in search_path_module.create(
+                    for element in search_path_module.create_raw_elements(
                         json, site_roots=get_site_roots()
                     )
                 ]
@@ -691,8 +673,8 @@ class Configuration:
         shared_memory_module.SharedMemory()
     )
     relative_local_root: Optional[str] = None
-    search_path: Sequence[search_path_module.Element] = field(default_factory=list)
-    source_directories: Optional[Sequence[search_path_module.Element]] = None
+    search_path: Sequence[search_path_module.RawElement] = field(default_factory=list)
+    source_directories: Optional[Sequence[search_path_module.RawElement]] = None
     strict: bool = False
     taint_models_path: Sequence[str] = field(default_factory=list)
     targets: Optional[Sequence[str]] = None
@@ -712,7 +694,7 @@ class Configuration:
         if len(search_path) == 0 and _in_virtual_environment(in_virtual_environment):
             LOG.warning("Using virtual environment site-packages in search path...")
             search_path = [
-                search_path_module.SimpleElement(root) for root in get_site_roots()
+                search_path_module.SimpleRawElement(root) for root in get_site_roots()
             ]
 
         return Configuration(
@@ -824,9 +806,9 @@ class Configuration:
                 if relative_local_root is not None
                 else {}
             ),
-            "search_path": [path.path() for path in self.search_path],
+            "search_path": [str(path) for path in self.search_path],
             **(
-                {"source_directories": [path.path() for path in source_directories]}
+                {"source_directories": [str(path) for path in source_directories]}
                 if source_directories is not None
                 else {}
             ),
@@ -871,24 +853,22 @@ class Configuration:
 
     # Expansion and validation of search paths cannot happen at Configuration creation
     # because link trees need to be built first.
-    def expand_and_get_existent_search_paths(self) -> List[search_path_module.Element]:
-        existent_paths = _expand_and_get_existent_paths(self.search_path)
+    def expand_and_get_existent_search_paths(
+        self,
+    ) -> List[search_path_module.Element]:
+        existent_paths = search_path_module.process_raw_elements(self.search_path)
 
         typeshed_root = self.get_typeshed_respecting_override()
-        typeshed_paths = (
-            []
-            if typeshed_root is None
-            else [
-                search_path_module.SimpleElement(str(element))
-                for element in find_directories.find_typeshed_search_paths(
-                    Path(typeshed_root)
-                )
-            ]
-        )
+        if typeshed_root is None:
+            return existent_paths
 
-        # pyre-ignore: Unsupported operand [58]: `+` is not supported for
-        # operand types `List[search_path_module.Element]` and `Union[List[typing.Any],
-        # List[search_path_module.SimpleElement]]`
+        typeshed_paths: List[search_path_module.Element] = [
+            search_path_module.SimpleElement(str(element))
+            for element in find_directories.find_typeshed_search_paths(
+                Path(typeshed_root)
+            )
+        ]
+
         return existent_paths + typeshed_paths
 
     def expand_and_get_existent_source_directories(
@@ -896,7 +876,7 @@ class Configuration:
     ) -> List[search_path_module.Element]:
         source_directories = self.source_directories
         if source_directories is not None:
-            return _expand_and_get_existent_paths(source_directories)
+            return search_path_module.process_raw_elements(source_directories)
         else:
             return []
 

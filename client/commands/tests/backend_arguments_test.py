@@ -284,30 +284,30 @@ class ArgumentsTest(testslide.TestCase):
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre", "src"])
-            element = search_path.SimpleElement(str(root_path / "src"))
+            raw_element = search_path.SimpleRawElement(str(root_path / "src"))
             self.assertEqual(
                 get_source_path(
                     configuration.Configuration(
                         project_root=str(root_path / "project"),
                         dot_pyre_directory=(root_path / ".pyre"),
-                        source_directories=[element],
+                        source_directories=[raw_element],
                     ),
                     artifact_root_name="irrelevant",
                 ),
-                SimpleSourcePath([element]),
+                SimpleSourcePath([raw_element.to_element()]),
             )
 
     def test_get_simple_source_path__nonexists(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre"])
-            element = search_path.SimpleElement(str(root_path / "src"))
+            raw_element = search_path.SimpleRawElement(str(root_path / "src"))
             self.assertEqual(
                 get_source_path(
                     configuration.Configuration(
                         project_root=str(root_path / "project"),
                         dot_pyre_directory=(root_path / ".pyre"),
-                        source_directories=[element],
+                        source_directories=[raw_element],
                     ),
                     artifact_root_name="irrelevant",
                 ),
@@ -321,7 +321,7 @@ class ArgumentsTest(testslide.TestCase):
             setup.ensure_files_exist(
                 root_path, ["src/indicator", "unwatched_root/CHECKSUMS"]
             )
-            element = search_path.SimpleElement(str(root_path / "src"))
+            raw_element = search_path.SimpleRawElement(str(root_path / "src"))
             unwatched_dependency = configuration.UnwatchedDependency(
                 change_indicator="indicator",
                 files=configuration.UnwatchedFiles(
@@ -334,13 +334,13 @@ class ArgumentsTest(testslide.TestCase):
                         project_root=str(root_path / "project"),
                         relative_local_root="local",
                         dot_pyre_directory=(root_path / ".pyre"),
-                        source_directories=[element],
+                        source_directories=[raw_element],
                         unwatched_dependency=unwatched_dependency,
                     ),
                     artifact_root_name="irrelevant",
                 ),
                 WithUnwatchedDependencySourcePath(
-                    elements=[element],
+                    elements=[raw_element.to_element()],
                     change_indicator_root=(root_path / "project" / "local"),
                     unwatched_dependency=unwatched_dependency,
                 ),
@@ -351,7 +351,7 @@ class ArgumentsTest(testslide.TestCase):
             root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, [".pyre", "project"])
             setup.ensure_files_exist(root_path, ["src/indicator"])
-            element = search_path.SimpleElement(str(root_path / "src"))
+            raw_element = search_path.SimpleRawElement(str(root_path / "src"))
             unwatched_dependency = configuration.UnwatchedDependency(
                 change_indicator="indicator",
                 files=configuration.UnwatchedFiles(
@@ -363,13 +363,13 @@ class ArgumentsTest(testslide.TestCase):
                     configuration.Configuration(
                         project_root=str(root_path / "project"),
                         dot_pyre_directory=(root_path / ".pyre"),
-                        source_directories=[element],
+                        source_directories=[raw_element],
                         unwatched_dependency=unwatched_dependency,
                     ),
                     artifact_root_name="irrelevant",
                 ),
                 SimpleSourcePath(
-                    elements=[element],
+                    elements=[raw_element.to_element()],
                 ),
             )
 
@@ -511,7 +511,7 @@ class ArgumentsTest(testslide.TestCase):
                 configuration.Configuration(
                     project_root="project",
                     dot_pyre_directory=Path(".pyre"),
-                    source_directories=[search_path.SimpleElement("src")],
+                    source_directories=[search_path.SimpleRawElement("src")],
                     targets=["//ct:ayla"],
                 ),
                 artifact_root_name="irrelevant",

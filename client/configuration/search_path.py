@@ -31,18 +31,6 @@ class Element(abc.ABC):
     def command_line_argument(self) -> str:
         raise NotImplementedError
 
-    @abc.abstractmethod
-    def expand_global_root(self, global_root: str) -> "Element":
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def expand_relative_root(self, relative_root: str) -> "Element":
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def expand_glob(self) -> List["Element"]:
-        raise NotImplementedError
-
 
 @dataclasses.dataclass(frozen=True)
 class SimpleElement(Element):
@@ -53,24 +41,6 @@ class SimpleElement(Element):
 
     def command_line_argument(self) -> str:
         return self.root
-
-    def expand_global_root(self, global_root: str) -> "SimpleElement":
-        return SimpleElement(
-            filesystem.expand_global_root(self.root, global_root=global_root)
-        )
-
-    def expand_relative_root(self, relative_root: str) -> "SimpleElement":
-        return SimpleElement(
-            _expand_relative_root(self.root, relative_root=relative_root)
-        )
-
-    def expand_glob(self) -> List[Element]:
-        expanded = sorted(glob.glob(self.root))
-        if expanded:
-            return [SimpleElement(path) for path in expanded]
-        else:
-            LOG.warning(f"'{self.path()}' does not match any paths.")
-            return []
 
 
 @dataclasses.dataclass(frozen=True)
@@ -83,21 +53,6 @@ class SubdirectoryElement(Element):
 
     def command_line_argument(self) -> str:
         return self.root + "$" + self.subdirectory
-
-    def expand_global_root(self, global_root: str) -> "SubdirectoryElement":
-        return SubdirectoryElement(
-            root=filesystem.expand_global_root(self.root, global_root=global_root),
-            subdirectory=self.subdirectory,
-        )
-
-    def expand_relative_root(self, relative_root: str) -> "SubdirectoryElement":
-        return SubdirectoryElement(
-            root=_expand_relative_root(self.root, relative_root=relative_root),
-            subdirectory=self.subdirectory,
-        )
-
-    def expand_glob(self) -> List[Element]:
-        return [self]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -116,23 +71,107 @@ class SitePackageElement(Element):
     def command_line_argument(self) -> str:
         return self.site_root + "$" + self.package_path()
 
-    def expand_global_root(self, global_root: str) -> "SitePackageElement":
-        # Site package does not participate in root expansion.
-        return self
 
-    def expand_relative_root(self, relative_root: str) -> "SitePackageElement":
-        # Site package does not participate in root expansion.
-        return self
+class RawElement(abc.ABC):
+    @abc.abstractmethod
+    def expand_global_root(self, global_root: str) -> "RawElement":
+        raise NotImplementedError
 
-    def expand_glob(self) -> List["Element"]:
+    @abc.abstractmethod
+    def expand_relative_root(self, relative_root: str) -> "RawElement":
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def expand_glob(self) -> List["RawElement"]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def to_element(self) -> Element:
+        raise NotImplementedError
+
+
+@dataclasses.dataclass(frozen=True)
+class SimpleRawElement(RawElement):
+    root: str
+
+    def expand_global_root(self, global_root: str) -> "SimpleRawElement":
+        return SimpleRawElement(
+            filesystem.expand_global_root(self.root, global_root=global_root)
+        )
+
+    def expand_relative_root(self, relative_root: str) -> "SimpleRawElement":
+        return SimpleRawElement(
+            _expand_relative_root(self.root, relative_root=relative_root)
+        )
+
+    def expand_glob(self) -> List[RawElement]:
+        expanded = sorted(glob.glob(self.root))
+        if expanded:
+            return [SimpleRawElement(path) for path in expanded]
+        else:
+            LOG.warning(f"'{self.root}' does not match any paths.")
+            return []
+
+    def to_element(self) -> SimpleElement:
+        return SimpleElement(self.root)
+
+
+@dataclasses.dataclass(frozen=True)
+class SubdirectoryRawElement(RawElement):
+    root: str
+    subdirectory: str
+
+    def expand_global_root(self, global_root: str) -> "SubdirectoryRawElement":
+        return SubdirectoryRawElement(
+            root=filesystem.expand_global_root(self.root, global_root=global_root),
+            subdirectory=self.subdirectory,
+        )
+
+    def expand_relative_root(self, relative_root: str) -> "SubdirectoryRawElement":
+        return SubdirectoryRawElement(
+            root=_expand_relative_root(self.root, relative_root=relative_root),
+            subdirectory=self.subdirectory,
+        )
+
+    def expand_glob(self) -> List[RawElement]:
         return [self]
 
+    def to_element(self) -> SubdirectoryElement:
+        return SubdirectoryElement(self.root, self.subdirectory)
 
-def create(
+
+@dataclasses.dataclass(frozen=True)
+class SitePackageRawElement(RawElement):
+    site_root: str
+    package_name: str
+    is_toplevel_module: bool = False
+
+    def package_path(self) -> str:
+        module_suffix = ".py" if self.is_toplevel_module else ""
+        return self.package_name + module_suffix
+
+    def expand_global_root(self, global_root: str) -> "SitePackageRawElement":
+        # Site package does not participate in root expansion.
+        return self
+
+    def expand_relative_root(self, relative_root: str) -> "SitePackageRawElement":
+        # Site package does not participate in root expansion.
+        return self
+
+    def expand_glob(self) -> List["RawElement"]:
+        return [self]
+
+    def to_element(self) -> SitePackageElement:
+        return SitePackageElement(
+            self.site_root, self.package_name, self.is_toplevel_module
+        )
+
+
+def create_raw_elements(
     json: Union[str, Dict[str, object]], site_roots: Iterable[str]
-) -> List[Element]:
+) -> List[RawElement]:
     if isinstance(json, str):
-        return [SimpleElement(json)]
+        return [SimpleRawElement(json)]
     elif isinstance(json, dict):
 
         def assert_string_item(input: Dict[str, object], name: str) -> str:
@@ -146,14 +185,14 @@ def create(
 
         if "root" in json and "subdirectory" in json:
             return [
-                SubdirectoryElement(
+                SubdirectoryRawElement(
                     root=assert_string_item(json, "root"),
                     subdirectory=assert_string_item(json, "subdirectory"),
                 )
             ]
         if "import_root" in json and "source" in json:
             return [
-                SubdirectoryElement(
+                SubdirectoryRawElement(
                     root=assert_string_item(json, "import_root"),
                     subdirectory=assert_string_item(json, "source"),
                 )
@@ -169,7 +208,7 @@ def create(
                     f"got {is_toplevel_module}"
                 )
             return [
-                SitePackageElement(
+                SitePackageRawElement(
                     site_root=root,
                     package_name=assert_string_item(json, "site-package"),
                     is_toplevel_module=bool(is_toplevel_module),
@@ -180,3 +219,17 @@ def create(
     raise exceptions.InvalidConfiguration(
         f"Invalid JSON format for search path element: {json}"
     )
+
+
+def process_raw_elements(
+    raw_elements: Iterable[RawElement],
+) -> List[Element]:
+    elements = []
+    for raw_element in raw_elements:
+        for expanded_raw_element in raw_element.expand_glob():
+            element = expanded_raw_element.to_element()
+            if os.path.exists(element.path()):
+                elements.append(element)
+            else:
+                LOG.warning(f"Path does not exist for search path: {element}")
+    return elements
