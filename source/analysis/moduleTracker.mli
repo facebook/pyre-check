@@ -10,7 +10,7 @@ module IncrementalUpdate : sig
     | NewExplicit of Ast.SourcePath.t
     | NewImplicit of Ast.Reference.t
     | Delete of Ast.Reference.t
-  [@@deriving sexp, compare, eq]
+  [@@deriving show, sexp, compare, eq]
 end
 
 module PathLookup : sig
@@ -18,7 +18,7 @@ module PathLookup : sig
     | Found of Ast.SourcePath.t
     | ShadowedBy of Ast.SourcePath.t
     | NotFound
-  [@@deriving sexp, compare]
+  [@@deriving show, sexp, compare]
 end
 
 type t

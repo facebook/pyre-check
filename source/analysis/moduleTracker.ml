@@ -14,7 +14,7 @@ module PathLookup = struct
     | Found of Ast.SourcePath.t
     | ShadowedBy of Ast.SourcePath.t
     | NotFound
-  [@@deriving sexp, compare]
+  [@@deriving show, sexp, compare]
 end
 
 module IncrementalUpdate = struct
@@ -22,7 +22,7 @@ module IncrementalUpdate = struct
     | NewExplicit of Ast.SourcePath.t
     | NewImplicit of Ast.Reference.t
     | Delete of Reference.t
-  [@@deriving sexp, compare]
+  [@@deriving show, sexp, compare]
 
   let equal = [%compare.equal: t]
 end
