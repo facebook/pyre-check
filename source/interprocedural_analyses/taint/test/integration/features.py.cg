@@ -1,6 +1,8 @@
 @generated
 Call dependencies
 features.$toplevel (fun) -> []
+features.SetItemClass::$class_toplevel (method) -> []
+features.SetItemClass::__setitem__ (method) -> []
 features.async_issue_bools (fun) -> [_test_sink (fun) features.async_tuple_of_bools (fun)]
 features.async_tuple_of_bools (fun) -> [_test_source (fun)]
 features.dynamic_feature_tito (fun) -> []
@@ -12,6 +14,7 @@ features.len (fun) -> []
 features.min (fun) -> []
 features.model_missing_feature (fun) -> []
 features.named (fun) -> []
+features.no_always_when_calling_setitem (fun) -> [_test_source (fun) features.SetItemClass::__setitem__ (method) object::__init__ (method) object::__new__ (method)]
 features.optional_scalar (fun) -> []
 features.return_tuple_of_bools (fun) -> [_test_source (fun)]
 features.returns_tainted_object (fun) -> [_test_source (fun)]

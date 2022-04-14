@@ -108,3 +108,17 @@ def issue_via_in():
 def model_missing_feature(arg):
     # TODO(T116691133): Miss "always-via" for feature string_concat_rhs
     return 0
+
+
+class SetItemClass:
+    def __setitem__(self, key, value):
+        pass
+
+
+def no_always_when_calling_setitem():
+    o = _test_source()
+    a = SetItemClass()
+    a["test_key"] = o
+    # This test reproduces T62465444. The model of this method
+    # should have feature "always-via": "copy", not "via": "copy"
+    return a
