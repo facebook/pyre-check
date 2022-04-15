@@ -5,5 +5,5 @@
   (pps ppx_deriving.eq ppx_deriving.show ppx_hash ppx_compare ppx_sexp_conv
     ppx_deriving_yojson))
  (libraries base64 core sexplib yojson ppx_deriving ppx_deriving_yojson
-   ppx_deriving_yojson.runtime pyrelib.file pyrelib.pyre
+   ppx_deriving_yojson.runtime pyrelib.file pyrelib.pyre pyrelib.data_structures
    pyrelib.configuration pyrelib.recognized))

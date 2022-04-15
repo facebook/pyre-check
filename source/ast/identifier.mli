@@ -11,7 +11,7 @@ type t = string [@@deriving compare, sexp, hash, to_yojson]
 
 module Map : Map.S with type Key.t = t
 
-module SerializableMap : SerializableMap.S with type key = t
+module SerializableMap : Data_structures.SerializableMap.S with type key = t
 
 module Set : Set.S with type Elt.t = t
 
