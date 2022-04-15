@@ -24,21 +24,7 @@ end
 include T
 
 module Set = struct
-  include Stdlib.Set.Make (T)
-
-  let t_of_sexp set = [%of_sexp: T.t list] set |> of_list
-
-  let sexp_of_t set = set |> elements |> [%sexp_of: T.t list]
-
-  let hash_fold_t state set = set |> elements |> [%hash_fold: T.t list] state
-
-  let hash set = set |> elements |> [%hash: T.t list]
-
-  let show set =
-    set |> elements |> List.map ~f:T.show |> String.concat ~sep:", " |> Format.asprintf "{%s}"
-
-
-  let pp format set = Format.fprintf format "%s" (show set)
+  include Data_structures.SerializableSet.Make (T)
 
   let filter_sources =
     filter (function
