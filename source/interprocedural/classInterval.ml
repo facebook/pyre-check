@@ -35,7 +35,7 @@ let less_or_equal ~left ~right = Interval.Int.is_subset left ~of_:right
 
 let pp_interval formatter interval =
   if Interval.Int.is_empty interval then
-    Format.fprintf formatter ""
+    Format.fprintf formatter "<empty>"
   else
     Format.fprintf
       formatter

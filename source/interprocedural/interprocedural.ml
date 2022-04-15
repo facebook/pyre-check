@@ -18,3 +18,4 @@ module FixpointState = FixpointState
 module AnalysisResult = AnalysisResult
 module ClassHierarchyGraph = ClassHierarchyGraph
 module ClassInterval = ClassInterval
+module IntervalSet = IntervalSet
