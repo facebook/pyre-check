@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-from typing import Any, cast, Dict, Generic, Iterable, Mapping, Optional, TypeVar
+from typing import Any, cast, Dict, Generic, Iterable, Mapping, Optional, TypeVar, Union
 
 
 def dictionary_source():
@@ -360,3 +360,29 @@ def test_mapping_sanitize_get(d: Mapping):
 
 def test_mapping_sanitize_getitem(d: Mapping):
     _test_sink(d[_test_source()])
+
+
+def taint_dict_keys(request):
+    service_id = request.service_id
+    service_type = request.type_
+    oncall = request.oncall
+    kvs: Dict[str, Union[str, Optional[int]]] = {
+        "1": service_id,
+        "2": service_type.value,
+        "3": oncall,
+    }
+    _test_sink(
+        f"""
+            SELECT
+            {", ".join(kvs.keys())}
+            FROM
+            WHERE service_id = %s
+        """
+    )
+    return kvs
+
+
+def taint_dict_keys_false_positive():
+    request = _test_source()
+    # TODO(T116671305): Should not have an issue here
+    taint_dict_keys(request)

@@ -373,6 +373,136 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "dictionary.taint_dict_keys_false_positive",
+    "callable_line": 385,
+    "code": 5002,
+    "line": 388,
+    "start": 20,
+    "end": 27,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 386,
+              "start": 14,
+              "end": 28
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "obscure:model" },
+                  { "always-via": "format-string" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "dictionary.py",
+                "line": 388,
+                "start": 20,
+                "end": 27
+              },
+              "resolves_to": [ "dictionary.taint_dict_keys" ],
+              "port": "formal(request)[oncall]"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "obscure:model" },
+                  { "always-via": "format-string" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "dictionary.py",
+                "line": 388,
+                "start": 20,
+                "end": 27
+              },
+              "resolves_to": [ "dictionary.taint_dict_keys" ],
+              "port": "formal(request)[service_id]"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "tito" },
+                  { "always-via": "obscure:model" },
+                  { "always-via": "format-string" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "dictionary.py",
+                "line": 388,
+                "start": 20,
+                "end": 27
+              },
+              "resolves_to": [ "dictionary.taint_dict_keys" ],
+              "port": "formal(request)[type_][value]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "obscure:model" },
+      { "always-via": "format-string" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "dictionary.taint_dict_keys",
+      "index": 0,
+      "parameter": "formal(request)"
+    },
+    "master_handle":
+      "dictionary.taint_dict_keys_false_positive:5002:0:Call|dictionary.taint_dict_keys|0|formal(request):e5ce7aa66bb510b5bd1788bdefd312f8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dictionary.test_index_from_tito",
     "callable_line": 303,
     "code": 5002,
@@ -1919,6 +2049,130 @@
               "start": 16,
               "end": 17
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.taint_dict_keys",
+    "sinks": [
+      {
+        "port": "formal(request)[oncall]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [
+              { "line": 377, "start": 22, "end": 43 },
+              { "line": 377, "start": 32, "end": 42 }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 375,
+              "start": 8,
+              "end": 8
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(request)[service_id]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [
+              { "line": 377, "start": 22, "end": 43 },
+              { "line": 377, "start": 32, "end": 42 }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 375,
+              "start": 8,
+              "end": 8
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(request)[type_][value]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [
+              { "line": 377, "start": 22, "end": 43 },
+              { "line": 377, "start": 32, "end": 42 }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 375,
+              "start": 8,
+              "end": 8
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(request)[oncall]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[3]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(request)[service_id]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[1]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(request)[type_][value]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[2]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
