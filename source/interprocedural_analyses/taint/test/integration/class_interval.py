@@ -391,3 +391,80 @@ def abstract_method(b: B13, c: C13):
     _test_sink(x)  # Issue here
     y = b.f()
     _test_sink(y)  # No issue here
+
+
+"""
+           A: [1,8]
+          / \
+         /   \
+        /     \
+B: [2,5]   C: [6,7]
+        \     /
+         \   /
+          \ /
+           D: [3,4]
+"""
+
+
+class A14:
+    def m1(self):
+        return self.m2()
+
+    def m2(self):
+        pass
+
+
+class C14(A14):
+    def m2(self):
+        # C14's interval is [6,7] \/ [3,4] = [3,7], which intersects
+        # with B14's interval [3,4], due to multi-inheritance
+        return _test_source()
+
+
+class B14(A14):
+    def m0(self):
+        return self.m1()
+
+    def m2(self):
+        return 0
+
+
+class D14(B14, C14):
+    pass
+
+
+def multi_inheritance_false_positive_one_hop(b: B14):
+    _test_sink(b.m0())
+
+
+class A15:
+    def m1(self):
+        return self.m2()
+
+    def m2(self):
+        pass
+
+
+class E15(A15):
+    def m2(self):
+        return _test_source()
+
+
+class B15(A15):
+    def m0(self):
+        return self.m1()
+
+    def m2(self):
+        return 0
+
+
+class C15(B15):
+    pass
+
+
+class D15(C15, E15):
+    pass
+
+
+def multi_inheritance_false_positive_two_hops(b: B15):
+    _test_sink(b.m0())
