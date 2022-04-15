@@ -5,7 +5,8 @@
 
 import testslide
 
-from ..site_packages import SearchStrategy
+from ..search_path import SimpleElement
+from ..site_packages import SearchStrategy, search_for_paths
 
 
 class SitePackagesTest(testslide.TestCase):
@@ -14,3 +15,14 @@ class SitePackagesTest(testslide.TestCase):
         self.assertEqual(SearchStrategy.from_string("none"), SearchStrategy.NONE)
         self.assertEqual(SearchStrategy.from_string("pep561"), SearchStrategy.PEP561)
         self.assertIsNone(SearchStrategy.from_string("derp"))
+
+    def test_search_for_path_disabled(self) -> None:
+        self.assertListEqual(
+            search_for_paths(SearchStrategy.NONE, site_roots=["derp"]), []
+        )
+
+    def test_search_for_path_all(self) -> None:
+        self.assertListEqual(
+            search_for_paths(SearchStrategy.ALL, site_roots=["/foo", "/bar"]),
+            [SimpleElement("/foo"), SimpleElement("/bar")],
+        )

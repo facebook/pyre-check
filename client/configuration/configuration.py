@@ -896,18 +896,21 @@ class Configuration:
             return site_roots
         return get_default_site_roots()
 
-    # Expansion and validation of search paths cannot happen at Configuration creation
-    # because link trees need to be built first.
     def expand_and_get_existent_search_paths(
         self,
     ) -> List[search_path_module.Element]:
+        site_roots = self.get_site_roots()
         existent_paths = search_path_module.process_raw_elements(
-            self.search_path, self.get_site_roots()
+            self.search_path, site_roots
+        )
+
+        site_packages_paths = site_packages.search_for_paths(
+            self.site_package_search_strategy, site_roots
         )
 
         typeshed_root = self.get_typeshed_respecting_override()
         if typeshed_root is None:
-            return existent_paths
+            return existent_paths + site_packages_paths
 
         typeshed_paths: List[search_path_module.Element] = [
             search_path_module.SimpleElement(str(element))
@@ -916,7 +919,7 @@ class Configuration:
             )
         ]
 
-        return existent_paths + typeshed_paths
+        return existent_paths + site_packages_paths + typeshed_paths
 
     def expand_and_get_existent_source_directories(
         self,
