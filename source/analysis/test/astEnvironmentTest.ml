@@ -146,18 +146,19 @@ let test_parse_source context =
 
 let test_parse_sources context =
   let scheduler = Test.mock_scheduler () in
-  let content = "def foo() -> int: ..." in
+  let local_root = PyrePath.create_absolute (bracket_tmpdir context) in
+  let module_root = PyrePath.create_absolute (bracket_tmpdir context) in
+  let link_root = PyrePath.create_absolute (bracket_tmpdir context) in
+  let stub_root = PyrePath.create_relative ~root:local_root ~relative:"stubs" in
+  let typeshed_root =
+    PyrePath.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
+  in
+  let write_file root relative =
+    let content = "def foo() -> int: ..." in
+    File.create ~content (PyrePath.create_relative ~root ~relative) |> File.write
+  in
   let source_handles, ast_environment =
-    let local_root = PyrePath.create_absolute (bracket_tmpdir context) in
-    let typeshed_root =
-      PyrePath.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
-    in
     Sys_utils.mkdir_p (PyrePath.absolute typeshed_root);
-    let module_root = PyrePath.create_absolute (bracket_tmpdir context) in
-    let link_root = PyrePath.create_absolute (bracket_tmpdir context) in
-    let write_file root relative =
-      File.create ~content (PyrePath.create_relative ~root ~relative) |> File.write
-    in
     write_file local_root "a.pyi";
     write_file local_root "a.py";
     write_file module_root "b.pyi";
@@ -176,7 +177,8 @@ let test_parse_sources context =
       Configuration.Analysis.create
         ~local_root
         ~source_paths:[SearchPath.Root local_root]
-        ~search_paths:[SearchPath.Root module_root; SearchPath.Root typeshed_root]
+        ~search_paths:
+          [SearchPath.Root module_root; SearchPath.Root typeshed_root; SearchPath.Root stub_root]
         ~filter_directories:[local_root]
         ()
     in
@@ -211,33 +213,17 @@ let test_parse_sources context =
     ~printer:(String.concat ~sep:", ")
     ["a.pyi"; "b.pyi"; "c.py"; "d.pyi"; "foo.pyi"]
     source_handles;
-  let local_root = PyrePath.create_absolute (bracket_tmpdir context) in
-  let stub_root = PyrePath.create_relative ~root:local_root ~relative:"stubs" in
   let source_handles =
-    let configuration =
-      Configuration.Analysis.create
-        ~local_root
-        ~source_paths:[SearchPath.Root local_root]
-        ~search_paths:[SearchPath.Root stub_root]
-        ~filter_directories:[local_root]
-        ()
-    in
-    let write_file root relative =
-      File.create ~content:"def foo() -> int: ..." (PyrePath.create_relative ~root ~relative)
-      |> File.write
-    in
-    write_file local_root "a.py";
-    write_file stub_root "stub.pyi";
-    let module_tracker = Analysis.ModuleTracker.create configuration in
+    write_file local_root "new_local.py";
+    write_file stub_root "new_stub.pyi";
     let update_result =
-      let { Configuration.Analysis.local_root; _ } = configuration in
       ModuleTracker.update
         ~paths:
           [
-            PyrePath.create_relative ~root:local_root ~relative:"a.py";
-            PyrePath.create_relative ~root:stub_root ~relative:"stub.pyi";
+            PyrePath.create_relative ~root:local_root ~relative:"new_local.py";
+            PyrePath.create_relative ~root:stub_root ~relative:"new_stub.pyi";
           ]
-        module_tracker
+        (AstEnvironment.module_tracker ast_environment)
       |> (fun updates -> AstEnvironment.Update updates)
       |> AstEnvironment.update ~scheduler:(mock_scheduler ()) ast_environment
     in
@@ -258,8 +244,8 @@ let test_parse_sources context =
       let left_handles = List.sort ~compare:String.compare left_handles in
       let right_handles = List.sort ~compare:String.compare right_handles in
       List.equal String.equal left_handles right_handles)
+    ["new_local.py"; "new_stub.pyi"]
     source_handles
-    ["stub.pyi"; "a.py"]
 
 
 let test_ast_change _ =
