@@ -179,7 +179,7 @@ def create_raw_element(json: Union[str, Dict[str, object]]) -> RawElement:
                 root=assert_string_item(json, "root"),
                 subdirectory=assert_string_item(json, "subdirectory"),
             )
-        if "import_root" in json and "source" in json:
+        elif "import_root" in json and "source" in json:
             return SubdirectoryRawElement(
                 root=assert_string_item(json, "import_root"),
                 subdirectory=assert_string_item(json, "source"),
