@@ -734,9 +734,13 @@ module IncrementalTest = struct
     let assert_parser_dependency expected actual =
       let expected_set = Reference.Set.of_list expected in
       let actual_set = Reference.Set.of_list actual in
-      assert_bool
-        "Check if the actual parser dependency overapproximates the expected one"
-        (Set.is_subset expected_set ~of_:actual_set)
+      if not (Set.is_subset expected_set ~of_:actual_set) then
+        assert_bool
+          (Format.asprintf
+             "Expected dependencies %s are not a subset of actual dependencies %s"
+             (Reference.Set.sexp_of_t expected_set |> Sexp.to_string)
+             (Reference.Set.sexp_of_t actual_set |> Sexp.to_string))
+          false
     in
     AstEnvironment.UpdateResult.invalidated_modules update_result
     |> assert_parser_dependency expected_dependencies;
