@@ -174,7 +174,11 @@ let taint_in_taint_out_mapping
           let tito_kind =
             Sinks.Transform
               {
-                local = TaintTransforms.of_sanitize_transforms sanitize_transforms;
+                local =
+                  TaintTransforms.of_sanitize_transforms
+                    ~preserve_sanitize_sources:true
+                    ~preserve_sanitize_sinks:true
+                    sanitize_transforms;
                 global = TaintTransforms.empty;
                 base = Sinks.LocalReturn;
               }

@@ -145,15 +145,29 @@ let apply_sanitize_transforms transforms source =
   | Attach -> Attach
   | NamedSource _
   | ParametricSource _ ->
-      Transform
-        {
-          local = TaintTransforms.of_sanitize_transforms transforms;
-          global = TaintTransforms.empty;
-          base = source;
-        }
+      let local =
+        TaintTransforms.of_sanitize_transforms
+          ~preserve_sanitize_sources:false
+          ~preserve_sanitize_sinks:true
+          transforms
+      in
+      if TaintTransforms.is_empty local then
+        source
+      else
+        Transform { local; global = TaintTransforms.empty; base = source }
   | Transform { local; global; base } ->
       let transforms = SanitizeTransformSet.diff transforms (extract_sanitize_transforms source) in
-      Transform { local = TaintTransforms.add_sanitize_transforms local transforms; global; base }
+      Transform
+        {
+          local =
+            TaintTransforms.add_sanitize_transforms
+              ~preserve_sanitize_sources:false
+              ~preserve_sanitize_sinks:true
+              local
+              transforms;
+          global;
+          base;
+        }
 
 
 let apply_transforms transforms order source =
@@ -161,22 +175,26 @@ let apply_transforms transforms order source =
   | Attach -> Attach
   | NamedSource _
   | ParametricSource _ ->
-      Transform
-        {
-          local =
-            TaintTransforms.add_transforms
-              ~transforms:TaintTransforms.empty
-              ~order:TaintTransforms.Order.Forward
-              ~to_add:transforms
-              ~to_add_order:order;
-          global = TaintTransforms.empty;
-          base = source;
-        }
+      let local =
+        TaintTransforms.add_transforms
+          ~preserve_sanitize_sources:false
+          ~preserve_sanitize_sinks:true
+          ~transforms:TaintTransforms.empty
+          ~order:TaintTransforms.Order.Forward
+          ~to_add:transforms
+          ~to_add_order:order
+      in
+      if TaintTransforms.is_empty local then
+        source
+      else
+        Transform { local; global = TaintTransforms.empty; base = source }
   | Transform { local; global; base } ->
       Transform
         {
           local =
             TaintTransforms.add_transforms
+              ~preserve_sanitize_sources:false
+              ~preserve_sanitize_sinks:true
               ~transforms:local
               ~order:TaintTransforms.Order.Forward
               ~to_add:transforms

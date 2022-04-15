@@ -42,33 +42,92 @@ let split_sanitizers transforms =
   split SanitizeTransformSet.empty transforms
 
 
-let add_sanitize_transforms transforms sanitizers =
-  let existing_sanitizers, rest = split_sanitizers transforms in
-  let sanitizers = SanitizeTransformSet.union sanitizers existing_sanitizers in
+let preserve_sanitizers ~preserve_sanitize_sources ~preserve_sanitize_sinks sanitizers =
+  let sanitizers =
+    if not preserve_sanitize_sources then
+      { sanitizers with SanitizeTransformSet.sources = SanitizeTransform.SourceSet.empty }
+    else
+      sanitizers
+  in
+  let sanitizers =
+    if not preserve_sanitize_sinks then
+      { sanitizers with SanitizeTransformSet.sinks = SanitizeTransform.SinkSet.empty }
+    else
+      sanitizers
+  in
   if SanitizeTransformSet.is_empty sanitizers then
-    rest
+    None
   else
-    TaintTransform.Sanitize sanitizers :: rest
+    Some sanitizers
 
 
-let add_transform transforms = function
+let add_sanitize_transforms
+    ~preserve_sanitize_sources
+    ~preserve_sanitize_sinks
+    transforms
+    sanitizers
+  =
+  match preserve_sanitizers ~preserve_sanitize_sources ~preserve_sanitize_sinks sanitizers with
+  | None -> transforms
+  | Some sanitizers ->
+      let existing_sanitizers, rest = split_sanitizers transforms in
+      let sanitizers = SanitizeTransformSet.union sanitizers existing_sanitizers in
+      TaintTransform.Sanitize sanitizers :: rest
+
+
+let add_transform ~preserve_sanitize_sources ~preserve_sanitize_sinks transforms = function
   | TaintTransform.Named _ as named_transform -> add_named_transform transforms named_transform
-  | TaintTransform.Sanitize sanitizers -> add_sanitize_transforms transforms sanitizers
+  | TaintTransform.Sanitize sanitizers ->
+      add_sanitize_transforms
+        ~preserve_sanitize_sources
+        ~preserve_sanitize_sinks
+        transforms
+        sanitizers
 
 
-let add_backward_into_forward_transforms ~transforms ~to_add =
-  List.fold_left to_add ~init:transforms ~f:add_transform
+let add_backward_into_forward_transforms
+    ~preserve_sanitize_sources
+    ~preserve_sanitize_sinks
+    ~transforms
+    ~to_add
+  =
+  List.fold_left
+    to_add
+    ~init:transforms
+    ~f:(add_transform ~preserve_sanitize_sources ~preserve_sanitize_sinks)
 
 
-let add_backward_into_backward_transforms ~transforms ~to_add =
+let add_backward_into_backward_transforms
+    ~preserve_sanitize_sources
+    ~preserve_sanitize_sinks
+    ~transforms
+    ~to_add
+  =
   List.fold_right to_add ~init:transforms ~f:(fun transform transforms ->
-      add_transform transforms transform)
+      add_transform ~preserve_sanitize_sources ~preserve_sanitize_sinks transforms transform)
 
 
-let add_transforms ~transforms ~order ~to_add ~to_add_order =
+let add_transforms
+    ~preserve_sanitize_sources
+    ~preserve_sanitize_sinks
+    ~transforms
+    ~order
+    ~to_add
+    ~to_add_order
+  =
   match order, to_add_order with
-  | Order.Forward, Order.Backward -> add_backward_into_forward_transforms ~transforms ~to_add
-  | Order.Backward, Order.Backward -> add_backward_into_backward_transforms ~transforms ~to_add
+  | Order.Forward, Order.Backward ->
+      add_backward_into_forward_transforms
+        ~preserve_sanitize_sources
+        ~preserve_sanitize_sinks
+        ~transforms
+        ~to_add
+  | Order.Backward, Order.Backward ->
+      add_backward_into_backward_transforms
+        ~preserve_sanitize_sources
+        ~preserve_sanitize_sinks
+        ~transforms
+        ~to_add
   | _ ->
       Format.asprintf
         "unsupported: add_transforms ~order:%a ~to_add_order:%a"
@@ -81,8 +140,10 @@ let add_transforms ~transforms ~order ~to_add ~to_add_order =
 
 let of_named_transforms transforms = transforms
 
-let of_sanitize_transforms sanitizers =
-  if SanitizeTransformSet.is_empty sanitizers then [] else [TaintTransform.Sanitize sanitizers]
+let of_sanitize_transforms ~preserve_sanitize_sources ~preserve_sanitize_sinks sanitizers =
+  match preserve_sanitizers ~preserve_sanitize_sources ~preserve_sanitize_sinks sanitizers with
+  | None -> []
+  | Some sanitizers -> [TaintTransform.Sanitize sanitizers]
 
 
 let is_empty = List.is_empty
