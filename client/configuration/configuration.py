@@ -46,6 +46,7 @@ from . import (
     python_version as python_version_module,
     shared_memory as shared_memory_module,
     ide_features as ide_features_module,
+    site_packages,
     unwatched,
 )
 
@@ -157,6 +158,7 @@ class PartialConfiguration:
     shared_memory: shared_memory_module.SharedMemory = (
         shared_memory_module.SharedMemory()
     )
+    site_package_search_strategy: Optional[site_packages.SearchStrategy] = None
     site_roots: Optional[Sequence[str]] = None
     source_directories: Optional[Sequence[search_path_module.RawElement]] = None
     strict: Optional[bool] = None
@@ -236,6 +238,7 @@ class PartialConfiguration:
                 dependency_table_power=arguments.shared_memory_dependency_table_power,
                 hash_table_power=arguments.shared_memory_hash_table_power,
             ),
+            site_package_search_strategy=None,
             site_roots=None,
             source_directories=source_directories,
             strict=strict,
@@ -380,6 +383,22 @@ class PartialConfiguration:
             else:
                 source_directories = None
 
+            site_package_search_strategy_json = ensure_option_type(
+                configuration_json, "site_package_search_strategy", str
+            )
+            if site_package_search_strategy_json is None:
+                site_package_search_strategy = None
+            else:
+                site_package_search_strategy = site_packages.SearchStrategy.from_string(
+                    site_package_search_strategy_json
+                )
+                if site_package_search_strategy is None:
+                    raise exceptions.InvalidConfiguration(
+                        "Invalid value for `site_package_search_strategy`: "
+                        f"{site_package_search_strategy_json}. Available choices: "
+                        f"{[str(x) for x in site_packages.SearchStrategy]}."
+                    )
+
             ide_features_json = ensure_option_type(
                 configuration_json, "ide_features", dict
             )
@@ -445,6 +464,7 @@ class PartialConfiguration:
                 python_version=python_version,
                 search_path=search_path,
                 shared_memory=shared_memory,
+                site_package_search_strategy=site_package_search_strategy,
                 site_roots=ensure_optional_string_list(
                     configuration_json, "site_roots"
                 ),
@@ -542,6 +562,7 @@ class PartialConfiguration:
             python_version=self.python_version,
             search_path=[path.expand_relative_root(root) for path in self.search_path],
             shared_memory=self.shared_memory,
+            site_package_search_strategy=self.site_package_search_strategy,
             site_roots=self.site_roots,
             source_directories=source_directories,
             strict=self.strict,
@@ -627,6 +648,9 @@ def merge_partial_configurations(
                 override.shared_memory.hash_table_power,
             ),
         ),
+        site_package_search_strategy=overwrite_base(
+            base.site_package_search_strategy, override.site_package_search_strategy
+        ),
         site_roots=overwrite_base(base.site_roots, override.site_roots),
         source_directories=raise_when_overridden(
             base.source_directories,
@@ -672,6 +696,9 @@ class Configuration:
     search_path: Sequence[search_path_module.RawElement] = field(default_factory=list)
     shared_memory: shared_memory_module.SharedMemory = (
         shared_memory_module.SharedMemory()
+    )
+    site_package_search_strategy: site_packages.SearchStrategy = (
+        site_packages.SearchStrategy.NONE
     )
     site_roots: Optional[Sequence[str]] = None
     source_directories: Optional[Sequence[search_path_module.RawElement]] = None
@@ -724,6 +751,8 @@ class Configuration:
                 path.expand_global_root(str(project_root)) for path in search_path
             ],
             shared_memory=partial_configuration.shared_memory,
+            site_package_search_strategy=partial_configuration.site_package_search_strategy
+            or site_packages.SearchStrategy.NONE,
             site_roots=partial_configuration.site_roots,
             source_directories=partial_configuration.source_directories,
             strict=_get_optional_value(partial_configuration.strict, default=False),
@@ -764,6 +793,7 @@ class Configuration:
         python_version = self.python_version
         relative_local_root = self.relative_local_root
         source_directories = self.source_directories
+        site_package_search_strategy = self.site_package_search_strategy
         site_roots = self.site_roots
         targets = self.targets
         typeshed = self.typeshed
@@ -808,6 +838,11 @@ class Configuration:
             **(
                 {"shared_memory": self.shared_memory.to_json()}
                 if self.shared_memory != shared_memory_module.SharedMemory()
+                else {}
+            ),
+            **(
+                {"site_package_search_strategy": site_package_search_strategy}
+                if site_package_search_strategy is not None
                 else {}
             ),
             "site_roots": site_roots if site_roots is not None else [],

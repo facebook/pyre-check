@@ -51,6 +51,7 @@ from ..search_path import (
     SubdirectoryRawElement,
 )
 from ..shared_memory import SharedMemory
+from ..site_packages import SearchStrategy
 from ..unwatched import (
     UnwatchedDependency,
     UnwatchedFiles,
@@ -98,6 +99,7 @@ class PartialConfigurationTest(unittest.TestCase):
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
         )
         self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=42))
+        self.assertEqual(configuration.site_package_search_strategy, None)
         self.assertEqual(configuration.site_roots, None)
         self.assertEqual(configuration.number_of_workers, 43)
         self.assertEqual(configuration.use_buck2, True)
@@ -273,6 +275,17 @@ class PartialConfigurationTest(unittest.TestCase):
                 SimpleRawElement("foo"),
                 SubdirectoryRawElement("bar", "baz"),
             ],
+        )
+        self.assertIsNone(
+            PartialConfiguration.from_string(
+                json.dumps({})
+            ).site_package_search_strategy
+        )
+        self.assertEqual(
+            PartialConfiguration.from_string(
+                json.dumps({"site_package_search_strategy": "pep561"})
+            ).site_package_search_strategy,
+            SearchStrategy.PEP561,
         )
         self.assertEqual(
             PartialConfiguration.from_string(json.dumps({"strict": True})).strict, True
@@ -480,6 +493,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"python_version": 42}))
         assert_raises(json.dumps({"shared_memory": "abc"}))
         assert_raises(json.dumps({"shared_memory": {"heap_size": "abc"}}))
+        assert_raises(json.dumps({"site_package_search_strategy": False}))
         assert_raises(json.dumps({"site_roots": 42}))
         assert_raises(json.dumps({"unwatched_dependency": {"change_indicator": "abc"}}))
         assert_raises(json.dumps({"use_buck2": {}}))
@@ -592,6 +606,7 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_prepended("other_critical_files")
         assert_overwritten("python_version")
         assert_prepended("search_path")
+        assert_overwritten("site_package_search_strategy")
         assert_overwritten("site_roots")
         assert_raise_when_overridden("source_directories")
         assert_overwritten("strict")
@@ -728,6 +743,7 @@ class ConfigurationTest(testslide.TestCase):
                 python_version=PythonVersion(major=3, minor=6, micro=7),
                 search_path=[SimpleRawElement("search_path")],
                 shared_memory=SharedMemory(heap_size=1024),
+                site_package_search_strategy=SearchStrategy.NONE,
                 site_roots=["site_root"],
                 source_directories=None,
                 strict=None,
@@ -768,6 +784,9 @@ class ConfigurationTest(testslide.TestCase):
         )
         self.assertEqual(configuration.source_directories, None)
         self.assertEqual(configuration.shared_memory, SharedMemory(heap_size=1024))
+        self.assertEqual(
+            configuration.site_package_search_strategy, SearchStrategy.NONE
+        )
         self.assertEqual(configuration.site_roots, ["site_root"])
         self.assertEqual(configuration.strict, False)
         self.assertEqual(configuration.taint_models_path, ["taint"])
