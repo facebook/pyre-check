@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
+from typing import Dict, Optional, Union
 
 
 def tito(x):
@@ -91,3 +92,43 @@ def widen_collapse_sink(c, d):
         _test_sink(d["a"]["a"]["a"]["a"]["1"])
     else:
         _test_sink(d["a"]["a"]["a"]["a"]["2"])
+
+
+def convert_2_update_dict_widening(source) -> Dict[str, Union[str, Optional[int]]]:
+    kvs: Dict[str, Union[str, Optional[int]]] = {}
+    kvs["1"] = source.f1
+    kvs["2"] = source.f2
+    kvs["3"] = source.f3
+    kvs["4"] = source.f4
+    kvs["5"] = source.f5
+    kvs["6"] = source.f6
+    # TODO(T116671305): Widening causes the entire dictionary to be tainted,
+    # as opposed to only the values' being tainted. By contrast, fewer
+    # entries in the dictionary do not seem to trigger broadening (see below).
+    return kvs
+
+
+def convert_2_update_dict_no_widening(source) -> Dict[str, Union[str, Optional[int]]]:
+    kvs: Dict[str, Union[str, Optional[int]]] = {}
+    kvs["1"] = source.f1
+    kvs["2"] = source.f2
+    kvs["3"] = source.f3
+    kvs["4"] = source.f4
+    kvs["5"] = source.f5
+    return kvs
+
+
+def untainted_keys():
+    source = _test_source()
+    kvs = convert_2_update_dict_widening(source)
+    _test_sink(
+        f"""
+            {", ".join(kvs.keys())}  # False positive here
+        """
+    )
+    kvs2 = convert_2_update_dict_no_widening(source)
+    _test_sink(
+        f"""
+            {", ".join(kvs2.keys())}  # No issue here
+        """
+    )
