@@ -1,0 +1,257 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize_parametric.partial_issue_sanitize",
+    "callable_line": 47,
+    "code": 1000,
+    "line": 51,
+    "start": 24,
+    "end": 25,
+    "filename": "sanitize_parametric.py",
+    "message": "[TestA[Y]] to [TestA[X]]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize_parametric.a_source_y" } ],
+                "length": 1,
+                "kind": "TestA[Y]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "sanitize_parametric.py",
+                "line": 50,
+                "start": 8,
+                "end": 31
+              },
+              "resolves_to": [ "sanitize_parametric.partial_issue_sources" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize_parametric.a_sink_x" } ],
+                "length": 1,
+                "kind": "TestA[X]"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "sanitize_parametric.py",
+                "line": 51,
+                "start": 24,
+                "end": 25
+              },
+              "resolves_to": [ "sanitize_parametric.partial_issue_sinks" ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize_parametric.partial_issue_sinks",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle":
+      "sanitize_parametric.partial_issue_sanitize:1000:0:Call|sanitize_parametric.partial_issue_sinks|0|formal(x):c93b57613cfd1f9419c3fdbc0666235b"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.a_sink_x",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "kinds": [ { "kind": "TestA[X]" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.a_sink_y",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "kinds": [ { "kind": "TestA[Y]" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.a_source_x",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "TestA[X]" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.a_source_y",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "TestA[Y]" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.partial_issue_sinks",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize_parametric.a_sink_x" } ],
+                "kind": "TestA[X]"
+              }
+            ],
+            "root": {
+              "filename": "sanitize_parametric.py",
+              "line": 41,
+              "start": 17,
+              "end": 18
+            }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize_parametric.a_sink_y" } ],
+                "kind": "NotSource[TestA]@TestA[Y]"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 43, "start": 35, "end": 36 } ],
+            "root": {
+              "filename": "sanitize_parametric.py",
+              "line": 44,
+              "start": 17,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.partial_issue_sources",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize_parametric.a_source_x" } ],
+                "kind": "NotSink[TestA]@TestA[X]"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 34, "start": 36, "end": 37 } ],
+            "root": {
+              "filename": "sanitize_parametric.py",
+              "line": 33,
+              "start": 12,
+              "end": 24
+            }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize_parametric.a_source_y" } ],
+                "kind": "TestA[Y]"
+              }
+            ],
+            "root": {
+              "filename": "sanitize_parametric.py",
+              "line": 36,
+              "start": 15,
+              "end": 27
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.sanitize_a_sink_tito",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": [ "" ],
+                "kind": "NotSink[TestA]@LocalReturn"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "global_sanitizer": { "tito_sources": [], "tito_sinks": [ "TestA" ] }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize_parametric.sanitize_a_source_tito",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": [ "" ],
+                "kind": "NotSource[TestA]@LocalReturn"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "global_sanitizer": { "tito_sources": [ "TestA" ], "tito_sinks": [] }
+  }
+}
