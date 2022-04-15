@@ -7,7 +7,7 @@
 
 type t =
   | Named of string
-  | Sanitize of SanitizeTransform.t
+  | Sanitize of SanitizeTransform.Set.t
 [@@deriving compare, eq, hash, sexp]
 
 val pp : Format.formatter -> t -> unit
@@ -16,10 +16,6 @@ val show : t -> string
 
 val is_named_transform : t -> bool
 
-val is_sanitize_transform : t -> bool
+val is_sanitize_transforms : t -> bool
 
-val is_sanitize_source_transform : t -> bool
-
-val is_sanitize_sink_transform : t -> bool
-
-val get_sanitize_transform : t -> SanitizeTransform.t option
+val get_sanitize_transforms : t -> SanitizeTransform.Set.t option

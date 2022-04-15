@@ -1510,7 +1510,7 @@
                 "return_paths": [ "" ],
                 "length": 2,
                 "kind":
-                  "NotSource[SourceA]:TransformX:NotSink[SinkD]:NotSource[SourceC]:TransformY:NotSink[SinkB]@LocalReturn"
+                  "NotSource[SourceA]:TransformX:NotSource[SourceC]:NotSink[SinkD]:TransformY:NotSink[SinkB]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2310,7 +2310,7 @@
                 "return_paths": [ "" ],
                 "length": 2,
                 "kind":
-                  "NotSink[SinkD]:NotSink[SinkB]:TransformX@LocalReturn"
+                  "NotSink[SinkB]:NotSink[SinkD]:TransformX@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2339,7 +2339,7 @@
                 "return_paths": [ "" ],
                 "length": 2,
                 "kind":
-                  "TransformX:NotSink[SinkD]:NotSink[SinkB]@LocalReturn"
+                  "TransformX:NotSink[SinkB]:NotSink[SinkD]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2426,7 +2426,7 @@
                 "return_paths": [ "" ],
                 "length": 2,
                 "kind":
-                  "NotSource[SourceC]:NotSource[SourceA]:TransformX@LocalReturn"
+                  "NotSource[SourceA]:NotSource[SourceC]:TransformX@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2455,7 +2455,7 @@
                 "return_paths": [ "" ],
                 "length": 2,
                 "kind":
-                  "TransformX:NotSource[SourceC]:NotSource[SourceA]@LocalReturn"
+                  "TransformX:NotSource[SourceA]:NotSource[SourceC]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],

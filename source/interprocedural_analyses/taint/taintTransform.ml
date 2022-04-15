@@ -9,13 +9,18 @@ open Core
 
 type t =
   | Named of string
-  | Sanitize of SanitizeTransform.t
+  (* Invariant: set is not empty. *)
+  | Sanitize of SanitizeTransform.Set.t
 [@@deriving compare, eq, hash, sexp]
 
 let pp formatter = function
   | Named transform -> Format.fprintf formatter "%s" transform
-  | Sanitize sanitize_transform ->
-      Format.fprintf formatter "%a" SanitizeTransform.pp sanitize_transform
+  | Sanitize transforms ->
+      transforms
+      |> SanitizeTransform.Set.elements
+      |> List.map ~f:SanitizeTransform.show
+      |> String.concat ~sep:":"
+      |> Format.fprintf formatter "%s"
 
 
 let show = Format.asprintf "%a" pp
@@ -25,21 +30,11 @@ let is_named_transform = function
   | Sanitize _ -> false
 
 
-let is_sanitize_transform = function
+let is_sanitize_transforms = function
   | Named _ -> false
   | Sanitize _ -> true
 
 
-let is_sanitize_source_transform = function
-  | Sanitize (SanitizeTransform.NamedSource _) -> true
-  | _ -> false
-
-
-let is_sanitize_sink_transform = function
-  | Sanitize (SanitizeTransform.NamedSink _) -> true
-  | _ -> false
-
-
-let get_sanitize_transform = function
+let get_sanitize_transforms = function
   | Named _ -> None
   | Sanitize sanitize -> Some sanitize
