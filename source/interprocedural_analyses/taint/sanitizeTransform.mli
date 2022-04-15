@@ -5,19 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type t =
-  | NamedSource of string
-  | NamedSink of string
-[@@deriving compare, eq, hash, sexp]
-
-val pp : Format.formatter -> t -> unit
-
-val show : t -> string
-
-module Set : sig
-  include Data_structures.SerializableSet.S with type elt = t
-
-  val filter_sources : t -> t
-
-  val filter_sinks : t -> t
+module Source : sig
+  type t = Named of string [@@deriving compare, eq, hash, sexp, show]
 end
+
+module SourceSet : Data_structures.SerializableSet.S with type elt = Source.t
+
+module Sink : sig
+  type t = Named of string [@@deriving compare, eq, hash, sexp, show]
+end
+
+module SinkSet : Data_structures.SerializableSet.S with type elt = Sink.t

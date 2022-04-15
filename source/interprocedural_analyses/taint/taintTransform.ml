@@ -10,17 +10,12 @@ open Core
 type t =
   | Named of string
   (* Invariant: set is not empty. *)
-  | Sanitize of SanitizeTransform.Set.t
+  | Sanitize of SanitizeTransformSet.t
 [@@deriving compare, eq, hash, sexp]
 
 let pp formatter = function
   | Named transform -> Format.fprintf formatter "%s" transform
-  | Sanitize transforms ->
-      transforms
-      |> SanitizeTransform.Set.elements
-      |> List.map ~f:SanitizeTransform.show
-      |> String.concat ~sep:":"
-      |> Format.fprintf formatter "%s"
+  | Sanitize transforms -> SanitizeTransformSet.pp formatter transforms
 
 
 let show = Format.asprintf "%a" pp

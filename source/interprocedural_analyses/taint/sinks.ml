@@ -84,10 +84,10 @@ module Set = struct
 
   let to_sanitize_transforms_exn set =
     let to_transform = function
-      | NamedSink name -> SanitizeTransform.NamedSink name
+      | NamedSink name -> SanitizeTransform.Sink.Named name
       | sink -> Format.asprintf "cannot sanitize the sink `%a`" T.pp sink |> failwith
     in
-    set |> elements |> List.map ~f:to_transform |> SanitizeTransform.Set.of_list
+    set |> elements |> List.map ~f:to_transform |> SanitizeTransform.SinkSet.of_list
 
 
   let is_singleton set =
@@ -149,18 +149,14 @@ let discard_sanitize_transforms = function
 
 
 let extract_sanitized_sinks_from_transforms transforms =
-  let extract transform sinks =
-    match transform with
-    | SanitizeTransform.NamedSink name -> Set.add (NamedSink name) sinks
-    | _ -> sinks
-  in
-  SanitizeTransform.Set.fold extract transforms Set.empty
+  let extract (SanitizeTransform.Sink.Named name) sinks = Set.add (NamedSink name) sinks in
+  SanitizeTransform.SinkSet.fold extract transforms Set.empty
 
 
 let extract_sanitize_transforms = function
   | Transform { local; global; _ } ->
       TaintTransforms.merge ~local ~global |> TaintTransforms.get_sanitize_transforms
-  | _ -> SanitizeTransform.Set.empty
+  | _ -> SanitizeTransformSet.empty
 
 
 let rec extract_partial_sink = function
@@ -176,10 +172,10 @@ let apply_sanitize_transforms transforms sink =
     | LocalReturn
     | Transform { base = LocalReturn; _ } ->
         transforms
-    | _ -> SanitizeTransform.Set.filter_sources transforms
+    | _ -> { transforms with SanitizeTransformSet.sinks = SanitizeTransform.SinkSet.empty }
   in
   match sink with
-  | _ when SanitizeTransform.Set.is_empty transforms -> sink
+  | _ when SanitizeTransformSet.is_empty transforms -> sink
   | Attach
   | AddFeatureToArgument ->
       sink
@@ -196,7 +192,7 @@ let apply_sanitize_transforms transforms sink =
           base = sink;
         }
   | Transform { local; global; base } ->
-      let transforms = SanitizeTransform.Set.diff transforms (extract_sanitize_transforms sink) in
+      let transforms = SanitizeTransformSet.diff transforms (extract_sanitize_transforms sink) in
       Transform { local = TaintTransforms.add_sanitize_transforms local transforms; global; base }
 
 
@@ -251,5 +247,5 @@ let get_named_transforms = function
   | _ -> []
 
 
-let contains_sanitize_transform sink sanitize_transform =
-  SanitizeTransform.Set.mem sanitize_transform (extract_sanitize_transforms sink)
+let contains_sanitize_transforms sink sanitize_transforms =
+  SanitizeTransformSet.subset sanitize_transforms (extract_sanitize_transforms sink)

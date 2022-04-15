@@ -18,7 +18,7 @@ end
 
 module Set : Stdlib.Set.S with type elt = t
 
-val add_sanitize_transforms : t -> SanitizeTransform.Set.t -> t
+val add_sanitize_transforms : t -> SanitizeTransformSet.t -> t
 
 val add_transforms : transforms:t -> order:Order.t -> to_add:t -> to_add_order:Order.t -> t
 
@@ -27,7 +27,7 @@ val empty : t
 val get_named_transforms : t -> TaintTransform.t list
 
 (* This only returns sanitizers that are still valid (i.e, before a named transform. *)
-val get_sanitize_transforms : t -> SanitizeTransform.Set.t
+val get_sanitize_transforms : t -> SanitizeTransformSet.t
 
 (* This discards all sanitizers, regardless of whether they are still valid or not. *)
 val discard_sanitize_transforms : t -> t
@@ -42,7 +42,7 @@ val merge : local:t -> global:t -> t
 
 val of_named_transforms : TaintTransform.t list -> t
 
-val of_sanitize_transforms : SanitizeTransform.Set.t -> t
+val of_sanitize_transforms : SanitizeTransformSet.t -> t
 
 val pp_kind
   :  formatter:Format.formatter ->

@@ -329,6 +329,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             let sanitized_tito_sources =
               transforms
               |> TaintTransforms.get_sanitize_transforms
+              |> (fun { sources; _ } -> sources)
               |> Sources.extract_sanitized_sources_from_transforms
             in
             let transforms = TaintTransforms.discard_sanitize_source_transforms transforms in
@@ -1568,6 +1569,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               | Some (Specific sanitized_sinks) ->
                   let sanitized_sinks_transforms =
                     Sinks.Set.to_sanitize_transforms_exn sanitized_sinks
+                    |> SanitizeTransformSet.from_sinks
                   in
                   taint
                   |> ForwardState.Tree.apply_sanitize_transforms sanitized_sinks_transforms

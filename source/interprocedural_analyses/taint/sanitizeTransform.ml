@@ -7,33 +7,22 @@
 
 open Core
 
-module T = struct
-  type t =
-    | NamedSource of string
-    | NamedSink of string
-  [@@deriving compare, eq, hash, sexp]
+module Source = struct
+  type t = Named of string [@@deriving compare, eq, hash, sexp]
 
-  let pp formatter = function
-    | NamedSource source -> Format.fprintf formatter "NotSource[%s]" source
-    | NamedSink sink -> Format.fprintf formatter "NotSink[%s]" sink
-
+  let pp formatter (Named source) = Format.fprintf formatter "NotSource[%s]" source
 
   let show = Format.asprintf "%a" pp
 end
 
-include T
+module SourceSet = Data_structures.SerializableSet.Make (Source)
 
-module Set = struct
-  include Data_structures.SerializableSet.Make (T)
+module Sink = struct
+  type t = Named of string [@@deriving compare, eq, hash, sexp]
 
-  let filter_sources =
-    filter (function
-        | NamedSource _ -> true
-        | _ -> false)
+  let pp formatter (Named sink) = Format.fprintf formatter "NotSink[%s]" sink
 
-
-  let filter_sinks =
-    filter (function
-        | NamedSink _ -> true
-        | _ -> false)
+  let show = Format.asprintf "%a" pp
 end
+
+module SinkSet = Data_structures.SerializableSet.Make (Sink)

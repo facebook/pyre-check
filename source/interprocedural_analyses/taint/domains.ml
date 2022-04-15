@@ -439,7 +439,7 @@ module type TAINT_DOMAIN = sig
 
   val sanitize : kind_set -> t -> t
 
-  val apply_sanitize_transforms : SanitizeTransform.Set.t -> t -> t
+  val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t
 
   val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t
 
@@ -483,7 +483,7 @@ module type KIND_ARG = sig
 
   val discard_sanitize_transforms : t -> t
 
-  val apply_sanitize_transforms : SanitizeTransform.Set.t -> t -> t
+  val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t
 
   val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t
 
@@ -905,7 +905,7 @@ end = struct
 
 
   let apply_sanitize_transforms transforms taint =
-    if SanitizeTransform.Set.is_empty transforms then
+    if SanitizeTransformSet.is_empty transforms then
       taint
     else
       transform KindTaintDomain.Key Map ~f:(Kind.apply_sanitize_transforms transforms) taint
@@ -1209,7 +1209,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
 
   let apply_sanitize_transforms transforms taint =
-    if SanitizeTransform.Set.is_empty transforms then
+    if SanitizeTransformSet.is_empty transforms then
       taint
     else
       transform Taint.Self Map ~f:(Taint.apply_sanitize_transforms transforms) taint
@@ -1328,7 +1328,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
 
 
   let apply_sanitize_transforms transforms taint =
-    if SanitizeTransform.Set.is_empty transforms then
+    if SanitizeTransformSet.is_empty transforms then
       taint
     else
       transform Taint.Self Map ~f:(Taint.apply_sanitize_transforms transforms) taint

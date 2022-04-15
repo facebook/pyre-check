@@ -65,10 +65,10 @@ module Set = struct
 
   let to_sanitize_transforms_exn set =
     let to_transform = function
-      | NamedSource name -> SanitizeTransform.NamedSource name
+      | NamedSource name -> SanitizeTransform.Source.Named name
       | source -> Format.asprintf "cannot sanitize the source `%a`" T.pp source |> failwith
     in
-    set |> elements |> List.map ~f:to_transform |> SanitizeTransform.Set.of_list
+    set |> elements |> List.map ~f:to_transform |> SanitizeTransform.SourceSet.of_list
 
 
   let is_singleton set =
@@ -130,18 +130,14 @@ let discard_sanitize_transforms = function
 
 
 let extract_sanitized_sources_from_transforms transforms =
-  let extract transform sources =
-    match transform with
-    | SanitizeTransform.NamedSource name -> Set.add (NamedSource name) sources
-    | _ -> sources
-  in
-  SanitizeTransform.Set.fold extract transforms Set.empty
+  let extract (SanitizeTransform.Source.Named name) sources = Set.add (NamedSource name) sources in
+  SanitizeTransform.SourceSet.fold extract transforms Set.empty
 
 
 let extract_sanitize_transforms = function
   | Transform { local; global; _ } ->
       TaintTransforms.merge ~local ~global |> TaintTransforms.get_sanitize_transforms
-  | _ -> SanitizeTransform.Set.empty
+  | _ -> SanitizeTransformSet.empty
 
 
 let apply_sanitize_transforms transforms source =
@@ -156,7 +152,7 @@ let apply_sanitize_transforms transforms source =
           base = source;
         }
   | Transform { local; global; base } ->
-      let transforms = SanitizeTransform.Set.diff transforms (extract_sanitize_transforms source) in
+      let transforms = SanitizeTransformSet.diff transforms (extract_sanitize_transforms source) in
       Transform { local = TaintTransforms.add_sanitize_transforms local transforms; global; base }
 
 
@@ -196,5 +192,5 @@ let get_named_transforms = function
   | _ -> []
 
 
-let contains_sanitize_transform source sanitize_transform =
-  SanitizeTransform.Set.mem sanitize_transform (extract_sanitize_transforms source)
+let contains_sanitize_transforms source sanitize_transforms =
+  SanitizeTransformSet.subset sanitize_transforms (extract_sanitize_transforms source)

@@ -36,16 +36,16 @@ let split_sanitizers transforms =
     | TaintTransform.Named _ :: _ ->
         sofar, transforms
     | TaintTransform.Sanitize sanitizers :: tail ->
-        let sofar = SanitizeTransform.Set.union sofar sanitizers in
+        let sofar = SanitizeTransformSet.union sofar sanitizers in
         split sofar tail
   in
-  split SanitizeTransform.Set.empty transforms
+  split SanitizeTransformSet.empty transforms
 
 
 let add_sanitize_transforms transforms sanitizers =
   let existing_sanitizers, rest = split_sanitizers transforms in
-  let sanitizers = SanitizeTransform.Set.union sanitizers existing_sanitizers in
-  if SanitizeTransform.Set.is_empty sanitizers then
+  let sanitizers = SanitizeTransformSet.union sanitizers existing_sanitizers in
+  if SanitizeTransformSet.is_empty sanitizers then
     rest
   else
     TaintTransform.Sanitize sanitizers :: rest
@@ -82,7 +82,7 @@ let add_transforms ~transforms ~order ~to_add ~to_add_order =
 let of_named_transforms transforms = transforms
 
 let of_sanitize_transforms sanitizers =
-  if SanitizeTransform.Set.is_empty sanitizers then [] else [TaintTransform.Sanitize sanitizers]
+  if SanitizeTransformSet.is_empty sanitizers then [] else [TaintTransform.Sanitize sanitizers]
 
 
 let is_empty = List.is_empty
@@ -98,8 +98,8 @@ let discard_sanitize_transforms = List.filter ~f:TaintTransform.is_named_transfo
 let discard_sanitize_source_transforms =
   List.filter_map ~f:(function
       | TaintTransform.Sanitize sanitizers ->
-          let sanitizers = SanitizeTransform.Set.filter_sinks sanitizers in
-          if SanitizeTransform.Set.is_empty sanitizers then
+          let sanitizers = { sanitizers with sources = SanitizeTransform.SourceSet.empty } in
+          if SanitizeTransformSet.is_empty sanitizers then
             None
           else
             Some (TaintTransform.Sanitize sanitizers)
@@ -109,8 +109,8 @@ let discard_sanitize_source_transforms =
 let discard_sanitize_sink_transforms =
   List.filter_map ~f:(function
       | TaintTransform.Sanitize sanitizers ->
-          let sanitizers = SanitizeTransform.Set.filter_sources sanitizers in
-          if SanitizeTransform.Set.is_empty sanitizers then
+          let sanitizers = { sanitizers with sinks = SanitizeTransform.SinkSet.empty } in
+          if SanitizeTransformSet.is_empty sanitizers then
             None
           else
             Some (TaintTransform.Sanitize sanitizers)

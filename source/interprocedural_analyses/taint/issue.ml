@@ -341,6 +341,7 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
         let sanitized =
           kind
           |> Sources.extract_sanitize_transforms
+          |> (fun { sinks; _ } -> sinks)
           |> Sinks.extract_sanitized_sinks_from_transforms
         in
         match sofar with
@@ -357,6 +358,7 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
         let sanitized =
           kind
           |> Sinks.extract_sanitize_transforms
+          |> (fun { sources; _ } -> sources)
           |> Sources.extract_sanitized_sources_from_transforms
         in
         match sofar with
@@ -385,11 +387,15 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
       let sink_taint =
         match single_base_source with
         | Some (Sources.NamedSource source) ->
-            let sanitize_transform = SanitizeTransform.NamedSource source in
+            let sanitize_transforms =
+              SanitizeTransform.Source.Named source
+              |> SanitizeTransform.SourceSet.singleton
+              |> SanitizeTransformSet.from_sources
+            in
             BackwardTaint.transform
               BackwardTaint.kind
               Filter
-              ~f:(fun kind -> not (Sinks.contains_sanitize_transform kind sanitize_transform))
+              ~f:(fun kind -> not (Sinks.contains_sanitize_transforms kind sanitize_transforms))
               sink_taint
         | _ -> sink_taint
       in
@@ -404,11 +410,15 @@ let generate_issues ~define { Candidate.flows; key = { location; sink_handle } }
       let source_taint =
         match single_base_sink with
         | Some (Sinks.NamedSink sink) ->
-            let sanitize_transform = SanitizeTransform.NamedSink sink in
+            let sanitize_transforms =
+              SanitizeTransform.Sink.Named sink
+              |> SanitizeTransform.SinkSet.singleton
+              |> SanitizeTransformSet.from_sinks
+            in
             ForwardTaint.transform
               ForwardTaint.kind
               Filter
-              ~f:(fun kind -> not (Sources.contains_sanitize_transform kind sanitize_transform))
+              ~f:(fun kind -> not (Sources.contains_sanitize_transforms kind sanitize_transforms))
               source_taint
         | _ -> source_taint
       in
@@ -721,6 +731,7 @@ let source_can_match_rule = function
           false
       | Some sinks ->
           TaintTransforms.get_sanitize_transforms transforms
+          |> (fun { sinks; _ } -> sinks)
           |> Sinks.extract_sanitized_sinks_from_transforms
           |> Sinks.Set.diff sinks
           |> Sinks.Set.is_empty
@@ -750,6 +761,7 @@ let sink_can_match_rule = function
           false
       | Some sources ->
           TaintTransforms.get_sanitize_transforms transforms
+          |> (fun { sources; _ } -> sources)
           |> Sources.extract_sanitized_sources_from_transforms
           |> Sources.Set.diff sources
           |> Sources.Set.is_empty
