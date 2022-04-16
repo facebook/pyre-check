@@ -70,6 +70,8 @@ class UndecoratedSourceGenerator(ModelGenerator[CallableModel]):
         models_to_filter = AnnotatedFreeFunctionWithDecoratorGenerator(
             root=self.root,
             annotation_specifications=self.decorators_to_filter,
+            # pyre-fixme[6]: For 3rd param expected `Optional[List[str]]` but got
+            #  `List[Optional[str]]`.
             paths=paths,
         ).generate_models()
         # pyre-fixme[58]: `-` is not supported for operand types

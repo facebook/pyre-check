@@ -153,7 +153,6 @@ class TimedStreamHandler(logging.StreamHandler):
         timed_record = copy.copy(record)
         timed_record.msg = (
             f"{click.unstyle(new_message)}\n"
-            # pyre-ignore[16]: Missing typeshed stub for this API
             if click.utils.should_strip_ansi(stream=sys.stderr)
             else new_message
         )

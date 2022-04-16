@@ -50,6 +50,5 @@ def get_all_views(django_urls: DjangoUrls) -> List[Callable[..., object]]:
             else:
                 raise TypeError("pattern is not url resolver or url pattern.")
 
-    # pyre-ignore: Too dynamic.
     visit_all_patterns(imported_urls_module.urlpatterns)
     return functions_to_model
