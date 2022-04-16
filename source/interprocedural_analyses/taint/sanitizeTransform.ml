@@ -26,3 +26,7 @@ module Sink = struct
 end
 
 module SinkSet = Data_structures.SerializableSet.Make (Sink)
+
+type t =
+  | Source of Source.t
+  | Sink of Sink.t

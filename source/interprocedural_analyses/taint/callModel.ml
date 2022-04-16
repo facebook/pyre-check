@@ -178,7 +178,9 @@ let taint_in_taint_out_mapping
                   TaintTransforms.of_sanitize_transforms
                     ~preserve_sanitize_sources:true
                     ~preserve_sanitize_sinks:true
-                    sanitize_transforms;
+                    ~base:None
+                    sanitize_transforms
+                  |> Option.value ~default:TaintTransforms.empty;
                 global = TaintTransforms.empty;
                 base = Sinks.LocalReturn;
               }

@@ -483,9 +483,9 @@ module type KIND_ARG = sig
 
   val discard_sanitize_transforms : t -> t
 
-  val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t
+  val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t option
 
-  val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t
+  val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t option
 
   module Set : sig
     include Stdlib.Set.S with type elt = t
@@ -908,14 +908,14 @@ end = struct
     if SanitizeTransformSet.is_empty transforms then
       taint
     else
-      transform KindTaintDomain.Key Map ~f:(Kind.apply_sanitize_transforms transforms) taint
+      transform KindTaintDomain.Key FilterMap ~f:(Kind.apply_sanitize_transforms transforms) taint
 
 
   let apply_transforms transforms order taint =
     if TaintTransforms.is_empty transforms then
       taint
     else
-      transform KindTaintDomain.Key Map ~f:(Kind.apply_transforms transforms order) taint
+      transform KindTaintDomain.Key FilterMap ~f:(Kind.apply_transforms transforms order) taint
 
 
   let apply_call

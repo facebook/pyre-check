@@ -16,3 +16,7 @@ module Sink : sig
 end
 
 module SinkSet : Data_structures.SerializableSet.S with type elt = Sink.t
+
+type t =
+  | Source of Source.t
+  | Sink of Sink.t

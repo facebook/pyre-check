@@ -140,68 +140,76 @@ let extract_sanitize_transforms = function
   | _ -> SanitizeTransformSet.empty
 
 
+let rec base_as_sanitizer = function
+  | NamedSource name
+  | ParametricSource { source_name = name; _ } ->
+      Some (SanitizeTransform.Source (SanitizeTransform.Source.Named name))
+  | Transform { base; _ } -> base_as_sanitizer base
+  | Attach -> None
+
+
 let apply_sanitize_transforms transforms source =
   match source with
-  | Attach -> Attach
+  | Attach -> Some Attach
   | NamedSource _
-  | ParametricSource _ ->
-      let local =
+  | ParametricSource _ -> (
+      match
         TaintTransforms.of_sanitize_transforms
           ~preserve_sanitize_sources:false
           ~preserve_sanitize_sinks:true
+          ~base:(base_as_sanitizer source)
           transforms
-      in
-      if TaintTransforms.is_empty local then
-        source
-      else
-        Transform { local; global = TaintTransforms.empty; base = source }
-  | Transform { local; global; base } ->
-      let transforms = SanitizeTransformSet.diff transforms (extract_sanitize_transforms source) in
-      Transform
-        {
-          local =
-            TaintTransforms.add_sanitize_transforms
-              ~preserve_sanitize_sources:false
-              ~preserve_sanitize_sinks:true
-              local
-              transforms;
-          global;
-          base;
-        }
+      with
+      | None -> None
+      | Some local when TaintTransforms.is_empty local -> Some source
+      | Some local -> Some (Transform { local; global = TaintTransforms.empty; base = source }))
+  | Transform { local; global; base } -> (
+      match
+        TaintTransforms.add_sanitize_transforms
+          ~preserve_sanitize_sources:false
+          ~preserve_sanitize_sinks:true
+          ~base:(base_as_sanitizer base)
+          ~local
+          ~global
+          transforms
+      with
+      | None -> None
+      | Some local -> Some (Transform { local; global; base }))
 
 
 let apply_transforms transforms order source =
   match source with
-  | Attach -> Attach
+  | Attach -> Some Attach
   | NamedSource _
-  | ParametricSource _ ->
-      let local =
+  | ParametricSource _ -> (
+      match
         TaintTransforms.add_transforms
           ~preserve_sanitize_sources:false
           ~preserve_sanitize_sinks:true
-          ~transforms:TaintTransforms.empty
+          ~base:(base_as_sanitizer source)
+          ~local:TaintTransforms.empty
+          ~global:TaintTransforms.empty
           ~order:TaintTransforms.Order.Forward
           ~to_add:transforms
           ~to_add_order:order
-      in
-      if TaintTransforms.is_empty local then
-        source
-      else
-        Transform { local; global = TaintTransforms.empty; base = source }
-  | Transform { local; global; base } ->
-      Transform
-        {
-          local =
-            TaintTransforms.add_transforms
-              ~preserve_sanitize_sources:false
-              ~preserve_sanitize_sinks:true
-              ~transforms:local
-              ~order:TaintTransforms.Order.Forward
-              ~to_add:transforms
-              ~to_add_order:order;
-          global;
-          base;
-        }
+      with
+      | None -> None
+      | Some local when TaintTransforms.is_empty local -> Some source
+      | Some local -> Some (Transform { local; global = TaintTransforms.empty; base = source }))
+  | Transform { local; global; base } -> (
+      match
+        TaintTransforms.add_transforms
+          ~preserve_sanitize_sources:false
+          ~preserve_sanitize_sinks:true
+          ~base:(base_as_sanitizer base)
+          ~local
+          ~global
+          ~order:TaintTransforms.Order.Forward
+          ~to_add:transforms
+          ~to_add_order:order
+      with
+      | None -> None
+      | Some local -> Some (Transform { local; global; base }))
 
 
 let get_named_transforms = function

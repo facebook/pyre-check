@@ -21,18 +21,22 @@ module Set : Stdlib.Set.S with type elt = t
 val add_sanitize_transforms
   :  preserve_sanitize_sources:bool ->
   preserve_sanitize_sinks:bool ->
-  t ->
+  base:SanitizeTransform.t option ->
+  local:t ->
+  global:t ->
   SanitizeTransformSet.t ->
-  t
+  t option
 
 val add_transforms
   :  preserve_sanitize_sources:bool ->
   preserve_sanitize_sinks:bool ->
-  transforms:t ->
+  base:SanitizeTransform.t option ->
+  local:t ->
+  global:t ->
   order:Order.t ->
   to_add:t ->
   to_add_order:Order.t ->
-  t
+  t option
 
 val empty : t
 
@@ -57,8 +61,9 @@ val of_named_transforms : TaintTransform.t list -> t
 val of_sanitize_transforms
   :  preserve_sanitize_sources:bool ->
   preserve_sanitize_sinks:bool ->
+  base:SanitizeTransform.t option ->
   SanitizeTransformSet.t ->
-  t
+  t option
 
 val pp_kind
   :  formatter:Format.formatter ->

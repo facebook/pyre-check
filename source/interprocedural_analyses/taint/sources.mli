@@ -57,9 +57,9 @@ val extract_sanitized_sources_from_transforms : SanitizeTransform.SourceSet.t ->
 
 val extract_sanitize_transforms : t -> SanitizeTransformSet.t
 
-val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t
+val apply_sanitize_transforms : SanitizeTransformSet.t -> t -> t option
 
-val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t
+val apply_transforms : TaintTransforms.t -> TaintTransforms.Order.t -> t -> t option
 
 val get_named_transforms : t -> TaintTransform.t list
 

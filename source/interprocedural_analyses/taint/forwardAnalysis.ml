@@ -326,15 +326,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match kind with
         | Sinks.Transform { local = transforms; global; _ } when TaintTransforms.is_empty global ->
             (* Apply source- and sink- specific tito sanitizers. *)
-            let sanitized_tito_sources =
-              transforms
-              |> TaintTransforms.get_sanitize_transforms
-              |> (fun { sources; _ } -> sources)
-              |> Sources.extract_sanitized_sources_from_transforms
-            in
-            let transforms = TaintTransforms.discard_sanitize_source_transforms transforms in
             taint_to_propagate
-            |> ForwardState.Tree.sanitize sanitized_tito_sources
             |> ForwardState.Tree.apply_transforms transforms TaintTransforms.Order.Backward
             |> ForwardState.Tree.transform ForwardTaint.kind Filter ~f:Issue.source_can_match_rule
         | Sinks.Transform _ -> failwith "unexpected non-empty `global` transforms in tito"

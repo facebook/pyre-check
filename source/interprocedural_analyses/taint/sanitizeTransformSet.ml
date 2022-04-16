@@ -59,3 +59,8 @@ let subset
   =
   SanitizeTransform.SourceSet.subset sources_left sources_right
   && SanitizeTransform.SinkSet.subset sinks_left sinks_right
+
+
+let mem { sources; sinks } = function
+  | SanitizeTransform.Source source -> SanitizeTransform.SourceSet.mem source sources
+  | SanitizeTransform.Sink sink -> SanitizeTransform.SinkSet.mem sink sinks
