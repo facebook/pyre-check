@@ -94,6 +94,10 @@ module Make (Element : ELEMENT) = struct
           | Concrete e, Add -> if e = f then p else Top
           | Concrete e, Map -> Concrete (f e)
           | Concrete e, Filter -> if f e then p else Bottom
+          | Concrete e, FilterMap -> (
+              match f e with
+              | Some e -> Concrete e
+              | None -> Bottom)
           | _ -> Base.transform part op ~f p)
       | _ -> Base.transform part op ~f p
 

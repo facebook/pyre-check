@@ -1071,6 +1071,13 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
               else
                 path, Element.bottom)
             tree
+      | Path, FilterMap ->
+          filter_map_tree_paths
+            ~f:(fun ~path ~element ->
+              match f (path, element) with
+              | Some (path, element) -> path, element
+              | None -> path, Element.bottom)
+            tree
       | _, Context (Path, op) ->
           let transform_node ~path ~element =
             path, Element.transform part op ~f:(f (path, element)) element

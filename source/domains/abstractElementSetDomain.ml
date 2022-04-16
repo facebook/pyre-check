@@ -90,6 +90,14 @@ module Make (Element : ELEMENT) = struct
           |> ListLabels.fold_left ~f:(fun result element -> add (f element) result) ~init:Set.empty
       | Element, Add -> add f set
       | Element, Filter -> Set.filter f set
+      | Element, FilterMap ->
+          Set.elements set
+          |> ListLabels.fold_left
+               ~f:(fun result element ->
+                 match f element with
+                 | Some element -> add element result
+                 | None -> result)
+               ~init:Set.empty
       | _ -> Base.transform part op ~f set
 
 

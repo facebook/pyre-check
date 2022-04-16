@@ -27,6 +27,7 @@ type ('k, 'a, _, _) operation =
   | Map : ([< `Transform ], 'a, 'a -> 'a, _) operation
   | Add : ([< `Transform ], 'a, 'a, _) operation
   | Filter : ([ `Transform ], 'a, 'a -> bool, _) operation
+  | FilterMap : ([ `Transform ], 'a, 'a -> 'a option, _) operation
   (* expand a part into multiple parts. Typically, just join, but different for keys etc *)
   | Expand : ([ `Transform ], 'a, 'a -> 'a list, _) operation
   (* Perform two operations in sequence. *)
@@ -131,6 +132,7 @@ let rec operation_name : type k a f b. (k, a, f, b) operation -> string =
   | Map -> "Map"
   | Add -> "Add"
   | Filter -> "Filter"
+  | FilterMap -> "FilterMap"
   | Expand -> "Expand"
   (* compositions *)
   | Context (p, _) -> Format.sprintf "Context(%s, _)" (part_name p)
@@ -223,6 +225,7 @@ end) : BASE with type t := D.t = struct
     | D.Self, Map -> f d
     | D.Self, Add -> D.join d f
     | D.Self, Filter -> if f d then d else D.bottom
+    | D.Self, FilterMap -> f d |> Option.value ~default:D.bottom
     | D.Self, Expand -> f d |> Core_kernel.List.fold ~f:D.join ~init:D.bottom
     | _, Seq (op1, op2) ->
         let f1, f2 = f in

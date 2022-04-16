@@ -707,7 +707,6 @@ module IntToStringSet = struct
     in
     let v = build_map [0, ["a"; "b"]; 1, ["b"; "c"]; 2, ["c"; "d"]; 3, []] in
     let v1 = transform Key Filter ~f:(fun i -> i <> 1) v in
-    let v2 = transform KeyValue Add ~f:(0, StringSet.of_list ["x"; "y"]) v1 in
     let () =
       assert_equivalent
         v1
@@ -721,6 +720,7 @@ module IntToStringSet = struct
              Part (StringSet.Self, StringSet.of_list []);
            ])
     in
+    let v2 = transform KeyValue Add ~f:(0, StringSet.of_list ["x"; "y"]) v1 in
     let () =
       assert_equivalent
         v2
@@ -732,6 +732,18 @@ module IntToStringSet = struct
              Part (StringSet.Self, StringSet.of_list ["c"; "d"]);
              Part (Key, 3);
              Part (StringSet.Self, StringSet.of_list []);
+           ])
+    in
+    let v3 = transform Key FilterMap ~f:(fun i -> if i % 2 = 0 then Some (i / 2) else None) v in
+    let () =
+      assert_equivalent
+        v3
+        (create
+           [
+             Part (Key, 0);
+             Part (StringSet.Self, StringSet.of_list ["a"; "b"]);
+             Part (Key, 1);
+             Part (StringSet.Self, StringSet.of_list ["c"; "d"]);
            ])
     in
     let assert_show ~expected map = assert_equal ~printer:Fn.id expected (show map) in

@@ -144,6 +144,7 @@ module MakeWithSet (Set : SET) = struct
       | Element, Map -> Set.map f set
       | Element, Add -> Set.add f set
       | Element, Filter -> Set.filter f set
+      | Element, FilterMap -> Set.elements set |> List.filter_map f |> Set.of_list
       | _ -> Base.transform part op ~f set
 
 

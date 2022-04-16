@@ -134,6 +134,11 @@ module Make (Element : ELEMENT) = struct
       | ASet set, Element, Add -> Set.add f set |> make_transformed ~old:set ~old_topped:topped_set
       | ASet set, Element, Filter ->
           Set.filter f set |> make_transformed ~old:set ~old_topped:topped_set
+      | ASet set, Element, FilterMap ->
+          Set.elements set
+          |> List.filter_map f
+          |> Set.of_list
+          |> make_transformed ~old:set ~old_topped:topped_set
       | Top, Element, _ -> Top
       | _ -> Base.transform part op ~f topped_set
 

@@ -105,6 +105,17 @@ module Make (Element : ELEMENT) = struct
           match set with
           | Universe -> Universe
           | InvertedSet set -> InvertedSet (Set.filter f set))
+      | Element, FilterMap -> (
+          match set with
+          | Universe -> Universe
+          | InvertedSet set ->
+              Set.elements set
+              |> ListLabels.fold_left
+                   ~f:(fun result element ->
+                     match f element with
+                     | Some element -> add element result
+                     | None -> result)
+                   ~init:bottom)
       | _ -> Base.transform part op ~f set
 
 
