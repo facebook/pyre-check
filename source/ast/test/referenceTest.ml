@@ -191,6 +191,23 @@ let test_map_last _ =
   ()
 
 
+let test_possible_qualifiers _ =
+  let assert_prefixes reference expected =
+    let actual = Reference.possible_qualifiers (Reference.create reference) in
+    let expected_references = List.map ~f:Reference.create expected in
+    assert_equal
+      ~cmp:(List.equal Reference.equal)
+      ~printer:(fun references -> [%show: Reference.t list] references)
+      expected_references
+      actual
+  in
+  assert_prefixes "" [];
+  assert_prefixes "a" [];
+  assert_prefixes "a.b" ["a"];
+  assert_prefixes "a.b.c" ["a"; "a.b"];
+  ()
+
+
 let () =
   "reference"
   >::: [
@@ -200,5 +217,6 @@ let () =
          "delocalize" >:: test_delocalize;
          "prefix" >:: test_prefix;
          "map_last" >:: test_map_last;
+         "possible_qualifiers" >:: test_possible_qualifiers;
        ]
   |> Test.run

@@ -70,3 +70,7 @@ val first : t -> Identifier.t
 val last : t -> Identifier.t
 
 val map_last : f:(Identifier.t -> Identifier.t) -> t -> t
+
+(* Given a reference (which is assumed to not be a qualifier), what are all possible qualifiers
+   containing it? We cannot simply use the prefix because of nested classes. *)
+val possible_qualifiers : t -> t list

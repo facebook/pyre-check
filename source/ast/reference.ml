@@ -160,3 +160,13 @@ let map_last ~f reference =
   match List.rev reference with
   | [] -> []
   | head :: tail -> f head :: tail |> List.rev
+
+
+let possible_qualifiers reference =
+  let rec recurse reversed sofar =
+    match reversed with
+    | [] -> sofar
+    | [_] -> sofar
+    | _ :: tail -> recurse tail (reverse tail :: sofar)
+  in
+  recurse (reverse reference) []
