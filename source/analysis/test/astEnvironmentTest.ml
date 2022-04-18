@@ -192,16 +192,6 @@ let test_parse_sources context =
              (AstEnvironment.ReadOnly.get_processed_source
                 (AstEnvironment.read_only ast_environment))
     in
-    let is_source_sorted =
-      let compare
-          { Source.source_path = { SourcePath.qualifier = left; _ }; _ }
-          { Source.source_path = { SourcePath.qualifier = right; _ }; _ }
-        =
-        Reference.compare left right
-      in
-      List.is_sorted sources ~compare
-    in
-    assert_bool "Sources should be in sorted order" is_source_sorted;
     let sorted_handles =
       List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
       |> List.sort ~compare:String.compare
@@ -211,7 +201,10 @@ let test_parse_sources context =
   assert_equal
     ~cmp:(List.equal String.equal)
     ~printer:(String.concat ~sep:", ")
-    ["a.pyi"; "b.pyi"; "c.py"; "d.pyi"; "foo.pyi"]
+    (* External files which have not been previously loaded are ignored in lazy invalidated_modules.
+       For this reason we skip `b.pyi` and `d.pyi`; `b` doesn't live in the local_root and neither
+       does the target of the symlink for `d` (we follow symlinks before setting `is_external`) *)
+    ["a.pyi"; "c.py"; "foo.pyi"]
     source_handles;
   let source_handles =
     write_file local_root "new_local.py";
@@ -654,6 +647,7 @@ module IncrementalTest = struct
   let assert_parser_update
       ?(external_setups = [])
       ?(preprocess_all_sources = false)
+      ?(force_load_external_sources = true)
       ~context
       ~expected:{ Expectation.dependencies = expected_dependencies }
       setups
@@ -696,12 +690,22 @@ module IncrementalTest = struct
         ScratchProject.setup ~context ~external_sources:old_external_sources old_sources
       in
       let ast_environment, update_result = ScratchProject.parse_sources project in
+      let read_only_environment = AstEnvironment.read_only ast_environment in
+      (if force_load_external_sources then
+         (* If we don't do this, external sources are ignored due to lazy loading *)
+         let load_source { handle; _ } =
+           let qualifier = SourcePath.qualifier_of_relative handle in
+           let _ = AstEnvironment.ReadOnly.get_raw_source read_only_environment qualifier in
+           ()
+         in
+         List.iter external_setups ~f:load_source);
       if preprocess_all_sources then
+        (* Preprocess invalidated modules (which are internal sources) *)
         AstEnvironment.UpdateResult.invalidated_modules update_result
         |> List.iter ~f:(fun qualifier ->
                AstEnvironment.ReadOnly.get_processed_source
+                 read_only_environment
                  ~track_dependency:true
-                 (AstEnvironment.read_only ast_environment)
                  qualifier
                |> ignore);
       configuration, module_tracker, ast_environment
@@ -786,12 +790,14 @@ let test_parser_update context =
     ]
     ~expected:(Expectation.create [!&"test"]);
 
-  (* Single external file update *)
+  (* Single external file update. *)
+  (* These tests rely on us force-loading sources, which causes them to be counted as invalidated.
+     Otherwise, they would be ignored due to laziness. *)
   assert_parser_update
     ~external_setups:
       [{ handle = "test.pyi"; old_source = None; new_source = Some "def foo() -> None: ..." }]
     []
-    ~expected:(Expectation.create [!&"test"]);
+    ~expected:(Expectation.create []);
   assert_parser_update
     ~external_setups:
       [{ handle = "test.pyi"; old_source = Some "def foo() -> None: ..."; new_source = None }]
