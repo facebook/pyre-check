@@ -210,6 +210,12 @@ class ErrorsTest(unittest.TestCase):
 
         get_unused_ignore_codes.return_value = [1]
         self.assertEqual(
+            _remove_unused_ignores("#  pyre-fixme[1]: Comment", []),
+            "",
+        )
+
+        get_unused_ignore_codes.return_value = [1]
+        self.assertEqual(
             _remove_unused_ignores("# pyre-fixme[2, 3, 4]: Comment", []),
             "# pyre-fixme[2, 3, 4]: Comment",
         )
