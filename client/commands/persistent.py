@@ -584,7 +584,9 @@ class ServerState:
     diagnostics: Dict[Path, List[lsp.Diagnostic]] = dataclasses.field(
         default_factory=dict
     )
-    last_diagnostic_update_timer: Optional[timer.Timer] = None
+    last_diagnostic_update_timer: timer.Timer = dataclasses.field(
+        default_factory=timer.Timer
+    )
     query_state: PyreQueryState = dataclasses.field(default_factory=PyreQueryState)
 
 
@@ -1435,21 +1437,18 @@ class PyreServerHandler(connection.BackgroundTask):
         for path in self.server_state.diagnostics:
             await _publish_diagnostics(self.client_output_channel, path, [])
         last_update_timer = self.server_state.last_diagnostic_update_timer
-        if last_update_timer is not None:
-            _log_lsp_event(
-                self.remote_logging,
-                LSPEvent.COVERED,
-                integers={"duration": int(last_update_timer.stop_in_millisecond())},
-            )
-            # Reset the timestamp to avoid duplicate counting
-            last_update_timer.reset()
+        _log_lsp_event(
+            self.remote_logging,
+            LSPEvent.COVERED,
+            integers={"duration": int(last_update_timer.stop_in_millisecond())},
+        )
+        # Reset the timestamp to avoid duplicate counting
+        last_update_timer.reset()
 
     async def show_type_errors_to_client(self) -> None:
         for path, diagnostics in self.server_state.diagnostics.items():
             await _publish_diagnostics(self.client_output_channel, path, diagnostics)
-        last_update_timer = self.server_state.last_diagnostic_update_timer
-        if last_update_timer is not None:
-            last_update_timer.reset()
+        self.server_state.last_diagnostic_update_timer.reset()
 
     async def handle_type_error_subscription(
         self, type_error_subscription: TypeErrorSubscription
