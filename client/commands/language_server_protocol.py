@@ -132,6 +132,35 @@ class MessageType(SerializationSafeIntEnum):
     LOG = 4
 
 
+class SymbolKind(SerializationSafeIntEnum):
+    FILE = 1
+    MODULE = 2
+    NAMESPACE = 3
+    PACKAGE = 4
+    CLASS = 5
+    METHOD = 6
+    PROPERTY = 7
+    FIELD = 8
+    CONSTRUCTOR = 9
+    ENUM = 10
+    INTERFACE = 11
+    FUNCTION = 12
+    VARIABLE = 13
+    CONSTANT = 14
+    STRING = 15
+    NUMBER = 16
+    BOOLEAN = 17
+    ARRAY = 18
+    OBJECT = 19
+    KEY = 20
+    NULL = 21
+    ENUMMEMBER = 22
+    STRUCT = 23
+    EVENT = 24
+    OPERATOR = 25
+    TYPEPARAMETER = 26
+
+
 @dataclasses.dataclass(frozen=True)
 class DocumentUri:
     scheme: str
@@ -589,4 +618,35 @@ class LspDefinitionResponse:
     """Contains one possible definition for a symbol."""
 
     uri: str
+    range: LspRange
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class DocumentSymbolsTextDocumentParameters:
+    text_document: TextDocumentIdentifier
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "DocumentSymbolsTextDocumentParameters":
+        return _parse_parameters(
+            parameters, target=DocumentSymbolsTextDocumentParameters
+        )
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class DocumentSymbolsResponse:
+    """Contains one possible definition for a symbol."""
+
+    name: str
+    detail: Optional[str]
+    kind: SymbolKind
     range: LspRange
