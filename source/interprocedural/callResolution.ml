@@ -29,6 +29,18 @@ let extract_constant_name { Node.value = expression; _ } =
   | _ -> None
 
 
+let is_transitive_successor_ignoring_untracked global_resolution ~predecessor ~successor =
+  try GlobalResolution.is_transitive_successor global_resolution ~predecessor ~successor with
+  | Analysis.ClassHierarchy.Untracked untracked_type ->
+      Log.warning
+        "Found untracked type `%s` when checking whether `%s` is a subclass of `%s`. This could \
+         lead to false negatives."
+        untracked_type
+        successor
+        predecessor;
+      false
+
+
 let is_super ~resolution ~define expression =
   match expression.Node.value with
   | Expression.Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
@@ -45,7 +57,7 @@ let is_super ~resolution ~define expression =
             in
             class_name
             >>| (fun class_name ->
-                  GlobalResolution.is_transitive_successor
+                  is_transitive_successor_ignoring_untracked
                     (Resolution.global_resolution resolution)
                     ~predecessor:class_name
                     ~successor:parent_name)

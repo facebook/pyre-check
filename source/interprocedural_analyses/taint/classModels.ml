@@ -114,7 +114,7 @@ let infer ~environment ~user_models =
     if is_dataclass then
       compute_dataclass_models class_name
     else if
-      GlobalResolution.is_transitive_successor
+      CallResolution.is_transitive_successor_ignoring_untracked
         global_resolution
         ~predecessor:class_name
         ~successor:"typing.NamedTuple"
