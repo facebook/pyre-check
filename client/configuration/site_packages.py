@@ -7,7 +7,7 @@ import dataclasses
 import enum
 import logging
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
+from typing import Dict, List, Iterable, Optional, Union
 
 from . import search_path
 
@@ -41,15 +41,23 @@ class PackageStatus(enum.IntEnum):
 @dataclasses.dataclass(frozen=True)
 class NonStubPackage:
     name: str
-    path: Path
+    path: Path  # NOTE: parent of this path would be the site root
     is_typed: bool = False
 
 
 @dataclasses.dataclass(frozen=True)
 class StubPackage:
     name: str
-    path: Path
+    path: Path  # NOTE: parent of this path would be the site root
     is_partial: bool = False
+
+
+# For the same name, it is possible for both a stub package and a non-stub package
+# to co-exist. This class is used to group the two.
+@dataclasses.dataclass(frozen=True)
+class PackageInfo:
+    nonstub_package: Optional[NonStubPackage] = None
+    stub_package: Optional[StubPackage] = None
 
 
 def is_valid_package_name(name: str) -> bool:
@@ -102,8 +110,31 @@ def create_package_from_path(path: Path) -> Union[StubPackage, NonStubPackage, N
         )
 
 
+def find_packages(site_roots: Iterable[str]) -> List[PackageInfo]:
+    nonstub_packages: Dict[str, NonStubPackage] = {}
+    stub_packages: Dict[str, StubPackage] = {}
+    for site_root in site_roots:
+        site_root_path = Path(site_root)
+        if not site_root_path.is_dir():
+            continue
+        for site_path in site_root_path.iterdir():
+            package = create_package_from_path(site_path)
+            if isinstance(package, NonStubPackage):
+                nonstub_packages.setdefault(package.name, package)
+            elif isinstance(package, StubPackage):
+                stub_packages.setdefault(package.name, package)
+
+    return [
+        PackageInfo(
+            nonstub_package=nonstub_packages.get(name, None),
+            stub_package=stub_packages.get(name, None),
+        )
+        for name in nonstub_packages.keys() | stub_packages.keys()
+    ]
+
+
 def search_for_paths(
-    strategy: SearchStrategy, site_roots: Sequence[str]
+    strategy: SearchStrategy, site_roots: Iterable[str]
 ) -> List[search_path.Element]:
     if strategy == SearchStrategy.NONE:
         return []

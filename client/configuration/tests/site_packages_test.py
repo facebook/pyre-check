@@ -23,6 +23,8 @@ from ..site_packages import (
     create_package_from_path,
     NonStubPackage,
     StubPackage,
+    find_packages,
+    PackageInfo,
 )
 
 
@@ -121,4 +123,94 @@ class SitePackagesTest(testslide.TestCase):
             self.assertEqual(
                 create_package_from_path(qux_path),
                 StubPackage(name="qux", path=qux_path, is_partial=True),
+            )
+
+    def test_find_packages_basic(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            ensure_files_exist(
+                root_path,
+                [
+                    "foo/foo.py",
+                    "bar/bar.py",
+                    "bar/py.typed",
+                    "baz/baz.py",
+                    "baz-stubs/baz.pyi",
+                    "qux-stubs/qux.pyi",
+                    "standalone.py",
+                    "random.txt",
+                ],
+            )
+            (root_path / "baz-stubs" / MARKER_FILE).write_text("partial\n")
+
+            self.assertCountEqual(
+                find_packages([str(root_path)]),
+                [
+                    PackageInfo(
+                        nonstub_package=NonStubPackage(
+                            name="foo", path=Path(root_path / "foo"), is_typed=False
+                        )
+                    ),
+                    PackageInfo(
+                        nonstub_package=NonStubPackage(
+                            name="bar", path=Path(root_path / "bar"), is_typed=True
+                        )
+                    ),
+                    PackageInfo(
+                        nonstub_package=NonStubPackage(
+                            name="baz", path=Path(root_path / "baz"), is_typed=False
+                        ),
+                        stub_package=StubPackage(
+                            name="baz",
+                            path=Path(root_path / "baz-stubs"),
+                            is_partial=True,
+                        ),
+                    ),
+                    PackageInfo(
+                        stub_package=StubPackage(
+                            name="qux",
+                            path=Path(root_path / "qux-stubs"),
+                            is_partial=False,
+                        )
+                    ),
+                ],
+            )
+
+    def test_find_packages_priority(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            ensure_files_exist(
+                root_path,
+                [
+                    "root0/foo/foo.py",
+                    "root0/bar-stubs/bar.pyi",
+                    "root1/foo/foo.py",
+                    "root1/foo-stubs/foo.pyi",
+                    "root1/bar-stubs/bar.pyi",
+                ],
+            )
+
+            self.assertCountEqual(
+                find_packages([str(root_path / "root0"), str(root_path / "root1")]),
+                [
+                    PackageInfo(
+                        nonstub_package=NonStubPackage(
+                            name="foo",
+                            path=Path(root_path / "root0" / "foo"),
+                            is_typed=False,
+                        ),
+                        stub_package=StubPackage(
+                            name="foo",
+                            path=Path(root_path / "root1" / "foo-stubs"),
+                            is_partial=False,
+                        ),
+                    ),
+                    PackageInfo(
+                        stub_package=StubPackage(
+                            name="bar",
+                            path=Path(root_path / "root0" / "bar-stubs"),
+                            is_partial=False,
+                        )
+                    ),
+                ],
             )
