@@ -632,7 +632,6 @@
             ],
             "local_features": [
               { "always-via": "tito" },
-              { "always-via": "obscure:model" },
               { "always-via": "format-string" }
             ],
             "tito": [ { "line": 64, "start": 25, "end": 26 } ],

@@ -103,7 +103,10 @@
               { "always-via": "tito" },
               { "always-via": "format-string" }
             ],
-            "tito": [ { "line": 112, "start": 16, "end": 17 } ],
+            "tito": [
+              { "line": 112, "start": 12, "end": 18 },
+              { "line": 112, "start": 16, "end": 17 }
+            ],
             "root": {
               "filename": "string_conversion.py",
               "line": 110,
@@ -179,7 +182,11 @@
                 "kind": "UserControlled"
               }
             ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 52, "start": 18, "end": 29 } ],
             "call": {
               "position": {
                 "filename": "string_conversion.py",
@@ -216,6 +223,7 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "tainted" },
+      { "always-via": "tito" },
       { "always-via": "format-string" }
     ],
     "sink_handle": {
@@ -511,8 +519,10 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "tainted" },
+              { "always-via": "tito" },
               { "always-via": "format-string" }
             ],
+            "tito": [ { "line": 105, "start": 12, "end": 13 } ],
             "root": {
               "filename": "string_conversion.py",
               "line": 103,
@@ -545,6 +555,7 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "tainted" },
+      { "always-via": "tito" },
       { "always-via": "format-string" }
     ],
     "sink_handle": {
@@ -974,6 +985,7 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "tainted" },
+              { "via": "tito" },
               { "via": "format-string" }
             ],
             "root": {
@@ -1137,7 +1149,10 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
             "root": {
               "filename": "builtins.pyi",
               "line": -1,
@@ -1336,7 +1351,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 170, "start": 18, "end": 19 } ],
             "root": {
               "filename": "string_conversion.py",
               "line": 169,
@@ -1592,7 +1611,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 148, "start": 14, "end": 15 } ],
             "root": {
               "filename": "string_conversion.py",
               "line": 147,

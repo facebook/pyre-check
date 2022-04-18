@@ -1409,6 +1409,43 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~f:add_root_taint
           in
           taint, state
+      (* Special case `"{}".format(s)` and `"%s" % (s,)` for Literal String Sinks *)
+      | {
+          callee =
+            {
+              Node.value =
+                Name
+                  (Name.Attribute
+                    {
+                      base =
+                        { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
+                      attribute = "__mod__";
+                      _;
+                    });
+              _;
+            };
+          arguments;
+        }
+      | {
+          callee =
+            {
+              Node.value =
+                Name
+                  (Name.Attribute
+                    {
+                      base =
+                        { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
+                      attribute = "format";
+                      _;
+                    });
+              _;
+            };
+          arguments;
+        } ->
+          let nested_expressions =
+            List.map ~f:(fun call_argument -> call_argument.value) arguments
+          in
+          analyze_string_literal ~resolution ~state ~location ~nested_expressions value
       | {
        callee = { Node.value = Expression.Name (Name.Identifier "reveal_taint"); _ };
        arguments = [{ Call.Argument.value = expression; _ }];
@@ -1442,29 +1479,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let call = { Call.callee; arguments } in
           let { Call.callee; arguments } = CallGraph.redirect_special_calls ~resolution call in
           let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
-          let taint, state =
-            apply_callees
-              ~resolution
-              ~is_property:false
-              ~call_location:location
-              ~callee
-              ~arguments
-              ~state
-              callees
-          in
-          let taint =
-            match Node.value callee with
-            | Name
-                (Name.Attribute
-                  {
-                    base = { Node.value = Expression.Constant (Constant.String _); _ };
-                    attribute = "format";
-                    _;
-                  }) ->
-                ForwardState.Tree.add_local_breadcrumb (Features.format_string ()) taint
-            | _ -> taint
-          in
-          taint, state
+          apply_callees
+            ~resolution
+            ~is_property:false
+            ~call_location:location
+            ~callee
+            ~arguments
+            ~state
+            callees
     in
     let taint, state = assign_super_constructor_taint_to_self_if_necessary taint state in
     let configuration = TaintConfiguration.get () in
@@ -1658,7 +1680,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (taint, state)
             ({ Node.location = expression_location; _ } as expression)
           =
-          let base_taint, base_state = analyze_expression ~resolution ~state ~expression in
+          let base_taint, base_state =
+            analyze_expression ~resolution ~state ~expression
+            |>> ForwardState.Tree.transform
+                  Features.TitoPositionSet.Element
+                  Add
+                  ~f:expression_location
+            |>> ForwardState.Tree.add_local_breadcrumb (Features.tito ())
+          in
           match get_format_string_callees ~location:expression_location with
           | Some { CallGraph.FormatStringCallees.call_targets } ->
               List.fold

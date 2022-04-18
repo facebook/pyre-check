@@ -2,6 +2,68 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "implicit_sinks.inline_issue_dot_format",
+    "callable_line": 26,
+    "code": 1337,
+    "line": 28,
+    "start": 4,
+    "end": 20,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 28, "start": 18, "end": 19 } ],
+            "root": {
+              "filename": "implicit_sinks.py",
+              "line": 27,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [ { "kind": "Test" } ],
+            "root": {
+              "filename": "implicit_sinks.py",
+              "line": 28,
+              "start": 4,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "format-string" },
+      { "always-via": "special_source" }
+    ],
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle":
+      "implicit_sinks.inline_issue_dot_format:1337:0:LiteralStringSink|Test:12e6985f0ee1e45370ff2a0b6e46b05f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "implicit_sinks.inline_issue_format_string",
     "callable_line": 15,
     "code": 1337,
@@ -22,7 +84,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 17, "start": 8, "end": 9 } ],
             "root": {
               "filename": "implicit_sinks.py",
               "line": 16,
@@ -48,12 +114,161 @@
       }
     ],
     "features": [
+      { "always-via": "tito" },
       { "always-via": "format-string" },
       { "always-via": "special_source" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
     "master_handle":
       "implicit_sinks.inline_issue_format_string:1337:0:LiteralStringSink|Test:e8f93741bdea2fc8de1e3a34c54afe6f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "implicit_sinks.inline_issue_format_string_proper_tito",
+    "callable_line": 41,
+    "code": 1337,
+    "line": 43,
+    "start": 4,
+    "end": 18,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 43, "start": 8, "end": 9 } ],
+            "root": {
+              "filename": "implicit_sinks.py",
+              "line": 42,
+              "start": 14,
+              "end": 28
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 43, "start": 14, "end": 15 } ],
+            "root": {
+              "filename": "implicit_sinks.py",
+              "line": 42,
+              "start": 34,
+              "end": 48
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [ { "kind": "Test" } ],
+            "root": {
+              "filename": "implicit_sinks.py",
+              "line": 43,
+              "start": 4,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "format-string" },
+      { "always-via": "special_source" }
+    ],
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle":
+      "implicit_sinks.inline_issue_format_string_proper_tito:1337:0:LiteralStringSink|Test:2d2f13f927e373f2d409957884ab2173"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "implicit_sinks.inline_issue_percent_format",
+    "callable_line": 36,
+    "code": 1337,
+    "line": 38,
+    "start": 4,
+    "end": 17,
+    "filename": "implicit_sinks.py",
+    "message": "[Test] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito": [ { "line": 38, "start": 13, "end": 17 } ],
+            "root": {
+              "filename": "implicit_sinks.py",
+              "line": 37,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [ { "kind": "Test" } ],
+            "root": {
+              "filename": "implicit_sinks.py",
+              "line": 38,
+              "start": 4,
+              "end": 17
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "format-string" },
+      { "always-via": "broadening" },
+      { "always-via": "special_source" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
+    "master_handle":
+      "implicit_sinks.inline_issue_percent_format:1337:0:LiteralStringSink|Test:a3816965f707388cfddef3263d5a9c83"
   }
 }
 {

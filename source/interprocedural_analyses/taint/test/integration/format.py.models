@@ -139,7 +139,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 15, "start": 14, "end": 28 } ],
             "root": {
               "filename": "format.py",
               "line": 15,
@@ -168,7 +172,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 11, "start": 14, "end": 19 } ],
             "root": {
               "filename": "format.py",
               "line": 10,

@@ -25,7 +25,6 @@ def propagate_sink_dot_format(a):
 
 def inline_issue_dot_format():
     a = _test_source()
-    # TODO(T88183535): Should be caught, but isn't
     "<{}>".format(a)
 
 
@@ -36,5 +35,9 @@ def propagate_sink_percent_format(a):
 
 def inline_issue_percent_format():
     a = _test_source()
-    # TODO(T88183535): Should be caught, but isn't
     "<%s>" % (a,)
+
+
+def inline_issue_format_string_proper_tito():
+    a, b, c = _test_source(), "", _test_source()
+    f"<{a}{b}{c}>"
