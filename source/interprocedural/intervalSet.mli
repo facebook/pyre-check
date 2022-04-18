@@ -17,3 +17,7 @@ val show : t -> string
 val show_list : ClassInterval.t list -> string
 
 val equal : t -> t -> bool
+
+val meet : t -> t -> t
+
+val empty : t

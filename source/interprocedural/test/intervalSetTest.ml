@@ -11,15 +11,15 @@ open Interprocedural
 
 let of_list list = List.map list ~f:(fun (lower, upper) -> ClassInterval.create lower upper)
 
+let assert_equal_interval_set ~actual ~expected =
+  assert_equal expected actual ~cmp:(List.equal ClassInterval.equal) ~printer:IntervalSet.show_list
+
+
 let test_of_list _ =
   let assert_of_list ~input ~expected =
     let actual = of_list input |> IntervalSet.of_list |> IntervalSet.to_list in
     let expected = of_list expected in
-    assert_equal
-      expected
-      actual
-      ~cmp:(List.equal ClassInterval.equal)
-      ~printer:IntervalSet.show_list
+    assert_equal_interval_set ~expected ~actual
   in
   assert_of_list ~input:[2, 1; 2, 0] ~expected:[];
   assert_of_list ~input:[1, 2; 2, 0] ~expected:[1, 2];
@@ -38,4 +38,31 @@ let test_of_list _ =
   assert_of_list ~input:[5, 6; 10, 11; 1, 2] ~expected:[1, 2; 5, 6; 10, 11]
 
 
-let () = "interval_set" >::: ["of_list" >:: test_of_list] |> Test.run
+let test_meet _ =
+  let assert_meet ~left ~right ~expected =
+    let left = of_list left |> IntervalSet.of_list in
+    let right = of_list right |> IntervalSet.of_list in
+    let actual = IntervalSet.meet left right |> IntervalSet.to_list in
+    let expected = of_list expected in
+    assert_equal_interval_set ~expected ~actual
+  in
+  assert_meet ~left:[1, 2] ~right:[2, 3] ~expected:[2, 2];
+  assert_meet ~left:[2, 3] ~right:[1, 2] ~expected:[2, 2];
+  assert_meet ~left:[3, 7] ~right:[3, 6] ~expected:[3, 6];
+  assert_meet ~left:[3, 7] ~right:[4, 7] ~expected:[4, 7];
+  assert_meet ~left:[3, 7] ~right:[4, 8] ~expected:[4, 7];
+  assert_meet ~left:[3, 7] ~right:[7, 8] ~expected:[7, 7];
+  assert_meet ~left:[3, 7] ~right:[3, 3] ~expected:[3, 3];
+  assert_meet ~left:[3, 7] ~right:[2, 3] ~expected:[3, 3];
+  assert_meet ~left:[3, 7] ~right:[2, 7] ~expected:[3, 7];
+  assert_meet ~left:[3, 7] ~right:[2, 8] ~expected:[3, 7];
+  assert_meet ~left:[3, 7] ~right:[2, 2] ~expected:[];
+  assert_meet
+    ~left:[17, 100; 1, 10; 14, 16; 12, 11]
+    ~right:[17, 20; 5, 6; 17, 16; 7, 12]
+    ~expected:[5, 10; 17, 20];
+  assert_meet ~left:[14, 16; 1, 15; 12, 11] ~right:[5, 6; 7, 12] ~expected:[5, 12];
+  assert_meet ~left:[1, 2; 3, 4] ~right:[1, 2; 3, 4] ~expected:[1, 4]
+
+
+let () = "interval_set" >::: ["of_list" >:: test_of_list; "meet" >:: test_meet] |> Test.run

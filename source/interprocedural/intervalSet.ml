@@ -73,3 +73,37 @@ let show = Format.asprintf "%a" pp
 let show_list = show
 
 let equal left right = List.equal ClassInterval.equal left right
+
+let empty = []
+
+let meet left right =
+  let rec intersect_interval_lists ~left ~right ~result =
+    match left, right with
+    | left_head :: left_tail, right_head :: right_tail ->
+        let left_lower = ClassInterval.lower_bound_exn left_head in
+        let left_upper = ClassInterval.upper_bound_exn left_head in
+        let right_lower = ClassInterval.lower_bound_exn right_head in
+        let right_upper = ClassInterval.upper_bound_exn right_head in
+        if left_lower <= right_lower then
+          if left_upper >= right_upper then (* l1[p1] covers l2[p2] *)
+            intersect_interval_lists ~left ~right:right_tail ~result:(right_head :: result)
+          else if (* l2[p2] ends later *) left_upper < right_lower then (* No overlap *)
+            intersect_interval_lists ~left:left_tail ~right ~result
+          else (* l2[p2] ends later *)
+            intersect_interval_lists
+              ~left:left_tail
+              ~right
+              ~result:(ClassInterval.meet left_head right_head :: result)
+        else if left_upper <= right_upper then (* l2[p2] covers l1[p1] *)
+          intersect_interval_lists ~left:left_tail ~right ~result:(left_head :: result)
+        else if (* l1[p1] ends later *) right_upper < left_lower then (* No overlap *)
+          intersect_interval_lists ~left ~right:right_tail ~result
+        else (* l1[p1] ends later *)
+          intersect_interval_lists
+            ~left
+            ~right:right_tail
+            ~result:(ClassInterval.meet left_head right_head :: result)
+    | _ -> result
+  in
+  let result = intersect_interval_lists ~left ~right ~result:[] in
+  List.rev result
