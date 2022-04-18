@@ -589,11 +589,17 @@ end = struct
     let compare = Node.compare ClassSummary.compare
   end
 
-  module ClassSummaries =
-    DependencyTrackedMemory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.StringKey)
-      (DependencyKey)
-      (ClassSummaryValue)
+  module ClassSummaries = struct
+    include
+      DependencyTrackedMemory.DependencyTrackedTableWithCache
+        (SharedMemoryKeys.StringKey)
+        (DependencyKey)
+        (ClassSummaryValue)
+
+    let is_qualifier = false
+
+    let key_to_reference name = Reference.create name
+  end
 
   module UnannotatedGlobalValue = struct
     type t = UnannotatedGlobal.t
@@ -605,11 +611,17 @@ end = struct
     let compare = UnannotatedGlobal.compare
   end
 
-  module UnannotatedGlobals =
-    DependencyTrackedMemory.DependencyTrackedTableNoCache
-      (SharedMemoryKeys.ReferenceKey)
-      (DependencyKey)
-      (UnannotatedGlobalValue)
+  module UnannotatedGlobals = struct
+    include
+      DependencyTrackedMemory.DependencyTrackedTableNoCache
+        (SharedMemoryKeys.ReferenceKey)
+        (DependencyKey)
+        (UnannotatedGlobalValue)
+
+    let is_qualifier = false
+
+    let key_to_reference = Fn.id
+  end
 
   module FunctionDefinitionValue = struct
     type t = FunctionDefinition.t
@@ -621,11 +633,17 @@ end = struct
     let compare = FunctionDefinition.compare
   end
 
-  module FunctionDefinitions =
-    DependencyTrackedMemory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.ReferenceKey)
-      (DependencyKey)
-      (FunctionDefinitionValue)
+  module FunctionDefinitions = struct
+    include
+      DependencyTrackedMemory.DependencyTrackedTableWithCache
+        (SharedMemoryKeys.ReferenceKey)
+        (DependencyKey)
+        (FunctionDefinitionValue)
+
+    let is_qualifier = false
+
+    let key_to_reference = Fn.id
+  end
 
   module ModuleValue = struct
     type t = Module.t
@@ -637,11 +655,17 @@ end = struct
     let compare = Module.compare
   end
 
-  module Modules =
-    DependencyTrackedMemory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.ReferenceKey)
-      (SharedMemoryKeys.DependencyKey)
-      (ModuleValue)
+  module Modules = struct
+    include
+      DependencyTrackedMemory.DependencyTrackedTableWithCache
+        (SharedMemoryKeys.ReferenceKey)
+        (DependencyKey)
+        (ModuleValue)
+
+    let is_qualifier = true
+
+    let key_to_reference = Fn.id
+  end
 
   let set_module ~qualifier module_ = Modules.add qualifier module_
 
@@ -762,10 +786,12 @@ end = struct
 
 
   let set_module_data ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-    set_module ~qualifier (Module.create source);
     set_unannotated_globals source;
     set_class_summaries source;
-    set_function_definitions source
+    set_function_definitions source;
+    (* We must set this last, because lazy-loading uses Module.mem to determine whether the source
+       has already been processed. So setting it earlier can lead to data races *)
+    set_module ~qualifier (Module.create source)
 
 
   let add_to_transaction
@@ -813,7 +839,139 @@ end = struct
     Modules.KeySet.of_list previous_modules_list |> Modules.remove_batch
 
 
+  module LazyLoading = struct
+    let load_module_if_tracked ~ast_environment qualifier =
+      if not (Modules.mem qualifier) then
+        if AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier then
+          match
+            AstEnvironment.ReadOnly.get_processed_source
+              ~track_dependency:true
+              ast_environment
+              qualifier
+          with
+          | Some source -> set_module_data source
+          | None -> ()
+
+
+    let load_all_possible_modules ~is_qualifier ~ast_environment reference =
+      let load_module_if_tracked = load_module_if_tracked ~ast_environment in
+      let ancestors_descending = Reference.possible_qualifiers reference in
+      List.iter ancestors_descending ~f:load_module_if_tracked;
+      if is_qualifier then load_module_if_tracked reference;
+      ()
+  end
+
+  module ReadOnlyTable = struct
+    module type S = sig
+      type key
+
+      type value
+
+      val mem
+        :  ast_environment:AstEnvironment.ReadOnly.t ->
+        ?dependency:DependencyKey.registered ->
+        key ->
+        bool
+
+      val get
+        :  ast_environment:AstEnvironment.ReadOnly.t ->
+        ?dependency:DependencyKey.registered ->
+        key ->
+        value option
+    end
+
+    module type In = sig
+      type key
+
+      type value
+
+      val is_qualifier : bool
+
+      val key_to_reference : key -> Reference.t
+
+      val mem : ?dependency:DependencyKey.registered -> key -> bool
+
+      val get : ?dependency:DependencyKey.registered -> key -> value option
+    end
+
+    module Make (In : In) : S with type key := In.key and type value := In.value = struct
+      let is_qualifier = In.is_qualifier
+
+      let mem ~ast_environment ?dependency key =
+        (* First handle the case where it's already in the hash map *)
+        match In.mem ?dependency key with
+        | true -> true
+        | false ->
+            (* If no precomputed value exists, we make sure all potential qualifiers are loaded *)
+            LazyLoading.load_all_possible_modules
+              ~is_qualifier
+              ~ast_environment
+              (In.key_to_reference key);
+            (* We try fetching again *)
+            In.mem ?dependency key
+
+
+      let get ~ast_environment ?dependency key =
+        (* The first get finds precomputed values *)
+        match In.get ?dependency key with
+        | Some _ as hit -> hit
+        | None ->
+            (* If no precomputed value exists, we make sure all potential qualifiers are loaded *)
+            LazyLoading.load_all_possible_modules
+              ~is_qualifier
+              ~ast_environment
+              (In.key_to_reference key);
+            (* We try fetching again *)
+            In.get ?dependency key
+    end
+  end
+
   let read_only ~ast_environment =
+    (* Mask the raw DependencyTrackedTables with lazy read-only views of each one *)
+    let module Modules = ReadOnlyTable.Make (Modules) in
+    let module ClassSummaries = ReadOnlyTable.Make (ClassSummaries) in
+    let module FunctionDefinitions = ReadOnlyTable.Make (FunctionDefinitions) in
+    let module UnannotatedGlobals = ReadOnlyTable.Make (UnannotatedGlobals) in
+    (* Define the basic getters and existence checks *)
+    let get_module = Modules.get ~ast_environment in
+    let class_exists = ClassSummaries.mem ~ast_environment in
+    let get_class_summary = ClassSummaries.get ~ast_environment in
+    let get_unannotated_global = UnannotatedGlobals.get ~ast_environment in
+    let get_function_definition = FunctionDefinitions.get ~ast_environment in
+    (* all_defines_in_module is the only KeyTracker-based API that requires loading *)
+    let all_defines_in_module qualifier =
+      LazyLoading.load_module_if_tracked ~ast_environment qualifier;
+      KeyTracker.get_define_body_keys [qualifier]
+    in
+    (* Special case some logic for modules *)
+    let get_module_metadata ?dependency qualifier =
+      let qualifier =
+        match Reference.as_list qualifier with
+        | ["future"; "builtins"]
+        | ["builtins"] ->
+            Reference.empty
+        | _ -> qualifier
+      in
+      match get_module ?dependency qualifier with
+      | Some _ as result -> result
+      | None -> (
+          match AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier with
+          | true -> Some (Module.create_implicit ())
+          | false -> None)
+    in
+    let module_exists ?dependency qualifier =
+      let qualifier =
+        match Reference.as_list qualifier with
+        | ["future"; "builtins"]
+        | ["builtins"] ->
+            Reference.empty
+        | _ -> qualifier
+      in
+      match Modules.mem ~ast_environment ?dependency qualifier with
+      | true -> true
+      | false -> AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier
+    in
+    (* Define the bulk key reads - these tell us what's been loaded thus far *)
     let all_classes () =
       AstEnvironment.ReadOnly.all_explicit_modules ast_environment |> KeyTracker.get_class_keys
     in
@@ -831,47 +989,17 @@ end = struct
       AstEnvironment.ReadOnly.all_explicit_modules ast_environment
       |> KeyTracker.get_define_body_keys
     in
-    let class_exists ?dependency name = ClassSummaries.mem ?dependency name in
-    let get_function_definition = FunctionDefinitions.get in
     let get_define_body ?dependency key =
-      FunctionDefinitions.get ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
-    in
-    let all_defines_in_module qualifier = KeyTracker.get_define_body_keys [qualifier] in
-    let get_module_metadata ?dependency qualifier =
-      let qualifier =
-        match Reference.as_list qualifier with
-        | ["future"; "builtins"]
-        | ["builtins"] ->
-            Reference.empty
-        | _ -> qualifier
-      in
-      match Modules.get ?dependency qualifier with
-      | Some _ as result -> result
-      | None -> (
-          match AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier with
-          | true -> Some (Module.create_implicit ())
-          | false -> None)
-    in
-    let module_exists ?dependency qualifier =
-      let qualifier =
-        match Reference.as_list qualifier with
-        | ["future"; "builtins"]
-        | ["builtins"] ->
-            Reference.empty
-        | _ -> qualifier
-      in
-      match Modules.mem ?dependency qualifier with
-      | true -> true
-      | false -> AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier
+      get_function_definition ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
     in
     {
-      ast_environment;
-      ReadOnly.get_class_summary = ClassSummaries.get;
+      ReadOnly.ast_environment;
+      get_class_summary;
       all_classes;
       all_indices;
       all_defines;
       class_exists;
-      get_unannotated_global = UnannotatedGlobals.get;
+      get_unannotated_global;
       get_function_definition;
       get_define_body;
       all_defines_in_module;
