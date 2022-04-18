@@ -44,12 +44,22 @@ class NonStubPackage:
     path: Path  # NOTE: parent of this path would be the site root
     is_typed: bool = False
 
+    def to_search_path_element(self) -> search_path.SitePackageElement:
+        return search_path.SitePackageElement(
+            site_root=str(self.path.parent), package_name=self.name
+        )
+
 
 @dataclasses.dataclass(frozen=True)
 class StubPackage:
     name: str
     path: Path  # NOTE: parent of this path would be the site root
     is_partial: bool = False
+
+    def to_search_path_element(self) -> search_path.SitePackageElement:
+        return search_path.SitePackageElement(
+            site_root=str(self.path.parent), package_name=self.path.name
+        )
 
 
 # For the same name, it is possible for both a stub package and a non-stub package
@@ -58,6 +68,21 @@ class StubPackage:
 class PackageInfo:
     nonstub_package: Optional[NonStubPackage] = None
     stub_package: Optional[StubPackage] = None
+
+    def to_search_path_elements(self) -> List[search_path.SitePackageElement]:
+        stub_package = self.stub_package
+        nonstub_package = self.nonstub_package
+        if stub_package is not None:
+            stub_search_path = stub_package.to_search_path_element()
+            if nonstub_package is not None and stub_package.is_partial:
+                # Partial stubs use the corresponding non-stub as fallback
+                return [stub_search_path, nonstub_package.to_search_path_element()]
+            else:
+                return [stub_search_path]
+
+        if nonstub_package is not None and nonstub_package.is_typed:
+            return [nonstub_package.to_search_path_element()]
+        return []
 
 
 def is_valid_package_name(name: str) -> bool:
@@ -141,6 +166,10 @@ def search_for_paths(
     elif strategy == SearchStrategy.ALL:
         return [search_path.SimpleElement(root) for root in site_roots]
     elif strategy == SearchStrategy.PEP561:
-        raise NotImplementedError
+        return [
+            element
+            for package in find_packages(site_roots)
+            for element in package.to_search_path_elements()
+        ]
     else:
         raise RuntimeError(f"Unhandled site package search strategy: {strategy}")

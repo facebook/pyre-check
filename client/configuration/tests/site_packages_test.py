@@ -12,7 +12,7 @@ import testslide
 from ...tests.setup import (
     ensure_files_exist,
 )
-from ..search_path import SimpleElement
+from ..search_path import SimpleElement, SitePackageElement
 from ..site_packages import (
     SearchStrategy,
     search_for_paths,
@@ -211,6 +211,107 @@ class SitePackagesTest(testslide.TestCase):
                             path=Path(root_path / "root0" / "bar-stubs"),
                             is_partial=False,
                         )
+                    ),
+                ],
+            )
+
+    def test_to_search_path_element(self) -> None:
+        self.assertEqual(
+            NonStubPackage(
+                name="foo", path=Path("/site_root/foo")
+            ).to_search_path_element(),
+            SitePackageElement(site_root="/site_root", package_name="foo"),
+        )
+        self.assertEqual(
+            StubPackage(
+                name="foo",
+                path=Path("/site_root/foo-stubs"),
+                is_partial=True,
+            ).to_search_path_element(),
+            SitePackageElement(site_root="/site_root", package_name="foo-stubs"),
+        )
+
+    def test_to_search_path_elements(self) -> None:
+        self.assertListEqual(
+            PackageInfo().to_search_path_elements(),
+            [],
+        )
+        self.assertListEqual(
+            PackageInfo(
+                nonstub_package=NonStubPackage(
+                    name="foo", path=Path("/site_root/foo"), is_typed=False
+                )
+            ).to_search_path_elements(),
+            [],
+        )
+        self.assertListEqual(
+            PackageInfo(
+                nonstub_package=NonStubPackage(
+                    name="foo", path=Path("/site_root/foo"), is_typed=True
+                )
+            ).to_search_path_elements(),
+            [SitePackageElement(site_root="/site_root", package_name="foo")],
+        )
+        self.assertListEqual(
+            PackageInfo(
+                stub_package=StubPackage(
+                    name="foo", path=Path("/site_root/foo-stubs"), is_partial=False
+                )
+            ).to_search_path_elements(),
+            [SitePackageElement(site_root="/site_root", package_name="foo-stubs")],
+        )
+        self.assertListEqual(
+            PackageInfo(
+                nonstub_package=NonStubPackage(
+                    name="foo", path=Path("/site_root/foo"), is_typed=False
+                ),
+                stub_package=StubPackage(
+                    name="foo", path=Path("/site_root/foo-stubs"), is_partial=False
+                ),
+            ).to_search_path_elements(),
+            [SitePackageElement(site_root="/site_root", package_name="foo-stubs")],
+        )
+        self.assertListEqual(
+            PackageInfo(
+                nonstub_package=NonStubPackage(
+                    name="foo", path=Path("/site_root/foo"), is_typed=False
+                ),
+                stub_package=StubPackage(
+                    name="foo", path=Path("/site_root/foo-stubs"), is_partial=True
+                ),
+            ).to_search_path_elements(),
+            [
+                SitePackageElement(site_root="/site_root", package_name="foo-stubs"),
+                SitePackageElement(site_root="/site_root", package_name="foo"),
+            ],
+        )
+
+    def test_search_for_path_pep561(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            ensure_files_exist(
+                root_path,
+                [
+                    "foo/foo.py",
+                    "bar/bar.py",
+                    "bar/py.typed",
+                    "baz/baz.py",
+                    "baz-stubs/baz.pyi",
+                    "qux-stubs/qux.pyi",
+                    "standalone.py",
+                    "random.txt",
+                ],
+            )
+
+            self.assertCountEqual(
+                search_for_paths(SearchStrategy.PEP561, site_roots=[str(root_path)]),
+                [
+                    SitePackageElement(site_root=str(root_path), package_name="bar"),
+                    SitePackageElement(
+                        site_root=str(root_path), package_name="baz-stubs"
+                    ),
+                    SitePackageElement(
+                        site_root=str(root_path), package_name="qux-stubs"
                     ),
                 ],
             )
