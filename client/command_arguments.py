@@ -147,7 +147,7 @@ class StatisticsArguments:
     filter_paths: List[str] = field(default_factory=list)
     log_identifier: Optional[str] = None
     log_results: bool = False
-    print_aggregates: bool = False
+    aggregate: bool = False
 
 
 @dataclass(frozen=True)

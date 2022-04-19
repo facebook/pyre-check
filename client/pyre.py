@@ -1024,7 +1024,7 @@ def start(
     help="Log the statistics results to external tables.",
 )
 @click.option(
-    "--print-aggregates",
+    "--aggregate",
     is_flag=True,
     default=False,
     help="Print aggregate instead of per-path data.",
@@ -1034,7 +1034,7 @@ def statistics(
     context: click.Context,
     filter_paths: Iterable[str],
     log_results: bool,
-    print_aggregates: bool,
+    aggregate: bool,
 ) -> int:
     """
     Collect various syntactic metrics on type coverage.
@@ -1049,7 +1049,7 @@ def statistics(
             filter_paths=list(filter_paths),
             log_identifier=command_argument.log_identifier,
             log_results=log_results,
-            print_aggregates=print_aggregates,
+            aggregate=aggregate,
         ),
     )
 

@@ -292,7 +292,7 @@ def run_statistics(
         strict_default=configuration.strict,
     )
 
-    if statistics_arguments.print_aggregates:
+    if statistics_arguments.aggregate:
         aggregated_data = aggregate_statistics(data)
         log.stdout.write(json.dumps(dataclasses.asdict(aggregated_data), indent=4))
     else:
