@@ -148,6 +148,7 @@ class StatisticsArguments:
     log_identifier: Optional[str] = None
     log_results: bool = False
     aggregate: bool = False
+    print_summary: bool = False
 
 
 @dataclass(frozen=True)

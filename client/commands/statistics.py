@@ -237,6 +237,49 @@ def aggregate_statistics(data: Dict[str, StatisticsData]) -> AggregatedStatistic
     )
 
 
+def get_overall_annotation_percentage(data: AggregatedStatisticsData) -> float:
+    total_annotation_slots = (
+        data.annotations["return_count"]
+        + data.annotations["parameter_count"]
+        + data.annotations["attribute_count"]
+        + data.annotations["globals_count"]
+    )
+    filled_annotation_slots = (
+        data.annotations["annotated_return_count"]
+        + data.annotations["annotated_parameter_count"]
+        + data.annotations["annotated_attribute_count"]
+        + data.annotations["annotated_globals_count"]
+    )
+    return filled_annotation_slots * 100.0 / total_annotation_slots
+
+
+def get_summary(aggregated_data: AggregatedStatisticsData) -> str:
+    annotation_rate = round(get_overall_annotation_percentage(aggregated_data), 2)
+    total_suppressions = aggregated_data.fixmes + aggregated_data.ignores
+    total_modules = aggregated_data.strict + aggregated_data.unsafe
+    strict_module_rate = round(aggregated_data.strict * 100.0 / total_modules, 2)
+    unsafe_module_rate = round(aggregated_data.unsafe * 100.0 / total_modules, 2)
+    total_function_count = aggregated_data.annotations["function_count"]
+    partially_annotated_function_rate = round(
+        aggregated_data.annotations["partially_annotated_function_count"]
+        * 100.0
+        / total_function_count,
+        2,
+    )
+    fully_annotated_function_rate = round(
+        aggregated_data.annotations["fully_annotated_function_count"]
+        * 100.0
+        / total_function_count,
+        2,
+    )
+    return (
+        f"Coverage summary:\nOverall annotation rate is {annotation_rate}%\n"
+        + f"There are {total_suppressions} total error suppressions inline ({aggregated_data.fixmes} fixmes and {aggregated_data.ignores} ignores)\n"
+        + f"Of {total_modules} modules, {strict_module_rate}% are strict and {unsafe_module_rate}% are unsafe\n"
+        + f"Of {total_function_count} functions, {fully_annotated_function_rate}% are fully annotated and {partially_annotated_function_rate}% are partially annotated\n"
+    )
+
+
 def log_to_remote(
     configuration: configuration_module.Configuration,
     run_id: str,
@@ -291,6 +334,10 @@ def run_statistics(
         ),
         strict_default=configuration.strict,
     )
+    if statistics_arguments.print_summary:
+        aggregated_data = aggregate_statistics(data)
+        LOG.warning(get_summary(aggregated_data))
+        return commands.ExitCode.SUCCESS
 
     if statistics_arguments.aggregate:
         aggregated_data = aggregate_statistics(data)

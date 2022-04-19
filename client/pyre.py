@@ -1029,12 +1029,19 @@ def start(
     default=False,
     help="Print aggregate instead of per-path data.",
 )
+@click.option(
+    "--print-summary",
+    is_flag=True,
+    default=False,
+    help="Pretty print human-readable type coverage summary for project.",
+)
 @click.pass_context
 def statistics(
     context: click.Context,
     filter_paths: Iterable[str],
     log_results: bool,
     aggregate: bool,
+    print_summary: bool,
 ) -> int:
     """
     Collect various syntactic metrics on type coverage.
@@ -1050,6 +1057,7 @@ def statistics(
             log_identifier=command_argument.log_identifier,
             log_results=log_results,
             aggregate=aggregate,
+            print_summary=print_summary,
         ),
     )
 
