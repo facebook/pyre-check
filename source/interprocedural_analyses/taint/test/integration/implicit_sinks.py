@@ -36,6 +36,26 @@ def inline_issue_percent_format():
     "<%s>" % (a,)
 
 
+def propagate_sink_left_add(a):
+    "https://" + a
+
+
+def inline_issue_left_add():
+    a = _test_source()
+    "https://" + a
+
+
+def propagate_sink_right_add(a):
+    sql_start = "SELECT"
+    columns = a + " FROM"
+
+
+def inline_issue_right_add():
+    a = _test_source()
+    sql_start = "SELECT"
+    columns = a + " FROM"
+
+
 def inline_issue_format_string_proper_tito():
     a, b, c = _test_source(), "", _test_source()
     f"<{a}{b}{c}>"
