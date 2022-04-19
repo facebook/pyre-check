@@ -1,0 +1,38 @@
+--- typeshed-master/stdlib/enum.pyi	2022-04-08 18:56:10.000000000 -0700
++++ enum.pyi	2022-04-19 10:19:53.360440629 -0700
+@@ -95,35 +95,6 @@
+     def __members__(self: type[_EnumMemberT]) -> types.MappingProxyType[str, _EnumMemberT]: ...
+     def __len__(self) -> int: ...
+     def __bool__(self) -> Literal[True]: ...
+-    # Simple value lookup
+-    @overload  # type: ignore[override]
+-    def __call__(cls: type[_EnumMemberT], value: Any, names: None = ...) -> _EnumMemberT: ...
+-    # Functional Enum API
+-    if sys.version_info >= (3, 11):
+-        @overload
+-        def __call__(
+-            cls,
+-            value: str,
+-            names: _EnumNames,
+-            *,
+-            module: str | None = ...,
+-            qualname: str | None = ...,
+-            type: type | None = ...,
+-            start: int = ...,
+-            boundary: FlagBoundary | None = ...,
+-        ) -> type[Enum]: ...
+-    else:
+-        @overload
+-        def __call__(
+-            cls,
+-            value: str,
+-            names: _EnumNames,
+-            *,
+-            module: str | None = ...,
+-            qualname: str | None = ...,
+-            type: type | None = ...,
+-            start: int = ...,
+-        ) -> type[Enum]: ...
+     _member_names_: list[str]  # undocumented
+     _member_map_: dict[str, Enum]  # undocumented
+     _value2member_map_: dict[Any, Enum]  # undocumented
