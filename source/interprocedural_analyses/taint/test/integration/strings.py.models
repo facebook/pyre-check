@@ -598,7 +598,6 @@
             ],
             "local_features": [
               { "always-via": "tito" },
-              { "always-via": "obscure:model" },
               { "always-via": "format-string" }
             ],
             "tito": [ { "line": 68, "start": 22, "end": 23 } ],
@@ -656,12 +655,9 @@
         "port": "formal(x)",
         "taint": [
           {
-            "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
-            ],
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
               { "always-via": "tito" },
-              { "always-via": "obscure:model" },
               { "always-via": "format-string" }
             ],
             "tito": [ { "line": 59, "start": 25, "end": 26 } ],

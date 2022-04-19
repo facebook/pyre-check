@@ -19,7 +19,6 @@ def inline_issue_format_string():
 
 
 def propagate_sink_dot_format(a):
-    # TODO(T88183535): Should be propogated, but isn't
     "<{}>".format(a)
 
 
@@ -29,7 +28,6 @@ def inline_issue_dot_format():
 
 
 def propagate_sink_percent_format(a):
-    # TODO(T88183535): Should be propogated, but isn't
     "<%s>" % (a,)
 
 

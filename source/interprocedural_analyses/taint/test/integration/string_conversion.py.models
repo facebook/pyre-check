@@ -1444,7 +1444,11 @@
         "taint": [
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 160, "start": 14, "end": 15 } ],
             "decl": null
           }
         ]
@@ -1463,7 +1467,7 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
-              { "via": "tito" },
+              { "always-via": "tito" },
               { "via": "obscure:model" },
               { "always-via": "format-string" }
             ],
@@ -1485,7 +1489,11 @@
         "taint": [
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 156, "start": 14, "end": 15 } ],
             "decl": null
           }
         ]
@@ -1537,7 +1545,10 @@
               { "always-via": "tito" },
               { "always-via": "format-string" }
             ],
-            "tito": [ { "line": 133, "start": 21, "end": 22 } ],
+            "tito": [
+              { "line": 133, "start": 14, "end": 23 },
+              { "line": 133, "start": 21, "end": 22 }
+            ],
             "decl": null
           }
         ]
@@ -1553,7 +1564,10 @@
               { "always-via": "tito" },
               { "always-via": "format-string" }
             ],
-            "tito": [ { "line": 133, "start": 32, "end": 33 } ],
+            "tito": [
+              { "line": 133, "start": 25, "end": 34 },
+              { "line": 133, "start": 32, "end": 33 }
+            ],
             "decl": null
           }
         ]
@@ -1688,7 +1702,7 @@
               }
             ],
             "local_features": [
-              { "via": "tito" },
+              { "always-via": "tito" },
               { "always-via": "format-string" }
             ],
             "tito": [ { "line": 73, "start": 12, "end": 13 } ],
@@ -1799,7 +1813,7 @@
               }
             ],
             "local_features": [
-              { "via": "tito" },
+              { "always-via": "tito" },
               { "via": "obscure:model" },
               { "always-via": "format-string" }
             ],
@@ -1927,7 +1941,7 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
-              { "via": "tito" },
+              { "always-via": "tito" },
               { "via": "obscure:model" },
               { "always-via": "format-string" },
               { "always-type": "integer" },
@@ -1944,7 +1958,7 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
-              { "via": "tito" },
+              { "always-via": "tito" },
               { "always-via": "format-string" }
             ],
             "tito": [ { "line": 120, "start": 17, "end": 23 } ],
@@ -1998,7 +2012,11 @@
         "taint": [
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "local_features": [ { "always-via": "format-string" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "format-string" }
+            ],
+            "tito": [ { "line": 164, "start": 14, "end": 15 } ],
             "decl": null
           }
         ]

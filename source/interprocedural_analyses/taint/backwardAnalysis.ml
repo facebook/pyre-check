@@ -33,6 +33,8 @@ module type FUNCTION_CONTEXT = sig
   val caller_class_interval : ClassInterval.t
 end
 
+let ( |>> ) (taint, state) f = f taint, state
+
 module State (FunctionContext : FUNCTION_CONTEXT) = struct
   type t = { taint: BackwardState.t }
 
@@ -1398,6 +1400,56 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 Expression.Tuple
                   (List.map arguments ~f:(fun argument -> argument.Call.Argument.value));
             }
+    (* Special case `"{}".format(s)` and `"%s" % (s,)` for Literal String Sinks *)
+    | {
+        callee =
+          {
+            Node.value =
+              Name
+                (Name.Attribute
+                  {
+                    base =
+                      {
+                        Node.value = Constant (Constant.String { StringLiteral.value; _ });
+                        location;
+                      };
+                    attribute = "__mod__";
+                    _;
+                  });
+            _;
+          };
+        arguments;
+      }
+    | {
+        callee =
+          {
+            Node.value =
+              Name
+                (Name.Attribute
+                  {
+                    base =
+                      {
+                        Node.value = Constant (Constant.String { StringLiteral.value; _ });
+                        location;
+                      };
+                    attribute = "format";
+                    _;
+                  });
+            _;
+          };
+        arguments;
+      } ->
+        let formatted_string = Substring.Literal (Node.create ~location value) in
+        let arguments_formatted_string =
+          List.map ~f:(fun call_argument -> Substring.Format call_argument.value) arguments
+        in
+        let substrings = formatted_string :: arguments_formatted_string in
+        analyze_joined_string
+          ~resolution
+          ~taint
+          ~state
+          ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+          substrings
     | {
      Call.callee = { Node.value = Name (Name.Identifier "reveal_taint"); _ };
      arguments = [{ Call.Argument.value = expression; _ }];
@@ -1430,18 +1482,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             | Some root -> store_taint ~weak:true ~root ~path:[] taint state
             | None -> state))
     | _ ->
-        let taint =
-          match Node.value callee with
-          | Name
-              (Name.Attribute
-                {
-                  base = { Node.value = Expression.Constant (Constant.String _); _ };
-                  attribute = "format";
-                  _;
-                }) ->
-              BackwardState.Tree.add_local_breadcrumb (Features.format_string ()) taint
-          | _ -> taint
-        in
         let { Call.callee; arguments } =
           CallGraph.redirect_special_calls ~resolution { Call.callee; arguments }
         in
@@ -1465,7 +1505,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         let value =
           List.map substrings ~f:(function
-              | Substring.Format _ -> "{}"
+              | Substring.Format _ -> ""
               | Substring.Literal { Node.value; _ } -> value)
           |> String.concat ~sep:""
         in
@@ -1528,7 +1568,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let analyze_nested_expression state = function
       | Substring.Format ({ Node.location = expression_location; _ } as expression) ->
           let new_taint, new_state =
-            match get_format_string_callees ~location:expression_location with
+            (match get_format_string_callees ~location:expression_location with
             | Some { CallGraph.FormatStringCallees.call_targets } ->
                 List.fold
                   call_targets
@@ -1541,7 +1581,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                       ~call_location:expression_location
                       ~base:expression
                       ~base_state:state)
-            | _ -> taint, state
+            | _ -> taint, state)
+            |>> BackwardState.Tree.transform
+                  Features.TitoPositionSet.Element
+                  Add
+                  ~f:expression_location
+            |>> BackwardState.Tree.add_local_breadcrumb (Features.tito ())
           in
           analyze_expression ~resolution ~taint:new_taint ~state:new_state ~expression
       | Substring.Literal _ -> state
