@@ -20,6 +20,22 @@ val equal : t -> t -> bool
 
 val meet : t -> t -> t
 
+val join : t -> t -> t
+
 val empty : t
 
-val join : t -> t -> t
+val bottom : t
+
+val top : t
+
+val is_top : t -> bool
+
+val is_empty : t -> bool
+
+val lower_bound_exn : t -> int
+
+val upper_bound_exn : t -> int
+
+val less_or_equal : left:t -> right:t -> bool
+
+val pp : Format.formatter -> t -> unit

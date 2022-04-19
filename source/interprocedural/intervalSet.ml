@@ -74,6 +74,21 @@ let equal left right = List.equal ClassInterval.equal left right
 
 let empty = []
 
+let bottom = empty
+
+let top = [ClassInterval.top]
+
+let is_empty = List.is_empty
+
+let is_top = function
+  | [head] -> ClassInterval.is_top head
+  | _ -> false
+
+
+let lower_bound_exn intervals = List.hd_exn intervals |> ClassInterval.lower_bound_exn
+
+let upper_bound_exn intervals = List.last_exn intervals |> ClassInterval.upper_bound_exn
+
 let meet left right =
   let rec intersect_interval_lists ~left ~right ~result =
     match left, right with
@@ -105,6 +120,8 @@ let meet left right =
   in
   intersect_interval_lists ~left ~right ~result:[] |> List.rev
 
+
+let less_or_equal ~left ~right = equal (meet left right) left
 
 let join left right =
   let rec merge_interval_lists ~left ~right ~result =

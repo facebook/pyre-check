@@ -94,7 +94,28 @@ let test_join _ =
   assert_join ~left:[1, 2] ~right:[3, 4] ~expected:[1, 4]
 
 
+let test_less_or_equal _ =
+  let assert_less_or_equal ~left ~right ~expected =
+    let left = of_list left |> IntervalSet.of_list in
+    let right = of_list right |> IntervalSet.of_list in
+    assert_equal expected (IntervalSet.less_or_equal ~left ~right)
+  in
+  assert_less_or_equal ~left:[1, 2] ~right:[2, 3] ~expected:false;
+  assert_less_or_equal ~left:[2, 3] ~right:[1, 2] ~expected:false;
+  assert_less_or_equal ~left:[1, 2] ~right:[1, 3] ~expected:true;
+  assert_less_or_equal ~left:[1, 2] ~right:[3, 4] ~expected:false;
+  assert_less_or_equal ~left:[1, 2; 4, 5] ~right:[1, 7] ~expected:true;
+  assert_less_or_equal ~left:[1, 7] ~right:[1, 2; 4, 5] ~expected:false;
+  assert_less_or_equal ~left:[1, 2; 4, 5; 7, 10] ~right:[1, 11] ~expected:true;
+  assert_less_or_equal ~left:[1, 11] ~right:[1, 2; 4, 5; 7, 10] ~expected:false
+
+
 let () =
   "interval_set"
-  >::: ["of_list" >:: test_of_list; "meet" >:: test_meet; "join" >:: test_join]
+  >::: [
+         "of_list" >:: test_of_list;
+         "meet" >:: test_meet;
+         "join" >:: test_join;
+         "less_or_equal" >:: test_less_or_equal;
+       ]
   |> Test.run
