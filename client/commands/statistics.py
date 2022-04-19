@@ -257,21 +257,29 @@ def get_summary(aggregated_data: AggregatedStatisticsData) -> str:
     annotation_rate = round(get_overall_annotation_percentage(aggregated_data), 2)
     total_suppressions = aggregated_data.fixmes + aggregated_data.ignores
     total_modules = aggregated_data.strict + aggregated_data.unsafe
-    strict_module_rate = round(aggregated_data.strict * 100.0 / total_modules, 2)
-    unsafe_module_rate = round(aggregated_data.unsafe * 100.0 / total_modules, 2)
+    if total_modules > 0:
+        strict_module_rate = round(aggregated_data.strict * 100.0 / total_modules, 2)
+        unsafe_module_rate = round(aggregated_data.unsafe * 100.0 / total_modules, 2)
+    else:
+        strict_module_rate = 100.00
+        unsafe_module_rate = 0.00
     total_function_count = aggregated_data.annotations["function_count"]
-    partially_annotated_function_rate = round(
-        aggregated_data.annotations["partially_annotated_function_count"]
-        * 100.0
-        / total_function_count,
-        2,
-    )
-    fully_annotated_function_rate = round(
-        aggregated_data.annotations["fully_annotated_function_count"]
-        * 100.0
-        / total_function_count,
-        2,
-    )
+    if total_function_count > 0:
+        partially_annotated_function_rate = round(
+            aggregated_data.annotations["partially_annotated_function_count"]
+            * 100.0
+            / total_function_count,
+            2,
+        )
+        fully_annotated_function_rate = round(
+            aggregated_data.annotations["fully_annotated_function_count"]
+            * 100.0
+            / total_function_count,
+            2,
+        )
+    else:
+        partially_annotated_function_rate = 0.00
+        fully_annotated_function_rate = 100.00
     return (
         f"Coverage summary:\nOverall annotation rate is {annotation_rate}%\n"
         + f"There are {total_suppressions} total error suppressions inline ({aggregated_data.fixmes} fixmes and {aggregated_data.ignores} ignores)\n"
