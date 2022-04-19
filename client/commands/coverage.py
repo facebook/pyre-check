@@ -77,15 +77,17 @@ def _print_summary(data: List[collector.FileCoverage]) -> None:
 def run_coverage(
     configuration: configuration_module.Configuration,
     working_directory: str,
-    roots: List[str],
+    paths: List[str],
     print_summary: bool,
 ) -> commands.ExitCode:
     working_directory_path = Path(working_directory)
-    if roots:
-        root_paths = [to_absolute_path(root, working_directory_path) for root in roots]
+    if paths:
+        absolute_paths = [
+            to_absolute_path(path, working_directory_path) for path in paths
+        ]
     else:
-        root_paths = [find_root_path(configuration, working_directory_path)]
-    module_paths = statistics.find_paths_to_parse(configuration, root_paths)
+        absolute_paths = [find_root_path(configuration, working_directory_path)]
+    module_paths = statistics.find_paths_to_parse(configuration, absolute_paths)
     data = collect_coverage_for_paths(
         module_paths, working_directory, strict_default=configuration.strict
     )
