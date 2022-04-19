@@ -21,3 +21,5 @@ val equal : t -> t -> bool
 val meet : t -> t -> t
 
 val empty : t
+
+val join : t -> t -> t

@@ -65,4 +65,36 @@ let test_meet _ =
   assert_meet ~left:[1, 2; 3, 4] ~right:[1, 2; 3, 4] ~expected:[1, 4]
 
 
-let () = "interval_set" >::: ["of_list" >:: test_of_list; "meet" >:: test_meet] |> Test.run
+let test_join _ =
+  let assert_join ~left ~right ~expected =
+    let left = of_list left |> IntervalSet.of_list in
+    let right = of_list right |> IntervalSet.of_list in
+    let actual = IntervalSet.join left right |> IntervalSet.to_list in
+    let expected = of_list expected in
+    assert_equal_interval_set ~expected ~actual
+  in
+  assert_join ~left:[1, 2] ~right:[2, 3] ~expected:[1, 3];
+  assert_join ~left:[2, 3] ~right:[1, 3] ~expected:[1, 3];
+  assert_join ~left:[1, 7] ~right:[2, 7] ~expected:[1, 7];
+  assert_join ~left:[2, 7] ~right:[1, 7] ~expected:[1, 7];
+  assert_join ~left:[1, 7] ~right:[2, 8] ~expected:[1, 8];
+  assert_join ~left:[2, 8] ~right:[1, 7] ~expected:[1, 8];
+  assert_join ~left:[1, 10; 20, 30] ~right:[2, 3; 4, 5] ~expected:[1, 10; 20, 30];
+  assert_join ~left:[1, 10; 20, 30] ~right:[2, 3; 4, 12] ~expected:[1, 12; 20, 30];
+  assert_join ~left:[2, 3; 4, 12] ~right:[1, 10; 20, 30] ~expected:[1, 12; 20, 30];
+  assert_join ~left:[1, 10; 20, 30] ~right:[2, 3; 12, 25] ~expected:[1, 10; 12, 30];
+  assert_join ~left:[1, 10; 12, 14] ~right:[2, 15; 20, 30] ~expected:[1, 15; 20, 30];
+  assert_join ~left:[1, 10; 12, 20] ~right:[2, 15; 20, 30] ~expected:[1, 30];
+  assert_join ~left:[1, 10; 12, 14] ~right:[20, 30] ~expected:[1, 10; 12, 14; 20, 30];
+  assert_join ~left:[1, 10; 12, 22] ~right:[20, 30] ~expected:[1, 10; 12, 30];
+  assert_join ~left:[1, 10; 25, 27] ~right:[20, 30] ~expected:[1, 10; 20, 30];
+  assert_join ~left:[1, 10] ~right:[10, 20; 2, 15; 30, 40] ~expected:[1, 20; 30, 40];
+  assert_join ~left:[30, 40; 30, 50; 3, 0; 2, 21; 10, 20] ~right:[1, 10] ~expected:[1, 21; 30, 50];
+  assert_join ~left:[1, 7] ~right:[1, 2; 8, 9] ~expected:[1, 9];
+  assert_join ~left:[1, 2] ~right:[3, 4] ~expected:[1, 4]
+
+
+let () =
+  "interval_set"
+  >::: ["of_list" >:: test_of_list; "meet" >:: test_meet; "join" >:: test_join]
+  |> Test.run
