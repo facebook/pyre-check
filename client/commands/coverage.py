@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Iterable, List, Optional
 
 from .. import (
+    command_arguments,
     configuration as configuration_module,
     coverage_collector as collector,
     log,
@@ -79,11 +80,14 @@ def run_coverage(
 @remote_logging.log_usage(command_name="coverage")
 def run(
     configuration: configuration_module.Configuration,
-    working_directory: str,
-    roots: List[str],
+    coverage_arguments: command_arguments.CoverageArguments,
 ) -> commands.ExitCode:
     try:
-        return run_coverage(configuration, working_directory, roots)
+        return run_coverage(
+            configuration,
+            coverage_arguments.working_directory,
+            coverage_arguments.paths,
+        )
     except Exception as error:
         raise commands.ClientException(
             f"Exception occurred during pyre coverage: {error}"

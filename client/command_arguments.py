@@ -151,6 +151,12 @@ class StatisticsArguments:
 
 
 @dataclass(frozen=True)
+class CoverageArguments:
+    working_directory: str
+    paths: List[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class AnalyzeArguments:
     debug: bool = False
     dump_call_graph: Optional[str] = None

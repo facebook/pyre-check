@@ -1092,7 +1092,13 @@ def coverage(
     paths = list(paths)
     paths_deprecated = list(paths_deprecated)
     paths = paths if len(paths) > 0 else paths_deprecated
-    return commands.coverage.run(configuration, working_directory, paths)
+    return commands.coverage.run(
+        configuration,
+        command_arguments.CoverageArguments(
+            working_directory=working_directory,
+            paths=paths,
+        ),
+    )
 
 
 @pyre.command()
