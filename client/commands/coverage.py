@@ -59,10 +59,26 @@ def collect_coverage_for_paths(
     return result
 
 
+def _print_summary(data: List[collector.FileCoverage]) -> None:
+    for file_data in data:
+        path = file_data.filepath
+        covered_lines = len(file_data.covered_lines)
+        uncovered_lines = len(file_data.uncovered_lines)
+        total_lines = covered_lines + uncovered_lines
+        if total_lines > 0:
+            coverage_rate = round(
+                covered_lines * 100.0 / (covered_lines + uncovered_lines), 2
+            )
+        else:
+            coverage_rate = 100.00
+        LOG.warning(f"{path}: {coverage_rate}% lines are type checked")
+
+
 def run_coverage(
     configuration: configuration_module.Configuration,
     working_directory: str,
     roots: List[str],
+    print_summary: bool,
 ) -> commands.ExitCode:
     working_directory_path = Path(working_directory)
     if roots:
@@ -73,6 +89,10 @@ def run_coverage(
     data = collect_coverage_for_paths(
         module_paths, working_directory, strict_default=configuration.strict
     )
+    if print_summary:
+        _print_summary(data)
+        return commands.ExitCode.SUCCESS
+
     log.stdout.write(json.dumps([dataclasses.asdict(entry) for entry in data]))
     return commands.ExitCode.SUCCESS
 
@@ -87,6 +107,7 @@ def run(
             configuration,
             coverage_arguments.working_directory,
             coverage_arguments.paths,
+            coverage_arguments.print_summary,
         )
     except Exception as error:
         raise commands.ClientException(

@@ -155,6 +155,7 @@ class StatisticsArguments:
 class CoverageArguments:
     working_directory: str
     paths: List[str] = field(default_factory=list)
+    print_summary: bool = False
 
 
 @dataclass(frozen=True)

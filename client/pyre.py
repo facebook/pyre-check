@@ -1083,12 +1083,19 @@ def statistics(
     type=str,
     multiple=True,
 )
+@click.option(
+    "--print-summary",
+    is_flag=True,
+    default=False,
+    help="Pretty print human-readable per-line type coverage summary for project.",
+)
 @click.pass_context
 def coverage(
     context: click.Context,
     paths_deprecated: Iterable[str],
     working_directory: str,
     paths: Iterable[str],
+    print_summary: bool,
 ) -> int:
     """
     Collect line-level type coverage.
@@ -1105,6 +1112,7 @@ def coverage(
         command_arguments.CoverageArguments(
             working_directory=working_directory,
             paths=paths,
+            print_summary=print_summary,
         ),
     )
 
