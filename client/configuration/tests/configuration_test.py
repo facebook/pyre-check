@@ -28,7 +28,6 @@ from ...tests.setup import (
     switch_working_directory,
     write_configuration_file,
 )
-from .. import configuration as configuration_module
 from ..configuration import (
     check_nested_local_configuration,
     Configuration,
@@ -754,7 +753,6 @@ class ConfigurationTest(testslide.TestCase):
                 use_buck2=None,
                 version_hash="abc",
             ),
-            in_virtual_environment=False,
         )
         self.assertEqual(configuration.project_root, "root")
         self.assertEqual(configuration.relative_local_root, "local")
@@ -808,31 +806,6 @@ class ConfigurationTest(testslide.TestCase):
         self.assertListEqual(
             get_default_site_roots(), [user_site_package, global_site_package]
         )
-
-    def test_from_partial_configuration_in_virtual_environment(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()
-            ensure_directories_exists(root_path, ["venv/lib/pythonX/site-packages"])
-
-            site_packages = str(root_path / "venv/lib/pythonX/site-packages")
-            self.mock_callable(
-                configuration_module, "get_default_site_roots"
-            ).to_return_value([site_packages]).and_assert_called_once()
-
-            configuration = Configuration.from_partial_configuration(
-                project_root=Path("root"),
-                relative_local_root="local",
-                partial_configuration=PartialConfiguration(
-                    search_path=[],
-                ),
-                in_virtual_environment=True,
-            )
-            self.assertListEqual(
-                list(configuration.search_path),
-                [
-                    SimpleRawElement(site_packages),
-                ],
-            )
 
     def test_derived_attributes(self) -> None:
         self.assertIsNone(

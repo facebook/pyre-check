@@ -128,13 +128,6 @@ def get_default_site_roots() -> List[str]:
         return []
 
 
-def _in_virtual_environment(override: Optional[bool] = None) -> bool:
-    if override is not None:
-        return override
-
-    return sys.prefix != sys.base_prefix
-
-
 @dataclass(frozen=True)
 class PartialConfiguration:
     binary: Optional[str] = None
@@ -715,15 +708,8 @@ class Configuration:
         project_root: Path,
         relative_local_root: Optional[str],
         partial_configuration: PartialConfiguration,
-        in_virtual_environment: Optional[bool] = None,
     ) -> "Configuration":
         search_path = partial_configuration.search_path
-        if len(search_path) == 0 and _in_virtual_environment(in_virtual_environment):
-            LOG.warning("Using virtual environment site-packages in search path...")
-            search_path = [
-                search_path_module.SimpleRawElement(root)
-                for root in get_default_site_roots()
-            ]
 
         return Configuration(
             project_root=str(project_root),
