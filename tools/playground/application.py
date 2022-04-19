@@ -82,7 +82,7 @@ class Pyre:
 
         LOG.debug("Priming the server")
         subprocess.check_call(
-            ["pyre", "--noninteractive"],
+            ["pyre", "--noninteractive", "--sequential"],
             cwd=self._directory,
         )
 
@@ -92,7 +92,7 @@ class Pyre:
         code_path.write_text(input)
 
         with subprocess.Popen(
-            ["pyre", "--output=json", "--noninteractive"],
+            ["pyre", "--output=json", "--noninteractive", "--sequential"],
             stderr=subprocess.PIPE,
             stdout=subprocess.PIPE,
             cwd=self._directory,
