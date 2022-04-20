@@ -321,6 +321,7 @@ module Analysis = struct
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
+    eagerly_load_external_modules: bool;
     filter_directories: PyrePath.t list option;
     ignore_all_errors: PyrePath.t list option;
     number_of_workers: int;
@@ -350,6 +351,7 @@ module Analysis = struct
   let create
       ?(parallel = true)
       ?(analyze_external_sources = false)
+      ?(eagerly_load_external_modules = false)
       ?filter_directories
       ?ignore_all_errors
       ?(number_of_workers = 4)
@@ -380,6 +382,7 @@ module Analysis = struct
     {
       parallel;
       analyze_external_sources;
+      eagerly_load_external_modules;
       filter_directories;
       ignore_all_errors;
       number_of_workers;

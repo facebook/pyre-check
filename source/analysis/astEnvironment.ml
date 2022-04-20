@@ -374,7 +374,7 @@ type trigger =
 
 let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environment) trigger =
   let module_tracker = ModuleTracker.read_only upstream_tracker in
-  let { Configuration.Analysis.incremental_style; _ } =
+  let { Configuration.Analysis.eagerly_load_external_modules; incremental_style; _ } =
     ModuleTracker.ReadOnly.configuration module_tracker
   in
   match trigger with
@@ -385,11 +385,14 @@ let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environme
          future, there are ever nested classes in builtins. *)
       let _ = LazyRawSources.load ~ast_environment Reference.empty in
       let invalidated_modules =
-        Reference.empty
-        ::
-        (ModuleTracker.ReadOnly.source_paths module_tracker
-        |> List.filter ~f:SourcePath.is_in_project
-        |> List.map ~f:SourcePath.qualifier)
+        if eagerly_load_external_modules then
+          ModuleTracker.ReadOnly.source_paths module_tracker |> List.map ~f:SourcePath.qualifier
+        else
+          Reference.empty
+          ::
+          (ModuleTracker.ReadOnly.source_paths module_tracker
+          |> List.filter ~f:SourcePath.is_in_project
+          |> List.map ~f:SourcePath.qualifier)
       in
       (* This logging can be removed later, but is needed for perf testing at this time. *)
       Statistics.performance

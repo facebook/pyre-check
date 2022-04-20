@@ -145,102 +145,112 @@ let test_parse_source context =
 
 
 let test_parse_sources context =
-  let scheduler = Test.mock_scheduler () in
-  (* Following symbolic links is needed to avoid is_external being always false on macos *)
-  let create_path = PyrePath.create_absolute ~follow_symbolic_links:true in
-  let local_root = create_path (bracket_tmpdir context) in
-  let module_root = create_path (bracket_tmpdir context) in
-  let link_root = create_path (bracket_tmpdir context) in
-  let stub_root = PyrePath.create_relative ~root:local_root ~relative:"stubs" in
-  let typeshed_root =
-    PyrePath.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
-  in
-  let write_file root relative =
-    let content = "def foo() -> int: ..." in
-    File.create ~content (PyrePath.create_relative ~root ~relative) |> File.write
-  in
-  let source_handles, ast_environment =
-    Sys_utils.mkdir_p (PyrePath.absolute typeshed_root);
-    write_file local_root "a.pyi";
-    write_file local_root "a.py";
-    write_file module_root "b.pyi";
-    write_file local_root "b.py";
-    write_file local_root "c.py";
-    write_file local_root ".pyre/resource_cache/typeshed/foo.pyi";
-    write_file link_root "link.py";
-    write_file link_root "seemingly_unrelated.pyi";
-    Unix.symlink
-      ~target:(PyrePath.absolute link_root ^/ "link.py")
-      ~link_name:(PyrePath.absolute local_root ^/ "d.py");
-    Unix.symlink
-      ~target:(PyrePath.absolute link_root ^/ "seemingly_unrelated.pyi")
-      ~link_name:(PyrePath.absolute local_root ^/ "d.pyi");
-    let configuration =
-      Configuration.Analysis.create
-        ~local_root
-        ~source_paths:[SearchPath.Root local_root]
-        ~search_paths:
-          [SearchPath.Root module_root; SearchPath.Root typeshed_root; SearchPath.Root stub_root]
-        ~filter_directories:[local_root]
-        ()
+  let run_test_case ~eagerly_load_external_modules =
+    let scheduler = Test.mock_scheduler () in
+    (* Following symbolic links is needed to avoid is_external being always false on macos *)
+    let create_path = PyrePath.create_absolute ~follow_symbolic_links:true in
+    let local_root = create_path (bracket_tmpdir context) in
+    let module_root = create_path (bracket_tmpdir context) in
+    let link_root = create_path (bracket_tmpdir context) in
+    let stub_root = PyrePath.create_relative ~root:local_root ~relative:"stubs" in
+    let typeshed_root =
+      PyrePath.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
     in
-    let module_tracker = Analysis.ModuleTracker.create configuration in
-    let ast_environment = Analysis.AstEnvironment.create module_tracker in
-    let update_result = AstEnvironment.update ~scheduler ast_environment ColdStart in
-    let sources =
-      AstEnvironment.UpdateResult.invalidated_modules update_result
-      |> List.filter_map
-           ~f:
-             (AstEnvironment.ReadOnly.get_processed_source
-                (AstEnvironment.read_only ast_environment))
+    let write_file root relative =
+      let content = "def foo() -> int: ..." in
+      File.create ~content (PyrePath.create_relative ~root ~relative) |> File.write
     in
-    let sorted_handles =
+    let source_handles, ast_environment =
+      Sys_utils.mkdir_p (PyrePath.absolute typeshed_root);
+      write_file local_root "a.pyi";
+      write_file local_root "a.py";
+      write_file module_root "b.pyi";
+      write_file local_root "b.py";
+      write_file local_root "c.py";
+      write_file local_root ".pyre/resource_cache/typeshed/foo.pyi";
+      write_file link_root "link.py";
+      write_file link_root "seemingly_unrelated.pyi";
+      Unix.symlink
+        ~target:(PyrePath.absolute link_root ^/ "link.py")
+        ~link_name:(PyrePath.absolute local_root ^/ "d.py");
+      Unix.symlink
+        ~target:(PyrePath.absolute link_root ^/ "seemingly_unrelated.pyi")
+        ~link_name:(PyrePath.absolute local_root ^/ "d.pyi");
+      let configuration =
+        Configuration.Analysis.create
+          ~eagerly_load_external_modules
+          ~local_root
+          ~source_paths:[SearchPath.Root local_root]
+          ~search_paths:
+            [SearchPath.Root module_root; SearchPath.Root typeshed_root; SearchPath.Root stub_root]
+          ~filter_directories:[local_root]
+          ()
+      in
+      let module_tracker = Analysis.ModuleTracker.create configuration in
+      let ast_environment = Analysis.AstEnvironment.create module_tracker in
+      let update_result = AstEnvironment.update ~scheduler ast_environment ColdStart in
+      let sources =
+        AstEnvironment.UpdateResult.invalidated_modules update_result
+        |> List.filter_map
+             ~f:
+               (AstEnvironment.ReadOnly.get_processed_source
+                  (AstEnvironment.read_only ast_environment))
+      in
+      let sorted_handles =
+        List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
+        |> List.sort ~compare:String.compare
+      in
+      sorted_handles, ast_environment
+    in
+    assert_equal
+      ~cmp:(List.equal String.equal)
+      ~printer:(String.concat ~sep:", ")
+      (* External files which have not been previously loaded are ignored in lazy
+         invalidated_modules. For this reason we skip `b.pyi` and `d.pyi`; `b` doesn't live in the
+         local_root and neither does the target of the symlink for `d` (we follow symlinks before
+         setting `is_external`) *)
+      (if eagerly_load_external_modules then
+         ["a.pyi"; "b.pyi"; "c.py"; "d.pyi"; "foo.pyi"]
+      else
+        ["a.pyi"; "c.py"; "foo.pyi"])
+      source_handles;
+    let source_handles =
+      write_file local_root "new_local.py";
+      write_file stub_root "new_stub.pyi";
+      let update_result =
+        ModuleTracker.update
+          ~paths:
+            [
+              PyrePath.create_relative ~root:local_root ~relative:"new_local.py";
+              PyrePath.create_relative ~root:stub_root ~relative:"new_stub.pyi";
+            ]
+          (AstEnvironment.module_tracker ast_environment)
+        |> (fun updates -> AstEnvironment.Update updates)
+        |> AstEnvironment.update ~scheduler:(mock_scheduler ()) ast_environment
+      in
+      let sources =
+        AstEnvironment.UpdateResult.invalidated_modules update_result
+        |> List.filter_map
+             ~f:
+               (AstEnvironment.ReadOnly.get_processed_source
+                  (AstEnvironment.read_only ast_environment))
+      in
       List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
-      |> List.sort ~compare:String.compare
     in
-    sorted_handles, ast_environment
+    (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
+       consistently gets mapped to the correct handle. *)
+    assert_equal
+      ~printer:(String.concat ~sep:", ")
+      ~cmp:(fun left_handles right_handles ->
+        let left_handles = List.sort ~compare:String.compare left_handles in
+        let right_handles = List.sort ~compare:String.compare right_handles in
+        List.equal String.equal left_handles right_handles)
+      ["new_local.py"; "new_stub.pyi"]
+      source_handles
   in
-  assert_equal
-    ~cmp:(List.equal String.equal)
-    ~printer:(String.concat ~sep:", ")
-    (* External files which have not been previously loaded are ignored in lazy invalidated_modules.
-       For this reason we skip `b.pyi` and `d.pyi`; `b` doesn't live in the local_root and neither
-       does the target of the symlink for `d` (we follow symlinks before setting `is_external`) *)
-    ["a.pyi"; "c.py"; "foo.pyi"]
-    source_handles;
-  let source_handles =
-    write_file local_root "new_local.py";
-    write_file stub_root "new_stub.pyi";
-    let update_result =
-      ModuleTracker.update
-        ~paths:
-          [
-            PyrePath.create_relative ~root:local_root ~relative:"new_local.py";
-            PyrePath.create_relative ~root:stub_root ~relative:"new_stub.pyi";
-          ]
-        (AstEnvironment.module_tracker ast_environment)
-      |> (fun updates -> AstEnvironment.Update updates)
-      |> AstEnvironment.update ~scheduler:(mock_scheduler ()) ast_environment
-    in
-    let sources =
-      AstEnvironment.UpdateResult.invalidated_modules update_result
-      |> List.filter_map
-           ~f:
-             (AstEnvironment.ReadOnly.get_processed_source
-                (AstEnvironment.read_only ast_environment))
-    in
-    List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
-  in
-  (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
-     consistently gets mapped to the correct handle. *)
-  assert_equal
-    ~printer:(String.concat ~sep:", ")
-    ~cmp:(fun left_handles right_handles ->
-      let left_handles = List.sort ~compare:String.compare left_handles in
-      let right_handles = List.sort ~compare:String.compare right_handles in
-      List.equal String.equal left_handles right_handles)
-    ["new_local.py"; "new_stub.pyi"]
-    source_handles
+  run_test_case ~eagerly_load_external_modules:false;
+  run_test_case ~eagerly_load_external_modules:true;
+  ()
 
 
 let test_ast_change _ =
