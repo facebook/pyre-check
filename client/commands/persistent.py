@@ -28,6 +28,13 @@ from typing import (
 
 import dataclasses_json
 from libcst.metadata import CodeRange
+from tools.pyre.client.commands.language_server_protocol import (
+    DocumentSymbolsResponse,
+)
+from tools.pyre.client.find_symbols import (
+    UnparseableError,
+    parse_source_and_collect_symbols,
+)
 
 from .. import (
     command_arguments,
@@ -757,6 +764,41 @@ class PyreServer:
             )
         )
 
+    async def process_document_symbols_request(
+        self,
+        parameters: lsp.DocumentSymbolsTextDocumentParameters,
+        request_id: Union[int, str, None],
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        if document_path not in self.state.opened_documents:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI has not been opened: {parameters.text_document.uri}"
+            )
+        try:
+            source = document_path.read_text()
+        except Exception:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a readable file: {parameters.text_document.uri}"
+            )
+        try:
+            symbols = parse_source_and_collect_symbols(source)
+        except UnparseableError as e:
+            raise json_rpc.ParseError(e)
+
+        await lsp.write_json_rpc(
+            self.output_channel,
+            json_rpc.SuccessResponse(
+                id=request_id,
+                # pyre-ignore[16]: Pyre does not understand
+                # `dataclasses_json`.
+                result=DocumentSymbolsResponse.schema().dump(symbols, many=True),
+            ),
+        )
+
     async def _run(self) -> int:
         while True:
             async with _read_lsp_request(
@@ -837,6 +879,18 @@ class PyreServer:
                         )
                     await self.process_type_coverage_request(
                         lsp.TypeCoverageTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        ),
+                        request.id,
+                    )
+                elif request.method == "textDocument/documentSymbol":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Mising Parameters for documetn symbols"
+                        )
+                    await self.process_document_symbols_request(
+                        lsp.DocumentSymbolsTextDocumentParameters.from_json_rpc_parameters(
                             parameters
                         ),
                         request.id,

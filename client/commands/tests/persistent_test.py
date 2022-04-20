@@ -13,6 +13,9 @@ from unittest.mock import CallableMixin, patch
 
 import testslide
 from libcst.metadata import CodePosition, CodeRange
+from tools.pyre.client.commands.language_server_protocol import (
+    SymbolKind,
+)
 
 from ... import configuration as configuration_module, error, json_rpc
 from ...coverage_collector import CoveredAndUncoveredLines
@@ -1043,6 +1046,58 @@ class PersistentTest(testslide.TestCase):
 
         self.assertTrue(fake_task_manager.is_task_running())
         assert_definition_response([])
+
+    @setup.async_test
+    async def test_document_symbols_request(self) -> None:
+        self.maxDiff = None
+        with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
+            temporary_file.write(b"def foo(x):\n  pass\n")
+            temporary_file.flush()
+            test_path = Path(temporary_file.name)
+            fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+            fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+            memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
+            server = PyreServer(
+                input_channel=create_memory_text_reader(""),
+                output_channel=TextWriter(memory_bytes_writer),
+                state=ServerState(
+                    opened_documents={test_path},
+                ),
+                pyre_manager=fake_task_manager,
+                pyre_query_manager=fake_task_manager2,
+            )
+            await fake_task_manager.ensure_task_running()
+            await server.process_document_symbols_request(
+                lsp.DocumentSymbolsTextDocumentParameters(
+                    text_document=lsp.TextDocumentIdentifier(uri=test_path.as_uri())
+                ),
+                request_id=42,
+            )
+            await asyncio.sleep(0)
+            self.assertTrue(fake_task_manager.is_task_running())
+
+            client_messages = memory_bytes_writer.items()
+            expected_response = json_rpc.SuccessResponse(
+                id=42,
+                result=[
+                    {
+                        "detail": "",
+                        "name": "foo",
+                        "range": {
+                            "start": {"line": 0, "character": 0},
+                            "end": {"line": 1, "character": 6},
+                        },
+                        "kind": SymbolKind.FUNCTION.value,
+                    }
+                ],
+            )
+            response_string = json.dumps(expected_response.json())
+            actual = client_messages[-1].decode()
+            self.assertRegex(
+                actual, f"Content-Length: {len(response_string)}\r\n\r\n.*"
+            )
+            actual_json = json.loads(actual[actual.index("{") :])
+            self.assertDictEqual(actual_json, expected_response.json())
 
 
 class PyreQueryStateTest(testslide.TestCase):
