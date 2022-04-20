@@ -922,15 +922,30 @@ def restart(
     invoke_without_command=True,
 )
 @click.pass_context
-def servers(context: click.Context) -> int:
+def servers(context: click.Context) -> None:
     """
     Commands to manipulate multiple Pyre servers.
     """
+    pass
+
+
+@servers.result_callback()
+@click.pass_context
+def run_default_servers_command(
+    context: click.Context,
+    value: Optional[commands.ExitCode],
+    *args: object,
+    **kwargs: object,
+) -> commands.ExitCode:
     if context.invoked_subcommand is None:
         arguments: command_arguments.CommandArguments = context.obj["arguments"]
         return commands.servers.run_list(arguments.output)
-    # This return value is not used anywhere.
-    return commands.ExitCode.SUCCESS
+    elif value is not None:
+        return value
+    else:
+        raise commands.ClientException(
+            "Non-default serevers subcommand did not return a value"
+        )
 
 
 @servers.command(name="list")
