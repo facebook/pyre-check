@@ -7,7 +7,7 @@
  * @format
  */
 
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import Layout from '@theme/Layout';
 import classnames from 'classnames';
 import Link from '@docusaurus/Link';
@@ -64,7 +64,7 @@ function CheckButton(props) {
         style={style}
         onClick={props.check}>
         {props.busy ? <div className={styles.spinner} /> : null}
-        Check
+        Check (Ctrl-Enter)
       </div>
     </div>
   );
@@ -112,9 +112,22 @@ function encodeCodeAndSetURL(code) {
   return encodedCode;
 }
 
+
+function setKeyboardShortcuts(check) {
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      event.stopPropagation();
+      check();
+    }
+  });
+}
+
+
 function Playground() {
 
   const [results, setResults] = useState(null);
+  const [modifierKey, setModifierKey] = useState(false);
   const [code, setCode] = useState(getInitialCode());
   const [busy, setBusy] = useState(false);
 
@@ -133,6 +146,10 @@ function Playground() {
       })
       .catch(error => console.error(error));
   };
+
+  useEffect(() => {
+    setKeyboardShortcuts(check);
+  }, []);
 
   return (
     <Layout title="Playground">
