@@ -31,10 +31,6 @@ from libcst.metadata import CodeRange
 from tools.pyre.client.commands.language_server_protocol import (
     DocumentSymbolsResponse,
 )
-from tools.pyre.client.find_symbols import (
-    UnparseableError,
-    parse_source_and_collect_symbols,
-)
 
 from .. import (
     command_arguments,
@@ -59,6 +55,10 @@ from . import (
     server_event,
     start,
     statistics,
+)
+from .find_symbols import (
+    UnparseableError,
+    parse_source_and_collect_symbols,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
