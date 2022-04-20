@@ -98,7 +98,15 @@ function Home() {
                 styles.getStarted,
               )}
               to={useBaseUrl('docs/getting-started')}>
-              Get Started
+              Getting Started
+            </Link>
+            <Link
+              className={classnames(
+                'button button--outline button--secondary button--lg',
+                styles.getStarted,
+              )}
+              to={useBaseUrl('play')}>
+              Playground
             </Link>
           </div>
         </div>
