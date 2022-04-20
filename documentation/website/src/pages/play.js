@@ -77,13 +77,16 @@ function Results(props) {
   }
 
   let errors = results.data.errors;
-  let errorDivs = errors
-      .map(error => {
-        let message = `${error.line}:${error.column}: ${error.description}`;
-        return <div style = {{fontFamily: 'monospace'}} key={message}> {message}</div>
-      });
-
-  return <div>{errorDivs}</div>;
+  if (errors.length !== 0) {
+    let errorDivs = errors
+        .map(error => {
+          let message = `${error.line}:${error.column}: ${error.description}`;
+          return <div style = {{fontFamily: 'monospace'}} key={message}> {message}</div>
+        });
+    return <div>{errorDivs}</div>;
+  } else {
+    return <div>No Errors!</div>;
+  }
 }
 
 /**
