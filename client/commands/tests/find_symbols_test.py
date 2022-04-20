@@ -7,15 +7,16 @@ import textwrap
 from typing import List
 
 import testslide
-from tools.pyre.client.commands.language_server_protocol import (
+
+from ..find_symbols import (
+    UnparseableError,
+    parse_source_and_collect_symbols,
+)
+from ..language_server_protocol import (
     DocumentSymbolsResponse,
     LspPosition,
     LspRange,
     SymbolKind,
-)
-from tools.pyre.client.find_symbols import (
-    UnparseableError,
-    parse_source_and_collect_symbols,
 )
 
 
