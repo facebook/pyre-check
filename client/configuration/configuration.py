@@ -259,8 +259,8 @@ class PartialConfiguration:
             elif isinstance(result, expected_type):
                 return result
             raise exceptions.InvalidConfiguration(
-                f"Configuration `{name}` is expected to have type "
-                f"{expected_type} but got: `{json}`."
+                f"Configuration field `{name}` is expected to have type "
+                f"{expected_type} but got: `{result}`."
             )
 
         def ensure_optional_string_or_string_dict(
@@ -275,13 +275,13 @@ class PartialConfiguration:
                 for value in result.values():
                     if not isinstance(value, str):
                         raise exceptions.InvalidConfiguration(
-                            f"Configuration `{name}` is expected to be a "
-                            + f"dict of strings but got `{json}`."
+                            f"Configuration field `{name}` is expected to be a "
+                            + f"dict of strings but got `{result}`."
                         )
                 return result
             raise exceptions.InvalidConfiguration(
-                f"Configuration `{name}` is expected to be a string or a "
-                + f"dict of strings but got `{json}`."
+                f"Configuration field `{name}` is expected to be a string or a "
+                + f"dict of strings but got `{result}`."
             )
 
         def ensure_optional_string_list(
@@ -293,8 +293,8 @@ class PartialConfiguration:
             elif is_list_of_string(result):
                 return result
             raise exceptions.InvalidConfiguration(
-                f"Configuration `{name}` is expected to be a list of "
-                + f"strings but got `{json}`."
+                f"Configuration field `{name}` is expected to be a list of "
+                + f"strings but got `{result}`."
             )
 
         def ensure_string_list(
@@ -306,8 +306,8 @@ class PartialConfiguration:
             if is_list_of_string(result):
                 return result
             raise exceptions.InvalidConfiguration(
-                f"Configuration `{name}` is expected to be a list of "
-                + f"strings but got `{json}`."
+                f"Configuration field `{name}` is expected to be a list of "
+                + f"strings but got `{result}`."
             )
 
         def ensure_list(json: Dict[str, object], name: str) -> List[object]:
@@ -315,7 +315,7 @@ class PartialConfiguration:
             if isinstance(result, list):
                 return result
             raise exceptions.InvalidConfiguration(
-                f"Configuration `{name}` is expected to be a list but got `{json}`."
+                f"Configuration field `{name}` is expected to be a list but got `{result}`."
             )
 
         try:
