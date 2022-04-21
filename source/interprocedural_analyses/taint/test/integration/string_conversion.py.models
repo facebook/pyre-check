@@ -1665,9 +1665,8 @@
               }
             ],
             "local_features": [
-              { "has": "first-field" },
-              { "first-field": "__add__" },
-              { "always-via": "obscure:unknown-callee" }
+              { "always-via": "tito" },
+              { "always-via": "string_concat_lhs" }
             ],
             "tito": [ { "line": 188, "start": 11, "end": 17 } ],
             "call": {

@@ -1445,7 +1445,57 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let nested_expressions =
             List.map ~f:(fun call_argument -> call_argument.value) arguments
           in
-          analyze_string_literal ~resolution ~state ~location ~nested_expressions value
+          analyze_string_literal
+            ~resolution
+            ~state
+            ~location
+            ~nested_expressions
+            ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
+            value
+      (* Special case `"str" + s` and `s + "str"` for Literal String Sinks *)
+      | {
+       callee =
+         { Node.value = Name (Name.Attribute { base = expression; attribute = "__add__"; _ }); _ };
+       arguments =
+         [
+           {
+             Call.Argument.value =
+               { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
+             _;
+           };
+         ];
+      } ->
+          analyze_string_literal
+            ~resolution
+            ~state
+            ~location
+            ~nested_expressions:[expression]
+            ~breadcrumbs:
+              (Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
+            value
+      | {
+       callee =
+         {
+           Node.value =
+             Name
+               (Name.Attribute
+                 {
+                   base = { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
+                   attribute = "__add__";
+                   _;
+                 });
+           _;
+         };
+       arguments = [{ Call.Argument.value = expression; _ }];
+      } ->
+          analyze_string_literal
+            ~resolution
+            ~state
+            ~location
+            ~nested_expressions:[expression]
+            ~breadcrumbs:
+              (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
+            value
       | {
        callee = { Node.value = Expression.Name (Name.Identifier "reveal_taint"); _ };
        arguments = [{ Call.Argument.value = expression; _ }];
@@ -1617,7 +1667,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     join_analyze_attribute_access_result property_call_result regular_attribute_result
 
 
-  and analyze_string_literal ~resolution ~state ~location ~nested_expressions value =
+  and analyze_string_literal ~resolution ~state ~location ~nested_expressions ~breadcrumbs value =
     let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
     let value_taint =
       let literal_string_regular_expressions = TaintConfiguration.literal_string_sources () in
@@ -1708,7 +1758,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             nested_expressions
             ~f:analyze_nested_expression
             ~init:(ForwardState.Tree.empty, state)
-          |>> ForwardState.Tree.add_local_breadcrumb (Features.format_string ())
+          |>> ForwardState.Tree.add_local_breadcrumbs breadcrumbs
           |>> ForwardState.Tree.join value_taint
         in
         (* Compute flows of user-controlled data -> literal string sinks if applicable. *)
@@ -1753,7 +1803,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               taint, state)
       | Call { callee; arguments } -> analyze_call ~resolution ~location ~state ~callee ~arguments
       | Constant (Constant.String { StringLiteral.value; _ }) ->
-          analyze_string_literal ~resolution ~state ~location ~nested_expressions:[] value
+          analyze_string_literal
+            ~resolution
+            ~state
+            ~location
+            ~nested_expressions:[]
+            ~breadcrumbs:Features.BreadcrumbSet.empty
+            value
       | Constant _ -> ForwardState.Tree.empty, state
       | Dictionary { Dictionary.entries; keywords } ->
           let taint, state =
@@ -1816,7 +1872,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 | Substring.Format expression -> Some expression
                 | _ -> None)
           in
-          analyze_string_literal ~resolution ~state ~location ~nested_expressions value
+          analyze_string_literal
+            ~resolution
+            ~state
+            ~location
+            ~nested_expressions
+            ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
+            value
       | Ternary { target; test; alternative } ->
           let state = analyze_condition ~resolution test state in
           let taint_then, state_then = analyze_expression ~resolution ~state ~expression:target in

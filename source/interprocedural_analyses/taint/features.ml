@@ -427,6 +427,14 @@ let broadening = memoize_breadcrumb_interned Breadcrumb.Broadening
 
 let issue_broadening = memoize_breadcrumb_interned Breadcrumb.IssueBroadening
 
+let string_concat_left_hand_side =
+  memoize_breadcrumb_interned (Breadcrumb.SimpleVia "string_concat_lhs")
+
+
+let string_concat_right_hand_side =
+  memoize_breadcrumb_interned (Breadcrumb.SimpleVia "string_concat_rhs")
+
+
 let memoize_breadcrumb_set breadcrumbs =
   memoize
     (lazy
