@@ -1829,7 +1829,7 @@ let defines
     let visit_children = function
       | { Node.value = Statement.Define _; _ } -> include_nested
       | { Node.value = Class _; _ } -> include_methods
-      | _ -> false
+      | _ -> true
 
 
     let predicate = function
@@ -1856,12 +1856,7 @@ let count_defines source =
   let module Visitor = Visit.MakeStatementVisitor (struct
     type t = int
 
-    let visit_children = function
-      | { Node.value = Statement.Define _; _ }
-      | { Node.value = Class _; _ } ->
-          true
-      | _ -> false
-
+    let visit_children _ = true
 
     let statement _ count = function
       | { Node.value = Statement.Class _; _ } ->

@@ -2981,7 +2981,7 @@ let test_defines _ =
       orelse = [];
     }
   in
-  assert_defines [+Statement.If if_define] [create_toplevel [+Statement.If if_define]];
+  assert_defines [+Statement.If if_define] [create_toplevel [+Statement.If if_define]; define];
 
   (* Note: Defines are returned in reverse order. *)
   let define_foo = create_define "foo" in

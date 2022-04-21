@@ -60,7 +60,9 @@ let test_call_graph_of_define context =
           ~f:(fun ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) ->
             Option.some_if (String.equal (Reference.show qualifier) "test") source)
       in
-      ( List.find_map_exn (Preprocessing.defines test_source) ~f:find_define,
+      ( List.find_map_exn
+          (Preprocessing.defines ~include_nested:true ~include_toplevels:true test_source)
+          ~f:find_define,
         test_source,
         TypeEnvironment.read_only type_environment )
     in
@@ -3268,6 +3270,62 @@ let test_call_graph_of_define context =
                   ~call_targets:
                     [
                       CallTarget.create ~return_type:(Some ReturnType.integer) (`Function "test.foo");
+                    ]
+                  ())) );
+      ]
+    ();
+  (* Nested defines. *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+       def baz(x: int) -> int:
+         return x
+
+       def foo():
+         def bar(x: int) -> int:
+           return baz(x)
+
+         return bar
+      |}
+    ~define_name:"$local_test?foo$bar"
+    ~expected:
+      [
+        ( "7:11-7:17",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create ~return_type:(Some ReturnType.integer) (`Function "test.baz");
+                    ]
+                  ())) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+       def baz(x: int) -> int:
+         return x
+
+       def foo():
+         if 1 < 2:
+           def bar(x: int) -> int:
+             return baz(x)
+
+           return bar
+         else:
+           return None
+      |}
+    ~define_name:"$local_test?foo$bar"
+    ~expected:
+      [
+        ( "8:13-8:19",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create ~return_type:(Some ReturnType.integer) (`Function "test.baz");
                     ]
                   ())) );
       ]
