@@ -208,12 +208,12 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "implicit_sinks.inline_issue_left_add",
-    "callable_line": 43,
+    "callable": "implicit_sinks.inline_issue_lhs_add_literal",
+    "callable_line": 53,
     "code": 1337,
-    "line": 45,
-    "start": 4,
-    "end": 18,
+    "line": 56,
+    "start": 14,
+    "end": 25,
     "filename": "implicit_sinks.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -230,12 +230,12 @@
             ],
             "local_features": [
               { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" }
+              { "always-via": "string_concat_lhs" }
             ],
-            "tito": [ { "line": 45, "start": 17, "end": 18 } ],
+            "tito": [ { "line": 56, "start": 14, "end": 15 } ],
             "root": {
               "filename": "implicit_sinks.py",
-              "line": 44,
+              "line": 54,
               "start": 8,
               "end": 22
             }
@@ -249,9 +249,9 @@
             "kinds": [ { "kind": "Test" } ],
             "root": {
               "filename": "implicit_sinks.py",
-              "line": 45,
-              "start": 4,
-              "end": 18
+              "line": 56,
+              "start": 14,
+              "end": 25
             }
           }
         ]
@@ -259,12 +259,12 @@
     ],
     "features": [
       { "always-via": "tito" },
-      { "always-via": "special_source" },
-      { "always-via": "string_concat_rhs" }
+      { "always-via": "string_concat_lhs" },
+      { "always-via": "special_source" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
     "master_handle":
-      "implicit_sinks.inline_issue_left_add:1337:0:LiteralStringSink|Test:0db9b2bc0328be0ce012795b0807c44c"
+      "implicit_sinks.inline_issue_lhs_add_literal:1337:0:LiteralStringSink|Test:e9c51c2a5cfd075f3b02e2b308c79e83"
   }
 }
 {
@@ -336,12 +336,12 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "implicit_sinks.inline_issue_right_add",
-    "callable_line": 53,
+    "callable": "implicit_sinks.inline_issue_rhs_add_literal",
+    "callable_line": 43,
     "code": 1337,
-    "line": 56,
-    "start": 14,
-    "end": 25,
+    "line": 45,
+    "start": 4,
+    "end": 18,
     "filename": "implicit_sinks.py",
     "message": "[Test] to [Test]",
     "traces": [
@@ -358,12 +358,12 @@
             ],
             "local_features": [
               { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" }
+              { "always-via": "string_concat_rhs" }
             ],
-            "tito": [ { "line": 56, "start": 14, "end": 15 } ],
+            "tito": [ { "line": 45, "start": 17, "end": 18 } ],
             "root": {
               "filename": "implicit_sinks.py",
-              "line": 54,
+              "line": 44,
               "start": 8,
               "end": 22
             }
@@ -377,9 +377,9 @@
             "kinds": [ { "kind": "Test" } ],
             "root": {
               "filename": "implicit_sinks.py",
-              "line": 56,
-              "start": 14,
-              "end": 25
+              "line": 45,
+              "start": 4,
+              "end": 18
             }
           }
         ]
@@ -387,12 +387,12 @@
     ],
     "features": [
       { "always-via": "tito" },
-      { "always-via": "string_concat_lhs" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via": "string_concat_rhs" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
     "master_handle":
-      "implicit_sinks.inline_issue_right_add:1337:0:LiteralStringSink|Test:434c7307fa9970032487de7c304bed3a"
+      "implicit_sinks.inline_issue_rhs_add_literal:1337:0:LiteralStringSink|Test:915afc9811e1387b5a7d62eacdefd5e7"
   }
 }
 {
@@ -452,6 +452,33 @@
 {
   "kind": "model",
   "data": {
+    "callable": "implicit_sinks.propagate_sink_lhs_add_literal",
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "Test" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "string_concat_lhs" }
+            ],
+            "tito": [ { "line": 50, "start": 14, "end": 15 } ],
+            "root": {
+              "filename": "implicit_sinks.py",
+              "line": 50,
+              "start": 14,
+              "end": 25
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "implicit_sinks.propagate_sink_percent_format",
     "sinks": [
       {
@@ -469,6 +496,33 @@
               "line": 31,
               "start": 4,
               "end": 10
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sinks.propagate_sink_rhs_add_literal",
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "Test" } ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "string_concat_rhs" }
+            ],
+            "tito": [ { "line": 40, "start": 17, "end": 18 } ],
+            "root": {
+              "filename": "implicit_sinks.py",
+              "line": 40,
+              "start": 4,
+              "end": 18
             }
           }
         ]

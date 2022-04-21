@@ -36,21 +36,21 @@ def inline_issue_percent_format():
     "<%s>" % (a,)
 
 
-def propagate_sink_left_add(a):
+def propagate_sink_rhs_add_literal(a):
     "https://" + a
 
 
-def inline_issue_left_add():
+def inline_issue_rhs_add_literal():
     a = _test_source()
     "https://" + a
 
 
-def propagate_sink_right_add(a):
+def propagate_sink_lhs_add_literal(a):
     sql_start = "SELECT"
     columns = a + " FROM"
 
 
-def inline_issue_right_add():
+def inline_issue_lhs_add_literal():
     a = _test_source()
     sql_start = "SELECT"
     columns = a + " FROM"

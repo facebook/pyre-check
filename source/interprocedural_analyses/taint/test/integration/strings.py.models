@@ -541,9 +541,7 @@
         "port": "formal(source)",
         "taint": [
           {
-            "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
-            ],
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
               { "always-via": "tito" },
               { "always-via": "string_concat_lhs" }
@@ -565,9 +563,7 @@
         "port": "formal(source)",
         "taint": [
           {
-            "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
-            ],
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
               { "always-via": "tito" },
               { "always-via": "string_concat_rhs" }

@@ -1449,6 +1449,54 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~taint
           ~state
           ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
+          substrings
+    (* Special case `"str" + s` and `s + "str"` for Literal String Sinks *)
+    | {
+     callee =
+       { Node.value = Name (Name.Attribute { base = expression; attribute = "__add__"; _ }); _ };
+     arguments =
+       [
+         {
+           Call.Argument.value =
+             { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ };
+           _;
+         };
+       ];
+    } ->
+        let formatted_string = Substring.Literal (Node.create ~location value) in
+        let substrings = [formatted_string; Substring.Format expression] in
+        analyze_joined_string
+          ~resolution
+          ~taint
+          ~state
+          ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
+          substrings
+    | {
+     callee =
+       {
+         Node.value =
+           Name
+             (Name.Attribute
+               {
+                 base = { Node.value = Constant (Constant.String { StringLiteral.value; _ }); _ };
+                 attribute = "__add__";
+                 _;
+               });
+         _;
+       };
+     arguments = [{ Call.Argument.value = expression; _ }];
+    } ->
+        let formatted_string = Substring.Literal (Node.create ~location value) in
+        let substrings = [formatted_string; Substring.Format expression] in
+        analyze_joined_string
+          ~resolution
+          ~taint
+          ~state
+          ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+          ~breadcrumbs:
+            (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
           substrings
     | {
      Call.callee = { Node.value = Name (Name.Identifier "reveal_taint"); _ };
@@ -1497,7 +1545,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           callees
 
 
-  and analyze_joined_string ~resolution ~taint ~state ~location substrings =
+  and analyze_joined_string ~resolution ~taint ~state ~location ~breadcrumbs substrings =
     let taint =
       let literal_string_sinks = TaintConfiguration.literal_string_sinks () in
       if List.is_empty literal_string_sinks then
@@ -1520,7 +1568,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               taint)
           ~init:taint
     in
-    let taint = BackwardState.Tree.add_local_breadcrumb (Features.format_string ()) taint in
+    let taint = BackwardState.Tree.add_local_breadcrumbs breadcrumbs taint in
     let analyze_stringify_callee
         ~taint_to_join
         ~state_to_join
@@ -1684,6 +1732,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~taint
           ~state
           ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+          ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
           substrings
     | Ternary { target; test; alternative } ->
         let state_then = analyze_expression ~resolution ~taint ~state ~expression:target in
