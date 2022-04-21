@@ -57,10 +57,10 @@
       }
     ],
     "features": [
-      { "always-via": "broadening" },
       { "always-via": "special_source" },
-      { "always-via": "issue-broadening" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -98,9 +98,9 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "b" },
+              { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "always-via": "tito-broadening" }
+              { "always-via": "broadening" }
             ],
             "tito": [ { "line": 21, "start": 13, "end": 14 } ],
             "root": {
@@ -136,11 +136,11 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "b" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "tito-broadening" }
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -176,12 +176,12 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
               { "always-via": "obscure:model" },
               { "always-via": "format-string" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
               { "always-via": "broadening" },
-              { "always-via": "widen-broadening" },
-              { "always-via": "tito-broadening" }
+              { "always-via": "widen-broadening" }
             ],
             "tito": [
               { "line": 123, "start": 41, "end": 47 },
@@ -219,14 +219,14 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "obscure:model" },
-      { "always-via": "format-string" },
-      { "always-via": "broadening" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "widen-broadening" },
-      { "always-via": "tito-broadening" }
+      { "always-via": "obscure:model" },
+      { "always-via": "format-string" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "widen-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -963,9 +963,9 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "b" },
+              { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "always-via": "tito-broadening" }
+              { "always-via": "broadening" }
             ],
             "tito": [ { "line": 26, "start": 13, "end": 14 } ],
             "root": {
@@ -997,9 +997,9 @@
               }
             ],
             "local_features": [
+              { "always-via": "tito-broadening" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "always-via": "tito-broadening" }
+              { "always-via": "broadening" }
             ],
             "tito": [ { "line": 32, "start": 16, "end": 17 } ],
             "root": {

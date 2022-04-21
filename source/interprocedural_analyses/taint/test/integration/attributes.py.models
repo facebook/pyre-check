@@ -185,9 +185,9 @@
     "features": [
       { "has": "first-index" },
       { "first-index": "a" },
-      { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -259,11 +259,11 @@
       }
     ],
     "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
       { "always-via": "tito" },
       { "always-via": "broadening" },
-      { "always-via": "special_source" },
-      { "always-via": "issue-broadening" },
-      { "always-via": "special_sink" }
+      { "always-via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -330,8 +330,8 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Global",

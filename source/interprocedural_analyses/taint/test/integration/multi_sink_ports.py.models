@@ -38,12 +38,12 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "tito" },
                   { "via": "d_feature" },
                   { "via": "a_feature" },
                   { "via": "c_feature" },
                   { "via": "split" },
-                  { "via": "b_feature" }
+                  { "via": "b_feature" },
+                  { "via": "tito" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkA" },
@@ -70,12 +70,12 @@
       }
     ],
     "features": [
-      { "via": "tito" },
       { "via": "d_feature" },
       { "always-via": "a_feature" },
       { "via": "c_feature" },
       { "via": "split" },
-      { "via": "b_feature" }
+      { "via": "b_feature" },
+      { "via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -132,12 +132,12 @@
             "kinds": [
               {
                 "features": [
-                  { "via": "tito" },
                   { "via": "d_feature" },
                   { "via": "a_feature" },
                   { "via": "c_feature" },
                   { "via": "split" },
-                  { "via": "b_feature" }
+                  { "via": "b_feature" },
+                  { "via": "tito" }
                 ],
                 "leaves": [
                   { "name": "multi_sink_ports.sinkA" },
@@ -164,14 +164,14 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
       { "via": "d_feature" },
       { "always-via": "a_feature" },
-      { "always-via": "broadening" },
-      { "always-via": "issue-broadening" },
       { "via": "c_feature" },
       { "via": "split" },
-      { "via": "b_feature" }
+      { "via": "b_feature" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -245,8 +245,8 @@
               { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "via": "split" }
+              { "via": "split" },
+              { "always-via": "tito" }
             ],
             "decl": null
           }
@@ -317,8 +317,8 @@
               { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "via": "split" }
+              { "via": "split" },
+              { "always-via": "tito" }
             ],
             "decl": null
           }
@@ -417,8 +417,8 @@
               { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "via": "split" }
+              { "via": "split" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 58, "start": 28, "end": 32 } ],
             "decl": null
@@ -753,8 +753,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "via": "split" }
+              { "via": "split" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 46, "start": 17, "end": 18 } ],
             "decl": null
@@ -786,8 +786,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "via": "split" }
+              { "via": "split" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 36, "start": 14, "end": 15 } ],
             "root": {
@@ -947,8 +947,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "via": "split" }
+              { "via": "split" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 74, "start": 19, "end": 20 } ],
             "call": {

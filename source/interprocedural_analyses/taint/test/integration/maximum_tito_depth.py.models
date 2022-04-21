@@ -55,9 +55,9 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -157,8 +157,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 59, "start": 18, "end": 19 } ],
             "decl": null

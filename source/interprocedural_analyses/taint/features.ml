@@ -254,7 +254,9 @@ end
 module BreadcrumbInterned = MakeInterner (Breadcrumb)
 
 module BreadcrumbSet = Abstract.OverUnderSetDomain.MakeWithSet (struct
-  include Data_structures.PatriciaTreeSet.PatriciaTreeIntSet
+  include Data_structures.BitSetPatriciaTreeIntSet.Make (struct
+    let common_integers = TaintAnalysisFeatureStats.common_breadcrumbs
+  end)
 
   let show_element = BreadcrumbInterned.show
 

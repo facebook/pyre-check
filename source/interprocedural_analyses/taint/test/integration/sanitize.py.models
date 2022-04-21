@@ -386,8 +386,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_sink" }
+                  { "always-via": "special_sink" },
+                  { "always-via": "tito" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "length": 1,
@@ -411,8 +411,8 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -835,8 +835,8 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "attribute" },
-      { "always-via": "tito" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -909,8 +909,8 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "instance" },
-      { "always-via": "tito" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1379,8 +1379,8 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "attribute" },
-      { "always-via": "tito" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1453,8 +1453,8 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "instance" },
-      { "always-via": "tito" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",

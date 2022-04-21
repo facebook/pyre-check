@@ -54,8 +54,8 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Global",
@@ -125,8 +125,8 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -193,8 +193,8 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Global",
@@ -260,8 +260,8 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Global",
@@ -331,8 +331,8 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -403,8 +403,8 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "special_source" }
+      { "always-via": "special_source" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",

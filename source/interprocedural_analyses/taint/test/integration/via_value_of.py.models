@@ -505,8 +505,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via-value": "by_backwards" }
+              { "always-via-value": "by_backwards" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 68, "start": 16, "end": 25 } ],
             "decl": null
@@ -928,8 +928,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via-value": "second" }
+              { "always-via-value": "second" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 55, "start": 13, "end": 27 } ],
             "root": {

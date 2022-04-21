@@ -8,7 +8,7 @@
  (libraries core sexplib yojson re2 ppx_deriving_yojson ppx_deriving
    pyrelib.ast pyrelib.analysis pyrelib.domains pyrelib.interprocedural
    pyrelib.pyreParser pyrelib.recognized pyrelib.statistics pyrelib.file
-   pyrelib.data_structures))
+   pyrelib.data_structures pyrelib.taintAnalysisFeatureStats))
 
 (library
  (name taintAnalysis)

@@ -264,8 +264,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "via": "obscure:model" }
+              { "via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [
               { "line": 24, "start": 19, "end": 25 },
@@ -290,9 +290,9 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
               { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 31, "start": 19, "end": 21 } ],
             "decl": null

@@ -138,8 +138,8 @@
       }
     ],
     "features": [
-      { "always-via": "obscure:unknown-callee" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:unknown-callee" }
     ],
     "sink_handle": {
       "kind": "Call",

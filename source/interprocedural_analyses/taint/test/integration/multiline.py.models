@@ -57,10 +57,10 @@
       }
     ],
     "features": [
-      { "always-via": "broadening" },
       { "always-via": "special_source" },
-      { "always-via": "issue-broadening" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",

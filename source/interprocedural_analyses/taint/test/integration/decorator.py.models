@@ -1311,8 +1311,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" }
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 95, "start": 17, "end": 18 } ],
             "call": {
@@ -1358,8 +1358,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" }
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 95, "start": 21, "end": 35 } ],
             "root": {
@@ -1400,10 +1400,10 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "string_concat_rhs" }
+      { "always-via": "string_concat_rhs" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -2313,9 +2313,9 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
+                  { "always-via": "special_sink" },
                   { "always-via": "string_concat_lhs" },
-                  { "always-via": "special_sink" }
+                  { "always-via": "tito" }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "length": 2,

@@ -90,8 +90,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 36, "start": 24, "end": 38 } ],
             "root": {
@@ -113,8 +113,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 36, "start": 11, "end": 12 } ],
             "decl": null
@@ -141,8 +141,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 60, "start": 45, "end": 59 } ],
             "root": {
@@ -164,8 +164,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 60, "start": 11, "end": 12 } ],
             "decl": null
@@ -192,8 +192,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 44, "start": 43, "end": 57 } ],
             "root": {
@@ -215,8 +215,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 44, "start": 11, "end": 12 } ],
             "decl": null
@@ -273,8 +273,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 40, "start": 44, "end": 58 } ],
             "root": {
@@ -296,8 +296,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 40, "start": 11, "end": 12 } ],
             "decl": null
@@ -342,8 +342,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 48, "start": 36, "end": 50 } ],
             "root": {
@@ -365,8 +365,8 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 48, "start": 11, "end": 12 } ],
             "decl": null
@@ -393,8 +393,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:model" }
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 64, "start": 15, "end": 16 } ],
             "root": {
@@ -433,9 +433,9 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
+              { "always-via": "a_feature" },
               { "always-via": "obscure:model" },
-              { "always-via": "a_feature" }
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 64, "start": 35, "end": 49 } ],
             "root": {
@@ -469,11 +469,11 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "obscure:model" },
       { "always-via": "a_feature" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",

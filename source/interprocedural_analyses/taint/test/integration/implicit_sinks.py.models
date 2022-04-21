@@ -23,8 +23,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "format-string" }
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 27, "start": 18, "end": 19 } ],
             "root": {
@@ -52,9 +52,9 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
+      { "always-via": "special_source" },
       { "always-via": "format-string" },
-      { "always-via": "special_source" }
+      { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
     "master_handle":
@@ -85,8 +85,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "format-string" }
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 17, "start": 8, "end": 9 } ],
             "root": {
@@ -114,9 +114,9 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
+      { "always-via": "special_source" },
       { "always-via": "format-string" },
-      { "always-via": "special_source" }
+      { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
     "master_handle":
@@ -147,8 +147,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "format-string" }
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 61, "start": 8, "end": 9 } ],
             "root": {
@@ -167,8 +167,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "format-string" }
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 61, "start": 14, "end": 15 } ],
             "root": {
@@ -196,9 +196,9 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
+      { "always-via": "special_source" },
       { "always-via": "format-string" },
-      { "always-via": "special_source" }
+      { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
     "master_handle":
@@ -291,8 +291,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
               { "always-via": "format-string" },
+              { "always-via": "tito" },
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
@@ -322,10 +322,10 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
-      { "always-via": "format-string" },
-      { "always-via": "broadening" },
       { "always-via": "special_source" },
+      { "always-via": "format-string" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
       { "always-via": "issue-broadening" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
@@ -406,8 +406,8 @@
           {
             "kinds": [ { "kind": "Test" } ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "format-string" }
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 22, "start": 18, "end": 19 } ],
             "root": {
@@ -433,8 +433,8 @@
           {
             "kinds": [ { "kind": "Test" } ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "format-string" }
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 12, "start": 8, "end": 9 } ],
             "root": {
@@ -487,8 +487,8 @@
           {
             "kinds": [ { "kind": "Test" } ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "format-string" }
+              { "always-via": "format-string" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 31, "start": 13, "end": 17 } ],
             "root": {

@@ -18,8 +18,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
+                  { "always-via": "special_source" },
+                  { "always-via": "tito" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "length": 1,
@@ -67,9 +67,9 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "bad" },
-      { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -100,8 +100,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
+                  { "always-via": "special_source" },
+                  { "always-via": "tito" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "length": 1,
@@ -149,9 +149,9 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "bad" },
-      { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -257,8 +257,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "tito" },
-                  { "always-via": "special_source" }
+                  { "always-via": "special_source" },
+                  { "always-via": "tito" }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
                 "length": 1,
@@ -306,9 +306,9 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "bad" },
-      { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
