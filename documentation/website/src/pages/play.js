@@ -113,17 +113,6 @@ function encodeCodeAndSetURL(code) {
 }
 
 
-function setKeyboardShortcuts(check) {
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-      event.preventDefault();
-      event.stopPropagation();
-      check();
-    }
-  });
-}
-
-
 function Playground() {
 
   const [results, setResults] = useState(null);
@@ -147,9 +136,20 @@ function Playground() {
       .catch(error => console.error(error));
   };
 
+  const checkOnCtrlEnter = (event) => {
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+      event.preventDefault();
+      event.stopPropagation();
+      check();
+    }
+  }
+
   useEffect(() => {
-    setKeyboardShortcuts(check);
-  }, []);
+    window.addEventListener('keydown', checkOnCtrlEnter);
+    return () => {
+      window.removeEventListener('keydown', checkOnCtrlEnter);
+    };
+  }, [code]);
 
   return (
     <Layout title="Playground">
