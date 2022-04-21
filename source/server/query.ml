@@ -833,6 +833,32 @@ let rec process_request ~environment ~build_system ~configuration request =
         let class_names =
           match class_names with
           | [] ->
+              (* Because of lazy parsing, `UnannotatedGlobalEnvironment.ReadOnly.get_all_classes
+                 only returns all *loaded* classes, which will not include all classes from external
+                 modules if they are not needed for type checking. So, we force them to load. *)
+              let load_all_modules scheduler =
+                let load_modules qualifiers =
+                  let _ =
+                    List.map
+                      qualifiers
+                      ~f:
+                        (UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata
+                           unannotated_global_environment)
+                  in
+                  ()
+                in
+                Scheduler.iter
+                  scheduler
+                  ~policy:
+                    (Scheduler.Policy.fixed_chunk_count
+                       ~minimum_chunks_per_worker:1
+                       ~minimum_chunk_size:100
+                       ~preferred_chunks_per_worker:5
+                       ())
+                  ~f:load_modules
+                  ~inputs:(ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker)
+              in
+              Scheduler.with_scheduler ~configuration ~f:load_all_modules;
               UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
               |> List.map ~f:Reference.create
           | _ ->

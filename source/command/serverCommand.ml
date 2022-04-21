@@ -125,7 +125,6 @@ module ServerConfiguration = struct
     Configuration.Analysis.create
       ~parallel
       ~analyze_external_sources:false
-      ~eagerly_load_external_modules:true
       ~filter_directories:checked_directory_allowlist
       ~ignore_all_errors:checked_directory_blocklist
       ~number_of_workers

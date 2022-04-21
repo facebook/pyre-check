@@ -123,7 +123,6 @@ module Analysis : sig
   type t = {
     parallel: bool;
     analyze_external_sources: bool;
-    eagerly_load_external_modules: bool;
     filter_directories: PyrePath.t list option;
     ignore_all_errors: PyrePath.t list option;
     number_of_workers: int;
@@ -153,7 +152,6 @@ module Analysis : sig
   val create
     :  ?parallel:bool ->
     ?analyze_external_sources:bool ->
-    ?eagerly_load_external_modules:bool ->
     ?filter_directories:PyrePath.t list ->
     ?ignore_all_errors:PyrePath.t list ->
     ?number_of_workers:int ->
