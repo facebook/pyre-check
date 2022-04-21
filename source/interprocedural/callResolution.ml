@@ -75,7 +75,7 @@ let resolve_ignoring_untracked ~resolution expression =
          negatives."
         untracked_type
         Expression.pp
-        expression;
+        (Ast.Expression.delocalize expression);
       Type.Any
 
 
