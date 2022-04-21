@@ -1,6 +1,6 @@
 dataclasses; python_version < "3.7"
 async-generator
-click
+click>=8.0
 dataclasses-json
 intervaltree
 libcst
