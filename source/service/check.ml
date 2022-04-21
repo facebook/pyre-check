@@ -83,14 +83,12 @@ let check
           ~indices:(indices ())
       in
       File.create ~content:class_hierarchy_dot type_order_file |> File.write);
-    if debug then (
-      GlobalResolution.class_hierarchy global_resolution
-      |> ClassHierarchy.check_integrity ~indices:(indices ());
+    if debug then
       Statistics.event
         ~section:`Memory
         ~name:"shared memory size"
         ~integers:["size", Memory.heap_size ()]
-        ());
+        ();
 
     ( type_environment,
       AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
