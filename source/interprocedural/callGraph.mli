@@ -199,19 +199,13 @@ val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
 module SharedMemory : sig
   val add : callable:Target.callable_t -> call_graph:DefineCallGraph.t -> unit
 
-  (* Attempts to read the call graph for the given callable from shared memory. If it doesn't exist,
-     computes the call graph and writes to shard memory. *)
-  val get_or_compute
-    :  callable:Target.callable_t ->
-    environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    define:Ast.Statement.Define.t ->
-    DefineCallGraph.t
+  val get : callable:Target.callable_t -> DefineCallGraph.t option
 
   val remove : Target.callable_t list -> unit
 end
 
 val create_callgraph
-  :  ?use_shared_memory:bool ->
+  :  store_shared_memory:bool ->
   environment:TypeEnvironment.ReadOnly.t ->
   source:Source.t ->
   DependencyGraph.callgraph

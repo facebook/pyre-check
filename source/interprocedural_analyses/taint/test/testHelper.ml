@@ -609,7 +609,7 @@ let initialize
   in
 
   let targets = List.rev_append (Target.Map.keys overrides) callable_targets in
-  let callables_to_analyze = List.rev_append stub_targets targets in
+  let callables_to_analyze = targets in
   let initial_models_callables = Target.Map.keys initial_models in
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in

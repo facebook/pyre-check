@@ -308,10 +308,10 @@ include Taint.Result.Register (struct
         TaintProfiler.none
     in
     let call_graph_of_define =
-      Interprocedural.CallGraph.SharedMemory.get_or_compute
-        ~callable
-        ~environment
-        ~define:(Ast.Node.value define)
+      match Interprocedural.CallGraph.SharedMemory.get ~callable with
+      | Some call_graph -> call_graph
+      | None ->
+          Format.asprintf "Missing call graph for `%a`" Target.pp (callable :> Target.t) |> failwith
     in
     let forward, result, triggered_sinks =
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis" ~f:(fun () ->

@@ -49,7 +49,7 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
         errors
       |> failwith
   in
-  CallGraph.create_callgraph ~use_shared_memory:false ~environment ~source
+  CallGraph.create_callgraph ~store_shared_memory:false ~environment ~source
 
 
 let create_callable = function
@@ -536,7 +536,7 @@ let test_strongly_connected_components context =
     let source, environment = setup ~context ~handle source in
     let partitions =
       let edges =
-        CallGraph.create_callgraph ~use_shared_memory:false ~environment ~source
+        CallGraph.create_callgraph ~store_shared_memory:false ~environment ~source
         |> DependencyGraph.from_callgraph
       in
       DependencyGraph.partition ~edges

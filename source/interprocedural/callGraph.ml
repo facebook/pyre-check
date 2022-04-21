@@ -1909,30 +1909,17 @@ module SharedMemory = struct
 
   let get ~callable = get callable >>| Location.Map.of_tree
 
-  let get_or_compute ~callable ~environment ~define =
-    match get ~callable with
-    | Some map -> map
-    | None ->
-        let call_graph = call_graph_of_define ~environment ~define in
-        add ~callable ~call_graph;
-        call_graph
-
-
   let remove callables = KeySet.of_list callables |> remove_batch
 end
 
-let create_callgraph ?(use_shared_memory = false) ~environment ~source =
+let create_callgraph ~store_shared_memory ~environment ~source =
   let fold_defines dependencies = function
     | { Node.value = define; _ } when Define.is_overloaded_function define -> dependencies
     | define ->
-        let call_graph_of_define =
-          if use_shared_memory then
-            SharedMemory.get_or_compute
-              ~callable:(Target.create define)
-              ~environment
-              ~define:(Node.value define)
-          else
-            call_graph_of_define ~environment ~define:(Node.value define)
+        let call_graph_of_define = call_graph_of_define ~environment ~define:(Node.value define) in
+        let () =
+          if store_shared_memory then
+            SharedMemory.add ~callable:(Target.create define) ~call_graph:call_graph_of_define
         in
         let non_object_target = function
           | `Object _ -> false
