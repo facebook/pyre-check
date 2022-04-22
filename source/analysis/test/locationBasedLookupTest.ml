@@ -441,6 +441,52 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.test"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:{|
+        def foo(x: str) -> None:
+          print(x)
+    |}
+    "3:8"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$x")));
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:{|
+        def foo() -> None:
+          x = 42
+          print(x)
+    |}
+    "4:8"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Node.create_with_default_location
+                (Expression.Name (Name.Identifier "$local_test?foo$x")));
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 1 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+        def foo() -> None:
+          with open() as f:
+            f.readline()
+    |}
+    "4:4"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Node.create_with_default_location (Expression.Name (Name.Identifier "$target$f")));
+         cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 1 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -492,6 +538,20 @@ let test_resolve_definition_for_symbol context =
           (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$b")));
       cfg_data = { define_name = !&"test.foo"; node_id = 0; statement_index = 0 };
       use_postcondition_info = true;
+    }
+    None;
+  (* TODO(T112570623): Get the definition for function parameters. *)
+  assert_resolved_definition
+    ~source:{|
+        def foo(x: str) -> None:
+          print(x)
+    |}
+    {
+      symbol_with_definition =
+        Expression
+          (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$x")));
+      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+      use_postcondition_info = false;
     }
     None;
   assert_resolved_definition
@@ -606,6 +666,39 @@ let test_resolve_definition_for_symbol context =
     {
       symbol_with_definition = Expression (parse_single_expression "(test.Bar()).foo().bar");
       cfg_data = { define_name = !&"test.test"; node_id = 4; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    None;
+  (* TODO(T112570623): Get the definition for local variables. *)
+  assert_resolved_definition
+    ~source:{|
+        def foo() -> None:
+          x = 42
+          print(x)
+    |}
+    {
+      symbol_with_definition =
+        Expression
+          (Node.create_with_default_location
+             (Expression.Name (Name.Identifier "$local_test?foo$x")));
+      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 1 };
+      use_postcondition_info = false;
+    }
+    None;
+  (* TODO(T112570623): Get the definition for variables bound by a context manager. *)
+  assert_resolved_definition
+    ~source:
+      {|
+        def foo() -> None:
+          with open() as f:
+            f.readline()
+    |}
+    {
+      symbol_with_definition =
+        Expression
+          (Node.create_with_default_location
+             (Expression.Name (Name.Identifier "$local_test?foo$x")));
+      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 1 };
       use_postcondition_info = false;
     }
     None;
