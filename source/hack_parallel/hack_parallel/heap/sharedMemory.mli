@@ -174,34 +174,34 @@ module NoCache : sig
     module KeySet : Set.S with type elt = key
     module KeyMap : MyMap.S with type key = key
 
-    (* Safe for concurrent writes, the first writer wins, the second write
-    * is dismissed.
-    *)
+
+    (* Add a value to the table. Safe for concurrent writes - the first
+       writer wins, later values are discarded. *)
     val add              : key -> value -> unit
-    (* Safe for concurrent reads. Safe for interleaved reads and mutations,
-    * provided the code runs on Intel architectures.
-    *)
+
+    (* Api to read and remove from the table *)
     val get              : key -> value option
-    val get_old          : key -> value option
-    val get_old_batch    : KeySet.t -> value option KeyMap.t
-    val remove_old_batch : KeySet.t -> unit
-    val find_unsafe      : key -> value
+    val mem              : key -> bool
     val get_batch        : KeySet.t -> value option KeyMap.t
     val remove_batch     : KeySet.t -> unit
-    val string_of_key    : key -> string
-    (* Safe for concurrent access. *)
-    val mem              : key -> bool
+
+    (* Api to read and remove old data from the table, which lives in a separate
+       hash map. Used in situations where we want to know what has changed, for
+       example dependency-tracked tables. *)
+    val get_old          : key -> value option
     val mem_old          : key -> bool
-    (* This function takes the elements present in the set and keep the "old"
-    * version in a separate heap. This is useful when we want to compare
-    * what has changed. We will be in a situation for type-checking
-    * (cf typing/typing_redecl_service.ml) where we want to compare the type
-    * of a class in the previous environment vs the current type.
-    *)
+    val get_old_batch    : KeySet.t -> value option KeyMap.t
+    val remove_old_batch : KeySet.t -> unit
+
+    (* Move keys between the current view of the table and the old-values table *)
     val oldify_batch     : KeySet.t -> unit
-    (* Reverse operation of oldify *)
     val revive_batch     : KeySet.t -> unit
 
+    (* Low level operations *)
+    val string_of_key    : key -> string
+    val find_unsafe      : key -> value
+
+    (* Api to allow batching up local changes before serializing them *)
     module LocalChanges : sig
       val has_local_changes : unit -> bool
       val push_stack : unit -> unit
