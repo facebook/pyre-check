@@ -487,6 +487,21 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 1 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:{|
+        def foo() -> None:
+          for x in [1]:
+            print(x)
+    |}
+    "4:10"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Node.create_with_default_location (Expression.Name (Name.Identifier "$target$x")));
+         cfg_data = { define_name = !&"test.foo"; node_id = 6; statement_index = 1 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -700,6 +715,20 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     (Some "test:3:17-3:18");
+  assert_resolved_definition
+    ~source:{|
+        def foo(x: str) -> None:
+          for x in [1]:
+            print(x)
+    |}
+    {
+      symbol_with_definition =
+        Expression
+          (Node.create_with_default_location (Expression.Name (Name.Identifier "$target$x")));
+      cfg_data = { define_name = !&"test.foo"; node_id = 6; statement_index = 1 };
+      use_postcondition_info = false;
+    }
+    (Some "test:3:6-3:7");
   ()
 
 

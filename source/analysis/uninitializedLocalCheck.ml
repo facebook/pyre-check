@@ -244,7 +244,14 @@ module State (Context : Context) = struct
     | Bottom -> Bottom
     | Value state ->
         let union ~key:_ = function
-          | `Both (left, _) -> Some left
+          | `Both
+              ( ({ Scope.Binding.location = left_location; _ } as left),
+                ({ Scope.Binding.location = right_location; _ } as right) ) ->
+              (* Pick the later-assigned variable. *)
+              if [%compare: Location.t] left_location right_location >= 0 then
+                Some left
+              else
+                Some right
           | `Right only
           | `Left only ->
               Some only

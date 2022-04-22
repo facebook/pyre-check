@@ -285,13 +285,14 @@ let assert_defined_locals source expected =
       | other -> other
     in
     (* Parsing `foo().__enter__` makes it have `special=false`. Just set it directly. *)
-    let make_dunder_enter_special = function
-      | Expression.Name (Attribute ({ attribute = "__enter__"; _ } as attribute)) ->
+    let make_dunder_attribute_special = function
+      | Expression.Name
+          (Attribute ({ attribute = "__enter__" | "__next__" | "__iter__"; _ } as attribute)) ->
           Expression.Name (Attribute { attribute with special = true })
       | other -> other
     in
     with_dummy_assert_origin statement
-    |> Node.map ~f:(Transform.transform_expressions ~transform:make_dunder_enter_special)
+    |> Node.map ~f:(Transform.transform_expressions ~transform:make_dunder_attribute_special)
   in
   let item_equal (left_statement, left_identifiers) (right_statement, right_identifiers) =
     Statement.location_insensitive_compare
@@ -350,7 +351,7 @@ let test_defined_locals_at_each_statement _ =
         x = y
         y = 5
     |}
-    [{| y = 5 |}, ["x", "3:2-3:3"; "y", "2:6-2:7"]; {| x = y |}, ["x", "3:2-3:3"; "y", "2:6-2:7"]];
+    [{| y = 5 |}, ["x", "3:2-3:3"; "y", "4:2-4:3"]; {| x = y |}, ["x", "3:2-3:3"; "y", "2:6-2:7"]];
   assert_defined_locals
     {|
       def f(x):
@@ -408,11 +409,11 @@ let test_defined_locals_at_each_statement _ =
     |}
     [
       {| x = 1 |}, ["_", "4:2-4:3"; "x", "5:2-5:3"];
-      {| _ = z |}, ["_", "4:2-4:3"; "x", "5:2-5:3"; "y", "7:2-7:3"];
+      {| _ = z |}, ["_", "8:2-8:3"; "x", "5:2-5:3"; "y", "7:2-7:3"];
       {| _ = x |}, ["_", "4:2-4:3"];
-      {| _ = y |}, ["_", "4:2-4:3"; "x", "5:2-5:3"];
+      {| _ = y |}, ["_", "6:2-6:3"; "x", "5:2-5:3"];
       {| global y |}, [];
-      {| y = 1 |}, ["_", "4:2-4:3"; "x", "5:2-5:3"; "y", "7:2-7:3"];
+      {| y = 1 |}, ["_", "6:2-6:3"; "x", "5:2-5:3"; "y", "7:2-7:3"];
     ];
   assert_defined_locals {|
       def f():
@@ -503,7 +504,7 @@ let test_defined_locals_at_each_statement _ =
         x, y = None, None
     |}
     [
-      {| x, y = None, None |}, ["_", "5:2-5:3"; "x", "3:31-3:32"; "y", "6:5-6:6"];
+      {| x, y = None, None |}, ["_", "5:2-5:3"; "x", "6:2-6:3"; "y", "6:5-6:6"];
       {| pass |}, ["x", "3:31-3:32"];
       {| _ = x, y |}, ["_", "5:2-5:3"; "x", "3:31-3:32"];
       {| x = open("x", "1:2-3:4").__enter__() |}, ["x", "3:31-3:32"];
@@ -524,9 +525,9 @@ let test_defined_locals_at_each_statement _ =
         y = None
     |}
     [
-      {| _ = x, y |}, ["_", "3:2-3:3"; "x", "4:2-4:3"];
+      {| _ = x, y |}, ["_", "5:2-5:3"; "x", "4:2-4:3"];
       {| x = None |}, ["_", "3:2-3:3"; "x", "4:2-4:3"];
-      {| y = None |}, ["_", "3:2-3:3"; "x", "4:2-4:3"; "y", "6:2-6:3"];
+      {| y = None |}, ["_", "5:2-5:3"; "x", "4:2-4:3"; "y", "6:2-6:3"];
       {| _  = [(x, y) for x,y in []] |}, ["_", "3:2-3:3"];
     ];
   assert_defined_locals
@@ -653,6 +654,18 @@ let test_defined_locals_at_each_statement _ =
           print(x)
     |}
     [{| return x |}, ["x", "4:4-4:5"]; {| print(x) |}, []; {| x = may_raise() |}, ["x", "4:4-4:5"]];
+  assert_defined_locals
+    {|
+      def foo(x: str) -> None:
+        for x in [1]:
+          print(x)
+        print(x, "outside")
+    |}
+    [
+      {| print(x) |}, ["x", "3:6-3:7"];
+      {| x = [1].__iter__().__next__() |}, ["x", "3:6-3:7"];
+      {| print(x, "outside") |}, ["x", "2:8-2:14"];
+    ];
   ()
 
 
