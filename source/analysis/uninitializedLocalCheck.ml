@@ -173,9 +173,10 @@ let extract_reads_in_statement { Node.value; _ } =
 
 
 module InitializedVariables = Identifier.Set
+module StatementKey = Int
 
 module type Context = sig
-  val fixpoint_post_statement : (Statement.t * InitializedVariables.t) Int.Table.t
+  val fixpoint_post_statement : (Statement.t * InitializedVariables.t) StatementKey.Table.t
 end
 
 module State (Context : Context) = struct
@@ -238,6 +239,27 @@ module State (Context : Context) = struct
   let backward ~statement_key:_ _ ~statement:_ = failwith "Not implemented"
 end
 
+let defined_locals_at_each_statement define =
+  let module Context = struct
+    let fixpoint_post_statement = StatementKey.Table.create ()
+  end
+  in
+  let module State = State (Context) in
+  let module Fixpoint = Fixpoint.Make (State) in
+  let cfg = Cfg.create (Node.value define) in
+  let fixpoint = Fixpoint.forward ~cfg ~initial:(State.initial ~define) in
+  let defined_locals =
+    match
+      Context.fixpoint_post_statement |> StatementKey.Table.to_alist |> StatementKey.Map.of_alist
+    with
+    | `Ok map -> map
+    | `Duplicate_key _ -> StatementKey.Map.empty
+  in
+  Fixpoint.exit fixpoint
+  >>| (fun _ -> defined_locals)
+  |> Option.value ~default:StatementKey.Map.empty
+
+
 let errors ~qualifier ~define defined_locals_at_each_statement =
   let emit_error { Node.value; location } =
     Error.create
@@ -267,26 +289,15 @@ let errors ~qualifier ~define defined_locals_at_each_statement =
     in
     extract_reads_in_statement statement |> List.filter ~f:is_uninitialized
   in
-  Int.Table.data defined_locals_at_each_statement
-  |> List.map ~f:uninitialized_usage
-  |> List.concat
+  defined_locals_at_each_statement
+  |> Map.data
+  |> List.concat_map ~f:uninitialized_usage
   |> List.filter ~f:in_local_scope
   |> List.map ~f:emit_error
 
 
 let run_on_define ~qualifier define =
-  let module Context = struct
-    let fixpoint_post_statement = Int.Table.create ()
-  end
-  in
-  let module State = State (Context) in
-  let module Fixpoint = Fixpoint.Make (State) in
-  let cfg = Cfg.create (Node.value define) in
-  let fixpoint = Fixpoint.forward ~cfg ~initial:(State.initial ~define) in
-  Fixpoint.exit fixpoint
-  >>| (fun _ -> Context.fixpoint_post_statement)
-  >>| errors ~qualifier ~define
-  |> Option.value ~default:[]
+  defined_locals_at_each_statement define |> errors ~qualifier ~define
 
 
 let run

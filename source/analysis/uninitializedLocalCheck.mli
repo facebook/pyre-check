@@ -6,6 +6,7 @@
  *)
 
 open Ast
+open Core
 module Error = AnalysisError
 
 val name : string
@@ -17,3 +18,11 @@ val run
   environment:TypeEnvironment.ReadOnly.t ->
   source:Source.t ->
   Error.t list
+
+module StatementKey = Int
+
+val defined_locals_at_each_statement
+  :  Statement.Define.t Node.t ->
+  (* TODO(T112570623): Store locations in the value. *)
+  (* TODO(T112570623): Don't store statements in the value. *)
+  (Statement.t * Identifier.Set.t) StatementKey.Map.t
