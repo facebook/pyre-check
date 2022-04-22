@@ -503,7 +503,10 @@ let test_resolve_definition_for_symbol context =
       ~cmp:[%compare.equal: Location.WithModule.t option]
       ~printer:[%show: Location.WithModule.t option]
       (expected >>| parse_location_with_module)
-      (LocationBasedLookup.resolve_definition_for_symbol ~type_environment symbol_data)
+      (LocationBasedLookup.resolve_definition_for_symbol
+         ~type_environment
+         ~module_reference:!&"test"
+         symbol_data)
   in
   let external_sources =
     [
@@ -540,7 +543,6 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = true;
     }
     None;
-  (* TODO(T112570623): Get the definition for function parameters. *)
   assert_resolved_definition
     ~source:{|
         def foo(x: str) -> None:
@@ -553,7 +555,7 @@ let test_resolve_definition_for_symbol context =
       cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
       use_postcondition_info = false;
     }
-    None;
+    (Some "test:2:8-2:14");
   assert_resolved_definition
     ~source:{|
         def getint() -> int:
@@ -576,7 +578,6 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     None;
-  (* TODO(T112570623): Get the definition for `self`. *)
   assert_resolved_definition
     ~source:{|
       class Foo:
@@ -590,7 +591,7 @@ let test_resolve_definition_for_symbol context =
       cfg_data = { define_name = !&"test.Foo.bar"; node_id = 4; statement_index = 0 };
       use_postcondition_info = false;
     }
-    None;
+    (Some "test:3:10-3:14");
   (* TODO(T112570623): Get the definition for `self.foo()`. *)
   assert_resolved_definition
     ~source:
@@ -669,7 +670,6 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     None;
-  (* TODO(T112570623): Get the definition for local variables. *)
   assert_resolved_definition
     ~source:{|
         def foo() -> None:
@@ -684,8 +684,7 @@ let test_resolve_definition_for_symbol context =
       cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 1 };
       use_postcondition_info = false;
     }
-    None;
-  (* TODO(T112570623): Get the definition for variables bound by a context manager. *)
+    (Some "test:3:2-3:3");
   assert_resolved_definition
     ~source:
       {|
@@ -696,12 +695,11 @@ let test_resolve_definition_for_symbol context =
     {
       symbol_with_definition =
         Expression
-          (Node.create_with_default_location
-             (Expression.Name (Name.Identifier "$local_test?foo$x")));
-      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 1 };
+          (Node.create_with_default_location (Expression.Name (Name.Identifier "$target$f")));
+      cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 1 };
       use_postcondition_info = false;
     }
-    None;
+    (Some "test:3:17-3:18");
   ()
 
 

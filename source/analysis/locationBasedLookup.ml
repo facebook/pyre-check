@@ -583,14 +583,39 @@ let resolve ~resolution expression =
   | ClassHierarchy.Untracked _ -> None
 
 
-let resolve_definition_for_name ~resolution expression =
-  let find_definition reference =
-    GlobalResolution.global_location (Resolution.global_resolution resolution) reference
-    >>= fun location ->
-    Option.some_if
-      (not ([%compare.equal: Location.WithModule.t] location Location.WithModule.any))
-      location
+let look_up_local_definition ~resolution ~define_name ~statement_key identifier =
+  let unannotated_global_environment =
+    Resolution.global_resolution resolution |> GlobalResolution.unannotated_global_environment
   in
+  UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment define_name
+  >>| UninitializedLocalCheck.defined_locals_at_each_statement
+  >>= (fun defined_locals_at_each_statement ->
+        Map.find defined_locals_at_each_statement statement_key)
+  >>= fun (_, locals_map) -> Map.find locals_map identifier
+
+
+let find_definition ~resolution ~module_reference ~define_name ~statement_key reference =
+  let local_definition =
+    Reference.single reference
+    >>| Identifier.sanitized
+    >>= look_up_local_definition ~resolution ~define_name ~statement_key
+    >>| fun { Scope.Binding.location; _ } -> location |> Location.with_module ~module_reference
+  in
+  let definition =
+    match local_definition with
+    | Some definition -> Some definition
+    | None -> GlobalResolution.global_location (Resolution.global_resolution resolution) reference
+  in
+  definition
+  >>= fun location ->
+  Option.some_if
+    (not ([%compare.equal: Location.WithModule.t] location Location.WithModule.any))
+    location
+
+
+let resolve_definition_for_name ~resolution ~module_reference ~define_name ~statement_key expression
+  =
+  let find_definition = find_definition ~resolution ~module_reference ~define_name ~statement_key in
   match Node.value expression with
   | Expression.Name (Name.Identifier identifier) -> find_definition (Reference.create identifier)
   | Name (Name.Attribute { base; attribute; _ } as name) -> (
@@ -608,6 +633,7 @@ let resolve_definition_for_name ~resolution expression =
 
 let resolve_definition_for_symbol
     ~type_environment
+    ~module_reference
     {
       symbol_with_definition;
       cfg_data = { define_name; node_id; statement_index };
@@ -639,7 +665,13 @@ let resolve_definition_for_symbol
     match symbol_with_definition with
     | Expression expression
     | TypeAnnotation expression ->
-        resolve_definition_for_name ~resolution expression
+        let statement_key = [%hash: int * int] (node_id, statement_index) in
+        resolve_definition_for_name
+          ~resolution
+          ~module_reference
+          ~define_name
+          ~statement_key
+          expression
   in
   Log.log
     ~section:`Performance
@@ -650,4 +682,4 @@ let resolve_definition_for_symbol
 
 let location_of_definition ~type_environment ~module_reference position =
   let result = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
-  result >>= resolve_definition_for_symbol ~type_environment
+  result >>= resolve_definition_for_symbol ~type_environment ~module_reference
