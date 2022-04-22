@@ -191,6 +191,7 @@ end
 
 module StaticAnalysis : sig
   type t = {
+    repository_root: PyrePath.t option;
     (* A directory to write files in. *)
     result_json_path: PyrePath.t option;
     dump_call_graph: PyrePath.t option;
@@ -201,6 +202,7 @@ module StaticAnalysis : sig
     find_missing_flows: string option;
     dump_model_query_results: PyrePath.t option;
     use_cache: bool;
+    inline_decorators: bool;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
   }

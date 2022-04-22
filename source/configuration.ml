@@ -437,6 +437,7 @@ end
 
 module StaticAnalysis = struct
   type t = {
+    repository_root: PyrePath.t option;
     result_json_path: PyrePath.t option;
     dump_call_graph: PyrePath.t option;
     verify_models: bool;
@@ -446,6 +447,7 @@ module StaticAnalysis = struct
     find_missing_flows: string option;
     dump_model_query_results: PyrePath.t option;
     use_cache: bool;
+    inline_decorators: bool;
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
   }

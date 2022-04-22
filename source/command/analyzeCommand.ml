@@ -125,8 +125,8 @@ module AnalyzeConfiguration = struct
         strict;
         taint_model_paths;
         use_cache;
-        inline_decorators = _;
-        repository_root = _;
+        inline_decorators;
+        repository_root;
       }
     =
     let configuration =
@@ -160,6 +160,7 @@ module AnalyzeConfiguration = struct
     in
     {
       Configuration.StaticAnalysis.configuration;
+      repository_root;
       result_json_path = save_results_to;
       dump_call_graph;
       verify_models = not no_verify;
@@ -167,6 +168,7 @@ module AnalyzeConfiguration = struct
       find_missing_flows;
       dump_model_query_results;
       use_cache;
+      inline_decorators;
       maximum_trace_length;
       maximum_tito_depth;
     }
@@ -190,13 +192,7 @@ let with_performance_tracking ~f =
 
 
 let run_analyze analyze_configuration =
-  let {
-    AnalyzeConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ };
-    inline_decorators;
-    repository_root;
-    _;
-  }
-    =
+  let { AnalyzeConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ }; _ } =
     analyze_configuration
   in
   let ({ Configuration.StaticAnalysis.configuration = analysis_configuration; _ } as
@@ -211,8 +207,6 @@ let run_analyze analyze_configuration =
                 ~static_analysis_configuration
                 ~build_system
                 ~scheduler
-                ~inline_decorators
-                ~repository_root
                 ());
           Lwt.return (ExitStatus.CheckStatus CheckCommand.ExitStatus.Ok)))
 

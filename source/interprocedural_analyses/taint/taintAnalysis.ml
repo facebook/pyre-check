@@ -395,12 +395,15 @@ end)
 
 let run_taint_analysis
     ~static_analysis_configuration:
-      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as
-      static_analysis_configuration)
-    ~inline_decorators
+      ({
+         Configuration.StaticAnalysis.configuration;
+         repository_root;
+         inline_decorators;
+         use_cache;
+         _;
+       } as static_analysis_configuration)
     ~build_system
     ~scheduler
-    ~repository_root
     ()
   =
   try
