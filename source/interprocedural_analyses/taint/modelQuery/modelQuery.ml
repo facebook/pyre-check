@@ -27,7 +27,7 @@ end = struct
       let to_json (callable, model) =
         `Assoc
           [
-            "callable", `String (Target.external_target_name callable);
+            "callable", `String (Target.external_name callable);
             ( "model",
               `List
                 (Taint.Reporting.externalize ~filename_lookup:(fun _ -> None) callable None model) );
@@ -210,7 +210,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
     Memo.unit (fun () ->
         let callable_type = Target.get_module_and_definition ~resolution callable >>| snd in
         if Option.is_none callable_type then
-          Log.error "Could not find callable type for callable: `%s`" (Target.show callable);
+          Log.error "Could not find callable type for callable: `%a`" Target.pp_pretty callable;
         callable_type)
   in
   match query_constraint with
@@ -230,7 +230,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
               matches_decorator_constraint ~name_constraint ~arguments_constraint decorator)
       | _ -> false)
   | ModelQuery.NameConstraint name_constraint ->
-      matches_name_constraint ~name_constraint (Target.external_target_name callable)
+      matches_name_constraint ~name_constraint (Target.external_name callable)
   | ModelQuery.ReturnConstraint annotation_constraint -> (
       let callable_type = get_callable_type () in
       match callable_type with
@@ -510,8 +510,8 @@ let apply_callable_query_rule
   =
   let kind_matches =
     match callable, rule_kind with
-    | `Function _, ModelQuery.FunctionModel
-    | `Method _, ModelQuery.MethodModel ->
+    | Target.Function _, ModelQuery.FunctionModel
+    | Target.Method _, ModelQuery.MethodModel ->
         true
     | _ -> false
   in
@@ -520,8 +520,8 @@ let apply_callable_query_rule
     if verbose then
       Log.info
         "Target `%a` matches all constraints for the model query rule%s."
-        Target.pretty_print
-        (callable :> Target.t)
+        Target.pp_pretty
+        callable
         (name |> Option.map ~f:(Format.sprintf " `%s`") |> Option.value ~default:"");
     apply_callable_productions ~resolution ~productions ~callable
   end
@@ -672,17 +672,17 @@ let apply_all_rules
             ~callable
             ~sources_to_keep
             ~sinks_to_keep
-            ~is_obscure:(Hash_set.mem stubs (callable :> Target.t))
+            ~is_obscure:(Hash_set.mem stubs callable)
             taint_to_model
         with
         | Ok model ->
             let models =
               let model =
-                match Target.Map.find models (callable :> Target.t) with
+                match Target.Map.find models callable with
                 | Some existing_model -> Model.join existing_model model
                 | None -> model
               in
-              Target.Map.set models ~key:(callable :> Target.t) ~data:model
+              Target.Map.set models ~key:callable ~data:model
             in
             models
         | Error error ->
@@ -693,8 +693,8 @@ let apply_all_rules
     in
     let callables =
       List.filter_map callables ~f:(function
-          | `Function _ as callable -> Some (callable :> Target.callable_t)
-          | `Method _ as callable -> Some (callable :> Target.callable_t)
+          | Target.Function _ as callable -> Some callable
+          | Target.Method _ as callable -> Some callable
           | _ -> None)
     in
     let callable_models =
@@ -738,11 +738,11 @@ let apply_all_rules
         | Ok model ->
             let models =
               let model =
-                match Target.Map.find models (callable :> Target.t) with
+                match Target.Map.find models callable with
                 | Some existing_model -> Model.join existing_model model
                 | None -> model
               in
-              Target.Map.set models ~key:(callable :> Target.t) ~data:model
+              Target.Map.set models ~key:callable ~data:model
             in
             models
         | Error error ->

@@ -1,12 +1,6 @@
 @generated
 Call dependencies
 higher_order_functions.$toplevel (fun) -> []
-higher_order_functions.C::$class_toplevel (method) -> []
-higher_order_functions.C::method_to_sink (method) -> [_test_sink (fun)]
-higher_order_functions.C::self_to_sink (method) -> [_test_sink (fun)]
-higher_order_functions.Callable::$class_toplevel (method) -> []
-higher_order_functions.Callable::__call__ (method) -> []
-higher_order_functions.Callable::__init__ (method) -> []
 higher_order_functions.apply (fun) -> []
 higher_order_functions.callable_class (fun) -> [_test_sink (fun) _test_source (fun) higher_order_functions.Callable::__call__ (method) higher_order_functions.Callable::__init__ (method) object::__new__ (method)]
 higher_order_functions.goes_to_sink (fun) -> [_test_sink (fun)]
@@ -23,3 +17,9 @@ higher_order_functions.test_higher_order_method (fun) -> [_test_source (fun) hig
 higher_order_functions.test_higher_order_method_self (fun) -> [_test_source (fun) higher_order_functions.C::self_to_sink (method) higher_order_functions.higher_order_function (fun)]
 higher_order_functions.test_higher_order_tito (fun) -> [higher_order_functions.has_tito (fun) higher_order_functions.higher_order_function (fun)]
 higher_order_functions.test_location (fun) -> [higher_order_functions.Callable::__call__ (method) higher_order_functions.sink_args (fun)]
+higher_order_functions.C::$class_toplevel (method) -> []
+higher_order_functions.C::method_to_sink (method) -> [_test_sink (fun)]
+higher_order_functions.C::self_to_sink (method) -> [_test_sink (fun)]
+higher_order_functions.Callable::$class_toplevel (method) -> []
+higher_order_functions.Callable::__call__ (method) -> []
+higher_order_functions.Callable::__init__ (method) -> []

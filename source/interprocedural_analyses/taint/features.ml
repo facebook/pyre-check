@@ -497,7 +497,7 @@ let expand_via_features ~resolution ~callees ~arguments via_features =
     | ViaFeature.ViaTypeOf { parameter; tag } ->
         let breadcrumb =
           match callees with
-          | [`Object object_target] ->
+          | [Interprocedural.Target.Object object_target] ->
               ViaFeature.via_type_of_breadcrumb_for_object ?tag ~resolution ~object_target
           | _ ->
               ViaFeature.via_type_of_breadcrumb

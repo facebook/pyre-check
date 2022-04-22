@@ -10,6 +10,7 @@ open Pyre
 open OUnit2
 open Ast
 open Test
+open Interprocedural
 
 let test_get_module_and_definition context =
   let assert_get_module_and_definition ~source ~target ~expected =
@@ -19,7 +20,7 @@ let test_get_module_and_definition context =
       |> Analysis.Resolution.global_resolution
     in
     let actual =
-      Interprocedural.Target.get_module_and_definition ~resolution target
+      Target.get_module_and_definition ~resolution target
       >>| fun (qualifier, { Node.value = { Statement.Define.body; _ }; _ }) -> qualifier, body
     in
     let equal (first_qualifier, first_body) (second_qualifier, second_body) =
@@ -47,7 +48,7 @@ let test_get_module_and_definition context =
       def foo(self, value: int) -> None:
         self._foo = value
   |}
-    ~target:(`Method { Interprocedural.Target.class_name = "test.C"; method_name = "foo$setter" })
+    ~target:(Target.Method { class_name = "test.C"; method_name = "foo$setter" })
     ~expected:
       (Some
          ( Reference.create "test",
@@ -69,9 +70,9 @@ let test_resolve_method context =
       |> Test.ScratchProject.build_global_resolution
     in
     assert_equal
-      ~printer:(show_optional Interprocedural.Target.show_method_t)
+      ~printer:(show_optional Target.show_pretty)
       expected
-      (Interprocedural.Target.resolve_method ~resolution ~class_type ~method_name)
+      (Target.resolve_method ~resolution ~class_type ~method_name)
   in
   assert_get_resolve_method
     ~source:
@@ -82,7 +83,7 @@ let test_resolve_method context =
      |}
     ~class_type:(Primitive "test.Foo")
     ~method_name:"method"
-    (Some (`Method { class_name = "cls"; method_name = "named" }));
+    (Some (Target.Method { class_name = "cls"; method_name = "named" }));
   assert_get_resolve_method
     ~source:
       {|
@@ -92,7 +93,7 @@ let test_resolve_method context =
      |}
     ~class_type:(Primitive "test.Foo")
     ~method_name:"method"
-    (Some (`Method { class_name = "cls"; method_name = "named" }));
+    (Some (Target.Method { class_name = "cls"; method_name = "named" }));
   ()
 
 

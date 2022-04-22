@@ -1,8 +1,8 @@
 @generated
 Call dependencies
 class_level_taint.$toplevel (fun) -> []
+class_level_taint.test (fun) -> [class_level_taint.ClassSink::sink (method) class_level_taint.ClassSource::source (method)]
 class_level_taint.ClassSink::$class_toplevel (method) -> []
-class_level_taint.ClassSink::sink (method) -> []
 class_level_taint.ClassSource::$class_toplevel (method) -> []
 class_level_taint.ClassSource::source (method) -> []
-class_level_taint.test (fun) -> [class_level_taint.ClassSink::sink (method) class_level_taint.ClassSource::source (method)]
+class_level_taint.ClassSink::sink (method) -> []

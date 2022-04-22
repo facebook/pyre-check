@@ -530,8 +530,6 @@ let initialize
   in
   let callables = List.map ~f:fst callables in
   let stubs = List.map ~f:fst stubs in
-  let callable_targets = (callables :> Target.t list) in
-  let stub_targets = (stubs :> Target.t list) in
   let user_models, skip_overrides =
     match models with
     | None -> Target.Map.empty, Ast.Reference.Set.empty
@@ -541,8 +539,8 @@ let initialize
             ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~configuration:taint_configuration
-            ~callables:(Some (Target.HashSet.of_list callable_targets))
-            ~stubs:(Target.HashSet.of_list stub_targets)
+            ~callables:(Some (Target.HashSet.of_list callables))
+            ~stubs:(Target.HashSet.of_list stubs)
             ()
         in
         assert_bool
@@ -561,9 +559,10 @@ let initialize
             ~models
             ~callables:
               (List.filter_map (List.rev_append stubs callables) ~f:(function
-                  | `Function _ as callable -> Some (callable :> Target.callable_t)
-                  | `Method _ as callable -> Some (callable :> Target.callable_t)))
-            ~stubs:(Target.HashSet.of_list stub_targets)
+                  | Target.Function _ as callable -> Some callable
+                  | Target.Method _ as callable -> Some callable
+                  | _ -> None))
+            ~stubs:(Target.HashSet.of_list stubs)
             ~environment
         in
         let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
@@ -577,7 +576,7 @@ let initialize
             in
             Target.Map.set models ~key:callable ~data:model
           in
-          stub_targets
+          stubs
           |> List.filter ~f:(fun stub ->
                  Target.Map.find models stub >>| Model.is_obscure |> Option.value ~default:true)
           |> List.fold ~init:models ~f:add_obscure_sink
@@ -608,7 +607,7 @@ let initialize
     DependencyGraph.from_overrides overrides
   in
 
-  let targets = List.rev_append (Target.Map.keys overrides) callable_targets in
+  let targets = List.rev_append (Target.Map.keys overrides) callables in
   let callables_to_analyze = targets in
   let initial_models_callables = Target.Map.keys initial_models in
   (* Initialize models *)

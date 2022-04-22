@@ -1,6 +1,5 @@
 @generated
 Overrides
-object::__init__ (override) -> [object::__init__ (method) sanitize.C_sanitized_a_sink::__init__ (override) sanitize.C_sanitized_a_source::__init__ (override) sanitize.C_sanitized_ab_sinks::__init__ (override) sanitize.C_sanitized_ab_sources::__init__ (override) sanitize.C_sanitized_all_sinks::__init__ (override) sanitize.C_sanitized_all_sources::__init__ (override) sanitize.C_sanitized_b_sink::__init__ (override) sanitize.C_sanitized_b_source::__init__ (override)]
 sanitize.C_sanitized_a_sink::__init__ (override) -> [sanitize.C_sanitized_a_sink::__init__ (method)]
 sanitize.C_sanitized_a_source::__init__ (override) -> [sanitize.C_sanitized_a_source::__init__ (method)]
 sanitize.C_sanitized_ab_sinks::__init__ (override) -> [sanitize.C_sanitized_ab_sinks::__init__ (method)]
@@ -9,3 +8,4 @@ sanitize.C_sanitized_all_sinks::__init__ (override) -> [sanitize.C_sanitized_all
 sanitize.C_sanitized_all_sources::__init__ (override) -> [sanitize.C_sanitized_all_sources::__init__ (method)]
 sanitize.C_sanitized_b_sink::__init__ (override) -> [sanitize.C_sanitized_b_sink::__init__ (method)]
 sanitize.C_sanitized_b_source::__init__ (override) -> [sanitize.C_sanitized_b_source::__init__ (method)]
+object::__init__ (override) -> [object::__init__ (method) sanitize.C_sanitized_a_sink::__init__ (override) sanitize.C_sanitized_a_source::__init__ (override) sanitize.C_sanitized_ab_sinks::__init__ (override) sanitize.C_sanitized_ab_sources::__init__ (override) sanitize.C_sanitized_all_sinks::__init__ (override) sanitize.C_sanitized_all_sources::__init__ (override) sanitize.C_sanitized_b_sink::__init__ (override) sanitize.C_sanitized_b_source::__init__ (override)]

@@ -1,7 +1,7 @@
 @generated
 Call dependencies
 callable_classes.$toplevel (fun) -> [callable_classes.returns_p (fun)]
-callable_classes.CallableProtocol::$class_toplevel (method) -> []
-callable_classes.P::$class_toplevel (method) -> []
 callable_classes.bar (fun) -> [callable_classes.CallableProtocol::__call__ (method) callable_classes.returns_callable_protocol (fun)]
 callable_classes.foo (fun) -> [callable_classes.P::__call__ (method)]
+callable_classes.CallableProtocol::$class_toplevel (method) -> []
+callable_classes.P::$class_toplevel (method) -> []

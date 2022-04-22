@@ -1,8 +1,6 @@
 @generated
 Call dependencies
 functions_as_locals.$toplevel (fun) -> []
-functions_as_locals.C::$class_toplevel (method) -> []
-functions_as_locals.C::m (method) -> [_test_sink (fun)]
 functions_as_locals.a_or_b (fun) -> [_test_source (fun) functions_as_locals.barA (fun) functions_as_locals.barB (fun) int::__gt__ (method) int::__le__ (method)]
 functions_as_locals.barA (fun) -> [_test_sink (fun)]
 functions_as_locals.barB (fun) -> [_test_sink (fun)]
@@ -11,3 +9,5 @@ functions_as_locals.foo_as_local (fun) -> [_test_source (fun) functions_as_local
 functions_as_locals.local_function_with_method_sink (fun) -> [_test_source (fun) functions_as_locals.C::m (method)]
 functions_as_locals.local_tito (fun) -> [functions_as_locals.foo (fun)]
 functions_as_locals.method_tito (fun) -> [functions_as_locals.C::m (method)]
+functions_as_locals.C::$class_toplevel (method) -> []
+functions_as_locals.C::m (method) -> [_test_sink (fun)]

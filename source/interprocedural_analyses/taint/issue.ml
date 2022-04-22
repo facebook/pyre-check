@@ -76,7 +76,7 @@ module SinkHandle = struct
         `Assoc
           [
             "kind", `String "Call";
-            "callee", `String (Target.external_target_name callee);
+            "callee", `String (Target.external_name callee);
             "index", `Int index;
             "parameter", `String (AccessPath.Root.to_string parameter);
           ]
@@ -84,7 +84,7 @@ module SinkHandle = struct
         `Assoc
           [
             "kind", `String "Global";
-            "callee", `String (Target.external_target_name callee);
+            "callee", `String (Target.external_name callee);
             "index", `Int index;
           ]
     | Return -> `Assoc ["kind", `String "Return"]
@@ -128,17 +128,17 @@ module Handle = struct
       | Call { callee; index; parameter } ->
           Format.asprintf
             "Call|%s|%d|%s"
-            (Target.external_target_name callee)
+            (Target.external_name callee)
             index
             (AccessPath.Root.to_string parameter)
       | Global { callee; index } ->
-          Format.asprintf "Global|%s|%d" (Target.external_target_name callee) index
+          Format.asprintf "Global|%s|%d" (Target.external_name callee) index
       | Return -> "Return"
       | LiteralStringSink sink -> Format.asprintf "LiteralStringSink|%a" Sinks.pp sink
       | ConditionalTestSink sink -> Format.asprintf "ConditionalTestSink|%a" Sinks.pp sink
     in
     let full_handle =
-      Format.asprintf "%s:%d:%d:%s" (Target.external_target_name callable) code version sink_handle
+      Format.asprintf "%s:%d:%d:%s" (Target.external_name callable) code version sink_handle
     in
     let hash = full_handle |> Digest.string |> Digest.to_hex in
     let short_handle =
@@ -637,7 +637,7 @@ let to_error ({ handle = { code; _ }; define; _ } as issue) =
 
 
 let to_json ~filename_lookup issue =
-  let callable_name = Target.external_target_name issue.handle.callable in
+  let callable_name = Target.external_name issue.handle.callable in
   let _, message = get_name_and_detailed_message issue in
   let source_traces =
     Domains.ForwardTaint.to_external_json ~filename_lookup issue.flow.source_taint

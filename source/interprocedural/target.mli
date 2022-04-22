@@ -18,82 +18,93 @@ type method_name = {
 }
 [@@deriving show, sexp, compare, hash, eq]
 
-type function_t = [ `Function of string ] [@@deriving show, sexp, compare, hash, eq]
-
-type method_t = [ `Method of method_name ] [@@deriving show, sexp, compare, hash, eq]
-
-type callable_t =
-  [ function_t
-  | method_t
-  ]
-[@@deriving show, sexp, compare, hash, eq]
-
-type override_t = [ `OverrideTarget of method_name ] [@@deriving show, sexp, compare, hash, eq]
-
-(* Technically not a callable, but we store models of some fields/globals, E.g. os.environ, or
-   HttpRequest.GET *)
-type object_t = [ `Object of string ] [@@deriving show, sexp, compare, hash, eq]
-
-type non_override_t =
-  [ callable_t
-  | object_t
-  ]
-[@@deriving show, sexp, compare, hash, eq]
-
 type t =
-  [ non_override_t
-  | override_t
-  ]
+  | Function of string
+  | Method of method_name
+  | Override of method_name
+  (* Represents a global variable or field of a class that we want to model,
+   * e.g os.environ or HttpRequest.GET *)
+  | Object of string
 [@@deriving sexp, compare, hash, eq]
 
+(* Pretty printers. *)
+
+val pp_internal : Format.formatter -> t -> unit
+
+val show_internal : t -> string
+
+val pp_pretty : Format.formatter -> t -> unit
+
+val show_pretty : t -> string
+
+val pp_pretty_with_kind : Format.formatter -> t -> unit
+
+val show_pretty_with_kind : t -> string
+
+val pp_external : Format.formatter -> t -> unit
+
+val external_name : t -> string
+
+(* Equivalent to pp_internal. Required by @@deriving. *)
 val pp : Format.formatter -> t -> unit
 
-val show : [< t ] -> string
+(* Constructors. *)
 
-val pretty_print : Format.formatter -> [< t ] -> unit
+val create_function : Reference.t -> t
 
-val external_target_name : [< t ] -> string
+val create_method : Reference.t -> t
 
-val class_name : [< t ] -> string option
+val create_property_setter : Reference.t -> t
 
-val method_name : [< t ] -> string option
+val create_override : Reference.t -> t
 
-val compare : ([< t ] as 'a) -> 'a -> int
+val create_property_setter_override : Reference.t -> t
 
-type t_with_result = callable_t
+val create_object : Reference.t -> t
 
-val create_function : Reference.t -> [> function_t ]
+val create : Define.t Node.t -> t
 
-val create_method : Reference.t -> [> method_t ]
+val create_derived_override : t -> at_type:Reference.t -> t
 
-val create_property_setter : Reference.t -> [> method_t ]
+(* Accessors. *)
 
-val create_override : Reference.t -> [> override_t ]
+val get_method_reference : t -> Reference.t
 
-val create_property_setter_override : Reference.t -> [> override_t ]
+val get_override_reference : t -> Reference.t
 
-val create_object : Reference.t -> [> object_t ]
+val get_corresponding_method : t -> t
 
-val create : Define.t Node.t -> [> callable_t ]
+val get_corresponding_override : t -> t
 
-val create_derived_override : override_t -> at_type:Reference.t -> [> override_t ]
+val class_name : t -> string option
 
-val get_method_reference : method_t -> Reference.t
-
-val get_override_reference : override_t -> Reference.t
-
-val get_corresponding_method : override_t -> [> method_t ]
-
-val get_corresponding_override : method_t -> [> override_t ]
-
-val get_callable_t : [< t ] -> [> callable_t ] option
+val method_name : t -> string option
 
 (* function or method name, no class or anything else *)
-val get_short_name : [< t ] -> string
+val get_short_name : t -> string
 
-val override_to_method : [< t ] -> t
+val override_to_method : t -> t
 
-module Key : sig
+val get_module_and_definition
+  :  resolution:Analysis.GlobalResolution.t ->
+  t ->
+  (Reference.t * Define.t Node.t) option
+
+val resolve_method
+  :  resolution:Analysis.GlobalResolution.t ->
+  class_type:Type.t ->
+  method_name:string ->
+  t option
+
+module Map : Core.Map.S with type Key.t = t
+
+module Set : Caml.Set.S with type elt = t
+
+module HashMap : Core.Hashtbl.S with type key := t
+
+module HashSet : Core.Hash_set.S with type elt := t
+
+module SharedMemoryKey : sig
   type nonrec t = t
 
   val compare : t -> t -> int
@@ -102,50 +113,3 @@ module Key : sig
 
   val from_string : string -> t
 end
-
-module OverrideKey : sig
-  type t = override_t
-
-  val compare : t -> t -> int
-
-  val to_string : t -> string
-
-  val from_string : string -> t
-end
-
-module CallableKey : sig
-  type t = callable_t
-
-  val compare : t -> t -> int
-
-  val to_string : t -> string
-
-  val from_string : string -> t
-end
-
-val get_module_and_definition
-  :  resolution:Analysis.GlobalResolution.t ->
-  [< callable_t ] ->
-  (Reference.t * Define.t Node.t) option
-
-val resolve_method
-  :  resolution:Analysis.GlobalResolution.t ->
-  class_type:Type.t ->
-  method_name:string ->
-  [> method_t ] option
-
-module Map : Core.Map.S with type Key.t = t
-
-module Set : Caml.Set.S with type elt = t
-
-module CallableMap : Core.Map.S with type Key.t = callable_t
-
-module CallableSet : Caml.Set.S with type elt = callable_t
-
-module CallableHashSet : Core.Hash_set.S with type elt := callable_t
-
-module OverrideSet : Caml.Set.S with type elt = override_t
-
-module HashMap : Core.Hashtbl.S with type key := t
-
-module HashSet : Core.Hash_set.S with type elt := t

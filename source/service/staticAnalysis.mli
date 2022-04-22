@@ -32,7 +32,7 @@ val record_and_merge_call_graph
   DependencyGraph.callgraph
 
 type found_callable = {
-  callable: Target.callable_t;
+  callable: Target.t;
   define: Define.t Node.t;
   is_internal: bool;
 }
@@ -42,14 +42,14 @@ val regular_and_filtered_callables
   :  configuration:Configuration.Analysis.t ->
   resolution:GlobalResolution.t ->
   source:Source.t ->
-  found_callable list * Target.callable_t list
+  found_callable list * Target.t list
 
 (* The boolean indicated whether the callable is internal or not. *)
-type callable_with_dependency_information = Target.callable_t * bool
+type callable_with_dependency_information = Target.t * bool
 
 type initial_callables = {
   callables_with_dependency_information: callable_with_dependency_information list;
-  stubs: Target.callable_t list;
+  stubs: Target.t list;
   filtered_callables: Target.Set.t;
 }
 

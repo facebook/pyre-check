@@ -95,7 +95,7 @@ module type ANALYZER = sig
 
   val analyze
     :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    callable:Target.callable_t ->
+    callable:Target.t ->
     qualifier:Reference.t ->
     define:Statement.Define.t Node.t ->
     existing:call_model option ->
@@ -111,8 +111,8 @@ module type ANALYZER = sig
     :  scheduler:Scheduler.t ->
     static_analysis_configuration:Configuration.StaticAnalysis.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    callables:Target.callable_t list ->
-    stubs:Target.callable_t list ->
+    callables:Target.t list ->
+    stubs:Target.t list ->
     call_model initialize_result
 
   val report

@@ -659,8 +659,8 @@ let test_prune_callables _ =
     let callgraph =
       List.map callgraph ~f:(fun (key, values) ->
           ( Target.create_method (Reference.create key),
-            List.map values ~f:(fun value -> (create (Reference.create value) :> Target.t)) ))
-      |> Target.CallableMap.of_alist_exn
+            List.map values ~f:(fun value -> create (Reference.create value)) ))
+      |> Target.Map.of_alist_exn
     in
     let overrides =
       List.map overrides ~f:(fun (key, values) ->
@@ -682,7 +682,7 @@ let test_prune_callables _ =
     in
     assert_equal
       ~cmp:(List.equal Target.equal)
-      ~printer:(List.to_string ~f:Target.show)
+      ~printer:(List.to_string ~f:Target.show_pretty)
       (List.map expected_callables ~f:(fun callable ->
            Target.create_method (Reference.create callable)))
       actual_callables;
@@ -692,7 +692,11 @@ let test_prune_callables _ =
              Target.equal left_key right_key && List.equal Target.equal left_values right_values))
       ~printer:
         (List.to_string ~f:(fun (key, values) ->
-             Format.sprintf "%s: %s" (Target.show key) (List.to_string values ~f:Target.show)))
+             Format.asprintf
+               "%a: %s"
+               Target.pp_pretty
+               key
+               (List.to_string values ~f:Target.show_pretty)))
       (List.map expected_dependencies ~f:(fun (key, values) ->
            ( create (Reference.create key),
              List.map values ~f:(fun value -> create (Reference.create value)) )))

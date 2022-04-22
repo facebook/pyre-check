@@ -7,6 +7,7 @@
 
 open OUnit2
 open Core
+open Interprocedural
 
 let test_callables context =
   let assert_callables ?(additional_sources = []) ?(source_filename = "test.py") source ~expected =
@@ -29,8 +30,8 @@ let test_callables context =
     |> fst
     |> List.map ~f:(fun { Service.StaticAnalysis.callable; _ } -> callable)
     |> assert_equal
-         ~printer:(List.to_string ~f:Interprocedural.Target.show_callable_t)
-         ~cmp:(List.equal Interprocedural.Target.equal_callable_t)
+         ~printer:(List.to_string ~f:Target.show_internal)
+         ~cmp:(List.equal Target.equal)
          expected
   in
   assert_callables
@@ -41,9 +42,9 @@ let test_callables context =
     |}
     ~expected:
       [
-        `Function "test.$toplevel";
-        `Method { Interprocedural.Target.class_name = "test.C"; method_name = "$class_toplevel" };
-        `Method { Interprocedural.Target.class_name = "test.C"; method_name = "foo" };
+        Target.Function "test.$toplevel";
+        Target.Method { class_name = "test.C"; method_name = "$class_toplevel" };
+        Target.Method { class_name = "test.C"; method_name = "foo" };
       ];
   assert_callables
     ~additional_sources:["placeholder.py", "# pyre-placeholder-stub"]
@@ -55,9 +56,9 @@ let test_callables context =
     |}
     ~expected:
       [
-        `Function "test.$toplevel";
-        `Method { Interprocedural.Target.class_name = "test.C"; method_name = "$class_toplevel" };
-        `Method { Interprocedural.Target.class_name = "test.C"; method_name = "foo" };
+        Target.Function "test.$toplevel";
+        Target.Method { class_name = "test.C"; method_name = "$class_toplevel" };
+        Target.Method { class_name = "test.C"; method_name = "foo" };
       ];
   assert_callables
     {|
@@ -80,7 +81,7 @@ let test_callables context =
           |}
         );
       ]
-    ~expected:[`Function "test.$toplevel"];
+    ~expected:[Target.Function "test.$toplevel"];
 
   assert_callables
     ~source_filename:"test.pyi"
@@ -90,7 +91,7 @@ let test_callables context =
         def foo() -> int:
           ...
     |}
-    ~expected:[`Method { Interprocedural.Target.class_name = "test.Toplevel"; method_name = "foo" }]
+    ~expected:[Target.Method { class_name = "test.Toplevel"; method_name = "foo" }]
 
 
 let () = "staticAnalysis" >::: ["callables" >:: test_callables] |> Test.run

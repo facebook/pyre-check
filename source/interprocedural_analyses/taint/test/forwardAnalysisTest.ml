@@ -91,7 +91,7 @@ let test_no_model context =
       [outcome ~kind:`Function "does_not_exist"]
   in
   assert_raises
-    (OUnitTest.OUnit_failure "model not found for `Function (\"does_not_exist\")")
+    (OUnitTest.OUnit_failure "model not found for (Function \"does_not_exist\")")
     assert_no_model
 
 

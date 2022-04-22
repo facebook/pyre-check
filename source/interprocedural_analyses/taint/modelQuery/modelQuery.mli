@@ -9,7 +9,7 @@ val apply_callable_query_rule
   :  verbose:bool ->
   resolution:Analysis.GlobalResolution.t ->
   rule:Taint.ModelParser.Internal.ModelQuery.rule ->
-  callable:Interprocedural.Target.callable_t ->
+  callable:Interprocedural.Target.t ->
   (Taint.ModelParser.Internal.annotation_kind * Taint.ModelParser.Internal.taint_annotation) list
 
 val apply_attribute_query_rule
@@ -26,7 +26,7 @@ val apply_all_rules
   configuration:Taint.TaintConfiguration.t ->
   rule_filter:int list option ->
   rules:Taint.ModelParser.Internal.ModelQuery.rule list ->
-  callables:Interprocedural.Target.callable_t list ->
+  callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.HashSet.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   models:Taint.Model.t Interprocedural.Target.Map.t ->

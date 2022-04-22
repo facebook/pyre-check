@@ -15,72 +15,82 @@ type method_name = {
   class_name: string;
   method_name: string;
 }
-[@@deriving show, sexp, compare, hash, eq]
+[@@deriving show { with_path = false }, sexp, compare, hash, eq]
 
-type function_t = [ `Function of string ] [@@deriving show, sexp, compare, hash, eq]
+module T = struct
+  type t =
+    | Function of string
+    | Method of method_name
+    | Override of method_name
+    (* Represents a global variable or field of a class that we want to model,
+     * e.g os.environ or HttpRequest.GET *)
+    | Object of string
+  [@@deriving show { with_path = false }, sexp, compare, hash, eq]
+end
 
-type method_t = [ `Method of method_name ] [@@deriving show, sexp, compare, hash, eq]
-
-type callable_t =
-  [ function_t
-  | method_t
-  ]
-[@@deriving show, sexp, compare, hash, eq]
-
-type override_t = [ `OverrideTarget of method_name ] [@@deriving show, sexp, compare, hash, eq]
-
-(* Technically not a callable, but we store models of some fields/globals, E.g. os.environ, or
-   HttpRequest.GET *)
-type object_t = [ `Object of string ] [@@deriving show, sexp, compare, hash, eq]
-
-type non_override_t =
-  [ callable_t
-  | object_t
-  ]
-[@@deriving show, sexp, compare, hash, eq]
-
-type t =
-  [ non_override_t
-  | override_t
-  ]
-[@@deriving show, sexp, hash, eq]
+include T
 
 (* Lower priority appears earlier in comparison. *)
 let priority = function
-  | `Function _ -> 0
-  | `Method _ -> 1
-  | `OverrideTarget _ -> 2
-  | `Object _ -> 3
+  | Function _ -> 0
+  | Method _ -> 1
+  | Override _ -> 2
+  | Object _ -> 3
 
 
 let compare left right =
   let priority_comparison = Int.compare (priority left) (priority right) in
   if priority_comparison <> 0 then
     priority_comparison
-  else (* left and right must have the same variant. *)
+  else
     match left, right with
-    | `Function first, `Function second -> String.compare first second
-    | `Method first, `Method second -> compare_method_name first second
-    | `OverrideTarget first, `OverrideTarget second -> compare_method_name first second
-    | `Object first, `Object second -> String.compare first second
+    | Function first, Function second -> String.compare first second
+    | Method first, Method second -> compare_method_name first second
+    | Override first, Override second -> compare_method_name first second
+    | Object first, Object second -> String.compare first second
     | _ -> failwith "The compared targets must belong to the same variant."
 
 
-(* pp forces type to be equal to t, but we want [<t] *)
-let pretty_print formatter callable =
-  let callable = (callable :> t) in
-  match callable with
-  | `Function name -> String.pp formatter name
-  | `Method { class_name; method_name } ->
-      String.pp formatter (Format.sprintf "%s::%s" class_name method_name)
-  | `OverrideTarget { class_name; method_name } ->
-      String.pp formatter (Format.sprintf "Override{%s::%s}" class_name method_name)
-  | `Object name -> String.pp formatter (Format.sprintf "Object{%s}" name)
+let pp_internal = pp
+
+let show_internal = Format.asprintf "%a" pp_internal
+
+let pp_pretty formatter = function
+  | Function name -> Format.fprintf formatter "%s" name
+  | Method { class_name; method_name } -> Format.fprintf formatter "%s::%s" class_name method_name
+  | Override { class_name; method_name } ->
+      Format.fprintf formatter "Override{%s::%s}" class_name method_name
+  | Object name -> Format.fprintf formatter "Object{%s}" name
 
 
-type t_with_result = callable_t
+let show_pretty = Format.asprintf "%a" pp_pretty
 
-let create_function reference = `Function (Reference.show reference)
+let pp_pretty_with_kind formatter = function
+  | Function target -> Format.fprintf formatter "%s (fun)" target
+  | Method { class_name; method_name } ->
+      Format.fprintf formatter "%s::%s (method)" class_name method_name
+  | Override { class_name; method_name } ->
+      Format.fprintf formatter "%s::%s (override)" class_name method_name
+  | Object name -> Format.fprintf formatter "%s (object)" name
+
+
+let show_pretty_with_kind = Format.asprintf "%a" pp_pretty_with_kind
+
+let pp_external formatter = function
+  | Function target ->
+      Format.fprintf formatter "%a" Reference.pp (target |> Reference.create |> Reference.delocalize)
+  | Method { class_name; method_name } -> Format.fprintf formatter "%s.%s" class_name method_name
+  | Override { class_name; method_name } ->
+      Format.fprintf formatter "Ovr{%s::%s}" class_name method_name
+  | Object name -> Format.fprintf formatter "Obj{%s}" name
+
+
+(* Equivalent to pp_internal. Required by @@deriving. *)
+let pp = pp_internal
+
+let external_name = Format.asprintf "%a" pp_external
+
+let create_function reference = Function (Reference.show reference)
 
 let create_method_name ?(suffix = "") reference =
   {
@@ -89,14 +99,14 @@ let create_method_name ?(suffix = "") reference =
   }
 
 
-let create_method reference = `Method (create_method_name reference)
+let create_method reference = Method (create_method_name reference)
 
-let create_property_setter reference = `Method (create_method_name ~suffix:"$setter" reference)
+let create_property_setter reference = Method (create_method_name ~suffix:"$setter" reference)
 
-let create_override reference = `OverrideTarget (create_method_name reference)
+let create_override reference = Override (create_method_name reference)
 
 let create_property_setter_override reference =
-  `OverrideTarget (create_method_name ~suffix:"$setter" reference)
+  Override (create_method_name ~suffix:"$setter" reference)
 
 
 let create { Node.value = define; _ } =
@@ -111,61 +121,67 @@ let create { Node.value = define; _ } =
   | None -> create_function name
 
 
+let create_object reference = Object (Reference.show reference)
+
 let create_derived_override override ~at_type =
   match override with
-  | `OverrideTarget { method_name; _ } ->
-      `OverrideTarget { class_name = Reference.show at_type; method_name }
+  | Override { method_name; _ } -> Override { class_name = Reference.show at_type; method_name }
+  | _ -> failwith "unexpected"
 
 
-let create_object reference = `Object (Reference.show reference)
+let get_override_reference = function
+  | Override { class_name; method_name } ->
+      Reference.combine (Reference.create class_name) (Reference.create method_name)
+  | _ -> failwith "not an override target"
 
-module Key = struct
-  type nonrec t = t
 
-  let sexp_of_t = sexp_of_t
+let get_method_reference = function
+  | Method { class_name; method_name } ->
+      Reference.combine (Reference.create class_name) (Reference.create method_name)
+  | _ -> failwith "not a method target"
 
-  let t_of_sexp = t_of_sexp
 
-  let hash = hash
+let get_corresponding_method = function
+  | Override method_name -> Method method_name
+  | _ -> failwith "not an override target"
 
-  let hash_fold_t = hash_fold_t
 
-  let compare = compare
+let get_corresponding_override = function
+  | Method method_name -> Override method_name
+  | _ -> failwith "unexpected"
 
-  let to_string key = sexp_of_t key |> Sexp.to_string
 
-  let from_string sexp_string = Sexp.of_string sexp_string |> t_of_sexp
-end
+let class_name = function
+  | Method { class_name; _ } -> Some class_name
+  | Override { class_name; _ } -> Some class_name
+  | Function _
+  | Object _ ->
+      None
 
-module CallableKey = struct
-  type t = callable_t [@@deriving sexp, hash]
 
-  let compare = compare_callable_t
+let method_name = function
+  | Method { method_name; _ } -> Some method_name
+  | Override { method_name; _ } -> Some method_name
+  | Function _
+  | Object _ ->
+      None
 
-  let to_string key = sexp_of_callable_t key |> Sexp.to_string
 
-  let from_string sexp_string = Sexp.of_string sexp_string |> callable_t_of_sexp
-end
+let get_short_name = function
+  | Function target -> target
+  | Method { method_name; _ }
+  | Override { method_name; _ } ->
+      method_name
+  | Object name -> name
 
-module OverrideKey = struct
-  type t = override_t [@@deriving sexp, hash]
 
-  let compare = compare_override_t
+let override_to_method = function
+  | Function target -> Function target
+  | Method target
+  | Override target ->
+      Method target
+  | Object name -> Object name
 
-  let to_string key = sexp_of_override_t key |> Sexp.to_string
-
-  let from_string sexp_string = Sexp.of_string sexp_string |> override_t_of_sexp
-end
-
-module Map = Core.Map.Make (Key)
-module Set = Caml.Set.Make (Key)
-module CallableMap = Core.Map.Make (CallableKey)
-module CallableSet = Caml.Set.Make (CallableKey)
-module CallableHashSet = Core.Hash_set.Make (CallableKey)
-module OverrideSet = Caml.Set.Make (OverrideKey)
-module Hashable = Core.Hashable.Make (Key)
-module HashMap = Hashable.Table
-module HashSet = Hashable.Hash_set
 
 let get_module_and_definition ~resolution callable =
   let get_bodies { class_name; method_name } =
@@ -183,14 +199,14 @@ let get_module_and_definition ~resolution callable =
     FunctionDefinition.all_bodies definitions |> fun bodies -> qualifier, bodies, is_setter
   in
   match callable with
-  | `Function name ->
+  | Function name ->
       Reference.create name
       |> GlobalResolution.function_definition resolution
       >>= fun ({ FunctionDefinition.qualifier; _ } as definitions) ->
       FunctionDefinition.all_bodies definitions
       |> List.find ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_function value))
       >>= fun body -> Some (qualifier, body)
-  | `Method method_name -> (
+  | Method method_name -> (
       match get_bodies method_name with
       | Some (qualifier, bodies, is_setter) ->
           if is_setter then
@@ -201,6 +217,7 @@ let get_module_and_definition ~resolution callable =
           else
             List.hd bodies >>| fun body -> qualifier, body
       | None -> None)
+  | _ -> failwith "expected a function or method"
 
 
 let resolve_method ~resolution ~class_type ~method_name =
@@ -223,80 +240,16 @@ let resolve_method ~resolution ~class_type ~method_name =
   | _ -> None
 
 
-let get_override_reference = function
-  | `OverrideTarget { class_name; method_name } ->
-      Reference.combine (Reference.create class_name) (Reference.create method_name)
+module Map = Core.Map.Make (T)
+module Set = Caml.Set.Make (T)
+module Hashable = Core.Hashable.Make (T)
+module HashMap = Hashable.Table
+module HashSet = Hashable.Hash_set
 
+module SharedMemoryKey = struct
+  include T
 
-let get_method_reference = function
-  | `Method { class_name; method_name } ->
-      Reference.combine (Reference.create class_name) (Reference.create method_name)
+  let to_string key = sexp_of_t key |> Sexp.to_string
 
-
-let get_corresponding_method = function
-  | `OverrideTarget method_name -> `Method method_name
-
-
-let get_corresponding_override = function
-  | `Method method_name -> `OverrideTarget method_name
-
-
-let get_callable_t = function
-  | `Function name -> Some (`Function name)
-  | `Method method_name -> Some (`Method method_name)
-  | `OverrideTarget method_name -> Some (`Method method_name)
-  | `Object _ -> None
-
-
-let show = function
-  | `Function target -> Format.sprintf "%s (fun)" target
-  | `Method { class_name; method_name } -> Format.sprintf "%s::%s (method)" class_name method_name
-  | `OverrideTarget { class_name; method_name } ->
-      Format.sprintf "%s::%s (override)" class_name method_name
-  | `Object name -> Format.sprintf "%s (object)" name
-
-
-let external_target_name = function
-  | `Function target -> target |> Reference.create |> Reference.delocalize |> Reference.show
-  | `Method { class_name; method_name } -> Format.sprintf "%s.%s" class_name method_name
-  | `OverrideTarget { class_name; method_name } ->
-      Format.sprintf "Ovr{%s::%s}" class_name method_name
-  | `Object name -> Format.sprintf "Obj{%s}" name
-
-
-let class_name = function
-  | `Method { class_name; _ } -> Some class_name
-  | `OverrideTarget { class_name; _ } -> Some class_name
-  | `Function _
-  | `Object _ ->
-      None
-
-
-let method_name = function
-  | `Method { method_name; _ } -> Some method_name
-  | `OverrideTarget { method_name; _ } -> Some method_name
-  | `Function _
-  | `Object _ ->
-      None
-
-
-let get_short_name = function
-  | `Function target -> target
-  | `Method { method_name; _ }
-  | `OverrideTarget { method_name; _ } ->
-      method_name
-  | `Object name -> name
-
-
-let override_to_method = function
-  | `Function target -> `Function target
-  | `Method target
-  | `OverrideTarget target ->
-      `Method target
-  | `Object name -> `Object name
-
-
-let compare target1 target2 =
-  let target1 = (target1 :> t) in
-  let target2 = (target2 :> t) in
-  compare target1 target2
+  let from_string sexp_string = Sexp.of_string sexp_string |> t_of_sexp
+end

@@ -1,12 +1,12 @@
 @generated
 Call dependencies
+$local_decorator_location?handle_request$_inlined_pass_local_variable_to_x (fun) -> [$local_decorator_location?handle_request$_original_function (fun) _test_sink (fun)]
 $local_decorator_location?baz$_inlined_with_logging2 (fun) -> [$local_decorator_location?baz$_original_function (fun) _test_sink (fun)]
 $local_decorator_location?baz$_original_function (fun) -> [print (fun)]
 $local_decorator_location?foo$_inlined_with_logging (fun) -> [$local_decorator_location?foo$_inlined_with_logging2 (fun) $local_decorator_location?foo?_inlined_with_logging$some_helper (fun) _test_sink (fun)]
 $local_decorator_location?foo$_inlined_with_logging2 (fun) -> [$local_decorator_location?foo$_original_function (fun) _test_sink (fun)]
 $local_decorator_location?foo$_original_function (fun) -> [_test_sink (fun)]
 $local_decorator_location?foo?_inlined_with_logging$some_helper (fun) -> [_test_sink (fun) print (fun)]
-$local_decorator_location?handle_request$_inlined_pass_local_variable_to_x (fun) -> [$local_decorator_location?handle_request$_original_function (fun) _test_sink (fun)]
 $local_decorator_location?handle_request$_original_function (fun) -> [_test_sink (fun)]
 $local_decorator_location?identity$inner (fun) -> []
 $local_decorator_location?pass_local_variable_to_x$inner (fun) -> [_test_sink (fun)]
@@ -17,8 +17,6 @@ $local_decorator_location?with_logging$inner (fun) -> [$local_decorator_location
 $local_decorator_location?with_logging$some_helper (fun) -> [_test_sink (fun) print (fun)]
 $local_decorator_location?with_logging2$inner (fun) -> [_test_sink (fun)]
 decorator_location.$toplevel (fun) -> []
-decorator_location.Foo::$class_toplevel (method) -> []
-decorator_location.Foo::return_source (method) -> [_test_source (fun)]
 decorator_location.bar (fun) -> [print (fun)]
 decorator_location.baz (fun) -> [$local_decorator_location?baz$_inlined_with_logging2 (fun)]
 decorator_location.call_return_foo (fun) -> [_test_sink (fun) decorator_location.Foo::return_source (method) decorator_location.return_foo (fun)]
@@ -31,3 +29,5 @@ decorator_location.return_foo (fun) -> [$local_decorator_location?return_foo$_in
 decorator_location.skip_this_decorator (fun) -> []
 decorator_location.with_logging (fun) -> []
 decorator_location.with_logging2 (fun) -> []
+decorator_location.Foo::$class_toplevel (method) -> []
+decorator_location.Foo::return_source (method) -> [_test_source (fun)]

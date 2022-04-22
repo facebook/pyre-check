@@ -229,8 +229,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" }
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 56, "start": 14, "end": 15 } ],
             "root": {
@@ -258,9 +258,9 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
+      { "always-via": "special_source" },
       { "always-via": "string_concat_lhs" },
-      { "always-via": "special_source" }
+      { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
     "master_handle":
@@ -357,8 +357,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" }
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 45, "start": 17, "end": 18 } ],
             "root": {
@@ -386,9 +386,9 @@
       }
     ],
     "features": [
-      { "always-via": "tito" },
       { "always-via": "special_source" },
-      { "always-via": "string_concat_rhs" }
+      { "always-via": "string_concat_rhs" },
+      { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
     "master_handle":
@@ -460,8 +460,8 @@
           {
             "kinds": [ { "kind": "Test" } ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_lhs" }
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 50, "start": 14, "end": 15 } ],
             "root": {
@@ -514,8 +514,8 @@
           {
             "kinds": [ { "kind": "Test" } ],
             "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "string_concat_rhs" }
+              { "always-via": "string_concat_rhs" },
+              { "always-via": "tito" }
             ],
             "tito": [ { "line": 40, "start": 17, "end": 18 } ],
             "root": {

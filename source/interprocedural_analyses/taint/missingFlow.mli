@@ -13,4 +13,4 @@ val unknown_callee : location:Location.WithModule.t -> call:Expression.expressio
 
 (* Register a model with sinks on all parameters for a symbolic callable that
  * represents an unknown callee, in order to find missing flows. *)
-val register_unknown_callee_model : [< Target.t ] -> unit
+val register_unknown_callee_model : Target.t -> unit

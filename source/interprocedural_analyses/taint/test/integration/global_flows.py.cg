@@ -1,7 +1,6 @@
 @generated
 Call dependencies
 global_flows.$toplevel (fun) -> []
-global_flows.MyList::$class_toplevel (method) -> []
 global_flows.append_argument (fun) -> [global_flows.MyList::append (method)]
 global_flows.append_directly (fun) -> [_test_source (fun) global_flows.MyList::append (method)]
 global_flows.append_indirectly (fun) -> [_test_source (fun) global_flows.append_argument (fun)]
@@ -14,3 +13,4 @@ global_flows.update_x_at_arg2 (fun) -> [_test_source (fun) global_flows.update_a
 global_flows.x_not_tainted (fun) -> [global_flows.indirectly_update_x_arg1 (fun)]
 global_flows.x_tainted_indirectly_arg1 (fun) -> [_test_source (fun) global_flows.indirectly_update_x_arg1 (fun)]
 global_flows.x_tainted_indirectly_arg2 (fun) -> [_test_source (fun) global_flows.indirectly_update_x_arg2 (fun)]
+global_flows.MyList::$class_toplevel (method) -> []

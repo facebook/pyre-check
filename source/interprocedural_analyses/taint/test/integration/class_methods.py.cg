@@ -1,6 +1,6 @@
 @generated
 Call dependencies
 class_methods.$toplevel (fun) -> []
+class_methods.bar (fun) -> [_test_source (fun) class_methods.Test::foo (method)]
 class_methods.Test::$class_toplevel (method) -> []
 class_methods.Test::foo (method) -> [_test_sink (fun)]
-class_methods.bar (fun) -> [_test_source (fun) class_methods.Test::foo (method)]

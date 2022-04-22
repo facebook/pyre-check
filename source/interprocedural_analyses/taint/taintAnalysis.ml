@@ -70,8 +70,8 @@ include Taint.Result.Register (struct
       let callables =
         Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:callables
         |> List.filter_map ~f:(function
-               | `Function _ as callable -> Some (callable :> Target.callable_t)
-               | `Method _ as callable -> Some (callable :> Target.callable_t)
+               | Target.Function _ as callable -> Some callable
+               | Target.Method _ as callable -> Some callable
                | _ -> None)
       in
       TaintModelQuery.ModelQuery.apply_all_rules
@@ -263,8 +263,7 @@ include Taint.Result.Register (struct
 
 
   let initialize_models ~scheduler ~static_analysis_configuration ~environment ~callables ~stubs =
-    let callables = (callables :> Target.t list) in
-    let stubs = Target.HashSet.of_list (stubs :> Target.t list) in
+    let stubs = Target.HashSet.of_list stubs in
 
     Log.info "Parsing taint models...";
     let timer = Timer.start () in
@@ -310,8 +309,7 @@ include Taint.Result.Register (struct
     let call_graph_of_define =
       match Interprocedural.CallGraph.SharedMemory.get ~callable with
       | Some call_graph -> call_graph
-      | None ->
-          Format.asprintf "Missing call graph for `%a`" Target.pp (callable :> Target.t) |> failwith
+      | None -> Format.asprintf "Missing call graph for `%a`" Target.pp callable |> failwith
     in
     let forward, result, triggered_sinks =
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis" ~f:(fun () ->
@@ -377,7 +375,7 @@ include Taint.Result.Register (struct
     match existing with
     | Some ({ Model.modes; _ } as model) when Model.ModeSet.contains Model.Mode.SkipAnalysis modes
       ->
-        let () = Log.info "Skipping taint analysis of %a" Target.pretty_print callable in
+        let () = Log.info "Skipping taint analysis of %a" Target.pp_pretty callable in
         [], model
     | Some ({ sanitizers; modes; _ } as model) ->
         analyze ~callable ~environment ~qualifier ~define ~sanitizers ~modes model

@@ -46,7 +46,7 @@ let assert_fixpoint
       ~all_callables:callables_to_analyze
       FixpointState.Epoch.initial
   in
-  assert_bool "Callgraph is empty!" (Target.CallableMap.length callgraph > 0);
+  assert_bool "Callgraph is empty!" (Target.Map.length callgraph > 0);
   assert_equal ~msg:"Fixpoint iterations" expect_iterations iterations ~printer:Int.to_string;
   List.iter ~f:(check_expectation ~environment) expect
 

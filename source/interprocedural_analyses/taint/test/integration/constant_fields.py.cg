@@ -1,10 +1,10 @@
 @generated
 Call dependencies
 constant_fields.$toplevel (fun) -> []
-constant_fields.CustomEnum::$class_toplevel (method) -> []
 constant_fields.test_untracked_constant (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
 constant_fields.tracked_constant_A (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
 constant_fields.tracked_constant_B (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
 constant_fields.tracked_index (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
 constant_fields.untracked_index_a (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
 constant_fields.untracked_index_b (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
+constant_fields.CustomEnum::$class_toplevel (method) -> []

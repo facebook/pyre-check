@@ -1,8 +1,6 @@
 @generated
 Call dependencies
 features.$toplevel (fun) -> []
-features.SetItemClass::$class_toplevel (method) -> []
-features.SetItemClass::__setitem__ (method) -> []
 features.async_issue_bools (fun) -> [_test_sink (fun) features.async_tuple_of_bools (fun)]
 features.async_tuple_of_bools (fun) -> [_test_source (fun)]
 features.dynamic_feature_tito (fun) -> []
@@ -26,3 +24,5 @@ features.tito_via_min_right (fun) -> [features.min (fun)]
 features.tito_via_named (fun) -> [features.named (fun)]
 features.tito_via_optional (fun) -> [features.optional_scalar (fun)]
 features.tito_with_tuple (fun) -> [features.min (fun)]
+features.SetItemClass::$class_toplevel (method) -> []
+features.SetItemClass::__setitem__ (method) -> []

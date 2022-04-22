@@ -1,11 +1,11 @@
 @generated
 Overrides
+model_query_transitive_extends.Test1_C::__init__ (override) -> [model_query_transitive_extends.Test1_C1::__init__ (override) model_query_transitive_extends.Test1_C::__init__ (method)]
 model_query_transitive_extends.Test1_C1::__init__ (override) -> [model_query_transitive_extends.Test1_C1::__init__ (method) model_query_transitive_extends.Test1_C2::__init__ (override)]
 model_query_transitive_extends.Test1_C2::__init__ (override) -> [model_query_transitive_extends.Test1_C2::__init__ (method)]
-model_query_transitive_extends.Test1_C::__init__ (override) -> [model_query_transitive_extends.Test1_C1::__init__ (override) model_query_transitive_extends.Test1_C::__init__ (method)]
 model_query_transitive_extends.Test1_D::__init__ (override) -> [model_query_transitive_extends.Test1_D::__init__ (method)]
+model_query_transitive_extends.Test2_C::foo (override) -> [model_query_transitive_extends.Test2_C1::foo (override) model_query_transitive_extends.Test2_C::foo (method)]
 model_query_transitive_extends.Test2_C1::foo (override) -> [model_query_transitive_extends.Test2_C1::foo (method) model_query_transitive_extends.Test2_C2::foo (override)]
 model_query_transitive_extends.Test2_C2::foo (override) -> [model_query_transitive_extends.Test2_C2::foo (method)]
-model_query_transitive_extends.Test2_C::foo (override) -> [model_query_transitive_extends.Test2_C1::foo (override) model_query_transitive_extends.Test2_C::foo (method)]
 model_query_transitive_extends.UnrelatedClass::__init__ (override) -> [model_query_transitive_extends.UnrelatedClass::__init__ (method)]
 object::__init__ (override) -> [model_query_transitive_extends.Test1_C::__init__ (override) model_query_transitive_extends.Test1_D::__init__ (override) model_query_transitive_extends.UnrelatedClass::__init__ (override) object::__init__ (method)]

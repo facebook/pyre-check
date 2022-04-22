@@ -18,11 +18,11 @@ module DependencyGraphSharedMemory = Interprocedural.DependencyGraphSharedMemory
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 
 (* The boolean indicated whether the callable is internal or not. *)
-type callable_with_dependency_information = Target.callable_t * bool
+type callable_with_dependency_information = Target.t * bool
 
 type initial_callables = {
   callables_with_dependency_information: callable_with_dependency_information list;
-  stubs: Target.callable_t list;
+  stubs: Target.t list;
   filtered_callables: Target.Set.t;
 }
 
@@ -289,7 +289,7 @@ module Cache = struct
     exception_to_error ~error:LoadError ~message:"loading call graph from cache" ~f:(fun () ->
         let path = get_callgraph_save_path ~configuration in
         let sexp = Sexplib.Sexp.load_sexp (PyrePath.absolute path) in
-        let callgraph = Target.CallableMap.t_of_sexp (Core.List.t_of_sexp Target.t_of_sexp) sexp in
+        let callgraph = Target.Map.t_of_sexp (Core.List.t_of_sexp Target.t_of_sexp) sexp in
         Log.info "Loaded call graph from cache.";
         Ok callgraph)
 
@@ -297,7 +297,7 @@ module Cache = struct
   let save_call_graph ~configuration ~call_graph =
     exception_to_error ~error:() ~message:"saving call graph to cache" ~f:(fun () ->
         let path = get_callgraph_save_path ~configuration in
-        let data = Target.CallableMap.sexp_of_t (Core.List.sexp_of_t Target.sexp_of_t) call_graph in
+        let data = Target.Map.sexp_of_t (Core.List.sexp_of_t Target.sexp_of_t) call_graph in
         ensure_save_directory_exists ~configuration;
         Sexplib.Sexp.save (PyrePath.absolute path) data;
         Log.info "Saved call graph to cache file: `%s`" (PyrePath.absolute path);
@@ -410,7 +410,7 @@ let unfiltered_callables ~resolution ~source:{ Source.source_path = { SourcePath
 
 
 type found_callable = {
-  callable: Target.callable_t;
+  callable: Target.t;
   define: Define.t Node.t;
   is_internal: bool;
 }
@@ -622,9 +622,8 @@ let build_call_graph ~scheduler ~static_analysis_configuration ~cache ~environme
         Scheduler.map_reduce
           scheduler
           ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-          ~initial:Target.CallableMap.empty
-          ~map:(fun _ qualifiers ->
-            List.fold qualifiers ~init:Target.CallableMap.empty ~f:build_call_graph)
+          ~initial:Target.Map.empty
+          ~map:(fun _ qualifiers -> List.fold qualifiers ~init:Target.Map.empty ~f:build_call_graph)
           ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
           ~inputs:qualifiers
           ())
@@ -642,16 +641,13 @@ let build_call_graph ~scheduler ~static_analysis_configuration ~cache ~environme
    dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
    maps dependees to dependers. *)
 let build_dependency_graph ~callables_with_dependency_information ~callgraph ~override_dependencies =
-  let override_targets = (Target.Map.keys override_dependencies :> Target.t list) in
+  let override_targets = Target.Map.keys override_dependencies in
   let dependencies, callables_to_analyze =
     let dependencies =
       DependencyGraph.from_callgraph callgraph |> DependencyGraph.union override_dependencies
     in
     let { DependencyGraph.dependencies; pruned_callables } =
-      DependencyGraph.prune
-        dependencies
-        ~callables_with_dependency_information:
-          (callables_with_dependency_information :> (Target.t * bool) list)
+      DependencyGraph.prune dependencies ~callables_with_dependency_information
     in
     DependencyGraph.reverse dependencies, pruned_callables
   in

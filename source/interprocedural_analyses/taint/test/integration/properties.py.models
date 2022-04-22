@@ -83,6 +83,79 @@
     "callable": "properties.property_setter_in_constructor",
     "callable_line": 159,
     "code": 5002,
+    "line": 161,
+    "start": 15,
+    "end": 20,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [
+              { "line": 160, "start": 38, "end": 52 },
+              { "line": 161, "start": 15, "end": 18 }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 160,
+              "start": 38,
+              "end": 52
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 161,
+              "start": 15,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
+      "properties.property_setter_in_constructor:5002:0:Call|_test_sink|0|formal(arg):845e2aa22281119cb404609f236231fd"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.property_setter_in_constructor",
+    "callable_line": 159,
+    "code": 5002,
     "line": 162,
     "start": 15,
     "end": 29,
@@ -151,79 +224,6 @@
     },
     "master_handle":
       "properties.property_setter_in_constructor:5002:0:Call|_test_sink|1|formal(arg):defd41b52fc690af796fbfb7598f009e"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "properties.property_setter_in_constructor",
-    "callable_line": 159,
-    "code": 5002,
-    "line": 161,
-    "start": 15,
-    "end": 20,
-    "filename": "properties.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [
-              { "line": 160, "start": 38, "end": 52 },
-              { "line": 161, "start": 15, "end": 18 }
-            ],
-            "root": {
-              "filename": "properties.py",
-              "line": 160,
-              "start": 38,
-              "end": 52
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "properties.py",
-              "line": 161,
-              "start": 15,
-              "end": 20
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle":
-      "properties.property_setter_in_constructor:5002:0:Call|_test_sink|0|formal(arg):845e2aa22281119cb404609f236231fd"
   }
 }
 {

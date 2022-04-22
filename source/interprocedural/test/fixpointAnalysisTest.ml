@@ -98,7 +98,7 @@ module AnalysisA = ResultA.Register (struct
       `Assoc
         [
           "analysis", `String ResultA.name;
-          "callable", `String (Target.show callable);
+          "callable", `String (Target.show_pretty_with_kind callable);
           "model", model;
           "result", result;
         ]
@@ -130,7 +130,8 @@ let test_unknown_function_analysis context =
   (* Make sure obscure models are correctly handled *)
   let check_obscure_model target =
     match FixpointState.get_model target with
-    | None -> Format.sprintf "no model stored for target %s" (Target.show target) |> assert_failure
+    | None ->
+        Format.sprintf "no model stored for target %s" (Target.show_pretty target) |> assert_failure
     | Some models ->
         assert_equal (AnalysisResult.get_model ResultA.kind models) (Some ResultA.obscure_model)
   in
@@ -161,9 +162,9 @@ let test_unknown_function_analysis context =
 let check_meta_data ~step ~is_partial target =
   match FixpointState.get_meta_data target with
   | None ->
-      Format.sprintf "no meta data stored for target %s" (Target.show target) |> assert_failure
+      Format.asprintf "no meta data stored for target %a" Target.pp_pretty target |> assert_failure
   | Some { is_partial = stored_is_partial; step = stored_step } ->
-      let target_name = Target.show target in
+      let target_name = Target.show_pretty target in
       assert_equal
         is_partial
         stored_is_partial

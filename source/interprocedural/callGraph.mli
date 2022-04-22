@@ -197,11 +197,11 @@ val call_graph_of_define
 val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
 
 module SharedMemory : sig
-  val add : callable:Target.callable_t -> call_graph:DefineCallGraph.t -> unit
+  val add : callable:Target.t -> call_graph:DefineCallGraph.t -> unit
 
-  val get : callable:Target.callable_t -> DefineCallGraph.t option
+  val get : callable:Target.t -> DefineCallGraph.t option
 
-  val remove : Target.callable_t list -> unit
+  val remove : Target.t list -> unit
 end
 
 val create_callgraph

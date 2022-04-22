@@ -1,7 +1,6 @@
 @generated
 Call dependencies
 via_value_of.$toplevel (fun) -> []
-via_value_of.MyEnum::$class_toplevel (method) -> []
 via_value_of.attach_to_sink (fun) -> [_test_sink (fun)]
 via_value_of.attach_to_source (fun) -> [_test_source (fun)]
 via_value_of.meta (fun) -> [via_value_of.return_via_parameter_name (fun)]
@@ -45,3 +44,4 @@ via_value_of.test_unknown_positional_named_kwargs1 (fun) -> [via_value_of.return
 via_value_of.test_unknown_positional_named_kwargs2 (fun) -> [via_value_of.return_via_second_parameter (fun)]
 via_value_of.test_via_value_of_does_not_propagate (fun) -> [via_value_of.meta (fun)]
 via_value_of.tito (fun) -> []
+via_value_of.MyEnum::$class_toplevel (method) -> []

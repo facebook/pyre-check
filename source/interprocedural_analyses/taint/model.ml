@@ -264,7 +264,14 @@ let remove_sinks model =
 
 
 let add_obscure_sink ~resolution ~call_target model =
-  match Target.get_callable_t call_target with
+  let real_target =
+    match call_target with
+    | Target.Function _ -> Some call_target
+    | Target.Method _ -> Some call_target
+    | Target.Override method_name -> Some (Target.Method method_name)
+    | Target.Object _ -> None
+  in
+  match real_target with
   | None -> model
   | Some real_target -> (
       match
@@ -273,7 +280,7 @@ let add_obscure_sink ~resolution ~call_target model =
           real_target
       with
       | None ->
-          let () = Log.warning "Found no definition for %s" (Target.show call_target) in
+          let () = Log.warning "Found no definition for %a" Target.pp_pretty real_target in
           model
       | Some (_, { value = { signature = { parameters; _ }; _ }; _ }) ->
           let open Domains in
@@ -589,7 +596,7 @@ let to_json
       modes;
     }
   =
-  let callable_name = Interprocedural.Target.external_target_name callable in
+  let callable_name = Interprocedural.Target.external_name callable in
   let model_json = ["callable", `String callable_name] in
   let model_json =
     if not (ForwardState.is_empty source_taint) then

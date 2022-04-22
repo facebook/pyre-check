@@ -1,7 +1,7 @@
 @generated
 Call dependencies
 static_methods.$toplevel (fun) -> []
-static_methods.StaticClass::$class_toplevel (method) -> []
-static_methods.StaticClass::sink (method) -> [_test_sink (fun)]
 static_methods.run_test (fun) -> [_test_source (fun) static_methods.test (fun)]
 static_methods.test (fun) -> [static_methods.StaticClass::sink (method)]
+static_methods.StaticClass::$class_toplevel (method) -> []
+static_methods.StaticClass::sink (method) -> [_test_sink (fun)]

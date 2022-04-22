@@ -974,7 +974,8 @@ let rec resolve_callees_from_type
                     ~return_type
                 in
                 let target =
-                  `Method { Target.class_name = primitive_callable_name; method_name = "__call__" }
+                  Target.Method
+                    { Target.class_name = primitive_callable_name; method_name = "__call__" }
                 in
                 CallCallees.create
                   ~call_targets:
@@ -1232,7 +1233,7 @@ let resolve_recognized_callees ~resolution ~call_indexer ~callee ~return_type ~c
               ~implicit_dunder_call:false
               ~collapse_tito
               ~return_type:(Some return_type)
-              (`Function name);
+              (Target.Function name);
           ]
         ()
   | _ -> None
@@ -1262,7 +1263,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
                ~implicit_dunder_call:false
                ~return_type:(Some (return_type ()))
                ~collapse_tito
-               (`Function (Reference.show name)))
+               (Target.Function (Reference.show name)))
       | Some
           (ResolvedReference.ModuleAttribute
             {
@@ -1287,7 +1288,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
                    ~implicit_dunder_call:false
                    ~collapse_tito
                    ~return_type:(Some (return_type ()))
-                   (`Method { Target.class_name; method_name = attribute }))
+                   (Target.Method { Target.class_name; method_name = attribute }))
           | _ -> None)
       | _ -> None)
   | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
@@ -1309,7 +1310,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
                    ~implicit_dunder_call:false
                    ~return_type:(Some (return_type ()))
                    ~collapse_tito
-                   (`Method { Target.class_name; method_name = attribute }))
+                   (Target.Method { Target.class_name; method_name = attribute }))
           | _ -> None)
       | _ -> None)
   | _ -> None
@@ -1421,10 +1422,10 @@ let resolve_attribute_access_properties
       if setter then
         let to_setter target =
           match target with
-          | `OverrideTarget { Target.class_name; method_name } ->
-              `OverrideTarget { Target.class_name; method_name = method_name ^ "$setter" }
-          | `Method { Target.class_name; method_name } ->
-              `Method { Target.class_name; method_name = method_name ^ "$setter" }
+          | Target.Override { Target.class_name; method_name } ->
+              Target.Override { Target.class_name; method_name = method_name ^ "$setter" }
+          | Target.Method { Target.class_name; method_name } ->
+              Target.Method { Target.class_name; method_name = method_name ^ "$setter" }
           | _ -> target
         in
         List.map property_targets ~f:to_setter
@@ -1896,7 +1897,7 @@ let call_graph_of_define
 module SharedMemory = struct
   include
     Memory.WithCache.Make
-      (Target.CallableKey)
+      (Target.SharedMemoryKey)
       (struct
         type t = LocationCallees.t Location.Map.Tree.t
 
@@ -1922,15 +1923,14 @@ let create_callgraph ~store_shared_memory ~environment ~source =
             SharedMemory.add ~callable:(Target.create define) ~call_graph:call_graph_of_define
         in
         let non_object_target = function
-          | `Object _ -> false
+          | Target.Object _ -> false
           | _ -> true
         in
         Location.Map.data call_graph_of_define
         |> List.concat_map ~f:LocationCallees.all_targets
         |> List.filter ~f:non_object_target
         |> List.dedup_and_sort ~compare:Target.compare
-        |> fun callees ->
-        Target.CallableMap.set dependencies ~key:(Target.create define) ~data:callees
+        |> fun callees -> Target.Map.set dependencies ~key:(Target.create define) ~data:callees
   in
   Preprocessing.defines ~include_nested:true ~include_toplevels:true source
-  |> List.fold ~init:Target.CallableMap.empty ~f:fold_defines
+  |> List.fold ~init:Target.Map.empty ~f:fold_defines

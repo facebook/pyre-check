@@ -246,7 +246,7 @@ let dump = function
           seconds
           (seconds /. total_seconds *. 100.0)
           average_size
-          Interprocedural.Target.pretty_print
+          Interprocedural.Target.pp_pretty
           target
       in
       List.iter fetch_model_events ~f:display_model_row

@@ -288,7 +288,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     log
       "Forward analysis of call to `%a` with arguments (%a)@,Call site model:@,%a"
-      Interprocedural.Target.pretty_print
+      Interprocedural.Target.pp_pretty
       target
       Ast.Expression.pp_expression_argument_list
       arguments
@@ -558,7 +558,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | [
        {
          CallGraph.CallTarget.target =
-           `Method { Interprocedural.Target.class_name = "object"; method_name = "__new__" };
+           Interprocedural.Target.Method { class_name = "object"; method_name = "__new__" };
          _;
        };
       ] ->
@@ -1706,11 +1706,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               }
             in
             match call_target.target with
-            | `Method { method_name; _ } -> callee_from_method_name method_name
-            | `OverrideTarget { method_name; _ } -> callee_from_method_name method_name
-            | `Function function_name ->
+            | Interprocedural.Target.Method { method_name; _ } ->
+                callee_from_method_name method_name
+            | Override { method_name; _ } -> callee_from_method_name method_name
+            | Function function_name ->
                 { Node.value = Name (Name.Identifier function_name); location = call_location }
-            | `Object _ -> failwith "callees should be either methods or functions"
+            | Object _ -> failwith "callees should be either methods or functions"
           in
           let new_taint, new_state =
             apply_callees_with_arguments_taint

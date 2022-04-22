@@ -2138,7 +2138,7 @@ let parse_return_taint
 type parsed_signature = {
   signature: Define.Signature.t;
   location: Location.t;
-  call_target: Target.callable_t;
+  call_target: Target.t;
 }
 
 type parsed_attribute = {
@@ -2147,7 +2147,7 @@ type parsed_attribute = {
   sink_annotation: Expression.t option;
   decorators: Decorator.t list;
   location: Location.t;
-  call_target: Target.object_t;
+  call_target: Target.t;
 }
 
 type parsed_statement =
@@ -2775,7 +2775,6 @@ let create_model_from_signature
   =
   let open Core.Result in
   let open ModelVerifier in
-  let call_target = (call_target :> Target.t) in
   let is_object_target = false in
   (* Strip off the decorators only used for taint annotations. *)
   let top_level_decorators, define =
@@ -2987,7 +2986,6 @@ let create_model_from_attribute
     { name; source_annotation; sink_annotation; decorators; location; call_target }
   =
   let open Core.Result in
-  let call_target = (call_target :> Target.t) in
   let is_object_target = true in
   ModelVerifier.verify_global ~path ~location ~resolution ~name
   >>= fun () ->
@@ -3084,7 +3082,7 @@ let create ~resolution ~path ~configuration ~rule_filter ~callables ~stubs sourc
           ~configuration
           ~sources_to_keep
           ~sinks_to_keep
-          ~is_obscure:(is_obscure (call_target :> Target.t))
+          ~is_obscure:(is_obscure call_target)
           parsed_signature
     | ParsedAttribute parsed_attribute ->
         create_model_from_attribute
@@ -3156,7 +3154,8 @@ let create_callable_model_from_annotations
   let open ModelVerifier in
   let global_resolution = Resolution.global_resolution resolution in
   match Interprocedural.Target.get_module_and_definition ~resolution:global_resolution callable with
-  | None -> Error (invalid_model_query_error (NoCorrespondingCallable (Target.show callable)))
+  | None ->
+      Error (invalid_model_query_error (NoCorrespondingCallable (Target.show_pretty callable)))
   | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
       resolve_global_callable
         ~path:None

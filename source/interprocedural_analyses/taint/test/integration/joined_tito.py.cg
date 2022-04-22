@@ -1,8 +1,8 @@
 @generated
 Call dependencies
 joined_tito.$toplevel (fun) -> []
+joined_tito.y_is_benign (fun) -> [_test_sink (fun) _test_source (fun) joined_tito.C::__init__ (method) joined_tito.Wrapper::__init__ (method) object::__new__ (method)]
+joined_tito.Wrapper::$class_toplevel (method) -> []
 joined_tito.C::$class_toplevel (method) -> []
 joined_tito.C::__init__ (method) -> []
-joined_tito.Wrapper::$class_toplevel (method) -> []
 joined_tito.Wrapper::__init__ (method) -> []
-joined_tito.y_is_benign (fun) -> [_test_sink (fun) _test_source (fun) joined_tito.C::__init__ (method) joined_tito.Wrapper::__init__ (method) object::__new__ (method)]

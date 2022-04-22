@@ -12,7 +12,6 @@ open Interprocedural
 open Domains
 
 let at_callsite ~resolution ~call_target ~arguments =
-  let call_target = (call_target :> Target.t) in
   match Interprocedural.FixpointState.get_model call_target with
   | None -> Model.obscure_model
   | Some model ->

@@ -68,9 +68,7 @@ module CallInfo = struct
         Format.fprintf
           formatter
           "CallSite(callees=[%s], location=%a, port=%s)"
-          (String.concat
-             ~sep:", "
-             (List.map ~f:Interprocedural.Target.external_target_name callees))
+          (String.concat ~sep:", " (List.map ~f:Interprocedural.Target.external_name callees))
           Location.WithModule.pp
           location
           port
@@ -85,7 +83,7 @@ module CallInfo = struct
       (fun
         (_ : AccessPath.Root.t)
         (_ : Abstract.TreeDomain.Label.path)
-        (_ : Interprocedural.Target.non_override_t)
+        (_ : Interprocedural.Target.t)
       -> true)
 
 
@@ -97,7 +95,7 @@ module CallInfo = struct
           Interprocedural.DependencyGraph.expand_callees callees
           |> List.filter ~f:(!has_significant_summary port path)
         in
-        CallSite { location; callees = (callees :> Interprocedural.Target.t list); port; path }
+        CallSite { location; callees; port; path }
     | _ -> trace
 
 
@@ -110,8 +108,7 @@ module CallInfo = struct
     | CallSite { location; callees; port; path } ->
         let callee_json =
           callees
-          |> List.map ~f:(fun callable ->
-                 `String (Interprocedural.Target.external_target_name callable))
+          |> List.map ~f:(fun callable -> `String (Interprocedural.Target.external_name callable))
         in
         let location_json = location_with_module_to_json ~filename_lookup location in
         let port_json = AccessPath.create port path |> AccessPath.to_json in
@@ -984,8 +981,8 @@ end = struct
       let local_taint =
         match callee with
         | None
-        | Some (`Object _)
-        | Some (`Function _) ->
+        | Some (Interprocedural.Target.Object _)
+        | Some (Interprocedural.Target.Function _) ->
             LocalTaintDomain.update
               LocalTaintDomain.Slots.CallInfoIntervals
               {
@@ -994,8 +991,8 @@ end = struct
                 is_self_call;
               }
               local_taint
-        | Some (`Method _)
-        | Some (`OverrideTarget _) ->
+        | Some (Interprocedural.Target.Method _)
+        | Some (Interprocedural.Target.Override _) ->
             let open Interprocedural in
             let { CallInfoIntervals.caller_interval = callee_class_interval; _ } =
               LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
@@ -1044,7 +1041,7 @@ end = struct
             else
               let open Features in
               let make_leaf_name callee =
-                LeafName.{ leaf = Interprocedural.Target.external_target_name callee; port = None }
+                LeafName.{ leaf = Interprocedural.Target.external_name callee; port = None }
                 |> LeafNameInterned.intern
               in
               List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list

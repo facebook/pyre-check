@@ -1,8 +1,6 @@
 @generated
 Call dependencies
 side_effects.$toplevel (fun) -> []
-side_effects.MyList::$class_toplevel (method) -> []
-side_effects.MyList::append (method) -> []
 side_effects.dict_to_sink_via_side_effect (fun) -> [_test_sink (fun) dict::__getitem__ (method) side_effects.change_arg0 (fun)]
 side_effects.test_from_0_to_1 (fun) -> [_test_source (fun) side_effects.change_arg1 (fun)]
 side_effects.test_from_1_to_0 (fun) -> [_test_source (fun) side_effects.change_arg0 (fun)]
@@ -12,3 +10,5 @@ side_effects.test_list_append (fun) -> [_test_source (fun) object::__init__ (met
 side_effects.to_sink_via_side_effect (fun) -> [_test_sink (fun) side_effects.change_arg0 (fun)]
 side_effects.wrapper_from_0_to_1 (fun) -> [side_effects.change_arg1 (fun)]
 side_effects.wrapper_from_1_to_0 (fun) -> [side_effects.change_arg0 (fun)]
+side_effects.MyList::$class_toplevel (method) -> []
+side_effects.MyList::append (method) -> []
