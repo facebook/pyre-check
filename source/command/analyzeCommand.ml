@@ -11,13 +11,14 @@ open Core
 module ExitStatus = struct
   type t =
     | CheckStatus of CheckCommand.ExitStatus.t
-    | PysaStatus of Taint.ExitStatus.t
+    | TaintConfigurationError
+    | ModelVerificationError
 
   let exit_code = function
     (* 1-9 are reserved for CheckCommand.ExitStatus *)
     | CheckStatus status -> CheckCommand.ExitStatus.exit_code status
-    (* 10-19 are reserved for Taint.ExitStatus *)
-    | PysaStatus status -> Taint.ExitStatus.exit_code status
+    | TaintConfigurationError -> 10
+    | ModelVerificationError -> 11
 end
 
 module AnalyzeConfiguration = struct
@@ -216,7 +217,12 @@ let on_exception = function
       Yojson.Safe.pretty_to_string
         (`Assoc ["errors", `List (List.map errors ~f:Taint.TaintConfiguration.Error.to_json)])
       |> Log.print "%s";
-      ExitStatus.PysaStatus Taint.ExitStatus.TaintConfigurationError
+      ExitStatus.TaintConfigurationError
+  | Taint.ModelParser.ModelVerificationError errors ->
+      Yojson.Safe.pretty_to_string
+        (`Assoc ["errors", `List (List.map errors ~f:Taint.ModelVerificationError.to_json)])
+      |> Log.print "%s";
+      ExitStatus.ModelVerificationError
   | exn -> ExitStatus.CheckStatus (CheckCommand.on_exception exn)
 
 

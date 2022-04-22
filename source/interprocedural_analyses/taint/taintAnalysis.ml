@@ -221,12 +221,8 @@ include Taint.Result.Register (struct
             Log.error "Found %d model verification errors!" (List.length errors);
             List.iter errors ~f:(fun error -> Log.error "%s" (ModelVerificationError.display error))
           end
-          else begin
-            Yojson.Safe.pretty_to_string
-              (`Assoc ["errors", `List (List.map errors ~f:ModelVerificationError.to_json)])
-            |> Log.print "%s";
-            exit (Taint.ExitStatus.exit_code Taint.ExitStatus.ModelVerificationError)
-          end
+          else
+            raise (ModelParser.ModelVerificationError errors)
       in
       {
         initialize_result =
@@ -390,7 +386,7 @@ include Taint.Result.Register (struct
           empty_model
 
 
-  let report = Taint.Reporting.report
+  let report = Reporting.report
 end)
 
 let run_taint_analysis
@@ -480,7 +476,8 @@ let run_taint_analysis
       ~skip_overrides
       ()
   with
-  | TaintConfiguration.TaintConfigurationError _ as exn -> raise exn
+  | (TaintConfiguration.TaintConfigurationError _ | ModelParser.ModelVerificationError _) as exn ->
+      raise exn
   | exn ->
       (* The backtrace is lost if the exception is caught at the top level, because of `Lwt`.
        * Let's print the exception here to ease debugging. *)

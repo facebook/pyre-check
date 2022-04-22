@@ -10,7 +10,8 @@ open Core
 module ExitStatus : sig
   type t =
     | CheckStatus of CheckCommand.ExitStatus.t
-    | PysaStatus of Taint.ExitStatus.t
+    | TaintConfigurationError
+    | ModelVerificationError
 
   val exit_code : t -> int
 end
