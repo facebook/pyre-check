@@ -142,7 +142,7 @@ val create
 
 val validate : t -> (t, Error.t list) Result.t
 
-val abort_on_error : (t, Error.t list) Result.t -> t
+exception TaintConfigurationError of Error.t list
 
 val exception_on_error : (t, Error.t list) Result.t -> t
 

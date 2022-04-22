@@ -883,18 +883,11 @@ let validate ({ sources; sinks; transforms; features; _ } as configuration) =
   |> Result.map ~f:(fun () -> configuration)
 
 
-let abort_on_error = function
-  | Ok configuration -> configuration
-  | Error errors ->
-      Yojson.Safe.pretty_to_string (`Assoc ["errors", `List (List.map errors ~f:Error.to_json)])
-      |> Log.print "%s";
-      exit (ExitStatus.exit_code ExitStatus.TaintConfigurationError)
-
+exception TaintConfigurationError of Error.t list
 
 let exception_on_error = function
   | Ok configuration -> configuration
-  | Error (error :: _) -> Error.show error |> failwith
-  | Error _ -> failwith "unreachable"
+  | Error errors -> raise (TaintConfigurationError errors)
 
 
 let register configuration =

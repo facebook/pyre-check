@@ -31,7 +31,7 @@ include Taint.Result.Register (struct
         ~maximum_trace_length:None
         ~maximum_tito_depth:None
         ~taint_model_paths
-      |> TaintConfiguration.abort_on_error
+      |> TaintConfiguration.exception_on_error
     in
     Statistics.performance
       ~name:"Verified model syntax and configuration"
@@ -207,7 +207,7 @@ include Taint.Result.Register (struct
           ~maximum_trace_length
           ~maximum_tito_depth
           ~taint_model_paths
-        |> TaintConfiguration.abort_on_error
+        |> TaintConfiguration.exception_on_error
       in
       TaintConfiguration.register taint_configuration;
       let models, errors, skip_overrides, queries =
@@ -480,6 +480,7 @@ let run_taint_analysis
       ~skip_overrides
       ()
   with
+  | TaintConfiguration.TaintConfigurationError _ as exn -> raise exn
   | exn ->
       (* The backtrace is lost if the exception is caught at the top level, because of `Lwt`.
        * Let's print the exception here to ease debugging. *)

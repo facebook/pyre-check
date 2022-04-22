@@ -211,6 +211,15 @@ let run_analyze analyze_configuration =
           Lwt.return (ExitStatus.CheckStatus CheckCommand.ExitStatus.Ok)))
 
 
+let on_exception = function
+  | Taint.TaintConfiguration.TaintConfigurationError errors ->
+      Yojson.Safe.pretty_to_string
+        (`Assoc ["errors", `List (List.map errors ~f:Taint.TaintConfiguration.Error.to_json)])
+      |> Log.print "%s";
+      ExitStatus.PysaStatus Taint.ExitStatus.TaintConfigurationError
+  | exn -> ExitStatus.CheckStatus (CheckCommand.on_exception exn)
+
+
 let run_analyze configuration_file =
   let exit_status =
     match
@@ -245,7 +254,7 @@ let run_analyze configuration_file =
         Lwt_main.run
           (Lwt.catch
              (fun () -> run_analyze analyze_configuration)
-             (fun exn -> Lwt.return (ExitStatus.CheckStatus (CheckCommand.on_exception exn))))
+             (fun exn -> Lwt.return (on_exception exn)))
   in
   Statistics.flush ();
   exit (ExitStatus.exit_code exit_status)

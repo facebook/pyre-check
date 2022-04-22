@@ -907,7 +907,7 @@ let rec process_request ~environment ~build_system ~configuration request =
               ~maximum_trace_length:None
               ~maximum_tito_depth:None
               ~taint_model_paths:paths
-            |> Taint.TaintConfiguration.abort_on_error
+            |> Taint.TaintConfiguration.exception_on_error
           in
           let get_model_errors sources =
             let model_errors (path, source) =
