@@ -202,44 +202,6 @@ module State (Context : Context) = struct
     |> fun value -> Value value
 
 
-  let errors ~qualifier ~define _ =
-    let emit_error { Node.value; location } =
-      Error.create
-        ~location:(Location.with_module ~module_reference:qualifier location)
-        ~kind:(Error.UninitializedLocal value)
-        ~define
-    in
-    let all_locals =
-      let { Scope.Scope.bindings; globals; nonlocals; _ } =
-        Scope.Scope.of_define_exn define.value
-      in
-      (* Santitization is needed to remove (some) scope information that is (sometimes, but not
-         consistently) added into the identifiers themselves (e.g. $local_test?f$y). *)
-      let locals =
-        Identifier.Map.keys bindings |> List.map ~f:Identifier.sanitized |> Identifier.Set.of_list
-      in
-      (* This operation needs to be repeated as Scope doesn't know about qualification, and hence
-         doesn't remove all globals and nonlocals from bindings *)
-      let globals = Identifier.Set.map ~f:Identifier.sanitized globals in
-      let nonlocals = Identifier.Set.map ~f:Identifier.sanitized nonlocals in
-      Identifier.Set.diff (Identifier.Set.diff locals globals) nonlocals
-    in
-    let in_local_scope { Node.value = identifier; _ } =
-      identifier |> Identifier.sanitized |> Identifier.Set.mem all_locals
-    in
-    let uninitialized_usage (statement, initialized) =
-      let is_uninitialized { Node.value = identifier; _ } =
-        not (InitializedVariables.mem initialized (Identifier.sanitized identifier))
-      in
-      extract_reads_in_statement statement |> List.filter ~f:is_uninitialized
-    in
-    Int.Table.data Context.fixpoint_post_statement
-    |> List.map ~f:uninitialized_usage
-    |> List.concat
-    |> List.filter ~f:in_local_scope
-    |> List.map ~f:emit_error
-
-
   let less_or_equal ~left ~right =
     match left, right with
     | Value left, Value right -> InitializedVariables.is_subset right ~of_:left
@@ -276,6 +238,42 @@ module State (Context : Context) = struct
   let backward ~statement_key:_ _ ~statement:_ = failwith "Not implemented"
 end
 
+let errors ~qualifier ~define defined_locals_at_each_statement =
+  let emit_error { Node.value; location } =
+    Error.create
+      ~location:(Location.with_module ~module_reference:qualifier location)
+      ~kind:(Error.UninitializedLocal value)
+      ~define
+  in
+  let all_locals =
+    let { Scope.Scope.bindings; globals; nonlocals; _ } = Scope.Scope.of_define_exn define.value in
+    (* Santitization is needed to remove (some) scope information that is (sometimes, but not
+       consistently) added into the identifiers themselves (e.g. $local_test?f$y). *)
+    let locals =
+      Identifier.Map.keys bindings |> List.map ~f:Identifier.sanitized |> Identifier.Set.of_list
+    in
+    (* This operation needs to be repeated as Scope doesn't know about qualification, and hence
+       doesn't remove all globals and nonlocals from bindings *)
+    let globals = Identifier.Set.map ~f:Identifier.sanitized globals in
+    let nonlocals = Identifier.Set.map ~f:Identifier.sanitized nonlocals in
+    Identifier.Set.diff (Identifier.Set.diff locals globals) nonlocals
+  in
+  let in_local_scope { Node.value = identifier; _ } =
+    identifier |> Identifier.sanitized |> Identifier.Set.mem all_locals
+  in
+  let uninitialized_usage (statement, initialized) =
+    let is_uninitialized { Node.value = identifier; _ } =
+      not (InitializedVariables.mem initialized (Identifier.sanitized identifier))
+    in
+    extract_reads_in_statement statement |> List.filter ~f:is_uninitialized
+  in
+  Int.Table.data defined_locals_at_each_statement
+  |> List.map ~f:uninitialized_usage
+  |> List.concat
+  |> List.filter ~f:in_local_scope
+  |> List.map ~f:emit_error
+
+
 let run_on_define ~qualifier define =
   let module Context = struct
     let fixpoint_post_statement = Int.Table.create ()
@@ -285,7 +283,10 @@ let run_on_define ~qualifier define =
   let module Fixpoint = Fixpoint.Make (State) in
   let cfg = Cfg.create (Node.value define) in
   let fixpoint = Fixpoint.forward ~cfg ~initial:(State.initial ~define) in
-  Fixpoint.exit fixpoint >>| State.errors ~qualifier ~define |> Option.value ~default:[]
+  Fixpoint.exit fixpoint
+  >>| (fun _ -> Context.fixpoint_post_statement)
+  >>| errors ~qualifier ~define
+  |> Option.value ~default:[]
 
 
 let run
