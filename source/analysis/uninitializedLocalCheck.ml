@@ -16,6 +16,8 @@ let name = "UninitializedLocal"
 
 module NameAccessSet = Set.Make (Define.NameAccess)
 
+(** Collect accesses to names within expressions. Within lambdas and comprehensions, collect
+    accesses to names not bound by the lambda or comprehension. *)
 module AccessCollector = struct
   let rec from_expression collected { Node.value; location = expression_location } =
     let open Expression in
@@ -131,7 +133,7 @@ module AccessCollector = struct
     NameAccessSet.union collected element_accesses
 end
 
-let extract_reads_expression expression =
+let extract_reads_in_expression expression =
   let name_access_to_identifier_node { Define.NameAccess.name; location } =
     { Node.value = name; location }
   in
@@ -140,7 +142,7 @@ let extract_reads_expression expression =
   |> List.map ~f:name_access_to_identifier_node
 
 
-let extract_reads_statement { Node.value; _ } =
+let extract_reads_in_statement { Node.value; _ } =
   let expressions =
     match value with
     | Statement.Assign { Assign.value = expression; _ }
@@ -167,7 +169,7 @@ let extract_reads_statement { Node.value; _ } =
     | Try _ ->
         []
   in
-  expressions |> List.concat_map ~f:extract_reads_expression
+  expressions |> List.concat_map ~f:extract_reads_in_expression
 
 
 module InitializedVariables = Identifier.Set
@@ -229,7 +231,7 @@ module State (Context : Context) = struct
       let is_uninitialized { Node.value = identifier; _ } =
         not (InitializedVariables.mem initialized (Identifier.sanitized identifier))
       in
-      extract_reads_statement statement |> List.filter ~f:is_uninitialized
+      extract_reads_in_statement statement |> List.filter ~f:is_uninitialized
     in
     Int.Table.data Context.fixpoint_post_statement
     |> List.map ~f:uninitialized_usage
