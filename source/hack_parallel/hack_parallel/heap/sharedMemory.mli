@@ -181,6 +181,7 @@ module NoCache : sig
 
     (* Api to read and remove from the table *)
     val get              : key -> value option
+    val get_exn          : key -> value
     val mem              : key -> bool
     val get_batch        : KeySet.t -> value option KeyMap.t
     val remove_batch     : KeySet.t -> unit
@@ -196,10 +197,6 @@ module NoCache : sig
     (* Move keys between the current view of the table and the old-values table *)
     val oldify_batch     : KeySet.t -> unit
     val revive_batch     : KeySet.t -> unit
-
-    (* Low level operations *)
-    val string_of_key    : key -> string
-    val find_unsafe      : key -> value
 
     (* Api to allow batching up local changes before serializing them *)
     module LocalChanges : sig
@@ -252,8 +249,6 @@ module type CacheType = sig
   val get: key -> value option
   val remove: key -> unit
   val clear: unit -> unit
-
-  val string_of_key : key -> string
   val get_size : unit -> int
 end
 

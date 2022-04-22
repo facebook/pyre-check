@@ -101,4 +101,4 @@ let indices annotations =
 
 let annotation index =
   (* Because we seal the type, we can be sure this will always succeed *)
-  OrderAnnotations.find_unsafe index
+  OrderAnnotations.get_exn index

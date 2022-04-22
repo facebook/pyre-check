@@ -231,7 +231,7 @@ module Serializer (Value : SerializableValueType) = struct
 
 
   let load () =
-    let table = Table.find_unsafe SingletonKey.key |> Value.deserialize in
+    let table = Table.get_exn SingletonKey.key |> Value.deserialize in
     Table.remove_batch (Table.KeySet.singleton SingletonKey.key);
     table
 end
