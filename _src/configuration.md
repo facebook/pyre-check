@@ -46,12 +46,22 @@ You specify additional information to configure Pyre. The following fields are s
 
  Note: Pyre assumes that all imports are relative to the given source directory. For example, if your source directory is `root/directory`, then an import statement `import module` will be looking to import `root.directory.module`. If you wish to set a different import root for your source directory, you can provide an object `{"import_root": "root", "source": "directory"}` instead of `"root/directory"`. In this case, `import module` will be looking to import `root.module`.
 
-- `search_path`: List of paths to Python modules to include in the typing
-environment. `search_path` takes precendence over `source_directories` and the order within the search path indicates precedence. Individual items in the list can take one of the following forms:
+- `site_package_search_strategy`: Configure how Pyre looks for type checking dependencies installed (e.g. by `pip`) on the local Python environment. Dependent libraries will not be type-checked, but they are consulted to determine the existence of globals/functions/classes. The value of this option can take one of the following forms:
+  + `"none"`. This indicates that Pyre should not attempt to search for any additional dependencies. Use this option if you know exactly what packages you depend on, and want to manually specify them with the `search_path` option.
+  + `"all"`. Pyre will pull in the entire site package roots (as specified in the `site_roots` option) as dependencies. Any libraries installed as site packages, regardless of whether they are typed or not, will be examined. Use this option if you do not know exactly which packages your code depend on, but want to make sure that no dependencies are missing.
+  + `"pep561"`. Similar to `"all"` but instead of pull in everything, Pyre will only pull in typed packages as dependencies according to rules specified in [PEP 561](https://peps.python.org/pep-0561/). This is usually the recommended option, as the behavior is closer to what other type checkers would do by default.
+
+  Note: If incremental check is used, and the search strategy is set to `"pep561"`, then a `pyre restart` is needed when new dependencies are installed -- Pyre will not automatically discover the new package by default. This is a limitation of the current implementation of Pyre and it may be lifted in the future.
+
+- `site_roots`: List of path to where packages are installed.
+
+  If not specified, Pyre will consult the current Python interpreter using `site.getusersitepackages()` and `site.getsitepackages()`, which should work in most cases. But if your codebase uses a different Python interpreter, you may want to specify this option manually so Pyre knows the correct location to look for site packages.
+
+- `search_path`: List of additional paths to Python modules to include as dependencies. `search_path` takes precendence over `source_directories` and the order within the search path indicates precedence. Individual items in the list can take one of the following forms:
   + A plain string, representing a path to the directories from which Pyre will search for modules. The paths can be globs, for example, `"./foo*"`.
   + An object `{"import_root": "root", "source": "directory"}`, which can be used to control import root of the search path. See explaination for `source_directories`.
-  + An object `{"site-package": "package_name"}`. It is equivalent to `{"import_root": "site_root", "source": "package_name"}`, where `site_root` is the return value of [`site.getsitepackages()`](https://docs.python.org/3/library/site.html#site.getsitepackages). This can be useful when you want to add installed `pip` packages as a dependency to your project.
-  + An object `{"site-package": "package_name", "is_toplevel_module": true}`, to specify the name as a singular toplevel module found in the site-root rather than as a package.
+  + An object `{"site-package": "package_name"}`. It is equivalent to `{"import_root": "site_root", "source": "package_name"}`, where `site_root` is the first element in `site_roots` that has the site package named `package_name` installed. This can be useful when you want to manually specify which `pip` package you want the type checker to see as a dependency to your project (in which case it is recommended to set `site_package_search_strategy` to `"none"` to disable site package auto discovery).
+  + An object `{"site-package": "package_name", "is_toplevel_module": true}`, to specify the name as a single-file module found in the site-root rather than as a package.
 
 - `exclude`: List of regular expressions such as `".*\/node_modules\/.*"` which
 specify files and directories that should be completely ignored by Pyre. The
