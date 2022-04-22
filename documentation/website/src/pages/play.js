@@ -22,8 +22,8 @@ if (ExecutionEnvironment.canUseDOM) {
 }
 
 
-const DEFAULT_INITIAL_CODE = `# Pyre is being run in strict mode: https://www.internalfb.com/intern/staticdocs/pyre/docs/types-in-python#strict-mode
-# Use the pyre-unsafe header to run in unsafe mode.
+const DEFAULT_INITIAL_CODE = `# Pyre is being run in gradual typing mode: https://pyre-check.org/docs/types-in-python/#gradual-typing
+# Use the \`# pyre-strict\` header to run in strict mode, which requires annotations.
 
 from typing import *
 
