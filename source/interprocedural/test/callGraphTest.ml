@@ -3371,6 +3371,43 @@ let test_call_graph_of_define context =
                   ())) );
       ]
     ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+       def decorator(function):
+           return function
+
+       class Base:
+           @decorator
+           def query(self, arg):
+               return arg
+
+       class Child(Base):
+           pass
+
+       def foo(base: Base, child: Child):
+           base.query(1)
+           child.query(1)
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "14:4-14:17",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        (Target.Method { Target.class_name = "test.Base"; method_name = "query" });
+                    ]
+                  ())) );
+        ( "15:4-15:18",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call (CallCallees.create ~unresolved:true ())) );
+      ]
+    ();
   ()
 
 
