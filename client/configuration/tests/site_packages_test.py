@@ -36,15 +36,28 @@ class SitePackagesTest(testslide.TestCase):
         self.assertIsNone(SearchStrategy.from_string("derp"))
 
     def test_search_for_path_disabled(self) -> None:
-        self.assertListEqual(
-            search_for_paths(SearchStrategy.NONE, site_roots=["derp"]), []
-        )
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            foo = str(root_path / Path("foo"))
+            ensure_files_exist(root_path, ["foo/foo.py"])
+            self.assertListEqual(
+                search_for_paths(SearchStrategy.NONE, site_roots=[foo]), []
+            )
 
     def test_search_for_path_all(self) -> None:
-        self.assertListEqual(
-            search_for_paths(SearchStrategy.ALL, site_roots=["/foo", "/bar"]),
-            [SimpleElement("/foo"), SimpleElement("/bar")],
-        )
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            foo = str(root_path / Path("foo"))
+            bar = str(root_path / Path("bar"))
+            ensure_files_exist(root_path, ["foo/foo.py", "bar/bar.py"])
+            does_not_exist = str(root_path / Path("does_not_exist"))
+            self.assertListEqual(
+                search_for_paths(
+                    SearchStrategy.ALL,
+                    site_roots=[foo, bar, does_not_exist],
+                ),
+                [SimpleElement(foo), SimpleElement(bar)],
+            )
 
     def test_valid_package_name(self) -> None:
         self.assertTrue(is_valid_package_name("foo"))

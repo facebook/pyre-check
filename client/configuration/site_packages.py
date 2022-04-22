@@ -164,7 +164,11 @@ def search_for_paths(
     if strategy == SearchStrategy.NONE:
         return []
     elif strategy == SearchStrategy.ALL:
-        return [search_path.SimpleElement(root) for root in site_roots]
+        return [
+            search_path.SimpleElement(root)
+            for root in site_roots
+            if Path(root).is_dir()
+        ]
     elif strategy == SearchStrategy.PEP561:
         return [
             element
