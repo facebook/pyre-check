@@ -172,22 +172,36 @@ let extract_reads_in_statement { Node.value; _ } =
   expressions |> List.concat_map ~f:extract_reads_in_expression
 
 
-module InitializedVariables = Identifier.Set
+type defined_locals = Scope.Binding.t Identifier.Map.t
+
 module StatementKey = Int
 
+let create_map =
+  List.fold ~init:Identifier.Map.empty ~f:(fun sofar ({ Scope.Binding.name; _ } as binding) ->
+      (* First binding (i.e. last item in the list) wins. *)
+      Map.set sofar ~key:(Identifier.sanitized name) ~data:binding)
+
+
 module type Context = sig
-  val fixpoint_post_statement : (Statement.t * InitializedVariables.t) StatementKey.Table.t
+  val fixpoint_post_statement : (Statement.t * defined_locals) StatementKey.Table.t
 end
 
 module State (Context : Context) = struct
   type t =
     | Bottom
-    | Value of InitializedVariables.t
+    | Value of defined_locals
 
   let show = function
     | Bottom -> "[]"
     | Value state ->
-        state |> InitializedVariables.elements |> String.concat ~sep:", " |> Format.sprintf "[%s]"
+        let show_binding { Scope.Binding.name; location; _ } =
+          [%show: Identifier.t * Location.t] (name, location)
+        in
+        state
+        |> Map.data
+        |> List.map ~f:show_binding
+        |> String.concat ~sep:", "
+        |> Format.sprintf "[%s]"
 
 
   let bottom = Bottom
@@ -195,17 +209,14 @@ module State (Context : Context) = struct
   let pp format state = Format.fprintf format "%s" (show state)
 
   let initial ~define:{ Node.value = { Define.signature; _ }; _ } =
-    signature.parameters
-    |> Scope.Binding.of_parameters []
-    |> List.map ~f:Scope.Binding.name
-    |> List.map ~f:Identifier.sanitized
-    |> InitializedVariables.of_list
-    |> fun value -> Value value
+    signature.parameters |> Scope.Binding.of_parameters [] |> create_map |> fun value -> Value value
 
 
   let less_or_equal ~left ~right =
     match left, right with
-    | Value left, Value right -> InitializedVariables.is_subset right ~of_:left
+    | Value left, Value right ->
+        let to_set map = Map.keys map |> Identifier.Set.of_list in
+        to_set right |> Set.is_subset ~of_:(to_set left)
     | Value _, Bottom -> false
     | Bottom, Value _ -> true
     | Bottom, Bottom -> true
@@ -213,7 +224,14 @@ module State (Context : Context) = struct
 
   let join left right =
     match left, right with
-    | Value left, Value right -> Value (InitializedVariables.inter left right)
+    | Value left, Value right ->
+        let intersect ~key:_ = function
+          | `Both (left, _) -> Some left
+          | `Right _
+          | `Left _ ->
+              None
+        in
+        Value (Map.merge ~f:intersect left right)
     | Value left, Bottom -> Value left
     | Bottom, Value right -> Value right
     | Bottom, Bottom -> Bottom
@@ -225,12 +243,14 @@ module State (Context : Context) = struct
     match state with
     | Bottom -> Bottom
     | Value state ->
+        let union ~key:_ = function
+          | `Both (left, _) -> Some left
+          | `Right only
+          | `Left only ->
+              Some only
+        in
         let new_state =
-          Scope.Binding.of_statement [] statement
-          |> List.map ~f:Scope.Binding.name
-          |> List.map ~f:Identifier.sanitized
-          |> InitializedVariables.of_list
-          |> InitializedVariables.union state
+          Scope.Binding.of_statement [] statement |> create_map |> Map.merge ~f:union state
         in
         Hashtbl.set Context.fixpoint_post_statement ~key:statement_key ~data:(statement, new_state);
         Value new_state
@@ -285,7 +305,7 @@ let errors ~qualifier ~define defined_locals_at_each_statement =
   in
   let uninitialized_usage (statement, initialized) =
     let is_uninitialized { Node.value = identifier; _ } =
-      not (InitializedVariables.mem initialized (Identifier.sanitized identifier))
+      not (Map.mem initialized (Identifier.sanitized identifier))
     in
     extract_reads_in_statement statement |> List.filter ~f:is_uninitialized
   in

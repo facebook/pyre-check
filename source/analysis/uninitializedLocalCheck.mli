@@ -21,8 +21,9 @@ val run
 
 module StatementKey = Int
 
+type defined_locals = Scope.Binding.t Identifier.Map.t
+
 val defined_locals_at_each_statement
   :  Statement.Define.t Node.t ->
-  (* TODO(T112570623): Store locations in the value. *)
   (* TODO(T112570623): Don't store statements in the value. *)
-  (Statement.t * Identifier.Set.t) StatementKey.Map.t
+  (Statement.t * defined_locals) StatementKey.Map.t
