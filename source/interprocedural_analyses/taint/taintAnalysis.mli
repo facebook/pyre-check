@@ -6,3 +6,12 @@
  *)
 
 val abstract_kind : Interprocedural.AnalysisKind.abstract
+
+val run_taint_analysis
+  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  inline_decorators:bool ->
+  build_system:Server.BuildSystem.t ->
+  scheduler:Scheduler.t ->
+  repository_root:PyrePath.t option ->
+  unit ->
+  unit

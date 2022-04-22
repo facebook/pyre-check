@@ -392,3 +392,93 @@ include Taint.Result.Register (struct
 
   let report = Taint.Reporting.report
 end)
+
+let run_taint_analysis
+    ~static_analysis_configuration:
+      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as
+      static_analysis_configuration)
+    ~inline_decorators
+    ~build_system
+    ~scheduler
+    ~repository_root
+    ()
+  =
+  try
+    Interprocedural.FixpointAnalysis.initialize_configuration
+      ~static_analysis_configuration
+      abstract_kind;
+
+    (* Collect decorators to skip before type-checking because decorator inlining happens in an
+       early phase of type-checking and needs to know which decorators to skip. *)
+    Service.StaticAnalysis.parse_and_save_decorators_to_skip ~inline_decorators configuration;
+    let cache = Service.StaticAnalysis.Cache.load ~scheduler ~configuration ~enabled:use_cache in
+    let environment = Service.StaticAnalysis.type_check ~scheduler ~configuration ~cache in
+
+    let qualifiers =
+      Analysis.TypeEnvironment.module_tracker environment
+      |> Analysis.ModuleTracker.read_only
+      |> Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules
+    in
+
+    let read_only_environment = Analysis.TypeEnvironment.read_only environment in
+    let class_hierarchy_graph =
+      Service.StaticAnalysis.build_class_hierarchy_graph
+        ~scheduler
+        ~cache
+        ~environment:read_only_environment
+        ~qualifiers
+    in
+    let _ = Service.StaticAnalysis.build_class_intervals class_hierarchy_graph in
+    let initial_callables =
+      Service.StaticAnalysis.fetch_initial_callables
+        ~scheduler
+        ~configuration
+        ~cache
+        ~environment:read_only_environment
+        ~qualifiers
+    in
+
+    let { Interprocedural.AnalysisResult.initial_models; skip_overrides } =
+      let { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } =
+        initial_callables
+      in
+      Interprocedural.FixpointAnalysis.initialize_models
+        abstract_kind
+        ~static_analysis_configuration
+        ~scheduler
+        ~environment:(Analysis.TypeEnvironment.read_only environment)
+        ~callables:(List.map callables_with_dependency_information ~f:fst)
+        ~stubs
+    in
+    let ast_environment =
+      environment
+      |> Analysis.TypeEnvironment.read_only
+      |> Analysis.TypeEnvironment.ReadOnly.ast_environment
+    in
+    let filename_lookup path_reference =
+      match
+        Server.RequestHandler.instantiate_path ~build_system ~ast_environment path_reference
+      with
+      | None -> None
+      | Some full_path ->
+          let root = Option.value repository_root ~default:configuration.local_root in
+          PyrePath.get_relative_to_root ~root ~path:(PyrePath.create_absolute full_path)
+    in
+    Service.StaticAnalysis.analyze
+      ~scheduler
+      ~analysis:abstract_kind
+      ~static_analysis_configuration
+      ~cache
+      ~filename_lookup
+      ~environment
+      ~qualifiers
+      ~initial_callables
+      ~initial_models
+      ~skip_overrides
+      ()
+  with
+  | exn ->
+      (* The backtrace is lost if the exception is caught at the top level, because of `Lwt`.
+       * Let's print the exception here to ease debugging. *)
+      Log.log_exception "Taint analysis failed." exn (Worker.exception_backtrace exn);
+      raise exn

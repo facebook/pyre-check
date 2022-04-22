@@ -172,7 +172,7 @@ module AnalyzeConfiguration = struct
     }
 end
 
-let with_performance_tracking f =
+let with_performance_tracking ~f =
   let timer = Timer.start () in
   let result = f () in
   let { Caml.Gc.minor_collections; major_collections; compactions; _ } = Caml.Gc.stat () in
@@ -189,103 +189,6 @@ let with_performance_tracking f =
   result
 
 
-let run_taint_analysis
-    ~static_analysis_configuration:
-      ({ Configuration.StaticAnalysis.configuration; use_cache; _ } as
-      static_analysis_configuration)
-    ~inline_decorators
-    ~build_system
-    ~repository_root
-    ()
-  =
-  let run () =
-    Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-        try
-          let analysis_kind = TaintAnalysis.abstract_kind in
-          Interprocedural.FixpointAnalysis.initialize_configuration
-            ~static_analysis_configuration
-            analysis_kind;
-
-          (* Collect decorators to skip before type-checking because decorator inlining happens in
-             an early phase of type-checking and needs to know which decorators to skip. *)
-          Service.StaticAnalysis.parse_and_save_decorators_to_skip ~inline_decorators configuration;
-          let cache =
-            Service.StaticAnalysis.Cache.load ~scheduler ~configuration ~enabled:use_cache
-          in
-          let environment = Service.StaticAnalysis.type_check ~scheduler ~configuration ~cache in
-
-          let qualifiers =
-            Analysis.TypeEnvironment.module_tracker environment
-            |> Analysis.ModuleTracker.read_only
-            |> Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules
-          in
-
-          let read_only_environment = Analysis.TypeEnvironment.read_only environment in
-          let class_hierarchy_graph =
-            Service.StaticAnalysis.build_class_hierarchy_graph
-              ~scheduler
-              ~cache
-              ~environment:read_only_environment
-              ~qualifiers
-          in
-          let _ = Service.StaticAnalysis.build_class_intervals class_hierarchy_graph in
-          let initial_callables =
-            Service.StaticAnalysis.fetch_initial_callables
-              ~scheduler
-              ~configuration
-              ~cache
-              ~environment:read_only_environment
-              ~qualifiers
-          in
-
-          let { Interprocedural.AnalysisResult.initial_models; skip_overrides } =
-            let { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } =
-              initial_callables
-            in
-            Interprocedural.FixpointAnalysis.initialize_models
-              analysis_kind
-              ~static_analysis_configuration
-              ~scheduler
-              ~environment:(Analysis.TypeEnvironment.read_only environment)
-              ~callables:(List.map callables_with_dependency_information ~f:fst)
-              ~stubs
-          in
-          let ast_environment =
-            environment
-            |> Analysis.TypeEnvironment.read_only
-            |> Analysis.TypeEnvironment.ReadOnly.ast_environment
-          in
-          let filename_lookup path_reference =
-            match
-              Server.RequestHandler.instantiate_path ~build_system ~ast_environment path_reference
-            with
-            | None -> None
-            | Some full_path ->
-                let root = Option.value repository_root ~default:configuration.local_root in
-                PyrePath.get_relative_to_root ~root ~path:(PyrePath.create_absolute full_path)
-          in
-          Service.StaticAnalysis.analyze
-            ~scheduler
-            ~analysis:analysis_kind
-            ~static_analysis_configuration
-            ~cache
-            ~filename_lookup
-            ~environment
-            ~qualifiers
-            ~initial_callables
-            ~initial_models
-            ~skip_overrides
-            ()
-        with
-        | exn ->
-            (* The backtrace is lost if the exception is caught at the top level, because of `Lwt`.
-             * Let's print the exception here to ease debugging. *)
-            Log.log_exception "Taint analysis failed." exn (Worker.exception_backtrace exn);
-            raise exn)
-  in
-  with_performance_tracking run
-
-
 let run_analyze analyze_configuration =
   let {
     AnalyzeConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; _ };
@@ -296,17 +199,22 @@ let run_analyze analyze_configuration =
     =
     analyze_configuration
   in
+  let ({ Configuration.StaticAnalysis.configuration = analysis_configuration; _ } as
+      static_analysis_configuration)
+    =
+    AnalyzeConfiguration.analysis_configuration_of analyze_configuration
+  in
   Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
-      let static_analysis_configuration =
-        AnalyzeConfiguration.analysis_configuration_of analyze_configuration
-      in
-      run_taint_analysis
-        ~static_analysis_configuration
-        ~build_system
-        ~inline_decorators
-        ~repository_root
-        ();
-      Lwt.return (ExitStatus.CheckStatus CheckCommand.ExitStatus.Ok))
+      Scheduler.with_scheduler ~configuration:analysis_configuration ~f:(fun scheduler ->
+          with_performance_tracking ~f:(fun () ->
+              TaintAnalysis.run_taint_analysis
+                ~static_analysis_configuration
+                ~build_system
+                ~scheduler
+                ~inline_decorators
+                ~repository_root
+                ());
+          Lwt.return (ExitStatus.CheckStatus CheckCommand.ExitStatus.Ok)))
 
 
 let run_analyze configuration_file =
