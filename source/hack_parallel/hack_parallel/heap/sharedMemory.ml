@@ -798,12 +798,27 @@ module Old : functor (Key : Key) -> functor (Value : ValueType) ->
 (*****************************************************************************)
 (* A shared memory table with no process-local caching of reads *)
 (*****************************************************************************)
-module NoCache = struct
+module TableTypes = struct
   module type S = sig
     type key
     type value
     module KeySet : Set.S with type elt = key
     module KeyMap : MyMap.S with type key = key
+  end
+
+  module Make (KeyType : KeyType) (Value : ValueType) = struct
+    module Key = KeyFunctor (KeyType)
+    module KeySet = Set.Make (KeyType)
+    module KeyMap = MyMap.Make (KeyType)
+
+    type key = KeyType.t
+    type value = Value.t
+  end
+end
+
+module NoCache = struct
+  module type S = sig
+    include TableTypes.S
 
 
 
@@ -844,14 +859,10 @@ module NoCache = struct
 
   module Make (KeyType : KeyType) (Value : ValueType) = struct
 
-    module Key = KeyFunctor (KeyType)
+    include TableTypes.Make (KeyType) (Value)
+
     module New = New (Key) (Value)
     module Old = Old (Key) (Value) (New.Raw)
-    module KeySet = Set.Make (KeyType)
-    module KeyMap = MyMap.Make (KeyType)
-
-    type key = KeyType.t
-    type value = Value.t
 
     let add x y = New.add (Key.make Value.prefix x) y
 

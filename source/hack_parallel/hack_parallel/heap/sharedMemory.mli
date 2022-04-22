@@ -165,14 +165,33 @@ module type ValueType = sig
 end
 
 (*****************************************************************************)
-(* A shared memory table with no process-local caching of reads *)
+(* The common key and value type logic for all shared-memory tables *)
 (*****************************************************************************)
-module NoCache : sig
+
+module TableTypes : sig
   module type S = sig
     type key
     type value
     module KeySet : Set.S with type elt = key
     module KeyMap : MyMap.S with type key = key
+  end
+
+  module Make :
+    functor (KeyType : KeyType) ->
+    functor (Value : ValueType) ->
+      S with type value = Value.t
+              and type key = KeyType.t
+              and module KeySet = Set.Make (KeyType)
+              and module KeyMap = MyMap.Make (KeyType)
+end
+
+
+(*****************************************************************************)
+(* A shared memory table with no process-local caching of reads *)
+(*****************************************************************************)
+module NoCache : sig
+  module type S = sig
+    include TableTypes.S
 
 
     (* Add a value to the table. Safe for concurrent writes - the first
