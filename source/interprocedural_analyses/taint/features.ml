@@ -115,7 +115,15 @@ end)
 module FirstFieldInterned = MakeInterner (FirstField)
 
 module FirstFieldSet = struct
-  include MakeAbstractSetFromInterner (FirstFieldInterned)
+  include Abstract.SetDomain.MakeWithSet (struct
+    include Data_structures.BitSetPatriciaTreeIntSet.Make (struct
+      let common_integers = TaintAnalysisFeatureStats.common_first_fields
+    end)
+
+    let show_element = FirstFieldInterned.show
+
+    let element_name = FirstFieldInterned.name
+  end)
 
   let add_first field fields =
     if is_bottom fields then
