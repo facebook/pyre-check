@@ -39,8 +39,8 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "timestamp" },
               { "first-index": "app_id" },
+              { "first-index": "timestamp" },
               { "always-via": "tito" }
             ],
             "decl": null
@@ -114,8 +114,8 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "timestamp" },
               { "first-index": "app_id" },
+              { "first-index": "timestamp" },
               { "always-via": "tito" }
             ],
             "decl": null
@@ -189,8 +189,8 @@
             ],
             "local_features": [
               { "has": "first-index" },
-              { "first-index": "timestamp" },
               { "first-index": "app_id" },
+              { "first-index": "timestamp" },
               { "always-via": "tito" }
             ],
             "tito": [

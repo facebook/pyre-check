@@ -54,6 +54,25 @@ struct
   end)
 end
 
+module MakeAbstractSetFromInternerAndStats (Interner : sig
+  val name : string
+
+  val show : int -> string
+end) (Stats : sig
+  val common_integers : int array
+end) =
+struct
+  include Abstract.SetDomain.MakeWithSet (struct
+    include Data_structures.BitSetPatriciaTreeIntSet.Make (struct
+      let common_integers = Stats.common_integers
+    end)
+
+    let show_element = Interner.show
+
+    let element_name = Interner.name
+  end)
+end
+
 module First (Kind : sig
   val kind : string
 end) =
@@ -80,7 +99,12 @@ end)
 module FirstIndexInterned = MakeInterner (FirstIndex)
 
 module FirstIndexSet = struct
-  include MakeAbstractSetFromInterner (FirstIndexInterned)
+  include
+    MakeAbstractSetFromInternerAndStats
+      (FirstIndexInterned)
+      (struct
+        let common_integers = TaintAnalysisFeatureStats.common_first_indices
+      end)
 
   let number_regexp = Str.regexp "[0-9]+"
 
@@ -115,15 +139,12 @@ end)
 module FirstFieldInterned = MakeInterner (FirstField)
 
 module FirstFieldSet = struct
-  include Abstract.SetDomain.MakeWithSet (struct
-    include Data_structures.BitSetPatriciaTreeIntSet.Make (struct
-      let common_integers = TaintAnalysisFeatureStats.common_first_fields
-    end)
-
-    let show_element = FirstFieldInterned.show
-
-    let element_name = FirstFieldInterned.name
-  end)
+  include
+    MakeAbstractSetFromInternerAndStats
+      (FirstFieldInterned)
+      (struct
+        let common_integers = TaintAnalysisFeatureStats.common_first_fields
+      end)
 
   let add_first field fields =
     if is_bottom fields then

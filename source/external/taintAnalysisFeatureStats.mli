@@ -8,3 +8,5 @@
 val common_breadcrumbs : int array
 
 val common_first_fields : int array
+
+val common_first_indices : int array
