@@ -10,35 +10,35 @@ open Pyre
 open Taint
 module Target = Interprocedural.Target
 
+let initialize_configuration
+    ~static_analysis_configuration:
+      { Configuration.StaticAnalysis.configuration = { taint_model_paths; _ }; _ }
+  =
+  (* In order to save time, sanity check models before starting the analysis. *)
+  Log.info "Verifying model syntax and configuration.";
+  let timer = Timer.start () in
+  ModelParser.get_model_sources ~paths:taint_model_paths
+  |> List.iter ~f:(fun (path, source) -> ModelParser.verify_model_syntax ~path ~source);
+  let (_ : TaintConfiguration.t) =
+    TaintConfiguration.create
+      ~rule_filter:None
+      ~find_missing_flows:None
+      ~dump_model_query_results_path:None
+      ~maximum_trace_length:None
+      ~maximum_tito_depth:None
+      ~taint_model_paths
+    |> TaintConfiguration.exception_on_error
+  in
+  Statistics.performance
+    ~name:"Verified model syntax and configuration"
+    ~phase_name:"Verifying model syntax and configuration"
+    ~timer
+    ()
+
+
 (* Registers the Taint analysis with the interprocedural analysis framework. *)
 include Taint.Result.Register (struct
   include Taint.Result
-
-  let initialize_configuration
-      ~static_analysis_configuration:
-        { Configuration.StaticAnalysis.configuration = { taint_model_paths; _ }; _ }
-    =
-    (* In order to save time, sanity check models before starting the analysis. *)
-    Log.info "Verifying model syntax and configuration.";
-    let timer = Timer.start () in
-    ModelParser.get_model_sources ~paths:taint_model_paths
-    |> List.iter ~f:(fun (path, source) -> ModelParser.verify_model_syntax ~path ~source);
-    let (_ : TaintConfiguration.t) =
-      TaintConfiguration.create
-        ~rule_filter:None
-        ~find_missing_flows:None
-        ~dump_model_query_results_path:None
-        ~maximum_trace_length:None
-        ~maximum_tito_depth:None
-        ~taint_model_paths
-      |> TaintConfiguration.exception_on_error
-    in
-    Statistics.performance
-      ~name:"Verified model syntax and configuration"
-      ~phase_name:"Verifying model syntax and configuration"
-      ~timer
-      ()
-
 
   type model_query_data = {
     queries: ModelParser.Internal.ModelQuery.rule list;
@@ -403,9 +403,7 @@ let run_taint_analysis
     ()
   =
   try
-    Interprocedural.FixpointAnalysis.initialize_configuration
-      ~static_analysis_configuration
-      abstract_kind;
+    let () = initialize_configuration ~static_analysis_configuration in
 
     (* Collect decorators to skip before type-checking because decorator inlining happens in an
        early phase of type-checking and needs to know which decorators to skip. *)

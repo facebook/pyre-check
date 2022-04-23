@@ -11,12 +11,6 @@ open Pyre
 open Statement
 module Kind = AnalysisKind
 
-let initialize_configuration kind ~static_analysis_configuration =
-  let (AnalysisResult.Analysis { analysis; _ }) = AnalysisResult.get_abstract_analysis kind in
-  let module Analysis = (val analysis) in
-  Analysis.initialize_configuration ~static_analysis_configuration
-
-
 (* Initialize models for the given analysis.
  * For the taint analysis, this parses taint stubs into models and queries. *)
 let initialize_models kind ~scheduler ~static_analysis_configuration ~environment ~callables ~stubs =

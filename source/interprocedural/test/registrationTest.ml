@@ -30,8 +30,6 @@ module SimpleAnalysis = Interprocedural.AnalysisResult.Make (struct
 end)
 
 include SimpleAnalysis.Register (struct
-  let initialize_configuration ~static_analysis_configuration:_ = ()
-
   let initialize_models
       ~scheduler:_
       ~static_analysis_configuration:_

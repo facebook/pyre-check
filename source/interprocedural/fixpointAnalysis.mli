@@ -7,11 +7,6 @@
 
 module Kind = AnalysisKind
 
-val initialize_configuration
-  :  Kind.abstract ->
-  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  unit
-
 val initialize_models
   :  Kind.abstract ->
   scheduler:Scheduler.t ->
