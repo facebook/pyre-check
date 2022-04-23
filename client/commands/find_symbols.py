@@ -6,7 +6,7 @@
 import ast
 from typing import List, Union
 
-from tools.pyre.client.commands.language_server_protocol import (
+from ..commands.language_server_protocol import (
     LspRange,
     DocumentSymbolsResponse,
     SymbolKind,

@@ -28,9 +28,6 @@ from typing import (
 
 import dataclasses_json
 from libcst.metadata import CodeRange
-from tools.pyre.client.commands.language_server_protocol import (
-    DocumentSymbolsResponse,
-)
 
 from .. import (
     command_arguments,
@@ -42,6 +39,7 @@ from .. import (
     timer,
     version,
 )
+from ..commands.language_server_protocol import DocumentSymbolsResponse
 from ..coverage_collector import coverage_collector_for_module, CoveredAndUncoveredLines
 from . import (
     async_server_connection as connection,

@@ -13,11 +13,9 @@ from unittest.mock import CallableMixin, patch
 
 import testslide
 from libcst.metadata import CodePosition, CodeRange
-from tools.pyre.client.commands.language_server_protocol import (
-    SymbolKind,
-)
 
 from ... import configuration as configuration_module, error, json_rpc
+from ...commands.language_server_protocol import SymbolKind
 from ...coverage_collector import CoveredAndUncoveredLines
 from ...tests import setup
 from .. import (
