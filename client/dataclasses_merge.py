@@ -141,12 +141,12 @@ def _merge_fields(
         if not isinstance(base, list):
             raise DataclassMergeError(
                 f"Field `{name}` is expected to be a list as it uses the 'prepend' "
-                "merge policy. Got `{base}`."
+                f"merge policy. Got `{base}`."
             )
         if not isinstance(override, list):
             raise DataclassMergeError(
                 f"Field `{name}` is expected to be a list as it uses the 'prepend' "
-                "merge policy. Got `{override}`."
+                f"merge policy. Got `{override}`."
             )
         return override + base
 

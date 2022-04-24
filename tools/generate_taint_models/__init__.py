@@ -71,7 +71,7 @@ class GenerationArguments:
 
 def _file_exists(path: str) -> str:
     if not os.path.exists(path):
-        raise ValueError("No file at `{path}`")
+        raise ValueError(f"No file at `{path}`")
     return path
 
 
