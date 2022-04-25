@@ -64,6 +64,10 @@
   max-height: 50vh;
 }
 
+.check {
+  float: left
+}
+
 /* Announcement banner */
 
 :root {
