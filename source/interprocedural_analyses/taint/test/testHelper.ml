@@ -618,7 +618,7 @@ let initialize
     FixpointState.remove_old keys;
     initial_models
     |> Target.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind)
-    |> Interprocedural.FixpointAnalysis.Testing.record_initial_models ~targets ~stubs
+    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:targets ~stubs
   in
   (* The call graph building depends on initial models for global targets. *)
   let callgraph =

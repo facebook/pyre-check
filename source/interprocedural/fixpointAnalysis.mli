@@ -16,14 +16,6 @@ val initialize_models
   stubs:Target.t list ->
   AnalysisResult.model_t AnalysisResult.initialize_result
 
-module Testing : sig
-  val record_initial_models
-    :  targets:Target.t list ->
-    stubs:Target.t list ->
-    AnalysisResult.model_t Target.Map.t ->
-    unit
-end
-
 val record_initial_models
   :  callables:Target.t list ->
   stubs:Target.t list ->

@@ -37,36 +37,28 @@ let initialize_models kind ~scheduler ~static_analysis_configuration ~environmen
   |> specialize_models
 
 
-module Testing = struct
-  (* This signature for record_initial_models is unreachable in production, we only have initial
-     models for callable_t. But as a hack the integration tests sometimes directly store initial
-     models on non-callable targets *)
-  let record_initial_models ~targets ~stubs models =
-    let record_models models =
-      let add_model_to_memory ~key:call_target ~data:model =
-        FixpointState.add_predefined FixpointState.Epoch.initial call_target model
-      in
-      Target.Map.iteri models ~f:add_model_to_memory
-    in
-    (* Augment models with initial inferred and obscure models *)
-    let add_missing_initial_models models =
-      targets
-      |> List.filter ~f:(fun target -> not (Target.Map.mem models target))
-      |> List.fold ~init:models ~f:(fun models target ->
-             Target.Map.set models ~key:target ~data:AnalysisResult.empty_model)
-    in
-    let add_missing_obscure_models models =
-      stubs
-      |> List.filter ~f:(fun target -> not (Target.Map.mem models target))
-      |> List.fold ~init:models ~f:(fun models target ->
-             Target.Map.set models ~key:target ~data:AnalysisResult.obscure_model)
-    in
-    models |> add_missing_initial_models |> add_missing_obscure_models |> record_models
-end
-
 (* Save initial models in the shared memory. *)
 let record_initial_models ~callables ~stubs models =
-  Testing.record_initial_models ~targets:callables ~stubs models
+  let record_models models =
+    let add_model_to_memory ~key:call_target ~data:model =
+      FixpointState.add_predefined FixpointState.Epoch.initial call_target model
+    in
+    Target.Map.iteri models ~f:add_model_to_memory
+  in
+  (* Augment models with initial inferred and obscure models *)
+  let add_missing_initial_models models =
+    callables
+    |> List.filter ~f:(fun target -> not (Target.Map.mem models target))
+    |> List.fold ~init:models ~f:(fun models target ->
+           Target.Map.set models ~key:target ~data:AnalysisResult.empty_model)
+  in
+  let add_missing_obscure_models models =
+    stubs
+    |> List.filter ~f:(fun target -> not (Target.Map.mem models target))
+    |> List.fold ~init:models ~f:(fun models target ->
+           Target.Map.set models ~key:target ~data:AnalysisResult.obscure_model)
+  in
+  models |> add_missing_initial_models |> add_missing_obscure_models |> record_models
 
 
 let analysis_failed step ~exn callable ~message =
