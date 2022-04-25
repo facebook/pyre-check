@@ -379,7 +379,6 @@ let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environme
   in
   match trigger with
   | ColdStart ->
-      let timer = Timer.start () in
       (* The one external module we want to try to force load is `builtins.pyi`. This improves
          performance later and also will prevent problems with lazy qualifier lookups if, in the
          future, there are ever nested classes in builtins. *)
@@ -391,12 +390,6 @@ let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environme
         |> List.filter ~f:SourcePath.is_in_project
         |> List.map ~f:SourcePath.qualifier)
       in
-      (* This logging can be removed later, but is needed for perf testing at this time. *)
-      Statistics.performance
-        ~name:"sources parsed"
-        ~phase_name:"Parsing and preprocessing"
-        ~timer
-        ();
       {
         UpdateResult.invalidated_modules;
         triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
