@@ -86,7 +86,6 @@ function CopyUrlButton(props) {
         )}
         style={style}
         onClick={copyCurrentUrl}>
-        {props.busy ? <div className={styles.spinner} /> : null}
         Copy Url
       </div>
     </div>
@@ -185,6 +184,7 @@ function Playground() {
           <CheckButton check={check} busy={busy} />
           <CopyUrlButton busy={busy} />
         </div>
+        <br />
         <br />
         <Results results={results} />
       </main>
