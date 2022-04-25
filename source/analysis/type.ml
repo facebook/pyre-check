@@ -2949,9 +2949,7 @@ module Callable = struct
           match parameter with
           | KeywordOnly { name = parameter_name; _ }
           | Named { name = parameter_name; _ }
-            when Identifier.equal
-                   (Identifier.remove_leading_underscores parameter_name)
-                   (Identifier.remove_leading_underscores name) ->
+            when Identifier.equal parameter_name name ->
               Some parameter
           | _ -> None
         in

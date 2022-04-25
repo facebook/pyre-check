@@ -1170,14 +1170,6 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       ^ "Could not find parameter `a` in overriding signature.";
     ];
   assert_type_errors
-    {|
-      class Foo():
-        def foo(self, a: int) -> None: pass
-      class Bar(Foo):
-        def foo(self, _a: int) -> None: pass
-    |}
-    [];
-  assert_type_errors
     ~show_error_traces:true
     {|
       import typing
@@ -1312,50 +1304,27 @@ let test_check_behavioral_subtyping__weakened_precondition context =
     |}
     [];
 
-  (* A leading underscore indicates parameters are unused; they should still be recognized *)
+  (* Positional-only parameters *)
   assert_type_errors
     {|
       class Foo:
-          def bar(self, _x: int) -> str:
+          def bar(self, __x: int) -> str:
               return ""
       class Bar(Foo):
-          def bar(self, x: int) -> str:
+          def bar(self, __y: int) -> str:
               return ""
     |}
     [];
   assert_type_errors
     {|
       class Foo:
-          def bar(self, _x: int) -> str:
+          def bar(self, x: int, /) -> str:
               return ""
-      class Baz(Foo):
-          def bar(self, _x: int) -> str:
+      class Bar(Foo):
+          def bar(self, y: int, /) -> str:
               return ""
     |}
     [];
-  assert_type_errors
-    {|
-      class Foo:
-          def bar(self, x: int) -> str:
-              return ""
-      class Bar(Foo):
-          def bar(self, _x: int) -> str:
-              return ""
-    |}
-    [];
-  assert_type_errors
-    {|
-      class Foo:
-          def bar(self, _y: int) -> str:
-              return ""
-      class Bar(Foo):
-          def bar(self, x: int) -> str:
-              return ""
-    |}
-    [
-      "Inconsistent override [14]: `test.Bar.bar` overrides method defined in `Foo` "
-      ^ "inconsistently. Could not find parameter `_y` in overriding signature.";
-    ];
   ()
 
 
