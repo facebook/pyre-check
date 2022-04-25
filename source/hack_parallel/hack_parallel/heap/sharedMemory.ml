@@ -1285,3 +1285,179 @@ module WithCache = struct
     end
   end
 end
+
+
+
+(*****************************************************************************)
+(* For some purposes, we need to use shared memory tables but still have the
+ * table itself act like a first-class value - for example in overlayed
+ * environments where we need both filesystem-backed and
+ * unsaved-editor-state-backed tables.
+ *
+ * The `FirstClass.NoCache` and `FirstClass.WithCache` modules expose roughly
+ * the same API as `NoCache` and `WithCache`, except that they expose a type
+ * `t` representing the identity of the table and each operation takes an
+ * additional argument of type `t`. The resulting interface is very similar to
+ * the built-in `Hashtbl` interface.
+ *)
+(*****************************************************************************)
+
+module FirstClass = struct
+
+
+    module TupleKey (Key: KeyType) = struct
+
+      type t = int * Key.t
+
+      let to_string (id, key) =
+        Format.asprintf "%d:%s" id (Key.to_string key)
+
+
+      let from_string string_key =
+        let split = String.split_on_char ':' string_key in
+        match split with
+        | [] -> failwith (Format.asprintf "Invalid stringified key: %s" string_key)
+        | id_string :: rest ->
+          let id = int_of_string id_string in
+          let key = String.concat ":" rest |> Key.from_string in
+          (id, key)
+
+
+      let compare (id0, key0) (id1, key1) =
+        let id_compare = Int.compare id0 id1 in
+        if id_compare <> 0 then
+          id_compare
+        else
+          Key.compare key0 key1
+    end
+
+  module NoCache = struct
+    module type S = sig
+      type t
+
+      type key
+
+      type value
+
+      module KeySet : Set.S with type elt = key
+
+      module KeyMap : MyMap.S with type key = key
+
+      (* The create function must be run on the main ocaml process, and is not thread-safe. *)
+      val create : unit -> t
+
+      (* Add a value to the table. Safe for concurrent writes - the first
+         writer wins, later values are discarded. *)
+      val add : t -> key -> value -> unit
+
+      (* Api to read and remove from the table *)
+      val mem : t -> key -> bool
+      val get : t -> key -> value option
+      val get_batch : t -> KeySet.t -> value option KeyMap.t
+      val remove_batch : t -> KeySet.t -> unit
+
+      (* Api to read and remove old data from the table, which lives in a separate
+         hash map. Used in situations where we want to know what has changed, for
+         example dependency-tracked tables. *)
+      val mem_old : t -> key -> bool
+      val get_old : t -> key -> value option
+      val get_old_batch : t -> KeySet.t -> value option KeyMap.t
+      val remove_old_batch : t -> KeySet.t -> unit
+
+      (* Move keys between the current view of the table and the old-values table *)
+      val oldify_batch : t -> KeySet.t -> unit
+      val revive_batch : t -> KeySet.t -> unit
+    end
+
+    module FromGlobal
+        (Key : KeyType)
+        (Value : ValueType)
+        (Global: NoCache.S
+          with type key = TupleKey(Key).t
+          and type value = Value.t
+          and module KeySet = Set.Make ( TupleKey( Key ) )
+          and module KeyMap = MyMap.Make ( TupleKey( Key) ) ) = struct
+
+      include TableTypes.Make(Key) (Value)
+
+      type t = int
+
+
+
+      let with_convert_key f id key = f (id, key)
+
+      let with_convert_keyset f id keys =
+        keys |> KeySet.to_seq |> Seq.map (fun key -> id, key) |> Global.KeySet.of_seq |> f
+
+
+      let convert_keymap map =
+        map
+        |> Global.KeyMap.to_seq
+        |> Seq.map (fun ((_, key), value) -> key, value)
+        |> KeyMap.of_seq
+
+      (* TODO (T117713942) use the Atomic module whenver we migrate to ocaml >= 4.12, which would
+         make this function save against data races. *)
+      let next_table_id = ref 0
+
+      let create () =
+        let out = !next_table_id in
+        next_table_id := out + 1;
+        out
+
+      let add = with_convert_key Global.add
+
+      let mem = with_convert_key Global.mem
+
+      let get = with_convert_key Global.get
+
+      let get_batch id keys = with_convert_keyset Global.get_batch id keys |> convert_keymap
+
+      let remove_batch = with_convert_keyset Global.remove_batch
+
+      let mem_old = with_convert_key Global.mem_old
+
+      let get_old = with_convert_key Global.get_old
+
+      let get_old_batch id keys = with_convert_keyset Global.get_old_batch id keys |> convert_keymap
+
+      let remove_old_batch = with_convert_keyset Global.remove_old_batch
+
+      let oldify_batch = with_convert_keyset Global.oldify_batch
+
+      let revive_batch = with_convert_keyset Global.revive_batch
+    end
+
+    module Make (Key: KeyType) (Value: ValueType) = struct
+
+      module Global = NoCache.Make( TupleKey( Key ) ) ( Value )
+
+      include FromGlobal (Key) (Value) (Global)
+
+    end
+  end
+
+  module WithCache = struct
+    module type S = sig
+      include NoCache.S
+
+      val write_through : t -> key -> value -> unit
+
+      val get_no_cache : t -> key -> value option
+    end
+
+    module Make (Key: KeyType) (Value: ValueType) = struct
+
+      module Global = WithCache.Make( TupleKey( Key ) ) ( Value )
+
+      include NoCache.FromGlobal (Key) (Value) (Global)
+
+      let write_through = with_convert_key Global.write_through
+
+      let get_no_cache = with_convert_key Global.get_no_cache
+
+    end
+
+  end
+
+end

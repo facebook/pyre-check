@@ -276,3 +276,75 @@ module LocalCache :
   functor (Value : ValueType) ->
     CacheType with type key = KeyType.t
                and type value = Value.t
+
+
+module FirstClass : sig
+
+
+  module NoCache : sig
+    module type S = sig
+      type t
+
+      type key
+
+      type value
+
+      module KeySet : Set.S with type elt = key
+
+      module KeyMap : MyMap.S with type key = key
+
+      (* The create function must be run on the main ocaml process, and is not thread-safe. *)
+      val create : unit -> t
+
+      (* Add a value to the table. Safe for concurrent writes - the first
+         writer wins, later values are discarded. *)
+      val add : t -> key -> value -> unit
+
+      (* Api to read and remove from the table *)
+      val mem : t -> key -> bool
+      val get : t -> key -> value option
+      val get_batch : t -> KeySet.t -> value option KeyMap.t
+      val remove_batch : t -> KeySet.t -> unit
+
+      (* Api to read and remove old data from the table, which lives in a separate
+         hash map. Used in situations where we want to know what has changed, for
+         example dependency-tracked tables. *)
+      val mem_old : t -> key -> bool
+      val get_old : t -> key -> value option
+      val get_old_batch : t -> KeySet.t -> value option KeyMap.t
+      val remove_old_batch : t -> KeySet.t -> unit
+
+      (* Move keys between the current view of the table and the old-values table *)
+      val oldify_batch : t -> KeySet.t -> unit
+      val revive_batch : t -> KeySet.t -> unit
+    end
+
+    module Make :
+      functor (KeyType : KeyType) ->
+      functor (Value : ValueType) ->
+        S with type value = Value.t
+                and type key = KeyType.t
+                and module KeySet = Set.Make (KeyType)
+                and module KeyMap = MyMap.Make (KeyType)
+
+  end
+
+  module WithCache : sig
+    module type S = sig
+      include NoCache.S
+
+      val write_through : t -> key -> value -> unit
+
+      val get_no_cache : t -> key -> value option
+    end
+
+    module Make :
+      functor (KeyType : KeyType) ->
+      functor (Value : ValueType) ->
+        S with type value = Value.t
+                and type key = KeyType.t
+                and module KeySet = Set.Make (KeyType)
+                and module KeyMap = MyMap.Make (KeyType)
+
+  end
+end
