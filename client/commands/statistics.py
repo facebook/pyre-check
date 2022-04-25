@@ -378,6 +378,7 @@ def run(
     statistics_arguments: command_arguments.StatisticsArguments,
 ) -> commands.ExitCode:
     try:
+        LOG.info("Collecting statistics...")
         return run_statistics(configuration, statistics_arguments)
     except Exception as error:
         raise commands.ClientException(
