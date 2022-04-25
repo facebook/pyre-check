@@ -984,10 +984,8 @@ let test_check_abstract_methods context =
     []
 
 
-let test_check_behavioral_subtyping context =
+let test_check_behavioral_subtyping__strengthened_postcondition context =
   let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
-  (* Strengthened postcondition. *)
   assert_type_errors
     {|
       class Foo():
@@ -1066,66 +1064,6 @@ let test_check_behavioral_subtyping context =
         def foo(self) -> int: return 1
     |}
     [];
-
-  (* Starred arguments. *)
-  assert_type_errors
-    {|
-      class C:
-        def f(self, *args: int) -> None: ...
-      class D(C):
-        def f(self, *args: int) -> None: ...
-    |}
-    [];
-
-  (* Keyword arguments. *)
-  assert_type_errors
-    {|
-      class C:
-        def f(self, **kwargs: str) -> None: ...
-      class D(C):
-        def f(self, **kwargs: str) -> None: ...
-    |}
-    [];
-  assert_type_errors
-    {|
-      class Foo():
-        def foo(self, input: int) -> int: ...
-      class Bar(Foo):
-        def foo(self, input) -> int: ...
-    |}
-    ["Missing parameter annotation [2]: Parameter `input` has no type specified."];
-  assert_type_errors
-    {|
-      import typing
-      T = typing.TypeVar("T", bound=int)
-      class Foo():
-        def foo(self, x: T) -> str:
-          return ""
-      class Bar(Foo[str]):
-        def foo(self, x: str) -> str:
-          return x
-    |}
-    [
-      "Invalid type parameters [24]: Non-generic type `Foo` cannot take parameters.";
-      "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` \
-       inconsistently. "
-      ^ "Parameter of type `str` is not a supertype of the overridden parameter "
-      ^ "`Variable[T (bound to int)]`.";
-    ];
-  assert_type_errors
-    {|
-      import typing
-      T = typing.TypeVar('T')
-      class Foo(typing.Generic[T]):
-        def foo(self) -> T: ...
-      class Bar(Foo[int]):
-        def foo(self) -> int:
-          return 1
-      class BarTwo(Foo[None]):
-        def foo(self) -> None:
-          pass
-    |}
-    [];
   assert_type_errors
     ~show_error_traces:true
     {|
@@ -1156,8 +1094,11 @@ let test_check_behavioral_subtyping context =
         def foo(self) -> typing.Generator[int, None, None]: ...
     |}
     [];
+  ()
 
-  (* Weakened precondition. *)
+
+let test_check_behavioral_subtyping__weakened_precondition context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class Foo():
@@ -1311,6 +1252,66 @@ let test_check_behavioral_subtyping context =
     |}
     [];
 
+  (* Starred arguments. *)
+  assert_type_errors
+    {|
+      class C:
+        def f(self, *args: int) -> None: ...
+      class D(C):
+        def f(self, *args: int) -> None: ...
+    |}
+    [];
+
+  (* Keyword arguments. *)
+  assert_type_errors
+    {|
+      class C:
+        def f(self, **kwargs: str) -> None: ...
+      class D(C):
+        def f(self, **kwargs: str) -> None: ...
+    |}
+    [];
+  assert_type_errors
+    {|
+      class Foo():
+        def foo(self, input: int) -> int: ...
+      class Bar(Foo):
+        def foo(self, input) -> int: ...
+    |}
+    ["Missing parameter annotation [2]: Parameter `input` has no type specified."];
+  assert_type_errors
+    {|
+      import typing
+      T = typing.TypeVar("T", bound=int)
+      class Foo():
+        def foo(self, x: T) -> str:
+          return ""
+      class Bar(Foo[str]):
+        def foo(self, x: str) -> str:
+          return x
+    |}
+    [
+      "Invalid type parameters [24]: Non-generic type `Foo` cannot take parameters.";
+      "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` \
+       inconsistently. "
+      ^ "Parameter of type `str` is not a supertype of the overridden parameter "
+      ^ "`Variable[T (bound to int)]`.";
+    ];
+  assert_type_errors
+    {|
+      import typing
+      T = typing.TypeVar('T')
+      class Foo(typing.Generic[T]):
+        def foo(self) -> T: ...
+      class Bar(Foo[int]):
+        def foo(self) -> int:
+          return 1
+      class BarTwo(Foo[None]):
+        def foo(self) -> None:
+          pass
+    |}
+    [];
+
   (* A leading underscore indicates parameters are unused; they should still be recognized *)
   assert_type_errors
     {|
@@ -1355,98 +1356,11 @@ let test_check_behavioral_subtyping context =
       "Inconsistent override [14]: `test.Bar.bar` overrides method defined in `Foo` "
       ^ "inconsistently. Could not find parameter `_y` in overriding signature.";
     ];
+  ()
 
-  (* Don't warn on constructors. *)
-  assert_type_errors
-    {|
-      class Foo():
-        def __init__(self, a: float) -> None: ...
-      class Bar(Foo):
-        def __init__(self, a: int) -> None: pass
-    |}
-    [];
 
-  (* Don't warn on dunder methods. *)
-  assert_type_errors
-    {|
-      class Foo():
-        def __dunder__(self, a: float) -> None: ...
-      class Bar(Foo):
-        def __dunder__(self, a: int) -> None: pass
-    |}
-    [
-      "Inconsistent override [14]: `test.Bar.__dunder__` overrides method defined in `Foo` \
-       inconsistently. Parameter of type `int` is not a supertype of the overridden parameter \
-       `float`.";
-    ];
-
-  (* Weakening of object precondition is not possible. *)
-  assert_type_errors
-    {|
-      class Foo():
-        def __eq__(self, o: object) -> bool: ...
-      class Bar(Foo):
-        def __eq__(self, other: int) -> bool: ...
-    |}
-    [];
-
-  (* Ensure that our preprocessing doesn't clobber starred argument names. *)
-  assert_type_errors
-    {|
-      class Foo():
-        def foo( **kwargs) -> int: ...
-      class Bar(Foo):
-        def foo( **kwargs) -> int: ...
-    |}
-    [];
-
-  (* Ignore anything involving `Any`. *)
-  assert_default_type_errors
-    {|
-      import typing
-      class Foo():
-        def __eq__(self, o: typing.Any) -> typing.Any: ...
-      class Bar(Foo):
-        def __eq__(self, o: int) -> int: pass
-    |}
-    [];
-
-  (* Overrides when both *args and **kwargs exist are not inconsistent. *)
-  assert_default_type_errors
-    {|
-      import typing
-      class Foo():
-        def f(self, a: float) -> None: ...
-      class Bar(Foo):
-        def f(self, *args: typing.Any) -> None: pass
-    |}
-    [
-      "Inconsistent override [14]: `test.Bar.f` overrides method defined in `Foo` inconsistently. "
-      ^ "Could not find parameter `a` in overriding signature.";
-    ];
-  assert_default_type_errors
-    {|
-      import typing
-      class Foo():
-        def f(self, b: int) -> None: ...
-      class Bar(Foo):
-        def f(self, **kwargs: typing.Any) -> None: pass
-    |}
-    [
-      "Inconsistent override [14]: `test.Bar.f` overrides method defined in `Foo` inconsistently. "
-      ^ "Could not find parameter `b` in overriding signature.";
-    ];
-  assert_default_type_errors
-    {|
-      import typing
-      class Foo():
-        def f(self, c: str) -> None: ...
-      class Bar(Foo):
-        def f(self, *args: typing.Any, **kwargs: typing.Any) -> None: pass
-    |}
-    [];
-
-  (* Overrides of overloaded methods. *)
+let test_check_behavioral_subtyping__overloads context =
+  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_default_type_errors
     {|
       import typing
@@ -1553,6 +1467,101 @@ let test_check_behavioral_subtyping context =
       "Missing overload implementation [42]: Overloaded function `Bar.foo` must have an \
        implementation.";
     ];
+  ()
+
+
+let test_check_behavioral_subtyping__special_cases context =
+  let assert_type_errors = assert_type_errors ~context in
+  let assert_default_type_errors = assert_default_type_errors ~context in
+  (* Don't warn on constructors. *)
+  assert_type_errors
+    {|
+      class Foo():
+        def __init__(self, a: float) -> None: ...
+      class Bar(Foo):
+        def __init__(self, a: int) -> None: pass
+    |}
+    [];
+
+  (* Don't warn on allowlisted dunder methods *)
+  assert_type_errors
+    {|
+      class Foo():
+        def __eq__(self, other: object) -> bool: ...
+      class Bar(Foo):
+        def __eq__(self, other: int) -> bool: ...
+    |}
+    [];
+
+  (* Do warn on other dunder methods. *)
+  assert_type_errors
+    {|
+      class Foo():
+        def __dunder__(self, a: float) -> None: ...
+      class Bar(Foo):
+        def __dunder__(self, a: int) -> None: pass
+    |}
+    [
+      "Inconsistent override [14]: `test.Bar.__dunder__` overrides method defined in `Foo` \
+       inconsistently. Parameter of type `int` is not a supertype of the overridden parameter \
+       `float`.";
+    ];
+
+  (* Ensure that our preprocessing doesn't clobber starred argument names. *)
+  assert_type_errors
+    {|
+      class Foo():
+        def foo( **kwargs) -> int: ...
+      class Bar(Foo):
+        def foo( **kwargs) -> int: ...
+    |}
+    [];
+
+  (* Ignore anything involving `Any`. *)
+  assert_default_type_errors
+    {|
+      import typing
+      class Foo():
+        def __eq__(self, o: typing.Any) -> typing.Any: ...
+      class Bar(Foo):
+        def __eq__(self, o: int) -> int: pass
+    |}
+    [];
+
+  (* Overrides when both *args and **kwargs exist are not inconsistent. *)
+  assert_default_type_errors
+    {|
+      import typing
+      class Foo():
+        def f(self, a: float) -> None: ...
+      class Bar(Foo):
+        def f(self, *args: typing.Any) -> None: pass
+    |}
+    [
+      "Inconsistent override [14]: `test.Bar.f` overrides method defined in `Foo` inconsistently. "
+      ^ "Could not find parameter `a` in overriding signature.";
+    ];
+  assert_default_type_errors
+    {|
+      import typing
+      class Foo():
+        def f(self, b: int) -> None: ...
+      class Bar(Foo):
+        def f(self, **kwargs: typing.Any) -> None: pass
+    |}
+    [
+      "Inconsistent override [14]: `test.Bar.f` overrides method defined in `Foo` inconsistently. "
+      ^ "Could not find parameter `b` in overriding signature.";
+    ];
+  assert_default_type_errors
+    {|
+      import typing
+      class Foo():
+        def f(self, c: str) -> None: ...
+      class Bar(Foo):
+        def f(self, *args: typing.Any, **kwargs: typing.Any) -> None: pass
+    |}
+    [];
   ()
 
 
@@ -3097,7 +3106,13 @@ let () =
          "check_method_parameters" >:: test_check_method_parameters;
          "check_private_member_access" >:: test_check_private_member_access;
          "check_abstract_methods" >:: test_check_abstract_methods;
-         "check_behavioral_subtyping" >:: test_check_behavioral_subtyping;
+         "check_behavioral_subtyping__strengthened_postcondition"
+         >:: test_check_behavioral_subtyping__strengthened_postcondition;
+         "check_behavioral_subtyping__weakened_precondition"
+         >:: test_check_behavioral_subtyping__weakened_precondition;
+         "check_behavioral_subtyping__overloads" >:: test_check_behavioral_subtyping__overloads;
+         "check_behavioral_subtyping__special_cases"
+         >:: test_check_behavioral_subtyping__special_cases;
          "check_nested_class_inheritance" >:: test_check_nested_class_inheritance;
          "check_method_resolution" >:: test_check_method_resolution;
          "check_callables" >:: test_check_callables;
