@@ -104,3 +104,7 @@ div[class^="announcementBarContent"] a:hover {
     padding: 6px 30px;
   }
 }
+
+.pyre-type-error {
+  background-color: rgb(235, 193, 137)
+}

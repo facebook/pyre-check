@@ -43,6 +43,9 @@ function Code(props) {
           lineNumbers: true,
           readOnly: props.busy ? 'nocursor' : false,
         }}
+        editorDidMount={(editor, _) => {
+          props.setEditor(editor);
+        }}
         onBeforeChange={(editor, data, value) => {
           props.setCode(value);
         }}
@@ -135,6 +138,20 @@ function encodeCodeAndSetURL(code) {
   return encodedCode;
 }
 
+function markErrors(editor, results) {
+  editor.getAllMarks().map(mark => mark.clear());
+
+  if (results == null) {
+    return
+  }
+  results.data.errors.map(error =>
+    editor.markText(
+      {line: error.line - 1, ch: error.column},
+      {line: error.stop_line - 1, ch: error.stop_column},
+      {className: 'pyre-type-error'},
+    )
+  );
+}
 
 function Playground() {
 
@@ -142,6 +159,7 @@ function Playground() {
   const [modifierKey, setModifierKey] = useState(false);
   const [code, setCode] = useState(getInitialCode());
   const [busy, setBusy] = useState(false);
+  const [editor, setEditor] = useState(null);
 
   const check = () => {
     setBusy(true);
@@ -152,9 +170,10 @@ function Playground() {
       headers: {'Content-Type': 'application/json'},
     })
       .then(response => response.json())
-      .then(data => {
-        setResults(data);
+      .then(results => {
+        setResults(results);
         setBusy(false);
+        markErrors(editor, results);
       })
       .catch(error => console.error(error));
   };
@@ -178,7 +197,7 @@ function Playground() {
     <Layout title="Playground">
       <main className={styles.main}>
         <h1 className={styles.heading}>Playground</h1>
-        <Code code={code} setCode={setCode} busy={busy} />
+        <Code code={code} results={results} setCode={setCode} setEditor={setEditor} busy={busy} />
         <br />
         <div className={`${styles.buttons} check`}>
           <CheckButton check={check} busy={busy} />
