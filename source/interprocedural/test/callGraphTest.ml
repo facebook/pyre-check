@@ -3511,6 +3511,63 @@ let test_call_graph_of_define context =
                   ())) );
       ]
     ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+       def foo(l: typing.AsyncIterator[int | str]):
+         async for x in l:
+           pass
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "3:12-3:13",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__aiter__",
+                   ExpressionCallees.from_call_with_empty_attribute
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~collapse_tito:false
+                              ~receiver_type:
+                                (Type.parametric
+                                   "typing.AsyncIterator"
+                                   [Single (Type.union [Type.integer; Type.string])])
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterator"; method_name = "__aiter__" });
+                          ]
+                        ()) );
+                 ( "__anext__",
+                   ExpressionCallees.from_call_with_empty_attribute
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:
+                                (Type.parametric
+                                   "typing.AsyncIterator"
+                                   [Single (Type.union [Type.integer; Type.string])])
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterator"; method_name = "__anext__" });
+                          ]
+                        ()) );
+               ]) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+       def foo(l0: typing.AsyncIterator[int]):
+         x = [x async for x in l0]
+      |}
+    ~define_name:"test.foo"
+    ~expected:[]
+    ();
   ()
 
 
