@@ -24,8 +24,7 @@ $ brew install python3 watchman
 ```
 On *Ubuntu*, *Mint*, or *Debian*; use `apt-get` and [homebrew](https://brew.sh/):
 ```bash
-$ sudo apt-get install python3 python3-pip python3-venv
-$ brew install watchman
+$ sudo apt-get install python3 python3-pip python3-venv watchman
 ```
 We tested Pyre on *Ubuntu 18.04.5 LTS*, *CentOS 7*, as well as *OSX 10.11* and later.
 
