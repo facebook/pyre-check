@@ -79,7 +79,7 @@ use both lines.
 
 ## Literal String Sources And Sinks
 
-Some security vulnerabilities are best captured by modelling strings of a given
+Some security vulnerabilities are best captured by modeling strings of a given
 form flowing to dangerous functions, or format strings that match a pattern getting
 tainted data passed in.
 
@@ -114,16 +114,18 @@ def test() -> None:
     dont_pass_an_ip_address(ip_address) # Pysa will now flag this.
 ```
 
-The converse of supporting literal strings as sinks is also supported, with a narrower use case. The
-syntax allows you to model data being used to format f-strings. To add a literal sink, first add the
-literal_sink to your configuration
+The converse of supporting literal strings as sinks is also supported, for data flowing into a tainted string. The
+syntax allows you to model data being used to format strings, like f-strings, manual string formatting, the string `format()` method, and printf-style string formatting with `%`.
+
+Template strings and and manual string formatting with more than two subexpressions are not yet supported.
+
+To add a literal sink, first add the literal_sink to your configuration
 
 ```json
 {
   "sinks": [
-    {
-      "name": "MayBeRendered"
-    }
+    { "name": "MayBeRendered" },
+    { "name": "MayBeSQL" }
   ],
   "implicit_sinks": {
      "literal_strings": [
@@ -131,17 +133,34 @@ literal_sink to your configuration
          "regexp": "^<.*>$",
          "kind": "MayBeRendered",
          "description": "Indicates a string whose contents may be rendered."
+       },
+       {
+         "regexp": "^SELECT *.",
+         "kind": "MayBeSQL",
+         "description": "Indicates a string whose contents may be a SQL query."
        }
+
      ]
   }
 ```
 
-Now, Pysa will treat any values flowing into a f-string as a regular sink:
+Now, Pysa will treat any values flowing into a each of the following as a regular sink:
 
 ```python
 def may_render(parameter: str) -> None:
     result = f"<content={parameter}>"
+    result = "<content={}>".format(parameter)
+    result = "<content%s>" % (parameter,)
 ```
+As well as values flowing into each of these as a regular sink:
+```python
+def build_sql_query(columns: str) -> None:
+    result = f"SELECT {columns} FROM users;"
+    result = "SELECT {} FROM users;".format(columns)
+    result = "SELECT %s FROM users" % (columns,)
+    result = "SELECT " + columns + " FROM users;"
+```
+
 
 ## Combined Source Rules
 
