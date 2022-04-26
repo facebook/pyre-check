@@ -6,7 +6,7 @@
 import ast
 from typing import List, Union
 
-from ..commands.language_server_protocol import (
+from tools.pyre.client.commands.language_server_protocol import (
     LspRange,
     DocumentSymbolsResponse,
     SymbolKind,
@@ -29,6 +29,10 @@ def _node_to_symbol(
         detail="",
         kind=kind,
         range=LspRange(
+            start=start.to_lsp_position(),
+            end=end.to_lsp_position(),
+        ),
+        selection_range=LspRange(
             start=start.to_lsp_position(),
             end=end.to_lsp_position(),
         ),

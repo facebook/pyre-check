@@ -650,3 +650,4 @@ class DocumentSymbolsResponse:
     detail: Optional[str]
     kind: SymbolKind
     range: LspRange
+    selection_range: LspRange

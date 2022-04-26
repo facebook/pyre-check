@@ -20,6 +20,18 @@ from ..language_server_protocol import (
 )
 
 
+def make_document_symbol(
+    name: str, detail: str, kind: SymbolKind, range: LspRange
+) -> DocumentSymbolsResponse:
+    return DocumentSymbolsResponse(
+        name=name,
+        detail=detail,
+        kind=kind,
+        range=range,
+        selection_range=range,
+    )
+
+
 class FindSymbolTests(testslide.TestCase):
     def assert_collected_symbols(
         self, source: str, expected_symbols: List[DocumentSymbolsResponse]
@@ -36,7 +48,7 @@ class FindSymbolTests(testslide.TestCase):
                 pass
             """,
             [
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="foo",
                     detail="",
                     kind=SymbolKind.FUNCTION,
@@ -58,7 +70,7 @@ class FindSymbolTests(testslide.TestCase):
             bar(None)
             """,
             [
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="foo",
                     detail="",
                     kind=SymbolKind.FUNCTION,
@@ -67,7 +79,7 @@ class FindSymbolTests(testslide.TestCase):
                         end=LspPosition(line=2, character=len("    return x")),
                     ),
                 ),
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="bar",
                     detail="",
                     kind=SymbolKind.FUNCTION,
@@ -88,7 +100,7 @@ class FindSymbolTests(testslide.TestCase):
                 y = 2
             """,
             [
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="foo",
                     detail="",
                     kind=SymbolKind.CLASS,
@@ -97,7 +109,7 @@ class FindSymbolTests(testslide.TestCase):
                         end=LspPosition(line=2, character=len("    x = 1")),
                     ),
                 ),
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="bar",
                     detail="",
                     kind=SymbolKind.CLASS,
@@ -118,7 +130,7 @@ class FindSymbolTests(testslide.TestCase):
                     return self
             """,
             [
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="foo",
                     detail="",
                     kind=SymbolKind.CLASS,
@@ -127,7 +139,7 @@ class FindSymbolTests(testslide.TestCase):
                         end=LspPosition(line=3, character=len("        return self")),
                     ),
                 ),
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="bar",
                     detail="",
                     kind=SymbolKind.FUNCTION,
@@ -148,7 +160,7 @@ class FindSymbolTests(testslide.TestCase):
                         return self
             """,
             [
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="foo",
                     detail="",
                     kind=SymbolKind.CLASS,
@@ -159,7 +171,7 @@ class FindSymbolTests(testslide.TestCase):
                         ),
                     ),
                 ),
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="bar",
                     detail="",
                     kind=SymbolKind.CLASS,
@@ -170,7 +182,7 @@ class FindSymbolTests(testslide.TestCase):
                         ),
                     ),
                 ),
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="foobar",
                     detail="",
                     kind=SymbolKind.FUNCTION,
@@ -195,7 +207,7 @@ class FindSymbolTests(testslide.TestCase):
                 return bar(x)
             """,
             [
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="foo",
                     detail="",
                     kind=SymbolKind.FUNCTION,
@@ -204,7 +216,7 @@ class FindSymbolTests(testslide.TestCase):
                         end=LspPosition(line=6, character=len("    return bar(x)")),
                     ),
                 ),
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="bar",
                     detail="",
                     kind=SymbolKind.FUNCTION,
@@ -213,7 +225,7 @@ class FindSymbolTests(testslide.TestCase):
                         end=LspPosition(line=5, character=len("        foobar(y)")),
                     ),
                 ),
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="foobar",
                     detail="",
                     kind=SymbolKind.FUNCTION,
@@ -234,7 +246,7 @@ class FindSymbolTests(testslide.TestCase):
                 await x
             """,
             [
-                DocumentSymbolsResponse(
+                make_document_symbol(
                     name="foo",
                     detail="",
                     kind=SymbolKind.FUNCTION,
@@ -261,7 +273,7 @@ class FindSymbolTests(testslide.TestCase):
                             pass
                         """,
                 [
-                    DocumentSymbolsResponse(
+                    make_document_symbol(
                         name="foo",
                         detail="",
                         kind=SymbolKind.FUNCTION,

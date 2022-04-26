@@ -1086,6 +1086,10 @@ class PersistentTest(testslide.TestCase):
                             "end": {"line": 1, "character": 6},
                         },
                         "kind": SymbolKind.FUNCTION.value,
+                        "selectionRange": {
+                            "start": {"line": 0, "character": 0},
+                            "end": {"line": 1, "character": 6},
+                        },
                     }
                 ],
             )
