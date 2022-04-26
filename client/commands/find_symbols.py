@@ -36,7 +36,11 @@ def _node_to_symbol(
 
 
 class _SymbolsCollector(ast.NodeVisitor):
-    symbols: List[DocumentSymbolsResponse] = []
+    symbols: List[DocumentSymbolsResponse]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.symbols = []
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self.symbols.append(_node_to_symbol(node, SymbolKind.FUNCTION))

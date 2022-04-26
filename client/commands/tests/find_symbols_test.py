@@ -252,3 +252,23 @@ class FindSymbolTests(testslide.TestCase):
             parse_source_and_collect_symbols,
             "thisIsNotValidPython x = x",
         )
+
+    def test_parse_source_and_collect_symbols_multiple_calls(self) -> None:
+        for _ in range(2):
+            self.assert_collected_symbols(
+                """
+                        def foo(x):
+                            pass
+                        """,
+                [
+                    DocumentSymbolsResponse(
+                        name="foo",
+                        detail="",
+                        kind=SymbolKind.FUNCTION,
+                        range=LspRange(
+                            start=LspPosition(line=1, character=0),
+                            end=LspPosition(line=2, character=len("    pass")),
+                        ),
+                    )
+                ],
+            )
