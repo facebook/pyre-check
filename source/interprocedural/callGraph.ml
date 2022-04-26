@@ -1292,17 +1292,27 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
           | _ -> None)
       | _ -> None)
   | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
-      (* Resolve `base.attribute` by looking up the type of `base`. *)
+      (* Resolve `base.attribute` by looking up the type of `base` or the types of its parent
+         classes in the Method Resolution Order. *)
       match CallResolution.resolve_ignoring_optional ~resolution base with
       | Type.Primitive class_name
       | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] } -> (
-          GlobalResolution.class_summary global_resolution (Type.Primitive class_name)
-          >>| Node.value
-          >>| ClassSummary.attributes
-          >>= Identifier.SerializableMap.find_opt attribute
-          >>| Node.value
-          >>= function
-          | { kind = Method _; _ } ->
+          let find_attribute element =
+            match
+              GlobalResolution.class_summary global_resolution (Type.Primitive element)
+              >>| Node.value
+              >>| ClassSummary.attributes
+              >>= Identifier.SerializableMap.find_opt attribute
+              >>| Node.value
+            with
+            | Some { ClassSummary.Attribute.kind = Method _; _ } -> Some element
+            | _ -> None
+          in
+          let parent_classes_in_mro =
+            GlobalResolution.successors ~resolution:global_resolution class_name
+          in
+          match List.find_map (class_name :: parent_classes_in_mro) ~f:find_attribute with
+          | Some base_class ->
               Some
                 (CallTargetIndexer.create_target
                    call_indexer
@@ -1310,8 +1320,8 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
                    ~implicit_dunder_call:false
                    ~return_type:(Some (return_type ()))
                    ~collapse_tito
-                   (Target.Method { Target.class_name; method_name = attribute }))
-          | _ -> None)
+                   (Target.Method { Target.class_name = base_class; method_name = attribute }))
+          | None -> None)
       | _ -> None)
   | _ -> None
 
