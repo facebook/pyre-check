@@ -26,7 +26,8 @@ val parse_and_save_decorators_to_skip : inline_decorators:bool -> Configuration.
 
 (* Exposed for testing purposes. *)
 val record_and_merge_call_graph
-  :  environment:TypeEnvironment.ReadOnly.t ->
+  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
   call_graph:DependencyGraph.callgraph ->
   source:Source.t ->
   DependencyGraph.callgraph

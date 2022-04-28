@@ -5,22 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Ast
-open Expression
+open Core
+open Pyre
 open Domains
+open Interprocedural
 
-let unknown_callee ~location ~call =
-  let callee =
-    match call with
-    | Expression.Call { callee; _ } -> callee
-    | _ -> Node.create ~location:(Location.strip_module location) call
-  in
-  Interprocedural.Target.create_function
-    (Reference.create
-       (Format.asprintf "%a:%a" Location.WithModule.pp location Expression.pp callee))
+let is_unknown_callee = function
+  | Target.Object name when String_utils.string_starts_with name "unknown-callee:" -> true
+  | _ -> false
 
 
-let register_unknown_callee_model callable =
+let unknown_callee_model _ =
   (* Add a model with sinks on *args and **kwargs. *)
   let sink_leaf =
     BackwardTaint.singleton (Sinks.NamedSink "UnknownCallee") Frame.initial
@@ -52,14 +47,81 @@ let register_unknown_callee_model callable =
          ~path:[]
          local_return
   in
-  Interprocedural.FixpointState.add_predefined
-    Interprocedural.FixpointState.Epoch.predefined
-    callable
-    (Interprocedural.AnalysisResult.make_model
-       TaintResult.kind
-       {
-         forward = Model.Forward.empty;
-         backward = { sink_taint; taint_in_taint_out };
-         sanitizers = Model.Sanitizers.empty;
-         modes = Model.ModeSet.singleton Model.Mode.SkipAnalysis;
-       })
+  AnalysisResult.make_model
+    TaintResult.kind
+    {
+      Model.forward = Model.Forward.empty;
+      backward = { sink_taint; taint_in_taint_out };
+      sanitizers = Model.Sanitizers.empty;
+      modes = Model.ModeSet.singleton Model.Mode.SkipAnalysis;
+    }
+
+
+let add_obscure_models
+    ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
+    ~environment
+    ~stubs
+    ~initial_models
+  =
+  let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
+  let add_obscure_sinks models =
+    let resolution =
+      Analysis.TypeCheck.resolution
+        (Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module Analysis.TypeCheck.DummyContext)
+    in
+    let add_obscure_sink models callable =
+      let model =
+        Target.Map.find models callable
+        |> Option.value ~default:Model.empty_model
+        |> Model.add_obscure_sink ~resolution ~call_target:callable
+        |> Model.remove_obscureness
+      in
+      Target.Map.set models ~key:callable ~data:model
+    in
+    stubs
+    |> Hash_set.filter ~f:(fun callable ->
+           Target.Map.find models callable >>| Model.is_obscure |> Option.value ~default:true)
+    |> Hash_set.fold ~f:add_obscure_sink ~init:models
+  in
+  let find_missing_flows =
+    find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
+  in
+  match find_missing_flows with
+  | Some Obscure -> initial_models |> remove_sinks |> add_obscure_sinks
+  | Some Type -> initial_models |> remove_sinks
+  | None -> initial_models
+
+
+let add_unknown_callee_models
+    ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
+    ~callgraph
+  =
+  let find_missing_flows =
+    find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
+  in
+  match find_missing_flows with
+  | Some Type ->
+      Log.info "Recording models for unknown callees in shared memory...";
+      let gather_unknown_callees ~key:_ ~data:callees unknown_callees =
+        List.fold
+          ~init:unknown_callees
+          ~f:(fun unknown_callees target ->
+            if is_unknown_callee target then
+              Target.Set.add target unknown_callees
+            else
+              unknown_callees)
+          callees
+      in
+      let unknown_callees =
+        Target.Map.fold ~init:Target.Set.empty ~f:gather_unknown_callees callgraph
+      in
+      let register_model target =
+        FixpointState.add_predefined
+          FixpointState.Epoch.predefined
+          target
+          (unknown_callee_model target)
+      in
+      Target.Set.iter register_model unknown_callees
+  | _ -> ()

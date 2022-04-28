@@ -455,6 +455,7 @@ let run_with_taint_models tests ~name =
 
 
 type test_environment = {
+  static_analysis_configuration: Configuration.StaticAnalysis.t;
   callgraph: DependencyGraph.callgraph;
   overrides: DependencyGraph.t;
   callables_to_analyze: Target.t list;
@@ -476,6 +477,7 @@ let set_up_decorator_inlining ~handle models =
 let initialize
     ?(handle = "test.py")
     ?models
+    ?find_missing_flows
     ?(taint_configuration = TaintConfiguration.default)
     ~context
     source_content
@@ -489,6 +491,9 @@ let initialize
         project
     in
     Test.ScratchProject.configuration_of project, type_environment, errors
+  in
+  let static_analysis_configuration =
+    Configuration.StaticAnalysis.create configuration ?find_missing_flows ()
   in
   let environment = TypeEnvironment.read_only environment in
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
@@ -565,28 +570,15 @@ let initialize
             ~stubs:(Target.HashSet.of_list stubs)
             ~environment
         in
-        let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
-        let add_obscure_sinks models =
-          let add_obscure_sink models callable =
-            let model =
-              Target.Map.find models callable
-              |> Option.value ~default:Model.empty_model
-              |> Model.add_obscure_sink ~resolution ~call_target:callable
-              |> Model.remove_obscureness
-            in
-            Target.Map.set models ~key:callable ~data:model
-          in
-          stubs
-          |> List.filter ~f:(fun stub ->
-                 Target.Map.find models stub >>| Model.is_obscure |> Option.value ~default:true)
-          |> List.fold ~init:models ~f:add_obscure_sink
-        in
+
         let models =
-          match taint_configuration.find_missing_flows with
-          | Some Obscure -> models |> remove_sinks |> add_obscure_sinks
-          | Some Type -> models |> remove_sinks
-          | None -> models
+          MissingFlow.add_obscure_models
+            ~static_analysis_configuration
+            ~environment
+            ~stubs:(Target.HashSet.of_list stubs)
+            ~initial_models:models
         in
+
         models, skip_overrides
   in
   let inferred_models = ClassModels.infer ~environment ~user_models in
@@ -623,6 +615,7 @@ let initialize
   (* The call graph building depends on initial models for global targets. *)
   let callgraph =
     Service.StaticAnalysis.record_and_merge_call_graph
+      ~static_analysis_configuration
       ~environment
       ~call_graph:DependencyGraph.empty_callgraph
       ~source
@@ -630,4 +623,11 @@ let initialize
   let class_hierarchy_graph = ClassHierarchyGraph.from_source ~environment ~source in
   Interprocedural.ClassInterval.compute_intervals class_hierarchy_graph
   |> Interprocedural.ClassInterval.SharedMemory.store;
-  { callgraph; overrides; callables_to_analyze; initial_models_callables; environment }
+  {
+    static_analysis_configuration;
+    callgraph;
+    overrides;
+    callables_to_analyze;
+    initial_models_callables;
+    environment;
+  }

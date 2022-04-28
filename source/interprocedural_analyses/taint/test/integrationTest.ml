@@ -98,7 +98,7 @@ let test_integration path context =
       let actual = Format.asprintf "@%s\nOverrides\n%a" "generated" DependencyGraph.pp overrides in
       create_expected_and_actual_files ~suffix:".overrides" actual
     in
-    let { callgraph; callables_to_analyze; initial_models_callables; environment; overrides } =
+    let { callgraph; callables_to_analyze; initial_models_callables; environment; overrides; _ } =
       initialize ~handle ?models:model_source ~taint_configuration ~context source
     in
     let dependencies =

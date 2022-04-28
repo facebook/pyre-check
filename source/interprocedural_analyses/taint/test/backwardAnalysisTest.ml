@@ -15,10 +15,13 @@ open TestHelper
 let assert_taint ~context source expected =
   let handle = "qualifier.py" in
   let qualifier = Ast.Reference.create "qualifier" in
-  let { Test.ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
+  let ({ Test.ScratchProject.configuration; _ } as project) =
     Test.ScratchProject.setup ~context [handle, source]
-    |> Test.ScratchProject.build_type_environment
   in
+  let { Test.ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
+    Test.ScratchProject.build_type_environment project
+  in
+  let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let source =
     AstEnvironment.ReadOnly.get_processed_source
       (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only)
@@ -34,7 +37,9 @@ let assert_taint ~context source expected =
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let call_graph_of_define =
       Interprocedural.CallGraph.call_graph_of_define
+        ~static_analysis_configuration
         ~environment:(TypeEnvironment.read_only environment)
+        ~qualifier
         ~define:(Ast.Node.value define)
     in
     let backward =

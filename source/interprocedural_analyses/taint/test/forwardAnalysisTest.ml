@@ -21,8 +21,11 @@ let assert_taint ?models ?models_source ~context source expect =
     | Some models_source -> [handle, source; "models.py", models_source]
     | None -> [handle, source]
   in
+  let ({ Test.ScratchProject.configuration; _ } as project) =
+    Test.ScratchProject.setup ~context sources
+  in
+  let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let { Test.ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
-    let project = Test.ScratchProject.setup ~context sources in
     Test.ScratchProject.build_type_environment project
   in
   let read_only_environment = TypeEnvironment.read_only environment in
@@ -58,7 +61,9 @@ let assert_taint ?models ?models_source ~context source expect =
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let call_graph_of_define =
       CallGraph.call_graph_of_define
+        ~static_analysis_configuration
         ~environment:read_only_environment
+        ~qualifier
         ~define:(Ast.Node.value define)
     in
     let forward, _errors, _ =

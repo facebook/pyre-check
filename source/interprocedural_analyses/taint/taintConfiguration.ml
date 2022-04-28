@@ -75,6 +75,11 @@ let missing_flows_kind_from_string = function
   | _ -> None
 
 
+let missing_flows_kind_to_string = function
+  | Obscure -> "obscure"
+  | Type -> "type"
+
+
 type t = {
   sources: AnnotationParser.source_or_sink list;
   sinks: AnnotationParser.source_or_sink list;

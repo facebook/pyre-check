@@ -190,7 +190,9 @@ module DefineCallGraph : sig
 end
 
 val call_graph_of_define
-  :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
   DefineCallGraph.t
 
@@ -205,7 +207,8 @@ module SharedMemory : sig
 end
 
 val create_callgraph
-  :  store_shared_memory:bool ->
+  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  store_shared_memory:bool ->
   environment:TypeEnvironment.ReadOnly.t ->
   source:Source.t ->
   DependencyGraph.callgraph

@@ -634,31 +634,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      * and merge triggered sinks at the end. *)
     let triggered_sinks = String.Hash_set.create () in
 
-    let call_targets =
-      (* Special handling for the missing-flow analysis. *)
-      if unresolved && TaintConfiguration.is_missing_flow_analysis Type then (
-        let callable =
-          MissingFlow.unknown_callee
-            ~location:
-              (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
-            ~call:(Expression.Call { Call.callee; arguments })
-        in
-        if not (Interprocedural.FixpointState.has_model callable) then
-          MissingFlow.register_unknown_callee_model callable;
-        let target =
-          CallGraph.CallTarget.create
-            ~implicit_self:false
-            ~implicit_dunder_call:false
-            ~collapse_tito:true
-            ~index:0
-            callable
-        in
-
-        target :: call_targets)
-      else
-        call_targets
-    in
-
     (* Extract the implicit self, if any *)
     let self =
       match callee.Node.value with

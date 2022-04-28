@@ -43,7 +43,7 @@ let test_call_graph_of_define context =
         ~f:(fun call_graph_of_define (location, callees) ->
           DefineCallGraph.add call_graph_of_define ~location:(parse_location location) ~callees)
     in
-    let define, test_source, environment =
+    let define, test_source, environment, configuration =
       let find_define = function
         | { Node.value = define; _ }
           when String.equal (Statement.Define.name define |> Reference.show) define_name ->
@@ -64,8 +64,10 @@ let test_call_graph_of_define context =
           (Preprocessing.defines ~include_nested:true ~include_toplevels:true test_source)
           ~f:find_define,
         test_source,
-        TypeEnvironment.read_only type_environment )
+        TypeEnvironment.read_only type_environment,
+        project.configuration )
     in
+    let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
     let register_model target =
       FixpointState.add_predefined
         FixpointState.Epoch.predefined
@@ -79,7 +81,11 @@ let test_call_graph_of_define context =
       ~cmp
       ~printer:DefineCallGraph.show
       expected
-      (CallGraph.call_graph_of_define ~environment ~define);
+      (CallGraph.call_graph_of_define
+         ~static_analysis_configuration
+         ~environment
+         ~qualifier:(Reference.create "test")
+         ~define);
     DependencyGraphSharedMemory.remove_overriding_types (Reference.Map.keys overrides)
   in
   assert_call_graph_of_define

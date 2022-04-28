@@ -27,11 +27,14 @@ let setup ?(update_environment_with = []) ~context ~handle source =
     List.find_exn sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } ->
         String.equal relative handle)
   in
-  source, TypeEnvironment.read_only type_environment
+  source, TypeEnvironment.read_only type_environment, project.configuration
 
 
 let create_call_graph ?(update_environment_with = []) ~context source_text =
-  let source, environment = setup ~update_environment_with ~context ~handle:"test.py" source_text in
+  let source, environment, configuration =
+    setup ~update_environment_with ~context ~handle:"test.py" source_text
+  in
+  let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let record_overrides overrides =
     let record_override_edge ~key:member ~data:subtypes =
       DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
@@ -49,7 +52,11 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
         errors
       |> failwith
   in
-  CallGraph.create_callgraph ~store_shared_memory:false ~environment ~source
+  CallGraph.create_callgraph
+    ~static_analysis_configuration
+    ~store_shared_memory:false
+    ~environment
+    ~source
 
 
 let create_callable = function
@@ -472,7 +479,7 @@ let test_method_overrides context =
       in
       List.map expected ~f:create_callables
     in
-    let source, environment = setup ~update_environment_with ~context ~handle source in
+    let source, environment, _ = setup ~update_environment_with ~context ~handle source in
     let overrides_map = DependencyGraph.create_overrides ~environment ~source in
     let expected_overrides = Reference.Map.of_alist_exn expected in
     let equal_elements = List.equal Reference.equal in
@@ -533,10 +540,15 @@ let test_method_overrides context =
 let test_strongly_connected_components context =
   let assert_strongly_connected_components source ~handle ~expected =
     let expected = List.map expected ~f:(List.map ~f:create_callable) in
-    let source, environment = setup ~context ~handle source in
+    let source, environment, configuration = setup ~context ~handle source in
+    let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
     let partitions =
       let edges =
-        CallGraph.create_callgraph ~store_shared_memory:false ~environment ~source
+        CallGraph.create_callgraph
+          ~static_analysis_configuration
+          ~store_shared_memory:false
+          ~environment
+          ~source
         |> DependencyGraph.from_callgraph
       in
       DependencyGraph.partition ~edges

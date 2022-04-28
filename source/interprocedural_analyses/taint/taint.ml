@@ -18,6 +18,7 @@ module TaintProfiler = TaintProfiler
 module Features = Features
 module Issue = Issue
 module ForwardAnalysis = ForwardAnalysis
+module MissingFlow = MissingFlow
 module Model = Model
 module ModelParser = ModelParser
 module ModelVerifier = ModelVerifier

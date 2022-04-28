@@ -388,11 +388,15 @@ let parse_and_save_decorators_to_skip
       ())
 
 
-let record_and_merge_call_graph ~environment ~call_graph ~source =
+let record_and_merge_call_graph ~static_analysis_configuration ~environment ~call_graph ~source =
   let record_and_merge_call_graph map call_graph =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
-  Interprocedural.CallGraph.create_callgraph ~store_shared_memory:true ~environment ~source
+  Interprocedural.CallGraph.create_callgraph
+    ~static_analysis_configuration
+    ~store_shared_memory:true
+    ~environment
+    ~source
   |> record_and_merge_call_graph call_graph
 
 
@@ -616,7 +620,12 @@ let build_call_graph ~scheduler ~static_analysis_configuration ~cache ~environme
     Cache.call_graph cache (fun () ->
         let build_call_graph call_graph qualifier =
           get_source ~environment qualifier
-          >>| (fun source -> record_and_merge_call_graph ~environment ~call_graph ~source)
+          >>| (fun source ->
+                record_and_merge_call_graph
+                  ~static_analysis_configuration
+                  ~environment
+                  ~call_graph
+                  ~source)
           |> Option.value ~default:call_graph
         in
         Scheduler.map_reduce

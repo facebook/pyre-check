@@ -28,14 +28,21 @@ let assert_fixpoint
   let taint_configuration =
     TaintConfiguration.apply_missing_flows TaintConfiguration.default missing_flows
   in
-  let { callables_to_analyze; callgraph; environment; overrides; _ } =
-    initialize ?models ~taint_configuration ~handle ~context source
+  let { static_analysis_configuration; callables_to_analyze; callgraph; environment; overrides; _ } =
+    initialize
+      ?models
+      ~find_missing_flows:(TaintConfiguration.missing_flows_kind_to_string missing_flows)
+      ~taint_configuration
+      ~handle
+      ~context
+      source
   in
   let dependencies =
     DependencyGraph.from_callgraph callgraph
     |> DependencyGraph.union overrides
     |> DependencyGraph.reverse
   in
+  let () = MissingFlow.add_unknown_callee_models ~static_analysis_configuration ~callgraph in
   let iterations =
     FixpointAnalysis.compute_fixpoint
       ~scheduler

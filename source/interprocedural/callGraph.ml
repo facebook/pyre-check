@@ -1596,11 +1596,15 @@ module DefineCallGraphFixpoint (Context : sig
 
   val local_annotations : LocalAnnotationMap.ReadOnly.t option
 
+  val qualifier : Reference.t
+
   val parent : Reference.t option
 
   val callees_at_location : UnprocessedLocationCallees.t Location.Table.t
 
   val call_indexer : CallTargetIndexer.t
+
+  val is_missing_flow_type_analysis : bool
 end) =
 struct
   type assignment_target = { location: Location.t }
@@ -1612,10 +1616,52 @@ struct
 
   let call_indexer = Context.call_indexer
 
+  (* For the missing flow analysis (`--find-missing-flows=type`), we turn unresolved
+   * calls into sinks, so that we may find sources flowing into those calls. *)
+  let add_unknown_callee
+      ~expression:{ Node.value; location }
+      ({ CallCallees.unresolved; call_targets; _ } as callees)
+    =
+    if unresolved && Context.is_missing_flow_type_analysis then
+      (* TODO(T117715045): Move the target creation in `taint/missingFlow.ml`. *)
+      let callee =
+        match value with
+        | Expression.Call { callee = { Node.value = callee; _ }; _ } -> callee
+        | _ -> value
+      in
+      let target =
+        Format.asprintf
+          "unknown-callee:%a:%a:%a"
+          Reference.pp
+          Context.qualifier
+          Location.pp
+          location
+          Expression.pp
+          (callee |> Node.create_with_default_location |> Ast.Expression.delocalize)
+      in
+      let call_target =
+        {
+          CallTarget.target = Target.Object target;
+          implicit_self = false;
+          implicit_dunder_call = false;
+          collapse_tito = true;
+          index = 0;
+          return_type = Some ReturnType.any;
+          receiver_type = None;
+        }
+      in
+      { callees with call_targets = call_target :: call_targets }
+    else
+      callees
+
+
   module NodeVisitor = struct
     type nonrec t = visitor_t
 
-    let expression_visitor ({ resolution; assignment_target } as state) { Node.value; location } =
+    let expression_visitor
+        ({ resolution; assignment_target } as state)
+        ({ Node.value; location } as expression)
+      =
       CallTargetIndexer.generate_fresh_indices call_indexer;
       let register_targets ~expression_identifier ?(location = location) callees =
         Location.Table.update Context.callees_at_location location ~f:(function
@@ -1628,6 +1674,7 @@ struct
         | Expression.Call call ->
             let call = redirect_special_calls ~resolution call in
             resolve_callees ~resolution ~call_indexer ~call
+            |> add_unknown_callee ~expression
             |> ExpressionCallees.from_call
             |> register_targets ~expression_identifier:(call_identifier call)
         | Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special }) ->
@@ -1650,6 +1697,7 @@ struct
             | Some { Node.value = Expression.Call call; _ } ->
                 let call = redirect_special_calls ~resolution call in
                 resolve_callees ~resolution ~call_indexer ~call
+                |> add_unknown_callee ~expression
                 |> ExpressionCallees.from_call
                 |> register_targets ~expression_identifier:(call_identifier call)
             | _ -> ())
@@ -1911,7 +1959,9 @@ struct
 end
 
 let call_graph_of_define
+    ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
     ~environment
+    ~qualifier
     ~define:({ Define.signature = { Define.Signature.name; parent; _ }; _ } as define)
   =
   let timer = Timer.start () in
@@ -1921,11 +1971,15 @@ let call_graph_of_define
 
     let local_annotations = TypeEnvironment.ReadOnly.get_local_annotations environment name
 
+    let qualifier = qualifier
+
     let parent = parent
 
     let callees_at_location = callees_at_location
 
     let call_indexer = CallTargetIndexer.create ()
+
+    let is_missing_flow_type_analysis = Option.equal String.equal find_missing_flows (Some "type")
   end)
   in
   (* Handle parameters. *)
@@ -1995,11 +2049,22 @@ module SharedMemory = struct
   let remove callables = KeySet.of_list callables |> remove_batch
 end
 
-let create_callgraph ~store_shared_memory ~environment ~source =
+let create_callgraph
+    ~static_analysis_configuration
+    ~store_shared_memory
+    ~environment
+    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
   let fold_defines dependencies = function
     | { Node.value = define; _ } when Define.is_overloaded_function define -> dependencies
     | define ->
-        let call_graph_of_define = call_graph_of_define ~environment ~define:(Node.value define) in
+        let call_graph_of_define =
+          call_graph_of_define
+            ~static_analysis_configuration
+            ~environment
+            ~qualifier
+            ~define:(Node.value define)
+        in
         let () =
           if store_shared_memory then
             SharedMemory.add ~callable:(Target.create define) ~call_graph:call_graph_of_define

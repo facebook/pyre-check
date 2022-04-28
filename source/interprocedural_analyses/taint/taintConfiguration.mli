@@ -53,6 +53,8 @@ type missing_flows_kind =
 
 val missing_flows_kind_from_string : string -> missing_flows_kind option
 
+val missing_flows_kind_to_string : missing_flows_kind -> string
+
 type t = {
   sources: AnnotationParser.source_or_sink list;
   sinks: AnnotationParser.source_or_sink list;

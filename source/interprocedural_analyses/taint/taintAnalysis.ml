@@ -209,43 +209,6 @@ let generate_models_from_queries
     ~models:initial_models
 
 
-let add_models_for_missing_flows
-    ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
-    ~environment
-    ~stubs
-    ~initial_models
-  =
-  let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
-  let add_obscure_sinks models =
-    let resolution =
-      Analysis.TypeCheck.resolution
-        (Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
-        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-        (module Analysis.TypeCheck.DummyContext)
-    in
-    let add_obscure_sink models callable =
-      let model =
-        Target.Map.find models callable
-        |> Option.value ~default:Model.empty_model
-        |> Model.add_obscure_sink ~resolution ~call_target:callable
-        |> Model.remove_obscureness
-      in
-      Target.Map.set models ~key:callable ~data:model
-    in
-    stubs
-    |> Hash_set.filter ~f:(fun callable ->
-           Target.Map.find models callable >>| Model.is_obscure |> Option.value ~default:true)
-    |> Hash_set.fold ~f:add_obscure_sink ~init:models
-  in
-  let find_missing_flows =
-    find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
-  in
-  match find_missing_flows with
-  | Some Obscure -> initial_models |> remove_sinks |> add_obscure_sinks
-  | Some Type -> initial_models |> remove_sinks
-  | None -> initial_models
-
-
 (* Registers the Taint analysis with the interprocedural analysis framework. *)
 include Taint.Result.Register (struct
   include Taint.Result
@@ -291,7 +254,7 @@ include Taint.Result.Register (struct
     in
 
     let models =
-      add_models_for_missing_flows
+      MissingFlow.add_obscure_models
         ~static_analysis_configuration
         ~environment
         ~stubs
@@ -511,6 +474,8 @@ let run_taint_analysis
       ~phase_name:"Computing dependencies"
       ~timer
       ();
+
+    let () = MissingFlow.add_unknown_callee_models ~static_analysis_configuration ~callgraph in
 
     Log.info "Purging shared memory...";
     let timer = Timer.start () in

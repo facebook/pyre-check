@@ -451,4 +451,34 @@ module StaticAnalysis = struct
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
   }
+
+  let create
+      configuration
+      ?repository_root
+      ?result_json_path
+      ?dump_call_graph
+      ?(verify_models = true)
+      ?rule_filter
+      ?find_missing_flows
+      ?dump_model_query_results
+      ?(use_cache = false)
+      ?(inline_decorators = true)
+      ?maximum_trace_length
+      ?maximum_tito_depth
+      ()
+    =
+    {
+      repository_root;
+      result_json_path;
+      dump_call_graph;
+      verify_models;
+      configuration;
+      rule_filter;
+      find_missing_flows;
+      dump_model_query_results;
+      use_cache;
+      inline_decorators;
+      maximum_trace_length;
+      maximum_tito_depth;
+    }
 end

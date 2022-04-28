@@ -206,4 +206,20 @@ module StaticAnalysis : sig
     maximum_trace_length: int option;
     maximum_tito_depth: int option;
   }
+
+  val create
+    :  Analysis.t ->
+    ?repository_root:PyrePath.t ->
+    ?result_json_path:PyrePath.t ->
+    ?dump_call_graph:PyrePath.t ->
+    ?verify_models:bool ->
+    ?rule_filter:int list ->
+    ?find_missing_flows:string ->
+    ?dump_model_query_results:PyrePath.t ->
+    ?use_cache:bool ->
+    ?inline_decorators:bool ->
+    ?maximum_trace_length:int ->
+    ?maximum_tito_depth:int ->
+    unit ->
+    t
 end
