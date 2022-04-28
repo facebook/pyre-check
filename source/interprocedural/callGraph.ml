@@ -2004,13 +2004,8 @@ let create_callgraph ~store_shared_memory ~environment ~source =
           if store_shared_memory then
             SharedMemory.add ~callable:(Target.create define) ~call_graph:call_graph_of_define
         in
-        let non_object_target = function
-          | Target.Object _ -> false
-          | _ -> true
-        in
         Location.Map.data call_graph_of_define
         |> List.concat_map ~f:LocationCallees.all_targets
-        |> List.filter ~f:non_object_target
         |> List.dedup_and_sort ~compare:Target.compare
         |> fun callees -> Target.Map.set dependencies ~key:(Target.create define) ~data:callees
   in

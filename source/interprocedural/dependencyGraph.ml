@@ -162,7 +162,16 @@ let dump call_graph ~path =
 
 
 let from_callgraph callgraph =
-  let add ~key ~data result = Target.Map.set result ~key ~data in
+  let add ~key:target ~data:callees result =
+    let callees =
+      List.filter
+        ~f:(function
+          | Target.Object _ -> false
+          | _ -> true)
+        callees
+    in
+    Target.Map.set result ~key:target ~data:callees
+  in
   Target.Map.fold callgraph ~f:add ~init:Target.Map.empty
 
 
