@@ -407,6 +407,7 @@ let run_taint_analysis
     in
 
     let read_only_environment = Analysis.TypeEnvironment.read_only environment in
+
     let class_hierarchy_graph =
       Service.StaticAnalysis.build_class_hierarchy_graph
         ~scheduler
@@ -414,7 +415,9 @@ let run_taint_analysis
         ~environment:read_only_environment
         ~qualifiers
     in
+
     let _ = Service.StaticAnalysis.build_class_intervals class_hierarchy_graph in
+
     let initial_callables =
       Service.StaticAnalysis.fetch_initial_callables
         ~scheduler
@@ -436,11 +439,91 @@ let run_taint_analysis
         ~callables:(List.map callables_with_dependency_information ~f:fst)
         ~stubs
     in
+
     let ast_environment =
       environment
       |> Analysis.TypeEnvironment.read_only
       |> Analysis.TypeEnvironment.ReadOnly.ast_environment
     in
+
+    Log.info "Recording initial models in shared memory...";
+    let timer = Timer.start () in
+    Interprocedural.FixpointAnalysis.record_initial_models
+      ~callables:(List.map initial_callables.callables_with_dependency_information ~f:fst)
+      ~stubs:initial_callables.stubs
+      initial_models;
+    Statistics.performance
+      ~name:"Recorded initial models"
+      ~phase_name:"Recording initial models"
+      ~timer
+      ();
+
+    Log.info "Computing overrides...";
+    let timer = Timer.start () in
+    let { Interprocedural.DependencyGraphSharedMemory.overrides; skipped_overrides } =
+      Service.StaticAnalysis.record_overrides_for_qualifiers
+        ~scheduler
+        ~cache
+        ~environment:(Analysis.TypeEnvironment.read_only environment)
+        ~skip_overrides
+        ~qualifiers
+    in
+    let override_dependencies = Interprocedural.DependencyGraph.from_overrides overrides in
+    Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
+
+    Log.info "Building call graph...";
+    let timer = Timer.start () in
+    let callgraph =
+      Service.StaticAnalysis.build_call_graph
+        ~scheduler
+        ~static_analysis_configuration
+        ~cache
+        ~environment:(Analysis.TypeEnvironment.read_only environment)
+        ~qualifiers
+    in
+    Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
+
+    Log.info "Computing dependencies...";
+    let timer = Timer.start () in
+    let dependencies, callables_to_analyze, override_targets =
+      Service.StaticAnalysis.build_dependency_graph
+        ~callables_with_dependency_information:
+          initial_callables.callables_with_dependency_information
+        ~callgraph
+        ~override_dependencies
+    in
+    Statistics.performance
+      ~name:"Computed dependencies"
+      ~phase_name:"Computing dependencies"
+      ~timer
+      ();
+
+    Log.info "Purging shared memory...";
+    let timer = Timer.start () in
+    let () = Service.StaticAnalysis.purge_shared_memory ~environment ~qualifiers in
+    Statistics.performance
+      ~name:"Purged shared memory"
+      ~phase_name:"Purging shared memory"
+      ~timer
+      ();
+
+    Log.info
+      "Analysis fixpoint started for %d overrides and %d functions..."
+      (List.length override_targets)
+      (List.length callables_to_analyze);
+    let callables_to_analyze = List.rev_append override_targets callables_to_analyze in
+    let fixpoint_timer = Timer.start () in
+    let fixpoint_iterations =
+      Interprocedural.FixpointAnalysis.compute_fixpoint
+        ~scheduler
+        ~environment:(Analysis.TypeEnvironment.read_only environment)
+        ~analysis:abstract_kind
+        ~dependencies
+        ~filtered_callables:initial_callables.filtered_callables
+        ~all_callables:callables_to_analyze
+        Interprocedural.FixpointState.Epoch.initial
+    in
+
     let filename_lookup path_reference =
       match
         Server.RequestHandler.instantiate_path ~build_system ~ast_environment path_reference
@@ -450,18 +533,22 @@ let run_taint_analysis
           let root = Option.value repository_root ~default:configuration.local_root in
           PyrePath.get_relative_to_root ~root ~path:(PyrePath.create_absolute full_path)
     in
-    Service.StaticAnalysis.analyze
-      ~scheduler
-      ~analysis:abstract_kind
-      ~static_analysis_configuration
-      ~cache
-      ~filename_lookup
-      ~environment
-      ~qualifiers
-      ~initial_callables
-      ~initial_models
-      ~skip_overrides
-      ()
+    let callables =
+      Target.Set.of_list (List.rev_append (Target.Map.keys initial_models) callables_to_analyze)
+    in
+    let summary =
+      Interprocedural.FixpointAnalysis.report_results
+        ~scheduler
+        ~static_analysis_configuration
+        ~environment:(Analysis.TypeEnvironment.read_only environment)
+        ~filename_lookup
+        ~analysis:abstract_kind
+        ~callables
+        ~skipped_overrides
+        ~fixpoint_timer
+        ~fixpoint_iterations:(Some fixpoint_iterations)
+    in
+    Yojson.Safe.pretty_to_string (`List summary) |> Log.print "%s"
   with
   | (TaintConfiguration.TaintConfigurationError _ | ModelParser.ModelVerificationError _) as exn ->
       raise exn

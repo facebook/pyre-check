@@ -70,16 +70,26 @@ val build_class_hierarchy_graph
 
 val build_class_intervals : ClassHierarchyGraph.t -> unit
 
-val analyze
+val record_overrides_for_qualifiers
   :  scheduler:Scheduler.t ->
-  analysis:AnalysisKind.abstract ->
+  cache:Cache.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
+  skip_overrides:Reference.Set.t ->
+  qualifiers:Reference.t list ->
+  DependencyGraphSharedMemory.cap_overrides_result
+
+val build_call_graph
+  :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   cache:Cache.t ->
-  filename_lookup:(Reference.t -> string option) ->
-  environment:TypeEnvironment.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
   qualifiers:Reference.t list ->
-  initial_callables:initial_callables ->
-  initial_models:AnalysisResult.model_t Target.Map.t ->
-  skip_overrides:Ast.Reference.Set.t ->
-  unit ->
-  unit
+  Target.t list Target.Map.t
+
+val build_dependency_graph
+  :  callables_with_dependency_information:(Target.t * bool) list ->
+  callgraph:DependencyGraph.callgraph ->
+  override_dependencies:Target.t list Target.Map.t ->
+  DependencyGraph.t * Target.t list * Target.t list
+
+val purge_shared_memory : environment:TypeEnvironment.t -> qualifiers:Reference.t list -> unit
