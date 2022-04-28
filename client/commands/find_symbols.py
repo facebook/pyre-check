@@ -23,6 +23,8 @@ def _node_to_symbol(
         end = Position(line=end_lineno, character=end_col_offset)
     else:
         end = Position(line=node.lineno, character=node.col_offset + len(node.name))
+    visitor = _SymbolsCollector()
+    visitor.generic_visit(node)
     return DocumentSymbolsResponse(
         name=node.name,
         # TODO(114362484): add docstrings to details
@@ -36,6 +38,7 @@ def _node_to_symbol(
             start=start.to_lsp_position(),
             end=end.to_lsp_position(),
         ),
+        children=visitor.symbols,
     )
 
 
@@ -48,23 +51,19 @@ class _SymbolsCollector(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self.symbols.append(_node_to_symbol(node, SymbolKind.FUNCTION))
-        self.generic_visit(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         self.symbols.append(_node_to_symbol(node, SymbolKind.FUNCTION))
-        self.generic_visit(node)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self.symbols.append(_node_to_symbol(node, SymbolKind.CLASS))
-        self.generic_visit(node)
 
 
 class UnparseableError(Exception):
     pass
 
 
-# TODO(114362484): 1) support child symbols 2) nested functions/classes 3)
-# multiple versions of python
+# TODO(114362484): 1) Support details filled with docstrings/comments 2) incremental re-parsing via tree-sitter.
 def parse_source_and_collect_symbols(source: str) -> List[DocumentSymbolsResponse]:
     try:
         ast_tree = ast.parse(source=source, mode="exec")

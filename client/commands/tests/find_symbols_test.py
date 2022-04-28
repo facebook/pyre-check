@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import textwrap
-from typing import List
+from typing import Optional, List
 
 import testslide
 
@@ -21,7 +21,11 @@ from ..language_server_protocol import (
 
 
 def make_document_symbol(
-    name: str, detail: str, kind: SymbolKind, range: LspRange
+    name: str,
+    detail: str,
+    kind: SymbolKind,
+    range: LspRange,
+    children: Optional[List[DocumentSymbolsResponse]] = None,
 ) -> DocumentSymbolsResponse:
     return DocumentSymbolsResponse(
         name=name,
@@ -29,6 +33,7 @@ def make_document_symbol(
         kind=kind,
         range=range,
         selection_range=range,
+        children=children if children else [],
     )
 
 
@@ -138,15 +143,19 @@ class FindSymbolTests(testslide.TestCase):
                         start=LspPosition(line=1, character=0),
                         end=LspPosition(line=3, character=len("        return self")),
                     ),
-                ),
-                make_document_symbol(
-                    name="bar",
-                    detail="",
-                    kind=SymbolKind.FUNCTION,
-                    range=LspRange(
-                        start=LspPosition(line=2, character=4),
-                        end=LspPosition(line=3, character=len("        return self")),
-                    ),
+                    children=[
+                        make_document_symbol(
+                            name="bar",
+                            detail="",
+                            kind=SymbolKind.FUNCTION,
+                            range=LspRange(
+                                start=LspPosition(line=2, character=4),
+                                end=LspPosition(
+                                    line=3, character=len("        return self")
+                                ),
+                            ),
+                        )
+                    ],
                 ),
             ],
         )
@@ -170,28 +179,33 @@ class FindSymbolTests(testslide.TestCase):
                             line=4, character=len("            return self")
                         ),
                     ),
-                ),
-                make_document_symbol(
-                    name="bar",
-                    detail="",
-                    kind=SymbolKind.CLASS,
-                    range=LspRange(
-                        start=LspPosition(line=2, character=4),
-                        end=LspPosition(
-                            line=4, character=len("            return self")
-                        ),
-                    ),
-                ),
-                make_document_symbol(
-                    name="foobar",
-                    detail="",
-                    kind=SymbolKind.FUNCTION,
-                    range=LspRange(
-                        start=LspPosition(line=3, character=8),
-                        end=LspPosition(
-                            line=4, character=len("            return self")
-                        ),
-                    ),
+                    children=[
+                        make_document_symbol(
+                            name="bar",
+                            detail="",
+                            kind=SymbolKind.CLASS,
+                            range=LspRange(
+                                start=LspPosition(line=2, character=4),
+                                end=LspPosition(
+                                    line=4, character=len("            return self")
+                                ),
+                            ),
+                            children=[
+                                make_document_symbol(
+                                    name="foobar",
+                                    detail="",
+                                    kind=SymbolKind.FUNCTION,
+                                    range=LspRange(
+                                        start=LspPosition(line=3, character=8),
+                                        end=LspPosition(
+                                            line=4,
+                                            character=len("            return self"),
+                                        ),
+                                    ),
+                                )
+                            ],
+                        )
+                    ],
                 ),
             ],
         )
@@ -215,26 +229,35 @@ class FindSymbolTests(testslide.TestCase):
                         start=LspPosition(line=1, character=0),
                         end=LspPosition(line=6, character=len("    return bar(x)")),
                     ),
-                ),
-                make_document_symbol(
-                    name="bar",
-                    detail="",
-                    kind=SymbolKind.FUNCTION,
-                    range=LspRange(
-                        start=LspPosition(line=2, character=4),
-                        end=LspPosition(line=5, character=len("        foobar(y)")),
-                    ),
-                ),
-                make_document_symbol(
-                    name="foobar",
-                    detail="",
-                    kind=SymbolKind.FUNCTION,
-                    range=LspRange(
-                        start=LspPosition(line=3, character=8),
-                        end=LspPosition(
-                            line=4, character=len("            return x * y * xy")
-                        ),
-                    ),
+                    children=[
+                        make_document_symbol(
+                            name="bar",
+                            detail="",
+                            kind=SymbolKind.FUNCTION,
+                            range=LspRange(
+                                start=LspPosition(line=2, character=4),
+                                end=LspPosition(
+                                    line=5, character=len("        foobar(y)")
+                                ),
+                            ),
+                            children=[
+                                make_document_symbol(
+                                    name="foobar",
+                                    detail="",
+                                    kind=SymbolKind.FUNCTION,
+                                    range=LspRange(
+                                        start=LspPosition(line=3, character=8),
+                                        end=LspPosition(
+                                            line=4,
+                                            character=len(
+                                                "            return x * y * xy"
+                                            ),
+                                        ),
+                                    ),
+                                )
+                            ],
+                        )
+                    ],
                 ),
             ],
         )

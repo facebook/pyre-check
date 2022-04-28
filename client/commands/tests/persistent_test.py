@@ -1090,6 +1090,7 @@ class PersistentTest(testslide.TestCase):
                             "start": {"line": 0, "character": 0},
                             "end": {"line": 1, "character": 6},
                         },
+                        "children": [],
                     }
                 ],
             )

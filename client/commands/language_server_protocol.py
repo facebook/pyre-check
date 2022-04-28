@@ -652,3 +652,4 @@ class DocumentSymbolsResponse:
     kind: SymbolKind
     range: LspRange
     selection_range: LspRange
+    children: List["DocumentSymbolsResponse"]

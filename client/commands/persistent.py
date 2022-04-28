@@ -794,7 +794,7 @@ class PyreServer:
                 id=request_id,
                 # pyre-ignore[16]: Pyre does not understand
                 # `dataclasses_json`.
-                result=DocumentSymbolsResponse.schema().dump(symbols, many=True),
+                result=[s.to_dict() for s in symbols],
             ),
         )
 
