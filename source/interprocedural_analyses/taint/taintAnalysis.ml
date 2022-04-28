@@ -175,8 +175,7 @@ let parse_models_and_queries_from_configuration
 
 
 let generate_models_from_queries
-    ~static_analysis_configuration:
-      { Configuration.StaticAnalysis.rule_filter; find_missing_flows; _ }
+    ~static_analysis_configuration:{ Configuration.StaticAnalysis.rule_filter; _ }
     ~scheduler
     ~environment
     ~callables
@@ -191,27 +190,39 @@ let generate_models_from_queries
       (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
       (module Analysis.TypeCheck.DummyContext)
   in
-  let models =
-    let callables =
-      Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:callables
-      |> List.filter_map ~f:(function
-             | Target.Function _ as callable -> Some callable
-             | Target.Method _ as callable -> Some callable
-             | _ -> None)
-    in
-    TaintModelQuery.ModelQuery.apply_all_rules
-      ~resolution
-      ~scheduler
-      ~configuration:taint_configuration
-      ~rule_filter
-      ~rules:queries
-      ~callables
-      ~stubs
-      ~environment
-      ~models:initial_models
+  let callables =
+    Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:callables
+    |> List.filter_map ~f:(function
+           | Target.Function _ as callable -> Some callable
+           | Target.Method _ as callable -> Some callable
+           | _ -> None)
   in
+  TaintModelQuery.ModelQuery.apply_all_rules
+    ~resolution
+    ~scheduler
+    ~configuration:taint_configuration
+    ~rule_filter
+    ~rules:queries
+    ~callables
+    ~stubs
+    ~environment
+    ~models:initial_models
+
+
+let add_models_for_missing_flows
+    ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
+    ~environment
+    ~stubs
+    ~initial_models
+  =
   let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
   let add_obscure_sinks models =
+    let resolution =
+      Analysis.TypeCheck.resolution
+        (Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module Analysis.TypeCheck.DummyContext)
+    in
     let add_obscure_sink models callable =
       let model =
         Target.Map.find models callable
@@ -229,13 +240,10 @@ let generate_models_from_queries
   let find_missing_flows =
     find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
   in
-  let models =
-    match find_missing_flows with
-    | Some Obscure -> models |> remove_sinks |> add_obscure_sinks
-    | Some Type -> models |> remove_sinks
-    | None -> models
-  in
-  models
+  match find_missing_flows with
+  | Some Obscure -> initial_models |> remove_sinks |> add_obscure_sinks
+  | Some Type -> initial_models |> remove_sinks
+  | None -> initial_models
 
 
 (* Registers the Taint analysis with the interprocedural analysis framework. *)
@@ -281,6 +289,15 @@ include Taint.Result.Register (struct
             ();
           models
     in
+
+    let models =
+      add_models_for_missing_flows
+        ~static_analysis_configuration
+        ~environment
+        ~stubs
+        ~initial_models:models
+    in
+
     { Interprocedural.AnalysisResult.initial_models = models; skip_overrides }
 
 
