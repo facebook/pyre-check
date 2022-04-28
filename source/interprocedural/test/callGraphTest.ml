@@ -1185,6 +1185,34 @@ let test_call_graph_of_define context =
                         (Target.Method { class_name = "test.C"; method_name = "run" });
                     ]
                   ())) );
+        ( "8:31-8:33",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__iter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:(Type.list (Type.Primitive "test.C"))
+                              (Target.Method { class_name = "list"; method_name = "__iter__" });
+                          ]
+                        ()) );
+                 ( "__next__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:(Type.iterator (Type.Primitive "test.C"))
+                              (Target.Method
+                                 { class_name = "typing.Iterator"; method_name = "__next__" });
+                          ]
+                        ()) );
+               ]) );
       ]
     ();
 
@@ -3562,11 +3590,258 @@ let test_call_graph_of_define context =
   assert_call_graph_of_define
     ~source:
       {|
-       def foo(l0: typing.AsyncIterator[int]):
+       class A:
+         def f(self) -> typing.List[int]:
+           return [1, 2]
+       def g() -> A:
+         return A()
+       def id(arg):
+         return arg
+       def foo(l0: typing.AsyncIterator[int], l1: typing.List[int], l2: typing.AsyncIterable[int]):
          x = [x async for x in l0]
+         x = [x for x in l1]
+         x = [x async for x in l2]
+         x = [x for x in g().f()]
       |}
     ~define_name:"test.foo"
-    ~expected:[]
+    ~expected:
+      [
+        ( "10:24-10:26",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__aiter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:
+                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              ~collapse_tito:false
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterator"; method_name = "__aiter__" });
+                          ]
+                        ()) );
+                 ( "__anext__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~return_type:
+                                (Some
+                                   {
+                                     ReturnType.is_boolean = false;
+                                     is_integer = true;
+                                     is_float = true;
+                                     is_enumeration = false;
+                                   })
+                              ~receiver_type:
+                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterator"; method_name = "__anext__" });
+                          ]
+                        ()) );
+               ]) );
+        ( "11:18-11:20",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__iter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:(Type.list Type.integer)
+                              (Target.Method { class_name = "list"; method_name = "__iter__" });
+                          ]
+                        ()) );
+                 ( "__next__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~return_type:
+                                (Some
+                                   {
+                                     ReturnType.is_boolean = false;
+                                     is_integer = true;
+                                     is_float = true;
+                                     is_enumeration = false;
+                                   })
+                              ~receiver_type:
+                                (Type.parametric "typing.Iterator" [Single Type.integer])
+                              (Target.Method
+                                 { class_name = "typing.Iterator"; method_name = "__next__" });
+                          ]
+                        ()) );
+               ]) );
+        ( "12:24-12:26",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__aiter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:
+                                (Type.parametric "typing.AsyncIterable" [Single Type.integer])
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterable"; method_name = "__aiter__" });
+                          ]
+                        ()) );
+                 ( "__anext__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~return_type:
+                                (Some
+                                   {
+                                     ReturnType.is_boolean = false;
+                                     is_integer = true;
+                                     is_float = true;
+                                     is_enumeration = false;
+                                   })
+                              ~receiver_type:
+                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              ~index:1
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterator"; method_name = "__anext__" });
+                          ]
+                        ()) );
+               ]) );
+        ( "13:18-13:21",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create ~call_targets:[CallTarget.create (Target.Function "test.g")] ()))
+        );
+        ( "13:18-13:25",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__iter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:(Type.list Type.integer)
+                              ~index:1
+                              (Target.Method { class_name = "list"; method_name = "__iter__" });
+                          ]
+                        ()) );
+                 ( "__next__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:
+                                (Type.parametric "typing.Iterator" [Single Type.integer])
+                              ~return_type:
+                                (Some
+                                   {
+                                     ReturnType.is_boolean = false;
+                                     is_integer = true;
+                                     is_float = true;
+                                     is_enumeration = false;
+                                   })
+                              ~index:1
+                              (Target.Method
+                                 { class_name = "typing.Iterator"; method_name = "__next__" });
+                          ]
+                        ()) );
+                 ( "f",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:(Type.Primitive "test.A")
+                              (Target.Method { class_name = "test.A"; method_name = "f" });
+                          ]
+                        ()) );
+               ]) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+       class A:
+         def foo(self): pass
+       class B:
+         def foo(self): pass
+       def f(l: typing.AsyncIterator[A], x: B):
+         ([x async for x in l], x.foo())
+      |}
+    ~define_name:"test.f"
+    ~expected:
+      [
+        ( "7:21-7:22",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__aiter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:
+                                (Type.parametric
+                                   "typing.AsyncIterator"
+                                   [Single (Type.Primitive "test.A")])
+                              ~collapse_tito:false
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterator"; method_name = "__aiter__" });
+                          ]
+                        ()) );
+                 ( "__anext__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:
+                                (Type.parametric
+                                   "typing.AsyncIterator"
+                                   [Single (Type.Primitive "test.A")])
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterator"; method_name = "__anext__" });
+                          ]
+                        ()) );
+               ]) );
+        ( "7:25-7:32",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.Primitive "test.B")
+                        (Target.Method { Target.class_name = "test.B"; method_name = "foo" });
+                    ]
+                  ())) );
+      ]
     ();
   ()
 

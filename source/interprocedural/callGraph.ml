@@ -1767,13 +1767,85 @@ struct
     let generator_visitor ({ resolution; _ } as state) generator =
       (* Since generators create variables that Pyre sees as scoped within the generator, handle
          them by adding the generator's bindings to the resolution. *)
-      {
-        state with
-        resolution =
-          Resolution.resolve_assignment
-            resolution
-            (Ast.Statement.Statement.generator_assignment generator);
-      }
+      let ({ Ast.Statement.Assign.target = _; value = { Node.value; location }; _ } as assignment) =
+        Ast.Statement.Statement.generator_assignment generator
+      in
+      (* Since the analysis views the generator as an assignment, we need to also register (extra)
+         calls that (are generated above and) appear within the right-hand-side of the assignment*)
+      let iter, iter_next =
+        match value with
+        | Expression.Await
+            {
+              Node.value =
+                Expression.Call
+                  {
+                    callee =
+                      {
+                        Node.value =
+                          Name
+                            (Name.Attribute
+                              {
+                                base =
+                                  {
+                                    Node.value =
+                                      Expression.Call
+                                        {
+                                          callee =
+                                            {
+                                              Node.value =
+                                                Name (Name.Attribute { attribute = "__aiter__"; _ });
+                                              _;
+                                            };
+                                          _;
+                                        } as aiter;
+                                    _;
+                                  };
+                                attribute = "__anext__";
+                                _;
+                              });
+                        _;
+                      };
+                    _;
+                  } as aiter_anext;
+              _;
+            } ->
+            (* E.g., x async for x in y *) aiter, aiter_anext
+        | Expression.Call
+            {
+              callee =
+                {
+                  Node.value =
+                    Name
+                      (Name.Attribute
+                        {
+                          base =
+                            {
+                              Node.value =
+                                Expression.Call
+                                  {
+                                    callee =
+                                      {
+                                        Node.value =
+                                          Name (Name.Attribute { attribute = "__iter__"; _ });
+                                        _;
+                                      };
+                                    _;
+                                  } as iter;
+                              _;
+                            };
+                          attribute = "__next__";
+                          _;
+                        });
+                  _;
+                };
+              _;
+            } as iter_next ->
+            (* E.g., x for x in y *) iter, iter_next
+        | _ -> failwith "Expect generators to be treated as e.__iter__().__next__()"
+      in
+      let state = expression_visitor state { Node.value = iter; location } in
+      let state = expression_visitor state { Node.value = iter_next; location } in
+      { state with resolution = Resolution.resolve_assignment resolution assignment }
 
 
     let node state = function
