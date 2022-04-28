@@ -1,4 +1,4 @@
-pyre-check-nightly
+pyre-check
 flask
 flask_cors
 flask_socketio
