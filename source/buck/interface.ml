@@ -88,7 +88,11 @@ module V1 = struct
             ["--config"; "client.id=pyre"];
             Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
             [
+              (* Build all python-related rules. *)
               "kind(\"python_binary|python_library|python_test\", %s)"
+              (* Certain Python-related rules are exposed as `configured_alias` which cannot be
+                 picked up by the preceding query. *)
+              ^ " + kind(\"python_binary|python_test\", deps(kind(configured_alias, %s), 1))"
               (* Don't bother with generated rules. *)
               ^ " - attrfilter(labels, generated, %s)"
               (* `python_unittest()` sources are separated into a macro-generated library, so make
