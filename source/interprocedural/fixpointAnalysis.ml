@@ -681,29 +681,3 @@ let compute_fixpoint
   | exn ->
       Log.log_exception "Fixpoint iteration failed." exn (Worker.exception_backtrace exn);
       raise exn
-
-
-let report_results
-    ~scheduler
-    ~static_analysis_configuration
-    ~environment
-    ~filename_lookup
-    ~analysis
-    ~callables
-    ~skipped_overrides
-    ~fixpoint_timer
-    ~fixpoint_iterations
-  =
-  let report_analysis (AnalysisResult.Analysis { analysis; _ }) =
-    let module Analysis = (val analysis) in
-    Analysis.report
-      ~scheduler
-      ~static_analysis_configuration
-      ~environment
-      ~filename_lookup
-      ~callables
-      ~skipped_overrides
-      ~fixpoint_timer
-      ~fixpoint_iterations
-  in
-  AnalysisResult.get_abstract_analysis analysis |> report_analysis

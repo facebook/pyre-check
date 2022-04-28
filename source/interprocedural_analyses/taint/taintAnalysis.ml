@@ -373,9 +373,6 @@ include Taint.Result.Register (struct
           ~sanitizers:Model.Sanitizers.empty
           ~modes:Model.ModeSet.empty
           empty_model
-
-
-  let report = Reporting.report
 end)
 
 let run_taint_analysis
@@ -537,12 +534,10 @@ let run_taint_analysis
       Target.Set.of_list (List.rev_append (Target.Map.keys initial_models) callables_to_analyze)
     in
     let summary =
-      Interprocedural.FixpointAnalysis.report_results
+      Reporting.report
         ~scheduler
         ~static_analysis_configuration
-        ~environment:(Analysis.TypeEnvironment.read_only environment)
         ~filename_lookup
-        ~analysis:abstract_kind
         ~callables
         ~skipped_overrides
         ~fixpoint_timer

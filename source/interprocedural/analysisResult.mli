@@ -109,17 +109,6 @@ module type ANALYZER = sig
     callables:Target.t list ->
     stubs:Target.t list ->
     call_model initialize_result
-
-  val report
-    :  scheduler:Scheduler.t ->
-    static_analysis_configuration:Configuration.StaticAnalysis.t ->
-    environment:Analysis.TypeEnvironment.ReadOnly.t ->
-    filename_lookup:(Ast.Reference.t -> string option) ->
-    callables:Target.Set.t ->
-    skipped_overrides:Ast.Reference.t list ->
-    fixpoint_timer:Timer.t ->
-    fixpoint_iterations:int option ->
-    Yojson.Safe.json list
 end
 
 module type ANALYSIS_RESULT = sig

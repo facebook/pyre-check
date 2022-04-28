@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Pyre
 open OUnit2
 open Ast
 open Analysis
@@ -20,23 +19,6 @@ let setup_environment scratch_project =
     scratch_project |> ScratchProject.build_global_environment
   in
   global_environment
-
-
-let static_analysis_configuration { ScratchProject.configuration; _ } =
-  {
-    Configuration.StaticAnalysis.repository_root = None;
-    result_json_path = None;
-    dump_call_graph = None;
-    verify_models = false;
-    configuration;
-    rule_filter = None;
-    find_missing_flows = None;
-    dump_model_query_results = None;
-    use_cache = false;
-    inline_decorators = false;
-    maximum_trace_length = None;
-    maximum_tito_depth = None;
-  }
 
 
 module ResultA = Interprocedural.AnalysisResult.Make (struct
@@ -71,52 +53,9 @@ module AnalysisA = ResultA.Register (struct
 
 
   let analyze ~environment:_ ~callable:_ ~qualifier:_ ~define:_ ~existing:_ = "A", 5
-
-  let report
-      ~scheduler:_
-      ~static_analysis_configuration:_
-      ~environment:_
-      ~filename_lookup:_
-      ~callables
-      ~skipped_overrides:_
-      ~fixpoint_timer:_
-      ~fixpoint_iterations:_
-    =
-    let get_model callable : Yojson.Safe.json =
-      let model =
-        FixpointState.get_model callable
-        >>= AnalysisResult.get_model ResultA.kind
-        >>| (fun r -> `Int r)
-        |> Option.value ~default:`Null
-      in
-      let result =
-        FixpointState.get_result callable
-        |> AnalysisResult.get_result ResultA.kind
-        >>| (fun r -> `String r)
-        |> Option.value ~default:`Null
-      in
-      `Assoc
-        [
-          "analysis", `String ResultA.name;
-          "callable", `String (Target.show_pretty_with_kind callable);
-          "model", model;
-          "result", result;
-        ]
-    in
-    callables |> Target.Set.elements |> List.map ~f:get_model
 end)
 
 let analysis = AnalysisA.abstract_kind
-
-let assert_report ~expected report =
-  let json_printer jsons = String.concat ~sep:"\n" (List.map ~f:Yojson.Safe.to_string jsons) in
-  let sort_json json =
-    json |> List.sort ~compare:String.compare |> List.map ~f:Yojson.Safe.from_string
-  in
-  let expected = sort_json expected in
-  let report = report |> List.map ~f:Yojson.Safe.to_string |> sort_json in
-  assert_equal ~printer:json_printer ~msg:"json report" expected report
-
 
 let test_unknown_function_analysis context =
   let callable_of_string name = name |> Reference.create |> Target.create_function in
@@ -135,28 +74,7 @@ let test_unknown_function_analysis context =
     | Some models ->
         assert_equal (AnalysisResult.get_model ResultA.kind models) (Some ResultA.obscure_model)
   in
-  List.iter ~f:check_obscure_model targets;
-  (* Make sure result extraction works (this verifies a lot of the type magic) *)
-  let report =
-    let static_analysis_configuration = static_analysis_configuration scratch_project in
-    FixpointAnalysis.report_results
-      ~scheduler:(Test.mock_scheduler ())
-      ~static_analysis_configuration
-      ~environment
-      ~analysis
-      ~filename_lookup:(fun _ -> None)
-      ~callables:(targets |> Target.Set.of_list)
-      ~skipped_overrides:[]
-      ~fixpoint_timer:(Timer.start ())
-      ~fixpoint_iterations:None
-  in
-  assert_report
-    report
-    ~expected:
-      [
-        {| {"analysis":"analysisA","callable":"fun_a (fun)","model":-1,"result":null} |};
-        {| {"analysis":"analysisA","callable":"fun_b (fun)","model":-1,"result":null} |};
-      ]
+  List.iter ~f:check_obscure_model targets
 
 
 let check_meta_data ~step ~is_partial target =

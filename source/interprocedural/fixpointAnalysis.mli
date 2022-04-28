@@ -52,15 +52,3 @@ val compute_fixpoint
   int
 
 val strip_for_callsite : AnalysisResult.model_t -> AnalysisResult.model_t
-
-val report_results
-  :  scheduler:Scheduler.t ->
-  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  filename_lookup:(Ast.Reference.t -> string option) ->
-  analysis:Kind.abstract ->
-  callables:Target.Set.t ->
-  skipped_overrides:Ast.Reference.t list ->
-  fixpoint_timer:Timer.t ->
-  fixpoint_iterations:int option ->
-  Yojson.Safe.json list

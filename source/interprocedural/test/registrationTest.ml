@@ -41,18 +41,6 @@ include SimpleAnalysis.Register (struct
 
 
   let analyze ~environment:_ ~callable:_ ~qualifier:_ ~define:_ ~existing:_ = "some result", 5
-
-  let report
-      ~scheduler:_
-      ~static_analysis_configuration:_
-      ~environment:_
-      ~filename_lookup:_
-      ~callables:_
-      ~skipped_overrides:_
-      ~fixpoint_timer:_
-      ~fixpoint_iterations:_
-    =
-    []
 end)
 
 let test_simple_analysis _ =
