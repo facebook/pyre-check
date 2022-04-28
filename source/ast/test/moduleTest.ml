@@ -78,6 +78,14 @@ let test_aliased_export _ =
       from other import thing
     |}
     ["thing", "other.thing"];
+  assert_aliased_exports
+    {|
+      if derp():
+        from other import thing
+      else:
+        from other import thing2
+    |}
+    ["thing", "other.thing"; "thing2", "other.thing2"];
 
   (* Global assignments should not be counted *)
   assert_aliased_exports

@@ -172,7 +172,7 @@ let create
     |> Map.to_tree
   in
   let legacy_aliased_exports =
-    let aliased_exports aliases { Node.value; _ } =
+    let rec aliased_exports aliases { Node.value; _ } =
       match value with
       | Statement.Import { Import.from = Some from; imports } ->
           let from = SourcePath.expand_relative_import source_path ~from in
@@ -207,6 +207,9 @@ let create
             Map.set aliases ~key:source ~data:target
           in
           List.fold imports ~f:export ~init:aliases
+      | If { If.body; orelse; _ } ->
+          let aliases = List.fold body ~init:aliases ~f:aliased_exports in
+          List.fold orelse ~init:aliases ~f:aliased_exports
       | _ -> aliases
     in
     List.fold statements ~f:aliased_exports ~init:Reference.Map.empty |> Map.to_tree
