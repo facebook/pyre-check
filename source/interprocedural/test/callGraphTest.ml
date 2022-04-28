@@ -3599,9 +3599,15 @@ let test_call_graph_of_define context =
          return arg
        def foo(l0: typing.AsyncIterator[int], l1: typing.List[int], l2: typing.AsyncIterable[int]):
          x = [x async for x in l0]
-         x = [x for x in l1]
-         x = [x async for x in l2]
-         x = [x for x in g().f()]
+         x = [x for x in l1]  # List comprehension
+         x = [x async for x in l2]  # List comprehension
+         x = [x for x in g().f()]  # Iterator as a compound AST node
+         x = {x for x in l1}  # Set comprehension
+         x = {x async for x in l2}  # Set comprehension
+         x = {x:0 for x in l1}  # Dictionary comprehension
+         x = {x:0 async for x in l2}  # Dictionary comprehension
+         x = (x for x in l1) # Generator comprehension
+         x = (x async for x in l2)  # Generator comprehension
       |}
     ~define_name:"test.foo"
     ~expected:
@@ -3775,6 +3781,246 @@ let test_call_graph_of_define context =
                               ~implicit_self:true
                               ~receiver_type:(Type.Primitive "test.A")
                               (Target.Method { class_name = "test.A"; method_name = "f" });
+                          ]
+                        ()) );
+               ]) );
+        ( "14:18-14:20",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__iter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:(Type.list Type.integer)
+                              ~index:2
+                              (Target.Method { class_name = "list"; method_name = "__iter__" });
+                          ]
+                        ()) );
+                 ( "__next__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~return_type:
+                                (Some
+                                   {
+                                     ReturnType.is_boolean = false;
+                                     is_integer = true;
+                                     is_float = true;
+                                     is_enumeration = false;
+                                   })
+                              ~receiver_type:
+                                (Type.parametric "typing.Iterator" [Single Type.integer])
+                              ~index:2
+                              (Target.Method
+                                 { class_name = "typing.Iterator"; method_name = "__next__" });
+                          ]
+                        ()) );
+               ]) );
+        ( "15:24-15:26",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__aiter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:
+                                (Type.parametric "typing.AsyncIterable" [Single Type.integer])
+                              ~index:1
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterable"; method_name = "__aiter__" });
+                          ]
+                        ()) );
+                 ( "__anext__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~return_type:
+                                (Some
+                                   {
+                                     ReturnType.is_boolean = false;
+                                     is_integer = true;
+                                     is_float = true;
+                                     is_enumeration = false;
+                                   })
+                              ~receiver_type:
+                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              ~index:2
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterator"; method_name = "__anext__" });
+                          ]
+                        ()) );
+               ]) );
+        ( "16:20-16:22",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__iter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:(Type.list Type.integer)
+                              ~index:3
+                              (Target.Method { class_name = "list"; method_name = "__iter__" });
+                          ]
+                        ()) );
+                 ( "__next__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~return_type:
+                                (Some
+                                   {
+                                     ReturnType.is_boolean = false;
+                                     is_integer = true;
+                                     is_float = true;
+                                     is_enumeration = false;
+                                   })
+                              ~receiver_type:
+                                (Type.parametric "typing.Iterator" [Single Type.integer])
+                              ~index:3
+                              (Target.Method
+                                 { class_name = "typing.Iterator"; method_name = "__next__" });
+                          ]
+                        ()) );
+               ]) );
+        ( "17:26-17:28",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__aiter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:
+                                (Type.parametric "typing.AsyncIterable" [Single Type.integer])
+                              ~index:2
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterable"; method_name = "__aiter__" });
+                          ]
+                        ()) );
+                 ( "__anext__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~return_type:
+                                (Some
+                                   {
+                                     ReturnType.is_boolean = false;
+                                     is_integer = true;
+                                     is_float = true;
+                                     is_enumeration = false;
+                                   })
+                              ~receiver_type:
+                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              ~index:3
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterator"; method_name = "__anext__" });
+                          ]
+                        ()) );
+               ]) );
+        ( "18:18-18:20",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__iter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:(Type.list Type.integer)
+                              ~index:4
+                              (Target.Method { class_name = "list"; method_name = "__iter__" });
+                          ]
+                        ()) );
+                 ( "__next__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~return_type:
+                                (Some
+                                   {
+                                     ReturnType.is_boolean = false;
+                                     is_integer = true;
+                                     is_float = true;
+                                     is_enumeration = false;
+                                   })
+                              ~receiver_type:
+                                (Type.parametric "typing.Iterator" [Single Type.integer])
+                              ~index:4
+                              (Target.Method
+                                 { class_name = "typing.Iterator"; method_name = "__next__" });
+                          ]
+                        ()) );
+               ]) );
+        ( "19:24-19:26",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__aiter__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:
+                                (Type.parametric "typing.AsyncIterable" [Single Type.integer])
+                              ~index:3
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterable"; method_name = "__aiter__" });
+                          ]
+                        ()) );
+                 ( "__anext__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~return_type:
+                                (Some
+                                   {
+                                     ReturnType.is_boolean = false;
+                                     is_integer = true;
+                                     is_float = true;
+                                     is_enumeration = false;
+                                   })
+                              ~receiver_type:
+                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              ~index:4
+                              (Target.Method
+                                 { class_name = "typing.AsyncIterator"; method_name = "__anext__" });
                           ]
                         ()) );
                ]) );
