@@ -379,6 +379,7 @@ class ServerCapabilities:
     text_document_sync: Optional[TextDocumentSyncOptions] = None
     hover_provider: Optional[bool] = None
     definition_provider: Optional[bool] = None
+    document_symbol_provider: Optional[bool] = None
 
 
 @dataclasses_json.dataclass_json(

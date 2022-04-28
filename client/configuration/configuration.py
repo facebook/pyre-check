@@ -193,6 +193,7 @@ class PartialConfiguration:
             ide_features_module.IdeFeatures(
                 hover_enabled=arguments.enable_hover,
                 go_to_definition_enabled=arguments.enable_go_to_definition,
+                find_symbols_enabled=arguments.enable_find_symbols,
             )
             if arguments.enable_hover is not None
             or arguments.enable_go_to_definition is not None
@@ -1032,6 +1033,11 @@ class Configuration:
         if self.ide_features is None:
             return ide_features_module.IdeFeatures.DEFAULT_GO_TO_DEFINITION_ENABLED
         return self.ide_features.is_go_to_definition_enabled()
+
+    def is_find_symbols_enabled(self) -> bool:
+        if self.ide_features is None:
+            return ide_features_module.IdeFeatures.DEFAULT_FIND_SYMBOLS_ENABLED
+        return self.ide_features.is_find_symbols_enabled()
 
     def get_valid_extension_suffixes(self) -> List[str]:
         vaild_extensions = []

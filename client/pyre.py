@@ -286,6 +286,13 @@ def _check_open_source_version(
     default=None,
     hidden=True,
 )
+@click.option(
+    "--enable-find-symbols/--no-enable-find-symbols",
+    is_flag=True,
+    help="Whether Pyre should support document-symbols in the IDE.",
+    default=None,
+    hidden=True,
+)
 @click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
 def pyre(
     context: click.Context,
@@ -315,6 +322,7 @@ def pyre(
     number_of_workers: Optional[int],
     enable_hover: Optional[bool],
     enable_go_to_definition: Optional[bool],
+    enable_find_symbols: Optional[bool],
 ) -> None:
     arguments = command_arguments.CommandArguments(
         local_configuration=None,
@@ -355,6 +363,7 @@ def pyre(
         enable_hover=enable_hover,
         use_buck2=None,
         enable_go_to_definition=enable_go_to_definition,
+        enable_find_symbols=enable_find_symbols,
     )
     context.ensure_object(dict)
     context.obj["arguments"] = arguments

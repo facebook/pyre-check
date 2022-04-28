@@ -108,11 +108,13 @@ class PartialConfigurationTest(unittest.TestCase):
             command_arguments.CommandArguments(
                 enable_hover=True,
                 enable_go_to_definition=True,
+                enable_find_symbols=True,
             )
         )
         assert configuration.ide_features is not None
         self.assertTrue(configuration.ide_features.is_hover_enabled())
         self.assertTrue(configuration.ide_features.is_go_to_definition_enabled())
+        self.assertTrue(configuration.ide_features.is_find_symbols_enabled())
 
         configuration = PartialConfiguration.from_command_arguments(
             command_arguments.CommandArguments(
@@ -731,7 +733,9 @@ class ConfigurationTest(testslide.TestCase):
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
                 ide_features=IdeFeatures(
-                    hover_enabled=True, go_to_definition_enabled=True
+                    hover_enabled=True,
+                    go_to_definition_enabled=True,
+                    find_symbols_enabled=True,
                 ),
                 ignore_all_errors=["bar"],
                 ignore_infer=["baz"],
@@ -766,7 +770,11 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])
         self.assertEqual(
             configuration.ide_features,
-            IdeFeatures(hover_enabled=True, go_to_definition_enabled=True),
+            IdeFeatures(
+                hover_enabled=True,
+                go_to_definition_enabled=True,
+                find_symbols_enabled=True,
+            ),
         )
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
         self.assertListEqual(list(configuration.ignore_infer), ["baz"])
@@ -1229,6 +1237,21 @@ class ConfigurationTest(testslide.TestCase):
                 dot_pyre_directory=Path(".pyre"),
                 ide_features=IdeFeatures(go_to_definition_enabled=True),
             ).is_go_to_definition_enabled(),
+        )
+
+    def test_is_find_symbols_enabled(self) -> None:
+        self.assertFalse(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+            ).is_find_symbols_enabled(),
+        )
+        self.assertTrue(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                ide_features=IdeFeatures(find_symbols_enabled=True),
+            ).is_find_symbols_enabled(),
         )
 
     def test_create_from_command_arguments_only(self) -> None:

@@ -21,11 +21,14 @@ class IdeFeatures:
     DEFAULT_HOVER_ENABLED: ClassVar[bool] = False
     go_to_definition_enabled: Optional[bool] = None
     DEFAULT_GO_TO_DEFINITION_ENABLED: ClassVar[bool] = False
+    find_symbols_enabled: Optional[bool] = None
+    DEFAULT_FIND_SYMBOLS_ENABLED: ClassVar[bool] = False
 
     @staticmethod
     def merge(base: "IdeFeatures", override: "IdeFeatures") -> "IdeFeatures":
         override_hover_enabled = override.hover_enabled
         override_go_to_definition_enabled = override.go_to_definition_enabled
+        override_find_symbols_enabled = override.find_symbols_enabled
         return IdeFeatures(
             hover_enabled=override_hover_enabled
             if override_hover_enabled is not None
@@ -33,6 +36,9 @@ class IdeFeatures:
             go_to_definition_enabled=override_go_to_definition_enabled
             if override_go_to_definition_enabled is not None
             else base.go_to_definition_enabled,
+            find_symbols_enabled=override_find_symbols_enabled
+            if override_find_symbols_enabled is not None
+            else base.find_symbols_enabled,
         )
 
     @staticmethod
@@ -72,6 +78,11 @@ class IdeFeatures:
                 if self.go_to_definition_enabled is not None
                 else {}
             ),
+            **(
+                {"find_symbols_enabled": self.find_symbols_enabled}
+                if self.find_symbols_enabled is not None
+                else {}
+            ),
         }
 
     def is_hover_enabled(self) -> bool:
@@ -86,4 +97,11 @@ class IdeFeatures:
             self.go_to_definition_enabled
             if self.go_to_definition_enabled is not None
             else self.DEFAULT_GO_TO_DEFINITION_ENABLED
+        )
+
+    def is_find_symbols_enabled(self) -> bool:
+        return (
+            self.find_symbols_enabled
+            if self.find_symbols_enabled is not None
+            else self.DEFAULT_FIND_SYMBOLS_ENABLED
         )
