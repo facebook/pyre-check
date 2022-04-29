@@ -14,6 +14,10 @@ open Interprocedural
 open TestHelper
 
 let assert_taint ?models ?models_source ~context source expect =
+  let () =
+    TestHelper.get_initial_models ~context
+    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
+  in
   let handle = "qualifier.py" in
   let qualifier = Ast.Reference.create "qualifier" in
   let sources =
@@ -1231,33 +1235,34 @@ let test_taint_in_taint_out_transform context =
 
 
 let () =
-  [
-    "access_paths", test_access_paths;
-    "apply_method_model_at_call_site", test_apply_method_model_at_call_site;
-    "asyncio_gather", test_asyncio_gather;
-    "class_model", test_class_model;
-    "composed_models", test_composed_models;
-    "comprehensions", test_comprehensions;
-    "construction", test_construction;
-    "copy", test_local_copy;
-    "dictionary", test_dictionary;
-    "global_taint", test_global_taint;
-    "hardcoded", test_hardcoded_source;
-    "lambda", test_lambda;
-    "list", test_list;
-    "no_model", test_no_model;
-    "parameter_default_values", test_parameter_default_values;
-    "set", test_set;
-    "simple", test_simple_source;
-    "starred", test_starred;
-    "string", test_string;
-    "taint_in_taint_out_application", test_taint_in_taint_out_application;
-    "taint_in_taint_out_transform", test_taint_in_taint_out_transform;
-    "ternary", test_ternary;
-    "tito_side_effects", test_tito_side_effects;
-    "tuple", test_tuple;
-    "unary", test_unary;
-    "walrus", test_walrus;
-    "yield", test_yield;
-  ]
-  |> TestHelper.run_with_taint_models ~name:"forwardTaint"
+  "forwardAnalysis"
+  >::: [
+         "access_paths" >:: test_access_paths;
+         "apply_method_model_at_call_site" >:: test_apply_method_model_at_call_site;
+         "asyncio_gather" >:: test_asyncio_gather;
+         "class_model" >:: test_class_model;
+         "composed_models" >:: test_composed_models;
+         "comprehensions" >:: test_comprehensions;
+         "construction" >:: test_construction;
+         "copy" >:: test_local_copy;
+         "dictionary" >:: test_dictionary;
+         "global_taint" >:: test_global_taint;
+         "hardcoded" >:: test_hardcoded_source;
+         "lambda" >:: test_lambda;
+         "list" >:: test_list;
+         "no_model" >:: test_no_model;
+         "parameter_default_values" >:: test_parameter_default_values;
+         "set" >:: test_set;
+         "simple" >:: test_simple_source;
+         "starred" >:: test_starred;
+         "string" >:: test_string;
+         "taint_in_taint_out_application" >:: test_taint_in_taint_out_application;
+         "taint_in_taint_out_transform" >:: test_taint_in_taint_out_transform;
+         "ternary" >:: test_ternary;
+         "tito_side_effects" >:: test_tito_side_effects;
+         "tuple" >:: test_tuple;
+         "unary" >:: test_unary;
+         "walrus" >:: test_walrus;
+         "yield" >:: test_yield;
+       ]
+  |> Test.run

@@ -17,6 +17,10 @@ type expect_fixpoint = {
 }
 
 let assert_fixpoint ?models ~context source ~expect:{ iterations = expect_iterations; expect } =
+  let () =
+    TestHelper.get_initial_models ~context
+    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
+  in
   let scheduler = Test.mock_scheduler () in
   let { callables_to_analyze; callgraph; environment; overrides; _ } =
     initialize ?models ~handle:"qualifier.py" ~context source
@@ -532,13 +536,14 @@ let test_overrides context =
 
 
 let () =
-  [
-    "fixpoint", test_fixpoint;
-    "combined_analysis", test_combined_analysis;
-    "skipped_analysis", test_skipped_analysis;
-    "sanitized_analysis", test_sanitized_analysis;
-    "primed_source_analysis", test_primed_source_analysis;
-    "primed_sink_analysis", test_primed_sink_analysis;
-    "overrides", test_overrides;
-  ]
-  |> TestHelper.run_with_taint_models ~name:"fixpoint"
+  "fixpoint"
+  >::: [
+         "fixpoint" >:: test_fixpoint;
+         "combined_analysis" >:: test_combined_analysis;
+         "skipped_analysis" >:: test_skipped_analysis;
+         "sanitized_analysis" >:: test_sanitized_analysis;
+         "primed_source_analysis" >:: test_primed_source_analysis;
+         "primed_sink_analysis" >:: test_primed_sink_analysis;
+         "overrides" >:: test_overrides;
+       ]
+  |> Test.run

@@ -24,6 +24,10 @@ let assert_fixpoint
     source
     ~expect:{ iterations = expect_iterations; expect }
   =
+  let () =
+    TestHelper.get_initial_models ~context
+    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
+  in
   let scheduler = Test.mock_scheduler () in
   let taint_configuration =
     TaintConfiguration.apply_missing_flows TaintConfiguration.default missing_flows
@@ -204,6 +208,4 @@ let test_type context =
       }
 
 
-let () =
-  ["obscure", test_obscure; "type", test_type]
-  |> TestHelper.run_with_taint_models ~name:"missingFlows"
+let () = "missingFlows" >::: ["obscure" >:: test_obscure; "type" >:: test_type] |> Test.run

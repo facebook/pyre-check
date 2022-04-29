@@ -395,10 +395,9 @@ let check_expectation
   assert_errors errors actual_errors
 
 
-let run_with_taint_models tests ~name =
-  let set_up_taint_models ~context =
-    let model_source =
-      {|
+let get_initial_models ~context =
+  let model_source =
+    {|
       def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
       def _test_source() -> TaintSource[Test, Via[special_source]]: ...
       def _tito( *x: TaintInTaintOut, **kw: TaintInTaintOut): ...
@@ -418,40 +417,30 @@ let run_with_taint_models tests ~name =
 
       def copy(obj: TaintInTaintOut[Via[copy]]): ...
     |}
-      |> Test.trim_extra_indentation
-    in
-    let global_resolution =
-      Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_global_resolution
-    in
-    let { ModelParser.models; errors; _ } =
-      ModelParser.parse
-        ~resolution:
-          (TypeCheck.resolution
-             global_resolution
-             (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-             (module TypeCheck.DummyContext))
-        ~source:model_source
-        ~configuration:TaintConfiguration.default
-        ~callables:None
-        ~stubs:(Interprocedural.Target.HashSet.create ())
-        ()
-    in
-    assert_bool
-      (Format.sprintf
-         "The models shouldn't have any parsing errors:\n%s."
-         (List.map errors ~f:ModelVerificationError.display |> String.concat ~sep:"\n"))
-      (List.is_empty errors);
-    Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
-    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
+    |> Test.trim_extra_indentation
   in
-  let decorated_tests =
-    List.map tests ~f:(fun (name, test) ->
-        name
-        >:: fun context ->
-        let _ = set_up_taint_models ~context in
-        test context)
+  let global_resolution =
+    Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_global_resolution
   in
-  Test.run (name >::: decorated_tests)
+  let { ModelParser.models; errors; _ } =
+    ModelParser.parse
+      ~resolution:
+        (TypeCheck.resolution
+           global_resolution
+           (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+           (module TypeCheck.DummyContext))
+      ~source:model_source
+      ~configuration:TaintConfiguration.default
+      ~callables:None
+      ~stubs:(Interprocedural.Target.HashSet.create ())
+      ()
+  in
+  assert_bool
+    (Format.sprintf
+       "The models shouldn't have any parsing errors:\n%s."
+       (List.map errors ~f:ModelVerificationError.display |> String.concat ~sep:"\n"))
+    (List.is_empty errors);
+  Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
 
 
 type test_environment = {

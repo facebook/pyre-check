@@ -19,6 +19,10 @@ type mismatch_file = {
 }
 
 let test_integration path context =
+  let () =
+    TestHelper.get_initial_models ~context
+    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
+  in
   TaintIntegrationTest.Files.dummy_dependency |> ignore;
   let create_expected_and_actual_files ~suffix actual =
     let output_filename ~suffix ~initial =
@@ -177,6 +181,7 @@ let test_paths_found _ =
 
 let () =
   test_paths
-  |> List.map ~f:(fun path -> PyrePath.last path, test_integration path)
-  |> List.cons ("paths_found", test_paths_found)
-  |> TestHelper.run_with_taint_models ~name:"taint"
+  |> List.map ~f:(fun path -> PyrePath.last path >:: test_integration path)
+  |> List.cons ("paths_found" >:: test_paths_found)
+  |> (fun tests -> "taint" >::: tests)
+  |> Test.run
