@@ -32,7 +32,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 CUSTOM_PYSA_MODEL_FILE: str = "custom.pysa"
 WATCHMAN_CONFIG_FILE: str = ".watchmanconfig"
 PYRE_CONFIG_FILE: str = ".pyre_configuration"
-INPUT_FILE: str = "input.py"
+INPUT_FILE: str = "playground_input.py"
 
 
 def _consume(stream: IO[str]) -> str:
