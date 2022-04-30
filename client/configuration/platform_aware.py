@@ -22,7 +22,7 @@ PLATFORM_MAPPING = {
 
 @dataclasses.dataclass(frozen=True)
 class PlatformAware(Generic[T]):
-    default: T
+    default: Optional[T] = None
     windows: Optional[T] = None
     macos: Optional[T] = None
     linux: Optional[T] = None
@@ -42,11 +42,7 @@ class PlatformAware(Generic[T]):
                     f"{PLATFORM_MAPPING.values()} but got: `{invalid_keys}`."
                 )
 
-            default: T = (
-                value["default"]
-                if "default" in value
-                else value[sorted(value.keys())[0]]
-            )
+            default = value.get("default", None)
             return PlatformAware(
                 default=default,
                 windows=value["windows"] if "windows" in value else None,
@@ -77,14 +73,16 @@ class PlatformAware(Generic[T]):
                 linux=linux if linux is not None else base.linux,
             )
 
-    def get(self, key: Optional[str] = None) -> T:
+    def get(self, key: Optional[str] = None) -> Optional[T]:
         if key is None:
             key = PLATFORM_MAPPING[platform.system()]
         value: T = self.__getattribute__(key)
         return value if value is not None else self.default
 
     def to_json(self) -> Dict[str, T]:
-        result = {"default": self.default}
+        result: Dict[str, T] = {}
+        if self.default is not None:
+            result["default"] = self.default
         if self.windows is not None:
             result["windows"] = self.windows
         if self.linux is not None:
