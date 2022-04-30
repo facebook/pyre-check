@@ -39,7 +39,6 @@ from .. import (
     timer,
     version,
 )
-from ..commands.language_server_protocol import DocumentSymbolsResponse
 from ..coverage_collector import coverage_collector_for_module, CoveredAndUncoveredLines
 from . import (
     async_server_connection as connection,
