@@ -1,0 +1,8 @@
+40c40
+< from . import path as path
+---
+> from . import path as _path
+44a45,47
+> # This unnecessary alias is to work around various errors
+> path = _path
+> 
