@@ -107,7 +107,7 @@ function Results(props) {
     let errorDivs = errors
         .map(error => {
           let message = `${error.line}:${error.column}: ${error.description}`;
-          return <div style = {{fontFamily: 'monospace'}} key={message}> {message}</div>
+          return <div key={message}> <pre> {message} </pre> </div>
         });
     return <div>{errorDivs}</div>;
   } else {
