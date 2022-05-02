@@ -21,10 +21,13 @@ let resolve_stringify_call ~resolution expression =
       (Expression.Name (Name.Attribute { base = expression; attribute = "__str__"; special = true }))
   in
 
-  match Resolution.resolve_expression_to_type resolution string_callee |> Type.callable_name with
-  | Some name ->
-      if Reference.equal name (Reference.create "object.__str__") then "__repr__" else "__str__"
-  | _ -> "__str__"
+  try
+    match Resolution.resolve_expression_to_type resolution string_callee |> Type.callable_name with
+    | Some name ->
+        if Reference.equal name (Reference.create "object.__str__") then "__repr__" else "__str__"
+    | _ -> "__str__"
+  with
+  | ClassHierarchy.Untracked _ -> "__str__"
 
 
 let redirect_special_calls
