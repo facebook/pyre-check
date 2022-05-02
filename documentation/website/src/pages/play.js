@@ -43,9 +43,16 @@ function Code(props) {
           lineNumbers: true,
           readOnly: props.busy ? 'nocursor' : false,
           indentUnit: 4,
+          indentWithTabs: false,
         }}
         editorDidMount={(editor, _) => {
           props.setEditor(editor);
+          editor.setOption("extraKeys", {
+            Tab: function(codeMirror) {
+              var spaces = Array(codeMirror.getOption("indentUnit") + 1).join(" ");
+              codeMirror.replaceSelection(spaces);
+            }
+          });
         }}
         onBeforeChange={(editor, data, value) => {
           props.setCode(value);
