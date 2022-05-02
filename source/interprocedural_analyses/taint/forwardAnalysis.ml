@@ -80,15 +80,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Some callees -> callees
       | None ->
           (* This is most likely a bug that should be fixed. *)
-          Log.error
+          Format.asprintf
             "Could not find callees for `%a` at `%a:%a` in the call graph."
             Expression.pp
             (Node.create_with_default_location (Expression.Call call) |> Ast.Expression.delocalize)
             Reference.pp
             FunctionContext.qualifier
             Location.pp
-            location;
-          CallGraph.CallCallees.unresolved
+            location
+          |> failwith
     in
     log
       "Resolved callees for call `%a` at %a:@,%a"
