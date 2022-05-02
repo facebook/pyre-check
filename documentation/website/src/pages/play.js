@@ -42,6 +42,7 @@ function Code(props) {
           mode: 'python',
           lineNumbers: true,
           readOnly: props.busy ? 'nocursor' : false,
+          indentUnit: 4,
         }}
         editorDidMount={(editor, _) => {
           props.setEditor(editor);
