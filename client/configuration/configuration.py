@@ -76,7 +76,21 @@ def _expand_and_get_existent_ignore_all_errors_path(
             paths.append(path)
         else:
             LOG.warning(f"Nonexistent paths passed in to `ignore_all_errors`: `{path}`")
+            if _is_glob(path):
+                LOG.warning(
+                    f"Within `ignore_all_errors`, no matches found to glob pattern: `{path}`"
+                )
+            else:
+                LOG.warning(
+                    f"Nonexistent paths passed in to `ignore_all_errors`: `{path}`"
+                )
     return paths
+
+
+def _is_glob(path: str) -> bool:
+    if ("*" in path) or ("?" in path) or (("[" in path) and ("]" in path)):
+        return True
+    return False
 
 
 @dataclasses.dataclass
