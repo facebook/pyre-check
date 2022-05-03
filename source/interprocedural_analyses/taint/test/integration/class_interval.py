@@ -431,7 +431,7 @@ class D14(B14, C14):
     pass
 
 
-def multi_inheritance_false_positive_one_hop(b: B14):
+def multi_inheritance_no_issue_one_hop(b: B14):
     _test_sink(b.m0())
 
 
@@ -464,5 +464,35 @@ class D15(C15, E15):
     pass
 
 
-def multi_inheritance_false_positive_two_hops(b: B15):
+def multi_inheritance_no_issue_two_hops(b: B15):
     _test_sink(b.m0())
+
+
+class A16:
+    def m1(self):
+        return self.m2()
+
+    def m2(self):
+        pass
+
+
+class C16(A16):
+    def m2(self):
+        return 0
+
+
+class B16(A16):
+    def m0(self):
+        return self.m1()
+
+    def m2(self):
+        return 0
+
+
+class D16(B16, C16):
+    def m2(self):
+        return _test_source()
+
+
+def multi_inheritance_issue(b: B16):
+    _test_sink(b.m0())  # b may have type D16

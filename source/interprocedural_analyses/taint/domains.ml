@@ -994,9 +994,21 @@ end = struct
             let { CallInfoIntervals.caller_interval = callee_class_interval; _ } =
               LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
             in
+            let intersect left right =
+              let new_interval = IntervalSet.meet left right in
+              let should_propagate =
+                (* Propagate if the intersection is not empty, and there exists a descendant
+                   relation between left and right *)
+                (not (IntervalSet.is_empty new_interval))
+                && (IntervalSet.equal left new_interval || IntervalSet.equal right new_interval)
+              in
+              new_interval, should_propagate
+            in
             if is_self_call then
-              let new_interval = IntervalSet.meet callee_class_interval caller_class_interval in
-              if IntervalSet.is_empty new_interval then
+              let new_interval, should_propagate =
+                intersect callee_class_interval caller_class_interval
+              in
+              if not should_propagate then
                 LocalTaintDomain.bottom
               else
                 LocalTaintDomain.update
@@ -1008,8 +1020,8 @@ end = struct
                   }
                   local_taint
             else
-              let new_interval = IntervalSet.meet callee_class_interval receiver_class_interval in
-              if IntervalSet.is_empty new_interval then
+              let _, should_propagate = intersect callee_class_interval receiver_class_interval in
+              if not should_propagate then
                 LocalTaintDomain.bottom
               else
                 LocalTaintDomain.update

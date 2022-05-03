@@ -76,10 +76,10 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "class_interval.multi_inheritance_false_positive_one_hop",
-    "callable_line": 434,
+    "callable": "class_interval.multi_inheritance_issue",
+    "callable_line": 497,
     "code": 5002,
-    "line": 435,
+    "line": 498,
     "start": 15,
     "end": 21,
     "filename": "class_interval.py",
@@ -89,7 +89,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 29, "upper": 32 } ],
+            "receiver_interval": [ { "lower": 47, "upper": 50 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -102,11 +102,11 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 435,
+                "line": 498,
                 "start": 15,
                 "end": 21
               },
-              "resolves_to": [ "class_interval.B14.m0" ],
+              "resolves_to": [ "class_interval.B16.m0" ],
               "port": "result"
             }
           }
@@ -125,7 +125,7 @@
             ],
             "root": {
               "filename": "class_interval.py",
-              "line": 435,
+              "line": 498,
               "start": 15,
               "end": 21
             }
@@ -144,81 +144,7 @@
       "parameter": "formal(arg)"
     },
     "master_handle":
-      "class_interval.multi_inheritance_false_positive_one_hop:5002:0:Call|_test_sink|0|formal(arg):9b134431010aa4f622fee4c4dbc5a74a"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "class_interval.multi_inheritance_false_positive_two_hops",
-    "callable_line": 467,
-    "code": 5002,
-    "line": 468,
-    "start": 15,
-    "end": 21,
-    "filename": "class_interval.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "receiver_interval": [ { "lower": 37, "upper": 42 } ],
-            "is_self_call": false,
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "length": 3,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 468,
-                "start": 15,
-                "end": 21
-              },
-              "resolves_to": [ "class_interval.B15.m0" ],
-              "port": "result"
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "class_interval.py",
-              "line": 468,
-              "start": 15,
-              "end": 21
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle":
-      "class_interval.multi_inheritance_false_positive_two_hops:5002:0:Call|_test_sink|0|formal(arg):bb54f5331009726bfe89c7a6a9fcb327"
+      "class_interval.multi_inheritance_issue:5002:0:Call|_test_sink|0|formal(arg):36fc6e54d8641a1eaf3a776a08e04f93"
   }
 }
 {
@@ -257,7 +183,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 47, "upper": 50 } ],
+            "receiver_interval": [ { "lower": 55, "upper": 58 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -331,7 +257,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 55, "upper": 60 } ],
+            "receiver_interval": [ { "lower": 63, "upper": 68 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -514,6 +440,36 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{class_interval.A16::m2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{class_interval.A1::m1}",
     "sinks": [
       {
@@ -586,7 +542,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "caller_interval": [ { "lower": 56, "upper": 57 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -616,7 +572,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 56, "upper": 57 } ],
+            "caller_interval": [ { "lower": 64, "upper": 65 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -646,7 +602,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 67, "upper": 68 } ],
+            "caller_interval": [ { "lower": 75, "upper": 76 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -676,7 +632,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 74, "upper": 75 } ],
+            "caller_interval": [ { "lower": 82, "upper": 83 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -706,7 +662,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 79, "upper": 82 } ],
+            "caller_interval": [ { "lower": 87, "upper": 90 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -723,8 +679,8 @@
             }
           },
           {
-            "caller_interval": [ { "lower": 79, "upper": 82 } ],
-            "receiver_interval": [ { "lower": 98, "upper": 99 } ],
+            "caller_interval": [ { "lower": 87, "upper": 90 } ],
+            "receiver_interval": [ { "lower": 106, "upper": 107 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -753,14 +709,44 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Ovr{class_interval.B16::m2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Ovr{class_interval.B3::m0}",
     "sinks": [
       {
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 56, "upper": 57 } ],
-            "receiver_interval": [ { "lower": 55, "upper": 60 } ],
+            "caller_interval": [ { "lower": 64, "upper": 65 } ],
+            "receiver_interval": [ { "lower": 63, "upper": 68 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -795,7 +781,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 79, "upper": 82 } ],
+            "caller_interval": [ { "lower": 87, "upper": 90 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -812,8 +798,8 @@
             }
           },
           {
-            "caller_interval": [ { "lower": 79, "upper": 82 } ],
-            "receiver_interval": [ { "lower": 98, "upper": 99 } ],
+            "caller_interval": [ { "lower": 87, "upper": 90 } ],
+            "receiver_interval": [ { "lower": 106, "upper": 107 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -971,7 +957,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "caller_interval": [ { "lower": 56, "upper": 57 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1001,8 +987,8 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 56, "upper": 57 } ],
-            "receiver_interval": [ { "lower": 56, "upper": 57 } ],
+            "caller_interval": [ { "lower": 64, "upper": 65 } ],
+            "receiver_interval": [ { "lower": 64, "upper": 65 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -1037,7 +1023,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 56, "upper": 57 } ],
+            "caller_interval": [ { "lower": 64, "upper": 65 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1067,12 +1053,42 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 67, "upper": 68 } ],
+            "caller_interval": [ { "lower": 75, "upper": 76 } ],
             "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{class_interval.D16::m2}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
                 "kind": "Test"
               }
             ],
@@ -1097,7 +1113,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "caller_interval": [ { "lower": 56, "upper": 57 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1127,7 +1143,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 74, "upper": 75 } ],
+            "caller_interval": [ { "lower": 82, "upper": 83 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1417,14 +1433,50 @@
 {
   "kind": "model",
   "data": {
+    "callable": "class_interval.A16.m1",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "receiver_interval": [ { "lower": 46, "upper": 53 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "class_interval.py",
+                "line": 473,
+                "start": 15,
+                "end": 24
+              },
+              "resolves_to": [ "class_interval.D16.m2" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "class_interval.A2.m1",
     "sinks": [
       {
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
-            "receiver_interval": [ { "lower": 46, "upper": 53 } ],
+            "caller_interval": [ { "lower": 56, "upper": 57 } ],
+            "receiver_interval": [ { "lower": 54, "upper": 61 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -1459,8 +1511,8 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 56, "upper": 57 } ],
-            "receiver_interval": [ { "lower": 54, "upper": 61 } ],
+            "caller_interval": [ { "lower": 64, "upper": 65 } ],
+            "receiver_interval": [ { "lower": 62, "upper": 69 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -1495,8 +1547,8 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 67, "upper": 68 } ],
-            "receiver_interval": [ { "lower": 62, "upper": 69 } ],
+            "caller_interval": [ { "lower": 75, "upper": 76 } ],
+            "receiver_interval": [ { "lower": 70, "upper": 77 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -1531,8 +1583,8 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 74, "upper": 75 } ],
-            "receiver_interval": [ { "lower": 70, "upper": 77 } ],
+            "caller_interval": [ { "lower": 82, "upper": 83 } ],
+            "receiver_interval": [ { "lower": 78, "upper": 85 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -1567,8 +1619,8 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 79, "upper": 82 } ],
-            "receiver_interval": [ { "lower": 78, "upper": 85 } ],
+            "caller_interval": [ { "lower": 87, "upper": 90 } ],
+            "receiver_interval": [ { "lower": 86, "upper": 93 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -1620,8 +1672,8 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 86, "upper": 87 } ],
-            "receiver_interval": [ { "lower": 92, "upper": 93 } ],
+            "caller_interval": [ { "lower": 94, "upper": 95 } ],
+            "receiver_interval": [ { "lower": 100, "upper": 101 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1656,8 +1708,8 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 88, "upper": 89 } ],
-            "receiver_interval": [ { "lower": 88, "upper": 89 } ],
+            "caller_interval": [ { "lower": 96, "upper": 97 } ],
+            "receiver_interval": [ { "lower": 96, "upper": 97 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -1679,8 +1731,8 @@
             }
           },
           {
-            "caller_interval": [ { "lower": 88, "upper": 89 } ],
-            "receiver_interval": [ { "lower": 94, "upper": 95 } ],
+            "caller_interval": [ { "lower": 96, "upper": 97 } ],
+            "receiver_interval": [ { "lower": 102, "upper": 103 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1702,8 +1754,8 @@
             }
           },
           {
-            "caller_interval": [ { "lower": 88, "upper": 89 } ],
-            "receiver_interval": [ { "lower": 88, "upper": 89 } ],
+            "caller_interval": [ { "lower": 96, "upper": 97 } ],
+            "receiver_interval": [ { "lower": 96, "upper": 97 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1749,7 +1801,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 88, "upper": 89 } ],
+            "caller_interval": [ { "lower": 96, "upper": 97 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1779,7 +1831,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 90, "upper": 91 } ],
+            "caller_interval": [ { "lower": 98, "upper": 99 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1803,14 +1855,14 @@
 {
   "kind": "model",
   "data": {
-    "callable": "class_interval.B14.m0",
+    "callable": "class_interval.B16.m0",
     "sources": [
       {
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 30, "upper": 31 } ],
-            "receiver_interval": [ { "lower": 29, "upper": 32 } ],
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "receiver_interval": [ { "lower": 47, "upper": 50 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -1823,47 +1875,11 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 424,
+                "line": 486,
                 "start": 15,
                 "end": 24
               },
-              "resolves_to": [ "class_interval.A14.m1" ],
-              "port": "result"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "class_interval.B15.m0",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "caller_interval": [ { "lower": 39, "upper": 40 } ],
-            "receiver_interval": [ { "lower": 37, "upper": 42 } ],
-            "is_self_call": true,
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "length": 2,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 453,
-                "start": 15,
-                "end": 24
-              },
-              "resolves_to": [ "class_interval.A15.m1" ],
+              "resolves_to": [ "class_interval.A16.m1" ],
               "port": "result"
             }
           }
@@ -1881,8 +1897,8 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
-            "receiver_interval": [ { "lower": 47, "upper": 50 } ],
+            "caller_interval": [ { "lower": 56, "upper": 57 } ],
+            "receiver_interval": [ { "lower": 55, "upper": 58 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -1917,8 +1933,8 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 56, "upper": 57 } ],
-            "receiver_interval": [ { "lower": 55, "upper": 60 } ],
+            "caller_interval": [ { "lower": 64, "upper": 65 } ],
+            "receiver_interval": [ { "lower": 63, "upper": 68 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -1953,7 +1969,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 79, "upper": 82 } ],
+            "caller_interval": [ { "lower": 87, "upper": 90 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1970,8 +1986,8 @@
             }
           },
           {
-            "caller_interval": [ { "lower": 79, "upper": 82 } ],
-            "receiver_interval": [ { "lower": 98, "upper": 99 } ],
+            "caller_interval": [ { "lower": 87, "upper": 90 } ],
+            "receiver_interval": [ { "lower": 106, "upper": 107 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -2006,7 +2022,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 92, "upper": 93 } ],
+            "caller_interval": [ { "lower": 100, "upper": 101 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -2036,8 +2052,8 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 92, "upper": 93 } ],
-            "receiver_interval": [ { "lower": 92, "upper": 93 } ],
+            "caller_interval": [ { "lower": 100, "upper": 101 } ],
+            "receiver_interval": [ { "lower": 100, "upper": 101 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -2072,7 +2088,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 94, "upper": 95 } ],
+            "caller_interval": [ { "lower": 102, "upper": 103 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -2255,8 +2271,8 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 56, "upper": 57 } ],
-            "receiver_interval": [ { "lower": 56, "upper": 57 } ],
+            "caller_interval": [ { "lower": 64, "upper": 65 } ],
+            "receiver_interval": [ { "lower": 64, "upper": 65 } ],
             "is_self_call": true,
             "kinds": [
               {
@@ -2291,7 +2307,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 56, "upper": 57 } ],
+            "caller_interval": [ { "lower": 64, "upper": 65 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -2321,7 +2337,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 67, "upper": 68 } ],
+            "caller_interval": [ { "lower": 75, "upper": 76 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -2345,13 +2361,43 @@
 {
   "kind": "model",
   "data": {
+    "callable": "class_interval.D16.m2",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "class_interval.py",
+              "line": 494,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "class_interval.D2.m2",
     "sinks": [
       {
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "caller_interval": [ { "lower": 56, "upper": 57 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -2381,7 +2427,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 74, "upper": 75 } ],
+            "caller_interval": [ { "lower": 82, "upper": 83 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -2444,7 +2490,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 98, "upper": 99 } ],
+            "caller_interval": [ { "lower": 106, "upper": 107 } ],
             "is_self_call": false,
             "kinds": [
               {
