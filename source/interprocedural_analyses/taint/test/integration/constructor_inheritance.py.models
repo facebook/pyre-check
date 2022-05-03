@@ -82,7 +82,7 @@
         "port": "formal(argument)",
         "taint": [
           {
-            "caller_interval": { "lower": 2, "upper": 5 },
+            "caller_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -123,7 +123,7 @@
         "port": "formal(argument)",
         "taint": [
           {
-            "caller_interval": { "lower": 2, "upper": 5 },
+            "caller_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -164,7 +164,7 @@
         "port": "formal(argument)",
         "taint": [
           {
-            "caller_interval": { "lower": 2, "upper": 5 },
+            "caller_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {

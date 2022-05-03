@@ -398,7 +398,7 @@ def abstract_method(b: B13, c: C13):
           / \
          /   \
         /     \
-B: [2,5]   C: [6,7]
+B: [2,5]   C: [6,7] \/ [3,4]
         \     /
          \   /
           \ /
@@ -416,8 +416,6 @@ class A14:
 
 class C14(A14):
     def m2(self):
-        # C14's interval is [6,7] \/ [3,4] = [3,7], which intersects
-        # with B14's interval [3,4], due to multi-inheritance
         return _test_source()
 
 

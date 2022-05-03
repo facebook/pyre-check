@@ -36,7 +36,7 @@
         "port": "formal(class_sink)",
         "taint": [
           {
-            "receiver_interval": { "lower": 2, "upper": 3 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -72,7 +72,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": { "lower": 4, "upper": 5 },
+            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -95,7 +95,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 3 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "kinds": [
               {

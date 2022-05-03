@@ -17,7 +17,7 @@ type t = {
   models: Model.WithCallTarget.t list;
   resolution: Resolution.t;
   location: Location.WithModule.t;
-  interval: Interprocedural.ClassInterval.t;
+  interval: Interprocedural.IntervalSet.t;
 }
 
 let get_global_targets ~call_graph ~expression =
@@ -71,7 +71,7 @@ let get_source { models; resolution; location; interval } =
          ~port:AccessPath.Root.LocalResult
          ~is_self_call:false
          ~caller_class_interval:interval
-         ~receiver_class_interval:Interprocedural.ClassInterval.top
+         ~receiver_class_interval:Interprocedural.IntervalSet.top
     |> ForwardState.Tree.join existing
   in
   List.fold ~init:ForwardState.Tree.bottom ~f:to_source models
@@ -95,7 +95,7 @@ let get_sinks { models; resolution; location; interval } =
            ~port:AccessPath.Root.LocalResult
            ~is_self_call:false
            ~caller_class_interval:interval
-           ~receiver_class_interval:Interprocedural.ClassInterval.top
+           ~receiver_class_interval:Interprocedural.IntervalSet.top
     in
     { Issue.SinkTreeWithHandle.sink_tree; handle = Issue.SinkHandle.make_global ~call_target }
   in

@@ -16,7 +16,7 @@ type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
 
 module CallGraph = Interprocedural.CallGraph
 module CallResolution = Interprocedural.CallResolution
-module ClassInterval = Interprocedural.ClassInterval
+module IntervalSet = Interprocedural.IntervalSet
 
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
@@ -35,7 +35,7 @@ module type FUNCTION_CONTEXT = sig
 
   val triggered_sinks : triggered_sinks
 
-  val caller_class_interval : ClassInterval.t
+  val caller_class_interval : IntervalSet.t
 end
 
 let ( |>> ) (taint, state) f = f taint, state
@@ -199,8 +199,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~arguments:[]
            ~port:AccessPath.Root.LocalResult
            ~is_self_call:false
-           ~caller_class_interval:ClassInterval.top
-           ~receiver_class_interval:ClassInterval.top
+           ~caller_class_interval:IntervalSet.top
+           ~receiver_class_interval:IntervalSet.top
     in
     let breadcrumbs_to_attach, via_features_to_attach =
       BackwardState.extract_features_to_attach
@@ -295,7 +295,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       Model.pp
       taint_model;
     let is_self_call = Ast.Expression.is_self_call ~callee in
-    let receiver_class_interval = ClassInterval.SharedMemory.of_type receiver_type in
+    let receiver_class_interval = IntervalSet.SharedMemory.of_type receiver_type in
     let convert_tito_path_to_taint
         ~argument
         ~argument_taint
@@ -2090,7 +2090,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~port:parameter_root
              ~is_self_call:false
              ~caller_class_interval:FunctionContext.caller_class_interval
-             ~receiver_class_interval:ClassInterval.top
+             ~receiver_class_interval:IntervalSet.top
       in
       let default_value_taint, state =
         match value with
@@ -2235,7 +2235,7 @@ let run
 
     let triggered_sinks = Location.Table.create ()
 
-    let caller_class_interval = ClassInterval.SharedMemory.of_definition definition
+    let caller_class_interval = IntervalSet.SharedMemory.of_definition definition
   end
   in
   let module State = State (FunctionContext) in

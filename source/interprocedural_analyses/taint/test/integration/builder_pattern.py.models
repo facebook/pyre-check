@@ -37,7 +37,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 5 },
+            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -114,7 +114,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 3, "upper": 4 },
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -191,7 +191,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 5 },
+            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -290,7 +290,7 @@
         "port": "formal(self)[_saved]",
         "taint": [
           {
-            "caller_interval": { "lower": 2, "upper": 5 },
+            "caller_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {

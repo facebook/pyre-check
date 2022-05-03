@@ -556,7 +556,7 @@
         "port": "formal(locale)",
         "taint": [
           {
-            "caller_interval": { "lower": 6, "upper": 7 },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -617,7 +617,7 @@
         "port": "formal(locale)",
         "taint": [
           {
-            "caller_interval": { "lower": 6, "upper": 7 },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -647,7 +647,7 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": { "lower": 8, "upper": 9 },
+            "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false,
             "kinds": [
               {

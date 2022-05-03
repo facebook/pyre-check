@@ -562,8 +562,8 @@ let build_class_hierarchy_graph ~scheduler ~cache ~environment ~qualifiers =
 
 let build_class_intervals class_hierarchy_graph =
   let timer = Timer.start () in
-  Interprocedural.ClassInterval.compute_intervals class_hierarchy_graph
-  |> Interprocedural.ClassInterval.SharedMemory.store;
+  Interprocedural.IntervalSet.compute_intervals class_hierarchy_graph
+  |> Interprocedural.IntervalSet.SharedMemory.store;
   Statistics.performance
     ~name:"Computed class intervals"
     ~phase_name:"Computing class intervals"

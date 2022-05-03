@@ -610,8 +610,8 @@ let initialize
       ~source
   in
   let class_hierarchy_graph = ClassHierarchyGraph.from_source ~environment ~source in
-  Interprocedural.ClassInterval.compute_intervals class_hierarchy_graph
-  |> Interprocedural.ClassInterval.SharedMemory.store;
+  Interprocedural.IntervalSet.compute_intervals class_hierarchy_graph
+  |> Interprocedural.IntervalSet.SharedMemory.store;
   {
     static_analysis_configuration;
     callgraph;

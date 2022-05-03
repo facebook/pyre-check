@@ -170,9 +170,9 @@ end)
 module CallInfoIntervals = struct
   type call_info_intervals = {
     (* The interval of the class that literally contains this call site *)
-    caller_interval: Interprocedural.ClassInterval.t;
+    caller_interval: Interprocedural.IntervalSet.t;
     (* The interval of the receiver object for this call site *)
-    receiver_interval: Interprocedural.ClassInterval.t;
+    receiver_interval: Interprocedural.IntervalSet.t;
     (* Whether this call site is a call on `self` *)
     is_self_call: bool;
   }
@@ -181,46 +181,43 @@ module CallInfoIntervals = struct
      such that SAPP will not intersect class intervals. *)
   let top =
     {
-      caller_interval = Interprocedural.ClassInterval.top;
-      receiver_interval = Interprocedural.ClassInterval.top;
+      caller_interval = Interprocedural.IntervalSet.top;
+      receiver_interval = Interprocedural.IntervalSet.top;
       is_self_call = false;
     }
 
 
   let is_top { caller_interval; receiver_interval; is_self_call } =
-    Interprocedural.ClassInterval.is_top caller_interval
-    && Interprocedural.ClassInterval.is_top receiver_interval
+    Interprocedural.IntervalSet.is_top caller_interval
+    && Interprocedural.IntervalSet.is_top receiver_interval
     && is_self_call == false
 
 
   let to_json { caller_interval; receiver_interval; is_self_call } =
     let list = ["is_self_call", `Bool is_self_call] in
-    let list =
-      if Interprocedural.ClassInterval.is_top receiver_interval then
-        list
-      else (* Output for SAPP to use *)
-        ( "receiver_interval",
+    let intervals_to_list intervals =
+      let intervals = Interprocedural.IntervalSet.to_list intervals in
+      List.map intervals ~f:(fun interval ->
           `Assoc
             [
-              "lower", `Int (Interprocedural.ClassInterval.lower_bound_exn receiver_interval);
-              "upper", `Int (Interprocedural.ClassInterval.upper_bound_exn receiver_interval);
-            ] )
-        :: list
+              "lower", `Int (Interprocedural.ClassInterval.lower_bound_exn interval);
+              "upper", `Int (Interprocedural.ClassInterval.upper_bound_exn interval);
+            ])
+    in
+    let list =
+      if Interprocedural.IntervalSet.is_top receiver_interval then
+        list
+      else (* Output for SAPP to use *)
+        ("receiver_interval", `List (intervals_to_list receiver_interval)) :: list
     in
     let list =
       if
-        Interprocedural.ClassInterval.is_empty caller_interval
-        || Interprocedural.ClassInterval.is_top caller_interval
+        Interprocedural.IntervalSet.is_empty caller_interval
+        || Interprocedural.IntervalSet.is_top caller_interval
       then
         list
       else (* Output for debug purposes *)
-        ( "caller_interval",
-          `Assoc
-            [
-              "lower", `Int (Interprocedural.ClassInterval.lower_bound_exn caller_interval);
-              "upper", `Int (Interprocedural.ClassInterval.upper_bound_exn caller_interval);
-            ] )
-        :: list
+        ("caller_interval", `List (intervals_to_list caller_interval)) :: list
     in
     list
 
@@ -232,8 +229,8 @@ module CallInfoIntervals = struct
 
     let bottom =
       {
-        caller_interval = Interprocedural.ClassInterval.bottom;
-        receiver_interval = Interprocedural.ClassInterval.bottom;
+        caller_interval = Interprocedural.IntervalSet.bottom;
+        receiver_interval = Interprocedural.IntervalSet.bottom;
         is_self_call = true;
       }
 
@@ -242,9 +239,9 @@ module CallInfoIntervals = struct
       Format.fprintf
         formatter
         "@[caller_interval: [%a] receiver_interval: [%a] is_self_call: [%b]@]"
-        Interprocedural.ClassInterval.pp_interval
+        Interprocedural.IntervalSet.pp
         caller_interval
-        Interprocedural.ClassInterval.pp_interval
+        Interprocedural.IntervalSet.pp
         receiver_interval
         is_self_call
 
@@ -265,10 +262,10 @@ module CallInfoIntervals = struct
             is_self_call = is_self_call_right;
           }
       =
-      Interprocedural.ClassInterval.less_or_equal
+      Interprocedural.IntervalSet.less_or_equal
         ~left:caller_interval_left
         ~right:caller_interval_right
-      && Interprocedural.ClassInterval.less_or_equal
+      && Interprocedural.IntervalSet.less_or_equal
            ~left:receiver_interval_left
            ~right:receiver_interval_right
       && not ((not is_self_call_left) && is_self_call_right)
@@ -288,9 +285,9 @@ module CallInfoIntervals = struct
       =
       {
         caller_interval =
-          Interprocedural.ClassInterval.join caller_interval_left caller_interval_right;
+          Interprocedural.IntervalSet.join caller_interval_left caller_interval_right;
         receiver_interval =
-          Interprocedural.ClassInterval.join receiver_interval_left receiver_interval_right;
+          Interprocedural.IntervalSet.join receiver_interval_left receiver_interval_right;
         (* The result of joining two calls is a call on `self` iff. both calls are on `self`. *)
         is_self_call = is_self_call_left && is_self_call_right;
       }
@@ -310,9 +307,9 @@ module CallInfoIntervals = struct
       =
       {
         caller_interval =
-          Interprocedural.ClassInterval.meet caller_interval_left caller_interval_right;
+          Interprocedural.IntervalSet.meet caller_interval_left caller_interval_right;
         receiver_interval =
-          Interprocedural.ClassInterval.meet receiver_interval_left receiver_interval_right;
+          Interprocedural.IntervalSet.meet receiver_interval_left receiver_interval_right;
         (* The result of meeting two calls is a call on `self` iff. one of the calls is on `self`. *)
         is_self_call = is_self_call_left || is_self_call_right;
       }
@@ -450,8 +447,8 @@ module type TAINT_DOMAIN = sig
     path:Abstract.TreeDomain.Label.path ->
     element:t ->
     is_self_call:bool ->
-    caller_class_interval:Interprocedural.ClassInterval.t ->
-    receiver_class_interval:Interprocedural.ClassInterval.t ->
+    caller_class_interval:Interprocedural.IntervalSet.t ->
+    receiver_class_interval:Interprocedural.IntervalSet.t ->
     t
 
   (* Return the taint with only essential elements. *)
@@ -998,8 +995,8 @@ end = struct
               LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
             in
             if is_self_call then
-              let new_interval = ClassInterval.meet callee_class_interval caller_class_interval in
-              if ClassInterval.is_empty new_interval then
+              let new_interval = IntervalSet.meet callee_class_interval caller_class_interval in
+              if IntervalSet.is_empty new_interval then
                 LocalTaintDomain.bottom
               else
                 LocalTaintDomain.update
@@ -1011,8 +1008,8 @@ end = struct
                   }
                   local_taint
             else
-              let new_interval = ClassInterval.meet callee_class_interval receiver_class_interval in
-              if ClassInterval.is_empty new_interval then
+              let new_interval = IntervalSet.meet callee_class_interval receiver_class_interval in
+              if IntervalSet.is_empty new_interval then
                 LocalTaintDomain.bottom
               else
                 LocalTaintDomain.update

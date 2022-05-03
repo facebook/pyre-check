@@ -438,7 +438,7 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "caller_interval": { "lower": 4, "upper": 5 },
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -526,7 +526,7 @@
         "port": "result[bad]",
         "taint": [
           {
-            "caller_interval": { "lower": 14, "upper": 15 },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -555,7 +555,7 @@
         "port": "formal(another)",
         "taint": [
           {
-            "caller_interval": { "lower": 14, "upper": 15 },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -674,7 +674,7 @@
         "port": "result[bad]",
         "taint": [
           {
-            "caller_interval": { "lower": 14, "upper": 15 },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -703,7 +703,7 @@
         "port": "formal(another)",
         "taint": [
           {
-            "caller_interval": { "lower": 14, "upper": 15 },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -734,7 +734,7 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "caller_interval": { "lower": 4, "upper": 5 },
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -861,7 +861,7 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "caller_interval": { "lower": 4, "upper": 5 },
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1009,7 +1009,7 @@
         "port": "result[bad]",
         "taint": [
           {
-            "caller_interval": { "lower": 14, "upper": 15 },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1038,7 +1038,7 @@
         "port": "formal(another)",
         "taint": [
           {
-            "caller_interval": { "lower": 14, "upper": 15 },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
             "is_self_call": false,
             "kinds": [
               {

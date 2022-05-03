@@ -15,7 +15,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": { "lower": 5, "upper": 12 },
+            "receiver_interval": [ { "lower": 5, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -94,7 +94,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": { "lower": 5, "upper": 12 },
+            "receiver_interval": [ { "lower": 5, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -121,7 +121,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 5, "upper": 12 },
+            "receiver_interval": [ { "lower": 5, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -175,7 +175,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 13 },
+            "receiver_interval": [ { "lower": 2, "upper": 13 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -254,7 +254,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 13 },
+            "receiver_interval": [ { "lower": 2, "upper": 13 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -281,7 +281,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 13 },
+            "receiver_interval": [ { "lower": 2, "upper": 13 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -335,7 +335,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": { "lower": 6, "upper": 11 },
+            "receiver_interval": [ { "lower": 6, "upper": 11 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -357,7 +357,7 @@
             }
           },
           {
-            "receiver_interval": { "lower": 6, "upper": 11 },
+            "receiver_interval": [ { "lower": 6, "upper": 11 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -384,7 +384,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 6, "upper": 11 },
+            "receiver_interval": [ { "lower": 6, "upper": 11 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -438,7 +438,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": { "lower": 7, "upper": 10 },
+            "receiver_interval": [ { "lower": 7, "upper": 10 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -465,7 +465,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 7, "upper": 10 },
+            "receiver_interval": [ { "lower": 7, "upper": 10 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -519,7 +519,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": { "lower": 5, "upper": 12 },
+            "receiver_interval": [ { "lower": 5, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -653,7 +653,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": { "lower": 3, "upper": 4 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -717,7 +717,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": { "lower": 5, "upper": 12 },
+            "caller_interval": [ { "lower": 5, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -747,7 +747,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": { "lower": 5, "upper": 12 },
+            "caller_interval": [ { "lower": 5, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -805,7 +805,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": { "lower": 5, "upper": 12 },
+            "caller_interval": [ { "lower": 5, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -835,7 +835,10 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": { "lower": 3, "upper": 10 },
+            "caller_interval": [
+              { "lower": 3, "upper": 4 },
+              { "lower": 7, "upper": 10 }
+            ],
             "is_self_call": false,
             "kinds": [
               {
@@ -876,7 +879,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": { "lower": 5, "upper": 12 },
+            "caller_interval": [ { "lower": 5, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -940,7 +943,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": { "lower": 7, "upper": 10 },
+            "caller_interval": [ { "lower": 7, "upper": 10 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1015,7 +1018,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": { "lower": 7, "upper": 10 },
+            "caller_interval": [ { "lower": 7, "upper": 10 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1056,7 +1059,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": { "lower": 7, "upper": 10 },
+            "caller_interval": [ { "lower": 7, "upper": 10 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1139,7 +1142,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": { "lower": 3, "upper": 4 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1205,7 +1208,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": { "lower": 5, "upper": 12 },
+            "caller_interval": [ { "lower": 5, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1235,7 +1238,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": { "lower": 5, "upper": 12 },
+            "caller_interval": [ { "lower": 5, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1363,7 +1366,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": { "lower": 7, "upper": 10 },
+            "caller_interval": [ { "lower": 7, "upper": 10 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1393,7 +1396,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": { "lower": 7, "upper": 10 },
+            "caller_interval": [ { "lower": 7, "upper": 10 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1423,7 +1426,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": { "lower": 15, "upper": 16 },
+            "caller_interval": [ { "lower": 15, "upper": 16 } ],
             "is_self_call": false,
             "kinds": [
               {

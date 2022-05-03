@@ -244,7 +244,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 3 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -315,7 +315,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 3 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -388,7 +388,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 3 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -463,7 +463,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 3 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -534,7 +534,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 3 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -613,7 +613,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": { "lower": 2, "upper": 3 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "kinds": [
               {

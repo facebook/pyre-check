@@ -192,7 +192,7 @@
         "port": "formal(self)[_params]",
         "taint": [
           {
-            "caller_interval": { "lower": 3, "upper": 4 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -264,7 +264,7 @@
         "port": "formal(self)[_params]",
         "taint": [
           {
-            "caller_interval": { "lower": 3, "upper": 4 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -364,7 +364,7 @@
         "port": "formal(self)[_params]",
         "taint": [
           {
-            "caller_interval": { "lower": 3, "upper": 4 },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -896,7 +896,7 @@
             }
           },
           {
-            "receiver_interval": { "lower": 3, "upper": 4 },
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -968,7 +968,7 @@
         "port": "formal(x)[_params]",
         "taint": [
           {
-            "receiver_interval": { "lower": 3, "upper": 4 },
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false,
             "kinds": [
               {

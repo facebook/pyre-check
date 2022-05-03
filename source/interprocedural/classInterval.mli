@@ -30,14 +30,12 @@ val is_empty : t -> bool
 val equal : t -> t -> bool
 
 (* Create a class interval that is representable as a single range. Multiple disjoint ranges can be
-   created with the union operation. *)
+   approximated with the join operation. *)
 val create : int -> int -> t
 
 val join : t -> t -> t
 
 val meet : t -> t -> t
-
-val compute_intervals : ClassHierarchyGraph.t -> t ClassHierarchyGraph.ClassNameMap.t
 
 val show : t -> string
 
@@ -56,15 +54,3 @@ val is_top : t -> bool
 val lower_bound_exn : t -> int
 
 val upper_bound_exn : t -> int
-
-module SharedMemory : sig
-  val add : class_name:ClassHierarchyGraph.class_name -> interval:t -> unit
-
-  val get : class_name:ClassHierarchyGraph.class_name -> t option
-
-  val store : t ClassHierarchyGraph.ClassNameMap.t -> unit
-
-  val of_type : Type.t option -> t
-
-  val of_definition : Ast.Statement.Define.t Ast.Node.t -> t
-end

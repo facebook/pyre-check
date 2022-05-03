@@ -153,7 +153,7 @@
         "port": "result",
         "taint": [
           {
-            "receiver_interval": { "lower": 6, "upper": 7 },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -185,7 +185,7 @@
         "port": "result",
         "taint": [
           {
-            "receiver_interval": { "lower": 2, "upper": 3 },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false,
             "kinds": [
               {
