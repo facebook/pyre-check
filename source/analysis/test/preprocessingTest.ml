@@ -3552,6 +3552,67 @@ let test_transform_ast _ =
     |};
   assert_expand
     {|
+      T = collections.namedtuple('T', 'a, b, c')
+    |}
+    {|
+      class T(typing.NamedTuple):
+        def __new__(
+          cls,
+          a: typing.Any,
+          b: typing.Any,
+          c: typing.Any) -> typing.NamedTuple: ...
+        def __init__(self, a: typing.Any, b: typing.Any, c: typing.Any) -> None:
+          self.a = a
+          self.b = b
+          self.c = c
+        _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
+        a: typing.Final[typing.Any]
+        b: typing.Final[typing.Any]
+        c: typing.Final[typing.Any]
+    |};
+
+  (* The purpose of the following tests is to test for multiple consecutive commas and whitespaces
+     in the field names parameter. Expected behavior is to strip all the commas and whitespace and
+     return a valid result, to match the result returned by Python *)
+  assert_expand
+    {|
+      T = collections.namedtuple('T', 'a,,, b, c')
+    |}
+    {|
+      class T(typing.NamedTuple):
+        def __new__(
+          cls,
+          a: typing.Any,
+          b: typing.Any,
+          c: typing.Any) -> typing.NamedTuple: ...
+        def __init__(self, a: typing.Any, b: typing.Any, c: typing.Any) -> None:
+          self.a = a
+          self.b = b
+          self.c = c
+        _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
+        a: typing.Final[typing.Any]
+        b: typing.Final[typing.Any]
+        c: typing.Final[typing.Any]
+  |};
+  assert_expand
+    {|
+      T = collections.namedtuple('T', 'a,,,        b')
+    |}
+    {|
+      class T(typing.NamedTuple):
+        def __new__(
+          cls,
+          a: typing.Any,
+          b: typing.Any) -> typing.NamedTuple: ...
+        def __init__(self, a: typing.Any, b: typing.Any) -> None:
+          self.a = a
+          self.b = b
+        _fields: typing.Tuple[str, str] = ('a', 'b')
+        a: typing.Final[typing.Any]
+        b: typing.Final[typing.Any]
+  |};
+  assert_expand
+    {|
       class Foo(Bar, collections.namedtuple('T', ['one', 'two'])):
         three: int = 1
     |}

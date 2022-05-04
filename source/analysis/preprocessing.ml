@@ -2387,8 +2387,9 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                _;
              };
             ] ->
-                String.split serialized ~on:' '
+                Str.split (Str.regexp "[, ]") serialized
                 |> List.map ~f:(fun name -> name, any_annotation, None)
+                |> List.filter ~f:(fun (name, _, _) -> not (String.is_empty name))
             | [_; { Call.Argument.value = { Node.value = List arguments; _ }; _ }]
             | [_; { Call.Argument.value = { Node.value = Tuple arguments; _ }; _ }] ->
                 let get_name ({ Node.value; _ } as expression) =
