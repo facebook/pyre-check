@@ -193,24 +193,24 @@ module Layouts = struct
 
   let update_explicit_modules ~configuration ~paths module_to_files =
     (* Process a single filesystem event *)
-    let process_filesystem_event ~configuration tracker = function
+    let process_filesystem_event ~configuration = function
       | FileSystemEvent.Update path -> (
           match SourcePath.create ~configuration path with
           | None ->
               Log.warning "`%a` not found in search path." PyrePath.pp path;
               None
           | Some ({ SourcePath.qualifier; _ } as source_path) -> (
-              match Hashtbl.find tracker qualifier with
+              match Hashtbl.find module_to_files qualifier with
               | None ->
                   (* New file for a new module *)
-                  Hashtbl.set tracker ~key:qualifier ~data:[source_path];
+                  Hashtbl.set module_to_files ~key:qualifier ~data:[source_path];
                   Some (IncrementalExplicitUpdate.New source_path)
               | Some source_paths ->
                   let new_source_paths =
                     insert_source_path ~configuration ~inserted:source_path source_paths
                   in
                   let new_source_path = List.hd_exn new_source_paths in
-                  Hashtbl.set tracker ~key:qualifier ~data:new_source_paths;
+                  Hashtbl.set module_to_files ~key:qualifier ~data:new_source_paths;
                   if SourcePath.equal new_source_path source_path then
                     (* Updating a shadowing file means the module gets changed *)
                     Some (IncrementalExplicitUpdate.Changed source_path)
@@ -222,21 +222,21 @@ module Layouts = struct
               Log.warning "`%a` not found in search path." PyrePath.pp path;
               None
           | Some ({ SourcePath.qualifier; _ } as source_path) -> (
-              Hashtbl.find tracker qualifier
+              Hashtbl.find module_to_files qualifier
               >>= fun source_paths ->
               match source_paths with
               | [] ->
                   (* This should never happen but handle it just in case *)
-                  Hashtbl.remove tracker qualifier;
+                  Hashtbl.remove module_to_files qualifier;
                   None
               | old_source_path :: _ -> (
                   match remove_source_path ~configuration ~removed:source_path source_paths with
                   | [] ->
                       (* Last remaining file for the module gets removed. *)
-                      Hashtbl.remove tracker qualifier;
+                      Hashtbl.remove module_to_files qualifier;
                       Some (IncrementalExplicitUpdate.Delete qualifier)
                   | new_source_path :: _ as new_source_paths ->
-                      Hashtbl.set tracker ~key:qualifier ~data:new_source_paths;
+                      Hashtbl.set module_to_files ~key:qualifier ~data:new_source_paths;
                       if SourcePath.equal old_source_path new_source_path then
                         (* Removing a shadowed file should not trigger any reanalysis *)
                         None
@@ -312,7 +312,7 @@ module Layouts = struct
        events *)
     List.dedup_and_sort ~compare:PyrePath.compare paths
     |> List.map ~f:FileSystemEvent.create
-    |> List.filter_map ~f:(process_filesystem_event ~configuration module_to_files)
+    |> List.filter_map ~f:(process_filesystem_event ~configuration)
     |> merge_updates
 
 
