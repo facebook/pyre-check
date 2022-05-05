@@ -247,7 +247,7 @@ end
 module WithCache : sig
   module type S = sig
     include NoCache.S
-    val write_through : key -> value -> unit
+    val write_around : key -> value -> unit
     val get_no_cache: key -> value option
   end
 
@@ -333,7 +333,7 @@ module FirstClass : sig
     module type S = sig
       include NoCache.S
 
-      val write_through : t -> key -> value -> unit
+      val write_around : t -> key -> value -> unit
 
       val get_no_cache : t -> key -> value option
     end

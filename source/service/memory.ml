@@ -261,7 +261,7 @@ module Interner (Value : InternerValueType) = struct
       |> Caml.Bytes.of_string
       |> fun md5 -> Caml.Bytes.get_int64_ne md5 0 |> Int64.to_int_trunc
     in
-    Table.write_through id value;
+    Table.write_around id value;
     id
 
 

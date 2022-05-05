@@ -67,7 +67,7 @@ let index annotation =
   | Some index -> index
   | None -> (
       let rec claim_free_index current =
-        OrderAnnotations.write_through current annotation;
+        OrderAnnotations.write_around current annotation;
         match OrderAnnotations.get_no_cache current with
         (* Successfully claimed the id *)
         | Some decoded when String.equal decoded annotation -> current
@@ -80,7 +80,7 @@ let index annotation =
        * Annotations: { hash(a) -> a; hash(a) + 1 -> a; ... }
        * By writing through, and then returning the canonical value, we ensure we only
        * ever return one value for index(a) *)
-      OrderIndices.write_through annotation encoded;
+      OrderIndices.write_around annotation encoded;
       match OrderIndices.get_no_cache annotation with
       | Some index -> index
       | None -> failwith "read-your-own-write consistency was violated")

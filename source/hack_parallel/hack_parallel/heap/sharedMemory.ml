@@ -1167,7 +1167,7 @@ module WithCache = struct
 
   module type S = sig
     include NoCache.S
-    val write_through : key -> value -> unit
+    val write_around : key -> value -> unit
     val get_no_cache: key -> value option
   end
 
@@ -1189,7 +1189,7 @@ module WithCache = struct
 
     let get_no_cache = Direct.get
 
-    let write_through x y =
+    let write_around x y =
       (* Note that we do not need to do any cache invalidation here because
       * Direct.add is a no-op if the key already exists. *)
       Direct.add x y
@@ -1441,7 +1441,7 @@ module FirstClass = struct
     module type S = sig
       include NoCache.S
 
-      val write_through : t -> key -> value -> unit
+      val write_around : t -> key -> value -> unit
 
       val get_no_cache : t -> key -> value option
     end
@@ -1452,7 +1452,7 @@ module FirstClass = struct
 
       include NoCache.FromGlobal (Key) (Value) (Global)
 
-      let write_through = with_convert_key Global.write_through
+      let write_around = with_convert_key Global.write_around
 
       let get_no_cache = with_convert_key Global.get_no_cache
 

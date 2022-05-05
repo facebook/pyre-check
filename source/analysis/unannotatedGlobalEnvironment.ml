@@ -673,10 +673,10 @@ end = struct
     UnannotatedGlobals.add name unannotated_global
 
 
-  let set_class_summary ~name class_summary = ClassSummaries.write_through name class_summary
+  let set_class_summary ~name class_summary = ClassSummaries.write_around name class_summary
 
   let set_function_definition ~name function_definition =
-    FunctionDefinitions.write_through name function_definition
+    FunctionDefinitions.write_around name function_definition
 
 
   let set_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
