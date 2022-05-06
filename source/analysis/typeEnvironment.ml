@@ -9,6 +9,26 @@ open Ast
 open Core
 module Error = AnalysisError
 
+module AnalysisErrorValue = struct
+  type t = Error.t list
+
+  let prefix = Prefix.make ()
+
+  let description = "Raw analysis errors"
+end
+
+module LocalAnnotationsValue = struct
+  type t = LocalAnnotationMap.ReadOnly.t
+
+  let prefix = Prefix.make ()
+
+  let description = "Node type resolution"
+end
+
+module RawErrors = Memory.NoCache.Make (SharedMemoryKeys.ReferenceKey) (AnalysisErrorValue)
+module LocalAnnotations =
+  Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (LocalAnnotationsValue)
+
 type t = {
   global_environment: AnnotatedGlobalEnvironment.t;
   set_errors: Reference.t -> Error.t list -> unit;
@@ -37,26 +57,6 @@ let set_local_annotations { set_local_annotations; _ } = set_local_annotations
 let get_local_annotations { get_local_annotations; _ } = get_local_annotations
 
 let invalidate { invalidate; _ } = invalidate
-
-module AnalysisErrorValue = struct
-  type t = Error.t list
-
-  let prefix = Prefix.make ()
-
-  let description = "Raw analysis errors"
-end
-
-module LocalAnnotationsValue = struct
-  type t = LocalAnnotationMap.ReadOnly.t
-
-  let prefix = Prefix.make ()
-
-  let description = "Node type resolution"
-end
-
-module RawErrors = Memory.NoCache.Make (SharedMemoryKeys.ReferenceKey) (AnalysisErrorValue)
-module LocalAnnotations =
-  Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (LocalAnnotationsValue)
 
 let create global_environment =
   let get_errors reference = RawErrors.get reference |> Option.value ~default:[] in
