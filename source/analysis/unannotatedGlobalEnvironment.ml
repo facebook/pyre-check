@@ -514,18 +514,18 @@ module KeyTracker = struct
     let description = "Class keys"
   end
 
-  module FunctionKeyValue = struct
+  module DefineKeyValue = struct
     type t = Reference.t list [@@deriving compare]
 
     let prefix = Prefix.make ()
 
-    let description = "TypeCheckUnit keys"
+    let description = "Define keys"
   end
 
   module ClassKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ClassKeyValue)
   module UnannotatedGlobalKeys =
     Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (UnannotatedGlobalKeyValue)
-  module FunctionKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (FunctionKeyValue)
+  module DefineKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DefineKeyValue)
 
   let get_class_keys qualifiers =
     ClassKeys.KeySet.of_list qualifiers
@@ -544,9 +544,9 @@ module KeyTracker = struct
 
 
   let get_define_body_keys qualifiers =
-    FunctionKeys.KeySet.of_list qualifiers
-    |> FunctionKeys.get_batch
-    |> FunctionKeys.KeyMap.values
+    DefineKeys.KeySet.of_list qualifiers
+    |> DefineKeys.get_batch
+    |> DefineKeys.KeyMap.values
     |> List.filter_map ~f:Fn.id
     |> List.concat
 end
@@ -782,7 +782,7 @@ end = struct
         in
         List.map function_definitions ~f:register
         |> List.sort ~compare:Reference.compare
-        |> KeyTracker.FunctionKeys.add qualifier
+        |> KeyTracker.DefineKeys.add qualifier
 
 
   let set_module_data ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
@@ -1099,7 +1099,7 @@ let update_this_and_all_preceding_environments
   KeyTracker.ClassKeys.KeySet.of_list modified_qualifiers |> KeyTracker.ClassKeys.remove_batch;
   KeyTracker.UnannotatedGlobalKeys.KeySet.of_list modified_qualifiers
   |> KeyTracker.UnannotatedGlobalKeys.remove_batch;
-  KeyTracker.FunctionKeys.KeySet.of_list modified_qualifiers |> KeyTracker.FunctionKeys.remove_batch;
+  KeyTracker.DefineKeys.KeySet.of_list modified_qualifiers |> KeyTracker.DefineKeys.remove_batch;
   match configuration this_environment with
   | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
       let define_additions, triggered_dependencies =
