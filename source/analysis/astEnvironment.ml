@@ -10,11 +10,6 @@ open Core
 open Pyre
 open PyreParser
 
-type t = {
-  module_tracker: ModuleTracker.t;
-  additional_preprocessing: (Source.t -> Source.t) option;
-}
-
 module ParserError = struct
   type t = {
     source_path: SourcePath.t;
@@ -59,6 +54,11 @@ module RawSources = struct
 
   let remove_sources _ qualifiers = KeySet.of_list qualifiers |> remove_batch
 end
+
+type t = {
+  module_tracker: ModuleTracker.t;
+  additional_preprocessing: (Source.t -> Source.t) option;
+}
 
 let create ?additional_preprocessing module_tracker = { module_tracker; additional_preprocessing }
 
