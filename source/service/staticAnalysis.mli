@@ -82,7 +82,6 @@ val record_overrides_for_qualifiers
 val build_call_graph
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  cache:Cache.t ->
   environment:TypeEnvironment.ReadOnly.t ->
   qualifiers:Reference.t list ->
   Target.t list Target.Map.t

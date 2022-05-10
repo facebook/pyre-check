@@ -454,7 +454,6 @@ let run_taint_analysis
       Service.StaticAnalysis.build_call_graph
         ~scheduler
         ~static_analysis_configuration
-        ~cache
         ~environment:(Analysis.TypeEnvironment.read_only environment)
         ~qualifiers
     in
