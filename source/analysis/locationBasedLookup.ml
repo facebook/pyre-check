@@ -622,12 +622,21 @@ let resolve_definition_for_name ~resolution ~module_reference ~define_name ~stat
       let definition = name_to_reference name >>= find_definition in
       match definition with
       | Some definition -> Some definition
-      | None ->
+      | None -> (
           (* Resolve prefix to check if this is a method. *)
-          resolve ~resolution base
-          >>| Type.class_name
-          >>| (fun prefix -> Reference.create ~prefix attribute)
-          >>= find_definition)
+          let base_class_summary =
+            resolve ~resolution base
+            >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
+            >>| Node.value
+          in
+          match base_class_summary with
+          | Some ({ ClassSummary.qualifier; _ } as base_class_summary) ->
+              base_class_summary
+              |> ClassSummary.attributes
+              |> Identifier.SerializableMap.find_opt attribute
+              >>| Node.location
+              >>| Location.with_module ~module_reference:qualifier
+          | None -> None))
   | _ -> None
 
 

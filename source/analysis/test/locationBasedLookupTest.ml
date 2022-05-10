@@ -395,13 +395,15 @@ let test_find_narrowest_spanning_symbol context =
 
         class Bar:
           some_attribute: Foo = Foo()
+
+        Bar().some_attribute
     |}
-    "5:2"
+    "7:12"
     (Some
        {
-         symbol_with_definition = Expression (parse_single_expression "test.Bar.some_attribute");
-         cfg_data = { define_name = !&"test.Bar.$class_toplevel"; node_id = 4; statement_index = 0 };
-         use_postcondition_info = true;
+         symbol_with_definition = Expression (parse_single_expression "test.Bar().some_attribute");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 2 };
+         use_postcondition_info = false;
        });
   assert_narrowest_expression
     ~source:
@@ -607,7 +609,6 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     (Some "test:3:10-3:14");
-  (* TODO(T112570623): Get the definition for `self.foo()`. *)
   assert_resolved_definition
     ~source:
       {|
@@ -634,7 +635,7 @@ let test_resolve_definition_for_symbol context =
       cfg_data = { define_name = !&"test.Foo.bar"; node_id = 4; statement_index = 0 };
       use_postcondition_info = false;
     }
-    None;
+    (Some "test:6:2-7:13");
   assert_resolved_definition
     ~external_sources
     ~source:{|
@@ -646,7 +647,6 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     (Some "library:2:0-2:15");
-  (* TODO(T112570623): Get the definition for `return_str()`. *)
   assert_resolved_definition
     ~source:
       {|
@@ -661,8 +661,7 @@ let test_resolve_definition_for_symbol context =
       cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
       use_postcondition_info = false;
     }
-    None;
-  (* TODO(T112570623): Get the definition for `Y().foo().bar()`. *)
+    (Some ":201:2-201:34");
   assert_resolved_definition
     ~source:
       {|
@@ -684,7 +683,23 @@ let test_resolve_definition_for_symbol context =
       cfg_data = { define_name = !&"test.test"; node_id = 4; statement_index = 0 };
       use_postcondition_info = false;
     }
-    None;
+    (Some "test:3:2-4:10");
+  assert_resolved_definition
+    ~source:
+      {|
+        class Foo: ...
+
+        class Bar:
+          some_attribute: Foo = Foo()
+
+        Bar().some_attribute
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "test.Bar().some_attribute");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 2 };
+      use_postcondition_info = false;
+    }
+    (Some "test:5:2-5:29");
   assert_resolved_definition
     ~source:{|
         def foo() -> None:
