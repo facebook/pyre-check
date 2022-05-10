@@ -212,3 +212,24 @@ def test_union_property_attribute_sink(x):
 
 def test_getattr_on_property(x: TaintedGetterAndSetter):
     _test_sink(getattr(x, "my_property", ""))
+
+
+def foo():
+    pass
+
+
+def bar():
+    pass
+
+
+def function_with_nested_properties():
+    # Property setters within a function, not a class
+    @property
+    def my_property(self) -> int:
+        foo()
+        return 0
+
+    @my_property.setter
+    def my_property(self, value) -> None:
+        _test_sink(_test_source())  # Analysis won't reach here
+        bar()
