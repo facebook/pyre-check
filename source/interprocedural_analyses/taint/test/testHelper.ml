@@ -395,9 +395,8 @@ let check_expectation
   assert_errors errors actual_errors
 
 
-let get_initial_models ~context =
-  let model_source =
-    {|
+let initial_models_source =
+  {|
       def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
       def _test_source() -> TaintSource[Test, Via[special_source]]: ...
       def _tito( *x: TaintInTaintOut, **kw: TaintInTaintOut): ...
@@ -406,6 +405,7 @@ let get_initial_models ~context =
       def _cookies() -> TaintSource[Cookies]: ...
       def _rce(argument: TaintSink[RemoteCodeExecution]): ...
       def _sql(argument: TaintSink[SQL]): ...
+      @SkipObscure
       def getattr(
           o: TaintInTaintOut[Via[object]],
           name: TaintSink[GetAttr],
@@ -417,8 +417,10 @@ let get_initial_models ~context =
 
       def copy(obj: TaintInTaintOut[Via[copy]]): ...
     |}
-    |> Test.trim_extra_indentation
-  in
+  |> Test.trim_extra_indentation
+
+
+let get_initial_models ~context =
   let global_resolution =
     Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_global_resolution
   in
@@ -429,7 +431,7 @@ let get_initial_models ~context =
            global_resolution
            (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
            (module TypeCheck.DummyContext))
-      ~source:model_source
+      ~source:initial_models_source
       ~configuration:TaintConfiguration.default
       ~callables:None
       ~stubs:(Interprocedural.Target.HashSet.create ())
@@ -465,7 +467,8 @@ let set_up_decorator_inlining ~handle models =
 
 let initialize
     ?(handle = "test.py")
-    ?models
+    ?models_source
+    ?(add_initial_models = true)
     ?find_missing_flows
     ?(taint_configuration = TaintConfiguration.default)
     ~context
@@ -473,7 +476,7 @@ let initialize
   =
   let configuration, environment, errors =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
-    set_up_decorator_inlining ~handle models;
+    set_up_decorator_inlining ~handle models_source;
     let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
       Test.ScratchProject.build_type_environment_and_postprocess
         ~call_graph_builder:(module Callgraph.NullBuilder)
@@ -525,7 +528,14 @@ let initialize
   let callables = List.map ~f:fst callables in
   let stubs = List.map ~f:fst stubs in
   let user_models, skip_overrides =
-    match models with
+    let models_source =
+      match models_source, add_initial_models with
+      | Some source, true ->
+          Some (Format.sprintf "%s\n%s" (Test.trim_extra_indentation source) initial_models_source)
+      | None, true -> Some initial_models_source
+      | models_source, _ -> models_source
+    in
+    match models_source with
     | None -> Target.Map.empty, Ast.Reference.Set.empty
     | Some source ->
         let { ModelParser.models; errors; skip_overrides; queries = rules } =
@@ -539,8 +549,9 @@ let initialize
         in
         assert_bool
           (Format.sprintf
-             "The models shouldn't have any parsing errors:\n%s."
-             (List.map errors ~f:ModelVerificationError.display |> String.concat ~sep:"\n"))
+             "The models shouldn't have any parsing errors:\n%s\nModels:\n%s"
+             (List.map errors ~f:ModelVerificationError.display |> String.concat ~sep:"\n")
+             source)
           (List.is_empty errors);
 
         let models =
@@ -606,6 +617,7 @@ let initialize
     Service.StaticAnalysis.record_and_merge_call_graph
       ~static_analysis_configuration
       ~environment
+      ~attribute_targets:(Service.StaticAnalysis.object_targets_from_models initial_models)
       ~call_graph:DependencyGraph.empty_callgraph
       ~source
   in

@@ -14,10 +14,6 @@ open Interprocedural
 open TestHelper
 
 let assert_taint ?models ?models_source ~context source expect =
-  let () =
-    TestHelper.get_initial_models ~context
-    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
-  in
   let handle = "qualifier.py" in
   let qualifier = Ast.Reference.create "qualifier" in
   let sources =
@@ -40,22 +36,23 @@ let assert_taint ?models ?models_source ~context source expect =
     |> fun option -> Option.value_exn option
   in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution read_only_environment in
-  models
-  >>| Test.trim_extra_indentation
-  >>| (fun model_source ->
-        let { ModelParser.models; errors; _ } =
-          ModelParser.parse
-            ~resolution:(TypeCheck.resolution global_resolution (module TypeCheck.DummyContext))
-            ~source:model_source
-            ~configuration:TaintConfiguration.default
-            ~callables:None
-            ~stubs:(Target.HashSet.create ())
-            ()
-        in
-        assert_bool "Error while parsing models." (List.is_empty errors);
-        Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
-        |> FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[])
-  |> ignore;
+  let models =
+    models >>| Test.trim_extra_indentation |> Option.value ~default:TestHelper.initial_models_source
+  in
+  let models =
+    let { ModelParser.models; errors; _ } =
+      ModelParser.parse
+        ~resolution:(TypeCheck.resolution global_resolution (module TypeCheck.DummyContext))
+        ~source:models
+        ~configuration:TaintConfiguration.default
+        ~callables:None
+        ~stubs:(Target.HashSet.create ())
+        ()
+    in
+    assert_bool "Error while parsing models." (List.is_empty errors);
+    Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
+  in
+  let () = FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[] models in
   let defines = source |> Preprocessing.defines |> List.rev in
   let () =
     List.map ~f:Target.create defines |> FixpointState.KeySet.of_list |> FixpointState.remove_new
@@ -67,6 +64,7 @@ let assert_taint ?models ?models_source ~context source expect =
       CallGraph.call_graph_of_define
         ~static_analysis_configuration
         ~environment:read_only_environment
+        ~attribute_targets:(Service.StaticAnalysis.object_targets_from_models models)
         ~qualifier
         ~define:(Ast.Node.value define)
     in
@@ -214,6 +212,11 @@ let test_hardcoded_source context =
         "qualifier.get_environment_variable_with_getitem";
     ];
   assert_taint
+    ~models:
+      {|
+      django.http.Request.GET: TaintSource[UserControlled] = ...
+      def dict.__getitem__(self: TaintInTaintOut, __k): ...
+    |}
     ~context
     {|
       class Request(django.http.Request): ...
@@ -924,6 +927,9 @@ let test_string context =
 let test_ternary context =
   assert_taint
     ~context
+    ~models:{|
+       django.http.Request.GET: TaintSource[UserControlled] = ...
+    |}
     {|
       def source_in_then(cond):
           return _test_source() if cond else None

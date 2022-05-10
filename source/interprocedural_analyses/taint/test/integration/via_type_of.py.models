@@ -16,11 +16,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "has": "first-field" },
@@ -44,11 +40,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -63,8 +55,6 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "x" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
       { "always-via-type": "int" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
@@ -96,11 +86,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "has": "first-field" },
@@ -124,11 +110,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -144,8 +126,6 @@
       { "has": "first-field" },
       { "first-field": "y" },
       { "always-via-type": "str" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
     ],
@@ -176,11 +156,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "has": "first-field" },
@@ -204,11 +180,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -224,8 +196,6 @@
       { "has": "first-field" },
       { "first-field": "z" },
       { "always-via-type": "typing.Annotated[str]" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
     ],
@@ -256,11 +226,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "has": "first-field" },
@@ -288,11 +254,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -311,8 +273,6 @@
       { "first-field": "y" },
       { "via-type": "str" },
       { "via-type": "typing.Annotated[str]" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
       { "via-type": "int" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
@@ -344,11 +304,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "has": "first-field" },
@@ -372,11 +328,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -391,8 +343,6 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "x" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
       { "always-via-type": "typing.Dict[str, int]" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
@@ -424,11 +374,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "has": "first-field" },
@@ -452,11 +398,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -471,8 +413,6 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "y" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
       { "always-via-type": "typing.List[str]" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
@@ -504,11 +444,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "has": "first-field" },
@@ -532,11 +468,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -552,8 +484,6 @@
       { "has": "first-field" },
       { "first-field": "z" },
       { "always-via-type": "typing.Annotated[float]" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
     ],
@@ -584,11 +514,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "has": "first-field" },
@@ -616,11 +542,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -638,8 +560,6 @@
       { "first-field": "z" },
       { "first-field": "y" },
       { "via-type": "typing.Annotated[float]" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
       { "via-type": "typing.List[str]" },
       { "via-type": "typing.Dict[str, int]" },
       { "always-via": "obscure:model" },
@@ -672,11 +592,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -708,10 +624,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via-type": "unknown" },
-      { "always-via": "special_source" }
-    ],
+    "features": [ { "always-via-type": "unknown" } ],
     "sink_handle": {
       "kind": "Global",
       "callee": "Obj{via_type_of.Test4_C.x}",
@@ -738,11 +651,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -774,10 +683,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via-type": "typing.Any" }
-    ],
+    "features": [ { "always-via-type": "typing.Any" } ],
     "sink_handle": {
       "kind": "Global",
       "callee": "Obj{via_type_of.Test4_C.y}",
@@ -804,11 +710,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -840,10 +742,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via-type": "object" },
-      { "always-via": "special_source" }
-    ],
+    "features": [ { "always-via-type": "object" } ],
     "sink_handle": {
       "kind": "Global",
       "callee": "Obj{via_type_of.Test4_C.z}",
@@ -1198,6 +1097,32 @@
 {
   "kind": "model",
   "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "via_type_of.meta",
     "sources": [
       {
@@ -1292,11 +1217,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1349,11 +1270,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1366,7 +1283,6 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
       { "always-via-type": "typing.Dict[str, typing.List[int]]" }
     ],
     "sink_handle": {
@@ -1389,11 +1305,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1446,11 +1358,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1462,10 +1370,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "special_sink" },
-      { "always-via-type": "via_type_of.Test3_Foo" }
-    ],
+    "features": [ { "always-via-type": "via_type_of.Test3_Foo" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1486,11 +1391,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1546,11 +1447,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1563,7 +1460,6 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
       {
         "always-via-type": "typing.Annotated[typing.List[typing.List[str]]]"
       }
@@ -1588,11 +1484,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1608,11 +1500,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1628,11 +1516,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1722,11 +1606,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "via_type_of.py",
@@ -1739,7 +1619,6 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
       { "via-type": "typing.Dict[str, typing.List[int]]" },
       { "via-type": "typing.Annotated[typing.List[typing.List[str]]]" },
       { "via-type": "via_type_of.Test3_Foo" }
@@ -1906,11 +1785,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "always-via-type": "typing.List[int]" },

@@ -56,6 +56,7 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
     ~static_analysis_configuration
     ~store_shared_memory:false
     ~environment
+    ~attribute_targets:(Target.HashSet.create ())
     ~source
 
 
@@ -548,6 +549,7 @@ let test_strongly_connected_components context =
           ~static_analysis_configuration
           ~store_shared_memory:false
           ~environment
+          ~attribute_targets:(Target.HashSet.create ())
           ~source
         |> DependencyGraph.from_callgraph
       in

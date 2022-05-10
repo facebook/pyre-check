@@ -192,6 +192,7 @@ end
 val call_graph_of_define
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  attribute_targets:Target.HashSet.t ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
   DefineCallGraph.t
@@ -210,5 +211,6 @@ val create_callgraph
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   store_shared_memory:bool ->
   environment:TypeEnvironment.ReadOnly.t ->
+  attribute_targets:Target.HashSet.t ->
   source:Source.t ->
   DependencyGraph.callgraph

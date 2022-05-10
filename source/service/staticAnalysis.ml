@@ -351,7 +351,13 @@ let parse_and_save_decorators_to_skip
       ())
 
 
-let record_and_merge_call_graph ~static_analysis_configuration ~environment ~call_graph ~source =
+let record_and_merge_call_graph
+    ~static_analysis_configuration
+    ~environment
+    ~attribute_targets
+    ~call_graph
+    ~source
+  =
   let record_and_merge_call_graph map call_graph =
     Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
   in
@@ -359,6 +365,7 @@ let record_and_merge_call_graph ~static_analysis_configuration ~environment ~cal
     ~static_analysis_configuration
     ~store_shared_memory:true
     ~environment
+    ~attribute_targets
     ~source
   |> record_and_merge_call_graph call_graph
 
@@ -575,10 +582,28 @@ let record_overrides_for_qualifiers ~scheduler ~cache ~environment ~skip_overrid
   cap_override_result
 
 
+(* TODO(T117715045): This should go in a proper module that handles a set of models. *)
+let object_targets_from_models models =
+  let objects = Target.HashSet.create () in
+  let add ~key:target ~data:_ =
+    match target with
+    | Target.Object _ -> Hash_set.add objects target
+    | _ -> ()
+  in
+  let () = Target.Map.iteri ~f:add models in
+  objects
+
+
 (* Build the callgraph, a map from caller to callees. The overrides must be computed first because
    we depend on a global shared memory graph to include overrides in the call graph. Without it,
    we'll underanalyze and have an inconsistent fixpoint. *)
-let build_call_graph ~scheduler ~static_analysis_configuration ~environment ~qualifiers =
+let build_call_graph
+    ~scheduler
+    ~static_analysis_configuration
+    ~environment
+    ~attribute_targets
+    ~qualifiers
+  =
   let call_graph =
     let build_call_graph call_graph qualifier =
       get_source ~environment qualifier
@@ -586,6 +611,7 @@ let build_call_graph ~scheduler ~static_analysis_configuration ~environment ~qua
             record_and_merge_call_graph
               ~static_analysis_configuration
               ~environment
+              ~attribute_targets
               ~call_graph
               ~source)
       |> Option.value ~default:call_graph

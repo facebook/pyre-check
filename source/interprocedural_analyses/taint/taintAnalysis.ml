@@ -455,6 +455,7 @@ let run_taint_analysis
         ~scheduler
         ~static_analysis_configuration
         ~environment:(Analysis.TypeEnvironment.read_only environment)
+        ~attribute_targets:(Service.StaticAnalysis.object_targets_from_models initial_models)
         ~qualifiers
     in
     Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();

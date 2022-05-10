@@ -68,13 +68,6 @@ let test_call_graph_of_define context =
         project.configuration )
     in
     let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-    let register_model target =
-      FixpointState.add_predefined
-        FixpointState.Epoch.predefined
-        target
-        AnalysisResult.obscure_model
-    in
-    List.iter ~f:register_model object_targets;
     let overrides = DependencyGraph.create_overrides ~environment ~source:test_source in
     let _ = DependencyGraphSharedMemory.record_overrides overrides in
     assert_equal
@@ -84,6 +77,7 @@ let test_call_graph_of_define context =
       (CallGraph.call_graph_of_define
          ~static_analysis_configuration
          ~environment
+         ~attribute_targets:(Target.HashSet.of_list object_targets)
          ~qualifier:(Reference.create "test")
          ~define);
     DependencyGraphSharedMemory.remove_overriding_types (Reference.Map.keys overrides)

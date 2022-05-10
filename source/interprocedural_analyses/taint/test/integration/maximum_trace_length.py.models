@@ -17,7 +17,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "length": 2,
                 "kind": "Test"
@@ -42,7 +41,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "length": 2,
                 "kind": "Test"
@@ -62,10 +60,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "maximum_trace_length.sink_distance_one",
@@ -94,7 +89,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "length": 2,
                 "kind": "Test"
@@ -119,7 +113,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
@@ -139,10 +132,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "maximum_trace_length.sink_distance_zero",
@@ -171,7 +161,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "length": 1,
                 "kind": "Test"
@@ -196,7 +185,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
@@ -216,10 +204,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "maximum_trace_length.sink_distance_zero",
@@ -233,6 +218,59 @@
 {
   "kind": "model",
   "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_tito",
+    "tito": [
+      {
+        "port": "formal(**kw)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(*rest0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "maximum_trace_length.sink_distance_one",
     "sinks": [
       {
@@ -241,7 +279,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "Test"
@@ -273,11 +310,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "maximum_trace_length.py",
@@ -302,7 +335,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "length": 1,
                 "kind": "Test"
@@ -334,11 +366,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "maximum_trace_length.py",

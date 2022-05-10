@@ -19,10 +19,6 @@ type mismatch_file = {
 }
 
 let test_integration path context =
-  let () =
-    TestHelper.get_initial_models ~context
-    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
-  in
   TaintIntegrationTest.Files.dummy_dependency |> ignore;
   let create_expected_and_actual_files ~suffix actual =
     let output_filename ~suffix ~initial =
@@ -71,7 +67,7 @@ let test_integration path context =
   in
   let divergent_files, serialized_models =
     let source = File.create path |> File.content |> fun content -> Option.value_exn content in
-    let model_source =
+    let models_source =
       try
         let model_path = PyrePath.with_suffix path ~suffix:".pysa" in
         File.create model_path |> File.content
@@ -86,9 +82,12 @@ let test_integration path context =
         |> Option.map ~f:(fun content ->
                Taint.TaintConfiguration.parse [path, Yojson.Safe.from_string content]
                |> Taint.TaintConfiguration.exception_on_error)
-        |> Option.value ~default:Taint.TaintConfiguration.default
       with
-      | Unix.Unix_error _ -> Taint.TaintConfiguration.default
+      | Unix.Unix_error _ -> None
+    in
+    let add_initial_models = Option.is_none models_source && Option.is_none taint_configuration in
+    let taint_configuration =
+      taint_configuration |> Option.value ~default:Taint.TaintConfiguration.default
     in
     let handle = PyrePath.show path |> String.split ~on:'/' |> List.last_exn in
     let create_call_graph_files call_graph =
@@ -103,7 +102,7 @@ let test_integration path context =
       create_expected_and_actual_files ~suffix:".overrides" actual
     in
     let { callgraph; callables_to_analyze; initial_models_callables; environment; overrides; _ } =
-      initialize ~handle ?models:model_source ~taint_configuration ~context source
+      initialize ~handle ?models_source ~add_initial_models ~taint_configuration ~context source
     in
     let dependencies =
       DependencyGraph.from_callgraph callgraph

@@ -16,11 +16,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "has": "first-index" },
@@ -40,11 +36,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "typed_dict.py",
@@ -56,12 +48,7 @@
         ]
       }
     ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "other" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
+    "features": [ { "has": "first-index" }, { "first-index": "other" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -89,11 +76,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "has": "first-index" },
@@ -113,11 +96,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "typed_dict.py",
@@ -129,12 +108,7 @@
         ]
       }
     ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "foo" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
+    "features": [ { "has": "first-index" }, { "first-index": "foo" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -162,11 +136,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
               { "has": "first-index" },
@@ -186,11 +156,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "typed_dict.py",
@@ -202,12 +168,7 @@
         ]
       }
     ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "foo" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
+    "features": [ { "has": "first-index" }, { "first-index": "foo" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -223,5 +184,31 @@
   "data": {
     "callable": "Obj{typed_dict.Foo.a}",
     "global_sanitizer": { "sources": [ "Test" ] }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }

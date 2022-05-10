@@ -28,6 +28,7 @@ val parse_and_save_decorators_to_skip : inline_decorators:bool -> Configuration.
 val record_and_merge_call_graph
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:TypeEnvironment.ReadOnly.t ->
+  attribute_targets:Target.HashSet.t ->
   call_graph:DependencyGraph.callgraph ->
   source:Source.t ->
   DependencyGraph.callgraph
@@ -79,10 +80,13 @@ val record_overrides_for_qualifiers
   qualifiers:Reference.t list ->
   DependencyGraphSharedMemory.cap_overrides_result
 
+val object_targets_from_models : 'a Target.Map.t -> Target.HashSet.t
+
 val build_call_graph
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:TypeEnvironment.ReadOnly.t ->
+  attribute_targets:Target.HashSet.t ->
   qualifiers:Reference.t list ->
   Target.t list Target.Map.t
 

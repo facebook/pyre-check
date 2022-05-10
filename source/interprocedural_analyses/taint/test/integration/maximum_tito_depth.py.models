@@ -16,11 +16,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 69, "start": 19, "end": 20 } ],
@@ -38,11 +34,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "maximum_tito_depth.py",
@@ -54,11 +46,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
+    "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -67,6 +55,32 @@
     },
     "master_handle":
       "maximum_tito_depth.issue:1000:0:Call|_test_sink|0|formal(arg):0721fb3ffb38a4bf7b197f2be4855e62"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {

@@ -1537,7 +1537,15 @@ let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~
       find_targets [] base_annotation
 
 
-let resolve_attribute_access ~resolution ~call_indexer ~base ~attribute ~special ~setter =
+let resolve_attribute_access
+    ~resolution
+    ~call_indexer
+    ~attribute_targets
+    ~base
+    ~attribute
+    ~special
+    ~setter
+  =
   let base_annotation = CallResolution.resolve_ignoring_optional ~resolution base in
 
   let { property_targets; is_attribute } =
@@ -1552,7 +1560,7 @@ let resolve_attribute_access ~resolution ~call_indexer ~base ~attribute ~special
   let global_targets =
     resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special
     |> List.map ~f:Target.create_object
-    |> List.filter ~f:FixpointState.has_model
+    |> List.filter ~f:(Hash_set.mem attribute_targets)
     |> List.map
          ~f:
            (CallTargetIndexer.create_target
@@ -1566,12 +1574,12 @@ let resolve_attribute_access ~resolution ~call_indexer ~base ~attribute ~special
   { AttributeAccessCallees.property_targets; global_targets; is_attribute }
 
 
-let resolve_identifier ~resolution ~call_indexer ~identifier =
+let resolve_identifier ~resolution ~call_indexer ~attribute_targets ~identifier =
   Expression.Name (Name.Identifier identifier)
   |> Node.create_with_default_location
   |> as_global_reference ~resolution
   >>| Target.create_object
-  |> Option.filter ~f:FixpointState.has_model
+  |> Option.filter ~f:(Hash_set.mem attribute_targets)
   >>| fun global ->
   {
     IdentifierCallees.global_targets =
@@ -1605,6 +1613,8 @@ module DefineCallGraphFixpoint (Context : sig
   val call_indexer : CallTargetIndexer.t
 
   val is_missing_flow_type_analysis : bool
+
+  val attribute_targets : Target.HashSet.t
 end) =
 struct
   type assignment_target = { location: Location.t }
@@ -1615,6 +1625,8 @@ struct
   }
 
   let call_indexer = Context.call_indexer
+
+  let attribute_targets = Context.attribute_targets
 
   (* For the missing flow analysis (`--find-missing-flows=type`), we turn unresolved
    * calls into sinks, so that we may find sources flowing into those calls. *)
@@ -1684,11 +1696,18 @@ struct
                   Location.equal assignment_target_location location
               | None -> false
             in
-            resolve_attribute_access ~resolution ~call_indexer ~base ~attribute ~special ~setter
+            resolve_attribute_access
+              ~resolution
+              ~call_indexer
+              ~attribute_targets
+              ~base
+              ~attribute
+              ~special
+              ~setter
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
         | Expression.Name (Name.Identifier identifier) ->
-            resolve_identifier ~resolution ~call_indexer ~identifier
+            resolve_identifier ~resolution ~call_indexer ~attribute_targets ~identifier
             >>| ExpressionCallees.from_identifier
             >>| register_targets ~expression_identifier:identifier
             |> ignore
@@ -1761,6 +1780,7 @@ struct
             resolve_attribute_access
               ~resolution
               ~call_indexer
+              ~attribute_targets
               ~base
               ~attribute
               ~special:false
@@ -1799,6 +1819,7 @@ struct
             resolve_attribute_access
               ~resolution
               ~call_indexer
+              ~attribute_targets
               ~base:self
               ~attribute
               ~special:true
@@ -1961,6 +1982,7 @@ end
 let call_graph_of_define
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
     ~environment
+    ~attribute_targets
     ~qualifier
     ~define:({ Define.signature = { Define.Signature.name; parent; _ }; _ } as define)
   =
@@ -1978,6 +2000,8 @@ let call_graph_of_define
     let callees_at_location = callees_at_location
 
     let call_indexer = CallTargetIndexer.create ()
+
+    let attribute_targets = attribute_targets
 
     let is_missing_flow_type_analysis = Option.equal String.equal find_missing_flows (Some "type")
   end)
@@ -2053,6 +2077,7 @@ let create_callgraph
     ~static_analysis_configuration
     ~store_shared_memory
     ~environment
+    ~attribute_targets
     ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
   =
   let fold_defines dependencies = function
@@ -2062,6 +2087,7 @@ let create_callgraph
           call_graph_of_define
             ~static_analysis_configuration
             ~environment
+            ~attribute_targets
             ~qualifier
             ~define:(Node.value define)
         in

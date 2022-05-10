@@ -14,10 +14,6 @@ open Interprocedural
 open TestHelper
 
 let assert_taint ~context source expected =
-  let () =
-    TestHelper.get_initial_models ~context
-    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
-  in
   let handle = "qualifier.py" in
   let qualifier = Ast.Reference.create "qualifier" in
   let ({ Test.ScratchProject.configuration; _ } as project) =
@@ -33,6 +29,10 @@ let assert_taint ~context source expected =
       qualifier
     |> fun option -> Option.value_exn option
   in
+  let initial_models = TestHelper.get_initial_models ~context in
+  let () =
+    Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[] initial_models
+  in
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
   let () =
     List.map ~f:Target.create defines |> FixpointState.KeySet.of_list |> FixpointState.remove_new
@@ -44,6 +44,7 @@ let assert_taint ~context source expected =
       Interprocedural.CallGraph.call_graph_of_define
         ~static_analysis_configuration
         ~environment:(TypeEnvironment.read_only environment)
+        ~attribute_targets:(Service.StaticAnalysis.object_targets_from_models initial_models)
         ~qualifier
         ~define:(Ast.Node.value define)
     in

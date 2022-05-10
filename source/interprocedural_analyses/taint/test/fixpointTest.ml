@@ -16,14 +16,15 @@ type expect_fixpoint = {
   iterations: int;
 }
 
-let assert_fixpoint ?models ~context source ~expect:{ iterations = expect_iterations; expect } =
-  let () =
-    TestHelper.get_initial_models ~context
-    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[]
-  in
+let assert_fixpoint
+    ?models_source
+    ~context
+    source
+    ~expect:{ iterations = expect_iterations; expect }
+  =
   let scheduler = Test.mock_scheduler () in
   let { callables_to_analyze; callgraph; environment; overrides; _ } =
-    initialize ?models ~handle:"qualifier.py" ~context source
+    initialize ?models_source ~handle:"qualifier.py" ~context source
   in
   let dependencies =
     DependencyGraph.from_callgraph callgraph
@@ -293,8 +294,10 @@ let test_fixpoint context =
 let test_combined_analysis context =
   assert_fixpoint
     ~context
-    ~models:
+    ~models_source:
       {|
+      def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
+      def _user_controlled() -> TaintSource[UserControlled]: ...
       def qualifier.combined_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
     |}
     {|
@@ -329,7 +332,7 @@ let test_combined_analysis context =
 let test_skipped_analysis context =
   assert_fixpoint
     ~context
-    ~models:
+    ~models_source:
       {|
       @SkipAnalysis
       def qualifier.skipped_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
@@ -358,7 +361,7 @@ let test_skipped_analysis context =
 let test_sanitized_analysis context =
   assert_fixpoint
     ~context
-    ~models:
+    ~models_source:
       {|
       @Sanitize
       def qualifier.sanitized_model(x, y: TaintSink[Demo], z: TaintInTaintOut): ...
@@ -390,7 +393,8 @@ let test_sanitized_analysis context =
 let test_primed_source_analysis context =
   assert_fixpoint
     ~context
-    ~models:{|
+    ~models_source:
+      {|
       def qualifier.primed_model(x, y: TaintSource[UserControlled]): ...
     |}
     {|
@@ -415,7 +419,7 @@ let test_primed_source_analysis context =
 let test_primed_sink_analysis context =
   assert_fixpoint
     ~context
-    ~models:
+    ~models_source:
       {|
       def qualifier.primed_model(x, y: TaintSource[Test]) -> TaintSink[Test]: ...
     |}
