@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+$local_properties?function_with_nested_properties$my_property$setter (fun) -> [_test_sink (fun) _test_source (fun) properties.bar (fun)]
 $local_properties?function_with_nested_properties$my_property (fun) -> [properties.foo (fun)]
 properties.$toplevel (fun) -> []
 properties.bar (fun) -> []

@@ -2314,6 +2314,90 @@
 {
   "kind": "model",
   "data": {
+    "callable": "properties.function_with_nested_properties.setter",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.function_with_nested_properties.setter",
+    "callable_line": 233,
+    "code": 5002,
+    "line": 234,
+    "start": 19,
+    "end": 33,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 234,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 234,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
+      "properties.function_with_nested_properties.setter:5002:0:Call|_test_sink|0|formal(arg):67e1ad8dc46a613e15639f513163a42e"
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "properties.test_getattr_on_property",
     "sinks": [
       {

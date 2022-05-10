@@ -231,5 +231,5 @@ def function_with_nested_properties():
 
     @my_property.setter
     def my_property(self, value) -> None:
-        _test_sink(_test_source())  # Analysis won't reach here
+        _test_sink(_test_source())
         bar()
