@@ -53,7 +53,7 @@ val create_overrides : environment:TypeEnvironment.ReadOnly.t -> source:Source.t
 
 val union : t -> t -> t
 
-val expand_callees : Target.t list -> Target.t list
+val expand_overrides : Target.t list -> Target.t list
 
 type prune_result = {
   dependencies: t;

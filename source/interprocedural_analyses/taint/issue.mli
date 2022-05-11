@@ -81,7 +81,16 @@ type issue = t
 
 val canonical_location : t -> Location.WithModule.t
 
-val to_json : filename_lookup:(Reference.t -> string option) -> t -> Yojson.Safe.json
+val to_json
+  :  expand_overrides:bool ->
+  is_valid_callee:
+    (port:AccessPath.Root.t ->
+    path:Abstract.TreeDomain.Label.path ->
+    callee:Interprocedural.Target.t ->
+    bool) ->
+  filename_lookup:(Reference.t -> string option) ->
+  t ->
+  Yojson.Safe.json
 
 val to_error : t -> Error.t
 

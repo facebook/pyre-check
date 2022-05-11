@@ -76,30 +76,20 @@ module CallInfo = struct
 
   let show = Format.asprintf "%a" pp
 
-  (* Breaks recursion among trace info and overall taint domain. *)
-  (* See implementation in taintResult.ml. *)
-  let has_significant_summary =
-    ref
-      (fun
-        (_ : AccessPath.Root.t)
-        (_ : Abstract.TreeDomain.Label.path)
-        (_ : Interprocedural.Target.t)
-      -> true)
-
-
   (* Only called when emitting models before we compute the json so we can dedup *)
-  let expand_call_site trace =
+  let expand_overrides ~is_valid_callee trace =
     match trace with
     | CallSite { location; callees; port; path } ->
         let callees =
-          Interprocedural.DependencyGraph.expand_callees callees
-          |> List.filter ~f:(!has_significant_summary port path)
+          Interprocedural.DependencyGraph.expand_overrides callees
+          |> List.filter ~f:(fun callee -> is_valid_callee ~port ~path ~callee)
         in
         CallSite { location; callees; port; path }
     | _ -> trace
 
 
-  let create_json ~filename_lookup trace : string * Yojson.Safe.json =
+  (* Returns the (dictionary key * json) to emit *)
+  let to_json ~filename_lookup trace : string * Yojson.Safe.json =
     match trace with
     | Declaration _ -> "decl", `Null
     | Origin location ->
@@ -117,11 +107,6 @@ module CallInfo = struct
         in
         "call", call_json
 
-
-  (* Returns the (dictionary key * json) to emit *)
-  let to_json = create_json ~filename_lookup:None
-
-  let to_external_json ~filename_lookup = create_json ~filename_lookup:(Some filename_lookup)
 
   let less_or_equal ~left ~right =
     match left, right with
@@ -457,9 +442,16 @@ module type TAINT_DOMAIN = sig
     t ->
     t
 
-  val to_json : t -> Yojson.Safe.json
-
-  val to_external_json : filename_lookup:(Reference.t -> string option) -> t -> Yojson.Safe.json
+  val to_json
+    :  expand_overrides:bool ->
+    is_valid_callee:
+      (port:AccessPath.Root.t ->
+      path:Abstract.TreeDomain.Label.path ->
+      callee:Interprocedural.Target.t ->
+      bool) ->
+    filename_lookup:(Reference.t -> string option) option ->
+    t ->
+    Yojson.Safe.json
 end
 
 module type KIND_ARG = sig
@@ -631,7 +623,7 @@ end = struct
     Map.fold kind ~init:[] ~f:List.cons map |> List.dedup_and_sort ~compare:Kind.compare
 
 
-  let create_json ~call_info_to_json taint =
+  let to_json ~expand_overrides ~is_valid_callee ~filename_lookup taint =
     let cons_if_non_empty key list assoc =
       if List.is_empty list then
         assoc
@@ -664,7 +656,7 @@ end = struct
     in
 
     let trace_to_json (trace_info, local_taint) =
-      let json = [call_info_to_json trace_info] in
+      let json = [CallInfo.to_json ~filename_lookup trace_info] in
 
       let tito_positions =
         LocalTaintDomain.get LocalTaintDomain.Slots.TitoPosition local_taint
@@ -742,16 +734,14 @@ end = struct
       in
       `Assoc json
     in
-    (* Expand overrides into actual callables and dedup *)
-    let taint = Map.transform Key Map ~f:CallInfo.expand_call_site taint in
+    let taint =
+      if expand_overrides then
+        Map.transform Key Map ~f:(CallInfo.expand_overrides ~is_valid_callee) taint
+      else
+        taint
+    in
     let elements = Map.to_alist taint |> List.map ~f:trace_to_json in
     `List elements
-
-
-  let to_json = create_json ~call_info_to_json:CallInfo.to_json
-
-  let to_external_json ~filename_lookup =
-    create_json ~call_info_to_json:(CallInfo.to_external_json ~filename_lookup)
 
 
   let add_local_breadcrumbs breadcrumbs taint =
@@ -1242,11 +1232,16 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       end)
       (Tree)
 
-  let create_json ~taint_to_json environment =
+  let to_json ~expand_overrides ~is_valid_callee ~filename_lookup environment =
     let element_to_json json_list (root, tree) =
       let path_to_json (path, tip) json_list =
         let port = AccessPath.create root path |> AccessPath.to_json in
-        (path, ["port", port; "taint", taint_to_json tip]) :: json_list
+        ( path,
+          [
+            "port", port;
+            "taint", Taint.to_json ~expand_overrides ~is_valid_callee ~filename_lookup tip;
+          ] )
+        :: json_list
       in
       let ports =
         Tree.fold Tree.Path ~f:path_to_json tree ~init:[]
@@ -1258,12 +1253,6 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
     in
     let paths = to_alist environment |> List.fold ~f:element_to_json ~init:[] in
     `List paths
-
-
-  let to_json = create_json ~taint_to_json:Taint.to_json
-
-  let to_external_json ~filename_lookup =
-    create_json ~taint_to_json:(Taint.to_external_json ~filename_lookup)
 
 
   let assign ?(weak = false) ~root ~path subtree environment =

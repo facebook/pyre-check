@@ -21,12 +21,50 @@ let get_model callable =
 
 let get_errors result = List.map ~f:Issue.to_error result
 
+(* Patch the forward reference to access the final summaries in trace info generation. *)
+let has_significant_summary ~port:root ~path ~callee =
+  let model =
+    Interprocedural.FixpointState.get_model callee
+    >>= Interprocedural.AnalysisResult.get_model TaintResult.kind
+  in
+  match model with
+  | None -> false
+  | Some { forward; backward; _ } -> (
+      match root with
+      | AccessPath.Root.LocalResult ->
+          let _, tree =
+            Domains.ForwardState.read_tree_raw
+              ~use_precise_labels:true
+              ~root
+              ~path
+              forward.source_taint
+          in
+          let taint = Domains.ForwardState.Tree.get_root tree in
+          not (Domains.ForwardTaint.is_bottom taint)
+      | _ ->
+          let _, tree =
+            Domains.BackwardState.read_tree_raw
+              ~use_precise_labels:true
+              ~root
+              ~path
+              backward.sink_taint
+          in
+          let taint = Domains.BackwardState.Tree.get_root tree in
+          not (Domains.BackwardTaint.is_bottom taint))
+
+
 let issues_to_json ~filename_lookup result_opt =
   match result_opt with
   | None -> []
   | Some issues ->
       let issue_to_json issue =
-        let json = Issue.to_json ~filename_lookup issue in
+        let json =
+          Issue.to_json
+            ~expand_overrides:true
+            ~is_valid_callee:has_significant_summary
+            ~filename_lookup
+            issue
+        in
         `Assoc ["kind", `String "issue"; "data", json]
       in
       List.map ~f:issue_to_json issues
@@ -65,7 +103,13 @@ let externalize ~filename_lookup callable result_option model =
   if not (Model.should_externalize model) then
     issues
   else
-    Model.to_json ~filename_lookup callable model :: issues
+    Model.to_json
+      ~expand_overrides:true
+      ~is_valid_callee:has_significant_summary
+      ~filename_lookup:(Some filename_lookup)
+      callable
+      model
+    :: issues
 
 
 let fetch_and_externalize ~filename_lookup callable =

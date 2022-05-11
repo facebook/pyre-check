@@ -29,7 +29,13 @@ module Forward = struct
     Format.fprintf
       formatter
       "  Sources: %s"
-      (json_to_string ~indent:"    " (ForwardState.to_json source_taint))
+      (json_to_string
+         ~indent:"    "
+         (ForwardState.to_json
+            ~expand_overrides:false
+            ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+            ~filename_lookup:None
+            source_taint))
 
 
   let show = Format.asprintf "%a" pp
@@ -66,8 +72,20 @@ module Backward = struct
     Format.fprintf
       formatter
       "  Taint-in-taint-out: %s\n  Sinks: %s"
-      (json_to_string ~indent:"    " (BackwardState.to_json taint_in_taint_out))
-      (json_to_string ~indent:"    " (BackwardState.to_json sink_taint))
+      (json_to_string
+         ~indent:"    "
+         (BackwardState.to_json
+            ~expand_overrides:false
+            ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+            ~filename_lookup:None
+            taint_in_taint_out))
+      (json_to_string
+         ~indent:"    "
+         (BackwardState.to_json
+            ~expand_overrides:false
+            ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+            ~filename_lookup:None
+            sink_taint))
 
 
   let show = Format.asprintf "%a" pp
@@ -586,6 +604,8 @@ let should_externalize { forward; backward; sanitizers; _ } =
 
 
 let to_json
+    ~expand_overrides
+    ~is_valid_callee
     ~filename_lookup
     callable
     {
@@ -600,19 +620,35 @@ let to_json
   let model_json = ["callable", `String callable_name] in
   let model_json =
     if not (ForwardState.is_empty source_taint) then
-      model_json @ ["sources", ForwardState.to_external_json ~filename_lookup source_taint]
+      model_json
+      @ [
+          ( "sources",
+            ForwardState.to_json ~expand_overrides ~is_valid_callee ~filename_lookup source_taint );
+        ]
     else
       model_json
   in
   let model_json =
     if not (BackwardState.is_empty sink_taint) then
-      model_json @ ["sinks", BackwardState.to_external_json ~filename_lookup sink_taint]
+      model_json
+      @ [
+          ( "sinks",
+            BackwardState.to_json ~expand_overrides ~is_valid_callee ~filename_lookup sink_taint );
+        ]
     else
       model_json
   in
   let model_json =
     if not (BackwardState.is_empty taint_in_taint_out) then
-      model_json @ ["tito", BackwardState.to_external_json ~filename_lookup taint_in_taint_out]
+      model_json
+      @ [
+          ( "tito",
+            BackwardState.to_json
+              ~expand_overrides
+              ~is_valid_callee
+              ~filename_lookup
+              taint_in_taint_out );
+        ]
     else
       model_json
   in

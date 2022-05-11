@@ -636,13 +636,23 @@ let to_error ({ handle = { code; _ }; define; _ } as issue) =
       Error.create ~location ~define ~kind
 
 
-let to_json ~filename_lookup issue =
+let to_json ~expand_overrides ~is_valid_callee ~filename_lookup issue =
   let callable_name = Target.external_name issue.handle.callable in
   let _, message = get_name_and_detailed_message issue in
   let source_traces =
-    Domains.ForwardTaint.to_external_json ~filename_lookup issue.flow.source_taint
+    Domains.ForwardTaint.to_json
+      ~expand_overrides
+      ~is_valid_callee
+      ~filename_lookup:(Some filename_lookup)
+      issue.flow.source_taint
   in
-  let sink_traces = Domains.BackwardTaint.to_external_json ~filename_lookup issue.flow.sink_taint in
+  let sink_traces =
+    Domains.BackwardTaint.to_json
+      ~expand_overrides
+      ~is_valid_callee
+      ~filename_lookup:(Some filename_lookup)
+      issue.flow.sink_taint
+  in
   let features = get_issue_features issue.flow in
   let json_features =
     let get_feature_json { Abstract.OverUnderSetDomain.element; in_under } breadcrumbs =

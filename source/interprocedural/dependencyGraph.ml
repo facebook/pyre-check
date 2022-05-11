@@ -293,7 +293,7 @@ let create_overrides ~environment ~source =
     |> Map.map ~f:(List.dedup_and_sort ~compare:Reference.compare)
 
 
-let expand_callees callees =
+let expand_overrides callees =
   let rec expand_and_gather expanded = function
     | (Target.Function _ | Target.Method _ | Target.Object _) as real -> real :: expanded
     | Target.Override _ as override ->
