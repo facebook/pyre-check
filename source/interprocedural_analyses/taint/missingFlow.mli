@@ -21,8 +21,9 @@ val add_obscure_models
   initial_models:Model.t Target.Map.t ->
   Model.t Target.Map.t
 
-(* Register models in shared memory for the missing-flows=type analysis. *)
+(* Return the initial set of models, updated for the missing-flows=type analysis. *)
 val add_unknown_callee_models
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   callgraph:Target.t list Target.Map.t ->
-  unit
+  initial_models:AnalysisResult.model_t Target.Map.t ->
+  AnalysisResult.model_t Target.Map.t

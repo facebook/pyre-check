@@ -604,14 +604,6 @@ let initialize
   let initial_models_callables = Target.Map.keys initial_models in
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
-  let () =
-    let keys = FixpointState.KeySet.of_list callables_to_analyze in
-    FixpointState.remove_new keys;
-    FixpointState.remove_old keys;
-    initial_models
-    |> Target.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind)
-    |> Interprocedural.FixpointAnalysis.record_initial_models ~callables:targets ~stubs
-  in
   (* The call graph building depends on initial models for global targets. *)
   let callgraph =
     Service.StaticAnalysis.record_and_merge_call_graph
@@ -620,6 +612,18 @@ let initialize
       ~attribute_targets:(Service.StaticAnalysis.object_targets_from_models initial_models)
       ~call_graph:DependencyGraph.empty_callgraph
       ~source
+  in
+  let initial_models =
+    Target.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind) initial_models
+  in
+  let initial_models =
+    MissingFlow.add_unknown_callee_models ~static_analysis_configuration ~callgraph ~initial_models
+  in
+  let () =
+    let keys = FixpointState.KeySet.of_list callables_to_analyze in
+    FixpointState.remove_new keys;
+    FixpointState.remove_old keys;
+    Interprocedural.FixpointAnalysis.record_initial_models ~callables:targets ~stubs initial_models
   in
   let class_hierarchy_graph = ClassHierarchyGraph.from_source ~environment ~source in
   Interprocedural.IntervalSet.compute_intervals class_hierarchy_graph

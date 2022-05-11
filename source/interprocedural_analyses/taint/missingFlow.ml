@@ -97,13 +97,14 @@ let add_obscure_models
 let add_unknown_callee_models
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
     ~callgraph
+    ~initial_models
   =
   let find_missing_flows =
     find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
   in
   match find_missing_flows with
   | Some Type ->
-      Log.info "Recording models for unknown callees in shared memory...";
+      Log.info "Initializing models for unknown callees...";
       let gather_unknown_callees ~key:_ ~data:callees unknown_callees =
         List.fold
           ~init:unknown_callees
@@ -117,11 +118,8 @@ let add_unknown_callee_models
       let unknown_callees =
         Target.Map.fold ~init:Target.Set.empty ~f:gather_unknown_callees callgraph
       in
-      let register_model target =
-        FixpointState.add_predefined
-          FixpointState.Epoch.predefined
-          target
-          (unknown_callee_model target)
+      let add_model target models =
+        Target.Map.set models ~key:target ~data:(unknown_callee_model target)
       in
-      Target.Set.iter register_model unknown_callees
-  | _ -> ()
+      Target.Set.fold add_model unknown_callees initial_models
+  | _ -> initial_models
