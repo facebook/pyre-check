@@ -8,6 +8,7 @@ from typing import ClassVar, Dict, Optional
 
 import dataclasses_json
 
+from .. import dataclasses_merge
 from . import exceptions
 
 
@@ -15,6 +16,7 @@ from . import exceptions
     letter_case=dataclasses_json.LetterCase.SNAKE,
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
+@dataclasses_merge.dataclass_merge
 @dataclasses.dataclass(frozen=True)
 class IdeFeatures:
     hover_enabled: Optional[bool] = None
@@ -25,23 +27,6 @@ class IdeFeatures:
     DEFAULT_FIND_SYMBOLS_ENABLED: ClassVar[bool] = False
 
     @staticmethod
-    def merge(base: "IdeFeatures", override: "IdeFeatures") -> "IdeFeatures":
-        override_hover_enabled = override.hover_enabled
-        override_go_to_definition_enabled = override.go_to_definition_enabled
-        override_find_symbols_enabled = override.find_symbols_enabled
-        return IdeFeatures(
-            hover_enabled=override_hover_enabled
-            if override_hover_enabled is not None
-            else base.hover_enabled,
-            go_to_definition_enabled=override_go_to_definition_enabled
-            if override_go_to_definition_enabled is not None
-            else base.go_to_definition_enabled,
-            find_symbols_enabled=override_find_symbols_enabled
-            if override_find_symbols_enabled is not None
-            else base.find_symbols_enabled,
-        )
-
-    @staticmethod
     def merge_optional(
         base: "Optional[IdeFeatures]", override: "Optional[IdeFeatures]"
     ) -> "Optional[IdeFeatures]":
@@ -49,6 +34,7 @@ class IdeFeatures:
             return base
         if base is None:
             return override
+        # pyre-ignore[16]: Pyre does not understand `dataclass_merge`
         return IdeFeatures.merge(base, override)
 
     @staticmethod

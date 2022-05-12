@@ -6,7 +6,10 @@
 import dataclasses
 from typing import Dict, Optional
 
+from .. import dataclasses_merge
 
+
+@dataclasses_merge.dataclass_merge
 @dataclasses.dataclass(frozen=True)
 class SharedMemory:
     heap_size: Optional[int] = None

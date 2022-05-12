@@ -7,6 +7,7 @@ import dataclasses
 import platform
 from typing import Dict, Generic, Optional, TypeVar
 
+from .. import dataclasses_merge
 from .exceptions import InvalidConfiguration
 
 T = TypeVar("T")
@@ -20,6 +21,7 @@ PLATFORM_MAPPING = {
 }
 
 
+@dataclasses_merge.dataclass_merge
 @dataclasses.dataclass(frozen=True)
 class PlatformAware(Generic[T]):
     default: Optional[T] = None
@@ -54,7 +56,7 @@ class PlatformAware(Generic[T]):
             return PlatformAware(default=value)
 
     @staticmethod
-    def merge(
+    def merge_optional(
         base: "Optional[PlatformAware[U]]", override: "Optional[PlatformAware[U]]"
     ) -> "Optional[PlatformAware[U]]":
         if base is None:
@@ -62,16 +64,8 @@ class PlatformAware(Generic[T]):
         elif override is None:
             return base
         else:
-            windows = override.windows
-            macos = override.macos
-            linux = override.linux
-            # pyre-ignore[7]: Pyre wasn't able to infer the right return type
-            return PlatformAware(
-                default=override.default,
-                windows=windows if windows is not None else base.windows,
-                macos=macos if macos is not None else base.macos,
-                linux=linux if linux is not None else base.linux,
-            )
+            # pyre-ignore[16]: Pyre does not understand `dataclass_merge`
+            return PlatformAware.merge(base, override)
 
     def get(self, key: Optional[str] = None) -> Optional[T]:
         if key is None:
