@@ -26,7 +26,6 @@ if sys.version_info >= (3, 7):
         def __class_getitem__(cls, *args: object) -> Any:
             return cls
 
-
 else:
 
     class Generic(metaclass=GenericMeta):

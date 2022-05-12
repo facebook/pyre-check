@@ -36,7 +36,7 @@ def make_features(x: Tensor[DType, [N]]) -> Tensor[DType, [N, D4]]:
     x2 = torch.unsqueeze(x, 1)
     # return torch.cat([x ** i for i in range(1, POLY_DEGREE+1)], 1)
     r: Tensor[DType, [N, D4]] = torch.cat(
-        [x2 ** i for i in range(1, POLY_DEGREE + 1)], 1
+        [x2**i for i in range(1, POLY_DEGREE + 1)], 1
     )
     return r
 

@@ -102,7 +102,7 @@ class AsyncConnectionTest(testslide.TestCase):
             ):
                 # Try reading ~4MB of data from the input channel, and verify that
                 # `read_until` do not choke.
-                message = b"a" * (2 ** 14) + b"\n"
+                message = b"a" * (2**14) + b"\n"
                 await output_channel.write(message)
                 result = await input_channel.read_until(b"\n")
                 self.assertEqual(message, result)

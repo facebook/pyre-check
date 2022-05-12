@@ -285,7 +285,7 @@ async def connect(
     """
     writer: Optional[BytesWriter] = None
     try:
-        limit = buffer_size if buffer_size is not None else 2 ** 16
+        limit = buffer_size if buffer_size is not None else 2**16
         stream_reader, stream_writer = await asyncio.open_unix_connection(
             str(socket_path), limit=limit
         )

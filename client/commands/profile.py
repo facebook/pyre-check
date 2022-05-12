@@ -115,7 +115,7 @@ class StatisticsOverTime:
             if divider in line:
                 time, size_component = line.split(divider)
                 size_in_megabytes = int(size_component[:-2])
-                size_in_bytes = size_in_megabytes * (10 ** 6)
+                size_in_bytes = size_in_megabytes * (10**6)
                 self._data.append((time, size_in_bytes))
 
     def graph_total_shared_memory_size_over_time(self) -> None:
@@ -147,11 +147,11 @@ class TableStatistics:
     def sort_by_value(items: List[Tuple[str, str]]) -> None:
         def parse(number: str) -> float:
             if number[-1] == "G":
-                return float(number[:-1]) * (10 ** 9)
+                return float(number[:-1]) * (10**9)
             if number[-1] == "M":
-                return float(number[:-1]) * (10 ** 6)
+                return float(number[:-1]) * (10**6)
             if number[-1] == "K":
-                return float(number[:-1]) * (10 ** 3)
+                return float(number[:-1]) * (10**3)
             return float(number)
 
         items.sort(key=lambda x: parse(x[1]), reverse=True)
