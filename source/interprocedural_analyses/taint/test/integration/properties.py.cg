@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+$local_properties?CollidePropertySetterName?collided_property$setter (fun) -> [properties.CollidePropertySetterName::foo (method)]
 $local_properties?function_with_nested_properties$my_property$setter (fun) -> [_test_sink (fun) _test_source (fun) properties.bar (fun)]
 $local_properties?function_with_nested_properties$my_property (fun) -> [properties.foo (fun)]
 properties.$toplevel (fun) -> []
@@ -18,6 +19,11 @@ properties.test_union_property_attribute_source (fun) -> [_test_source (fun) int
 properties.Class::uses_property_but_no_tito_taint (method) -> [_test_source (fun) properties.Class::my_property (override)]
 properties.ClassProperty::my_class_property (method) -> []
 properties.ClassProperty::$class_toplevel (method) -> []
+properties.CollidePropertySetterName::$class_toplevel (method) -> []
+properties.CollidePropertySetterName::collided_property (method) -> [$local_properties?CollidePropertySetterName?collided_property$setter (fun)]
+properties.CollidePropertySetterName::collided_property$setter (method) -> [properties.CollidePropertySetterName::bar (method)]
+properties.CollidePropertySetterName::bar (method) -> []
+properties.CollidePropertySetterName::foo (method) -> []
 properties.Derived::uses_property_but_no_tito_taint (method) -> [_test_source (fun) properties.Class::my_property (method)]
 properties.Derived::$class_toplevel (method) -> []
 properties.DerivedTaintedSetter::$class_toplevel (method) -> []
