@@ -1870,8 +1870,8 @@ def run(
                 remote_logging,
             )
         )
-    except Exception as error:
-        error_message = str(error)
+    except Exception:
+        error_message = traceback.format_exc()
         return 1
     finally:
         _log_lsp_event(
