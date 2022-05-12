@@ -158,10 +158,6 @@ class PartialConfigurationTest(unittest.TestCase):
                 ).buck_mode
             )
 
-        self.assertEqual(
-            PartialConfiguration.from_string(json.dumps({"disabled": True})).disabled,
-            True,
-        )
         self.assertListEqual(
             list(
                 PartialConfiguration.from_string(
@@ -471,7 +467,6 @@ class PartialConfigurationTest(unittest.TestCase):
                 }
             )
         )
-        assert_raises(json.dumps({"disabled": "False"}))
         assert_raises(json.dumps({"do_not_ignore_errors_in": "abc"}))
         assert_raises(json.dumps({"dot_pyre_directory": {}}))
         assert_raises(json.dumps({"exclude": 42}))
@@ -601,7 +596,6 @@ class ConfigurationTest(testslide.TestCase):
             partial_configuration=PartialConfiguration(
                 binary="binary",
                 buck_mode=PlatformAware.from_json("opt", "buck_mode"),
-                disabled=None,
                 do_not_ignore_errors_in=["foo"],
                 dot_pyre_directory=None,
                 excludes=["exclude"],
@@ -636,7 +630,6 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.binary, "binary")
         self.assertIsNotNone(configuration.buck_mode)
         self.assertEqual(configuration.buck_mode.get(), "opt")
-        self.assertEqual(configuration.disabled, False)
         self.assertListEqual(list(configuration.do_not_ignore_errors_in), ["foo"])
         self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))
         self.assertListEqual(list(configuration.excludes), ["exclude"])
