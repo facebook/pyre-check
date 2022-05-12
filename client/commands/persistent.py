@@ -1756,20 +1756,30 @@ class PyreServerHandler(connection.BackgroundTask):
             self.server_start_options_reader, self.remote_logging
         )
         session_timer = timer.Timer()
+        error_message: Optional[str] = None
         try:
             LOG.info(f"Starting Pyre server from configuration: {server_start_options}")
             await self._run(server_start_options)
-        except Exception:
+        except asyncio.CancelledError:
+            error_message = "Explicit termination request"
+            raise
+        except BaseException:
+            error_message = traceback.format_exc()
+            raise
+        finally:
             _log_lsp_event(
                 remote_logging=self.remote_logging,
                 event=LSPEvent.DISCONNECTED,
                 integers={"duration": int(session_timer.stop_in_millisecond())},
                 normals={
                     **self._auxiliary_logging_info(server_start_options),
-                    "exception": traceback.format_exc(),
+                    **(
+                        {"exception": error_message}
+                        if error_message is not None
+                        else {}
+                    ),
                 },
             )
-            raise
 
 
 async def run_persistent(
