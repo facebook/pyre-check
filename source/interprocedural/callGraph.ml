@@ -1433,9 +1433,11 @@ let resolve_attribute_access_properties
         let to_setter target =
           match target with
           | Target.Override { Target.class_name; method_name } ->
-              Target.Override { Target.class_name; method_name = method_name ^ "$setter" }
+              Target.Override
+                { Target.class_name; method_name = method_name ^ Target.property_setter_suffix }
           | Target.Method { Target.class_name; method_name } ->
-              Target.Method { Target.class_name; method_name = method_name ^ "$setter" }
+              Target.Method
+                { Target.class_name; method_name = method_name ^ Target.property_setter_suffix }
           | _ -> target
         in
         List.map property_targets ~f:to_setter

@@ -48,7 +48,8 @@ let test_get_module_and_definition context =
       def foo(self, value: int) -> None:
         self._foo = value
   |}
-    ~target:(Target.Method { class_name = "test.C"; method_name = "foo$setter" })
+    ~target:
+      (Target.Method { class_name = "test.C"; method_name = "foo" ^ Target.property_setter_suffix })
     ~expected:
       (Some
          ( Reference.create "test",

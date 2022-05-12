@@ -637,7 +637,11 @@ let test_call_graph_of_define context =
                      CallTarget.create
                        ~implicit_self:true
                        ~return_type:(Some ReturnType.none)
-                       (Target.Method { class_name = "test.C"; method_name = "p$setter" });
+                       (Target.Method
+                          {
+                            class_name = "test.C";
+                            method_name = "p" ^ Target.property_setter_suffix;
+                          });
                    ];
                  global_targets = [];
                  is_attribute = false;
@@ -1321,7 +1325,11 @@ let test_call_graph_of_define context =
                      CallTarget.create
                        ~implicit_self:true
                        ~return_type:(Some ReturnType.none)
-                       (Target.Method { class_name = "test.C"; method_name = "p$setter" });
+                       (Target.Method
+                          {
+                            class_name = "test.C";
+                            method_name = "p" ^ Target.property_setter_suffix;
+                          });
                    ];
                  global_targets = [];
                  is_attribute = false;

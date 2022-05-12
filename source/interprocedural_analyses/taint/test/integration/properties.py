@@ -244,8 +244,8 @@ class CollidePropertySetterName:
 
     @property
     def collided_property(self):
-        # The target name of the inner function collides with the property setter
-        # of the outer function. See the dumped call graph.
+        # Please ensure the target name of the inner function does not
+        # collide with the property setter of the outer function.
         def setter(value):
             self.foo()
 

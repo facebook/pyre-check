@@ -101,7 +101,7 @@ let create_method_name ?(suffix = "") reference =
 
 let create_function_name ?(suffix = "") reference = Reference.show reference ^ suffix
 
-let property_setter_suffix = "$setter"
+let property_setter_suffix = "@setter"
 
 let create_method reference = Method (create_method_name reference)
 

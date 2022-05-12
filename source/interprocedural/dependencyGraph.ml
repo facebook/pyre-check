@@ -256,7 +256,7 @@ let create_overrides ~environment ~source =
         else
           let method_name =
             if Define.is_property_setter child_method then
-              method_name ^ "$setter"
+              method_name ^ Target.property_setter_suffix
             else
               method_name
           in

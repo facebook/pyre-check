@@ -27,6 +27,8 @@ type t =
   | Object of string
 [@@deriving sexp, compare, hash, eq]
 
+val property_setter_suffix : string
+
 (* Pretty printers. *)
 
 val pp_internal : Format.formatter -> t -> unit
