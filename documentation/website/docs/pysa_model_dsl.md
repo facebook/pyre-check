@@ -8,8 +8,8 @@ We have started developing a model Domain Specific Language (DSL) that can be
 used to solve many of the same problems as [model
 generators](pysa_precollectors.md), while still keeping model information in
 `.pysa` files. The DSL aims to provide a compact way to generate models for all
-code that matches a given query. This allows users to avoid writing hundereds or
-thousand of models.
+code that matches a given query. This allows users to avoid writing hundreds or
+thousands of models.
 
 ## Basics
 
