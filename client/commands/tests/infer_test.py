@@ -59,14 +59,12 @@ class ArgumentTest(testslide.TestCase):
                         [search_path.SimpleElement("source")]
                     ),
                 ),
-                ignore_infer=["/ignore"],
                 paths_to_modify={Path("/derp3.py")},
             ),
             [
                 ("log_path", "/log"),
                 ("global_root", "/project"),
                 ("source_paths", {"kind": "simple", "paths": ["source"]}),
-                ("ignore_infer", ["/ignore"]),
                 ("paths_to_modify", ["/derp3.py"]),
             ],
         )
@@ -87,7 +85,6 @@ class InferTest(testslide.TestCase):
                 root_path,
                 {
                     "ignore_all_errors": ["blocks", "nonexistent"],
-                    "ignore_infer": ["ignores"],
                     "exclude": ["exclude"],
                     "extensions": [".ext"],
                     "workers": 42,
@@ -138,7 +135,6 @@ class InferTest(testslide.TestCase):
                             [search_path.SimpleElement(str(root_path / "local/src"))]
                         ),
                     ),
-                    ignore_infer=[str(root_path / "ignores")],
                     paths_to_modify={Path("path/to/module.py")},
                 ),
             )

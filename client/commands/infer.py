@@ -37,14 +37,11 @@ class Arguments:
     """
 
     base_arguments: backend_arguments.BaseArguments
-
-    ignore_infer: Sequence[str] = dataclasses.field(default_factory=list)
     paths_to_modify: Optional[Set[Path]] = None
 
     def serialize(self) -> Dict[str, Any]:
         return {
             **self.base_arguments.serialize(),
-            "ignore_infer": self.ignore_infer,
             **(
                 {}
                 if self.paths_to_modify is None
@@ -763,7 +760,6 @@ def create_infer_arguments(
             search_paths=configuration.expand_and_get_existent_search_paths(),
             source_paths=source_paths,
         ),
-        ignore_infer=configuration.get_existent_ignore_infer_paths(),
         paths_to_modify=infer_arguments.paths_to_modify,
     )
 

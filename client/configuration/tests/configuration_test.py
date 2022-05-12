@@ -477,7 +477,6 @@ class PartialConfigurationTest(unittest.TestCase):
         assert_raises(json.dumps({"exclude": 42}))
         assert_raises(json.dumps({"extensions": 42}))
         assert_raises(json.dumps({"ignore_all_errors": [1, 2, 3]}))
-        assert_raises(json.dumps({"ignore_infer": [False, "bc"]}))
         assert_raises(json.dumps({"logger": []}))
         assert_raises(json.dumps({"oncall": []}))
         assert_raises(json.dumps({"workers": "abc"}))
@@ -518,12 +517,6 @@ class PartialConfigurationTest(unittest.TestCase):
             PartialConfiguration(ignore_all_errors=["foo", "bar"])
             .expand_relative_paths("baz")
             .ignore_all_errors,
-            ["baz/foo", "baz/bar"],
-        )
-        self.assertEqual(
-            PartialConfiguration(ignore_infer=["foo", "bar"])
-            .expand_relative_paths("baz")
-            .ignore_infer,
             ["baz/foo", "baz/bar"],
         )
         self.assertEqual(
@@ -619,7 +612,6 @@ class ConfigurationTest(testslide.TestCase):
                     find_symbols_enabled=True,
                 ),
                 ignore_all_errors=["bar"],
-                ignore_infer=["baz"],
                 logger="logger",
                 number_of_workers=3,
                 oncall="oncall",
@@ -658,7 +650,6 @@ class ConfigurationTest(testslide.TestCase):
             ),
         )
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
-        self.assertListEqual(list(configuration.ignore_infer), ["baz"])
         self.assertEqual(configuration.logger, "logger")
         self.assertEqual(configuration.number_of_workers, 3)
         self.assertEqual(configuration.oncall, "oncall")
@@ -805,25 +796,6 @@ class ConfigurationTest(testslide.TestCase):
                         ),
                     ),
                 ).get_existent_unwatched_dependency()
-            )
-
-    def test_existent_ignore_infer(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()
-            ensure_directories_exists(root_path, ["a", "b/c"])
-
-            self.assertCountEqual(
-                Configuration(
-                    project_root=str(root_path),
-                    dot_pyre_directory=Path(".pyre"),
-                    ignore_infer=[
-                        str(root_path / "a"),
-                        str(root_path / "x"),
-                        str(root_path / "b/c"),
-                        str(root_path / "y/z"),
-                    ],
-                ).get_existent_ignore_infer_paths(),
-                [str(root_path / "a"), str(root_path / "b/c")],
             )
 
     def test_existent_do_not_ignore_errors(self) -> None:

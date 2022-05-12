@@ -172,10 +172,6 @@ class PartialConfiguration:
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
     )
-    ignore_infer: Sequence[str] = field(
-        default_factory=list,
-        metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
-    )
     isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
@@ -262,7 +258,6 @@ class PartialConfiguration:
             extensions=[],
             ide_features=ide_features,
             ignore_all_errors=[],
-            ignore_infer=[],
             isolation_prefix=arguments.isolation_prefix,
             logger=arguments.logger,
             number_of_workers=arguments.number_of_workers,
@@ -491,7 +486,6 @@ class PartialConfiguration:
                 ignore_all_errors=ensure_string_list(
                     configuration_json, "ignore_all_errors"
                 ),
-                ignore_infer=ensure_string_list(configuration_json, "ignore_infer"),
                 isolation_prefix=ensure_option_type(
                     configuration_json, "isolation_prefix", str
                 ),
@@ -593,9 +587,6 @@ class PartialConfiguration:
             ignore_all_errors=[
                 expand_relative_path(root, path) for path in self.ignore_all_errors
             ],
-            ignore_infer=[
-                expand_relative_path(root, path) for path in self.ignore_infer
-            ],
             isolation_prefix=self.isolation_prefix,
             logger=logger,
             number_of_workers=self.number_of_workers,
@@ -645,7 +636,6 @@ class Configuration:
     extensions: Sequence[ExtensionElement] = field(default_factory=list)
     ide_features: Optional[ide_features_module.IdeFeatures] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
-    ignore_infer: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
     logger: Optional[str] = None
     number_of_workers: Optional[int] = None
@@ -692,7 +682,6 @@ class Configuration:
             extensions=partial_configuration.extensions,
             ide_features=partial_configuration.ide_features,
             ignore_all_errors=partial_configuration.ignore_all_errors,
-            ignore_infer=partial_configuration.ignore_infer,
             isolation_prefix=partial_configuration.isolation_prefix,
             logger=partial_configuration.logger,
             number_of_workers=partial_configuration.number_of_workers,
@@ -763,7 +752,6 @@ class Configuration:
             "excludes": list(self.excludes),
             "extensions": list(self.extensions),
             "ignore_all_errors": list(self.ignore_all_errors),
-            "ignore_infer": list(self.ignore_infer),
             **(
                 {"isolation_prefix": isolation_prefix}
                 if isolation_prefix is not None
@@ -885,15 +873,6 @@ class Configuration:
             )
         else:
             return []
-
-    def get_existent_ignore_infer_paths(self) -> List[str]:
-        existent_paths = []
-        for path in self.ignore_infer:
-            if os.path.exists(path):
-                existent_paths.append(path)
-            else:
-                LOG.warn(f"Filtering out nonexistent path in `ignore_infer`: {path}")
-        return existent_paths
 
     def get_existent_do_not_ignore_errors_in_paths(self) -> List[str]:
         """
