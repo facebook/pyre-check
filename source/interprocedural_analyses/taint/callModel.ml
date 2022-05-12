@@ -11,8 +11,8 @@ open Ast
 open Interprocedural
 open Domains
 
-let at_callsite ~resolution ~call_target ~arguments =
-  match Interprocedural.FixpointState.get_model call_target with
+let at_callsite ~resolution ~get_callee_model ~call_target ~arguments =
+  match get_callee_model call_target with
   | None -> Model.obscure_model
   | Some model ->
       let expand_model_via_features
@@ -32,18 +32,7 @@ let at_callsite ~resolution ~call_target ~arguments =
         in
         { Model.forward; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
       in
-      let taint_model =
-        Interprocedural.AnalysisResult.get_model TaintResult.kind model
-        |> Option.value ~default:Model.empty_model
-        |> expand_model_via_features
-      in
-      let taint_model =
-        if model.is_obscure then
-          { taint_model with Model.modes = Model.ModeSet.add Obscure taint_model.modes }
-        else
-          taint_model
-      in
-      taint_model
+      expand_model_via_features model
 
 
 module ArgumentMatches = struct

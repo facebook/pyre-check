@@ -29,5 +29,5 @@ val apply_all_rules
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.HashSet.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  models:Taint.Model.t Interprocedural.Target.Map.t ->
-  Taint.Model.t Interprocedural.Target.Map.t
+  models:Taint.Registry.t ->
+  Taint.Registry.t

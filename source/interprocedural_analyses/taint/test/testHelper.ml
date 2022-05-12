@@ -43,7 +43,6 @@ type expectation = {
   tito_parameters: parameter_taint list;
   returns: Sources.t list;
   errors: error_expectation list;
-  obscure: bool option;
   global_sanitizer: Domains.Sanitize.t;
   parameters_sanitizer: Domains.Sanitize.t;
   return_sanitizer: Domains.Sanitize.t;
@@ -58,7 +57,6 @@ let outcome
     ?(tito_parameters = [])
     ?(returns = [])
     ?(errors = [])
-    ?obscure
     ?(global_sanitizer = Domains.Sanitize.empty)
     ?(parameters_sanitizer = Domains.Sanitize.empty)
     ?(return_sanitizer = Domains.Sanitize.empty)
@@ -74,25 +72,12 @@ let outcome
     tito_parameters;
     returns;
     errors;
-    obscure;
     global_sanitizer;
     parameters_sanitizer;
     return_sanitizer;
     parameter_sanitizers;
     analysis_modes;
   }
-
-
-let get_model callable =
-  let error =
-    Base.Error.of_exn
-      (OUnitTest.OUnit_failure (Format.asprintf "model not found for %a" Target.pp callable))
-  in
-  let model =
-    FixpointState.get_model callable |> Option.value_exn ?here:None ~error ?message:None
-  in
-  ( model |> AnalysisResult.get_model Taint.Result.kind |> Option.value ~default:Model.empty_model,
-    model.is_obscure )
 
 
 let create_callable kind define_name =
@@ -106,17 +91,17 @@ let create_callable kind define_name =
 
 
 let check_expectation
-    ?(get_model = get_model)
+    ~get_model
+    ~get_errors
     ~environment
     {
+      kind;
       define_name;
       source_parameters;
       sink_parameters;
       tito_parameters;
       returns;
       errors;
-      kind;
-      obscure;
       global_sanitizer;
       parameters_sanitizer;
       return_sanitizer;
@@ -157,7 +142,11 @@ let check_expectation
         String.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
-  let { Model.backward; forward; sanitizers; modes }, is_obscure = get_model callable in
+  let { Model.backward; forward; sanitizers; modes } =
+    Option.value_exn
+      ~message:(Format.asprintf "Model not found for %a" Target.pp callable)
+      (get_model callable)
+  in
   assert_equal ~printer:Model.ModeSet.show modes expected_analysis_modes;
   let sink_taint_map =
     Domains.BackwardState.fold
@@ -267,17 +256,6 @@ let check_expectation
     List.map ~f:(fun { name; sanitize } -> name, sanitize) parameter_sanitizers
     |> String.Map.of_alist_exn
   in
-  (* Check obscure *)
-  let () =
-    match obscure with
-    | None -> ()
-    | Some obscure ->
-        assert_equal
-          obscure
-          is_obscure
-          ~msg:(Format.sprintf "Obscure for %s" define_name)
-          ~printer:Bool.to_string
-  in
   (* Check sources. *)
   let returned_sources =
     Domains.ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
@@ -378,19 +356,13 @@ let check_expectation
 
   (* Check errors *)
   let actual_errors =
-    FixpointState.get_result callable
-    |> AnalysisResult.get_result Taint.Result.kind
-    >>| List.map ~f:Issue.to_error
-    |> Option.value ~default:[]
-  in
-  let actual_errors =
     let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
-    List.map
-      actual_errors
-      ~f:
-        (Error.instantiate
-           ~show_error_traces:true
-           ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment))
+    let to_analysis_error =
+      Error.instantiate
+        ~show_error_traces:true
+        ~lookup:(AstEnvironment.ReadOnly.get_relative ast_environment)
+    in
+    get_errors callable |> List.map ~f:Issue.to_error |> List.map ~f:to_analysis_error
   in
   assert_errors errors actual_errors
 
@@ -442,7 +414,7 @@ let get_initial_models ~context =
        "The models shouldn't have any parsing errors:\n%s."
        (List.map errors ~f:ModelVerificationError.display |> String.concat ~sep:"\n"))
     (List.is_empty errors);
-  Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
+  models
 
 
 type test_environment = {
@@ -450,7 +422,10 @@ type test_environment = {
   callgraph: DependencyGraph.callgraph;
   overrides: DependencyGraph.t;
   callables_to_analyze: Target.t list;
-  initial_models_callables: Target.t list;
+  initial_callables: Target.t list;
+  stubs: Target.t list;
+  override_targets: Target.t list;
+  initial_models: Registry.t;
   environment: TypeEnvironment.ReadOnly.t;
 }
 
@@ -525,7 +500,7 @@ let initialize
            callable, define.Node.value)
     |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
   in
-  let callables = List.map ~f:fst callables in
+  let initial_callables = List.map ~f:fst callables in
   let stubs = List.map ~f:fst stubs in
   let user_models, skip_overrides =
     let models_source =
@@ -536,14 +511,14 @@ let initialize
       | models_source, _ -> models_source
     in
     match models_source with
-    | None -> Target.Map.empty, Ast.Reference.Set.empty
+    | None -> Registry.empty, Ast.Reference.Set.empty
     | Some source ->
         let { ModelParser.models; errors; skip_overrides; queries = rules } =
           ModelParser.parse
             ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~configuration:taint_configuration
-            ~callables:(Some (Target.HashSet.of_list callables))
+            ~callables:(Some (Target.HashSet.of_list initial_callables))
             ~stubs:(Target.HashSet.of_list stubs)
             ()
         in
@@ -563,7 +538,7 @@ let initialize
             ~rules
             ~models
             ~callables:
-              (List.filter_map (List.rev_append stubs callables) ~f:(function
+              (List.filter_map (List.rev_append stubs initial_callables) ~f:(function
                   | Target.Function _ as callable -> Some callable
                   | Target.Method _ as callable -> Some callable
                   | _ -> None))
@@ -582,13 +557,7 @@ let initialize
         models, skip_overrides
   in
   let inferred_models = ClassModels.infer ~environment ~user_models in
-  let initial_models =
-    Target.Map.merge inferred_models user_models ~f:(fun ~key:_ -> function
-      | `Both (left, right) -> Some (Model.join left right)
-      | `Left model
-      | `Right model ->
-          Some model)
-  in
+  let initial_models = Registry.merge inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
   let overrides =
     let overrides =
@@ -599,9 +568,8 @@ let initialize
     DependencyGraph.from_overrides overrides
   in
 
-  let targets = List.rev_append (Target.Map.keys overrides) callables in
-  let callables_to_analyze = targets in
-  let initial_models_callables = Target.Map.keys initial_models in
+  let override_targets = Target.Map.keys overrides in
+  let callables_to_analyze = List.rev_append override_targets initial_callables in
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
   (* The call graph building depends on initial models for global targets. *)
@@ -609,21 +577,12 @@ let initialize
     Service.StaticAnalysis.record_and_merge_call_graph
       ~static_analysis_configuration
       ~environment
-      ~attribute_targets:(Service.StaticAnalysis.object_targets_from_models initial_models)
+      ~attribute_targets:(Registry.object_targets initial_models)
       ~call_graph:DependencyGraph.empty_callgraph
       ~source
   in
   let initial_models =
-    Target.Map.map ~f:(AnalysisResult.make_model Taint.Result.kind) initial_models
-  in
-  let initial_models =
     MissingFlow.add_unknown_callee_models ~static_analysis_configuration ~callgraph ~initial_models
-  in
-  let () =
-    let keys = FixpointState.KeySet.of_list callables_to_analyze in
-    FixpointState.remove_new keys;
-    FixpointState.remove_old keys;
-    Interprocedural.FixpointAnalysis.record_initial_models ~callables:targets ~stubs initial_models
   in
   let class_hierarchy_graph = ClassHierarchyGraph.from_source ~environment ~source in
   Interprocedural.IntervalSet.compute_intervals class_hierarchy_graph
@@ -633,6 +592,9 @@ let initialize
     callgraph;
     overrides;
     callables_to_analyze;
-    initial_models_callables;
+    initial_callables;
+    stubs;
+    override_targets;
+    initial_models;
     environment;
   }

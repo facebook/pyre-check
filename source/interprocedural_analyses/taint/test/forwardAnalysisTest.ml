@@ -39,7 +39,7 @@ let assert_taint ?models ?models_source ~context source expect =
   let models =
     models >>| Test.trim_extra_indentation |> Option.value ~default:TestHelper.initial_models_source
   in
-  let models =
+  let initial_models =
     let { ModelParser.models; errors; _ } =
       ModelParser.parse
         ~resolution:(TypeCheck.resolution global_resolution (module TypeCheck.DummyContext))
@@ -49,22 +49,18 @@ let assert_taint ?models ?models_source ~context source expect =
         ~stubs:(Target.HashSet.create ())
         ()
     in
-    assert_bool "Error while parsing models." (List.is_empty errors);
-    Target.Map.map models ~f:(AnalysisResult.make_model Taint.Result.kind)
+    let () = assert_bool "Error while parsing models." (List.is_empty errors) in
+    models
   in
-  let () = FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[] models in
   let defines = source |> Preprocessing.defines |> List.rev in
-  let () =
-    List.map ~f:Target.create defines |> FixpointState.KeySet.of_list |> FixpointState.remove_new
-  in
-  let analyze_and_store_in_order define =
+  let analyze_and_store_in_order models define =
     let call_target = Target.create define in
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let call_graph_of_define =
       CallGraph.call_graph_of_define
         ~static_analysis_configuration
         ~environment:read_only_environment
-        ~attribute_targets:(Service.StaticAnalysis.object_targets_from_models models)
+        ~attribute_targets:(Registry.object_targets models)
         ~qualifier
         ~define:(Ast.Node.value define)
     in
@@ -75,15 +71,16 @@ let assert_taint ?models ?models_source ~context source expect =
         ~qualifier
         ~define
         ~call_graph_of_define
+        ~get_callee_model:(Registry.get models)
         ~existing_model:Model.empty_model
     in
     let model = { Model.empty_model with forward } in
-    AnalysisResult.empty_model
-    |> AnalysisResult.with_model Taint.Result.kind model
-    |> FixpointState.add_predefined FixpointState.Epoch.predefined call_target
+    Registry.set models ~target:call_target ~model
   in
-  let () = List.iter ~f:analyze_and_store_in_order defines in
-  List.iter ~f:(check_expectation ~environment:read_only_environment) expect;
+  let models = List.fold ~f:analyze_and_store_in_order ~init:initial_models defines in
+  let get_model = Registry.get models in
+  let get_errors _ = [] in
+  List.iter ~f:(check_expectation ~environment:read_only_environment ~get_model ~get_errors) expect;
   TypeEnvironment.invalidate environment [qualifier]
 
 
@@ -98,7 +95,9 @@ let test_no_model context =
       [outcome ~kind:`Function "does_not_exist"]
   in
   assert_raises
-    (OUnitTest.OUnit_failure "model not found for (Function \"does_not_exist\")")
+    ("Model not found for (Function \"does_not_exist\")"
+    |> Base.Error.of_string
+    |> Base.Error.to_exn)
     assert_no_model
 
 
@@ -927,7 +926,9 @@ let test_string context =
 let test_ternary context =
   assert_taint
     ~context
-    ~models:{|
+    ~models:
+      {|
+       def _test_source() -> TaintSource[Test]: ...
        django.http.Request.GET: TaintSource[UserControlled] = ...
     |}
     {|
@@ -1011,7 +1012,9 @@ let test_yield context =
 let test_construction context =
   assert_taint
     ~context
-    ~models:{|
+    ~models:
+      {|
+      def _test_source() -> TaintSource[Test]: ...
       def qualifier.Data.__init__(self, capture: TaintInTaintOut): ...
     |}
     {|
@@ -1069,6 +1072,7 @@ let test_tito_side_effects context =
     ~context
     ~models:
       {|
+      def _test_source() -> TaintSource[Test]: ...
       def models.change_arg0(arg0, arg1: TaintInTaintOut[Updates[arg0]]): ...
       def models.change_arg1(arg0: TaintInTaintOut[Updates[arg1]], arg1): ...
       def qualifier.MyList.append(self, arg: TaintInTaintOut[Updates[self]]): ...
@@ -1134,6 +1138,7 @@ let test_taint_in_taint_out_transform context =
     ~context
     ~models:
       {|
+      def _test_source() -> TaintSource[Test]: ...
       def models.test_transform(arg: TaintInTaintOut[Transform[TestTransform]]): ...
     |}
     ~models_source:{|
@@ -1166,6 +1171,7 @@ let test_taint_in_taint_out_transform context =
     ~context
     ~models:
       {|
+      def _test_source() -> TaintSource[Test]: ...
       def models.test_transform(arg: TaintInTaintOut[Transform[TestTransform]]): ...
       def models.demo_transform(arg: TaintInTaintOut[Transform[DemoTransform]]): ...
     |}
@@ -1205,6 +1211,7 @@ let test_taint_in_taint_out_transform context =
     ~context
     ~models:
       {|
+      def _test_source() -> TaintSource[Test]: ...
       def models.test_transform(arg: TaintInTaintOut[Transform[TestTransform]]): ...
       def models.demo_transform(arg: TaintInTaintOut[Transform[DemoTransform]]): ...
     |}

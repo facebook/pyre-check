@@ -17,5 +17,6 @@ val run
   qualifier:Reference.t ->
   define:Define.t Node.t ->
   call_graph_of_define:Interprocedural.CallGraph.DefineCallGraph.t ->
+  get_callee_model:(Interprocedural.Target.t -> Model.t option) ->
   existing_model:Model.t ->
   Model.Forward.t * Issue.t list * triggered_sinks

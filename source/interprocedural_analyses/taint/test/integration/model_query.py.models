@@ -16,11 +16,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -53,7 +49,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Global",
       "callee": "Obj{model_query.AttributeTestClass3.instance}",
@@ -80,11 +76,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -117,7 +109,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Global",
       "callee": "Obj{model_query.AttributeTestClass3.instance}",
@@ -464,6 +456,32 @@
 {
   "kind": "model",
   "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "model_query.AttributeTestClass1.__init__",
     "tito": [
       {
@@ -779,11 +797,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -837,11 +851,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -853,7 +863,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -874,11 +884,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -933,11 +939,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -949,7 +951,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -970,11 +972,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1029,11 +1027,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1045,7 +1039,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1066,11 +1060,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1125,11 +1115,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1141,7 +1127,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1162,11 +1148,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1218,11 +1200,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1234,7 +1212,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1255,11 +1233,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1313,11 +1287,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1329,7 +1299,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1350,11 +1320,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1406,11 +1372,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1422,7 +1384,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1786,11 +1748,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1842,11 +1800,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1858,7 +1812,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1907,11 +1861,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -1923,7 +1873,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1944,11 +1894,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -2003,11 +1949,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -2019,7 +1961,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -2108,11 +2050,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -2128,11 +2066,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -2156,11 +2090,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",
@@ -2171,11 +2101,7 @@
           },
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "model_query.py",

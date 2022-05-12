@@ -47,14 +47,12 @@ let unknown_callee_model _ =
          ~path:[]
          local_return
   in
-  AnalysisResult.make_model
-    TaintResult.kind
-    {
-      Model.forward = Model.Forward.empty;
-      backward = { sink_taint; taint_in_taint_out };
-      sanitizers = Model.Sanitizers.empty;
-      modes = Model.ModeSet.singleton Model.Mode.SkipAnalysis;
-    }
+  {
+    Model.forward = Model.Forward.empty;
+    backward = { sink_taint; taint_in_taint_out };
+    sanitizers = Model.Sanitizers.empty;
+    modes = Model.ModeSet.singleton Model.Mode.SkipAnalysis;
+  }
 
 
 let add_obscure_models
@@ -63,7 +61,7 @@ let add_obscure_models
     ~stubs
     ~initial_models
   =
-  let remove_sinks models = Target.Map.map ~f:Model.remove_sinks models in
+  let remove_sinks models = Registry.map models ~f:Model.remove_sinks in
   let add_obscure_sinks models =
     let resolution =
       Analysis.TypeCheck.resolution
@@ -73,16 +71,16 @@ let add_obscure_models
     in
     let add_obscure_sink models callable =
       let model =
-        Target.Map.find models callable
+        Registry.get models callable
         |> Option.value ~default:Model.empty_model
         |> Model.add_obscure_sink ~resolution ~call_target:callable
         |> Model.remove_obscureness
       in
-      Target.Map.set models ~key:callable ~data:model
+      Registry.set models ~target:callable ~model
     in
     stubs
     |> Hash_set.filter ~f:(fun callable ->
-           Target.Map.find models callable >>| Model.is_obscure |> Option.value ~default:true)
+           Registry.get models callable >>| Model.is_obscure |> Option.value ~default:true)
     |> Hash_set.fold ~f:add_obscure_sink ~init:models
   in
   let find_missing_flows =
@@ -119,7 +117,7 @@ let add_unknown_callee_models
         Target.Map.fold ~init:Target.Set.empty ~f:gather_unknown_callees callgraph
       in
       let add_model target models =
-        Target.Map.set models ~key:target ~data:(unknown_callee_model target)
+        Registry.set models ~target ~model:(unknown_callee_model target)
       in
       Target.Set.fold add_model unknown_callees initial_models
   | _ -> initial_models

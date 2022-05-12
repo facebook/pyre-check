@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val abstract_kind : Interprocedural.AnalysisKind.abstract
-
 val run_taint_analysis
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   build_system:Server.BuildSystem.t ->

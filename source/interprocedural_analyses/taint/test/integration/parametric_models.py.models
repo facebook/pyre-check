@@ -93,11 +93,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "parametric_models.py",
@@ -138,7 +134,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "parametric_models.inferred_sink",
@@ -147,6 +143,19 @@
     },
     "master_handle":
       "parametric_models.test_to_subkind_sink:7002:0:Call|parametric_models.inferred_sink|0|formal(x):dab13191364556881466b8c4df42a47b"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {

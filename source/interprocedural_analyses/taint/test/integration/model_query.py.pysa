@@ -1,3 +1,6 @@
+def _test_sink(arg: TaintSink[Test]): ...
+def _test_source() -> TaintSource[Test]: ...
+
 ModelQuery(
   find = "functions",
   where = [name.matches("foo")],

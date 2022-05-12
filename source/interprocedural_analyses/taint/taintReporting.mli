@@ -9,14 +9,16 @@ open Interprocedural
 module Json = Yojson.Safe
 
 val externalize
-  :  filename_lookup:(Ast.Reference.t -> string option) ->
+  :  fixpoint_state:Fixpoint.t ->
+  filename_lookup:(Ast.Reference.t -> string option) ->
   Target.t ->
-  Issue.t list option ->
+  Issue.t list ->
   Model.t ->
   Yojson.Safe.json list
 
 val fetch_and_externalize
-  :  filename_lookup:(Ast.Reference.t -> string option) ->
+  :  fixpoint_state:Fixpoint.t ->
+  filename_lookup:(Ast.Reference.t -> string option) ->
   Target.t ->
   Yojson.Safe.json list
 
@@ -27,5 +29,5 @@ val report
   callables:Target.Set.t ->
   skipped_overrides:Ast.Reference.t list ->
   fixpoint_timer:Timer.t ->
-  fixpoint_iterations:int option ->
+  fixpoint_state:Fixpoint.t ->
   Yojson.Safe.json list

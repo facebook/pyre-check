@@ -1,3 +1,6 @@
+def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
+def _test_source() -> TaintSource[Test, Via[special_source]]: ...
+
 def add_feature_to_argument.add_feature_to_first(
   first: AddFeatureToArgument[Via[string_concat_lhs]],
   second

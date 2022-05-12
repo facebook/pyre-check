@@ -178,7 +178,7 @@ end
 val get_model_sources : paths:PyrePath.t list -> (PyrePath.t * string) list
 
 type parse_result = {
-  models: Model.t Interprocedural.Target.Map.t;
+  models: Registry.t;
   queries: Internal.ModelQuery.rule list;
   skip_overrides: Ast.Reference.Set.t;
   errors: ModelVerificationError.t list;

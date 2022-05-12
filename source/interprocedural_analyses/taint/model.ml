@@ -176,6 +176,16 @@ module Sanitizers = struct
 
 
   let widen ~iteration:_ ~previous ~next = join previous next
+
+  let reached_fixpoint
+      ~iteration:_
+      ~previous:
+        { global = global_previous; parameters = parameters_previous; roots = roots_previous }
+      ~next:{ global = global_next; parameters = parameters_next; roots = roots_next }
+    =
+    Sanitize.less_or_equal ~left:global_next ~right:global_previous
+    && Sanitize.less_or_equal ~left:parameters_next ~right:parameters_previous
+    && SanitizeRootMap.less_or_equal ~left:roots_next ~right:roots_previous
 end
 
 module Mode = struct
@@ -337,6 +347,8 @@ let widen ~iteration ~previous ~next =
 let reached_fixpoint ~iteration ~previous ~next =
   Forward.reached_fixpoint ~iteration ~previous:previous.forward ~next:next.forward
   && Backward.reached_fixpoint ~iteration ~previous:previous.backward ~next:next.backward
+  && Sanitizers.reached_fixpoint ~iteration ~previous:previous.sanitizers ~next:next.sanitizers
+  && ModeSet.less_or_equal ~left:next.modes ~right:previous.modes
 
 
 let strip_for_callsite

@@ -11,19 +11,19 @@ open Interprocedural
 val is_unknown_callee : Target.t -> bool
 
 (* Model for an unknown callee, with sinks on all parameters, in order to find missing flows. *)
-val unknown_callee_model : Target.t -> AnalysisResult.model_t
+val unknown_callee_model : Target.t -> Model.t
 
 (* Return the initial set of models, updated for the missing-flows=obscure analysis. *)
 val add_obscure_models
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   stubs:Target.HashSet.t ->
-  initial_models:Model.t Target.Map.t ->
-  Model.t Target.Map.t
+  initial_models:Registry.t ->
+  Registry.t
 
 (* Return the initial set of models, updated for the missing-flows=type analysis. *)
 val add_unknown_callee_models
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   callgraph:Target.t list Target.Map.t ->
-  initial_models:AnalysisResult.model_t Target.Map.t ->
-  AnalysisResult.model_t Target.Map.t
+  initial_models:Registry.t ->
+  Registry.t

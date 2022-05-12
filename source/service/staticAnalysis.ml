@@ -582,18 +582,6 @@ let record_overrides_for_qualifiers ~scheduler ~cache ~environment ~skip_overrid
   cap_override_result
 
 
-(* TODO(T117715045): This should go in a proper module that handles a set of models. *)
-let object_targets_from_models models =
-  let objects = Target.HashSet.create () in
-  let add ~key:target ~data:_ =
-    match target with
-    | Target.Object _ -> Hash_set.add objects target
-    | _ -> ()
-  in
-  let () = Target.Map.iteri ~f:add models in
-  objects
-
-
 (* Build the callgraph, a map from caller to callees. The overrides must be computed first because
    we depend on a global shared memory graph to include overrides in the call graph. Without it,
    we'll underanalyze and have an inconsistent fixpoint. *)
@@ -647,18 +635,6 @@ let build_dependency_graph ~callables_with_dependency_information ~callgraph ~ov
       DependencyGraph.prune dependencies ~callables_with_dependency_information
     in
     DependencyGraph.reverse dependencies, pruned_callables
-  in
-
-  (* Create an empty callable for each override target (on each iteration, the framework will update
-     these by joining models for all overrides *)
-  let () =
-    let add_predefined callable =
-      Interprocedural.FixpointState.add_predefined
-        Interprocedural.FixpointState.Epoch.initial
-        callable
-        Interprocedural.AnalysisResult.empty_model
-    in
-    List.iter override_targets ~f:add_predefined
   in
   dependencies, callables_to_analyze, override_targets
 

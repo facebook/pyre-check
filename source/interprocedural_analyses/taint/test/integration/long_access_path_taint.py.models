@@ -65,6 +65,7 @@
               { "has": "first-index" },
               { "first-index": "app_id" },
               { "first-index": "timestamp" },
+              { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
             "decl": null
@@ -140,6 +141,7 @@
               { "has": "first-index" },
               { "first-index": "app_id" },
               { "first-index": "timestamp" },
+              { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
             "decl": null
@@ -427,6 +429,7 @@
               { "has": "first-index" },
               { "first-index": "app_id" },
               { "first-index": "timestamp" },
+              { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
             "tito": [
@@ -500,7 +503,7 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" },
+              { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
             "tito": [

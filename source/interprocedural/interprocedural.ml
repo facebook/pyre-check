@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module AnalysisKind = AnalysisKind
 module FixpointAnalysis = FixpointAnalysis
 module Target = Target
 module CallGraph = CallGraph
@@ -14,8 +13,6 @@ module DecoratorHelper = DecoratorHelper
 module DependencyGraph = DependencyGraph
 module DependencyGraphSharedMemory = DependencyGraphSharedMemory
 module Error = Error
-module FixpointState = FixpointState
-module AnalysisResult = AnalysisResult
 module ClassHierarchyGraph = ClassHierarchyGraph
 module ClassInterval = ClassInterval
 module IntervalSet = IntervalSet

@@ -39,9 +39,11 @@ let get_global_targets ~call_graph ~expression =
   | _ -> []
 
 
-let from_expression ~resolution ~call_graph ~qualifier ~expression ~interval =
+let from_expression ~resolution ~call_graph ~get_callee_model ~qualifier ~expression ~interval =
   let fetch_model ({ CallGraph.CallTarget.target; _ } as call_target) =
-    let model = CallModel.at_callsite ~resolution ~call_target:target ~arguments:[] in
+    let model =
+      CallModel.at_callsite ~resolution ~get_callee_model ~call_target:target ~arguments:[]
+    in
     { Model.WithCallTarget.model; call_target }
   in
   let models = get_global_targets ~call_graph ~expression |> List.map ~f:fetch_model in

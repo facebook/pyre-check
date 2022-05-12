@@ -36,15 +36,6 @@ let initialize_configuration
     ()
 
 
-(* TODO(T117715045): This should go in a generic `registry` module. *)
-let merge_model_maps left right =
-  Target.Map.merge left right ~f:(fun ~key:_ -> function
-    | `Both (left, right) -> Some (Model.join left right)
-    | `Left model
-    | `Right model ->
-        Some model)
-
-
 let join_parse_result
     {
       ModelParser.models = models_left;
@@ -60,7 +51,7 @@ let join_parse_result
     }
   =
   {
-    ModelParser.models = merge_model_maps models_left models_right;
+    ModelParser.models = Registry.merge models_left models_right;
     queries = List.rev_append queries_right queries_left;
     errors = List.rev_append errors_right errors_left;
     skip_overrides = Set.union skip_overrides_left skip_overrides_right;
@@ -96,7 +87,7 @@ let parse_models_and_queries_from_sources
     ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
     ~initial:
       {
-        ModelParser.models = Target.Map.empty;
+        ModelParser.models = Registry.empty;
         queries = [];
         skip_overrides = Ast.Reference.Set.empty;
         errors = [];
@@ -166,12 +157,7 @@ let parse_models_and_queries_from_configuration
         raise (ModelParser.ModelVerificationError errors)
   in
   let class_models = ClassModels.infer ~environment ~user_models in
-  {
-    ModelParser.models = merge_model_maps user_models class_models;
-    queries;
-    skip_overrides;
-    errors;
-  }
+  { ModelParser.models = Registry.merge user_models class_models; queries; skip_overrides; errors }
 
 
 let generate_models_from_queries
@@ -209,151 +195,56 @@ let generate_models_from_queries
     ~models:initial_models
 
 
-(* Registers the Taint analysis with the interprocedural analysis framework. *)
-include Taint.Result.Register (struct
-  include Taint.Result
+let initialize_models ~scheduler ~static_analysis_configuration ~environment ~callables ~stubs =
+  let stubs = Target.HashSet.of_list stubs in
 
-  let initialize_models ~scheduler ~static_analysis_configuration ~environment ~callables ~stubs =
-    let stubs = Target.HashSet.of_list stubs in
-
-    Log.info "Parsing taint models...";
-    let timer = Timer.start () in
-    let { ModelParser.models; queries; skip_overrides; _ } =
-      parse_models_and_queries_from_configuration
-        ~scheduler
-        ~static_analysis_configuration
-        ~environment
-        ~callables:(Some (Target.HashSet.of_list callables))
-        ~stubs
-    in
-    Statistics.performance ~name:"Parsed taint models" ~phase_name:"Parsing taint models" ~timer ();
-
-    let models =
-      match queries with
-      | [] -> models
-      | _ ->
-          Log.info "Generating models from model queries...";
-          let timer = Timer.start () in
-          let models =
-            generate_models_from_queries
-              ~static_analysis_configuration
-              ~scheduler
-              ~environment
-              ~callables
-              ~stubs
-              ~initial_models:models
-              ~taint_configuration:(TaintConfiguration.get ())
-              queries
-          in
-          Statistics.performance
-            ~name:"Generated models from model queries"
-            ~phase_name:"Generating models from model queries"
-            ~timer
-            ();
-          models
-    in
-
-    let models =
-      MissingFlow.add_obscure_models
-        ~static_analysis_configuration
-        ~environment
-        ~stubs
-        ~initial_models:models
-    in
-
-    { Interprocedural.AnalysisResult.initial_models = models; skip_overrides }
-
-
-  let analyze ~environment ~callable ~qualifier ~define ~sanitizers ~modes existing_model =
-    let profiler =
-      if Ast.Statement.Define.dump_perf (Ast.Node.value define) then
-        TaintProfiler.create ()
-      else
-        TaintProfiler.none
-    in
-    let call_graph_of_define =
-      match Interprocedural.CallGraph.SharedMemory.get ~callable with
-      | Some call_graph -> call_graph
-      | None -> Format.asprintf "Missing call graph for `%a`" Target.pp callable |> failwith
-    in
-    let forward, result, triggered_sinks =
-      TaintProfiler.track_duration ~profiler ~name:"Forward analysis" ~f:(fun () ->
-          ForwardAnalysis.run
-            ~profiler
-            ~environment
-            ~qualifier
-            ~define
-            ~call_graph_of_define
-            ~existing_model)
-    in
-    let backward =
-      TaintProfiler.track_duration ~profiler ~name:"Backward analysis" ~f:(fun () ->
-          BackwardAnalysis.run
-            ~profiler
-            ~environment
-            ~qualifier
-            ~define
-            ~call_graph_of_define
-            ~existing_model
-            ~triggered_sinks)
-    in
-    let forward, backward =
-      if Model.ModeSet.contains Model.Mode.SkipAnalysis modes then
-        empty_model.forward, empty_model.backward
-      else
-        forward, backward
-    in
-    let model = { Model.forward; backward; sanitizers; modes } in
-    let model =
-      TaintProfiler.track_duration ~profiler ~name:"Sanitize" ~f:(fun () ->
-          Model.apply_sanitizers model)
-    in
-    TaintProfiler.dump profiler;
-    result, model
-
-
-  let analyze
+  Log.info "Parsing taint models...";
+  let timer = Timer.start () in
+  let { ModelParser.models; queries; skip_overrides; errors } =
+    parse_models_and_queries_from_configuration
+      ~scheduler
+      ~static_analysis_configuration
       ~environment
-      ~callable
-      ~qualifier
-      ~define:
-        ({ Ast.Node.value = { Ast.Statement.Define.signature = { name; _ }; _ }; _ } as define)
-      ~existing
-    =
-    let define_qualifier = Ast.Reference.delocalize name in
-    let open Analysis in
-    let open Ast in
-    let module_reference =
-      let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-      let annotated_global_environment =
-        GlobalResolution.annotated_global_environment global_resolution
-      in
-      (* Pysa inlines decorators when a function is decorated. However, we want issues and models to
-         point to the lines in the module where the decorator was defined, not the module where it
-         was inlined. So, look up the originating module, if any, and use that as the module
-         qualifier. *)
-      InlineDecorator.InlinedNameToOriginalName.get define_qualifier
-      >>= AnnotatedGlobalEnvironment.ReadOnly.get_global_location annotated_global_environment
-      >>| fun { Location.WithModule.module_reference; _ } -> module_reference
-    in
-    let qualifier = Option.value ~default:qualifier module_reference in
-    match existing with
-    | Some ({ Model.modes; _ } as model) when Model.ModeSet.contains Model.Mode.SkipAnalysis modes
-      ->
-        let () = Log.info "Skipping taint analysis of %a" Target.pp_pretty callable in
-        [], model
-    | Some ({ sanitizers; modes; _ } as model) ->
-        analyze ~callable ~environment ~qualifier ~define ~sanitizers ~modes model
-    | None ->
-        analyze
-          ~callable
-          ~environment
-          ~qualifier
-          ~define
-          ~sanitizers:Model.Sanitizers.empty
-          ~modes:Model.ModeSet.empty
-          empty_model
-end)
+      ~callables:(Some (Target.HashSet.of_list callables))
+      ~stubs
+  in
+  Statistics.performance ~name:"Parsed taint models" ~phase_name:"Parsing taint models" ~timer ();
+
+  let models =
+    match queries with
+    | [] -> models
+    | _ ->
+        Log.info "Generating models from model queries...";
+        let timer = Timer.start () in
+        let models =
+          generate_models_from_queries
+            ~static_analysis_configuration
+            ~scheduler
+            ~environment
+            ~callables
+            ~stubs
+            ~initial_models:models
+            ~taint_configuration:(TaintConfiguration.get ())
+            queries
+        in
+        Statistics.performance
+          ~name:"Generated models from model queries"
+          ~phase_name:"Generating models from model queries"
+          ~timer
+          ();
+        models
+  in
+
+  let models =
+    MissingFlow.add_obscure_models
+      ~static_analysis_configuration
+      ~environment
+      ~stubs
+      ~initial_models:models
+  in
+
+  { ModelParser.models; skip_overrides; queries = []; errors }
+
 
 let run_taint_analysis
     ~static_analysis_configuration:
@@ -404,14 +295,13 @@ let run_taint_analysis
         ~qualifiers
     in
 
-    let { Interprocedural.AnalysisResult.initial_models; skip_overrides } =
+    let { ModelParser.models = initial_models; skip_overrides; _ } =
       let { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } =
         initial_callables
       in
-      Interprocedural.FixpointAnalysis.initialize_models
-        abstract_kind
-        ~static_analysis_configuration
+      initialize_models
         ~scheduler
+        ~static_analysis_configuration
         ~environment:(Analysis.TypeEnvironment.read_only environment)
         ~callables:(List.map callables_with_dependency_information ~f:fst)
         ~stubs
@@ -443,14 +333,14 @@ let run_taint_analysis
         ~scheduler
         ~static_analysis_configuration
         ~environment:(Analysis.TypeEnvironment.read_only environment)
-        ~attribute_targets:(Service.StaticAnalysis.object_targets_from_models initial_models)
+        ~attribute_targets:(Registry.object_targets initial_models)
         ~qualifiers
     in
     Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
 
     Log.info "Computing dependencies...";
     let timer = Timer.start () in
-    let dependencies, callables_to_analyze, override_targets =
+    let dependency_graph, callables_to_analyze, override_targets =
       Service.StaticAnalysis.build_dependency_graph
         ~callables_with_dependency_information:
           initial_callables.callables_with_dependency_information
@@ -479,33 +369,27 @@ let run_taint_analysis
       ~timer
       ();
 
-    Log.info "Recording initial models in shared memory...";
-    let timer = Timer.start () in
-    Interprocedural.FixpointAnalysis.record_initial_models
-      ~callables:(List.map initial_callables.callables_with_dependency_information ~f:fst)
-      ~stubs:initial_callables.stubs
-      initial_models;
-    Statistics.performance
-      ~name:"Recorded initial models"
-      ~phase_name:"Recording initial models"
-      ~timer
-      ();
-
     Log.info
       "Analysis fixpoint started for %d overrides and %d functions..."
       (List.length override_targets)
       (List.length callables_to_analyze);
     let callables_to_analyze = List.rev_append override_targets callables_to_analyze in
     let fixpoint_timer = Timer.start () in
-    let fixpoint_iterations =
-      Interprocedural.FixpointAnalysis.compute_fixpoint
+    let fixpoint_state =
+      Taint.Fixpoint.compute
         ~scheduler
-        ~environment:(Analysis.TypeEnvironment.read_only environment)
-        ~analysis:abstract_kind
-        ~dependencies
+        ~type_environment:(Analysis.TypeEnvironment.read_only environment)
+        ~context:
+          { Taint.Fixpoint.Analysis.environment = Analysis.TypeEnvironment.read_only environment }
+        ~dependency_graph
+        ~initial_callables:(List.map initial_callables.callables_with_dependency_information ~f:fst)
+        ~stubs:initial_callables.stubs
         ~filtered_callables:initial_callables.filtered_callables
-        ~all_callables:callables_to_analyze
-        Interprocedural.FixpointState.Epoch.initial
+        ~override_targets
+        ~callables_to_analyze
+        ~initial_models
+        ~max_iterations:100
+        ~epoch:Taint.Fixpoint.Epoch.initial
     in
 
     let filename_lookup path_reference =
@@ -518,7 +402,7 @@ let run_taint_analysis
           PyrePath.get_relative_to_root ~root ~path:(PyrePath.create_absolute full_path)
     in
     let callables =
-      Target.Set.of_list (List.rev_append (Target.Map.keys initial_models) callables_to_analyze)
+      Target.Set.of_list (List.rev_append (Registry.targets initial_models) callables_to_analyze)
     in
     let summary =
       Reporting.report
@@ -528,7 +412,7 @@ let run_taint_analysis
         ~callables
         ~skipped_overrides
         ~fixpoint_timer
-        ~fixpoint_iterations:(Some fixpoint_iterations)
+        ~fixpoint_state
     in
     Yojson.Safe.pretty_to_string (`List summary) |> Log.print "%s"
   with

@@ -1,3 +1,6 @@
+def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
+def _test_source() -> TaintSource[Test, Via[special_source]]: ...
+
 def cross_repository.cross_repository_source(
   source_parameter: CrossRepositoryTaint[
     TaintSource[UserControlled],

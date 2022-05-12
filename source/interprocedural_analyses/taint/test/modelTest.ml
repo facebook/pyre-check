@@ -102,12 +102,9 @@ let assert_model ?source ?rules ?expected_skipped_overrides ~context ~model_sour
         assert_equal ~cmp:Ast.Reference.Set.equal expected_set skip_overrides
     | None -> ()
   end;
-  let get_model callable =
-    let message = Format.asprintf "Model %a missing" Interprocedural.Target.pp callable in
-    Target.Map.find models callable |> Option.value_exn ?here:None ?error:None ~message, false
-    (* obscure *)
-  in
-  List.iter ~f:(check_expectation ~environment ~get_model) expect
+  let get_model = Registry.get models in
+  let get_errors _ = [] in
+  List.iter ~f:(check_expectation ~environment ~get_model ~get_errors) expect
 
 
 let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~expect () =

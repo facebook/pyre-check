@@ -35,7 +35,7 @@ let infer ~environment ~user_models =
     let qualified_attribute =
       Target.create_object (Reference.create ~prefix:class_name attribute)
     in
-    match Target.Map.find user_models qualified_attribute with
+    match Registry.get user_models qualified_attribute with
     | Some { Model.backward = { sink_taint; _ }; _ } ->
         let taint = BackwardState.read ~root:GlobalModel.global_root ~path:[] sink_taint in
         BackwardState.assign
@@ -133,9 +133,7 @@ let infer ~environment ~user_models =
     |> GlobalResolution.unannotated_global_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
   in
-  let models =
-    List.concat_map all_classes ~f:inferred_models |> Target.Map.of_alist_reduce ~f:Model.join
-  in
+  let models = List.concat_map all_classes ~f:inferred_models |> Registry.of_alist in
   Statistics.performance
     ~name:"Computed inferred models"
     ~phase_name:"Computing inferred models"

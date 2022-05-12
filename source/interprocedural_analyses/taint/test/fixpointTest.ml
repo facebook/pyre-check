@@ -23,27 +23,52 @@ let assert_fixpoint
     ~expect:{ iterations = expect_iterations; expect }
   =
   let scheduler = Test.mock_scheduler () in
-  let { callables_to_analyze; callgraph; environment; overrides; _ } =
+  let {
+    callables_to_analyze;
+    callgraph;
+    environment;
+    overrides;
+    initial_models;
+    initial_callables;
+    stubs;
+    override_targets;
+    _;
+  }
+    =
     initialize ?models_source ~handle:"qualifier.py" ~context source
   in
-  let dependencies =
+  let dependency_graph =
     DependencyGraph.from_callgraph callgraph
     |> DependencyGraph.union overrides
     |> DependencyGraph.reverse
   in
-  let iterations =
-    FixpointAnalysis.compute_fixpoint
+  let fixpoint_state =
+    Fixpoint.compute
       ~scheduler
-      ~environment
-      ~analysis:TaintAnalysis.abstract_kind
-      ~dependencies
+      ~type_environment:environment
+      ~context:{ Fixpoint.Analysis.environment }
+      ~dependency_graph
+      ~initial_callables
+      ~stubs
       ~filtered_callables:Target.Set.empty
-      ~all_callables:callables_to_analyze
-      FixpointState.Epoch.initial
+      ~override_targets
+      ~callables_to_analyze
+      ~initial_models
+      ~max_iterations:100
+      ~epoch:Fixpoint.Epoch.initial
   in
+
   assert_bool "Target is empty!" (Target.Map.length callgraph > 0);
-  assert_equal ~msg:"Fixpoint iterations" expect_iterations iterations ~printer:Int.to_string;
-  List.iter ~f:(check_expectation ~environment) expect
+  assert_equal
+    ~msg:"Fixpoint iterations"
+    expect_iterations
+    (Fixpoint.get_iterations fixpoint_state)
+    ~printer:Int.to_string;
+  let get_model = Fixpoint.get_model fixpoint_state in
+  let get_errors = Fixpoint.get_result fixpoint_state in
+  let () = List.iter ~f:(check_expectation ~environment ~get_model ~get_errors) expect in
+  let () = Fixpoint.cleanup fixpoint_state in
+  ()
 
 
 let test_fixpoint context =
@@ -490,7 +515,10 @@ let test_overrides context =
         iterations = 4;
         expect =
           [
-            outcome ~kind:`Override ~obscure:true "qualifier.Base.split";
+            outcome
+              ~kind:`Override
+              ~analysis_modes:(Model.ModeSet.singleton Model.Mode.Obscure)
+              "qualifier.Base.split";
             outcome
               ~kind:`Function
               ~tito_parameters:[{ name = "b"; sinks = [Sinks.LocalReturn] }]

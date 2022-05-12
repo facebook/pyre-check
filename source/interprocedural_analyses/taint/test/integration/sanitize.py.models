@@ -34,7 +34,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "length": 2,
                 "kind": "NotSource[UserControlled]:Test"
@@ -56,7 +55,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee":
@@ -385,10 +384,7 @@
           {
             "kinds": [
               {
-                "features": [
-                  { "always-via": "special_sink" },
-                  { "always-via": "tito" }
-                ],
+                "features": [ { "always-via": "tito" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "NotSource[TestA]:Test"
@@ -410,10 +406,7 @@
         ]
       }
     ],
-    "features": [
-      { "always-via": "special_sink" },
-      { "always-via": "tito" }
-    ],
+    "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "sanitize.sanitize_test_a_source_attribute_in_sink_trace",
@@ -655,11 +648,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -695,7 +684,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "sanitize.sanitize_a_sink_attribute",
@@ -723,11 +712,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -763,7 +748,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "sanitize.sanitize_a_sink_instance",
@@ -816,11 +801,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -835,7 +816,6 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "attribute" },
-      { "always-via": "special_sink" },
       { "always-via": "tito" }
     ],
     "sink_handle": {
@@ -890,11 +870,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -909,7 +885,6 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "instance" },
-      { "always-via": "special_sink" },
       { "always-via": "tito" }
     ],
     "sink_handle": {
@@ -962,11 +937,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -978,7 +949,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1027,11 +998,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -1043,7 +1010,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1071,11 +1038,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -1108,7 +1071,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Global",
       "callee": "Obj{sanitize.C_sanitized_all_sinks.attribute}",
@@ -1135,11 +1098,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -1172,7 +1131,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Global",
       "callee": "Obj{sanitize.C_sanitized_all_sinks.instance}",
@@ -1199,11 +1158,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -1239,7 +1194,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "sanitize.sanitize_b_sink_attribute",
@@ -1267,11 +1222,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -1307,7 +1258,7 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_source" } ],
+    "features": [],
     "sink_handle": {
       "kind": "Call",
       "callee": "sanitize.sanitize_b_sink_instance",
@@ -1360,11 +1311,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -1379,7 +1326,6 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "attribute" },
-      { "always-via": "special_sink" },
       { "always-via": "tito" }
     ],
     "sink_handle": {
@@ -1434,11 +1380,7 @@
         "roots": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -1453,7 +1395,6 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "instance" },
-      { "always-via": "special_sink" },
       { "always-via": "tito" }
     ],
     "sink_handle": {
@@ -1689,7 +1630,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "length": 1,
                 "kind": "NotSource[UserControlled]:Test"
@@ -2433,6 +2373,88 @@
 {
   "kind": "model",
   "data": {
+    "callable": "_cookies",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Cookies" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_rce",
+    "sinks": [
+      {
+        "port": "formal(argument)",
+        "taint": [
+          { "kinds": [ { "kind": "RemoteCodeExecution" } ], "decl": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_sql",
+    "sinks": [
+      {
+        "port": "formal(argument)",
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_user_controlled",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "decl": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.C_sanitized_a_sink.__init__",
     "tito": [
       {
@@ -2945,7 +2967,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_source" } ],
                 "leaves": [ { "name": "_test_source" } ],
                 "kind": "NotSink[TestA]:NotSink[TestB]@Test"
               }
@@ -3651,11 +3672,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -3671,11 +3688,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -3827,7 +3840,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "NotSource[UserControlled]@Test"
               }
@@ -4094,11 +4106,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -4194,11 +4202,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -4214,11 +4218,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -4502,11 +4502,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -4732,11 +4728,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",
@@ -4805,7 +4797,6 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink" } ],
                 "kind": "NotSource[TestA]@Test"
               }
@@ -4931,11 +4922,7 @@
         "taint": [
           {
             "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
+              { "leaves": [ { "name": "_test_sink" } ], "kind": "Test" }
             ],
             "root": {
               "filename": "sanitize.py",

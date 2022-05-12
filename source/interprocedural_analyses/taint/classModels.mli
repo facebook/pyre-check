@@ -5,7 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val infer
-  :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  user_models:Model.t Interprocedural.Target.Map.t ->
-  Model.t Interprocedural.Target.Map.t
+val infer : environment:Analysis.TypeEnvironment.ReadOnly.t -> user_models:Registry.t -> Registry.t

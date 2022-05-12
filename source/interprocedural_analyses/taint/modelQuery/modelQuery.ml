@@ -19,7 +19,7 @@ module ModelParser = struct
 end
 
 module DumpModelQueryResults : sig
-  val dump : path:PyrePath.t -> models:Model.t Target.Map.t -> unit
+  val dump : path:PyrePath.t -> models:Registry.t -> unit
 end = struct
   let dump ~path ~models =
     Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
@@ -29,12 +29,16 @@ end = struct
           [
             "callable", `String (Target.external_name callable);
             ( "model",
-              `List
-                (Taint.Reporting.externalize ~filename_lookup:(fun _ -> None) callable None model) );
+              Model.to_json
+                ~expand_overrides:false
+                ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+                ~filename_lookup:None
+                callable
+                model );
           ]
       in
       models
-      |> Map.to_alist
+      |> Registry.to_alist
       |> fun models -> `List (List.map models ~f:to_json) |> Yojson.Safe.pretty_to_string
     in
     path |> File.create ~content |> File.write
@@ -643,9 +647,6 @@ let apply_all_rules
     let sources_to_keep, sinks_to_keep =
       ModelParser.compute_sources_and_sinks_to_keep ~configuration ~rule_filter
     in
-    let merge_models new_models models =
-      Map.merge_skewed new_models models ~combine:(fun ~key:_ left right -> Model.join left right)
-    in
     let attribute_rules, callable_rules =
       List.partition_tf
         ~f:(fun { ModelQuery.rule_kind; _ } ->
@@ -675,16 +676,7 @@ let apply_all_rules
             ~is_obscure:(Hash_set.mem stubs callable)
             taint_to_model
         with
-        | Ok model ->
-            let models =
-              let model =
-                match Target.Map.find models callable with
-                | Some existing_model -> Model.join existing_model model
-                | None -> model
-              in
-              Target.Map.set models ~key:callable ~data:model
-            in
-            models
+        | Ok model -> Registry.add models ~target:callable ~model
         | Error error ->
             Log.error "Error while executing model query: %s" (ModelVerificationError.display error);
             models)
@@ -705,11 +697,9 @@ let apply_all_rules
              ~minimum_chunk_size:500
              ~preferred_chunks_per_worker:1
              ())
-        ~initial:Target.Map.empty
+        ~initial:Registry.empty
         ~map:(fun models callables -> List.fold callables ~init:models ~f:apply_rules_for_callable)
-        ~reduce:(fun new_models models ->
-          Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
-              Model.join left right))
+        ~reduce:Registry.merge
         ~inputs:callables
         ()
     in
@@ -735,16 +725,7 @@ let apply_all_rules
             ~sinks_to_keep
             taint_to_model
         with
-        | Ok model ->
-            let models =
-              let model =
-                match Target.Map.find models callable with
-                | Some existing_model -> Model.join existing_model model
-                | None -> model
-              in
-              Target.Map.set models ~key:callable ~data:model
-            in
-            models
+        | Ok model -> Registry.add models ~target:callable ~model
         | Error error ->
             Log.error "Error while executing model query: %s" (ModelVerificationError.display error);
             models)
@@ -769,23 +750,21 @@ let apply_all_rules
                ~minimum_chunk_size:500
                ~preferred_chunks_per_worker:1
                ())
-          ~initial:Target.Map.empty
+          ~initial:Registry.empty
           ~map:(fun models attributes ->
             List.fold attributes ~init:models ~f:apply_rules_for_attribute)
-          ~reduce:(fun new_models models ->
-            Map.merge_skewed new_models models ~combine:(fun ~key:_ left right ->
-                Model.join left right))
+          ~reduce:Registry.merge
           ~inputs:attributes
           ()
       else
-        Target.Map.empty
+        Registry.empty
     in
-    let new_models = merge_models callable_models attribute_models in
+    let new_models = Registry.merge callable_models attribute_models in
     begin
       match configuration.dump_model_query_results_path with
       | Some path -> DumpModelQueryResults.dump ~path ~models:new_models
       | None -> ()
     end;
-    merge_models new_models models)
+    Registry.merge new_models models)
   else
     models

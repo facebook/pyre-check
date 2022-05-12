@@ -31,6 +31,8 @@ module type FUNCTION_CONTEXT = sig
 
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
+  val get_callee_model : Interprocedural.Target.t -> Model.t option
+
   val existing_model : Model.t
 
   val triggered_sinks : triggered_sinks
@@ -284,7 +286,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~profiler
         ~analysis:TaintProfiler.Forward
         ~call_target:target
-        ~f:(fun () -> CallModel.at_callsite ~resolution ~call_target:target ~arguments)
+        ~f:(fun () ->
+          CallModel.at_callsite
+            ~resolution
+            ~get_callee_model:FunctionContext.get_callee_model
+            ~call_target:target
+            ~arguments)
     in
     log
       "Forward analysis of call to `%a` with arguments (%a)@,Call site model:@,%a"
@@ -469,6 +476,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         GlobalModel.from_expression
           ~resolution
           ~call_graph:FunctionContext.call_graph_of_define
+          ~get_callee_model:FunctionContext.get_callee_model
           ~qualifier:FunctionContext.qualifier
           ~expression:argument
           ~interval:FunctionContext.caller_class_interval
@@ -1300,6 +1308,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           GlobalModel.from_expression
             ~resolution
             ~call_graph:FunctionContext.call_graph_of_define
+            ~get_callee_model:FunctionContext.get_callee_model
             ~qualifier:FunctionContext.qualifier
             ~expression:base
             ~interval:FunctionContext.caller_class_interval
@@ -1583,6 +1592,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             GlobalModel.from_expression
               ~resolution
               ~call_graph:FunctionContext.call_graph_of_define
+              ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
               ~expression
               ~interval:FunctionContext.caller_class_interval
@@ -1927,6 +1937,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         GlobalModel.from_expression
           ~resolution
           ~call_graph:FunctionContext.call_graph_of_define
+          ~get_callee_model:FunctionContext.get_callee_model
           ~qualifier:FunctionContext.qualifier
           ~expression:target
           ~interval:FunctionContext.caller_class_interval
@@ -1982,6 +1993,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           GlobalModel.from_expression
             ~resolution
             ~call_graph:FunctionContext.call_graph_of_define
+            ~get_callee_model:FunctionContext.get_callee_model
             ~qualifier:FunctionContext.qualifier
             ~expression:target
             ~interval:FunctionContext.caller_class_interval
@@ -2215,6 +2227,7 @@ let run
     ~qualifier
     ~define
     ~call_graph_of_define
+    ~get_callee_model
     ~existing_model
   =
   let { Node.value = { Statement.Define.signature = { name; parameters; _ }; _ }; _ } = define in
@@ -2231,6 +2244,8 @@ let run
 
     let call_graph_of_define = call_graph_of_define
 
+    let get_callee_model = get_callee_model
+
     let existing_model = existing_model
 
     let triggered_sinks = Location.Table.create ()
@@ -2239,7 +2254,7 @@ let run
   end
   in
   let module State = State (FunctionContext) in
-  let module Fixpoint = Fixpoint.Make (State) in
+  let module Fixpoint = Analysis.Fixpoint.Make (State) in
   if FunctionContext.debug || Statement.Define.dump_call_graph define.value then
     Log.dump
       "Call graph of `%a`:@,%a"

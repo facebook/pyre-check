@@ -199,7 +199,7 @@ module Internal = struct
   end
 
   type parse_result = {
-    models: Model.t Interprocedural.Target.Map.t;
+    models: Registry.t;
     queries: ModelQuery.rule list;
     skip_overrides: Reference.Set.t;
     errors: ModelVerificationError.t list;
@@ -3128,8 +3128,7 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration ~callables ~stub
   in
   {
     models =
-      List.map new_models ~f:(fun (model, _) -> model.target, model.model)
-      |> Target.Map.of_alist_reduce ~f:Model.join;
+      List.map new_models ~f:(fun (model, _) -> model.target, model.model) |> Registry.of_alist;
     skip_overrides =
       List.filter_map new_models ~f:(fun (_, skipped_override) -> skipped_override)
       |> Reference.Set.of_list;

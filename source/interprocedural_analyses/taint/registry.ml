@@ -5,4 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* Blank to catch unused tests *)
+include Fixpoint.Registry

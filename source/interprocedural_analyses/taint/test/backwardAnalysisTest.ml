@@ -30,21 +30,15 @@ let assert_taint ~context source expected =
     |> fun option -> Option.value_exn option
   in
   let initial_models = TestHelper.get_initial_models ~context in
-  let () =
-    Interprocedural.FixpointAnalysis.record_initial_models ~callables:[] ~stubs:[] initial_models
-  in
   let defines = source |> Preprocessing.defines ~include_stubs:true |> List.rev in
-  let () =
-    List.map ~f:Target.create defines |> FixpointState.KeySet.of_list |> FixpointState.remove_new
-  in
-  let analyze_and_store_in_order define =
+  let analyze_and_store_in_order models define =
     let call_target = Target.create define in
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let call_graph_of_define =
       Interprocedural.CallGraph.call_graph_of_define
         ~static_analysis_configuration
         ~environment:(TypeEnvironment.read_only environment)
-        ~attribute_targets:(Service.StaticAnalysis.object_targets_from_models initial_models)
+        ~attribute_targets:(Registry.object_targets initial_models)
         ~qualifier
         ~define:(Ast.Node.value define)
     in
@@ -55,16 +49,23 @@ let assert_taint ~context source expected =
         ~qualifier
         ~define
         ~call_graph_of_define
+        ~get_callee_model:(Registry.get models)
         ~existing_model:Model.empty_model
         ~triggered_sinks:(Ast.Location.Table.create ())
     in
     let model = { Model.empty_model with backward } in
-    AnalysisResult.empty_model
-    |> AnalysisResult.with_model Taint.Result.kind model
-    |> FixpointState.add_predefined FixpointState.Epoch.predefined call_target
+    Registry.set models ~target:call_target ~model
   in
-  let () = List.iter ~f:analyze_and_store_in_order defines in
-  List.iter ~f:(check_expectation ~environment:(TypeEnvironment.read_only environment)) expected;
+  let models = List.fold ~f:analyze_and_store_in_order ~init:initial_models defines in
+  let get_model = Registry.get models in
+  let get_errors _ = [] in
+  List.iter
+    ~f:
+      (check_expectation
+         ~environment:(TypeEnvironment.read_only environment)
+         ~get_model
+         ~get_errors)
+    expected;
   TypeEnvironment.invalidate environment [qualifier]
 
 

@@ -80,8 +80,6 @@ val record_overrides_for_qualifiers
   qualifiers:Reference.t list ->
   DependencyGraphSharedMemory.cap_overrides_result
 
-val object_targets_from_models : 'a Target.Map.t -> Target.HashSet.t
-
 val build_call_graph
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->

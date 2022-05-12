@@ -11,25 +11,11 @@ open Ast
 open Interprocedural
 module Json = Yojson.Safe
 
-let get_result callable =
-  FixpointState.get_result callable |> AnalysisResult.get_result TaintResult.kind
-
-
-let get_model callable =
-  FixpointState.get_model callable >>= AnalysisResult.get_model TaintResult.kind
-
-
-let get_errors result = List.map ~f:Issue.to_error result
-
 (* Patch the forward reference to access the final summaries in trace info generation. *)
-let has_significant_summary ~port:root ~path ~callee =
-  let model =
-    Interprocedural.FixpointState.get_model callee
-    >>= Interprocedural.AnalysisResult.get_model TaintResult.kind
-  in
-  match model with
+let has_significant_summary ~fixpoint_state ~port:root ~path ~callee =
+  match Fixpoint.get_model fixpoint_state callee with
   | None -> false
-  | Some { forward; backward; _ } -> (
+  | Some { Model.forward; backward; _ } -> (
       match root with
       | AccessPath.Root.LocalResult ->
           let _, tree =
@@ -53,21 +39,18 @@ let has_significant_summary ~port:root ~path ~callee =
           not (Domains.BackwardTaint.is_bottom taint))
 
 
-let issues_to_json ~filename_lookup result_opt =
-  match result_opt with
-  | None -> []
-  | Some issues ->
-      let issue_to_json issue =
-        let json =
-          Issue.to_json
-            ~expand_overrides:true
-            ~is_valid_callee:has_significant_summary
-            ~filename_lookup
-            issue
-        in
-        `Assoc ["kind", `String "issue"; "data", json]
-      in
-      List.map ~f:issue_to_json issues
+let issues_to_json ~fixpoint_state ~filename_lookup issues =
+  let issue_to_json issue =
+    let json =
+      Issue.to_json
+        ~expand_overrides:true
+        ~is_valid_callee:(has_significant_summary ~fixpoint_state)
+        ~filename_lookup
+        issue
+    in
+    `Assoc ["kind", `String "issue"; "data", json]
+  in
+  List.map ~f:issue_to_json issues
 
 
 let metadata () =
@@ -82,9 +65,11 @@ let statistics () =
   `Assoc ["model_verification_errors", `List model_verification_errors]
 
 
-let extract_errors scheduler callables =
+let extract_errors ~scheduler ~callables ~fixpoint_state =
   let extract_errors callables =
-    List.filter_map ~f:(fun callable -> get_result callable >>| get_errors) callables
+    List.map
+      ~f:(fun callable -> Fixpoint.get_result fixpoint_state callable |> List.map ~f:Issue.to_error)
+      callables
     |> List.concat_no_order
   in
   Scheduler.map_reduce
@@ -98,28 +83,30 @@ let extract_errors scheduler callables =
   |> List.concat_no_order
 
 
-let externalize ~filename_lookup callable result_option model =
-  let issues = issues_to_json ~filename_lookup result_option in
+let externalize ~fixpoint_state ~filename_lookup callable result model =
+  let issues = issues_to_json ~fixpoint_state ~filename_lookup result in
   if not (Model.should_externalize model) then
     issues
   else
     Model.to_json
       ~expand_overrides:true
-      ~is_valid_callee:has_significant_summary
+      ~is_valid_callee:(has_significant_summary ~fixpoint_state)
       ~filename_lookup:(Some filename_lookup)
       callable
       model
     :: issues
 
 
-let fetch_and_externalize ~filename_lookup callable =
-  let model = get_model callable |> Option.value ~default:Model.empty_model in
-  let result_option = get_result callable in
-  externalize ~filename_lookup callable result_option model
+let fetch_and_externalize ~fixpoint_state ~filename_lookup callable =
+  let model =
+    Fixpoint.get_model fixpoint_state callable |> Option.value ~default:Model.empty_model
+  in
+  let result = Fixpoint.get_result fixpoint_state callable in
+  externalize ~fixpoint_state ~filename_lookup callable result model
 
 
-let emit_externalization ~filename_lookup emitter callable =
-  fetch_and_externalize ~filename_lookup callable |> List.iter ~f:emitter
+let emit_externalization ~fixpoint_state ~filename_lookup emitter callable =
+  fetch_and_externalize ~fixpoint_state ~filename_lookup callable |> List.iter ~f:emitter
 
 
 let save_results_to_directory
@@ -128,6 +115,7 @@ let save_results_to_directory
     ~filename_lookup
     ~skipped_overrides
     ~callables
+    ~fixpoint_state
     ~errors
   =
   let emit_json_array_elements out_buffer =
@@ -144,7 +132,7 @@ let save_results_to_directory
   let models_path analysis_name = Format.sprintf "%s-output.json" analysis_name in
   let root = local_root |> PyrePath.absolute in
   let save_models () =
-    let filename = models_path TaintResult.name in
+    let filename = "taint-output.json" in
     let output_path = PyrePath.append result_directory ~element:filename in
     let out_channel = open_out (PyrePath.absolute output_path) in
     let out_buffer = Bi_outbuf.create_channel_writer out_channel in
@@ -154,7 +142,7 @@ let save_results_to_directory
     in
     Json.to_outbuf out_buffer header_with_version;
     Bi_outbuf.add_string out_buffer "\n";
-    Target.Set.iter (emit_externalization ~filename_lookup array_emitter) callables;
+    Target.Set.iter (emit_externalization ~fixpoint_state ~filename_lookup array_emitter) callables;
     Bi_outbuf.flush_output_writer out_buffer;
     close_out out_channel
   in
@@ -168,11 +156,11 @@ let save_results_to_directory
     close_out out_channel
   in
   let save_metadata () =
-    let filename = Format.sprintf "%s-metadata.json" TaintResult.name in
+    let filename = "taint-metadata.json" in
     let output_path = PyrePath.append result_directory ~element:filename in
     let out_channel = open_out (PyrePath.absolute output_path) in
     let out_buffer = Bi_outbuf.create_channel_writer out_channel in
-    let filename_spec = models_path TaintResult.name in
+    let filename_spec = models_path "taint" in
     let statistics =
       let global_statistics =
         `Assoc
@@ -223,26 +211,28 @@ let report
     ~callables
     ~skipped_overrides
     ~fixpoint_timer
-    ~fixpoint_iterations
+    ~fixpoint_state
   =
-  let errors = extract_errors scheduler (Target.Set.elements callables) in
+  let errors =
+    extract_errors ~scheduler ~callables:(Target.Set.elements callables) ~fixpoint_state
+  in
   (* Log and record stats *)
-  Log.info "Found %d issues" (List.length errors);
-  (match fixpoint_iterations with
-  | Some iterations ->
-      Log.info "Fixpoint iterations: %d" iterations;
-      Statistics.performance
-        ~name:"Analysis fixpoint complete"
-        ~phase_name:"Static analysis fixpoint"
-        ~timer:fixpoint_timer
-        ~integers:
-          [
-            "pysa fixpoint iterations", iterations;
-            "pysa heap size", SharedMemory.heap_size ();
-            "pysa issues", List.length errors;
-          ]
-        ()
-  | None -> ());
+  let () = Log.info "Found %d issues" (List.length errors) in
+  let iterations = Fixpoint.get_iterations fixpoint_state in
+  let () = Log.info "Fixpoint iterations: %d" iterations in
+  let () =
+    Statistics.performance
+      ~name:"Analysis fixpoint complete"
+      ~phase_name:"Static analysis fixpoint"
+      ~timer:fixpoint_timer
+      ~integers:
+        [
+          "pysa fixpoint iterations", iterations;
+          "pysa heap size", SharedMemory.heap_size ();
+          "pysa issues", List.length errors;
+        ]
+      ()
+  in
   (* Dump results to output directory if one was provided, and return a list of json (empty whenever
      we dumped to a directory) to summarize *)
   let error_to_json error =
@@ -259,6 +249,7 @@ let report
         ~filename_lookup
         ~skipped_overrides
         ~callables
+        ~fixpoint_state
         ~errors;
       []
   | _ -> errors

@@ -13,6 +13,7 @@ open Domains
 
 val at_callsite
   :  resolution:Resolution.t ->
+  get_callee_model:(Target.t -> Model.t option) ->
   call_target:Target.t ->
   arguments:Expression.Call.Argument.t list ->
   Model.t

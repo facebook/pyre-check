@@ -28,6 +28,8 @@ module type FUNCTION_CONTEXT = sig
 
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
+  val get_callee_model : Interprocedural.Target.t -> Model.t option
+
   val triggered_sinks : ForwardAnalysis.triggered_sinks
 
   val caller_class_interval : IntervalSet.t
@@ -275,7 +277,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~profiler
         ~analysis:TaintProfiler.Backward
         ~call_target:target
-        ~f:(fun () -> CallModel.at_callsite ~resolution ~call_target:target ~arguments)
+        ~f:(fun () ->
+          CallModel.at_callsite
+            ~resolution
+            ~get_callee_model:FunctionContext.get_callee_model
+            ~call_target:target
+            ~arguments)
     in
     log
       "Backward analysis of call to `%a` with arguments (%a)@,Call site model:@,%a"
@@ -308,6 +315,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         GlobalModel.from_expression
           ~resolution
           ~call_graph:FunctionContext.call_graph_of_define
+          ~get_callee_model:FunctionContext.get_callee_model
           ~qualifier:FunctionContext.qualifier
           ~expression:argument
           ~interval:FunctionContext.caller_class_interval
@@ -799,6 +807,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             GlobalModel.from_expression
               ~resolution
               ~call_graph:FunctionContext.call_graph_of_define
+              ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
               ~expression
               ~interval:FunctionContext.caller_class_interval
@@ -1271,6 +1280,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             GlobalModel.from_expression
               ~resolution
               ~call_graph:FunctionContext.call_graph_of_define
+              ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
               ~expression:base
               ~interval:FunctionContext.caller_class_interval
@@ -1779,6 +1789,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             GlobalModel.from_expression
               ~resolution
               ~call_graph:FunctionContext.call_graph_of_define
+              ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
               ~expression:target
               ~interval:FunctionContext.caller_class_interval
@@ -1824,6 +1835,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           GlobalModel.from_expression
             ~resolution
             ~call_graph:FunctionContext.call_graph_of_define
+            ~get_callee_model:FunctionContext.get_callee_model
             ~qualifier:FunctionContext.qualifier
             ~expression:target
             ~interval:FunctionContext.caller_class_interval
@@ -2063,6 +2075,7 @@ let run
     ~qualifier
     ~define
     ~call_graph_of_define
+    ~get_callee_model
     ~existing_model
     ~triggered_sinks
   =
@@ -2087,13 +2100,15 @@ let run
 
     let call_graph_of_define = call_graph_of_define
 
+    let get_callee_model = get_callee_model
+
     let triggered_sinks = triggered_sinks
 
     let caller_class_interval = IntervalSet.SharedMemory.of_definition definition
   end
   in
   let module State = State (FunctionContext) in
-  let module Fixpoint = Fixpoint.Make (State) in
+  let module Fixpoint = Analysis.Fixpoint.Make (State) in
   let initial = State.{ taint = initial_taint } in
   let cfg = Cfg.create define.value in
   let () = State.log "Backward analysis of callable: `%a`" Reference.pp name in

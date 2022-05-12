@@ -7,7 +7,7 @@
 
 open Core
 open OUnit2
-open Analysis
+open Taint
 open Interprocedural
 open TestHelper
 
@@ -101,30 +101,47 @@ let test_integration path context =
       let actual = Format.asprintf "@%s\nOverrides\n%a" "generated" DependencyGraph.pp overrides in
       create_expected_and_actual_files ~suffix:".overrides" actual
     in
-    let { callgraph; callables_to_analyze; initial_models_callables; environment; overrides; _ } =
+    let {
+      callables_to_analyze;
+      callgraph;
+      environment;
+      overrides;
+      initial_models;
+      initial_callables;
+      stubs;
+      override_targets;
+      _;
+    }
+      =
       initialize ~handle ?models_source ~add_initial_models ~taint_configuration ~context source
     in
-    let dependencies =
+    let dependency_graph =
       DependencyGraph.from_callgraph callgraph
       |> DependencyGraph.union overrides
       |> DependencyGraph.reverse
     in
-    FixpointAnalysis.compute_fixpoint
-      ~scheduler:(Test.mock_scheduler ())
-      ~environment
-      ~analysis:TaintAnalysis.abstract_kind
-      ~dependencies
-      ~filtered_callables:Target.Set.empty
-      ~all_callables:callables_to_analyze
-      FixpointState.Epoch.initial
-    |> ignore;
-    let serialized_model callable : string =
+    let fixpoint_state =
+      Fixpoint.compute
+        ~scheduler:(Test.mock_scheduler ())
+        ~type_environment:environment
+        ~context:{ Fixpoint.Analysis.environment }
+        ~dependency_graph
+        ~initial_callables
+        ~stubs
+        ~filtered_callables:Target.Set.empty
+        ~override_targets
+        ~callables_to_analyze
+        ~initial_models
+        ~max_iterations:100
+        ~epoch:Fixpoint.Epoch.initial
+    in
+    let serialize_model callable : string =
       let externalization =
         let filename_lookup =
-          TypeEnvironment.ReadOnly.ast_environment environment
-          |> AstEnvironment.ReadOnly.get_relative
+          Analysis.TypeEnvironment.ReadOnly.ast_environment environment
+          |> Analysis.AstEnvironment.ReadOnly.get_relative
         in
-        Taint.Reporting.fetch_and_externalize ~filename_lookup callable
+        Taint.Reporting.fetch_and_externalize ~fixpoint_state ~filename_lookup callable
         |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
         |> String.concat ~sep:""
       in
@@ -132,13 +149,16 @@ let test_integration path context =
     in
 
     let divergent_files = [create_call_graph_files callgraph; create_overrides_files overrides] in
-    ( divergent_files,
-      List.rev_append initial_models_callables callables_to_analyze
+    let serialized_models =
+      List.rev_append (Registry.targets initial_models) callables_to_analyze
       |> Target.Set.of_list
       |> Target.Set.elements
-      |> List.map ~f:serialized_model
+      |> List.map ~f:serialize_model
       |> List.sort ~compare:String.compare
-      |> String.concat ~sep:"" )
+      |> String.concat ~sep:""
+    in
+    let () = Fixpoint.cleanup fixpoint_state in
+    divergent_files, serialized_models
   in
   let divergent_files =
     create_expected_and_actual_files ~suffix:".models" ("@" ^ "generated\n" ^ serialized_models)
