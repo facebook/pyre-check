@@ -106,16 +106,26 @@ module BuckBuildSystem = struct
 
   (* Both `integers` and `normals` are functions that return a list instead of a list directly,
      since some of the logging may depend on the return value of `f`. *)
-  let with_logging ?(integers = fun _ -> []) ?(normals = fun _ -> []) f =
+  let with_logging ?(integers = fun _ -> []) ?(normals = fun () -> []) f =
     let open Lwt.Infix in
     let timer = Timer.start () in
-    f ()
-    >>= fun result ->
-    let millisecond = Timer.stop_in_ms timer in
-    let normals = ("version", Version.version ()) :: normals result in
-    let integers = ("runtime", millisecond) :: integers result in
-    Statistics.buck_event ~normals ~integers ();
-    Lwt.return result
+    Lwt.catch
+      (fun () ->
+        f ()
+        >>= fun result ->
+        let millisecond = Timer.stop_in_ms timer in
+        let normals = ("version", Version.version ()) :: normals () in
+        let integers = ("runtime", millisecond) :: integers result in
+        Statistics.buck_event ~normals ~integers ();
+        Lwt.return result)
+      (fun exn ->
+        let millisecond = Timer.stop_in_ms timer in
+        let normals =
+          ("version", Version.version ()) :: ("exception", Exn.to_string exn) :: normals ()
+        in
+        let integers = ["runtime", millisecond] in
+        Statistics.buck_event ~normals ~integers ();
+        Lwt.fail exn)
 
 
   module IncrementalBuilder = struct
