@@ -797,6 +797,23 @@ class PyreServer:
             ),
         )
 
+    async def process_shutdown_request(self, request_id: Union[int, str, None]) -> int:
+        try:
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(id=request_id, result=None),
+            )
+            return await self.wait_for_exit()
+        except (ConnectionError, json_rpc.ParseError) as error:
+            # These errors can happen when the connection gets dropped unilaterally
+            # from the language client, which causes issue when we try to access the
+            # I/O channel.
+            # Since the language client has explicitly notified us it wants to
+            # shutdown at this point, it should be safe to just ignore the error and
+            # terminate the language server immediately.
+            LOG.info(f"Connection dropped by LSP client: {error}")
+            return commands.ExitCode.SUCCESS
+
     async def _run(self) -> int:
         while True:
             async with _read_lsp_request(
@@ -807,11 +824,7 @@ class PyreServer:
                 if request.method == "exit":
                     return commands.ExitCode.FAILURE
                 elif request.method == "shutdown":
-                    await lsp.write_json_rpc(
-                        self.output_channel,
-                        json_rpc.SuccessResponse(id=request.id, result=None),
-                    )
-                    return await self.wait_for_exit()
+                    return await self.process_shutdown_request(request.id)
                 elif request.method == "textDocument/definition":
                     parameters = request.parameters
                     if parameters is None:
