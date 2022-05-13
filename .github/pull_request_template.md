@@ -2,7 +2,7 @@
 
 **Pre-submission checklist**
 - [ ] I've ran the linters locally and fixed lint errors related to the files I modified in this PR. You can install the linters by running `pip install -r requirements-dev.txt && pre-commit install`
-    - [ ] `pre-commit run`
+- [ ] `pre-commit run`
 
 ## Summary
 
