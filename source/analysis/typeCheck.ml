@@ -3607,7 +3607,7 @@ module State (Context : Context) = struct
                 ~kind:(AnalysisError.InvalidType (AnalysisError.SingleExplicit explicit))
           | _ -> errors
         in
-        let add_prohibitive_any_errors errors =
+        let add_prohibited_any_errors errors =
           let reference =
             match target.value with
             | Expression.Name (Name.Identifier identifier) -> Reference.create identifier
@@ -3634,7 +3634,7 @@ module State (Context : Context) = struct
             errors
         in
         ( Value resolution,
-          add_annotation_errors errors |> add_type_variable_errors |> add_prohibitive_any_errors )
+          add_annotation_errors errors |> add_type_variable_errors |> add_prohibited_any_errors )
     | _ ->
         (* Processing actual value assignments. *)
         let resolution, errors, resolved_value =
