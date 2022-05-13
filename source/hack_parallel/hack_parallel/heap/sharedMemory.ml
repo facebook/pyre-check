@@ -80,7 +80,6 @@ let rec shm_dir_init config = function
         "We've run out of filesystems to use for shared memory";
       raise Out_of_shared_memory
   | shm_dir::shm_dirs ->
-      let shm_min_avail = config.shm_min_avail in
       begin try
           (* For some reason statvfs is segfaulting when the directory doesn't
            * exist, instead of returning -1 and an errno *)
@@ -91,12 +90,6 @@ let rec shm_dir_init config = function
             ~shm_dir:(Some shm_dir)
         with
         | Less_than_minimum_available avail ->
-            EventLogger.(log_if_initialized (fun () ->
-                sharedmem_less_than_minimum_available
-                  ~shm_dir
-                  ~shm_min_avail
-                  ~avail
-              ));
             if !Utils.debug
             then Hh_logger.log
                 "Filesystem %s only has %d bytes available, \
@@ -112,9 +105,6 @@ let rec shm_dir_init config = function
               else Utils.spf " thrown by %s(%s)" fn arg in
             let reason =
               Utils.spf "Unix error%s: %s" fn_string (Unix.error_message e) in
-            EventLogger.(log_if_initialized (fun () ->
-                sharedmem_failed_to_use_shm_dir ~shm_dir ~reason
-              ));
             if !Utils.debug
             then Hh_logger.log
                 "Failed to use shm dir `%s`: %s"
@@ -122,9 +112,6 @@ let rec shm_dir_init config = function
                 reason;
             shm_dir_init config shm_dirs
         | Failed_to_use_shm_dir reason ->
-            EventLogger.(log_if_initialized (fun () ->
-                sharedmem_failed_to_use_shm_dir ~shm_dir ~reason
-              ));
             if !Utils.debug
             then Hh_logger.log
                 "Failed to use shm dir `%s`: %s"
@@ -136,9 +123,6 @@ let rec shm_dir_init config = function
 let init config =
   try anonymous_init config
   with Failed_anonymous_memfd_init ->
-    EventLogger.(log_if_initialized (fun () ->
-        sharedmem_failed_anonymous_memfd_init ()
-      ));
     if !Utils.debug
     then Hh_logger.log "Failed to use anonymous memfd init";
     shm_dir_init config config.shm_dirs
@@ -259,8 +243,7 @@ external dep_slots : unit -> int = "hh_dep_slots"
 
 external hh_check_heap_overflow: unit -> bool  = "hh_check_heap_overflow"
 
-let init_done () =
-  EventLogger.sharedmem_init_done (heap_size ())
+let init_done () = ()
 
 type table_stats = {
   nonempty_slots : int;
@@ -296,15 +279,9 @@ let should_collect (effort : [ `gentle | `aggressive | `always_TEST ]) =
   used >= truncate ((float reachable) *. overhead)
 
 let collect (effort : [ `gentle | `aggressive | `always_TEST ]) =
-  let old_size = heap_size () in
-  Stats.update_max_heap_size old_size;
-  let start_t = Unix.gettimeofday () in
   (* The wrapper is used to run the function in a worker instead of master. *)
-  if should_collect effort then hh_collect ();
-  let new_size = heap_size () in
-  let time_taken = Unix.gettimeofday () -. start_t in
-  if old_size <> new_size then begin
-    EventLogger.sharedmem_gc_ran effort old_size new_size time_taken
+  if should_collect effort then begin
+    hh_collect ();
   end
 
 let is_heap_overflow () = hh_check_heap_overflow ()

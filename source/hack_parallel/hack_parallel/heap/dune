@@ -10,4 +10,4 @@
  (wrapped false)
  (modules (:standard))
  (libraries hack_parallel.collections hack_parallel.lz4 hack_parallel.sqlite3
-   hack_parallel.stubs hack_parallel.utils))
+   hack_parallel.utils))

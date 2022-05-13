@@ -81,8 +81,6 @@ let close_out_no_fail fn oc =
     Printf.fprintf stderr "Could not close: '%s' (%s)\n" fn e;
     exit 3
 
-let cat = Disk.cat
-
 let cat_no_fail filename =
   let ic = open_in_bin_no_fail filename in
   let len = in_channel_length ic in
@@ -332,12 +330,6 @@ let mkdir_no_fail dir =
 
 let unlink_no_fail fn =
   try Unix.unlink fn with Unix.Unix_error (Unix.ENOENT, _, _) -> ()
-
-let readlink_no_fail fn =
-  if Sys.win32 && Sys.file_exists fn then
-    cat fn
-  else
-    try Unix.readlink fn with _ -> fn
 
 let splitext filename =
   let root = Filename.chop_extension filename in

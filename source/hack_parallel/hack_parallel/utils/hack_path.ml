@@ -11,7 +11,6 @@ type t = string
 
 let dummy_path : t = ""
 
-let cat = Sys_utils.cat
 let compare = Pervasives.compare
 let dirname = Filename.dirname
 

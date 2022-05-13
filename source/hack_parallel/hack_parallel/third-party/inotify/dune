@@ -1,4 +1,0 @@
-(library
- (name inotify)
- (public_name hack_parallel.inotify)
- (wrapped false))

@@ -4,5 +4,4 @@
  (public_name hack_parallel)
  (library_flags
   (-cclib -l -cclib pthread))
- (libraries hack_parallel.collections hack_parallel.heap hack_parallel.procs
-   hack_parallel.socket))
+ (libraries hack_parallel.collections hack_parallel.heap hack_parallel.procs))
