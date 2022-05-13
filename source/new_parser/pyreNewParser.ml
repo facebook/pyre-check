@@ -283,8 +283,9 @@ let expression =
           |> Node.create ~location:{ location with stop = second.location.stop }
         in
         let f sofar next =
+          let { Node.location = { Ast.Location.stop = next_stop; _ }; _ } = next in
           Expression.BooleanOperator { BooleanOperator.left = sofar; operator = op; right = next }
-          |> Node.create ~location:{ location with stop = next.location.stop }
+          |> Node.create ~location:{ location with stop = next_stop }
         in
         List.fold rest ~init ~f
   in
@@ -355,9 +356,10 @@ let expression =
       (* NOTE(grievejia): This is not 100% accurate since `last` is never evaluated more than once
          at runtime. But it's a fairly close approximation. *)
       let right =
+        let { Node.location = { Ast.Location.start = last_start; _ }; _ } = last in
+        let { Node.location = { Ast.Location.stop = next_stop; _ }; _ } = next in
         Expression.ComparisonOperator { ComparisonOperator.left = last; operator; right = next }
-        |> Node.create
-             ~location:{ Ast.Location.start = last.location.start; stop = next.location.stop }
+        |> Node.create ~location:{ Ast.Location.start = last_start; stop = next_stop }
       in
       let sofar =
         Expression.BooleanOperator
@@ -371,9 +373,10 @@ let expression =
     |> function
     | [] -> left
     | (operator, right) :: rest ->
+        let { Node.location = { Ast.Location.stop = right_stop; _ }; _ } = right in
         let first_operand =
           Expression.ComparisonOperator { ComparisonOperator.left; operator; right }
-          |> Node.create ~location:{ location with stop = right.location.stop }
+          |> Node.create ~location:{ location with stop = right_stop }
         in
         let result, _ = List.fold ~init:(first_operand, right) ~f rest in
         result

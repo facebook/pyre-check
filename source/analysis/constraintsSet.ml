@@ -733,7 +733,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
            && List.equal (Callable.equal_overload Type.equal) left_overloads right_overloads ->
         impossible
     | Type.Callable callable, Type.Callable { implementation; overloads; _ } ->
-        let fold_overload sofar called_as =
+        let fold_overload sofar (called_as : Type.t Callable.overload) =
           let call_as_overload constraints =
             simulate_signature_select order ~callable ~called_as ~constraints
             |> List.concat_map ~f:(fun (left, constraints) ->
