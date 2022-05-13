@@ -8,5 +8,5 @@ repos:
   hooks:
     - id: ufmt
       additional_dependencies:
-        - black == 21.4b2
+        - black == 22.3.0
         - usort == 0.6.4
