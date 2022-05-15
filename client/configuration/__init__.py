@@ -5,20 +5,14 @@
 
 from . import search_path  # noqa: F401
 from .configuration import (  # noqa: F401
-    ExtensionElement,
+    check_nested_local_configuration,
     Configuration,
     create_configuration,
-    check_nested_local_configuration,
+    ExtensionElement,
 )
-from .exceptions import (  # noqa: F401
-    InvalidConfiguration,
-    InvalidPythonVersion,
-)
+from .exceptions import InvalidConfiguration, InvalidPythonVersion  # noqa: F401
 from .ide_features import IdeFeatures  # noqa: F401
 from .platform_aware import PlatformAware  # noqa: F401
 from .python_version import PythonVersion  # noqa: F401
 from .shared_memory import SharedMemory  # noqa: F401
-from .unwatched import (  # noqa: F401
-    UnwatchedFiles,
-    UnwatchedDependency,
-)
+from .unwatched import UnwatchedDependency, UnwatchedFiles  # noqa: F401

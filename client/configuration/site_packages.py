@@ -7,7 +7,7 @@ import dataclasses
 import enum
 import logging
 from pathlib import Path
-from typing import Dict, List, Iterable, Optional, Union
+from typing import Dict, Iterable, List, Optional, Union
 
 from . import search_path
 

@@ -8,19 +8,17 @@ from pathlib import Path
 
 import testslide
 
-from ...tests.setup import (
-    ensure_directories_exists,
-)
+from ...tests.setup import ensure_directories_exists
 from ..exceptions import InvalidConfiguration
-from ..search_path import create_raw_element
 from ..search_path import (
-    SimpleElement,
-    SubdirectoryElement,
-    SitePackageElement,
-    SimpleRawElement,
-    SubdirectoryRawElement,
-    SitePackageRawElement,
+    create_raw_element,
     process_raw_elements,
+    SimpleElement,
+    SimpleRawElement,
+    SitePackageElement,
+    SitePackageRawElement,
+    SubdirectoryElement,
+    SubdirectoryRawElement,
 )
 
 

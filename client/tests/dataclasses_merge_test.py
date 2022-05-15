@@ -6,11 +6,11 @@
 # pyre-ignore-all-errors[16]: Pyre does not understand `dataclass_merge`.
 
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import List, Optional
 
 import testslide
 
-from ..dataclasses_merge import dataclass_merge, Policy, DataclassMergeError
+from ..dataclasses_merge import dataclass_merge, DataclassMergeError, Policy
 
 
 @dataclass_merge

@@ -7,10 +7,10 @@ import ast
 from typing import List, Union
 
 from .language_server_protocol import (
-    LspRange,
     DocumentSymbolsResponse,
-    SymbolKind,
+    LspRange,
     Position,
+    SymbolKind,
 )
 
 

@@ -53,10 +53,7 @@ from . import (
     start,
     statistics,
 )
-from .find_symbols import (
-    UnparseableError,
-    parse_source_and_collect_symbols,
-)
+from .find_symbols import parse_source_and_collect_symbols, UnparseableError
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

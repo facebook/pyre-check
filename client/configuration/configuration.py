@@ -31,7 +31,7 @@ from typing import (
 )
 
 from .. import command_arguments, dataclasses_merge, find_directories
-from ..filesystem import expand_relative_path, expand_global_root
+from ..filesystem import expand_global_root, expand_relative_path
 from ..find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
@@ -40,12 +40,12 @@ from ..find_directories import (
     LOG_DIRECTORY,
 )
 from . import (
-    search_path as search_path_module,
     exceptions,
+    ide_features as ide_features_module,
     platform_aware,
     python_version as python_version_module,
+    search_path as search_path_module,
     shared_memory as shared_memory_module,
-    ide_features as ide_features_module,
     site_packages,
     unwatched,
 )

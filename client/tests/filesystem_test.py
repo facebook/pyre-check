@@ -12,10 +12,7 @@ import unittest
 from unittest.mock import call, MagicMock, Mock, patch
 
 from .. import filesystem
-from ..filesystem import (
-    acquire_lock,
-    expand_relative_path,
-)
+from ..filesystem import acquire_lock, expand_relative_path
 
 
 class FilesystemTest(unittest.TestCase):

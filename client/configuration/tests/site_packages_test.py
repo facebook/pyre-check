@@ -9,22 +9,20 @@ from pathlib import Path
 
 import testslide
 
-from ...tests.setup import (
-    ensure_files_exist,
-)
+from ...tests.setup import ensure_files_exist
 from ..search_path import SimpleElement, SitePackageElement
 from ..site_packages import (
-    SearchStrategy,
-    search_for_paths,
-    is_valid_package_name,
-    PackageStatus,
-    get_package_status,
-    MARKER_FILE,
     create_package_from_path,
-    NonStubPackage,
-    StubPackage,
     find_packages,
+    get_package_status,
+    is_valid_package_name,
+    MARKER_FILE,
+    NonStubPackage,
     PackageInfo,
+    PackageStatus,
+    search_for_paths,
+    SearchStrategy,
+    StubPackage,
 )
 
 

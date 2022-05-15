@@ -14,10 +14,7 @@ from pathlib import Path
 
 import testslide
 
-from ... import (
-    command_arguments,
-    find_directories,
-)
+from ... import command_arguments, find_directories
 from ...find_directories import BINARY_NAME
 from ...tests.setup import (
     ensure_directories_exists,
@@ -34,9 +31,7 @@ from ..configuration import (
     get_default_site_roots,
     PartialConfiguration,
 )
-from ..exceptions import (
-    InvalidConfiguration,
-)
+from ..exceptions import InvalidConfiguration
 from ..ide_features import IdeFeatures
 from ..platform_aware import PlatformAware
 from ..python_version import PythonVersion
@@ -48,10 +43,7 @@ from ..search_path import (
 )
 from ..shared_memory import SharedMemory
 from ..site_packages import SearchStrategy
-from ..unwatched import (
-    UnwatchedDependency,
-    UnwatchedFiles,
-)
+from ..unwatched import UnwatchedDependency, UnwatchedFiles
 
 
 class PartialConfigurationTest(unittest.TestCase):

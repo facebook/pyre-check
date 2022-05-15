@@ -6,7 +6,7 @@
 # flake8: noqa
 
 from builtins import _test_sink, _test_source
-from typing import Union, overload
+from typing import overload, Union
 
 
 @overload

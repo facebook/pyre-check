@@ -4,14 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 
 import textwrap
-from typing import Optional, List
+from typing import List, Optional
 
 import testslide
 
-from ..find_symbols import (
-    UnparseableError,
-    parse_source_and_collect_symbols,
-)
+from ..find_symbols import parse_source_and_collect_symbols, UnparseableError
 from ..language_server_protocol import (
     DocumentSymbolsResponse,
     LspPosition,

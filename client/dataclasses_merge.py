@@ -95,7 +95,7 @@ subject to this constraint, though.
 
 import dataclasses
 import enum
-from typing import Type, TypeVar, Optional, Iterable
+from typing import Iterable, Optional, Type, TypeVar
 
 T = TypeVar("T")
 

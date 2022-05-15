@@ -8,10 +8,7 @@ from typing import Dict
 import testslide
 
 from ..exceptions import InvalidConfiguration
-from ..unwatched import (
-    UnwatchedFiles,
-    UnwatchedDependency,
-)
+from ..unwatched import UnwatchedDependency, UnwatchedFiles
 
 
 class UnwatchedDependencyTest(testslide.TestCase):
