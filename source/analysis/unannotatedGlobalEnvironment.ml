@@ -661,28 +661,6 @@ let direct_data_purge
   Modules.KeySet.of_list previous_modules_list |> Modules.remove_batch
 
 
-module LazyLoading = struct
-  let load_module_if_tracked ~environment ~ast_environment qualifier =
-    if not (Modules.mem qualifier) then
-      if AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier then
-        match
-          AstEnvironment.ReadOnly.get_processed_source
-            ~track_dependency:true
-            ast_environment
-            qualifier
-        with
-        | Some source -> set_module_data environment source
-        | None -> ()
-
-
-  let load_all_possible_modules ~is_qualifier ~environment ~ast_environment reference =
-    let load_module_if_tracked = load_module_if_tracked ~environment ~ast_environment in
-    let ancestors_descending = Reference.possible_qualifiers reference in
-    List.iter ancestors_descending ~f:load_module_if_tracked;
-    if is_qualifier then load_module_if_tracked reference;
-    ()
-end
-
 module ReadOnly = struct
   type t = {
     ast_environment: AstEnvironment.ReadOnly.t;
@@ -925,25 +903,46 @@ module ReadOnly = struct
     first_matching_class_decorator read_only ?dependency ~names class_summary |> Option.is_some
 end
 
+module LazyLoader = struct
+  type t = {
+    environment: ReadWrite.t;
+    ast_environment: AstEnvironment.ReadOnly.t;
+  }
+
+  let load_module_if_tracked { environment; ast_environment } qualifier =
+    if not (Modules.mem qualifier) then
+      if AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier then
+        match
+          AstEnvironment.ReadOnly.get_processed_source
+            ~track_dependency:true
+            ast_environment
+            qualifier
+        with
+        | Some source -> set_module_data environment source
+        | None -> ()
+
+
+  let load_all_possible_modules loader ~is_qualifier reference =
+    let load_module_if_tracked = load_module_if_tracked loader in
+    let ancestors_descending = Reference.possible_qualifiers reference in
+    List.iter ancestors_descending ~f:load_module_if_tracked;
+    if is_qualifier then load_module_if_tracked reference;
+    ()
+end
+
 module ReadOnlyTable = struct
   module type S = sig
     type key
 
     type value
 
-    val mem
-      :  environment:t ->
-      ast_environment:AstEnvironment.ReadOnly.t ->
-      ?dependency:DependencyKey.registered ->
-      key ->
-      bool
+    type t
 
-    val get
-      :  environment:t ->
-      ast_environment:AstEnvironment.ReadOnly.t ->
-      ?dependency:DependencyKey.registered ->
-      key ->
-      value option
+    val create : LazyLoader.t -> t
+
+    val mem : t -> ?dependency:DependencyKey.registered -> key -> bool
+
+    val get : t -> ?dependency:DependencyKey.registered -> key -> value option
   end
 
   module type In = sig
@@ -961,34 +960,30 @@ module ReadOnlyTable = struct
   end
 
   module Make (In : In) : S with type key := In.key and type value := In.value = struct
+    type t = LazyLoader.t
+
+    let create loader = loader
+
     let is_qualifier = In.is_qualifier
 
-    let mem ~environment ~ast_environment ?dependency key =
+    let mem loader ?dependency key =
       (* First handle the case where it's already in the hash map *)
       match In.mem ?dependency key with
       | true -> true
       | false ->
           (* If no precomputed value exists, we make sure all potential qualifiers are loaded *)
-          LazyLoading.load_all_possible_modules
-            ~is_qualifier
-            ~environment
-            ~ast_environment
-            (In.key_to_reference key);
+          LazyLoader.load_all_possible_modules loader ~is_qualifier (In.key_to_reference key);
           (* We try fetching again *)
           In.mem ?dependency key
 
 
-    let get ~environment ~ast_environment ?dependency key =
+    let get loader ?dependency key =
       (* The first get finds precomputed values *)
       match In.get ?dependency key with
       | Some _ as hit -> hit
       | None ->
           (* If no precomputed value exists, we make sure all potential qualifiers are loaded *)
-          LazyLoading.load_all_possible_modules
-            ~is_qualifier
-            ~environment
-            ~ast_environment
-            (In.key_to_reference key);
+          LazyLoader.load_all_possible_modules loader ~is_qualifier (In.key_to_reference key);
           (* We try fetching again *)
           In.get ?dependency key
   end
@@ -996,13 +991,18 @@ end
 
 let read_only ({ ast_environment; key_tracker } as environment) =
   let ast_environment = AstEnvironment.read_only ast_environment in
+  let loader = LazyLoader.{ environment; ast_environment } in
   (* Mask the raw DependencyTrackedTables with lazy read-only views of each one *)
   let module Modules = ReadOnlyTable.Make (Modules) in
   let module ClassSummaries = ReadOnlyTable.Make (ClassSummaries) in
   let module FunctionDefinitions = ReadOnlyTable.Make (FunctionDefinitions) in
   let module UnannotatedGlobals = ReadOnlyTable.Make (UnannotatedGlobals) in
+  let modules = Modules.create loader in
+  let class_summaries = ClassSummaries.create loader in
+  let function_definitions = FunctionDefinitions.create loader in
+  let unannotated_globals = UnannotatedGlobals.create loader in
   (* Define the basic getters and existence checks *)
-  let get_module = Modules.get ~environment ~ast_environment in
+  let get_module = Modules.get modules in
   let get_module_metadata ?dependency qualifier =
     let qualifier =
       match Reference.as_list qualifier with
@@ -1026,20 +1026,20 @@ let read_only ({ ast_environment; key_tracker } as environment) =
           Reference.empty
       | _ -> qualifier
     in
-    match Modules.mem ~environment ~ast_environment ?dependency qualifier with
+    match Modules.mem modules ?dependency qualifier with
     | true -> true
     | false -> AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier
   in
-  let get_class_summary = ClassSummaries.get ~environment ~ast_environment in
-  let class_exists = ClassSummaries.mem ~environment ~ast_environment in
-  let get_unannotated_global = UnannotatedGlobals.get ~environment ~ast_environment in
-  let get_function_definition = FunctionDefinitions.get ~environment ~ast_environment in
+  let get_class_summary = ClassSummaries.get class_summaries in
+  let class_exists = ClassSummaries.mem class_summaries in
+  let get_function_definition = FunctionDefinitions.get function_definitions in
   let get_define_body ?dependency key =
     get_function_definition ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
   in
+  let get_unannotated_global = UnannotatedGlobals.get unannotated_globals in
   (* all_defines_in_module is the only KeyTracker-based API that requires loading *)
   let all_defines_in_module qualifier =
-    LazyLoading.load_module_if_tracked ~environment ~ast_environment qualifier;
+    LazyLoader.load_module_if_tracked loader qualifier;
     KeyTracker.get_define_keys key_tracker [qualifier]
   in
   (* Define the bulk key reads - these tell us what's been loaded thus far *)
