@@ -123,6 +123,13 @@ let test_parse_query context =
   assert_fails_to_parse "location_of_definition(path='/foo.py', line=42)";
   assert_fails_to_parse "location_of_definition(path='/foo.py', column=10)";
   assert_fails_to_parse "location_of_definition(path=99, line=42, column=10)";
+  assert_parses
+    "find_references(path='/foo.py', line=42, column=10)"
+    (FindReferences
+       { path = PyrePath.create_absolute "/foo.py"; position = Location.{ line = 42; column = 10 } });
+  assert_fails_to_parse "find_references(path='/foo.py', line=42)";
+  assert_fails_to_parse "find_references(path='/foo.py', column=10)";
+  assert_fails_to_parse "find_references(path=99, line=42, column=10)";
   ()
 
 

@@ -28,6 +28,10 @@ module Request : sig
       }
     | ModulesOfPath of PyrePath.t
     | PathOfModule of Reference.t
+    | FindReferences of {
+        path: PyrePath.t;
+        position: Location.position;
+      }
     | SaveServerState of PyrePath.t
     | Superclasses of Reference.t list
     | Type of Expression.t

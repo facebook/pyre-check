@@ -35,6 +35,10 @@ module Request = struct
       }
     | ModulesOfPath of PyrePath.t
     | PathOfModule of Reference.t
+    | FindReferences of {
+        path: PyrePath.t;
+        position: Location.position;
+      }
     | SaveServerState of PyrePath.t
     | Superclasses of Reference.t list
     | Type of Expression.t
@@ -307,6 +311,10 @@ let help () =
     | ModulesOfPath _ ->
         Some "modules_of_path(path): Returns the modules of a file pointed to by path."
     | PathOfModule _ -> Some "path_of_module(module): Gives an absolute path for `module`."
+    | FindReferences _ ->
+        Some
+          "find_references(path='<absolute path>', line=<line>, character=<character>): Returns \
+           the locations of all references to the symbol at the given line and character."
     | SaveServerState _ ->
         Some "save_server_state('path'): Saves Pyre's serialized state into `path`."
     | Superclasses _ ->
@@ -458,6 +466,12 @@ let rec parse_request_exn query =
             }
       | "modules_of_path", [path] -> Request.ModulesOfPath (PyrePath.create_absolute (string path))
       | "path_of_module", [module_access] -> Request.PathOfModule (reference module_access)
+      | "find_references", [path; line; column] ->
+          Request.FindReferences
+            {
+              path = PyrePath.create_absolute (string path);
+              position = { line = integer line; column = integer column };
+            }
       | "save_server_state", [path] ->
           Request.SaveServerState (PyrePath.create_absolute (string path))
       | "superclasses", names -> Superclasses (List.map ~f:reference names)
@@ -817,6 +831,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         |> Option.value
              ~default:
                (Error (Format.sprintf "No path found for module `%s`" (Reference.show module_name)))
+    | FindReferences _ -> failwith "TODO(T114362295)"
     | SaveServerState path ->
         let path = PyrePath.absolute path in
         Log.info "Saving server state into `%s`" path;
