@@ -15,6 +15,7 @@ module type ValueType = SharedMemory.ValueType
 
 module NoCache = SharedMemory.NoCache
 module WithCache = SharedMemory.WithCache
+module FirstClass = SharedMemory.FirstClass
 
 type bytes = int
 

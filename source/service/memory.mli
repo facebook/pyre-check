@@ -15,6 +15,7 @@ module type ValueType = SharedMemory.ValueType
 
 module NoCache = SharedMemory.NoCache
 module WithCache = SharedMemory.WithCache
+module FirstClass = SharedMemory.FirstClass
 
 val initialize_for_tests : unit -> unit
 

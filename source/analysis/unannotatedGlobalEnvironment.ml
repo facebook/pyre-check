@@ -280,30 +280,54 @@ module KeyTracker = struct
     let description = "Class keys"
   end
 
-  module ClassKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ClassKeyValue)
+  module ClassKeys =
+    Memory.FirstClass.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ClassKeyValue)
+  module DefineKeys =
+    Memory.FirstClass.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DefineKeyValue)
   module UnannotatedGlobalKeys =
-    Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (UnannotatedGlobalKeyValue)
-  module DefineKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (DefineKeyValue)
+    Memory.FirstClass.WithCache.Make (SharedMemoryKeys.ReferenceKey) (UnannotatedGlobalKeyValue)
 
-  let get_class_keys qualifiers =
+  type t = {
+    class_keys: ClassKeys.t;
+    unannotated_global_keys: UnannotatedGlobalKeys.t;
+    define_keys: DefineKeys.t;
+  }
+
+  let create () =
+    {
+      class_keys = ClassKeys.create ();
+      unannotated_global_keys = UnannotatedGlobalKeys.create ();
+      define_keys = DefineKeys.create ();
+    }
+
+
+  let add_class_keys { class_keys; _ } = ClassKeys.add class_keys
+
+  let add_define_keys { define_keys; _ } = DefineKeys.add define_keys
+
+  let add_unannotated_global_keys { unannotated_global_keys; _ } =
+    UnannotatedGlobalKeys.add unannotated_global_keys
+
+
+  let get_class_keys { class_keys; _ } qualifiers =
     ClassKeys.KeySet.of_list qualifiers
-    |> ClassKeys.get_batch
+    |> ClassKeys.get_batch class_keys
     |> ClassKeys.KeyMap.values
     |> List.filter_map ~f:Fn.id
     |> List.concat
 
 
-  let get_define_keys qualifiers =
+  let get_define_keys { define_keys; _ } qualifiers =
     DefineKeys.KeySet.of_list qualifiers
-    |> DefineKeys.get_batch
+    |> DefineKeys.get_batch define_keys
     |> DefineKeys.KeyMap.values
     |> List.filter_map ~f:Fn.id
     |> List.concat
 
 
-  let get_unannotated_global_keys qualifiers =
+  let get_unannotated_global_keys { unannotated_global_keys; _ } qualifiers =
     UnannotatedGlobalKeys.KeySet.of_list qualifiers
-    |> UnannotatedGlobalKeys.get_batch
+    |> UnannotatedGlobalKeys.get_batch unannotated_global_keys
     |> UnannotatedGlobalKeys.KeyMap.values
     |> List.filter_map ~f:Fn.id
     |> List.concat
@@ -320,16 +344,22 @@ module KeyTracker = struct
     }
   end
 
-  let get_previous_keys_and_clear modified_qualifiers =
-    let previous_classes_list = get_class_keys modified_qualifiers in
+  let get_previous_keys_and_clear
+      ({ class_keys; define_keys; unannotated_global_keys } as key_tracker)
+      modified_qualifiers
+    =
+    let previous_classes_list = get_class_keys key_tracker modified_qualifiers in
+    let previous_defines_list = get_define_keys key_tracker modified_qualifiers in
+    let previous_unannotated_globals_list =
+      get_unannotated_global_keys key_tracker modified_qualifiers
+    in
     let previous_classes = Type.Primitive.Set.of_list previous_classes_list in
-    let previous_unannotated_globals_list = get_unannotated_global_keys modified_qualifiers in
-    let previous_defines_list = get_define_keys modified_qualifiers in
     let previous_defines = Reference.Set.of_list previous_defines_list in
     let previous_unannotated_globals = Reference.Set.of_list previous_unannotated_globals_list in
-    ClassKeys.KeySet.of_list modified_qualifiers |> ClassKeys.remove_batch;
-    DefineKeys.KeySet.of_list modified_qualifiers |> DefineKeys.remove_batch;
-    UnannotatedGlobalKeys.KeySet.of_list modified_qualifiers |> UnannotatedGlobalKeys.remove_batch;
+    ClassKeys.KeySet.of_list modified_qualifiers |> ClassKeys.remove_batch class_keys;
+    DefineKeys.KeySet.of_list modified_qualifiers |> DefineKeys.remove_batch define_keys;
+    UnannotatedGlobalKeys.KeySet.of_list modified_qualifiers
+    |> UnannotatedGlobalKeys.remove_batch unannotated_global_keys;
     PreviousKeys.
       {
         previous_classes_list;
@@ -429,25 +459,46 @@ module UnannotatedGlobals = struct
   let key_to_reference = Fn.id
 end
 
-type t = { ast_environment: AstEnvironment.t }
+module ReadWrite = struct
+  type t = {
+    key_tracker: KeyTracker.t;
+    ast_environment: AstEnvironment.t;
+  }
 
-let create ast_environment = { ast_environment }
+  (* For the moment, all base environments need to use the same key tracker. The reason is that even
+     though in production we would never create two environments from the same process, we do so
+     heavily in tests. If we don't reuse the key tracker, we fail to clear out contaminated shared
+     memory tables. We could change this once all environment tables are first-class, but even then
+     it might not work out well because we would leak memory in long test suites. *)
+  let base_key_tracker = KeyTracker.create ()
 
-let ast_environment { ast_environment } = ast_environment
+  let create ast_environment = { key_tracker = base_key_tracker; ast_environment }
 
-let configuration { ast_environment; _ } = AstEnvironment.configuration ast_environment
+  let ast_environment { ast_environment; _ } = ast_environment
 
-let set_module ~qualifier module_ = Modules.add qualifier module_
+  let configuration { ast_environment; _ } = AstEnvironment.configuration ast_environment
+end
 
-let set_class_summary ~name class_summary = ClassSummaries.write_around name class_summary
+include ReadWrite
 
-let set_function_definition ~name function_definition =
+let set_module _environment ~qualifier module_ = Modules.add qualifier module_
+
+let set_class_summary _environment ~name class_summary =
+  ClassSummaries.write_around name class_summary
+
+
+let set_function_definition _environment ~name function_definition =
   FunctionDefinitions.write_around name function_definition
 
 
-let set_unannotated_global ~name unannotated_global = UnannotatedGlobals.add name unannotated_global
+let set_unannotated_global _environment ~name unannotated_global =
+  UnannotatedGlobals.add name unannotated_global
 
-let set_class_summaries ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+
+let set_class_summaries
+    ({ key_tracker; _ } as environment)
+    ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
   (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
   let module ClassCollector = Visit.MakeStatementVisitor (struct
     type t = Class.t Node.t list
@@ -480,16 +531,18 @@ let set_class_summaries ({ Source.source_path = { SourcePath.qualifier; _ }; _ }
       | _ -> definition
     in
     set_class_summary
+      environment
       ~name:primitive
       { Node.location; value = ClassSummary.create ~qualifier definition };
     Set.add new_annotations primitive
   in
   List.fold classes ~init:Type.Primitive.Set.empty ~f:register
   |> Set.to_list
-  |> KeyTracker.ClassKeys.add qualifier
+  |> KeyTracker.add_class_keys key_tracker qualifier
 
 
 let set_function_definitions
+    ({ key_tracker; _ } as environment)
     ({ Source.source_path = { SourcePath.qualifier; is_external; _ }; _ } as source)
   =
   match is_external with
@@ -499,18 +552,21 @@ let set_function_definitions
   | false ->
       let function_definitions = FunctionDefinition.collect_defines source in
       let register (name, function_definition) =
-        set_function_definition ~name function_definition;
+        set_function_definition environment ~name function_definition;
         name
       in
       List.map function_definitions ~f:register
       |> List.sort ~compare:Reference.compare
-      |> KeyTracker.DefineKeys.add qualifier
+      |> KeyTracker.add_define_keys key_tracker qualifier
 
 
-let set_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+let set_unannotated_globals
+    ({ key_tracker; _ } as environment)
+    ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+  =
   let write { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
     let name = Reference.create name |> Reference.combine qualifier in
-    set_unannotated_global ~name unannotated_global;
+    set_unannotated_global environment ~name unannotated_global;
     name
   in
   let merge_defines unannotated_globals_alist =
@@ -549,16 +605,16 @@ let set_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ };
     | [] -> globals @ missing_builtin_globals
     | _ -> globals
   in
-  globals |> List.map ~f:write |> KeyTracker.UnannotatedGlobalKeys.add qualifier
+  globals |> List.map ~f:write |> KeyTracker.add_unannotated_global_keys key_tracker qualifier
 
 
-let set_module_data ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-  set_class_summaries source;
-  set_function_definitions source;
-  set_unannotated_globals source;
+let set_module_data environment ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+  set_class_summaries environment source;
+  set_function_definitions environment source;
+  set_unannotated_globals environment source;
   (* We must set this last, because lazy-loading uses Module.mem to determine whether the source has
      already been processed. So setting it earlier can lead to data races *)
-  set_module ~qualifier (Module.create source)
+  set_module environment ~qualifier (Module.create source)
 
 
 let add_to_transaction
@@ -606,7 +662,7 @@ let direct_data_purge
 
 
 module LazyLoading = struct
-  let load_module_if_tracked ~ast_environment qualifier =
+  let load_module_if_tracked ~environment ~ast_environment qualifier =
     if not (Modules.mem qualifier) then
       if AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier then
         match
@@ -615,12 +671,12 @@ module LazyLoading = struct
             ast_environment
             qualifier
         with
-        | Some source -> set_module_data source
+        | Some source -> set_module_data environment source
         | None -> ()
 
 
-  let load_all_possible_modules ~is_qualifier ~ast_environment reference =
-    let load_module_if_tracked = load_module_if_tracked ~ast_environment in
+  let load_all_possible_modules ~is_qualifier ~environment ~ast_environment reference =
+    let load_module_if_tracked = load_module_if_tracked ~environment ~ast_environment in
     let ancestors_descending = Reference.possible_qualifiers reference in
     List.iter ancestors_descending ~f:load_module_if_tracked;
     if is_qualifier then load_module_if_tracked reference;
@@ -876,13 +932,15 @@ module ReadOnlyTable = struct
     type value
 
     val mem
-      :  ast_environment:AstEnvironment.ReadOnly.t ->
+      :  environment:t ->
+      ast_environment:AstEnvironment.ReadOnly.t ->
       ?dependency:DependencyKey.registered ->
       key ->
       bool
 
     val get
-      :  ast_environment:AstEnvironment.ReadOnly.t ->
+      :  environment:t ->
+      ast_environment:AstEnvironment.ReadOnly.t ->
       ?dependency:DependencyKey.registered ->
       key ->
       value option
@@ -905,7 +963,7 @@ module ReadOnlyTable = struct
   module Make (In : In) : S with type key := In.key and type value := In.value = struct
     let is_qualifier = In.is_qualifier
 
-    let mem ~ast_environment ?dependency key =
+    let mem ~environment ~ast_environment ?dependency key =
       (* First handle the case where it's already in the hash map *)
       match In.mem ?dependency key with
       | true -> true
@@ -913,13 +971,14 @@ module ReadOnlyTable = struct
           (* If no precomputed value exists, we make sure all potential qualifiers are loaded *)
           LazyLoading.load_all_possible_modules
             ~is_qualifier
+            ~environment
             ~ast_environment
             (In.key_to_reference key);
           (* We try fetching again *)
           In.mem ?dependency key
 
 
-    let get ~ast_environment ?dependency key =
+    let get ~environment ~ast_environment ?dependency key =
       (* The first get finds precomputed values *)
       match In.get ?dependency key with
       | Some _ as hit -> hit
@@ -927,6 +986,7 @@ module ReadOnlyTable = struct
           (* If no precomputed value exists, we make sure all potential qualifiers are loaded *)
           LazyLoading.load_all_possible_modules
             ~is_qualifier
+            ~environment
             ~ast_environment
             (In.key_to_reference key);
           (* We try fetching again *)
@@ -934,7 +994,7 @@ module ReadOnlyTable = struct
   end
 end
 
-let read_only { ast_environment } =
+let read_only ({ ast_environment; key_tracker } as environment) =
   let ast_environment = AstEnvironment.read_only ast_environment in
   (* Mask the raw DependencyTrackedTables with lazy read-only views of each one *)
   let module Modules = ReadOnlyTable.Make (Modules) in
@@ -942,7 +1002,7 @@ let read_only { ast_environment } =
   let module FunctionDefinitions = ReadOnlyTable.Make (FunctionDefinitions) in
   let module UnannotatedGlobals = ReadOnlyTable.Make (UnannotatedGlobals) in
   (* Define the basic getters and existence checks *)
-  let get_module = Modules.get ~ast_environment in
+  let get_module = Modules.get ~environment ~ast_environment in
   let get_module_metadata ?dependency qualifier =
     let qualifier =
       match Reference.as_list qualifier with
@@ -966,35 +1026,37 @@ let read_only { ast_environment } =
           Reference.empty
       | _ -> qualifier
     in
-    match Modules.mem ~ast_environment ?dependency qualifier with
+    match Modules.mem ~environment ~ast_environment ?dependency qualifier with
     | true -> true
     | false -> AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier
   in
-  let get_class_summary = ClassSummaries.get ~ast_environment in
-  let class_exists = ClassSummaries.mem ~ast_environment in
-  let get_unannotated_global = UnannotatedGlobals.get ~ast_environment in
-  let get_function_definition = FunctionDefinitions.get ~ast_environment in
+  let get_class_summary = ClassSummaries.get ~environment ~ast_environment in
+  let class_exists = ClassSummaries.mem ~environment ~ast_environment in
+  let get_unannotated_global = UnannotatedGlobals.get ~environment ~ast_environment in
+  let get_function_definition = FunctionDefinitions.get ~environment ~ast_environment in
   let get_define_body ?dependency key =
     get_function_definition ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
   in
   (* all_defines_in_module is the only KeyTracker-based API that requires loading *)
   let all_defines_in_module qualifier =
-    LazyLoading.load_module_if_tracked ~ast_environment qualifier;
-    KeyTracker.get_define_keys [qualifier]
+    LazyLoading.load_module_if_tracked ~environment ~ast_environment qualifier;
+    KeyTracker.get_define_keys key_tracker [qualifier]
   in
   (* Define the bulk key reads - these tell us what's been loaded thus far *)
   let all_classes () =
-    AstEnvironment.ReadOnly.all_explicit_modules ast_environment |> KeyTracker.get_class_keys
+    AstEnvironment.ReadOnly.all_explicit_modules ast_environment
+    |> KeyTracker.get_class_keys key_tracker
   in
   let all_indices () =
     all_classes () |> Type.Primitive.Set.of_list |> IndexTracker.indices |> IndexTracker.Set.to_list
   in
   let all_unannotated_globals () =
     AstEnvironment.ReadOnly.all_explicit_modules ast_environment
-    |> KeyTracker.get_unannotated_global_keys
+    |> KeyTracker.get_unannotated_global_keys key_tracker
   in
   let all_defines () =
-    AstEnvironment.ReadOnly.all_explicit_modules ast_environment |> KeyTracker.get_define_keys
+    AstEnvironment.ReadOnly.all_explicit_modules ast_environment
+    |> KeyTracker.get_define_keys key_tracker
   in
   {
     ReadOnly.ast_environment;
@@ -1052,7 +1114,7 @@ module UpdateResult = struct
 end
 
 let update_this_and_all_preceding_environments
-    ({ ast_environment } as this_environment)
+    ({ ast_environment; key_tracker } as environment)
     ~scheduler
     trigger
   =
@@ -1061,7 +1123,7 @@ let update_this_and_all_preceding_environments
   let map sources =
     let register qualifier =
       AstEnvironment.ReadOnly.get_processed_source ~track_dependency:true ast_environment qualifier
-      >>| set_module_data
+      >>| set_module_data environment
       |> Option.value ~default:()
     in
     List.iter sources ~f:register
@@ -1089,9 +1151,9 @@ let update_this_and_all_preceding_environments
           previous_unannotated_globals;
         }
     =
-    KeyTracker.get_previous_keys_and_clear modified_qualifiers
+    KeyTracker.get_previous_keys_and_clear key_tracker modified_qualifiers
   in
-  match configuration this_environment with
+  match configuration environment with
   | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
       let define_additions, triggered_dependencies =
         Profiling.track_duration_and_shared_memory_with_dynamic_tags
@@ -1107,13 +1169,15 @@ let update_this_and_all_preceding_environments
               |> DependencyKey.Transaction.execute ~update
             in
             let current_classes =
-              KeyTracker.get_class_keys modified_qualifiers |> Type.Primitive.Set.of_list
+              KeyTracker.get_class_keys key_tracker modified_qualifiers
+              |> Type.Primitive.Set.of_list
             in
             let current_defines =
-              KeyTracker.get_define_keys modified_qualifiers |> Reference.Set.of_list
+              KeyTracker.get_define_keys key_tracker modified_qualifiers |> Reference.Set.of_list
             in
             let current_unannotated_globals =
-              KeyTracker.get_unannotated_global_keys modified_qualifiers |> Reference.Set.of_list
+              KeyTracker.get_unannotated_global_keys key_tracker modified_qualifiers
+              |> Reference.Set.of_list
             in
             let class_additions = Type.Primitive.Set.diff current_classes previous_classes in
             let define_additions = Reference.Set.diff current_defines previous_defines in
@@ -1148,7 +1212,7 @@ let update_this_and_all_preceding_environments
         previous_unannotated_globals;
         triggered_dependencies;
         upstream;
-        read_only = read_only this_environment;
+        read_only = read_only environment;
       }
   | _ ->
       let triggered_dependencies =
@@ -1171,5 +1235,5 @@ let update_this_and_all_preceding_environments
         define_additions = Reference.Set.empty;
         triggered_dependencies;
         upstream;
-        read_only = read_only this_environment;
+        read_only = read_only environment;
       }
