@@ -645,17 +645,17 @@ let add_to_transaction
     ~previous_defines_list
     ~previous_modules_list
   =
+  let module_keys = Modules.KeySet.of_list previous_modules_list in
   let class_keys = ClassSummaries.KeySet.of_list previous_classes_list in
+  let defines_keys = FunctionDefinitions.KeySet.of_list previous_defines_list in
   let unannotated_globals_keys =
     UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
   in
-  let defines_keys = FunctionDefinitions.KeySet.of_list previous_defines_list in
-  let module_keys = Modules.KeySet.of_list previous_modules_list in
   transaction
-  |> ClassSummaries.add_to_transaction class_summaries ~keys:class_keys
-  |> UnannotatedGlobals.add_to_transaction unannotated_globals ~keys:unannotated_globals_keys
-  |> FunctionDefinitions.add_to_transaction function_definitions ~keys:defines_keys
   |> Modules.add_to_transaction modules ~keys:module_keys
+  |> ClassSummaries.add_to_transaction class_summaries ~keys:class_keys
+  |> FunctionDefinitions.add_to_transaction function_definitions ~keys:defines_keys
+  |> UnannotatedGlobals.add_to_transaction unannotated_globals ~keys:unannotated_globals_keys
 
 
 let get_all_dependents ~class_additions ~unannotated_global_additions ~define_additions =
@@ -677,12 +677,12 @@ let direct_data_purge
     ~previous_defines_list
     ~previous_modules_list
   =
+  Modules.KeySet.of_list previous_modules_list |> Modules.remove_batch modules;
   ClassSummaries.KeySet.of_list previous_classes_list |> ClassSummaries.remove_batch class_summaries;
-  UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
-  |> UnannotatedGlobals.remove_batch unannotated_globals;
   FunctionDefinitions.KeySet.of_list previous_defines_list
   |> FunctionDefinitions.remove_batch function_definitions;
-  Modules.KeySet.of_list previous_modules_list |> Modules.remove_batch modules;
+  UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
+  |> UnannotatedGlobals.remove_batch unannotated_globals;
   ()
 
 
