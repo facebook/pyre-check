@@ -397,6 +397,14 @@ module Modules = struct
   let key_to_reference = Fn.id
 end
 
+type t = { ast_environment: AstEnvironment.t }
+
+let create ast_environment = { ast_environment }
+
+let ast_environment { ast_environment } = ast_environment
+
+let configuration { ast_environment; _ } = AstEnvironment.configuration ast_environment
+
 let set_module ~qualifier module_ = Modules.add qualifier module_
 
 let set_unannotated_global ~name unannotated_global = UnannotatedGlobals.add name unannotated_global
@@ -586,14 +594,6 @@ module LazyLoading = struct
     if is_qualifier then load_module_if_tracked reference;
     ()
 end
-
-type t = { ast_environment: AstEnvironment.t }
-
-let create ast_environment = { ast_environment }
-
-let ast_environment { ast_environment } = ast_environment
-
-let configuration { ast_environment; _ } = AstEnvironment.configuration ast_environment
 
 module ReadOnly = struct
   type t = {

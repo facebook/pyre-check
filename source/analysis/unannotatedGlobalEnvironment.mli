@@ -9,6 +9,14 @@ open Ast
 open Statement
 open SharedMemoryKeys
 
+type t
+
+val create : AstEnvironment.t -> t
+
+val ast_environment : t -> AstEnvironment.t
+
+val configuration : t -> Configuration.Analysis.t
+
 module ResolvedReference : sig
   type export =
     | FromModuleGetattr
@@ -116,6 +124,8 @@ module ReadOnly : sig
     bool
 end
 
+val read_only : t -> ReadOnly.t
+
 module UpdateResult : sig
   (* This type is sealed to reify that Environment updates must follow and be based off of
      preenvironment updates *)
@@ -143,16 +153,6 @@ module UpdateResult : sig
 
   val read_only : t -> read_only
 end
-
-type t
-
-val create : AstEnvironment.t -> t
-
-val ast_environment : t -> AstEnvironment.t
-
-val configuration : t -> Configuration.Analysis.t
-
-val read_only : t -> ReadOnly.t
 
 val update_this_and_all_preceding_environments
   :  t ->
