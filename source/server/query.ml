@@ -131,7 +131,7 @@ module Response = struct
       `Assoc ["start", position_to_yojson start; "end", position_to_yojson end_]
 
 
-    type location_of_definition = {
+    type code_location = {
       path: string;
       range: range;
     }
@@ -146,9 +146,10 @@ module Response = struct
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | FoundAttributes of attribute list
       | FoundDefines of define list
-      | FoundLocationsOfDefinitions of location_of_definition list
+      | FoundLocationsOfDefinitions of code_location list
       | FoundModules of Reference.t list
       | FoundPath of string
+      | FoundReferences of code_location list
       | FunctionDefinition of Statement.Define.t
       | Help of string
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
@@ -235,11 +236,12 @@ module Response = struct
           in
           `List (List.map defines ~f:define_to_yojson)
       | FoundLocationsOfDefinitions locations ->
-          `List (List.map locations ~f:location_of_definition_to_yojson)
+          `List (List.map locations ~f:code_location_to_yojson)
       | FoundModules references ->
           let reference_to_yojson reference = `String (Reference.show reference) in
           `List (List.map references ~f:reference_to_yojson)
       | FoundPath path -> `Assoc ["path", `String path]
+      | FoundReferences locations -> `List (List.map locations ~f:code_location_to_yojson)
       | FunctionDefinition define ->
           `Assoc
             [
@@ -831,7 +833,9 @@ let rec process_request ~environment ~build_system ~configuration request =
         |> Option.value
              ~default:
                (Error (Format.sprintf "No path found for module `%s`" (Reference.show module_name)))
-    | FindReferences _ -> failwith "TODO(T114362295)"
+    | FindReferences _ ->
+        (* TODO(T114362295): Support find all references. *)
+        Single (Base.FoundReferences [])
     | SaveServerState path ->
         let path = PyrePath.absolute path in
         Log.info "Saving server state into `%s`" path;

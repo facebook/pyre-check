@@ -119,7 +119,7 @@ module Response : sig
     }
     [@@deriving sexp, compare, to_yojson]
 
-    type location_of_definition = {
+    type code_location = {
       path: string;
       range: range;
     }
@@ -134,9 +134,10 @@ module Response : sig
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | FoundAttributes of attribute list
       | FoundDefines of define list
-      | FoundLocationsOfDefinitions of location_of_definition list
+      | FoundLocationsOfDefinitions of code_location list
       | FoundModules of Ast.Reference.t list
       | FoundPath of string
+      | FoundReferences of code_location list
       | FunctionDefinition of Statement.Define.t
       | Help of string
       | ModelVerificationErrors of Taint.ModelVerificationError.t list

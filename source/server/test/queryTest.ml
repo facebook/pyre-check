@@ -1475,6 +1475,66 @@ let test_location_of_definition context =
              |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
+let test_find_references context =
+  let sources =
+    [
+      "stubbed_library.py", {|
+              def identity(a):
+                return a
+            |};
+      "stubbed_library.pyi", {|
+              def identity(a: int) -> int: ...
+            |};
+      ( "foo.py",
+        {|
+              def foo(a: int) -> int:
+                x = a
+                return x
+
+              class Base:
+                def __init__(self, x: int) -> None:
+                  self.x = x
+            |}
+      );
+      ( "bar.py",
+        {|
+              from foo import foo, Base
+              from stubbed_library import identity
+
+              class Child(Base): ...
+
+              def bar() -> int:
+                return foo(0)
+            |}
+      );
+    ]
+  in
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  (* TODO(T114362295): Support find all references. *)
+  let queries_and_expected_responses =
+    [
+      ( "find_references(path='foo.py', line=2, column=8)",
+        {|
+      {
+      "response": []
+      }
+    |} );
+    ]
+  in
+  assert_queries_with_local_root
+    ~custom_source_root
+    ~context
+    ~sources
+    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
+         ( query,
+           fun _ ->
+             response
+             |> Yojson.Safe.from_string
+             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
+
+
 let () =
   "query"
   >::: [
@@ -1485,5 +1545,6 @@ let () =
          "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
          "inline_decorators" >:: OUnitLwt.lwt_wrapper test_inline_decorators;
          "location_of_definition" >:: OUnitLwt.lwt_wrapper test_location_of_definition;
+         "find_references" >:: OUnitLwt.lwt_wrapper test_find_references;
        ]
   |> Test.run
