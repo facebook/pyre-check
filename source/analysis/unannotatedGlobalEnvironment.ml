@@ -264,20 +264,20 @@ module KeyTracker = struct
     let description = "Class keys"
   end
 
-  module UnannotatedGlobalKeyValue = struct
-    type t = Reference.t list [@@deriving compare]
-
-    let prefix = Prefix.make ()
-
-    let description = "Class keys"
-  end
-
   module DefineKeyValue = struct
     type t = Reference.t list [@@deriving compare]
 
     let prefix = Prefix.make ()
 
     let description = "Define keys"
+  end
+
+  module UnannotatedGlobalKeyValue = struct
+    type t = Reference.t list [@@deriving compare]
+
+    let prefix = Prefix.make ()
+
+    let description = "Class keys"
   end
 
   module ClassKeys = Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (ClassKeyValue)
@@ -293,86 +293,20 @@ module KeyTracker = struct
     |> List.concat
 
 
+  let get_define_keys qualifiers =
+    DefineKeys.KeySet.of_list qualifiers
+    |> DefineKeys.get_batch
+    |> DefineKeys.KeyMap.values
+    |> List.filter_map ~f:Fn.id
+    |> List.concat
+
+
   let get_unannotated_global_keys qualifiers =
     UnannotatedGlobalKeys.KeySet.of_list qualifiers
     |> UnannotatedGlobalKeys.get_batch
     |> UnannotatedGlobalKeys.KeyMap.values
     |> List.filter_map ~f:Fn.id
     |> List.concat
-
-
-  let get_define_body_keys qualifiers =
-    DefineKeys.KeySet.of_list qualifiers
-    |> DefineKeys.get_batch
-    |> DefineKeys.KeyMap.values
-    |> List.filter_map ~f:Fn.id
-    |> List.concat
-end
-
-module ClassSummaryValue = struct
-  type t = ClassSummary.t Node.t
-
-  let prefix = Prefix.make ()
-
-  let description = "ClassSummary"
-
-  let compare = Node.compare ClassSummary.compare
-end
-
-module ClassSummaries = struct
-  include
-    DependencyTrackedMemory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.StringKey)
-      (DependencyKey)
-      (ClassSummaryValue)
-
-  let is_qualifier = false
-
-  let key_to_reference name = Reference.create name
-end
-
-module UnannotatedGlobalValue = struct
-  type t = UnannotatedGlobal.t
-
-  let prefix = Prefix.make ()
-
-  let description = "UnannotatedGlobal"
-
-  let compare = UnannotatedGlobal.compare
-end
-
-module UnannotatedGlobals = struct
-  include
-    DependencyTrackedMemory.DependencyTrackedTableNoCache
-      (SharedMemoryKeys.ReferenceKey)
-      (DependencyKey)
-      (UnannotatedGlobalValue)
-
-  let is_qualifier = false
-
-  let key_to_reference = Fn.id
-end
-
-module FunctionDefinitionValue = struct
-  type t = FunctionDefinition.t
-
-  let description = "FunctionDefinition"
-
-  let prefix = Prefix.make ()
-
-  let compare = FunctionDefinition.compare
-end
-
-module FunctionDefinitions = struct
-  include
-    DependencyTrackedMemory.DependencyTrackedTableWithCache
-      (SharedMemoryKeys.ReferenceKey)
-      (DependencyKey)
-      (FunctionDefinitionValue)
-
-  let is_qualifier = false
-
-  let key_to_reference = Fn.id
 end
 
 module ModuleValue = struct
@@ -397,6 +331,72 @@ module Modules = struct
   let key_to_reference = Fn.id
 end
 
+module ClassSummaryValue = struct
+  type t = ClassSummary.t Node.t
+
+  let prefix = Prefix.make ()
+
+  let description = "ClassSummary"
+
+  let compare = Node.compare ClassSummary.compare
+end
+
+module ClassSummaries = struct
+  include
+    DependencyTrackedMemory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.StringKey)
+      (DependencyKey)
+      (ClassSummaryValue)
+
+  let is_qualifier = false
+
+  let key_to_reference name = Reference.create name
+end
+
+module FunctionDefinitionValue = struct
+  type t = FunctionDefinition.t
+
+  let description = "FunctionDefinition"
+
+  let prefix = Prefix.make ()
+
+  let compare = FunctionDefinition.compare
+end
+
+module FunctionDefinitions = struct
+  include
+    DependencyTrackedMemory.DependencyTrackedTableWithCache
+      (SharedMemoryKeys.ReferenceKey)
+      (DependencyKey)
+      (FunctionDefinitionValue)
+
+  let is_qualifier = false
+
+  let key_to_reference = Fn.id
+end
+
+module UnannotatedGlobalValue = struct
+  type t = UnannotatedGlobal.t
+
+  let prefix = Prefix.make ()
+
+  let description = "UnannotatedGlobal"
+
+  let compare = UnannotatedGlobal.compare
+end
+
+module UnannotatedGlobals = struct
+  include
+    DependencyTrackedMemory.DependencyTrackedTableNoCache
+      (SharedMemoryKeys.ReferenceKey)
+      (DependencyKey)
+      (UnannotatedGlobalValue)
+
+  let is_qualifier = false
+
+  let key_to_reference = Fn.id
+end
+
 type t = { ast_environment: AstEnvironment.t }
 
 let create ast_environment = { ast_environment }
@@ -407,58 +407,13 @@ let configuration { ast_environment; _ } = AstEnvironment.configuration ast_envi
 
 let set_module ~qualifier module_ = Modules.add qualifier module_
 
-let set_unannotated_global ~name unannotated_global = UnannotatedGlobals.add name unannotated_global
-
 let set_class_summary ~name class_summary = ClassSummaries.write_around name class_summary
 
 let set_function_definition ~name function_definition =
   FunctionDefinitions.write_around name function_definition
 
 
-let set_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-  let write { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
-    let name = Reference.create name |> Reference.combine qualifier in
-    set_unannotated_global ~name unannotated_global;
-    name
-  in
-  let merge_defines unannotated_globals_alist =
-    let not_defines, defines =
-      List.partition_map unannotated_globals_alist ~f:(function
-          | { UnannotatedGlobal.Collector.Result.name; unannotated_global = Define defines } ->
-              Either.Second (name, defines)
-          | x -> Either.First x)
-    in
-    let add_to_map sofar (name, defines) =
-      let merge_with_existing to_merge = function
-        | None -> Some to_merge
-        | Some existing -> Some (to_merge @ existing)
-      in
-      Map.change sofar name ~f:(merge_with_existing defines)
-    in
-    List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
-    |> Identifier.Map.to_alist
-    |> List.map ~f:(fun (name, defines) ->
-           {
-             UnannotatedGlobal.Collector.Result.name;
-             unannotated_global = Define (List.rev defines);
-           })
-    |> fun defines -> List.append defines not_defines
-  in
-  let drop_classes unannotated_globals =
-    let is_not_class = function
-      | { UnannotatedGlobal.Collector.Result.unannotated_global = Class; _ } -> false
-      | _ -> true
-    in
-    List.filter unannotated_globals ~f:is_not_class
-  in
-  let globals = UnannotatedGlobal.Collector.from_source source |> merge_defines |> drop_classes in
-  let globals =
-    match Reference.as_list qualifier with
-    | [] -> globals @ missing_builtin_globals
-    | _ -> globals
-  in
-  globals |> List.map ~f:write |> KeyTracker.UnannotatedGlobalKeys.add qualifier
-
+let set_unannotated_global ~name unannotated_global = UnannotatedGlobals.add name unannotated_global
 
 let set_class_summaries ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
   (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
@@ -520,10 +475,55 @@ let set_function_definitions
       |> KeyTracker.DefineKeys.add qualifier
 
 
+let set_unannotated_globals ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+  let write { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
+    let name = Reference.create name |> Reference.combine qualifier in
+    set_unannotated_global ~name unannotated_global;
+    name
+  in
+  let merge_defines unannotated_globals_alist =
+    let not_defines, defines =
+      List.partition_map unannotated_globals_alist ~f:(function
+          | { UnannotatedGlobal.Collector.Result.name; unannotated_global = Define defines } ->
+              Either.Second (name, defines)
+          | x -> Either.First x)
+    in
+    let add_to_map sofar (name, defines) =
+      let merge_with_existing to_merge = function
+        | None -> Some to_merge
+        | Some existing -> Some (to_merge @ existing)
+      in
+      Map.change sofar name ~f:(merge_with_existing defines)
+    in
+    List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
+    |> Identifier.Map.to_alist
+    |> List.map ~f:(fun (name, defines) ->
+           {
+             UnannotatedGlobal.Collector.Result.name;
+             unannotated_global = Define (List.rev defines);
+           })
+    |> fun defines -> List.append defines not_defines
+  in
+  let drop_classes unannotated_globals =
+    let is_not_class = function
+      | { UnannotatedGlobal.Collector.Result.unannotated_global = Class; _ } -> false
+      | _ -> true
+    in
+    List.filter unannotated_globals ~f:is_not_class
+  in
+  let globals = UnannotatedGlobal.Collector.from_source source |> merge_defines |> drop_classes in
+  let globals =
+    match Reference.as_list qualifier with
+    | [] -> globals @ missing_builtin_globals
+    | _ -> globals
+  in
+  globals |> List.map ~f:write |> KeyTracker.UnannotatedGlobalKeys.add qualifier
+
+
 let set_module_data ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-  set_unannotated_globals source;
   set_class_summaries source;
   set_function_definitions source;
+  set_unannotated_globals source;
   (* We must set this last, because lazy-loading uses Module.mem to determine whether the source has
      already been processed. So setting it earlier can lead to data races *)
   set_module ~qualifier (Module.create source)
@@ -619,8 +619,6 @@ module ReadOnly = struct
 
   let unannotated_global_environment = Fn.id
 
-  let class_exists { class_exists; _ } = class_exists
-
   let all_classes { all_classes; _ } = all_classes ()
 
   let all_indices { all_indices; _ } = all_indices ()
@@ -629,15 +627,21 @@ module ReadOnly = struct
 
   let all_unannotated_globals { all_unannotated_globals; _ } = all_unannotated_globals ()
 
+  let all_defines_in_module { all_defines_in_module; _ } = all_defines_in_module
+
+  let get_module_metadata { get_module_metadata; _ } = get_module_metadata
+
+  let module_exists { module_exists; _ } = module_exists
+
   let get_class_summary { get_class_summary; _ } = get_class_summary
 
-  let get_unannotated_global { get_unannotated_global; _ } = get_unannotated_global
+  let class_exists { class_exists; _ } = class_exists
 
   let get_function_definition { get_function_definition; _ } = get_function_definition
 
   let get_define_body { get_define_body; _ } = get_define_body
 
-  let all_defines_in_module { all_defines_in_module; _ } = all_defines_in_module
+  let get_unannotated_global { get_unannotated_global; _ } = get_unannotated_global
 
   let primitive_name annotation =
     let primitive, _ = Type.split annotation in
@@ -656,10 +660,6 @@ module ReadOnly = struct
     let is_tracked = class_exists read_only ?dependency in
     List.exists ~f:(fun annotation -> not (is_tracked annotation)) (Type.elements annotation)
 
-
-  let get_module_metadata { get_module_metadata; _ } = get_module_metadata
-
-  let module_exists { module_exists; _ } = module_exists
 
   let legacy_resolve_exports read_only ?dependency reference =
     (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
@@ -911,16 +911,6 @@ let read_only { ast_environment } =
   let module UnannotatedGlobals = ReadOnlyTable.Make (UnannotatedGlobals) in
   (* Define the basic getters and existence checks *)
   let get_module = Modules.get ~ast_environment in
-  let class_exists = ClassSummaries.mem ~ast_environment in
-  let get_class_summary = ClassSummaries.get ~ast_environment in
-  let get_unannotated_global = UnannotatedGlobals.get ~ast_environment in
-  let get_function_definition = FunctionDefinitions.get ~ast_environment in
-  (* all_defines_in_module is the only KeyTracker-based API that requires loading *)
-  let all_defines_in_module qualifier =
-    LazyLoading.load_module_if_tracked ~ast_environment qualifier;
-    KeyTracker.get_define_body_keys [qualifier]
-  in
-  (* Special case some logic for modules *)
   let get_module_metadata ?dependency qualifier =
     let qualifier =
       match Reference.as_list qualifier with
@@ -948,6 +938,18 @@ let read_only { ast_environment } =
     | true -> true
     | false -> AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier
   in
+  let get_class_summary = ClassSummaries.get ~ast_environment in
+  let class_exists = ClassSummaries.mem ~ast_environment in
+  let get_unannotated_global = UnannotatedGlobals.get ~ast_environment in
+  let get_function_definition = FunctionDefinitions.get ~ast_environment in
+  let get_define_body ?dependency key =
+    get_function_definition ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
+  in
+  (* all_defines_in_module is the only KeyTracker-based API that requires loading *)
+  let all_defines_in_module qualifier =
+    LazyLoading.load_module_if_tracked ~ast_environment qualifier;
+    KeyTracker.get_define_keys [qualifier]
+  in
   (* Define the bulk key reads - these tell us what's been loaded thus far *)
   let all_classes () =
     AstEnvironment.ReadOnly.all_explicit_modules ast_environment |> KeyTracker.get_class_keys
@@ -960,34 +962,31 @@ let read_only { ast_environment } =
     |> KeyTracker.get_unannotated_global_keys
   in
   let all_defines () =
-    AstEnvironment.ReadOnly.all_explicit_modules ast_environment |> KeyTracker.get_define_body_keys
-  in
-  let get_define_body ?dependency key =
-    get_function_definition ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
+    AstEnvironment.ReadOnly.all_explicit_modules ast_environment |> KeyTracker.get_define_keys
   in
   {
     ReadOnly.ast_environment;
+    get_module_metadata;
+    module_exists;
     get_class_summary;
+    class_exists;
+    get_function_definition;
+    get_define_body;
+    get_unannotated_global;
+    all_defines_in_module;
     all_classes;
     all_indices;
     all_defines;
-    class_exists;
-    get_unannotated_global;
-    get_function_definition;
-    get_define_body;
-    all_defines_in_module;
     all_unannotated_globals;
-    get_module_metadata;
-    module_exists;
   }
 
 
 module UpdateResult = struct
   type t = {
     previous_classes: Type.Primitive.Set.t;
-    previous_unannotated_globals: Reference.Set.t;
     previous_defines: Reference.Set.t;
     define_additions: Reference.Set.t;
+    previous_unannotated_globals: Reference.Set.t;
     triggered_dependencies: DependencyKey.RegisteredSet.t;
     upstream: AstEnvironment.UpdateResult.t;
     read_only: ReadOnly.t;
@@ -995,15 +994,15 @@ module UpdateResult = struct
 
   type read_only = ReadOnly.t
 
-  let previous_unannotated_globals { previous_unannotated_globals; _ } =
-    previous_unannotated_globals
-
+  let previous_classes { previous_classes; _ } = previous_classes
 
   let previous_defines { previous_defines; _ } = previous_defines
 
-  let previous_classes { previous_classes; _ } = previous_classes
-
   let define_additions { define_additions; _ } = define_additions
+
+  let previous_unannotated_globals { previous_unannotated_globals; _ } =
+    previous_unannotated_globals
+
 
   let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
@@ -1053,13 +1052,13 @@ let update_this_and_all_preceding_environments
   let previous_unannotated_globals_list =
     KeyTracker.get_unannotated_global_keys modified_qualifiers
   in
-  let previous_unannotated_globals = Reference.Set.of_list previous_unannotated_globals_list in
-  let previous_defines_list = KeyTracker.get_define_body_keys modified_qualifiers in
+  let previous_defines_list = KeyTracker.get_define_keys modified_qualifiers in
   let previous_defines = Reference.Set.of_list previous_defines_list in
+  let previous_unannotated_globals = Reference.Set.of_list previous_unannotated_globals_list in
   KeyTracker.ClassKeys.KeySet.of_list modified_qualifiers |> KeyTracker.ClassKeys.remove_batch;
+  KeyTracker.DefineKeys.KeySet.of_list modified_qualifiers |> KeyTracker.DefineKeys.remove_batch;
   KeyTracker.UnannotatedGlobalKeys.KeySet.of_list modified_qualifiers
   |> KeyTracker.UnannotatedGlobalKeys.remove_batch;
-  KeyTracker.DefineKeys.KeySet.of_list modified_qualifiers |> KeyTracker.DefineKeys.remove_batch;
   match configuration this_environment with
   | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
       let define_additions, triggered_dependencies =
@@ -1078,17 +1077,17 @@ let update_this_and_all_preceding_environments
             let current_classes =
               KeyTracker.get_class_keys modified_qualifiers |> Type.Primitive.Set.of_list
             in
+            let current_defines =
+              KeyTracker.get_define_keys modified_qualifiers |> Reference.Set.of_list
+            in
             let current_unannotated_globals =
               KeyTracker.get_unannotated_global_keys modified_qualifiers |> Reference.Set.of_list
             in
-            let current_defines =
-              KeyTracker.get_define_body_keys modified_qualifiers |> Reference.Set.of_list
-            in
             let class_additions = Type.Primitive.Set.diff current_classes previous_classes in
+            let define_additions = Reference.Set.diff current_defines previous_defines in
             let unannotated_global_additions =
               Reference.Set.diff current_unannotated_globals previous_unannotated_globals
             in
-            let define_additions = Reference.Set.diff current_defines previous_defines in
             let addition_triggers =
               get_all_dependents
                 ~class_additions:(Set.to_list class_additions)
@@ -1112,9 +1111,9 @@ let update_this_and_all_preceding_environments
       in
       {
         UpdateResult.previous_classes;
-        previous_unannotated_globals;
         previous_defines;
         define_additions;
+        previous_unannotated_globals;
         triggered_dependencies;
         upstream;
         read_only = read_only this_environment;
