@@ -82,21 +82,25 @@ let assert_dependency ~expected actual =
     (StringDependencyKey.RegisteredSet.subset expected_set actual)
 
 
+let table_a = TableA.create ()
+
+let table_b = TableB.create ()
+
 let test_dependency_table _ =
   let function_1 = "function_1" in
   let function_2 = "function_2" in
   let function_3 = "function_3" in
   let function_4 = "function_4" in
-  let _value : string option = TableA.get "Foo" ~dependency:function_1 in
-  let _value : string option = TableA.get "Bar" ~dependency:function_1 in
-  let _value : string option = TableA.get "Foo" ~dependency:function_2 in
-  let _value : string option = TableA.get "Foo" ~dependency:function_3 in
+  let _value : string option = TableA.get table_a "Foo" ~dependency:function_1 in
+  let _value : string option = TableA.get table_a "Bar" ~dependency:function_1 in
+  let _value : string option = TableA.get table_a "Foo" ~dependency:function_2 in
+  let _value : string option = TableA.get table_a "Foo" ~dependency:function_3 in
 
   assert_dependency
     ~expected:[function_3; function_2; function_1]
     (TableA.get_dependents ~kind:Get "Foo");
   assert_dependency ~expected:[function_1] (TableA.get_dependents ~kind:Get "Bar");
-  let _value : string option = TableB.get "Foo" ~dependency:function_4 in
+  let _value : string option = TableB.get table_b "Foo" ~dependency:function_4 in
 
   (* Ensure that different tables' same keys are encoded differently *)
   assert_dependency ~expected:[function_4] (TableB.get_dependents ~kind:Get "Foo");
@@ -105,14 +109,14 @@ let test_dependency_table _ =
   Memory.reset_shared_memory ();
   assert_dependency ~expected:[] (TableA.get_dependents ~kind:Get "Foo");
   assert_dependency ~expected:[] (TableB.get_dependents ~kind:Get "Foo");
-  let _value : string option = TableB.get "Foo" ~dependency:function_4 in
+  let _value : string option = TableB.get table_b "Foo" ~dependency:function_4 in
   assert_dependency ~expected:[function_4] (TableB.get_dependents ~kind:Get "Foo");
 
   (* Ensure that the `get` interface also adds the corresponding dependencies *)
-  TableA.get "Foo" ~dependency:function_1 |> ignore;
-  TableA.get "Bar" ~dependency:function_1 |> ignore;
-  TableA.get "Foo" ~dependency:function_2 |> ignore;
-  TableA.get "Foo" ~dependency:function_3 |> ignore;
+  TableA.get table_a "Foo" ~dependency:function_1 |> ignore;
+  TableA.get table_a "Bar" ~dependency:function_1 |> ignore;
+  TableA.get table_a "Foo" ~dependency:function_2 |> ignore;
+  TableA.get table_a "Foo" ~dependency:function_3 |> ignore;
 
   assert_dependency
     ~expected:[function_3; function_2; function_1]
@@ -136,22 +140,22 @@ module UpdateDependencyTest = struct
   let assert_dependencies ~expected specification =
     let open Core in
     let setup_old_state { key; old_value; get_dependencies; mem_dependencies; _ } =
-      Option.iter old_value ~f:(TableA.add key);
+      Option.iter old_value ~f:(TableA.add table_a key);
       let _values : string option list =
-        List.map get_dependencies ~f:(fun dependency -> TableA.get key ~dependency)
+        List.map get_dependencies ~f:(fun dependency -> TableA.get table_a key ~dependency)
       in
       let _values : bool list =
-        List.map mem_dependencies ~f:(fun dependency -> TableA.mem key ~dependency)
+        List.map mem_dependencies ~f:(fun dependency -> TableA.mem table_a key ~dependency)
       in
       ()
     in
     List.iter specification ~f:setup_old_state;
-    let setup_new_state { key; new_value; _ } = Option.iter new_value ~f:(TableA.add key) in
+    let setup_new_state { key; new_value; _ } = Option.iter new_value ~f:(TableA.add table_a key) in
     let update _ = List.iter specification ~f:setup_new_state in
     let keys = List.map specification ~f:(fun { key; _ } -> key) |> TableB.KeySet.of_list in
     let _, actual =
       StringDependencyKey.Transaction.empty ~scheduler:(Test.mock_scheduler ())
-      |> TableA.add_to_transaction ~keys
+      |> TableA.add_to_transaction table_a ~keys
       |> StringDependencyKey.Transaction.execute ~update
     in
     assert_dependency ~expected actual;

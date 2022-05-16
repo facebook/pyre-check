@@ -88,27 +88,29 @@ module DependencyTrackedTableWithCache
     (DependencyKey : DependencyKey.S)
     (Value : Memory.ComparableValueType) : sig
   include
-    Memory.WithCache.S
+    Memory.FirstClass.WithCache.S
       with type value = Value.t
        and type key = Key.t
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 
-  val get : ?dependency:DependencyKey.registered -> key -> value option
+  val get : t -> ?dependency:DependencyKey.registered -> key -> value option
 
-  val mem : ?dependency:DependencyKey.registered -> key -> bool
+  val mem : t -> ?dependency:DependencyKey.registered -> key -> bool
 
   val get_dependents : kind:DependencyKind.t -> key -> DependencyKey.RegisteredSet.t
 
   val get_all_dependents : KeySet.t -> DependencyKey.RegisteredSet.t
 
   val add_to_transaction
-    :  DependencyKey.Transaction.t ->
+    :  t ->
+    DependencyKey.Transaction.t ->
     keys:KeySet.t ->
     DependencyKey.Transaction.t
 
   val add_pessimistic_transaction
-    :  DependencyKey.Transaction.t ->
+    :  t ->
+    DependencyKey.Transaction.t ->
     keys:KeySet.t ->
     DependencyKey.Transaction.t
 end
@@ -118,27 +120,29 @@ module DependencyTrackedTableNoCache
     (DependencyKey : DependencyKey.S)
     (Value : Memory.ComparableValueType) : sig
   include
-    Memory.NoCache.S
+    Memory.FirstClass.NoCache.S
       with type value = Value.t
        and type key = Key.t
        and module KeySet = Set.Make(Key)
        and module KeyMap = MyMap.Make(Key)
 
-  val get : ?dependency:DependencyKey.registered -> key -> value option
+  val get : t -> ?dependency:DependencyKey.registered -> key -> value option
 
-  val mem : ?dependency:DependencyKey.registered -> key -> bool
+  val mem : t -> ?dependency:DependencyKey.registered -> key -> bool
 
   val get_dependents : kind:DependencyKind.t -> key -> DependencyKey.RegisteredSet.t
 
   val get_all_dependents : KeySet.t -> DependencyKey.RegisteredSet.t
 
   val add_to_transaction
-    :  DependencyKey.Transaction.t ->
+    :  t ->
+    DependencyKey.Transaction.t ->
     keys:KeySet.t ->
     DependencyKey.Transaction.t
 
   val add_pessimistic_transaction
-    :  DependencyKey.Transaction.t ->
+    :  t ->
+    DependencyKey.Transaction.t ->
     keys:KeySet.t ->
     DependencyKey.Transaction.t
 end

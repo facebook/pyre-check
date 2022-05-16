@@ -160,12 +160,16 @@ end
 
 module DependencyTracking = struct
   module type TableType = sig
-    include Memory.NoCache.S
+    include Memory.FirstClass.NoCache.S
 
     module Value : Memory.ComparableValueType with type t = value
   end
 
   module Make (DependencyKey : DependencyKey.S) (Table : TableType) = struct
+    type t = Table.t
+
+    let create () = Table.create ()
+
     let add_dependency
         ~(kind : DependencyKind.t)
         (key : Table.key)
@@ -191,23 +195,23 @@ module DependencyTracking = struct
       |> List.fold ~init ~f:DependencyKey.RegisteredSet.union
 
 
-    let get ?dependency key =
+    let get table ?dependency key =
       Option.iter dependency ~f:(add_dependency key ~kind:Get);
-      Table.get key
+      Table.get table key
 
 
-    let mem ?dependency key =
+    let mem table ?dependency key =
       Option.iter dependency ~f:(add_dependency key ~kind:Mem);
-      Table.mem key
+      Table.mem table key
 
 
-    let deprecate_keys = Table.oldify_batch
+    let deprecate_keys table = Table.oldify_batch table
 
-    let dependencies_since_last_deprecate keys ~scheduler:_ =
+    let dependencies_since_last_deprecate table keys ~scheduler:_ =
       let add_dependencies init keys =
         let add_dependency sofar key =
           let value_has_changed, presence_has_changed =
-            match Table.get_old key, Table.get key with
+            match Table.get_old table key, Table.get table key with
             | None, None -> false, false
             | Some old_value, Some new_value ->
                 not (Int.equal 0 (Table.Value.compare old_value new_value)), false
@@ -231,25 +235,25 @@ module DependencyTracking = struct
       let dependencies =
         add_dependencies DependencyKey.RegisteredSet.empty (Table.KeySet.elements keys)
       in
-      Table.remove_old_batch keys;
+      Table.remove_old_batch table keys;
       dependencies
 
 
-    let add_to_transaction transaction ~keys =
+    let add_to_transaction table transaction ~keys =
       let scheduler = DependencyKey.Transaction.scheduler transaction in
       DependencyKey.Transaction.add
         transaction
         {
-          before = (fun () -> deprecate_keys keys);
-          after = (fun () -> dependencies_since_last_deprecate keys ~scheduler);
+          before = (fun () -> deprecate_keys table keys);
+          after = (fun () -> dependencies_since_last_deprecate table keys ~scheduler);
         }
 
 
-    let add_pessimistic_transaction (transaction : DependencyKey.Transaction.t) ~keys =
+    let add_pessimistic_transaction table (transaction : DependencyKey.Transaction.t) ~keys =
       DependencyKey.Transaction.add
         transaction
         {
-          before = (fun () -> Table.remove_batch keys);
+          before = (fun () -> Table.remove_batch table keys);
           after = (fun () -> get_all_dependents keys);
         }
   end
@@ -260,7 +264,7 @@ module DependencyTrackedTableWithCache
     (DependencyKey : DependencyKey.S)
     (Value : Memory.ComparableValueType) =
 struct
-  module Table = Memory.WithCache.Make (Key) (Value)
+  module Table = Memory.FirstClass.WithCache.Make (Key) (Value)
   include Table
 
   include
@@ -277,7 +281,7 @@ module DependencyTrackedTableNoCache
     (DependencyKey : DependencyKey.S)
     (Value : Memory.ComparableValueType) =
 struct
-  module Table = Memory.NoCache.Make (Key) (Value)
+  module Table = Memory.FirstClass.NoCache.Make (Key) (Value)
   include Table
 
   include

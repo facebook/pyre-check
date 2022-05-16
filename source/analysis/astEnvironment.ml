@@ -37,30 +37,36 @@ module RawSources = struct
       (SharedMemoryKeys.DependencyKey)
       (RawSourceValue)
 
-  let add_parsed_source _ ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
-    add qualifier (Result.Ok source)
+  let add_parsed_source table ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+    add table qualifier (Result.Ok source)
 
 
-  let add_unparsed_source _ ({ ParserError.source_path = { SourcePath.qualifier; _ }; _ } as error) =
-    add qualifier (Result.Error error)
+  let add_unparsed_source
+      table
+      ({ ParserError.source_path = { SourcePath.qualifier; _ }; _ } as error)
+    =
+    add table qualifier (Result.Error error)
 
 
-  let update_and_compute_dependencies _ ~update ~scheduler qualifiers =
+  let update_and_compute_dependencies table ~update ~scheduler qualifiers =
     let keys = KeySet.of_list qualifiers in
     SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler
-    |> add_to_transaction ~keys
+    |> add_to_transaction table ~keys
     |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
 
 
-  let remove_sources _ qualifiers = KeySet.of_list qualifiers |> remove_batch
+  let remove_sources table qualifiers = KeySet.of_list qualifiers |> remove_batch table
 end
 
 type t = {
   module_tracker: ModuleTracker.t;
+  raw_sources: RawSources.t;
   additional_preprocessing: (Source.t -> Source.t) option;
 }
 
-let create ?additional_preprocessing module_tracker = { module_tracker; additional_preprocessing }
+let create ?additional_preprocessing module_tracker =
+  { module_tracker; raw_sources = RawSources.create (); additional_preprocessing }
+
 
 let wildcard_exports_of ({ Source.source_path = { SourcePath.is_stub; _ }; _ } as source) =
   let open Expression in
@@ -180,7 +186,7 @@ let parse_source
         }
 
 
-let load_raw_source ~ast_environment:({ module_tracker; _ } as ast_environment) source_path =
+let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } source_path =
   let module_tracker = ModuleTracker.read_only module_tracker in
   let configuration = ModuleTracker.ReadOnly.configuration module_tracker in
   let do_parse context =
@@ -203,10 +209,10 @@ let load_raw_source ~ast_environment:({ module_tracker; _ } as ast_environment) 
             source
           |> Preprocessing.preprocess_phase0
         in
-        RawSources.add_parsed_source ast_environment source
+        RawSources.add_parsed_source raw_sources source
     | Error { location; message; is_suppressed } ->
         RawSources.add_unparsed_source
-          ast_environment
+          raw_sources
           { ParserError.source_path; location; message; is_suppressed }
   in
   PyreNewParser.with_context do_parse
@@ -235,12 +241,12 @@ module LazyRawSources = struct
     | None -> false
 
 
-  let get ~ast_environment ?dependency qualifier =
-    match RawSources.get ?dependency qualifier with
+  let get ~ast_environment:({ raw_sources; _ } as ast_environment) ?dependency qualifier =
+    match RawSources.get raw_sources ?dependency qualifier with
     | Some _ as source -> source
     | None ->
         if load ~ast_environment qualifier then
-          RawSources.get ?dependency qualifier
+          RawSources.get raw_sources ?dependency qualifier
         else
           None
 end
@@ -372,7 +378,11 @@ type trigger =
   | Update of ModuleTracker.IncrementalUpdate.t list
   | ColdStart
 
-let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environment) trigger =
+let update
+    ~scheduler
+    ({ raw_sources; module_tracker = upstream_tracker; _ } as ast_environment)
+    trigger
+  =
   let module_tracker = ModuleTracker.read_only upstream_tracker in
   let { Configuration.Analysis.incremental_style; _ } =
     ModuleTracker.ReadOnly.configuration module_tracker
@@ -407,7 +417,7 @@ let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environme
          sources that are now deleted or changed from explicit to implicit. *)
       let reparse_source_paths =
         List.filter changed_source_paths ~f:(fun { SourcePath.qualifier; _ } ->
-            RawSources.mem qualifier)
+            RawSources.mem raw_sources qualifier)
       in
       let reparse_modules =
         reparse_source_paths |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
@@ -430,7 +440,7 @@ let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environme
       in
       match incremental_style with
       | Configuration.Analysis.Shallow ->
-          RawSources.remove_sources ast_environment modules_with_invalidated_raw_source;
+          RawSources.remove_sources raw_sources modules_with_invalidated_raw_source;
           load_raw_sources ~scheduler ~ast_environment reparse_source_paths;
           {
             UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
@@ -446,7 +456,7 @@ let update ~scheduler ({ module_tracker = upstream_tracker; _ } as ast_environme
               ~tags:["phase_name", "Parsing"]
               ~f:(fun _ ->
                 RawSources.update_and_compute_dependencies
-                  ast_environment
+                  raw_sources
                   modules_with_invalidated_raw_source
                   ~update:update_raw_sources
                   ~scheduler)
@@ -527,7 +537,7 @@ module ReadOnly = struct
     >>= fun path -> PyrePath.get_relative_to_root ~root:local_root ~path
 end
 
-let remove_sources = RawSources.remove_sources
+let remove_sources { raw_sources; _ } = RawSources.remove_sources raw_sources
 
 let read_only ({ module_tracker; _ } as ast_environment) =
   let get_processed_source ~track_dependency qualifier =

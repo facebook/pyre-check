@@ -148,21 +148,23 @@ module EnvironmentTable = struct
   end
 
   module type Table = sig
-    include Memory.NoCache.S
+    include Memory.FirstClass.NoCache.S
 
     val add_to_transaction
-      :  SharedMemoryKeys.DependencyKey.Transaction.t ->
+      :  t ->
+      SharedMemoryKeys.DependencyKey.Transaction.t ->
       keys:KeySet.t ->
       SharedMemoryKeys.DependencyKey.Transaction.t
 
     val add_pessimistic_transaction
-      :  SharedMemoryKeys.DependencyKey.Transaction.t ->
+      :  t ->
+      SharedMemoryKeys.DependencyKey.Transaction.t ->
       keys:KeySet.t ->
       SharedMemoryKeys.DependencyKey.Transaction.t
 
-    val get : ?dependency:SharedMemoryKeys.DependencyKey.registered -> key -> value option
+    val get : t -> ?dependency:SharedMemoryKeys.DependencyKey.registered -> key -> value option
 
-    val mem : ?dependency:SharedMemoryKeys.DependencyKey.registered -> key -> bool
+    val mem : t -> ?dependency:SharedMemoryKeys.DependencyKey.registered -> key -> bool
   end
 
   module type S = sig
@@ -203,43 +205,54 @@ module EnvironmentTable = struct
 
     module In = In
 
-    type t = { upstream_environment: In.PreviousEnvironment.t }
+    type t = {
+      table: Table.t;
+      upstream_environment: In.PreviousEnvironment.t;
+    }
+
+    let base_table = Table.create ()
 
     let create ast_environment =
-      { upstream_environment = In.PreviousEnvironment.create ast_environment }
+      { table = base_table; upstream_environment = In.PreviousEnvironment.create ast_environment }
 
 
-    let ast_environment { upstream_environment } =
+    let ast_environment { upstream_environment; _ } =
       In.PreviousEnvironment.ast_environment upstream_environment
 
 
-    let configuration { upstream_environment } =
+    let configuration { upstream_environment; _ } =
       In.PreviousEnvironment.configuration upstream_environment
 
 
     module ReadOnly = struct
-      type t = { upstream_environment: In.PreviousEnvironment.ReadOnly.t }
+      type t = {
+        table: Table.t;
+        upstream_environment: In.PreviousEnvironment.ReadOnly.t;
+      }
 
-      let upstream_environment { upstream_environment } = upstream_environment
+      let upstream_environment { upstream_environment; _ } = upstream_environment
 
-      let get { upstream_environment } ?dependency key =
-        match Table.get ?dependency key with
+      let get { table; upstream_environment } ?dependency key =
+        match Table.get table ?dependency key with
         | Some hit -> hit
         | None ->
             let trigger = In.key_to_trigger key in
             let dependency = In.trigger_to_dependency trigger in
             let dependency = Some (SharedMemoryKeys.DependencyKey.Registry.register dependency) in
             let value = In.produce_value upstream_environment trigger ~dependency in
-            Table.add key value;
+            Table.add table key value;
             value
 
 
-      let unannotated_global_environment { upstream_environment } =
+      let unannotated_global_environment { upstream_environment; _ } =
         In.PreviousEnvironment.ReadOnly.unannotated_global_environment upstream_environment
     end
 
-    let read_only { upstream_environment } =
-      { ReadOnly.upstream_environment = In.PreviousEnvironment.read_only upstream_environment }
+    let read_only { table; upstream_environment } =
+      {
+        ReadOnly.table;
+        upstream_environment = In.PreviousEnvironment.read_only upstream_environment;
+      }
 
 
     module UpdateResult = UpdateResult.Make (In.PreviousEnvironment) (ReadOnly)
@@ -248,7 +261,7 @@ module EnvironmentTable = struct
       type t = In.trigger [@@deriving sexp, compare]
     end)
 
-    let update_only_this_environment ~scheduler this_environment upstream_update =
+    let update_only_this_environment ~scheduler ({ table; _ } as this_environment) upstream_update =
       Log.log ~section:`Environment "Updating %s Environment" In.Value.description;
       let update ~names_to_update () =
         let register () =
@@ -257,7 +270,7 @@ module EnvironmentTable = struct
               (In.PreviousEnvironment.UpdateResult.read_only upstream_update)
               name
               ~dependency:(Some dependency)
-            |> Table.add (In.convert_trigger name)
+            |> Table.add table (In.convert_trigger name)
           in
           List.iter ~f:set
         in
@@ -309,10 +322,10 @@ module EnvironmentTable = struct
                   in
                   let transaction = SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler in
                   if In.lazy_incremental then
-                    Table.add_pessimistic_transaction ~keys transaction
+                    Table.add_pessimistic_transaction table ~keys transaction
                     |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update:(fun () -> ())
                   else
-                    Table.add_to_transaction ~keys transaction
+                    Table.add_to_transaction table ~keys transaction
                     |> SharedMemoryKeys.DependencyKey.Transaction.execute
                          ~update:(update ~names_to_update)
                 in
@@ -346,7 +359,7 @@ module EnvironmentTable = struct
                 |> Set.to_list
                 |> List.map ~f:In.convert_trigger
                 |> Table.KeySet.of_list
-                |> Table.remove_batch)
+                |> Table.remove_batch table)
           in
           {
             UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
@@ -356,7 +369,7 @@ module EnvironmentTable = struct
 
 
     let update_this_and_all_preceding_environments
-        ({ upstream_environment } as this_environment)
+        ({ upstream_environment; _ } as this_environment)
         ~scheduler
         ast_environment_trigger
       =
