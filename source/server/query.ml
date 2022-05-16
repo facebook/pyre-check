@@ -832,9 +832,56 @@ let rec process_request ~environment ~build_system ~configuration request =
         |> Option.value
              ~default:
                (Error (Format.sprintf "No path found for module `%s`" (Reference.show module_name)))
-    | FindReferences _ ->
-        (* TODO(T114362295): Support find all references. *)
-        Single (Base.FoundReferences [])
+    | FindReferences { path; position } -> (
+        let find_references_local ~reference ~define_name =
+          (* TODO(T114362295): Support find all references. *)
+          let _, _ = reference, define_name in
+          Single (Base.FoundReferences [])
+        in
+        let find_references_global ~reference =
+          (* TODO(T114362295): Support find all references. *)
+          let _ = reference in
+          Single (Base.FoundReferences [])
+        in
+        let symbol =
+          let module_of_path path =
+            let relative_path =
+              let { Configuration.Analysis.local_root = root; _ } = configuration in
+              PyrePath.create_relative ~root ~relative:(PyrePath.absolute path)
+            in
+            match modules_of_path relative_path with
+            | [found_module] -> Some found_module
+            | _ -> None
+          in
+          module_of_path path
+          >>= fun module_reference ->
+          LocationBasedLookup.find_narrowest_spanning_symbol
+            ~type_environment:(TypeEnvironment.read_only environment)
+            ~module_reference
+            position
+        in
+        match symbol with
+        | Some
+            {
+              symbol_with_definition = Expression { Node.value = Name name; _ };
+              cfg_data = { define_name; _ };
+              _;
+            }
+        | Some
+            {
+              symbol_with_definition = TypeAnnotation { Node.value = Name name; _ };
+              cfg_data = { define_name; _ };
+              _;
+            }
+          when Expression.is_simple_name name ->
+            let reference = Expression.name_to_reference_exn name in
+            if Reference.is_local reference then
+              find_references_local ~reference ~define_name
+            else
+              find_references_global ~reference
+        | _ ->
+            (* Find-all-references is not supported for syntax, keywords, or literal values. *)
+            Single (Base.FoundReferences []))
     | SaveServerState path ->
         let path = PyrePath.absolute path in
         Log.info "Saving server state into `%s`" path;
