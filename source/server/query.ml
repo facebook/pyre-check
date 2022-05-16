@@ -600,6 +600,17 @@ let rec process_request ~environment ~build_system ~configuration request =
             (print_reason error_reason))
         errors
     in
+    let modules_of_path path =
+      let module_of_path path =
+        match ModuleTracker.ReadOnly.lookup_path module_tracker path with
+        | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } -> Some qualifier
+        | ShadowedBy _
+        | NotFound ->
+            None
+      in
+      let artifact_path = BuildSystem.lookup_artifact build_system path in
+      List.filter_map ~f:module_of_path artifact_path
+    in
     let open Response in
     match request with
     | Request.Attributes annotation ->
@@ -761,16 +772,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         in
         GlobalResolution.is_compatible_with global_resolution ~left ~right
         |> fun result -> Single (Base.Compatibility { actual = left; expected = right; result })
-    | ModulesOfPath path ->
-        let module_of_path path =
-          match ModuleTracker.ReadOnly.lookup_path module_tracker path with
-          | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } -> Some qualifier
-          | ShadowedBy _
-          | NotFound ->
-              None
-        in
-        let artifiact_paths = BuildSystem.lookup_artifact build_system path in
-        Single (Base.FoundModules (List.filter_map ~f:module_of_path artifiact_paths))
+    | ModulesOfPath path -> Single (Base.FoundModules (modules_of_path path))
     | LessOrEqual (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
@@ -782,11 +784,8 @@ let rec process_request ~environment ~build_system ~configuration request =
             let { Configuration.Analysis.local_root = root; _ } = configuration in
             PyrePath.create_relative ~root ~relative:(PyrePath.absolute path)
           in
-          match
-            BuildSystem.lookup_artifact build_system relative_path
-            |> List.map ~f:(ModuleTracker.ReadOnly.lookup_path module_tracker)
-          with
-          | [ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ }] -> Some qualifier
+          match modules_of_path relative_path with
+          | [found_module] -> Some found_module
           | _ -> None
         in
         let open Base in

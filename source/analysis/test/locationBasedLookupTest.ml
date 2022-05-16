@@ -242,6 +242,20 @@ let test_find_narrowest_spanning_symbol context =
        });
   assert_narrowest_expression
     ~source:{|
+        def foo(a: int, b: str) -> None:
+          x = a
+    |}
+    "3:6"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$a")));
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:{|
         def foo() -> None:
           xs: list[str] = ["a", "b"]
     |}
