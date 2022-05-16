@@ -307,6 +307,38 @@ module KeyTracker = struct
     |> UnannotatedGlobalKeys.KeyMap.values
     |> List.filter_map ~f:Fn.id
     |> List.concat
+
+
+  module PreviousKeys = struct
+    type t = {
+      previous_classes_list: Type.Primitive.t list;
+      previous_classes: Type.Primitive.Set.t;
+      previous_defines_list: Reference.t list;
+      previous_defines: Reference.Set.t;
+      previous_unannotated_globals_list: Reference.t list;
+      previous_unannotated_globals: Reference.Set.t;
+    }
+  end
+
+  let get_previous_keys_and_clear modified_qualifiers =
+    let previous_classes_list = get_class_keys modified_qualifiers in
+    let previous_classes = Type.Primitive.Set.of_list previous_classes_list in
+    let previous_unannotated_globals_list = get_unannotated_global_keys modified_qualifiers in
+    let previous_defines_list = get_define_keys modified_qualifiers in
+    let previous_defines = Reference.Set.of_list previous_defines_list in
+    let previous_unannotated_globals = Reference.Set.of_list previous_unannotated_globals_list in
+    ClassKeys.KeySet.of_list modified_qualifiers |> ClassKeys.remove_batch;
+    DefineKeys.KeySet.of_list modified_qualifiers |> DefineKeys.remove_batch;
+    UnannotatedGlobalKeys.KeySet.of_list modified_qualifiers |> UnannotatedGlobalKeys.remove_batch;
+    PreviousKeys.
+      {
+        previous_classes_list;
+        previous_classes;
+        previous_defines_list;
+        previous_defines;
+        previous_unannotated_globals_list;
+        previous_unannotated_globals;
+      }
 end
 
 module ModuleValue = struct
@@ -1047,18 +1079,18 @@ let update_this_and_all_preceding_environments
       ~f:map
       ~inputs:modified_qualifiers
   in
-  let previous_classes_list = KeyTracker.get_class_keys modified_qualifiers in
-  let previous_classes = Type.Primitive.Set.of_list previous_classes_list in
-  let previous_unannotated_globals_list =
-    KeyTracker.get_unannotated_global_keys modified_qualifiers
+  let KeyTracker.PreviousKeys.
+        {
+          previous_classes_list;
+          previous_classes;
+          previous_defines_list;
+          previous_defines;
+          previous_unannotated_globals_list;
+          previous_unannotated_globals;
+        }
+    =
+    KeyTracker.get_previous_keys_and_clear modified_qualifiers
   in
-  let previous_defines_list = KeyTracker.get_define_keys modified_qualifiers in
-  let previous_defines = Reference.Set.of_list previous_defines_list in
-  let previous_unannotated_globals = Reference.Set.of_list previous_unannotated_globals_list in
-  KeyTracker.ClassKeys.KeySet.of_list modified_qualifiers |> KeyTracker.ClassKeys.remove_batch;
-  KeyTracker.DefineKeys.KeySet.of_list modified_qualifiers |> KeyTracker.DefineKeys.remove_batch;
-  KeyTracker.UnannotatedGlobalKeys.KeySet.of_list modified_qualifiers
-  |> KeyTracker.UnannotatedGlobalKeys.remove_batch;
   match configuration this_environment with
   | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
       let define_additions, triggered_dependencies =
@@ -1133,7 +1165,7 @@ let update_this_and_all_preceding_environments
             DependencyKey.RegisteredSet.empty)
       in
       {
-        previous_classes;
+        UpdateResult.previous_classes;
         previous_unannotated_globals;
         previous_defines;
         define_additions = Reference.Set.empty;
