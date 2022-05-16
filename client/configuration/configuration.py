@@ -8,7 +8,6 @@ import dataclasses
 import glob
 import json
 import logging
-import multiprocessing
 import os
 import shutil
 import site
@@ -29,6 +28,8 @@ from typing import (
     TypeVar,
     Union,
 )
+
+import psutil
 
 from .. import command_arguments, dataclasses_merge, find_directories
 from ..filesystem import expand_global_root, expand_relative_path
@@ -952,15 +953,22 @@ class Configuration:
         if number_of_workers is not None and number_of_workers > 0:
             return number_of_workers
 
-        try:
-            default_number_of_workers = max(multiprocessing.cpu_count() - 4, 1)
-        except NotImplementedError:
-            default_number_of_workers = 4
+        # pyre-fixme[28]: Unexpected keyword argument `logical`.
+        number_of_physical_cores = psutil.cpu_count(logical=False)
+        if number_of_physical_cores is None:
+            default_number_of_workers = 1
+        else:
+            default_number_of_workers = max(1, number_of_physical_cores - 1)
 
         LOG.info(
             "Could not determine the number of Pyre workers from configuration. "
             f"Auto-set the value to {default_number_of_workers}."
         )
+        if default_number_of_workers <= 1:
+            LOG.info(
+                "Consider setting the `--sequential` flag instead when the number "
+                "of parallel workers is not greater than 1."
+            )
         return default_number_of_workers
 
     def is_hover_enabled(self) -> bool:
