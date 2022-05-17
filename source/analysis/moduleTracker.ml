@@ -77,67 +77,16 @@ module Layouts = struct
     remove [] existing_files
 
 
-  let find_files
-      ({ Configuration.Analysis.source_paths; search_paths; excludes; _ } as configuration)
-    =
-    let visited_directories = String.Hash_set.create () in
-    let visited_files = String.Hash_set.create () in
-    let valid_suffixes =
-      ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration
-    in
-    let mark_visited set path =
-      match Hash_set.strict_add set path with
-      | Result.Ok () -> false
-      | _ -> true
-    in
-    let search_roots =
-      List.append
-        (List.map ~f:SearchPath.to_path source_paths)
-        (List.map ~f:SearchPath.to_path search_paths)
-    in
-    List.map search_roots ~f:(fun root ->
-        let root_path = PyrePath.absolute root in
-        let directory_filter path =
-          (* Don't bother with hidden directories (except in the case where the root itself is
-             hidden) as they are non-importable in Python by default *)
-          ((not (String.is_prefix (Filename.basename path) ~prefix:"."))
-          || String.equal path root_path)
-          (* Do not scan excluding directories to speed up the traversal *)
-          && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
-          && not (mark_visited visited_directories path)
-        in
-        let file_filter path =
-          let extension =
-            Filename.split_extension path
-            |> snd
-            >>| (fun extension -> "." ^ extension)
-            |> Option.value ~default:""
-          in
-          (* Don't bother with hidden files as they are non-importable in Python by default *)
-          (not (String.is_prefix (Filename.basename path) ~prefix:"."))
-          (* Only consider files with valid suffix *)
-          && List.exists ~f:(String.equal extension) valid_suffixes
-          && not (mark_visited visited_files path)
-        in
-        PyrePath.list ~file_filter ~directory_filter ~root ())
-    |> List.concat
-
-
-  let create_module_to_files configuration =
+  let create_module_to_files ~configuration source_paths =
     let module_to_files = Reference.Table.create () in
-    let process_file path =
-      match SourcePath.create ~configuration path with
-      | None -> ()
-      | Some ({ SourcePath.qualifier; _ } as source_path) ->
-          let update_table = function
-            | None -> [source_path]
-            | Some source_paths ->
-                insert_source_path ~configuration ~inserted:source_path source_paths
-          in
-          Hashtbl.update module_to_files qualifier ~f:update_table
+    let process_source_path ({ SourcePath.qualifier; _ } as source_path) =
+      let update_table = function
+        | None -> [source_path]
+        | Some source_paths -> insert_source_path ~configuration ~inserted:source_path source_paths
+      in
+      Hashtbl.update module_to_files qualifier ~f:update_table
     in
-    let files = find_files configuration in
-    List.iter files ~f:process_file;
+    List.iter source_paths ~f:process_source_path;
     module_to_files
 
 
@@ -159,12 +108,9 @@ module Layouts = struct
     submodule_refcounts
 
 
-  let create configuration =
-    let timer = Timer.start () in
-    Log.info "Building module tracker...";
-    let module_to_files = create_module_to_files configuration in
+  let create ~configuration source_paths =
+    let module_to_files = create_module_to_files ~configuration source_paths in
     let submodule_refcounts = create_submodule_refcounts module_to_files in
-    Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
     { module_to_files; submodule_refcounts }
 
 
@@ -425,11 +371,92 @@ end
 type t = {
   layouts: Layouts.t;
   configuration: Configuration.Analysis.t;
+  get_raw_code: SourcePath.t -> (string, string) Result.t;
 }
 
+let find_source_paths
+    ({ Configuration.Analysis.source_paths; search_paths; excludes; _ } as configuration)
+  =
+  let visited_directories = String.Hash_set.create () in
+  let visited_files = String.Hash_set.create () in
+  let valid_suffixes = ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration in
+  let mark_visited set path =
+    match Hash_set.strict_add set path with
+    | Result.Ok () -> false
+    | _ -> true
+  in
+  let search_roots =
+    List.append
+      (List.map ~f:SearchPath.to_path source_paths)
+      (List.map ~f:SearchPath.to_path search_paths)
+  in
+  List.map search_roots ~f:(fun root ->
+      let root_path = PyrePath.absolute root in
+      let directory_filter path =
+        (* Don't bother with hidden directories (except in the case where the root itself is hidden)
+           as they are non-importable in Python by default *)
+        ((not (String.is_prefix (Filename.basename path) ~prefix:"."))
+        || String.equal path root_path)
+        (* Do not scan excluding directories to speed up the traversal *)
+        && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
+        && not (mark_visited visited_directories path)
+      in
+      let file_filter path =
+        let extension =
+          Filename.split_extension path
+          |> snd
+          >>| (fun extension -> "." ^ extension)
+          |> Option.value ~default:""
+        in
+        (* Don't bother with hidden files as they are non-importable in Python by default *)
+        (not (String.is_prefix (Filename.basename path) ~prefix:"."))
+        (* Only consider files with valid suffix *)
+        && List.exists ~f:(String.equal extension) valid_suffixes
+        && not (mark_visited visited_files path)
+      in
+      PyrePath.list ~file_filter ~directory_filter ~root ())
+  |> List.concat
+  |> List.filter_map ~f:(SourcePath.create ~configuration)
+
+
+let make_get_raw_code ?source_path_code_pairs configuration =
+  let in_memory_sources =
+    let table = Reference.Table.create () in
+    let add_pair (source_path, code) =
+      Reference.Table.set table ~key:(SourcePath.qualifier source_path) ~data:code
+    in
+    Option.value source_path_code_pairs ~default:[] |> List.iter ~f:add_pair;
+    table
+  in
+  let get_raw_code ({ SourcePath.qualifier; _ } as source_path) =
+    let load_raw_code () =
+      let path = SourcePath.full_path ~configuration source_path in
+      try Ok (File.content_exn (File.create path)) with
+      | Sys_error error ->
+          Error (Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.pp path error)
+    in
+    match Reference.Table.find in_memory_sources qualifier with
+    | Some code -> Ok code
+    | None -> load_raw_code ()
+  in
+  get_raw_code
+
+
 let create configuration =
-  let layouts = Layouts.create configuration in
-  { layouts; configuration }
+  Log.info "Building module tracker...";
+  let timer = Timer.start () in
+  let source_paths = find_source_paths configuration in
+  let layouts = Layouts.create ~configuration source_paths in
+  Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
+  { layouts; configuration; get_raw_code = make_get_raw_code configuration }
+
+
+let create_for_testing configuration source_path_code_pairs =
+  let layouts =
+    let source_paths = List.map ~f:fst source_path_code_pairs in
+    Layouts.create ~configuration source_paths
+  in
+  { layouts; configuration; get_raw_code = make_get_raw_code ~source_path_code_pairs configuration }
 
 
 let all_source_paths { layouts = { module_to_files; _ }; _ } =
@@ -442,7 +469,7 @@ let source_paths { layouts = { module_to_files; _ }; _ } =
 
 let configuration { configuration; _ } = configuration
 
-let update ~paths { layouts; configuration } =
+let update ~paths { layouts; configuration; _ } =
   let timer = Timer.start () in
   let result = Layouts.update ~configuration ~paths layouts in
   Statistics.performance ~name:"module tracker updated" ~timer ~phase_name:"Module tracking" ();
@@ -476,7 +503,7 @@ module Serializer = struct
 
   let from_stored_layouts ~configuration () =
     let layouts = Layouts.load () in
-    { layouts; configuration }
+    { layouts; configuration; get_raw_code = make_get_raw_code configuration }
 end
 
 module ReadOnly = struct
@@ -517,7 +544,9 @@ module ReadOnly = struct
   let get_raw_code { get_raw_code; _ } = get_raw_code
 end
 
-let read_only ({ layouts = { module_to_files; submodule_refcounts }; configuration } as tracker) =
+let read_only
+    ({ layouts = { module_to_files; submodule_refcounts }; configuration; get_raw_code } as tracker)
+  =
   let lookup_source_path module_name =
     match Hashtbl.find module_to_files module_name with
     | Some (source_path :: _) -> Some source_path
@@ -525,12 +554,6 @@ let read_only ({ layouts = { module_to_files; submodule_refcounts }; configurati
   in
   let is_module_tracked qualifier =
     Hashtbl.mem module_to_files qualifier || Hashtbl.mem submodule_refcounts qualifier
-  in
-  let get_raw_code source_path =
-    let path = SourcePath.full_path ~configuration source_path in
-    try Ok (File.content_exn (File.create path)) with
-    | Sys_error error ->
-        Error (Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.pp path error)
   in
   {
     ReadOnly.lookup_source_path;

@@ -25,6 +25,8 @@ type t
 
 val create : Configuration.Analysis.t -> t
 
+val create_for_testing : Configuration.Analysis.t -> (Ast.SourcePath.t * string) list -> t
+
 (* This function returns all SourcePaths that are tracked, including the shadowed ones. *)
 val all_source_paths : t -> Ast.SourcePath.t list
 
