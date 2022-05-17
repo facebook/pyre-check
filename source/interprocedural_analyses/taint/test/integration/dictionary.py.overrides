@@ -1,4 +1,5 @@
 @generated
 Overrides
 dictionary.SpecialSetitemDict::__setitem__ (override) -> [dictionary.SpecialSetitemDict::__setitem__ (method)]
-dict::__setitem__ (override) -> [dict::__setitem__ (method) dictionary.SpecialSetitemDict::__setitem__ (override)]
+dict::__setitem__ (override) -> [dict::__setitem__ (method) dictionary.MyDict::__setitem__ (override) dictionary.SpecialSetitemDict::__setitem__ (override)]
+dictionary.MyDict::__setitem__ (override) -> [dictionary.MyDict::__setitem__ (method)]

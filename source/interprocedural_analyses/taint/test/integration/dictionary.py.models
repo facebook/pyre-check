@@ -1159,7 +1159,7 @@
         "port": "formal(key)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1189,7 +1189,7 @@
         "port": "formal(key)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1385,7 +1385,7 @@
         "port": "formal(key)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -2076,6 +2076,37 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dictionary.setitem_models",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": [ "[0][a]", "[1][b]", "[2][c]" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(d3)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[2]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.sink_dictionary_through_keys",
     "sinks": [
       {
@@ -2278,7 +2309,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false,
             "kinds": [
               {

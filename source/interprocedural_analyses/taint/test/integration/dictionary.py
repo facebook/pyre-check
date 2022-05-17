@@ -386,3 +386,27 @@ def taint_dict_keys_false_positive():
     request = _test_source()
     # TODO(T116671305): Should not have an issue here
     taint_dict_keys(request)
+
+
+class MyDict(Dict[Any, Any]):
+    foo: int = 0
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        self.foo = value
+
+
+def setitem_models(d3: Dict[str, Any], x):
+    # We should use the custom model of __setitem__ for MyDict,
+    # but currently we use the built-in model.
+    # TODO: Update the above comment after the next diff.
+    d1 = MyDict()
+    d1["a"] = x
+
+    # Use the built-in model of __setitem__ for dict
+    d2 = {}
+    d2["b"] = x
+
+    # Use the built-in model of __setitem__ for any subtype
+    # of dict. This is incorrect, but can lead to higher SNR.
+    d3["c"] = x
+    return d1, d2, d3
