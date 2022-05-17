@@ -26,7 +26,7 @@ let test_compute_locally_changed_files context =
             old_content >>| fun content -> relative, content)
       in
       let { ScratchProject.configuration; module_tracker; _ } =
-        ScratchProject.setup ~context sources
+        ScratchProject.setup ~context ~in_memory:false sources
       in
       let () = Service.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker in
       configuration, module_tracker

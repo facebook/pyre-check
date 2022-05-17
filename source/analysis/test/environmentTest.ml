@@ -25,6 +25,7 @@ let create_environments_and_project
     ?(include_typeshed_stubs = true)
     ?(include_helpers = false)
     ?(additional_sources = [])
+    ?(in_memory = true)
     ()
   =
   let project =
@@ -32,6 +33,7 @@ let create_environments_and_project
       ~context
       ~include_typeshed_stubs
       ~include_helper_builtins:include_helpers
+      ~in_memory
       additional_sources
   in
   let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
@@ -1228,6 +1230,7 @@ let test_update_and_compute_dependencies context =
       |}; "other.py", {|
           bar = "A"
       |}]
+      ~in_memory:false
       ()
   in
   let readonly_environment = AnnotatedGlobalEnvironment.read_only environment in

@@ -690,7 +690,11 @@ module IncrementalTest = struct
     let old_sources = get_old_inputs setups in
     let configuration, module_tracker, ast_environment =
       let ({ ScratchProject.configuration; module_tracker; _ } as project) =
-        ScratchProject.setup ~context ~external_sources:old_external_sources old_sources
+        ScratchProject.setup
+          ~context
+          ~external_sources:old_external_sources
+          ~in_memory:false
+          old_sources
       in
       let ast_environment, update_result = ScratchProject.parse_sources project in
       let read_only_environment = AstEnvironment.read_only ast_environment in

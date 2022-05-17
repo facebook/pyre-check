@@ -741,6 +741,7 @@ let assert_updates
     ScratchProject.setup
       ~include_typeshed_stubs:false
       ~incremental_style:FineGrained
+      ~in_memory:false
       sources
       ~context
   in

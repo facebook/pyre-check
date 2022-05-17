@@ -2718,19 +2718,24 @@ module ScratchProject = struct
       ?(show_error_traces = false)
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
+      ?(in_memory = true)
       sources
     =
-    let add_source ~root (relative, content) =
-      let content = trim_extra_indentation content in
-      let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
-      File.write file
+    let local_root, external_root, log_directory =
+      if in_memory then
+        (* NOTE: any attempt to access disk in an in-memory test will fail. This means nothing that
+           tries to log or save to disk can be tested using in-memory mode. *)
+        let in_memory_root = "_pyre_no_such_directory_for_in_memory_test" in
+        let local_root = PyrePath.create_absolute (in_memory_root ^/ "local_root") in
+        let external_root = PyrePath.create_absolute (in_memory_root ^/ "external_root") in
+        let log_directory = in_memory_root ^/ "log_directory" in
+        local_root, external_root, log_directory
+      else (* For simplicity, assume just one checked directory and one external directory *)
+        let local_root = bracket_tmpdir context |> PyrePath.create_absolute in
+        let external_root = bracket_tmpdir context |> PyrePath.create_absolute in
+        let log_directory = bracket_tmpdir context in
+        local_root, external_root, log_directory
     in
-    (* We assume that there's only one checked source directory that acts as the local root as well. *)
-    let local_root = bracket_tmpdir context |> PyrePath.create_absolute in
-    (* We assume that there's only one external source directory that acts as the local root as
-       well. *)
-    let external_root = bracket_tmpdir context |> PyrePath.create_absolute in
-    let log_directory = bracket_tmpdir context in
     let configuration =
       Configuration.Analysis.create
         ~local_root
@@ -2751,9 +2756,28 @@ module ScratchProject = struct
       else
         external_sources
     in
-    List.iter sources ~f:(add_source ~root:local_root);
-    List.iter external_sources ~f:(add_source ~root:external_root);
-    let module_tracker = ModuleTracker.create configuration in
+    let module_tracker =
+      if in_memory then
+        let to_source_path_code_pair (relative, content) ~is_external =
+          let code = trim_extra_indentation content in
+          let source_path = SourcePath.create_for_testing ~relative ~is_external ~priority:1 in
+          source_path, code
+        in
+        let source_path_code_pairs =
+          List.map sources ~f:(to_source_path_code_pair ~is_external:false)
+          @ List.map external_sources ~f:(to_source_path_code_pair ~is_external:true)
+        in
+        ModuleTracker.create_for_testing configuration source_path_code_pairs
+      else
+        let add_source ~root (relative, content) =
+          let content = trim_extra_indentation content in
+          let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
+          File.write file
+        in
+        List.iter sources ~f:(add_source ~root:local_root);
+        List.iter external_sources ~f:(add_source ~root:external_root);
+        ModuleTracker.create configuration
+    in
     { context; configuration; module_tracker }
 
 
@@ -2888,6 +2912,7 @@ let assert_errors
     source
     errors
   =
+  let in_memory = List.is_empty update_environment_with in
   (if SourcePath.qualifier_of_relative handle |> Reference.is_empty then
      let message =
        Format.sprintf
@@ -2903,7 +2928,12 @@ let assert_errors
           let external_sources =
             List.map update_environment_with ~f:(fun { handle; source } -> handle, source)
           in
-          ScratchProject.setup ~context ~constraint_solving_style ~external_sources [handle, source]
+          ScratchProject.setup
+            ~context
+            ~constraint_solving_style
+            ~external_sources
+            ~in_memory
+            [handle, source]
         in
         let { ScratchProject.BuiltGlobalEnvironment.sources; global_environment } =
           ScratchProject.build_global_environment project

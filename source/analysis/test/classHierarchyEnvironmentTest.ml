@@ -227,6 +227,7 @@ let test_updates context =
       ScratchProject.setup
         ~include_typeshed_stubs:false
         ~incremental_style:FineGrained
+        ~in_memory:false
         sources
         ~context
     in
