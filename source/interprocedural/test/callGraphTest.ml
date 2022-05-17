@@ -1525,6 +1525,125 @@ let test_call_graph_of_define context =
   assert_call_graph_of_define
     ~source:
       {|
+       import typing
+       def foo() -> typing.Dict[str, int]:
+         return {"a": 0}
+       def bar():
+         return 1
+       def baz():
+         return "b"
+       def fun(d: typing.Dict[str, int], e: typing.Dict[str, typing.Dict[str, int]]):
+         foo()["a"] = bar()
+         d[baz()] = bar()
+         e["a"]["b"] = 0
+      |}
+    ~define_name:"test.fun"
+    ~expected:
+      [
+        ( "10:2-10:7",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__setitem__",
+                   ExpressionCallees.from_attribute_access
+                     {
+                       AttributeAccessCallees.property_targets = [];
+                       global_targets = [];
+                       is_attribute = true;
+                     } );
+                 ( "foo",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:[CallTarget.create (Target.Function "test.foo")]
+                        ()) );
+               ]) );
+        ( "10:2-10:20",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.dictionary ~key:Type.string ~value:Type.integer)
+                        (Target.Method { class_name = "dict"; method_name = "__setitem__" });
+                    ]
+                  ())) );
+        ( "10:15-10:20",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create (Target.Function "test.bar")]
+                  ())) );
+        ( "11:2-11:18",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.dictionary ~key:Type.string ~value:Type.integer)
+                        ~index:1
+                        (Target.Method { class_name = "dict"; method_name = "__setitem__" });
+                    ]
+                  ())) );
+        ( "11:4-11:9",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create (Target.Function "test.baz")]
+                  ())) );
+        ( "11:13-11:18",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:[CallTarget.create ~index:1 (Target.Function "test.bar")]
+                  ())) );
+        ( "12:2-12:8",
+          LocationCallees.Compound
+            (String.Map.Tree.of_alist_exn
+               [
+                 ( "__getitem__",
+                   ExpressionCallees.from_call
+                     (CallCallees.create
+                        ~call_targets:
+                          [
+                            CallTarget.create
+                              ~implicit_self:true
+                              ~receiver_type:
+                                (Type.dictionary
+                                   ~key:Type.string
+                                   ~value:(Type.dictionary ~key:Type.string ~value:Type.integer))
+                              (Target.Method { class_name = "dict"; method_name = "__getitem__" });
+                          ]
+                        ()) );
+                 ( "__setitem__",
+                   ExpressionCallees.from_attribute_access
+                     {
+                       AttributeAccessCallees.property_targets = [];
+                       global_targets = [];
+                       is_attribute = true;
+                     } );
+               ]) );
+        ( "12:2-12:17",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_self:true
+                        ~receiver_type:(Type.dictionary ~key:Type.string ~value:Type.integer)
+                        ~index:2
+                        (Target.Method { class_name = "dict"; method_name = "__setitem__" });
+                    ]
+                  ())) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
       def outer(x: int) -> None:
         def inner(x: int) -> None:
           print(x)
