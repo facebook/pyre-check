@@ -483,6 +483,7 @@ module ReadOnly = struct
   type t = {
     lookup_source_path: Reference.t -> SourcePath.t option;
     is_module_tracked: Reference.t -> bool;
+    get_raw_code: SourcePath.t -> (string, string) Result.t;
     source_paths: unit -> SourcePath.t list;
     configuration: unit -> Configuration.Analysis.t;
   }
@@ -513,11 +514,7 @@ module ReadOnly = struct
 
   let tracked_explicit_modules tracker = source_paths tracker |> List.map ~f:SourcePath.qualifier
 
-  let get_raw_code tracker source_path =
-    let path = SourcePath.full_path ~configuration:(configuration tracker) source_path in
-    try Ok (File.content_exn (File.create path)) with
-    | Sys_error error ->
-        Error (Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.pp path error)
+  let get_raw_code { get_raw_code; _ } = get_raw_code
 end
 
 let read_only ({ layouts = { module_to_files; submodule_refcounts }; configuration } as tracker) =
@@ -529,9 +526,16 @@ let read_only ({ layouts = { module_to_files; submodule_refcounts }; configurati
   let is_module_tracked qualifier =
     Hashtbl.mem module_to_files qualifier || Hashtbl.mem submodule_refcounts qualifier
   in
+  let get_raw_code source_path =
+    let path = SourcePath.full_path ~configuration source_path in
+    try Ok (File.content_exn (File.create path)) with
+    | Sys_error error ->
+        Error (Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.pp path error)
+  in
   {
     ReadOnly.lookup_source_path;
     is_module_tracked;
+    get_raw_code;
     source_paths = (fun () -> source_paths tracker);
     configuration = (fun () -> configuration);
   }
