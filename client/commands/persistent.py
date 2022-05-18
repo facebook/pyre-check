@@ -290,7 +290,16 @@ async def try_initialize(
 
         initialized_notification = await lsp.read_json_rpc(input_channel)
         if initialized_notification.method == "shutdown":
-            await _wait_for_exit(input_channel, output_channel)
+            try:
+                await _wait_for_exit(input_channel, output_channel)
+            except (ConnectionError, json_rpc.ParseError) as error:
+                # These errors can happen when the connection gets dropped unilaterally
+                # from the language client, which causes issue when we try to access
+                # the I/O channel.
+                # Since the language client has explicitly notified us it wants to
+                # shutdown at this point, it should be safe to just ignore the error
+                # and terminate the language server immediately.
+                LOG.info(f"Initialization connection dropped by LSP client: {error}")
             return InitializationExit()
         elif initialized_notification.method != "initialized":
             actual_message = json.dumps(initialized_notification.json())
