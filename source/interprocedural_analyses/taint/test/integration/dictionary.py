@@ -396,9 +396,7 @@ class MyDict(Dict[Any, Any]):
 
 
 def setitem_models(d3: Dict[str, Any], x):
-    # We should use the custom model of __setitem__ for MyDict,
-    # but currently we use the built-in model.
-    # TODO: Update the above comment after the next diff.
+    # Use the custom model of __setitem__ for MyDict
     d1 = MyDict()
     d1["a"] = x
 

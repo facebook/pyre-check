@@ -1118,28 +1118,60 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
       } ->
           let taint, state = analyze_expression ~resolution ~state ~expression:value in
-          let state =
-            analyze_assignment
-              ~resolution
-              ~fields:[AccessPath.get_index index]
-              base
-              taint
-              taint
-              state
+          let ({ CallGraph.CallCallees.call_targets; _ } as callees) =
+            get_call_callees ~location ~call:{ Call.callee; arguments }
           in
-          (* Also make sure we analyze the __setitem__ call in case the __setitem__ function body is
-             tainted. *)
-          let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
-          if CallGraph.CallCallees.is_partially_resolved callees then
-            apply_callees
-              ~resolution
-              ~is_property:false
-              ~callee
-              ~call_location:location
-              ~arguments
-              ~state
-              callees
+          let is_dict_setitem =
+            match call_targets with
+            | [
+                {
+                  CallGraph.CallTarget.target =
+                    Method { class_name = "dict"; method_name = "__setitem__" };
+                  _;
+                };
+              ]
+            | [
+                {
+                  CallGraph.CallTarget.target =
+                    Override { class_name = "dict"; method_name = "__setitem__" };
+                  _;
+                };
+              ] ->
+                true
+            | _ -> false
+          in
+          if is_dict_setitem || not (CallGraph.CallCallees.is_partially_resolved callees) then
+            (* Use the hardcoded model of `__setitem__` for any subtype of dict or unresolved
+               callees: `base[index] = value`. This is incorrect, but can lead to higher SNR,
+               because we assume in most cases, we run into an expression whose type is exactly
+               `dict`, rather than a (strict) subtype of `dict` that overrides `__setitem__`. *)
+            let state =
+              analyze_assignment
+                ~resolution
+                ~fields:[AccessPath.get_index index]
+                base
+                taint
+                taint
+                state
+            in
+            taint, state
           else
+            (* Use the custom model of `__setitem__`. We treat `e.__setitem__(k, v)` as `e =
+               e.__setitem__(k, v)` where method `__setitem__` returns the updated self. Due to
+               modeling with the assignment, the user-provided models of `__setitem__` will be
+               ignored, if they are inconsistent with treating `__setitem__` as returning an updated
+               self.*)
+            let taint, state =
+              apply_callees
+                ~resolution
+                ~is_property:false
+                ~callee
+                ~call_location:location
+                ~arguments
+                ~state
+                callees
+            in
+            let state = analyze_assignment ~resolution base taint taint state in
             taint, state
       (* We special object.__setattr__, which is sometimes used in order to work around dataclasses
          being frozen post-initialization. *)

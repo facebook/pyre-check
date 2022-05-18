@@ -2,78 +2,6 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "dictionary.copy_untainted_values_with_tainted_keys",
-    "callable_line": 203,
-    "code": 5002,
-    "line": 207,
-    "start": 27,
-    "end": 30,
-    "filename": "dictionary.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "dictionary.py",
-              "line": 204,
-              "start": 9,
-              "end": 23
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "dictionary.py",
-                "line": 207,
-                "start": 27,
-                "end": 30
-              },
-              "resolves_to": [ "dictionary.SpecialSetitemDict.__setitem__" ],
-              "port": "formal(key)"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "dict.__setitem__",
-      "index": 0,
-      "parameter": "formal(key)"
-    },
-    "master_handle":
-      "dictionary.copy_untainted_values_with_tainted_keys:5002:0:Call|dict.__setitem__|0|formal(key):dc1d69a06f3933dab76cbe33ad6e5c51"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
     "callable": "dictionary.dict_with_tainted_key_flows_to_sink",
     "callable_line": 211,
     "code": 5002,
@@ -1177,6 +1105,56 @@
           }
         ]
       }
+    ],
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[foo]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{dictionary.MyDict::__setitem__}",
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[foo]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
     ]
   }
 }
@@ -1204,6 +1182,17 @@
               "start": -1,
               "end": -1
             }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -1290,6 +1279,34 @@
         "port": "formal(__m)",
         "taint": [
           { "kinds": [ { "kind": "ParameterUpdate0" } ], "decl": null }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.MyDict.__setitem__",
+    "tito": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[foo]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
         ]
       }
     ]
@@ -1400,6 +1417,17 @@
               "start": 19,
               "end": 22
             }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
@@ -2084,10 +2112,12 @@
           {
             "kinds": [
               {
-                "return_paths": [ "[0][a]", "[1][b]", "[2][c]" ],
+                "return_paths": [ "[0][foo]", "[1][b]", "[2][c]" ],
                 "kind": "LocalReturn"
               }
             ],
+            "local_features": [ { "via": "tito" } ],
+            "tito": [ { "line": 401, "start": 14, "end": 15 } ],
             "decl": null
           }
         ]
@@ -2266,6 +2296,8 @@
         "taint": [
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "via": "tito" } ],
+            "tito": [ { "line": 169, "start": 4, "end": 5 } ],
             "decl": null
           }
         ]

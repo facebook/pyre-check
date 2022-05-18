@@ -18,9 +18,19 @@
             "kinds": [
               {
                 "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindA]"
+              },
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
                 "kind": "SourceA[KindB]"
               }
             ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito": [ { "line": 66, "start": 4, "end": 6 } ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 65,
@@ -50,7 +60,11 @@
         ]
       }
     ],
-    "features": [],
+    "features": [
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "lineage_analysis.sink",
@@ -80,9 +94,19 @@
             "kinds": [
               {
                 "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindA]"
+              },
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
                 "kind": "SourceA[KindB]"
               }
             ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito": [ { "line": 66, "start": 4, "end": 6 } ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 65,
@@ -112,7 +136,11 @@
         ]
       }
     ],
-    "features": [],
+    "features": [
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "lineage_analysis.sink",
@@ -459,6 +487,12 @@
                 "kind": "SourceA[KindB]"
               }
             ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito": [ { "line": 93, "start": 4, "end": 6 } ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 91,
@@ -488,7 +522,11 @@
         ]
       }
     ],
-    "features": [],
+    "features": [
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "lineage_analysis.sink",
@@ -519,8 +557,18 @@
               {
                 "leaves": [ { "name": "lineage_analysis.source" } ],
                 "kind": "SourceA[KindA]"
+              },
+              {
+                "leaves": [ { "name": "lineage_analysis.source" } ],
+                "kind": "SourceA[KindB]"
               }
             ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito": [ { "line": 93, "start": 4, "end": 6 } ],
             "root": {
               "filename": "lineage_analysis.py",
               "line": 91,
@@ -550,7 +598,11 @@
         ]
       }
     ],
-    "features": [],
+    "features": [
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "lineage_analysis.sink",
@@ -876,6 +928,23 @@
   "kind": "model",
   "data": {
     "callable": "lineage_analysis.DataFrame.__init__",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "lineage_analysis.DataFrame.__setitem__",
     "tito": [
       {
         "port": "formal(self)",

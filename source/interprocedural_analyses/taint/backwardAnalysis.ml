@@ -142,6 +142,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ -> false
 
 
+  let is_setitem () =
+    let { Node.value = { Statement.Define.signature = { name; _ }; _ }; _ } =
+      FunctionContext.definition
+    in
+    String.equal (Reference.last name) "__setitem__"
+
+
   let first_parameter () =
     let { Node.value = { Statement.Define.signature = { parameters; _ }; _ }; _ } =
       FunctionContext.definition
@@ -154,9 +161,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   (* This is where we can observe access paths reaching into LocalReturn and record the extraneous
      paths for more precise tito. *)
   let initial_taint =
-    (* We handle constructors and property setters specially and track effects. *)
+    (* We handle constructors, __setitem__ methods, and property setters specially and track
+       effects. *)
     if
       is_constructor ()
+      || is_setitem ()
       || Statement.Define.is_property_setter (Node.value FunctionContext.definition)
     then
       match first_parameter () with
@@ -1075,29 +1084,55 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as callee;
      arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
     } ->
-        (* Ensure we simulate the body of __setitem__ in case the function contains taint. *)
-        let state =
-          let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
-          if CallGraph.CallCallees.is_partially_resolved callees then
-            apply_callees
-              ~resolution
-              ~is_property:false
-              ~call_location:location
-              ~state
-              ~callee
-              ~arguments
-              ~call_taint:taint
-              callees
-          else
-            state
+        let ({ CallGraph.CallCallees.call_targets; _ } as callees) =
+          get_call_callees ~location ~call:{ Call.callee; arguments }
         in
-        (* Handle base[index] = value. *)
-        analyze_assignment
-          ~resolution
-          ~fields:[AccessPath.get_index index]
-          ~target:base
-          ~value
-          state
+        let is_dict_setitem =
+          match call_targets with
+          | [
+              {
+                CallGraph.CallTarget.target =
+                  Method { class_name = "dict"; method_name = "__setitem__" };
+                _;
+              };
+            ]
+          | [
+              {
+                CallGraph.CallTarget.target =
+                  Override { class_name = "dict"; method_name = "__setitem__" };
+                _;
+              };
+            ] ->
+              true
+          | _ -> false
+        in
+        if is_dict_setitem || not (CallGraph.CallCallees.is_partially_resolved callees) then
+          (* Use the hardcoded model of `__setitem__` for any subtype of dict or unresolved callees:
+             `base[index] = value`. This is incorrect, but can lead to higher SNR, because we assume
+             in most cases, we run into an expression whose type is exactly `dict`, rather than a
+             (strict) subtype of `dict` that overrides `__setitem__`. *)
+          analyze_assignment
+            ~resolution
+            ~fields:[AccessPath.get_index index]
+            ~target:base
+            ~value
+            state
+        else
+          (* Use the custom model of `__setitem__`. We treat `e.__setitem__(k, v)` as `e =
+             e.__setitem__(k, v)` where method `__setitem__` returns the updated self. Due to
+             modeling with the assignment, the user-provided models of `__setitem__` will be
+             ignored, if they are inconsistent with treating `__setitem__` as returning an updated
+             self.*)
+          let taint = compute_assignment_taint ~resolution base state |> fst in
+          apply_callees
+            ~resolution
+            ~is_property:false
+            ~call_location:location
+            ~state
+            ~callee
+            ~arguments
+            ~call_taint:taint
+            callees
     | {
      callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
      arguments = [{ Call.Argument.value = argument_value; _ }];
