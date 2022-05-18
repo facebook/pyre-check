@@ -1,6 +1,6 @@
 (tests
  (names targetTest callGraphTest DependencyGraphTest classHierarchyGraphTest
-   classIntervalTest intervalSetTest callResolutionTest)
+   classIntervalTest intervalSetTest callResolutionTest fetchCallablesTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_compare ppx_sexp_conv
     ppx_sexp_message ppx_hash))

@@ -287,16 +287,16 @@ let run_taint_analysis
     let _ = Service.StaticAnalysis.build_class_intervals class_hierarchy_graph in
 
     let initial_callables =
-      Service.StaticAnalysis.fetch_initial_callables
-        ~scheduler
-        ~configuration
-        ~cache
-        ~environment:read_only_environment
-        ~qualifiers
+      Service.StaticAnalysis.Cache.initial_callables cache (fun () ->
+          Interprocedural.FetchCallables.fetch_initial_callables
+            ~scheduler
+            ~configuration
+            ~environment:read_only_environment
+            ~qualifiers)
     in
 
     let { ModelParser.models = initial_models; skip_overrides; _ } =
-      let { Service.StaticAnalysis.callables_with_dependency_information; stubs; _ } =
+      let { Interprocedural.FetchCallables.callables_with_dependency_information; stubs; _ } =
         initial_callables
       in
       initialize_models

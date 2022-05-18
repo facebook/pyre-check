@@ -26,9 +26,9 @@ let test_callables context =
           environment
           (Ast.Reference.create "test"))
     in
-    Service.StaticAnalysis.regular_and_filtered_callables ~configuration ~resolution ~source
+    FetchCallables.regular_and_filtered_callables ~configuration ~resolution ~source
     |> fst
-    |> List.map ~f:(fun { Service.StaticAnalysis.callable; _ } -> callable)
+    |> List.map ~f:(fun { FetchCallables.callable; _ } -> callable)
     |> assert_equal
          ~printer:(List.to_string ~f:Target.show_internal)
          ~cmp:(List.equal Target.equal)

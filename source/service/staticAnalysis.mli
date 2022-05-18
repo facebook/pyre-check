@@ -7,13 +7,17 @@
 
 open Analysis
 open Ast
-open Statement
 open Interprocedural
 
 module Cache : sig
   type t
 
   val load : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> enabled:bool -> t
+
+  val initial_callables
+    :  t ->
+    (unit -> FetchCallables.initial_callables) ->
+    FetchCallables.initial_callables
 end
 
 val type_check
@@ -32,36 +36,6 @@ val record_and_merge_call_graph
   call_graph:DependencyGraph.callgraph ->
   source:Source.t ->
   DependencyGraph.callgraph
-
-type found_callable = {
-  callable: Target.t;
-  define: Define.t Node.t;
-  is_internal: bool;
-}
-
-(* Exposed for testing purposes. *)
-val regular_and_filtered_callables
-  :  configuration:Configuration.Analysis.t ->
-  resolution:GlobalResolution.t ->
-  source:Source.t ->
-  found_callable list * Target.t list
-
-(* The boolean indicated whether the callable is internal or not. *)
-type callable_with_dependency_information = Target.t * bool
-
-type initial_callables = {
-  callables_with_dependency_information: callable_with_dependency_information list;
-  stubs: Target.t list;
-  filtered_callables: Target.Set.t;
-}
-
-val fetch_initial_callables
-  :  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  cache:Cache.t ->
-  environment:TypeEnvironment.ReadOnly.t ->
-  qualifiers:Reference.t list ->
-  initial_callables
 
 val build_class_hierarchy_graph
   :  scheduler:Scheduler.t ->

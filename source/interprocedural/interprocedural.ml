@@ -16,3 +16,4 @@ module Error = Error
 module ClassHierarchyGraph = ClassHierarchyGraph
 module ClassInterval = ClassInterval
 module IntervalSet = IntervalSet
+module FetchCallables = FetchCallables

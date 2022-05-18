@@ -491,12 +491,12 @@ let initialize
       (module TypeCheck.DummyContext)
   in
   let callables, stubs =
-    Service.StaticAnalysis.regular_and_filtered_callables
+    Interprocedural.FetchCallables.regular_and_filtered_callables
       ~configuration
       ~resolution:global_resolution
       ~source
     |> fst
-    |> List.map ~f:(fun { Service.StaticAnalysis.callable; define; _ } ->
+    |> List.map ~f:(fun { Interprocedural.FetchCallables.callable; define; _ } ->
            callable, define.Node.value)
     |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
   in
