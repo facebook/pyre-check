@@ -119,8 +119,7 @@ def no_always_when_calling_setitem():
     o = _test_source()
     a = SetItemClass()
     a["test_key"] = o
-    # This test reproduces T62465444. The model of this method
-    # should have feature "always-via": "copy", not "via": "copy"
-    # TODO: Delete or update this test, since we will no longer support
-    # user-provided models that specify `Update[Self]` for `__setitem__`.
+    # This test ensures the problem in T62465444 does not appear again.
+    # The model of this method should have feature "always-via": "copy",
+    # instead of "via": "copy"
     return a
