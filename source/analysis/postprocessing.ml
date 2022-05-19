@@ -10,12 +10,12 @@ open Ast
 open Pyre
 module Error = AnalysisError
 
-(* General idea: Keep two hash tables - one for unused ignores, and one from ignored lines -> list
-   of ignores affecting the line. For each error, process the ignores on that line one by one, and
-   remove the used codes from the map of unused ignores. Since the hash tables are initialized with
-   only the sources we're considering, this is sufficient to determine all ignored errors and unused
-   ignores. *)
-let ignore
+(* General idea: Keep two hash tables - one for unused ignores and fixmes, and one from ignored
+   lines -> list of ignores affecting the line. For each error, process the ignores on that line one
+   by one, and remove the used codes from the map of unused ignores. Since the hash tables are
+   initialized with only the sources we're considering, this is sufficient to determine all ignored
+   errors and unused ignores. *)
+let handle_ignores_and_fixmes
     ~qualifier
     { Source.typecheck_flags = { Source.TypecheckFlags.ignore_lines; _ }; _ }
     errors
@@ -144,7 +144,7 @@ let run_on_source
   =
   filter_errors ~configuration ~global_resolution ~typecheck_flags errors_by_define
   |> add_local_mode_errors ~define:(Source.top_level_define_node source) source
-  |> ignore ~qualifier source
+  |> handle_ignores_and_fixmes ~qualifier source
   |> List.map
        ~f:(Error.dequalify (Preprocessing.dequalify_map source) ~resolution:global_resolution)
   |> List.sort ~compare:Error.compare
