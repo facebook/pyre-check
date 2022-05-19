@@ -1036,7 +1036,7 @@ def start(
 
 
 @pyre.command()
-@click.argument("filter_paths", type=str, nargs=-1)
+@click.argument("directories", type=str, nargs=-1)
 @click.option(
     "--log-results",
     is_flag=True,
@@ -1058,13 +1058,15 @@ def start(
 @click.pass_context
 def statistics(
     context: click.Context,
-    filter_paths: Iterable[str],
+    directories: Iterable[str],
     log_results: bool,
     aggregate: bool,
     print_summary: bool,
 ) -> int:
     """
     Collect various syntactic metrics on type coverage.
+
+    If no directories are specified, defaults to counting all sources in the project.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = configuration_module.create_configuration(
@@ -1073,7 +1075,7 @@ def statistics(
     return commands.statistics.run(
         configuration,
         command_arguments.StatisticsArguments(
-            filter_paths=list(filter_paths),
+            directories=list(directories),
             log_identifier=command_argument.log_identifier,
             log_results=log_results,
             aggregate=aggregate,
