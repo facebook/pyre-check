@@ -24,7 +24,7 @@ from libcst.codemod import CodemodContext
 
 from .. import command_arguments, configuration as configuration_module, log
 from ..libcst_vendored_visitors import ApplyTypeAnnotationsVisitor
-from . import backend_arguments, commands, remote_logging, start
+from . import backend_arguments, commands, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -1023,7 +1023,6 @@ def run_infer(
     return commands.ExitCode.SUCCESS
 
 
-@remote_logging.log_usage(command_name="infer")
 def run(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,

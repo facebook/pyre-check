@@ -120,7 +120,7 @@ def _run_incremental_command(
             no_start=no_start_server,
             start_arguments=start_arguments,
         ),
-    )
+    ).exit_code
 
 
 def _run_default_command(

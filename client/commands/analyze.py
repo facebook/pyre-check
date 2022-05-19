@@ -17,7 +17,7 @@ from .. import (
     error as error_module,
     log,
 )
-from . import backend_arguments, commands, remote_logging, start, validate_models
+from . import backend_arguments, commands, start, validate_models
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -268,7 +268,6 @@ def run_analyze(
             )
 
 
-@remote_logging.log_usage(command_name="analyze")
 def run(
     configuration: configuration_module.Configuration,
     analyze_arguments: command_arguments.AnalyzeArguments,

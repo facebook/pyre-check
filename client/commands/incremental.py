@@ -16,14 +16,7 @@ from .. import (
     error,
     statistics_logger,
 )
-from . import (
-    backend_arguments,
-    commands,
-    remote_logging as remote_logging_module,
-    server_connection,
-    server_event,
-    start,
-)
+from . import backend_arguments, commands, server_connection, server_event, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -206,19 +199,12 @@ def _exit_code_from_error_kind(error_kind: server_event.ErrorKind) -> commands.E
     return commands.ExitCode.FAILURE
 
 
-@remote_logging_module.log_usage_with_additional_info(command_name=COMMAND_NAME)
 def run(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,
-) -> remote_logging_module.ExitCodeWithAdditionalLogging:
+) -> ExitStatus:
     try:
-        exit_status = run_incremental(configuration, incremental_arguments)
-        return remote_logging_module.ExitCodeWithAdditionalLogging(
-            exit_code=exit_status.exit_code,
-            additional_logging={
-                "connected_to": str(exit_status.connected_to),
-            },
-        )
+        return run_incremental(configuration, incremental_arguments)
     except server_event.ServerStartException as error:
         raise commands.ClientException(
             f"{error}", exit_code=_exit_code_from_error_kind(error.kind)

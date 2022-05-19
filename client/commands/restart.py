@@ -6,13 +6,12 @@
 import logging
 
 from .. import command_arguments, configuration as configuration_module
-from . import commands, incremental, remote_logging, stop
+from . import commands, incremental, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-@remote_logging.log_usage(command_name="restart")
 def run(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,

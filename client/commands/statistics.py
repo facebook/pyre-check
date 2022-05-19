@@ -21,7 +21,7 @@ from .. import (
     statistics_collectors as collectors,
     statistics_logger,
 )
-from . import commands, remote_logging
+from . import commands
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -372,7 +372,6 @@ def run_statistics(
     return commands.ExitCode.SUCCESS
 
 
-@remote_logging.log_usage(command_name="statistics")
 def run(
     configuration: configuration_module.Configuration,
     statistics_arguments: command_arguments.StatisticsArguments,

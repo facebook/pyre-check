@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Sequence
 
 from .. import command_arguments, configuration as configuration_module, error
-from . import backend_arguments, commands, incremental, remote_logging, start
+from . import backend_arguments, commands, incremental, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -208,7 +208,6 @@ def run_check(
             )
 
 
-@remote_logging.log_usage(command_name="check")
 def run(
     configuration: configuration_module.Configuration,
     check_arguments: command_arguments.CheckArguments,

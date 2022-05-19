@@ -16,7 +16,7 @@ from .. import (
     find_directories,
     recently_used_configurations,
 )
-from . import commands, remote_logging, server_connection, servers, stop
+from . import commands, server_connection, servers, stop
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -125,7 +125,6 @@ def _delete_caches(configuration: configuration_module.Configuration) -> None:
     # supported by the server
 
 
-@remote_logging.log_usage(command_name="kill")
 def run(
     configuration: configuration_module.Configuration, with_fire: bool
 ) -> commands.ExitCode:

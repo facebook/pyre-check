@@ -31,14 +31,7 @@ from .. import (
     find_directories,
     log,
 )
-from . import (
-    backend_arguments,
-    commands,
-    remote_logging,
-    server_connection,
-    server_event,
-    stop,
-)
+from . import backend_arguments, commands, server_connection, server_event, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -493,7 +486,6 @@ def run_start(
             )
 
 
-@remote_logging.log_usage(command_name="start")
 def run(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,

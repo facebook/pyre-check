@@ -16,7 +16,7 @@ from .. import (
     coverage_collector as collector,
     log,
 )
-from . import commands, remote_logging, statistics
+from . import commands, statistics
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -99,7 +99,6 @@ def run_coverage(
     return commands.ExitCode.SUCCESS
 
 
-@remote_logging.log_usage(command_name="coverage")
 def run(
     configuration: configuration_module.Configuration,
     coverage_arguments: command_arguments.CoverageArguments,

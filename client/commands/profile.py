@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from typing_extensions import Final
 
 from .. import command_arguments, configuration as configuration_module
-from . import backend_arguments, commands, remote_logging
+from . import backend_arguments, commands
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -420,7 +420,6 @@ def run_profile(
     return commands.ExitCode.SUCCESS
 
 
-@remote_logging.log_usage(command_name="profile")
 def run(
     configuration: configuration_module.Configuration,
     output: command_arguments.ProfileOutput,

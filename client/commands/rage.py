@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import List, Optional, Sequence, TextIO, Tuple
 
 from .. import command_arguments, configuration as configuration_module, log, version
-from . import commands, remote_logging, start
+from . import commands, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -205,7 +205,6 @@ def run_rage(
     LOG.info("Done\n")
 
 
-@remote_logging.log_usage(command_name="rage")
 def run(
     configuration: configuration_module.Configuration,
     arguments: command_arguments.RageArguments,
