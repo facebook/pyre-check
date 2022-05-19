@@ -45,7 +45,6 @@ class Configuration:
         self.use_buck_source_database: Optional[bool] = json_contents.get(
             "use_buck_source_database"
         )
-        self.use_command_v2: Optional[bool] = json_contents.get("use_command_v2")
         self.ignore_all_errors: Optional[List[str]] = json_contents.get(
             "ignore_all_errors"
         )
@@ -69,7 +68,6 @@ class Configuration:
         update_contents("strict")
         update_contents("use_buck_builder")
         update_contents("use_buck_source_database")
-        update_contents("use_command_v2")
         return contents
 
     @staticmethod
@@ -161,9 +159,6 @@ class Configuration:
     def enable_source_database_buck_builder(self) -> None:
         self.use_buck_builder = True
         self.use_buck_source_database = True
-
-    def enable_new_server(self) -> None:
-        self.use_command_v2 = True
 
     def add_strict(self) -> None:
         if self.strict:

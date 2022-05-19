@@ -13,7 +13,6 @@ from logging import Logger
 from . import UserError
 from .ast import UnstableAST
 from .commands.codemods import (
-    EnableNewServer,
     EnableSourceDatabaseBuckBuilder,
     MissingGlobalAnnotations,
     MissingOverrideReturnAnnotations,
@@ -110,9 +109,6 @@ def run(repository: Repository) -> None:
 
     support_sqlalchemy = commands.add_parser("support-sqlalchemy")
     SupportSqlalchemy.add_arguments(support_sqlalchemy)
-
-    enable_new_server = commands.add_parser("enable-new-server")
-    EnableNewServer.add_arguments(enable_new_server)
 
     # Initialize default values.
     arguments = parser.parse_args()

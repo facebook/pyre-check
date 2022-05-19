@@ -166,34 +166,3 @@ class EnableSourceDatabaseBuckBuilder(Command):
             configuration = Configuration(local_root / ".pyre_configuration.local")
             configuration.enable_source_database_buck_builder()
             configuration.write()
-
-
-class EnableNewServer(Command):
-    def __init__(self, *, local_roots: Sequence[Path], repository: Repository) -> None:
-        super().__init__(repository)
-        self._local_roots = local_roots
-
-    @staticmethod
-    def from_arguments(
-        arguments: argparse.Namespace, repository: Repository
-    ) -> "EnableNewServer":
-        return EnableNewServer(local_roots=arguments.local_roots, repository=repository)
-
-    @classmethod
-    # pyre-fixme[40]: Non-static method `add_arguments` cannot override a static
-    #  method defined in `Command`.
-    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
-        super(EnableNewServer, cls).add_arguments(parser)
-        parser.set_defaults(command=cls.from_arguments)
-        parser.add_argument(
-            "local_roots",
-            help="Path to directory with local configuration",
-            type=path_exists,
-            nargs="*",
-        )
-
-    def run(self) -> None:
-        for local_root in self._local_roots:
-            configuration = Configuration(local_root / ".pyre_configuration.local")
-            configuration.enable_new_server()
-            configuration.write()
