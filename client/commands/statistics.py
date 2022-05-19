@@ -44,7 +44,7 @@ def find_roots(
     if local_root is not None:
         return [Path(local_root)]
 
-    return [Path.cwd()]
+    return [Path(configuration.project_root)]
 
 
 def _is_excluded(path: Path, excludes: Sequence[str]) -> bool:

@@ -77,7 +77,7 @@ class StatisticsTest(testslide.TestCase):
             [Path("/root/local")],
         )
 
-    def test_find_roots__current_working_directory(self) -> None:
+    def test_find_roots__project_root(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
             with setup.switch_working_directory(root_path):
@@ -88,7 +88,7 @@ class StatisticsTest(testslide.TestCase):
                         ),
                         command_arguments.StatisticsArguments(directories=[]),
                     ),
-                    [root_path],
+                    [Path("/root")],
                 )
 
     def test_find_paths_to_parse(self) -> None:
