@@ -173,7 +173,7 @@ rules*.
 Sources for combined source rules are declared as normal in `taint.config`.
 Sinks, however, need to be unique to the combined source rule and are declared inside
 the rule definition. The rule itself is declared in the `combined_source_rules`
-top level entry. The rule lists all the same things as a reglular rule, but also ties
+top level entry. The rule lists all the same things as a regular rule, but also ties
 labels to its sources:
 
 ```json
