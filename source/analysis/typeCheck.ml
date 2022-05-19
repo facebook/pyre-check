@@ -6901,7 +6901,10 @@ let get_or_recompute_local_annotations ~environment name =
   match TypeEnvironment.ReadOnly.get_local_annotations environment name with
   | Some _ as local_annotations -> local_annotations
   | None -> (
-      (* Local annotations not preserved in shared memory. Recompute it. *)
+      (* Local annotations not preserved in shared memory in a standard pyre server (they can be,
+         via TypeEnvironment.LocalAnnotations, but to save memory we only populate this for pysa
+         runs, not the normal server used by LSP). This behavior is controlled by the
+         `store_type_check_resolution` flag. *)
       let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
       match GlobalResolution.define_body global_resolution name with
       | None -> None
