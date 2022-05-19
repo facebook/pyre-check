@@ -30,10 +30,20 @@ type ('k, 'a, _, _) operation =
   | FilterMap : ([ `Transform ], 'a, 'a -> 'a option, _) operation
   (* expand a part into multiple parts. Typically, just join, but different for keys etc *)
   | Expand : ([ `Transform ], 'a, 'a -> 'a list, _) operation
-  (* Perform two operations in sequence. *)
+  (* Perform two operations of the same type (Reduce or Transform) in sequence. *)
   | Seq :
       (([< `Transform | `Reduce ] as 'k), 'a, 'f, 'r) operation * ('k, 'a, 'g, 'r) operation
       -> ('k, 'a, 'f * 'g, 'r) operation
+  (* Perform two operations in sequence when the first is Reduce and the second is Transform. Result
+     of Reduce will be passed to Transform operation. *)
+  | ReduceTransform :
+      ((([ `Reduce ] as 'k1), 'a, 'f, 'r) operation * 'r)
+      * (([ `Transform ] as 'k2), 'a, 'g, 'r) operation
+      -> ('k2, 'a, 'f * ('r -> 'g), 'r) operation
+  (* Perform two operations in sequence when th first is Transform and the second is Reduce. *)
+  | TransformReduce :
+      (([ `Transform ] as 'k1), 'a, 'f, 'r) operation * (([ `Reduce ] as 'k2), 'a, 'g, 'r) operation
+      -> ('k2, 'a, 'f * 'g, 'r) operation
   (* context grabs an arbitrary outer part and passes it to an inner operation. 'c part must be on
      the path to 'a part in the structure. Only applies to non-leaf domain parts (like Map.Key,
      Tree.Path, ..., or Self) *)
@@ -137,6 +147,10 @@ let rec operation_name : type k a f b. (k, a, f, b) operation -> string =
   (* compositions *)
   | Context (p, _) -> Format.sprintf "Context(%s, _)" (part_name p)
   | Seq (op1, op2) -> Format.sprintf "Seq(%s, %s)" (operation_name op1) (operation_name op2)
+  | ReduceTransform ((op1, _), op2) ->
+      Format.sprintf "ReduceTransform(%s, %s)" (operation_name op1) (operation_name op2)
+  | TransformReduce (op1, op2) ->
+      Format.sprintf "TransformReduce(%s, %s)" (operation_name op1) (operation_name op2)
   | Nest (p, op) -> Format.sprintf "Nest(%s, %s)" (part_name p) (operation_name op)
   (* folds *)
   | Acc -> "Acc"
@@ -219,7 +233,7 @@ end) : BASE with type t := D.t = struct
     |> failwith
 
 
-  let transform : type a f. a part -> ([ `Transform ], a, f, _) operation -> f:f -> D.t -> D.t =
+  let transform : type a b f. a part -> ([ `Transform ], a, f, b) operation -> f:f -> D.t -> D.t =
    fun part op ~f d ->
     match part, op with
     | D.Self, Map -> f d
@@ -231,6 +245,10 @@ end) : BASE with type t := D.t = struct
         let f1, f2 = f in
         let d = D.transform part op1 ~f:f1 d in
         D.transform part op2 ~f:f2 d
+    | _, ReduceTransform ((op1, init), op2) ->
+        let f1, f2 = f in
+        let r = D.reduce part ~using:op1 ~f:f1 ~init d in
+        D.transform part op2 ~f:(f2 r) d
     | _, Nest (nested_part, op) -> D.transform nested_part op ~f d
     | _, Context (D.Self, op) -> D.transform part op ~f:(f d) d
     | _, Context (p, _) -> unhandled_context p "transform"
@@ -247,6 +265,10 @@ end) : BASE with type t := D.t = struct
     | _, Seq (op1, op2) ->
         let f1, f2 = f in
         let init = D.reduce part ~using:op1 ~f:f1 ~init d in
+        D.reduce part ~using:op2 ~f:f2 ~init d
+    | _, TransformReduce (op1, op2) ->
+        let f1, f2 = f in
+        let d = D.transform part op1 ~f:f1 d in
         D.reduce part ~using:op2 ~f:f2 ~init d
     | _, Nest (nested_part, op) -> D.reduce nested_part ~using:op ~f ~init d
     | _, Context (D.Self, op) -> D.reduce part ~using:op ~f:(f d) ~init d

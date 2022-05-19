@@ -924,14 +924,25 @@ module NonStrictIntToStringSet = struct
       ~printer:show
 
 
+  let assert_equivalent a b =
+    if not (less_or_equal ~left:a ~right:b && less_or_equal ~left:b ~right:a) then
+      assert_equal a b ~printer:show
+
+
   let test_additional _ =
-    let () =
-      assert_equal
-        "ints -> \n  Set(strings)"
-        (introspect Structure |> String.concat ~sep:"\n")
-        ~printer:Fn.id
-    in
-    ()
+    assert_equal
+      "ints -> \n  Set(strings)"
+      (introspect Structure |> String.concat ~sep:"\n")
+      ~printer:Fn.id;
+    let v = build_map [0, ["a"; "b"]; 1, ["b"; "c"; "d"]; 2, ["d"]; 3, []] in
+    assert_equivalent
+      (build_map [0, ["2a"; "2b"]; 1, ["3b"; "3c"; "3d"]; 2, ["1d"]; 3, []])
+      (transform
+         StringSet.Self
+         (ReduceTransform ((Nest (StringSet.Element, Acc), 0), Nest (StringSet.Element, Map)))
+         ~f:((fun _ acc -> acc + 1), fun r e -> Format.sprintf "%d%s" r e)
+         v);
+    assert_equal 18 (reduce Key ~using:(TransformReduce (Map, Acc)) ~f:(( * ) 3, ( + )) ~init:0 v)
 
 
   let test_context _ =
