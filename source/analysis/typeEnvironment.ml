@@ -25,9 +25,10 @@ module LocalAnnotationsValue = struct
   let description = "Node type resolution"
 end
 
-module RawErrors = Memory.NoCache.Make (SharedMemoryKeys.ReferenceKey) (AnalysisErrorValue)
+module RawErrors =
+  Memory.FirstClass.NoCache.Make (SharedMemoryKeys.ReferenceKey) (AnalysisErrorValue)
 module LocalAnnotations =
-  Memory.WithCache.Make (SharedMemoryKeys.ReferenceKey) (LocalAnnotationsValue)
+  Memory.FirstClass.WithCache.Make (SharedMemoryKeys.ReferenceKey) (LocalAnnotationsValue)
 
 type t = {
   global_environment: AnnotatedGlobalEnvironment.t;
@@ -59,13 +60,15 @@ let get_local_annotations { get_local_annotations; _ } = get_local_annotations
 let invalidate { invalidate; _ } = invalidate
 
 let create global_environment =
-  let get_errors reference = RawErrors.get reference |> Option.value ~default:[] in
-  let set_errors = RawErrors.add in
-  let get_local_annotations = LocalAnnotations.get in
-  let set_local_annotations = LocalAnnotations.add in
+  let raw_errors = RawErrors.create () in
+  let local_annotations = LocalAnnotations.create () in
+  let get_errors reference = RawErrors.get raw_errors reference |> Option.value ~default:[] in
+  let set_errors = RawErrors.add raw_errors in
+  let get_local_annotations = LocalAnnotations.get local_annotations in
+  let set_local_annotations = LocalAnnotations.add local_annotations in
   let invalidate qualifiers =
-    RawErrors.KeySet.of_list qualifiers |> RawErrors.remove_batch;
-    LocalAnnotations.KeySet.of_list qualifiers |> LocalAnnotations.remove_batch
+    RawErrors.KeySet.of_list qualifiers |> RawErrors.remove_batch raw_errors;
+    LocalAnnotations.KeySet.of_list qualifiers |> LocalAnnotations.remove_batch local_annotations
   in
   {
     global_environment;
