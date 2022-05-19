@@ -419,27 +419,11 @@ let find_source_paths
   |> List.filter_map ~f:(SourcePath.create ~configuration)
 
 
-let make_get_raw_code ?source_path_code_pairs configuration =
-  let in_memory_sources =
-    let table = Reference.Table.create () in
-    let add_pair (source_path, code) =
-      Reference.Table.set table ~key:(SourcePath.qualifier source_path) ~data:code
-    in
-    Option.value source_path_code_pairs ~default:[] |> List.iter ~f:add_pair;
-    table
-  in
-  let get_raw_code ({ SourcePath.qualifier; _ } as source_path) =
-    let load_raw_code () =
-      let path = SourcePath.full_path ~configuration source_path in
-      try Ok (File.content_exn (File.create path)) with
-      | Sys_error error ->
-          Error (Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.pp path error)
-    in
-    match Reference.Table.find in_memory_sources qualifier with
-    | Some code -> Ok code
-    | None -> load_raw_code ()
-  in
-  get_raw_code
+let load_raw_code ~configuration source_path =
+  let path = SourcePath.full_path ~configuration source_path in
+  try Ok (File.content_exn (File.create path)) with
+  | Sys_error error ->
+      Error (Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.pp path error)
 
 
 let create configuration =
@@ -447,8 +431,9 @@ let create configuration =
   let timer = Timer.start () in
   let source_paths = find_source_paths configuration in
   let layouts = Layouts.create ~configuration source_paths in
+  let get_raw_code = load_raw_code ~configuration in
   Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
-  { layouts; configuration; get_raw_code = make_get_raw_code configuration }
+  { layouts; configuration; get_raw_code }
 
 
 let create_for_testing configuration source_path_code_pairs =
@@ -456,7 +441,20 @@ let create_for_testing configuration source_path_code_pairs =
     let source_paths = List.map ~f:fst source_path_code_pairs in
     Layouts.create ~configuration source_paths
   in
-  { layouts; configuration; get_raw_code = make_get_raw_code ~source_path_code_pairs configuration }
+  let in_memory_sources =
+    let table = Reference.Table.create () in
+    let add_pair (source_path, code) =
+      Reference.Table.set table ~key:(SourcePath.qualifier source_path) ~data:code
+    in
+    List.iter source_path_code_pairs ~f:add_pair;
+    table
+  in
+  let get_raw_code ({ SourcePath.qualifier; _ } as source_path) =
+    match Reference.Table.find in_memory_sources qualifier with
+    | Some code -> Ok code
+    | None -> load_raw_code ~configuration source_path
+  in
+  { layouts; configuration; get_raw_code }
 
 
 let all_source_paths { layouts = { module_to_files; _ }; _ } =
@@ -503,7 +501,7 @@ module Serializer = struct
 
   let from_stored_layouts ~configuration () =
     let layouts = Layouts.load () in
-    { layouts; configuration; get_raw_code = make_get_raw_code configuration }
+    { layouts; configuration; get_raw_code = load_raw_code ~configuration }
 end
 
 module ReadOnly = struct
