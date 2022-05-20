@@ -6,7 +6,6 @@
 import dataclasses
 import datetime
 import itertools
-import json
 import logging
 import shutil
 import subprocess
@@ -14,7 +13,7 @@ from pathlib import Path
 from typing import List, Optional, Sequence, TextIO, Tuple
 
 from .. import command_arguments, configuration as configuration_module, log, version
-from . import commands, start
+from . import commands, frontend_configuration, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ def _print_section(section: Section, output: TextIO) -> None:
     print("", file=output, flush=True)
 
 
-def _version_section(configuration: configuration_module.Configuration) -> Section:
+def _version_section(configuration: frontend_configuration.Base) -> Section:
     client_version_line = f"Client version: {version.__version__}"
     try:
         binary_version = configuration.get_binary_version()
@@ -46,14 +45,15 @@ def _version_section(configuration: configuration_module.Configuration) -> Secti
 
 
 def _configuration_section(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
 ) -> Section:
     return Section(
-        name="Configuration", content=json.dumps(configuration.to_json(), indent=2)
+        name="Configuration", content=configuration.get_content_for_display()
     )
 
 
 def _get_subprocess_stdout(command: Sequence[str]) -> Optional[str]:
+    # lint-ignore: NoUnsafeExecRule
     result = subprocess.run(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True
     )
@@ -145,7 +145,7 @@ def _client_log_section(log_directory: Path) -> Optional[Section]:
 
 
 def _print_configuration_sections(
-    configuration: configuration_module.Configuration, output: TextIO
+    configuration: frontend_configuration.Base, output: TextIO
 ) -> None:
     LOG.info("Collecting information about Pyre configurations...")
     _print_section(_version_section(configuration), output)
@@ -192,7 +192,7 @@ def _print_log_file_sections(
 
 
 def run_rage(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     arguments: command_arguments.RageArguments,
     output: TextIO,
 ) -> None:
@@ -200,7 +200,7 @@ def run_rage(
     _print_mercurial_sections(output)
     _print_watchman_sections(output)
     _print_log_file_sections(
-        Path(configuration.log_directory), arguments.server_log_count, output
+        configuration.get_log_directory(), arguments.server_log_count, output
     )
     LOG.info("Done\n")
 
@@ -211,11 +211,13 @@ def run(
 ) -> commands.ExitCode:
     try:
         output_path = arguments.output
+        rage_configuration = frontend_configuration.OpenSource(configuration)
         if output_path is None:
-            run_rage(configuration, arguments, log.stdout)
+            run_rage(rage_configuration, arguments, log.stdout)
         else:
+            # lint-ignore: NoUnsafeFilesystemRule
             with open(output_path) as output:
-                run_rage(configuration, arguments, output)
+                run_rage(frontend_configuration, arguments, output)
         return commands.ExitCode.SUCCESS
     except Exception as error:
         raise commands.ClientException(
