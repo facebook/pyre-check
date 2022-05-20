@@ -14,10 +14,7 @@ module Cache : sig
 
   val load : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> enabled:bool -> t
 
-  val initial_callables
-    :  t ->
-    (unit -> FetchCallables.initial_callables) ->
-    FetchCallables.initial_callables
+  val initial_callables : t -> (unit -> FetchCallables.t) -> FetchCallables.t
 end
 
 val type_check
@@ -63,7 +60,7 @@ val build_call_graph
   Target.t list Target.Map.t
 
 val build_dependency_graph
-  :  callables_with_dependency_information:(Target.t * bool) list ->
+  :  initial_callables:FetchCallables.t ->
   callgraph:DependencyGraph.callgraph ->
   override_dependencies:Target.t list Target.Map.t ->
   DependencyGraph.t * Target.t list * Target.t list

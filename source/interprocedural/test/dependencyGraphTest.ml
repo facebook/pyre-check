@@ -681,25 +681,32 @@ let test_prune_callables _ =
           Reference.create key, List.map values ~f:(fun value -> Reference.create value))
       |> Reference.Map.of_alist_exn
     in
-    let callables_with_dependency_information =
-      List.map project_callables ~f:(fun callable ->
-          Target.create_method (Reference.create callable), true)
-      @ List.map external_callables ~f:(fun callable ->
-            Target.create_method (Reference.create callable), false)
+    let project_callables =
+      List.map ~f:(fun name -> name |> Reference.create |> Target.create_method) project_callables
+    in
+    let external_callables =
+      List.map ~f:(fun name -> name |> Reference.create |> Target.create_method) external_callables
+    in
+    let initial_callables =
+      {
+        FetchCallables.internals = project_callables;
+        callables = List.rev_append project_callables external_callables;
+        stubs = [];
+      }
     in
     let overrides = DependencyGraph.from_overrides overrides in
     let dependencies =
       DependencyGraph.from_callgraph callgraph |> DependencyGraph.union overrides
     in
     let { DependencyGraph.dependencies = actual_dependencies; pruned_callables = actual_callables } =
-      DependencyGraph.prune dependencies ~callables_with_dependency_information
+      DependencyGraph.prune dependencies ~initial_callables
     in
     assert_equal
       ~cmp:(List.equal Target.equal)
       ~printer:(List.to_string ~f:Target.show_pretty)
       (List.map expected_callables ~f:(fun callable ->
            Target.create_method (Reference.create callable)))
-      actual_callables;
+      (List.sort ~compare:Target.compare actual_callables);
     assert_equal
       ~cmp:
         (List.equal (fun (left_key, left_values) (right_key, right_values) ->
@@ -765,7 +772,7 @@ let test_prune_callables _ =
         "external.unrelated";
       ]
     ~expected_callables:
-      ["a.foo"; "external.bar"; "external.C.m"; "external.D.m"; "external.called_by_override"]
+      ["a.foo"; "external.bar"; "external.called_by_override"; "external.C.m"; "external.D.m"]
     ~expected_dependencies:
       [
         "a.foo", ["external.bar"];
@@ -823,7 +830,7 @@ let test_prune_callables _ =
         "external.unrelated";
       ]
     ~expected_callables:
-      ["a.foo"; "external.C.m"; "external.D.m"; "external.E.m"; "external.called_by_override"]
+      ["a.foo"; "external.called_by_override"; "external.C.m"; "external.D.m"; "external.E.m"]
     ~expected_dependencies:
       [
         "a.foo", ["O|external.C.m"];

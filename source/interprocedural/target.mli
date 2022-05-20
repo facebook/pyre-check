@@ -87,6 +87,27 @@ val get_short_name : t -> string
 
 val override_to_method : t -> t
 
+module Map : Core.Map.S with type Key.t = t
+
+module Set : Caml.Set.S with type elt = t
+
+module HashMap : Core.Hashtbl.S with type key := t
+
+module HashSet : Core.Hash_set.S with type elt := t
+
+type definitions_result = {
+  qualifier: Reference.t;
+  (* Mapping from a target to its selected definition. *)
+  callables: Define.t Node.t Map.t;
+  (* True if there was multiple non-stub definitions. *)
+  has_multiple_definitions: bool;
+}
+
+val get_definitions
+  :  resolution:Analysis.GlobalResolution.t ->
+  Reference.t ->
+  definitions_result option
+
 val get_module_and_definition
   :  resolution:Analysis.GlobalResolution.t ->
   t ->
@@ -97,14 +118,6 @@ val resolve_method
   class_type:Type.t ->
   method_name:string ->
   t option
-
-module Map : Core.Map.S with type Key.t = t
-
-module Set : Caml.Set.S with type elt = t
-
-module HashMap : Core.Hashtbl.S with type key := t
-
-module HashSet : Core.Hash_set.S with type elt := t
 
 module SharedMemoryKey : sig
   type nonrec t = t

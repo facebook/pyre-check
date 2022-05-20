@@ -315,16 +315,13 @@ type prune_result = {
   pruned_callables: Target.t list;
 }
 
-let prune dependency_graph ~callables_with_dependency_information =
-  let initial_callables =
-    List.filter_map callables_with_dependency_information ~f:(fun (callable, is_internal) ->
-        Option.some_if is_internal callable)
-  in
+let prune dependency_graph ~initial_callables =
+  let internal_callables = FetchCallables.get_internals initial_callables in
   (* We have an implicit edge from a method to the override it corresponds to during the analysis.
      During the pruning, we make the edges from the method to the override explicit to make sure the
      DFS captures the interesting overrides. *)
   let callables_to_keep =
-    depth_first_search dependency_graph initial_callables
+    depth_first_search dependency_graph internal_callables
     |> List.concat
     |> List.dedup_and_sort ~compare:Target.compare
   in
@@ -340,6 +337,8 @@ let prune dependency_graph ~callables_with_dependency_information =
   {
     dependencies = dependency_graph;
     pruned_callables =
-      List.filter_map callables_with_dependency_information ~f:(fun (callable, _) ->
-          Option.some_if (Target.Set.mem callable callables_to_keep) callable);
+      initial_callables
+      |> FetchCallables.get_callables
+      |> List.filter_map ~f:(fun callable ->
+             Option.some_if (Target.Set.mem callable callables_to_keep) callable);
   }

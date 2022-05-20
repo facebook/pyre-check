@@ -490,18 +490,15 @@ let initialize
       (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
       (module TypeCheck.DummyContext)
   in
-  let callables, stubs =
-    Interprocedural.FetchCallables.regular_and_filtered_callables
+  let initial_callables =
+    Interprocedural.FetchCallables.from_source
       ~configuration
       ~resolution:global_resolution
+      ~include_unit_tests:false
       ~source
-    |> fst
-    |> List.map ~f:(fun { Interprocedural.FetchCallables.callable; define; _ } ->
-           callable, define.Node.value)
-    |> List.partition_tf ~f:(fun (_callable, define) -> not (Statement.Define.is_stub define))
   in
-  let initial_callables = List.map ~f:fst callables in
-  let stubs = List.map ~f:fst stubs in
+  let stubs = Interprocedural.FetchCallables.get_stubs initial_callables in
+  let initial_callables = Interprocedural.FetchCallables.get_callables initial_callables in
   let user_models, skip_overrides =
     let models_source =
       match models_source, add_initial_models with
@@ -537,11 +534,7 @@ let initialize
             ~rule_filter:None
             ~rules
             ~models
-            ~callables:
-              (List.filter_map (List.rev_append stubs initial_callables) ~f:(function
-                  | Target.Function _ as callable -> Some callable
-                  | Target.Method _ as callable -> Some callable
-                  | _ -> None))
+            ~callables:(List.rev_append stubs initial_callables)
             ~stubs:(Target.HashSet.of_list stubs)
             ~environment
         in

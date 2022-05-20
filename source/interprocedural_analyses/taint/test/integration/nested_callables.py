@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 # flake8: noqa
+import typing
 from builtins import _test_sink, _test_source
 
 
@@ -36,3 +37,15 @@ def outer_calling_other_function(x: int) -> None:
         some_sink(x)
 
     inner_calling_other_function(x)
+
+
+def parameter_function(
+    add: typing.Optional[typing.Callable[[str, str], str]], x: str
+) -> str:
+    if add is None:
+
+        def add(x: str, y: str) -> str:
+            return x + y
+
+    # pyre-ignore
+    return add("/bin/bash", x)

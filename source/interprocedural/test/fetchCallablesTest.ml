@@ -26,11 +26,11 @@ let test_callables context =
           environment
           (Ast.Reference.create "test"))
     in
-    FetchCallables.regular_and_filtered_callables ~configuration ~resolution ~source
-    |> fst
-    |> List.map ~f:(fun { FetchCallables.callable; _ } -> callable)
+    FetchCallables.from_source ~configuration ~resolution ~include_unit_tests:false ~source
+    |> FetchCallables.get_all
+    |> List.sort ~compare:Target.compare
     |> assert_equal
-         ~printer:(List.to_string ~f:Target.show_internal)
+         ~printer:(List.to_string ~f:Target.show_pretty)
          ~cmp:(List.equal Target.equal)
          expected
   in

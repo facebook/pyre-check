@@ -128,7 +128,6 @@ let test_integration path context =
         ~dependency_graph
         ~initial_callables
         ~stubs
-        ~filtered_callables:Target.Set.empty
         ~override_targets
         ~callables_to_analyze
         ~initial_models

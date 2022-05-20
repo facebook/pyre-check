@@ -505,13 +505,7 @@ module Make (Analysis : ANALYSIS) = struct
 
   type dependency_graph = Target.t list Target.Map.t
 
-  let compute_callables_to_reanalyze
-      ~dependency_graph
-      ~filtered_callables
-      ~all_callables
-      ~previous_callables
-      ~step
-    =
+  let compute_callables_to_reanalyze ~dependency_graph ~all_callables ~previous_callables ~step =
     let might_change_if_reanalyzed =
       List.fold previous_callables ~init:Target.Set.empty ~f:(fun accumulator callable ->
           if not (State.get_is_partial callable) then
@@ -539,13 +533,6 @@ module Make (Analysis : ANALYSIS) = struct
         let check_missing callable =
           match State.get_meta_data callable with
           | None -> () (* okay, caller is in a later epoch *)
-          | Some _ when Target.Set.mem callable filtered_callables ->
-              (* This is fine - even though this function was called, it was filtered from the
-                 analysis beforehand. *)
-              Log.warning
-                "%a was omitted due to being explicitly filtered from the analysis."
-                Target.pp_pretty
-                callable
           | Some { step = { epoch; _ }; _ } when epoch = Epoch.predefined -> ()
           | Some meta ->
               let message =
@@ -576,7 +563,6 @@ module Make (Analysis : ANALYSIS) = struct
       ~dependency_graph
       ~initial_callables
       ~stubs
-      ~filtered_callables
       ~override_targets
       ~callables_to_analyze:initial_callables_to_analyze
       ~initial_models
@@ -626,7 +612,6 @@ module Make (Analysis : ANALYSIS) = struct
         let callables_to_analyze =
           compute_callables_to_reanalyze
             ~dependency_graph
-            ~filtered_callables
             ~all_callables:initial_callables_to_analyze
             ~previous_callables:callables_to_analyze
             ~step

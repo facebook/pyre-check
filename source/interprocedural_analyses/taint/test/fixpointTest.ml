@@ -50,7 +50,6 @@ let assert_fixpoint
       ~dependency_graph
       ~initial_callables
       ~stubs
-      ~filtered_callables:Target.Set.empty
       ~override_targets
       ~callables_to_analyze
       ~initial_models

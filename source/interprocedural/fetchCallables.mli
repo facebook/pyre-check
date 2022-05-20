@@ -6,33 +6,35 @@
  *)
 
 open Ast
-open Statement
 
-type found_callable = {
-  callable: Target.t;
-  define: Define.t Node.t;
-  is_internal: bool;
+type t = {
+  (* Non-stub callables that are in files within the source paths
+   * (as opposed to being in the search path). *)
+  internals: Target.t list;
+  (* All non-stub callables. *)
+  callables: Target.t list;
+  stubs: Target.t list;
 }
 
-(* Exposed for testing purposes. *)
-val regular_and_filtered_callables
+val from_source
   :  configuration:Configuration.Analysis.t ->
   resolution:Analysis.GlobalResolution.t ->
+  include_unit_tests:bool ->
   source:Source.t ->
-  found_callable list * Target.t list
+  t
 
-(* The boolean indicated whether the callable is internal or not. *)
-type callable_with_dependency_information = Target.t * bool
-
-type initial_callables = {
-  callables_with_dependency_information: callable_with_dependency_information list;
-  stubs: Target.t list;
-  filtered_callables: Target.Set.t;
-}
-
-val fetch_initial_callables
+val from_qualifiers
   :  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  configuration:Configuration.Analysis.t ->
+  include_unit_tests:bool ->
   qualifiers:Reference.t list ->
-  initial_callables
+  t
+
+val get_internals : t -> Target.t list
+
+val get_callables : t -> Target.t list
+
+val get_stubs : t -> Target.t list
+
+val get_all : t -> Target.t list

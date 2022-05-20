@@ -17,10 +17,10 @@ module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 
 module InitialCallablesSharedMemory = Memory.Serializer (struct
-  type t = FetchCallables.initial_callables
+  type t = FetchCallables.t
 
   module Serialized = struct
-    type t = FetchCallables.initial_callables
+    type t = FetchCallables.t
 
     let prefix = Prefix.make ()
 
@@ -489,14 +489,14 @@ let build_call_graph
    the callables we are actually analyzing. Then reverse the graph, which maps dependers to
    dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
    maps dependees to dependers. *)
-let build_dependency_graph ~callables_with_dependency_information ~callgraph ~override_dependencies =
+let build_dependency_graph ~initial_callables ~callgraph ~override_dependencies =
   let override_targets = Target.Map.keys override_dependencies in
   let dependencies, callables_to_analyze =
     let dependencies =
       DependencyGraph.from_callgraph callgraph |> DependencyGraph.union override_dependencies
     in
     let { DependencyGraph.dependencies; pruned_callables } =
-      DependencyGraph.prune dependencies ~callables_with_dependency_information
+      DependencyGraph.prune dependencies ~initial_callables
     in
     DependencyGraph.reverse dependencies, pruned_callables
   in

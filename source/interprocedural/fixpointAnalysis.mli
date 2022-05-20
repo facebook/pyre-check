@@ -142,7 +142,6 @@ module Make (Analysis : ANALYSIS) : sig
     dependency_graph:dependency_graph ->
     initial_callables:Target.t list ->
     stubs:Target.t list ->
-    filtered_callables:Target.Set.t ->
     override_targets:Target.t list ->
     callables_to_analyze:Target.t list ->
     initial_models:Registry.t ->

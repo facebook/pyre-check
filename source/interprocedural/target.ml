@@ -195,6 +195,49 @@ let override_to_method = function
   | Object name -> Object name
 
 
+module Map = Core.Map.Make (T)
+module Set = Caml.Set.Make (T)
+module Hashable = Core.Hashable.Make (T)
+module HashMap = Hashable.Table
+module HashSet = Hashable.Hash_set
+
+type definitions_result = {
+  qualifier: Reference.t;
+  (* Mapping from a target to its selected definition. *)
+  callables: Define.t Node.t Map.t;
+  (* True if there was multiple non-stub definitions. *)
+  has_multiple_definitions: bool;
+}
+
+(* This is the source of truth for the mapping of callables to definitions.
+ * All parts of the analysis should use this (or `get_module_and_definition`)
+ * rather than walking over source files. *)
+let get_definitions ~resolution define_name =
+  GlobalResolution.function_definition resolution define_name
+  >>| fun ({ FunctionDefinition.qualifier; _ } as definitions) ->
+  let bodies = FunctionDefinition.all_bodies definitions in
+  (* Ignore defines for type overloads. *)
+  let bodies =
+    List.filter ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_function value)) bodies
+  in
+  let fold ({ callables; _ } as result) define =
+    let target = create define in
+    match Map.find callables target with
+    | None -> { result with callables = Map.set callables ~key:target ~data:define }
+    | Some previous_define -> (
+        (* Prefer the non-stub definition, so we can analyze its body. *)
+        match Define.is_stub (Node.value previous_define), Define.is_stub (Node.value define) with
+        | true, true -> result
+        | false, true -> result
+        | true, false -> { result with callables = Map.set callables ~key:target ~data:define }
+        | false, false -> { result with has_multiple_definitions = true })
+  in
+  List.fold
+    ~init:{ qualifier; callables = Map.empty; has_multiple_definitions = false }
+    ~f:fold
+    bodies
+
+
 let get_module_and_definition ~resolution callable =
   let drop_setter_suffix name =
     if String.is_suffix name ~suffix:property_setter_suffix then
@@ -202,37 +245,21 @@ let get_module_and_definition ~resolution callable =
     else
       name, false
   in
-  let find_defines name =
-    GlobalResolution.function_definition resolution name
-    >>| fun ({ FunctionDefinition.qualifier; _ } as definitions) ->
-    FunctionDefinition.all_bodies definitions, qualifier
-  in
   (* If the callable is a property setter, then find the definition that is decorated with
      "*.setter". Otherwise, return one of the definitions of the callable. *)
-  match callable with
-  | Function name -> (
-      let function_name, is_setter = drop_setter_suffix name in
-      match find_defines (Reference.create function_name) with
-      | Some (bodies, qualifier) ->
-          let find_body { Node.value = { Define.signature; _ } as value; _ } =
-            (not (Define.is_overloaded_function value))
-            && ((not is_setter) || Define.Signature.is_property_setter signature)
-          in
-          List.find bodies ~f:find_body >>| fun body -> qualifier, body
-      | None -> None)
-  | Method { class_name; method_name } -> (
-      let method_name, is_setter = drop_setter_suffix method_name in
-      let define_name =
+  let define_name =
+    match callable with
+    | Function name ->
+        let function_name, _ = drop_setter_suffix name in
+        Reference.create function_name
+    | Method { class_name; method_name } ->
+        let method_name, _ = drop_setter_suffix method_name in
         Reference.combine (Reference.create class_name) (Reference.create method_name)
-      in
-      match find_defines define_name with
-      | Some (bodies, qualifier) ->
-          let find_body { Node.value = { Define.signature; _ }; _ } =
-            (not is_setter) || Define.Signature.is_property_setter signature
-          in
-          List.find bodies ~f:find_body >>| fun body -> qualifier, body
-      | None -> None)
-  | _ -> failwith "expected a function or method"
+    | _ -> failwith "expected a function or method"
+  in
+  get_definitions ~resolution define_name
+  >>= fun { qualifier; callables; _ } ->
+  Map.find callables callable >>| fun define -> qualifier, define
 
 
 let resolve_method ~resolution ~class_type ~method_name =
@@ -254,12 +281,6 @@ let resolve_method ~resolution ~class_type ~method_name =
       >>| create_method
   | _ -> None
 
-
-module Map = Core.Map.Make (T)
-module Set = Caml.Set.Make (T)
-module Hashable = Core.Hashable.Make (T)
-module HashMap = Hashable.Table
-module HashSet = Hashable.Hash_set
 
 module SharedMemoryKey = struct
   include T
