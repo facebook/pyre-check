@@ -30,11 +30,15 @@ module RawSourceValue = struct
   let compare = Result.compare Source.compare ParserError.compare
 end
 
+module QualifierDependencyKey = DependencyTrackedMemory.DependencyKey.Make (struct
+  type t = Reference.t [@@deriving compare, sexp, hash]
+end)
+
 module RawSources = struct
   include
     DependencyTrackedMemory.DependencyTrackedTableNoCache
       (SharedMemoryKeys.ReferenceKey)
-      (SharedMemoryKeys.DependencyKey)
+      (QualifierDependencyKey)
       (RawSourceValue)
 
   let add_parsed_source table ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
@@ -50,9 +54,9 @@ module RawSources = struct
 
   let update_and_compute_dependencies table ~update ~scheduler qualifiers =
     let keys = KeySet.of_list qualifiers in
-    SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler
+    QualifierDependencyKey.Transaction.empty ~scheduler
     |> add_to_transaction table ~keys
-    |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
+    |> QualifierDependencyKey.Transaction.execute ~update
 
 
   let remove_sources table qualifiers = KeySet.of_list qualifiers |> remove_batch table
@@ -358,20 +362,11 @@ let get_and_preprocess_source
 
 
 module UpdateResult = struct
-  type t = {
-    triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
-    invalidated_modules: Reference.t list;
-  }
-
-  let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
+  type t = { invalidated_modules: Reference.t list }
 
   let invalidated_modules { invalidated_modules; _ } = invalidated_modules
 
-  let create_for_testing () =
-    {
-      triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
-      invalidated_modules = [];
-    }
+  let create_for_testing () = { invalidated_modules = [] }
 end
 
 type trigger =
@@ -400,10 +395,7 @@ let update
         |> List.filter ~f:SourcePath.is_in_project
         |> List.map ~f:SourcePath.qualifier)
       in
-      {
-        UpdateResult.invalidated_modules;
-        triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
-      }
+      { UpdateResult.invalidated_modules }
   | Update module_updates -> (
       let changed_source_paths, removed_modules, new_implicits =
         let categorize = function
@@ -442,15 +434,12 @@ let update
       | Configuration.Analysis.Shallow ->
           RawSources.remove_sources raw_sources modules_with_invalidated_raw_source;
           load_raw_sources ~scheduler ~ast_environment reparse_source_paths;
-          {
-            UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
-            invalidated_modules = invalidated_modules_before_preprocessing;
-          }
+          { invalidated_modules = invalidated_modules_before_preprocessing }
       | Configuration.Analysis.FineGrained ->
           let update_raw_sources () =
             load_raw_sources ~scheduler ~ast_environment reparse_source_paths
           in
-          let _, triggered_dependencies =
+          let _, preprocessing_dependencies =
             Profiling.track_duration_and_shared_memory
               "Parse Raw Sources"
               ~tags:["phase_name", "Parsing"]
@@ -463,17 +452,16 @@ let update
           in
           let invalidated_modules =
             let fold_key registered sofar =
-              match SharedMemoryKeys.DependencyKey.get_key registered with
-              | SharedMemoryKeys.WildcardImport qualifier -> RawSources.KeySet.add qualifier sofar
-              | _ -> sofar
+              let qualifier = QualifierDependencyKey.get_key registered in
+              RawSources.KeySet.add qualifier sofar
             in
-            SharedMemoryKeys.DependencyKey.RegisteredSet.fold
+            QualifierDependencyKey.RegisteredSet.fold
               fold_key
-              triggered_dependencies
+              preprocessing_dependencies
               (RawSources.KeySet.of_list invalidated_modules_before_preprocessing)
             |> RawSources.KeySet.elements
           in
-          { UpdateResult.triggered_dependencies; invalidated_modules })
+          { invalidated_modules })
 
 
 (* Both `load` and `store` are no-ops here since `Sources` and `WildcardExports` are in shared
@@ -543,9 +531,7 @@ let read_only ({ module_tracker; _ } as ast_environment) =
   let get_processed_source ~track_dependency qualifier =
     let dependency =
       if track_dependency then
-        Some
-          (SharedMemoryKeys.DependencyKey.Registry.register
-             (SharedMemoryKeys.WildcardImport qualifier))
+        Some (QualifierDependencyKey.Registry.register qualifier)
       else
         None
     in

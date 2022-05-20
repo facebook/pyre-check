@@ -7,7 +7,6 @@
 
 open Ast
 open Core
-open SharedMemoryKeys
 
 type t
 
@@ -63,8 +62,6 @@ val create : ?additional_preprocessing:(Source.t -> Source.t) -> ModuleTracker.t
 
 module UpdateResult : sig
   type t
-
-  val triggered_dependencies : t -> DependencyKey.RegisteredSet.t
 
   val invalidated_modules : t -> Reference.t list
 
