@@ -562,18 +562,18 @@ let initialize
   in
 
   let override_targets = Target.Map.keys overrides in
-  let callables_to_analyze = List.rev_append override_targets initial_callables in
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
   (* The call graph building depends on initial models for global targets. *)
   let callgraph =
-    Service.StaticAnalysis.record_and_merge_call_graph
+    Service.StaticAnalysis.build_call_graph
+      ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~environment
       ~attribute_targets:(Registry.object_targets initial_models)
-      ~call_graph:DependencyGraph.empty_callgraph
-      ~source
+      ~callables:initial_callables
   in
+  let callables_to_analyze = List.rev_append override_targets initial_callables in
   let initial_models =
     MissingFlow.add_unknown_callee_models ~static_analysis_configuration ~callgraph ~initial_models
   in

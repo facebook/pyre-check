@@ -342,7 +342,7 @@ let run_taint_analysis
         ~static_analysis_configuration
         ~environment:(Analysis.TypeEnvironment.read_only environment)
         ~attribute_targets:(Registry.object_targets initial_models)
-        ~qualifiers
+        ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
     in
     Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
 

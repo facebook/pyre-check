@@ -2,5 +2,3 @@
 Call dependencies
 function_class.$toplevel (fun) -> []
 function_class.test (fun) -> [function_class.test.A::__init__ (method) object::__new__ (method)]
-function_class.test.A::$class_toplevel (method) -> []
-function_class.test.A::__init__ (method) -> [_test_sink (fun) _test_source (fun)]

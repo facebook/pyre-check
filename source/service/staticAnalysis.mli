@@ -30,15 +30,6 @@ val type_check
 
 val parse_and_save_decorators_to_skip : inline_decorators:bool -> Configuration.Analysis.t -> unit
 
-(* Exposed for testing purposes. *)
-val record_and_merge_call_graph
-  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  environment:TypeEnvironment.ReadOnly.t ->
-  attribute_targets:Target.HashSet.t ->
-  call_graph:DependencyGraph.callgraph ->
-  source:Source.t ->
-  DependencyGraph.callgraph
-
 val build_class_hierarchy_graph
   :  scheduler:Scheduler.t ->
   cache:Cache.t ->
@@ -53,7 +44,7 @@ val build_call_graph
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:TypeEnvironment.ReadOnly.t ->
   attribute_targets:Target.HashSet.t ->
-  qualifiers:Reference.t list ->
+  callables:Target.t list ->
   Target.t list Target.Map.t
 
 val build_dependency_graph

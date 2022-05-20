@@ -207,10 +207,11 @@ module SharedMemory : sig
   val remove : Target.t list -> unit
 end
 
-val create_callgraph
+val call_graph_of_callable
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   store_shared_memory:bool ->
-  environment:TypeEnvironment.ReadOnly.t ->
+  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   attribute_targets:Target.HashSet.t ->
-  source:Source.t ->
+  global_call_graph:DependencyGraph.callgraph ->
+  callable:Target.t ->
   DependencyGraph.callgraph

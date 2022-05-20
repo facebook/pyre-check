@@ -358,25 +358,6 @@ let parse_and_save_decorators_to_skip
       ())
 
 
-let record_and_merge_call_graph
-    ~static_analysis_configuration
-    ~environment
-    ~attribute_targets
-    ~call_graph
-    ~source
-  =
-  let record_and_merge_call_graph map call_graph =
-    Map.merge_skewed map call_graph ~combine:(fun ~key:_ left _ -> left)
-  in
-  Interprocedural.CallGraph.create_callgraph
-    ~static_analysis_configuration
-    ~store_shared_memory:true
-    ~environment
-    ~attribute_targets
-    ~source
-  |> record_and_merge_call_graph call_graph
-
-
 let get_source ~environment qualifier =
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
   AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
@@ -430,27 +411,25 @@ let build_call_graph
     ~static_analysis_configuration
     ~environment
     ~attribute_targets
-    ~qualifiers
+    ~callables
   =
   let call_graph =
-    let build_call_graph call_graph qualifier =
-      get_source ~environment qualifier
-      >>| (fun source ->
-            record_and_merge_call_graph
-              ~static_analysis_configuration
-              ~environment
-              ~attribute_targets
-              ~call_graph
-              ~source)
-      |> Option.value ~default:call_graph
+    let build_call_graph call_graph callable =
+      Interprocedural.CallGraph.call_graph_of_callable
+        ~static_analysis_configuration
+        ~store_shared_memory:true
+        ~environment
+        ~attribute_targets
+        ~global_call_graph:call_graph
+        ~callable
     in
     Scheduler.map_reduce
       scheduler
       ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
       ~initial:Target.Map.empty
-      ~map:(fun _ qualifiers -> List.fold qualifiers ~init:Target.Map.empty ~f:build_call_graph)
+      ~map:(fun _ callables -> List.fold callables ~init:Target.Map.empty ~f:build_call_graph)
       ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
-      ~inputs:qualifiers
+      ~inputs:callables
       ()
   in
   let () =

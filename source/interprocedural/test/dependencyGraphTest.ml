@@ -48,12 +48,24 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
         errors
       |> failwith
   in
-  CallGraph.create_callgraph
-    ~static_analysis_configuration
-    ~store_shared_memory:false
-    ~environment
-    ~attribute_targets:(Target.HashSet.create ())
-    ~source
+  let callables =
+    FetchCallables.from_source
+      ~configuration
+      ~resolution:(TypeEnvironment.ReadOnly.global_resolution environment)
+      ~include_unit_tests:true
+      ~source
+    |> FetchCallables.get_callables
+  in
+  let fold call_graph callable =
+    CallGraph.call_graph_of_callable
+      ~static_analysis_configuration
+      ~store_shared_memory:false
+      ~environment
+      ~attribute_targets:(Target.HashSet.create ())
+      ~global_call_graph:call_graph
+      ~callable
+  in
+  List.fold ~init:Target.Map.empty ~f:fold callables
 
 
 let create_callable = function
@@ -472,16 +484,28 @@ let test_strongly_connected_components context =
     let expected = List.map expected ~f:(List.map ~f:create_callable) in
     let source, environment, configuration = setup ~context ~handle source in
     let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-    let partitions =
-      let edges =
-        CallGraph.create_callgraph
+    let callables =
+      FetchCallables.from_source
+        ~configuration
+        ~resolution:(TypeEnvironment.ReadOnly.global_resolution environment)
+        ~include_unit_tests:true
+        ~source
+      |> FetchCallables.get_callables
+    in
+    let call_graph =
+      let fold call_graph callable =
+        CallGraph.call_graph_of_callable
           ~static_analysis_configuration
           ~store_shared_memory:false
           ~environment
           ~attribute_targets:(Target.HashSet.create ())
-          ~source
-        |> DependencyGraph.from_callgraph
+          ~global_call_graph:call_graph
+          ~callable
       in
+      List.fold ~init:Target.Map.empty ~f:fold callables
+    in
+    let partitions =
+      let edges = DependencyGraph.from_callgraph call_graph in
       DependencyGraph.partition ~edges
     in
     let printer partitions = Format.asprintf "%a" DependencyGraph.pp_partitions partitions in

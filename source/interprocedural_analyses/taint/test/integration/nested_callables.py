@@ -49,3 +49,11 @@ def parameter_function(
 
     # pyre-ignore
     return add("/bin/bash", x)
+
+
+def duplicate_function():
+    foo()
+
+
+def duplicate_function():
+    foo()

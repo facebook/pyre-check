@@ -2075,32 +2075,31 @@ module SharedMemory = struct
   let remove callables = KeySet.of_list callables |> remove_batch
 end
 
-let create_callgraph
+let call_graph_of_callable
     ~static_analysis_configuration
     ~store_shared_memory
     ~environment
     ~attribute_targets
-    ~source:({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+    ~global_call_graph
+    ~callable
   =
-  let fold_defines dependencies = function
-    | { Node.value = define; _ } when Define.is_overloaded_function define -> dependencies
-    | define ->
-        let call_graph_of_define =
-          call_graph_of_define
-            ~static_analysis_configuration
-            ~environment
-            ~attribute_targets
-            ~qualifier
-            ~define:(Node.value define)
-        in
-        let () =
-          if store_shared_memory then
-            SharedMemory.add ~callable:(Target.create define) ~call_graph:call_graph_of_define
-        in
-        Location.Map.data call_graph_of_define
-        |> List.concat_map ~f:LocationCallees.all_targets
-        |> List.dedup_and_sort ~compare:Target.compare
-        |> fun callees -> Target.Map.set dependencies ~key:(Target.create define) ~data:callees
-  in
-  Preprocessing.defines ~include_nested:true ~include_toplevels:true source
-  |> List.fold ~init:Target.Map.empty ~f:fold_defines
+  let resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
+  match Target.get_module_and_definition callable ~resolution with
+  | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
+  | Some (qualifier, define) ->
+      let call_graph_of_define =
+        call_graph_of_define
+          ~static_analysis_configuration
+          ~environment
+          ~attribute_targets
+          ~qualifier
+          ~define:(Node.value define)
+      in
+      let () =
+        if store_shared_memory then
+          SharedMemory.add ~callable ~call_graph:call_graph_of_define
+      in
+      Location.Map.data call_graph_of_define
+      |> List.concat_map ~f:LocationCallees.all_targets
+      |> List.dedup_and_sort ~compare:Target.compare
+      |> fun callees -> Target.Map.set global_call_graph ~key:callable ~data:callees
