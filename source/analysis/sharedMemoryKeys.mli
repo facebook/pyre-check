@@ -66,37 +66,6 @@ type dependency =
   | WildcardImport of Reference.t
 [@@deriving show, compare, sexp]
 
-module DependencyKey : sig
-  include DependencyTrackedMemory.DependencyKey.S with type key = dependency
-
-  val get_key : registered -> key
-
-  module Registry : sig
-    val register : key -> registered
-
-    type serialized
-
-    val store : unit -> unit
-
-    val load : unit -> unit
-
-    val collected_map_reduce
-      :  Scheduler.t ->
-      policy:Scheduler.Policy.t ->
-      initial:'state ->
-      map:('state -> 'input list -> 'intermediate) ->
-      reduce:('intermediate -> 'state -> 'state) ->
-      inputs:'input list ->
-      unit ->
-      'state
-
-    val collected_iter
-      :  Scheduler.t ->
-      policy:Scheduler.Policy.t ->
-      f:('input list -> unit) ->
-      inputs:'input list ->
-      unit
-  end
-end
+module DependencyKey : DependencyTrackedMemory.DependencyKey.S with type key = dependency
 
 module LocationKey : Memory.KeyType with type t = Location.t

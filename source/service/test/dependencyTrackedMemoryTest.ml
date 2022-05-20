@@ -7,46 +7,18 @@
 
 open OUnit2
 open Core
-open Pyre
 
 module StringKey = struct
-  type t = string
+  type t = string [@@deriving sexp, compare, hash]
 
-  type key = string [@@deriving sexp, compare]
+  let from_string = Fn.id
 
-  module KeySet = Caml.Set.Make (struct
-    type t = key [@@deriving compare, sexp]
-  end)
-
-  type registered = string [@@deriving sexp, compare]
-
-  module RegisteredSet = KeySet
-
-  let to_string x = x
-
-  let compare = String.compare
-
-  let from_string x = x
-
-  module Registry = struct
-    let table = DependencyTrackedMemory.EncodedDependency.Table.create ()
-
-    let encode key =
-      let add = function
-        | None -> String.Set.singleton key
-        | Some existing -> String.Set.add existing key
-      in
-      let encoded = DependencyTrackedMemory.EncodedDependency.make key ~hash:String.hash in
-      DependencyTrackedMemory.EncodedDependency.Table.update table encoded ~f:add;
-      encoded
-
-
-    let decode hash =
-      DependencyTrackedMemory.EncodedDependency.Table.find table hash >>| Set.to_list
-  end
+  let to_string = Fn.id
 end
 
 module StringDependencyKey = DependencyTrackedMemory.DependencyKey.Make (StringKey)
+
+let register = StringDependencyKey.Registry.register
 
 module StringValue = struct
   type t = string
@@ -87,10 +59,10 @@ let table_a = TableA.create ()
 let table_b = TableB.create ()
 
 let test_dependency_table _ =
-  let function_1 = "function_1" in
-  let function_2 = "function_2" in
-  let function_3 = "function_3" in
-  let function_4 = "function_4" in
+  let function_1 = register "function_1" in
+  let function_2 = register "function_2" in
+  let function_3 = register "function_3" in
+  let function_4 = register "function_4" in
   let _value : string option = TableA.get table_a "Foo" ~dependency:function_1 in
   let _value : string option = TableA.get table_a "Bar" ~dependency:function_1 in
   let _value : string option = TableA.get table_a "Foo" ~dependency:function_2 in
@@ -142,10 +114,12 @@ module UpdateDependencyTest = struct
     let setup_old_state { key; old_value; get_dependencies; mem_dependencies; _ } =
       Option.iter old_value ~f:(TableA.add table_a key);
       let _values : string option list =
-        List.map get_dependencies ~f:(fun dependency -> TableA.get table_a key ~dependency)
+        List.map get_dependencies ~f:register
+        |> List.map ~f:(fun dependency -> TableA.get table_a key ~dependency)
       in
       let _values : bool list =
-        List.map mem_dependencies ~f:(fun dependency -> TableA.mem table_a key ~dependency)
+        List.map mem_dependencies ~f:register
+        |> List.map ~f:(fun dependency -> TableA.mem table_a key ~dependency)
       in
       ()
     in
@@ -158,7 +132,7 @@ module UpdateDependencyTest = struct
       |> TableA.add_to_transaction table_a ~keys
       |> StringDependencyKey.Transaction.execute ~update
     in
-    assert_dependency ~expected actual;
+    assert_dependency ~expected:(List.map ~f:register expected) actual;
     Memory.reset_shared_memory ()
 end
 
