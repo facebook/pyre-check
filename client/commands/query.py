@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TextIO
 
 from .. import configuration as configuration_module, log
-from . import commands, server_connection
+from . import commands, frontend_configuration, server_connection
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -106,12 +106,12 @@ def query_server(socket_path: Path, query_text: str) -> Response:
         return _receive_query_response(input_channel)
 
 
-def run(
-    configuration: configuration_module.Configuration, query_text: str
+def run_query(
+    configuration: frontend_configuration.Base, query_text: str
 ) -> commands.ExitCode:
     socket_path = server_connection.get_default_socket_path(
-        project_root=Path(configuration.project_root),
-        relative_local_root=configuration.relative_local_root,
+        project_root=configuration.get_global_root(),
+        relative_local_root=configuration.get_relative_local_root(),
     )
     try:
         if query_text == "help":
@@ -127,6 +127,13 @@ def run(
             "Please run `pyre` first to set up a server."
         )
         return commands.ExitCode.SERVER_NOT_FOUND
+
+
+def run(
+    configuration: configuration_module.Configuration, query_text: str
+) -> commands.ExitCode:
+    try:
+        return run_query(frontend_configuration.OpenSource(configuration), query_text)
     except Exception as error:
         raise commands.ClientException(
             f"Exception occurred during pyre query: {error}"

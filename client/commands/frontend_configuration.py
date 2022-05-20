@@ -33,6 +33,20 @@ class Base(abc.ABC):
     def get_content_for_display(self) -> str:
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def get_global_root(self) -> Path:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_relative_local_root(self) -> Optional[str]:
+        raise NotImplementedError
+
+    def get_local_root(self) -> Optional[Path]:
+        relative_local_root = self.get_relative_local_root()
+        if relative_local_root is None:
+            return None
+        return self.get_global_root() / relative_local_root
+
 
 class OpenSource(Base):
     def __init__(
@@ -57,3 +71,9 @@ class OpenSource(Base):
 
     def get_content_for_display(self) -> str:
         return json.dumps(self.configuration.to_json(), indent=2)
+
+    def get_global_root(self) -> Path:
+        return Path(self.configuration.project_root)
+
+    def get_relative_local_root(self) -> Optional[str]:
+        return self.configuration.relative_local_root
