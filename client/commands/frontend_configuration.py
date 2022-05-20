@@ -14,7 +14,15 @@ from ..configuration import configuration as configuration_module
 # class per command.
 class Base(abc.ABC):
     @abc.abstractmethod
+    def get_dot_pyre_directory(self) -> Path:
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def get_log_directory(self) -> Path:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -33,8 +41,16 @@ class OpenSource(Base):
     ) -> None:
         self.configuration = configuration
 
+    def get_dot_pyre_directory(self) -> Path:
+        return self.configuration.dot_pyre_directory
+
     def get_log_directory(self) -> Path:
         return Path(self.configuration.log_directory)
+
+    def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
+        location = self.configuration.get_binary_respecting_override()
+        # Auto-download is not supported in OSS
+        return Path(location) if location is not None else None
 
     def get_binary_version(self) -> Optional[str]:
         return self.configuration.get_binary_version()

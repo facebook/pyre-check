@@ -7,7 +7,6 @@ import logging
 import os
 import shutil
 import signal
-from pathlib import Path
 
 import psutil
 
@@ -16,7 +15,7 @@ from .. import (
     find_directories,
     recently_used_configurations,
 )
-from . import commands, server_connection, servers, stop
+from . import commands, frontend_configuration, server_connection, servers, stop
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -79,28 +78,28 @@ def _kill_processes_by_name(name: str) -> None:
             )
 
 
-def _kill_binary_processes(configuration: configuration_module.Configuration) -> None:
+def _kill_binary_processes(configuration: frontend_configuration.Base) -> None:
     LOG.warning("Force-killing all running pyre servers.")
     LOG.warning(
         "Use `pyre servers stop` if you want to gracefully stop all running servers."
     )
-    binary = configuration.get_binary_respecting_override()
+    binary = configuration.get_binary_location(download_if_needed=False)
     if binary is not None:
-        _kill_processes_by_name(binary)
+        _kill_processes_by_name(str(binary))
 
 
-def _kill_client_processes(configuration: configuration_module.Configuration) -> None:
+def _kill_client_processes(configuration: frontend_configuration.Base) -> None:
     _kill_processes_by_name(find_directories.CLIENT_NAME)
     # TODO (T85602687): Run `buck kill` once buck is supported by the server
 
 
-def _delete_server_files(configuration: configuration_module.Configuration) -> None:
+def _delete_server_files(configuration: frontend_configuration.Base) -> None:
     socket_root = server_connection.get_default_socket_root()
     LOG.info(f"Deleting socket files and lock files under {socket_root}")
     for socket_path in servers.get_pyre_socket_files(socket_root):
         stop.remove_socket_if_exists(socket_path)
 
-    log_directory = Path(configuration.log_directory) / "new_server"
+    log_directory = configuration.get_log_directory() / "new_server"
     LOG.info(f"Deleting server logs under {log_directory}")
     try:
         shutil.rmtree(str(log_directory), ignore_errors=True)
@@ -110,8 +109,8 @@ def _delete_server_files(configuration: configuration_module.Configuration) -> N
     # TODO(T92826668): Delete files under artifact root
 
 
-def _delete_caches(configuration: configuration_module.Configuration) -> None:
-    dot_pyre_directory = configuration.dot_pyre_directory
+def _delete_caches(configuration: frontend_configuration.Base) -> None:
+    dot_pyre_directory = configuration.get_dot_pyre_directory()
     resource_cache_directory = dot_pyre_directory / "resource_cache"
     LOG.info(
         f"Deleting local binary and typeshed cache under {resource_cache_directory}"
@@ -129,12 +128,13 @@ def run(
     configuration: configuration_module.Configuration, with_fire: bool
 ) -> commands.ExitCode:
     try:
-        _kill_binary_processes(configuration)
-        _kill_client_processes(configuration)
+        kill_configuration = frontend_configuration.OpenSource(configuration)
+        _kill_binary_processes(kill_configuration)
+        _kill_client_processes(kill_configuration)
         # TODO (T85602550): Store a rage log before this happens.
         # TODO (T85614630): Delete client logs as well.
-        _delete_server_files(configuration)
-        _delete_caches(configuration)
+        _delete_server_files(kill_configuration)
+        _delete_caches(kill_configuration)
         if with_fire:
             LOG.warning(
                 (
