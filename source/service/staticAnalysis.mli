@@ -15,6 +15,11 @@ module Cache : sig
   val load : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> enabled:bool -> t
 
   val initial_callables : t -> (unit -> FetchCallables.t) -> FetchCallables.t
+
+  val override_graph
+    :  t ->
+    (unit -> OverrideGraph.Heap.cap_overrides_result) ->
+    OverrideGraph.Heap.cap_overrides_result
 end
 
 val type_check
@@ -42,14 +47,6 @@ val build_class_hierarchy_graph
   ClassHierarchyGraph.t
 
 val build_class_intervals : ClassHierarchyGraph.t -> unit
-
-val record_overrides_for_qualifiers
-  :  scheduler:Scheduler.t ->
-  cache:Cache.t ->
-  environment:TypeEnvironment.ReadOnly.t ->
-  skip_overrides:Reference.Set.t ->
-  qualifiers:Reference.t list ->
-  DependencyGraphSharedMemory.cap_overrides_result
 
 val build_call_graph
   :  scheduler:Scheduler.t ->

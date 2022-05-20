@@ -554,10 +554,10 @@ let initialize
   (* Overrides must be done first, as they influence the call targets. *)
   let overrides =
     let overrides =
-      DependencyGraph.create_overrides ~environment ~source
-      |> Reference.Map.filter_keys ~f:(fun override -> not (Set.mem skip_overrides override))
+      OverrideGraph.Heap.from_source ~environment ~source
+      |> OverrideGraph.Heap.skip_overrides ~to_skip:skip_overrides
     in
-    let _ = DependencyGraphSharedMemory.record_overrides overrides in
+    let () = OverrideGraph.SharedMemory.from_heap overrides in
     DependencyGraph.from_overrides overrides
   in
 

@@ -7,9 +7,6 @@
 
 open Core
 open Pyre
-open Ast
-open Statement
-open Analysis
 
 type t = Target.t list Target.Map.t
 
@@ -31,29 +28,9 @@ module CallGraphSharedMemory = Memory.Serializer (struct
   let deserialize = Fn.id
 end)
 
-type overrides = Reference.t list Reference.Map.t
-
-module OverridesSharedMemory = Memory.Serializer (struct
-  type t = Reference.t list Reference.Map.Tree.t
-
-  module Serialized = struct
-    type t = Reference.t list Reference.Map.Tree.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Overrides"
-  end
-
-  let serialize = Fn.id
-
-  let deserialize = Fn.id
-end)
-
 let empty = Target.Map.empty
 
 let empty_callgraph = Target.Map.empty
-
-let empty_overrides = Reference.Map.empty
 
 (* Returns forest of nodes in reverse finish time order. *)
 let depth_first_search edges nodes =
@@ -182,7 +159,7 @@ let union left right =
 
 let from_overrides overrides =
   let override_map, all_overrides =
-    let add ~key:method_name ~data:subtypes (override_map, all_overrides) =
+    let add ~member:method_name ~subtypes (override_map, all_overrides) =
       let key = Target.create_override method_name in
       let data =
         List.map subtypes ~f:(fun at_type -> Target.create_derived_override key ~at_type)
@@ -190,7 +167,7 @@ let from_overrides overrides =
       ( Target.Map.set override_map ~key ~data,
         Target.Set.union all_overrides (Target.Set.of_list data) )
     in
-    Reference.Map.fold overrides ~f:add ~init:(Target.Map.empty, Target.Set.empty)
+    OverrideGraph.Heap.fold overrides ~f:add ~init:(Target.Map.empty, Target.Set.empty)
   in
   let connect_overrides_to_methods override_graph =
     let overrides_to_methods =
@@ -217,97 +194,6 @@ let from_overrides overrides =
     all_overrides
     override_map
   |> connect_overrides_to_methods
-
-
-let create_overrides ~environment ~source =
-  let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  if GlobalResolution.source_is_unit_test resolution ~source then
-    Reference.Map.empty
-  else
-    let timer = Timer.start () in
-    let class_method_overrides { Node.value = { Class.body; name = class_name; _ }; _ } =
-      let get_method_overrides child_method =
-        let method_name = Define.unqualified_name child_method in
-        let ancestor =
-          try
-            GlobalResolution.overrides (Reference.show class_name) ~name:method_name ~resolution
-          with
-          | Analysis.ClassHierarchy.Untracked untracked_type ->
-              Log.warning
-                "Found untracked type `%s` when looking for a parent of `%a.%s`. The method will \
-                 be considered has having no parent, which could lead to false negatives."
-                untracked_type
-                Reference.pp
-                class_name
-                method_name;
-              None
-        in
-        ancestor
-        >>= fun ancestor ->
-        let parent_annotation = Annotated.Attribute.parent ancestor in
-        let ancestor_parent =
-          Type.Primitive parent_annotation |> Type.expression |> Expression.show |> Reference.create
-        in
-        (* This special case exists only for `type`. Our override lookup for a class C first looks
-           at the regular MRO. If that fails, it looks for Type[C]'s MRO. However, when C is type,
-           this causes a cycle to get registered. *)
-        if Reference.equal ancestor_parent class_name then
-          None
-        else
-          let method_name =
-            if Define.is_property_setter child_method then
-              method_name ^ Target.property_setter_suffix
-            else
-              method_name
-          in
-          Some (Reference.create ~prefix:ancestor_parent method_name, class_name)
-      in
-      let extract_define = function
-        | { Node.value = Statement.Define define; _ } -> Some define
-        | _ -> None
-      in
-      let overrides =
-        body |> List.filter_map ~f:extract_define |> List.filter_map ~f:get_method_overrides
-      in
-      Statistics.performance
-        ~randomly_log_every:1000
-        ~always_log_time_threshold:1.0 (* Seconds *)
-        ~name:"Overrides built"
-        ~section:`DependencyGraph
-        ~normals:["class", Reference.show class_name]
-        ~timer
-        ();
-      overrides
-    in
-    let record_overrides map (ancestor_method, overriding_type) =
-      let update_types = function
-        | Some types -> overriding_type :: types
-        | None -> [overriding_type]
-      in
-      Reference.Map.update map ancestor_method ~f:update_types
-    in
-    let record_overrides_list map relations = List.fold relations ~init:map ~f:record_overrides in
-    Preprocessing.classes source
-    |> List.map ~f:class_method_overrides
-    |> List.fold ~init:Reference.Map.empty ~f:record_overrides_list
-    |> Map.map ~f:(List.dedup_and_sort ~compare:Reference.compare)
-
-
-let expand_overrides callees =
-  let rec expand_and_gather expanded = function
-    | (Target.Function _ | Target.Method _ | Target.Object _) as real -> real :: expanded
-    | Target.Override _ as override ->
-        let make_override at_type = Target.create_derived_override override ~at_type in
-        let overrides =
-          let member = Target.get_override_reference override in
-          DependencyGraphSharedMemory.get_overriding_types ~member
-          |> Option.value ~default:[]
-          |> List.map ~f:make_override
-        in
-        Target.get_corresponding_method override
-        :: List.fold overrides ~f:expand_and_gather ~init:expanded
-  in
-  List.fold callees ~init:[] ~f:expand_and_gather |> List.dedup_and_sort ~compare:Target.compare
 
 
 type prune_result = {

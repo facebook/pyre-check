@@ -35,13 +35,9 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
     setup ~update_environment_with ~context ~handle:"test.py" source_text
   in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-  let record_overrides overrides =
-    let record_override_edge ~key:member ~data:subtypes =
-      DependencyGraphSharedMemory.add_overriding_types ~member ~subtypes
-    in
-    Reference.Map.iteri overrides ~f:record_override_edge
+  let () =
+    OverrideGraph.Heap.from_source ~environment ~source |> OverrideGraph.SharedMemory.from_heap
   in
-  DependencyGraph.create_overrides ~environment ~source |> record_overrides;
   let () =
     let errors = TypeEnvironment.ReadOnly.get_errors environment !&"test" in
     if not (List.is_empty errors) then
@@ -471,73 +467,6 @@ let test_type_collection context =
     ~expected:[4, 0, "$local_0$a.foo.(...).foo.(...)", "test2.A.foo"]
 
 
-let test_method_overrides context =
-  let assert_method_overrides ?(update_environment_with = []) ?(handle = "test.py") source ~expected
-    =
-    let expected =
-      let create_callables (member, overriding_types) =
-        !&member, List.map overriding_types ~f:Reference.create
-      in
-      List.map expected ~f:create_callables
-    in
-    let source, environment, _ = setup ~update_environment_with ~context ~handle source in
-    let overrides_map = DependencyGraph.create_overrides ~environment ~source in
-    let expected_overrides = Reference.Map.of_alist_exn expected in
-    let equal_elements = List.equal Reference.equal in
-    let printer map =
-      map |> Reference.Map.sexp_of_t (List.sexp_of_t Reference.sexp_of_t) |> Sexp.to_string
-    in
-    assert_equal ~cmp:(Reference.Map.equal equal_elements) ~printer expected_overrides overrides_map
-  in
-  assert_method_overrides
-    {|
-      class Foo:
-        def foo(): pass
-      class Bar(Foo):
-        def foo(): pass
-      class Baz(Bar):
-        def foo(): pass
-        def baz(): pass
-      class Qux(Foo):
-        def foo(): pass
-    |}
-    ~expected:["test.Bar.foo", ["test.Baz"]; "test.Foo.foo", ["test.Bar"; "test.Qux"]];
-
-  (* We don't register any overrides at all for classes in test files. *)
-  assert_method_overrides
-    {|
-      class Foo:
-        def foo(): pass
-      class Bar(Foo):
-        def foo(): pass
-      class Test(unittest.case.TestCase):
-        class Baz(Foo):
-          def foo(): pass
-    |}
-    ~expected:[];
-  assert_method_overrides
-    ~update_environment_with:
-      [
-        {
-          handle = "module.py";
-          source =
-            {|
-        import module
-        class Baz(module.Foo):
-          def foo(): pass
-      |};
-        };
-      ]
-    ~handle:"test_module.py"
-    {|
-      import module
-      class Test(unittest.case.TestCase):
-        class Bar(module.Foo):
-          def foo(): pass
-    |}
-    ~expected:[]
-
-
 let test_strongly_connected_components context =
   let assert_strongly_connected_components source ~handle ~expected =
     let expected = List.map expected ~f:(List.map ~f:create_callable) in
@@ -679,7 +608,7 @@ let test_prune_callables _ =
     let overrides =
       List.map overrides ~f:(fun (key, values) ->
           Reference.create key, List.map values ~f:(fun value -> Reference.create value))
-      |> Reference.Map.of_alist_exn
+      |> OverrideGraph.Heap.of_alist_exn
     in
     let project_callables =
       List.map ~f:(fun name -> name |> Reference.create |> Target.create_method) project_callables
@@ -876,7 +805,6 @@ let () =
          "type_collection" >:: test_type_collection;
          "build" >:: test_construction;
          "build_reverse" >:: test_construction_reverse;
-         "overrides" >:: test_method_overrides;
          "strongly_connected_components" >:: test_strongly_connected_components;
          "prune_callables" >:: test_prune_callables;
        ]

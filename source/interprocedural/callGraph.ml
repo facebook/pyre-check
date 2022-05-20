@@ -770,7 +770,7 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
   let global_resolution = Resolution.global_resolution resolution in
   let get_class_type = GlobalResolution.parse_reference global_resolution in
   let get_actual_target method_name =
-    if DependencyGraphSharedMemory.overrides_exist method_name then
+    if OverrideGraph.SharedMemory.overrides_exist method_name then
       Target.create_override method_name
     else
       Target.create_method method_name
@@ -785,7 +785,7 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
     [get_actual_target implementation_target]
   else
     let target_callable = Target.create_method implementation_target in
-    match DependencyGraphSharedMemory.get_overriding_types ~member:implementation_target with
+    match OverrideGraph.SharedMemory.get_overriding_types ~member:implementation_target with
     | None ->
         (* case b *)
         [target_callable]

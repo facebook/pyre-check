@@ -10,6 +10,7 @@ module Target = Target
 module CallGraph = CallGraph
 module CallResolution = CallResolution
 module DecoratorHelper = DecoratorHelper
+module OverrideGraph = OverrideGraph
 module DependencyGraph = DependencyGraph
 module DependencyGraphSharedMemory = DependencyGraphSharedMemory
 module Error = Error

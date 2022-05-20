@@ -81,7 +81,7 @@ module CallInfo = struct
     match trace with
     | CallSite { location; callees; port; path } ->
         let callees =
-          Interprocedural.DependencyGraph.expand_overrides callees
+          Interprocedural.OverrideGraph.SharedMemory.expand_override_targets callees
           |> List.filter ~f:(fun callee -> is_valid_callee ~port ~path ~callee)
         in
         CallSite { location; callees; port; path }

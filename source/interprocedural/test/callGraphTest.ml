@@ -68,8 +68,8 @@ let test_call_graph_of_define context =
         project.configuration )
     in
     let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-    let overrides = DependencyGraph.create_overrides ~environment ~source:test_source in
-    let _ = DependencyGraphSharedMemory.record_overrides overrides in
+    let overrides = OverrideGraph.Heap.from_source ~environment ~source:test_source in
+    let () = OverrideGraph.SharedMemory.from_heap overrides in
     assert_equal
       ~cmp
       ~printer:DefineCallGraph.show
@@ -80,7 +80,7 @@ let test_call_graph_of_define context =
          ~attribute_targets:(Target.HashSet.of_list object_targets)
          ~qualifier:(Reference.create "test")
          ~define);
-    DependencyGraphSharedMemory.remove_overriding_types (Reference.Map.keys overrides)
+    OverrideGraph.SharedMemory.cleanup overrides
   in
   assert_call_graph_of_define
     ~source:{|

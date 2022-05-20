@@ -322,13 +322,14 @@ let run_taint_analysis
 
     Log.info "Computing overrides...";
     let timer = Timer.start () in
-    let { Interprocedural.DependencyGraphSharedMemory.overrides; skipped_overrides } =
-      Service.StaticAnalysis.record_overrides_for_qualifiers
-        ~scheduler
-        ~cache
-        ~environment:(Analysis.TypeEnvironment.read_only environment)
-        ~skip_overrides
-        ~qualifiers
+    let { Interprocedural.OverrideGraph.Heap.overrides; skipped_overrides } =
+      Service.StaticAnalysis.Cache.override_graph cache (fun () ->
+          Interprocedural.OverrideGraph.record_overrides_for_qualifiers
+            ~scheduler
+            ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~skip_overrides
+            ~maximum_overrides:(TaintConfiguration.get_maximum_overrides_to_analyze ())
+            ~qualifiers)
     in
     let override_dependencies = Interprocedural.DependencyGraph.from_overrides overrides in
     Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();

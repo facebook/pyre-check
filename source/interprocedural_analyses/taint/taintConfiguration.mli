@@ -162,6 +162,8 @@ val is_missing_flow_analysis : missing_flows_kind -> bool
 
 val get_maximum_model_width : unit -> int
 
+val get_maximum_overrides_to_analyze : unit -> int option
+
 val maximum_return_access_path_width : int
 
 val maximum_return_access_path_depth : int

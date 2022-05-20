@@ -416,7 +416,7 @@ module Make (Analysis : ANALYSIS) = struct
     let timer = Timer.start () in
     let overrides =
       (* TODO(T117715045): This should be a parameter of the functor. *)
-      DependencyGraphSharedMemory.get_overriding_types
+      OverrideGraph.SharedMemory.get_overriding_types
         ~member:(Target.get_override_reference callable)
       |> Option.value ~default:[]
       |> List.map ~f:(fun at_type -> Target.create_derived_override callable ~at_type)

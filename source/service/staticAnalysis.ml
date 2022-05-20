@@ -6,15 +6,14 @@
  *)
 
 open Core
-open Ast
 open Pyre
 module Target = Interprocedural.Target
 module TypeEnvironment = Analysis.TypeEnvironment
 module AstEnvironment = Analysis.AstEnvironment
 module DependencyGraph = Interprocedural.DependencyGraph
-module DependencyGraphSharedMemory = Interprocedural.DependencyGraphSharedMemory
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
+module OverrideGraph = Interprocedural.OverrideGraph
 
 module InitialCallablesSharedMemory = Memory.Serializer (struct
   type t = FetchCallables.t
@@ -30,6 +29,31 @@ module InitialCallablesSharedMemory = Memory.Serializer (struct
   let serialize = Fn.id
 
   let deserialize = Fn.id
+end)
+
+module OverrideGraphSharedMemory = Memory.Serializer (struct
+  type t = OverrideGraph.Heap.cap_overrides_result
+
+  module Serialized = struct
+    type t = {
+      overrides: OverrideGraph.Heap.serializable;
+      skipped_overrides: Ast.Reference.t list;
+    }
+
+    let prefix = Prefix.make ()
+
+    let description = "Cached override graph"
+  end
+
+  let serialize { OverrideGraph.Heap.overrides; skipped_overrides } =
+    { Serialized.overrides = OverrideGraph.Heap.to_serializable overrides; skipped_overrides }
+
+
+  let deserialize { Serialized.overrides; skipped_overrides } =
+    {
+      OverrideGraph.Heap.overrides = OverrideGraph.Heap.of_serializable overrides;
+      skipped_overrides;
+    }
 end)
 
 module ClassHierarchyGraphSharedMemory = Memory.Serializer (struct
@@ -72,10 +96,6 @@ module Cache = struct
 
   let get_shared_memory_save_path ~configuration =
     PyrePath.append (get_save_directory ~configuration) ~element:"sharedmem"
-
-
-  let get_overrides_save_path ~configuration =
-    PyrePath.append (get_save_directory ~configuration) ~element:"overrides"
 
 
   let exception_to_error ~error ~message ~f =
@@ -238,29 +258,26 @@ module Cache = struct
         callables
 
 
-  let load_overrides ~configuration =
+  let load_overrides () =
     exception_to_error ~error:LoadError ~message:"loading overrides from cache" ~f:(fun () ->
-        let path = get_overrides_save_path ~configuration in
-        let sexp = Sexplib.Sexp.load_sexp (PyrePath.absolute path) in
-        let overrides = Reference.Map.t_of_sexp (Core.List.t_of_sexp Reference.t_of_sexp) sexp in
-        Log.info "Loaded overrides from cache.";
-        Ok overrides)
+        let override_graph = OverrideGraphSharedMemory.load () in
+        Log.info "Loaded overrides.";
+        Ok override_graph)
 
 
   let save_overrides ~configuration ~overrides =
     exception_to_error ~error:() ~message:"saving overrides to cache" ~f:(fun () ->
-        let path = get_overrides_save_path ~configuration in
-        let data = Reference.Map.sexp_of_t (Core.List.sexp_of_t Reference.sexp_of_t) overrides in
-        ensure_save_directory_exists ~configuration;
-        Sexplib.Sexp.save (PyrePath.absolute path) data;
-        Log.info "Saved overrides to cache file: `%s`" (PyrePath.absolute path);
-        Ok ())
+        OverrideGraphSharedMemory.store overrides;
+        Log.info "Saved overrides to cache shared memory.";
+        (* Now that we have cached everything in shared memory, save it to a file. *)
+        Memory.SharedMemory.collect `aggressive;
+        save_shared_memory ~configuration)
 
 
-  let overrides { cache; save_cache; configuration; _ } f =
+  let override_graph { cache; save_cache; configuration; _ } f =
     let overrides =
       match cache with
-      | Ok _ -> load_overrides ~configuration |> Result.ok
+      | Ok _ -> load_overrides () |> Result.ok
       | _ -> None
     in
     match overrides with
@@ -403,47 +420,6 @@ let build_class_intervals class_hierarchy_graph =
     ~phase_name:"Computing class intervals"
     ~timer
     ()
-
-
-(* Compute the override graph, which maps overide_targets (parent methods which are overridden) to
-   all concrete methods overriding them, and save it to shared memory. *)
-let record_overrides_for_qualifiers ~scheduler ~cache ~environment ~skip_overrides ~qualifiers =
-  let overrides =
-    Cache.overrides cache (fun () ->
-        let combine ~key:_ left right = List.rev_append left right in
-        let build_overrides overrides qualifier =
-          match get_source ~environment qualifier with
-          | None -> overrides
-          | Some source ->
-              let new_overrides =
-                DependencyGraph.create_overrides ~environment ~source
-                |> Reference.Map.filter_keys ~f:(fun override ->
-                       not (Reference.Set.mem skip_overrides override))
-              in
-              Map.merge_skewed overrides new_overrides ~combine
-        in
-        Scheduler.map_reduce
-          scheduler
-          ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-          ~initial:DependencyGraph.empty_overrides
-          ~map:(fun _ qualifiers ->
-            List.fold qualifiers ~init:DependencyGraph.empty_overrides ~f:build_overrides)
-          ~reduce:(Map.merge_skewed ~combine)
-          ~inputs:qualifiers
-          ())
-  in
-  let {
-    Taint.TaintConfiguration.analysis_model_constraints = { maximum_overrides_to_analyze; _ };
-    _;
-  }
-    =
-    Taint.TaintConfiguration.get ()
-  in
-  let ({ DependencyGraphSharedMemory.overrides; _ } as cap_override_result) =
-    DependencyGraphSharedMemory.cap_overrides ?maximum_overrides_to_analyze overrides
-  in
-  DependencyGraphSharedMemory.record_overrides overrides;
-  cap_override_result
 
 
 (* Build the callgraph, a map from caller to callees. The overrides must be computed first because

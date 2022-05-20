@@ -1202,6 +1202,11 @@ let literal_string_sources () =
   implicit_sources.literal_strings
 
 
+let get_maximum_overrides_to_analyze () =
+  let { analysis_model_constraints = { maximum_overrides_to_analyze; _ }; _ } = get () in
+  maximum_overrides_to_analyze
+
+
 let maximum_return_access_path_width = 5
 
 let maximum_return_access_path_depth = 3
