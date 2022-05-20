@@ -1325,10 +1325,9 @@ class PyreQueryHandler(connection.BackgroundTask):
 
     async def _run(self, server_start_options: "PyreServerStartOptions") -> None:
         start_arguments = server_start_options.start_arguments
-        local_root = start_arguments.base_arguments.relative_local_root
         socket_path = server_connection.get_default_socket_path(
             project_root=Path(start_arguments.base_arguments.global_root),
-            relative_local_root=Path(local_root) if local_root else None,
+            relative_local_root=start_arguments.base_arguments.relative_local_root,
         )
         strict_default = server_start_options.strict_default
         type_queries_enabled = (
@@ -1630,10 +1629,9 @@ class PyreServerHandler(connection.BackgroundTask):
     async def _run(self, server_start_options: PyreServerStartOptions) -> None:
         server_identifier = server_start_options.server_identifier
         start_arguments = server_start_options.start_arguments
-        local_root = start_arguments.base_arguments.relative_local_root
         socket_path = server_connection.get_default_socket_path(
             project_root=Path(start_arguments.base_arguments.global_root),
-            relative_local_root=Path(local_root) if local_root else None,
+            relative_local_root=start_arguments.base_arguments.relative_local_root,
         )
 
         connection_timer = timer.Timer()

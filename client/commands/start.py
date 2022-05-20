@@ -138,9 +138,7 @@ class Arguments:
             "socket_path": str(
                 server_connection.get_default_socket_path(
                     Path(self.base_arguments.global_root),
-                    Path(self.base_arguments.relative_local_root)
-                    if self.base_arguments.relative_local_root
-                    else None,
+                    self.base_arguments.relative_local_root,
                 )
             ),
             "show_error_traces": self.show_error_traces,
@@ -470,10 +468,7 @@ def run_start(
             return _run_in_foreground(server_command, server_environment)
         else:
             socket_path = server_connection.get_default_socket_path(
-                Path(configuration.project_root),
-                Path(configuration.relative_local_root)
-                if configuration.relative_local_root
-                else None,
+                Path(configuration.project_root), configuration.relative_local_root
             )
             return _run_in_background(
                 server_command,

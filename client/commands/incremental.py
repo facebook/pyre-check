@@ -153,9 +153,7 @@ def run_incremental(
 ) -> ExitStatus:
     socket_path = server_connection.get_default_socket_path(
         project_root=Path(configuration.project_root),
-        relative_local_root=Path(configuration.relative_local_root)
-        if configuration.relative_local_root
-        else None,
+        relative_local_root=configuration.relative_local_root,
     )
     # Need to be consistent with the log symlink location in start command
     log_path = Path(configuration.log_directory) / "new_server" / "server.stderr"

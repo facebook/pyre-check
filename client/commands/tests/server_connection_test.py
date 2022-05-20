@@ -19,7 +19,7 @@ class SocketTest(testslide.TestCase):
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
             project_root = Path("project_root")
-            relative_local_root = Path("my/project")
+            relative_local_root = "my/project"
             md5_hash = hashlib.md5(
                 (str(project_root) + "//" + str(relative_local_root)).encode("utf-8")
             ).hexdigest()

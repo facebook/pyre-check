@@ -17,7 +17,7 @@ class ConnectionFailure(Exception):
 
 
 def get_socket_path(
-    root: Path, global_root: Path, relative_local_root: Optional[Path]
+    root: Path, global_root: Path, relative_local_root: Optional[str]
 ) -> Path:
     """
     Determine where the server socket file is located. We can't directly use
@@ -29,7 +29,7 @@ def get_socket_path(
     """
     project_identifier = str(global_root)
     if relative_local_root is not None:
-        project_identifier = project_identifier + "//" + str(relative_local_root)
+        project_identifier = project_identifier + "//" + relative_local_root
     project_identifier = project_identifier.encode("utf-8")
 
     project_hash = hashlib.md5(project_identifier).hexdigest()
@@ -43,7 +43,7 @@ def get_default_socket_root() -> Path:
 
 
 def get_default_socket_path(
-    project_root: Path, relative_local_root: Optional[Path]
+    project_root: Path, relative_local_root: Optional[str]
 ) -> Path:
     return get_socket_path(get_default_socket_root(), project_root, relative_local_root)
 
