@@ -8,9 +8,8 @@ import itertools
 import json
 import logging
 import re
-import time
 from pathlib import Path
-from typing import Callable, Dict, Iterable, Optional, Sequence, Union
+from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence, Union
 
 import libcst as cst
 
@@ -19,7 +18,6 @@ from .. import (
     configuration as configuration_module,
     log,
     statistics_collectors as collectors,
-    statistics_logger,
 )
 from . import commands
 
@@ -190,7 +188,9 @@ class AggregatedStatisticsData:
     unsafe: int = 0
 
 
-def aggregate_statistics(data: Dict[str, StatisticsData]) -> AggregatedStatisticsData:
+def aggregate_statistics(
+    data: Mapping[str, StatisticsData]
+) -> AggregatedStatisticsData:
     aggregate_annotations = {
         "return_count": 0,
         "annotated_return_count": 0,
@@ -288,48 +288,25 @@ def get_summary(aggregated_data: AggregatedStatisticsData) -> str:
     )
 
 
-def log_to_remote(
-    configuration: configuration_module.Configuration,
-    run_id: str,
-    data: Dict[str, Dict[str, Dict[str, int]]],
-) -> None:
-    def path_to_data(category: str) -> Dict[str, Dict[str, int]]:
-        return {
-            path: statistics_data[category] for (path, statistics_data) in data.items()
-        }
+def print_text_summary(data: Mapping[str, StatisticsData]) -> None:
+    aggregated_data = aggregate_statistics(data)
+    LOG.warning(get_summary(aggregated_data))
 
-    def _log_fixmes(fixme_type: str, data: Dict[str, int], path: str) -> None:
-        for error_code, count in data.items():
-            statistics_logger.log_with_configuration(
-                statistics_logger.LoggerCategory.FIXME_COUNTS,
-                configuration,
-                integers={"count": count},
-                normals={
-                    "run_id": run_id,
-                    "code": error_code,
-                    "type": fixme_type,
-                    "path": path,
-                },
-            )
 
-    for path, counts in path_to_data("annotations").items():
-        statistics_logger.log_with_configuration(
-            statistics_logger.LoggerCategory.ANNOTATION_COUNTS,
-            configuration,
-            integers=counts,
-            normals={"run_id": run_id, "path": path},
-        )
-    for path, counts in path_to_data("fixmes").items():
-        _log_fixmes("fixme", counts, path)
-    for path, counts in path_to_data("ignores").items():
-        _log_fixmes("ignore", counts, path)
-    for path, counts in path_to_data("strict").items():
-        statistics_logger.log_with_configuration(
-            statistics_logger.LoggerCategory.STRICT_ADOPTION,
-            configuration,
-            integers=counts,
-            normals={"run_id": run_id, "path": path},
-        )
+def print_json_summary(data: Mapping[str, StatisticsData]) -> None:
+    aggregated_data = aggregate_statistics(data)
+    log.stdout.write(json.dumps(dataclasses.asdict(aggregated_data), indent=4))
+
+
+def process_json_statistics(
+    data: Mapping[str, StatisticsData]
+) -> Dict[str, Dict[str, Dict[str, int]]]:
+    path_to_dictionary_statistics = {
+        path: dataclasses.asdict(statistics_data)
+        for (path, statistics_data) in data.items()
+    }
+    log.stdout.write(json.dumps(path_to_dictionary_statistics))
+    return path_to_dictionary_statistics
 
 
 def run_statistics(
@@ -343,32 +320,14 @@ def run_statistics(
         strict_default=configuration.strict,
     )
     if statistics_arguments.print_summary:
-        aggregated_data = aggregate_statistics(data)
-        LOG.warning(get_summary(aggregated_data))
+        print_text_summary(data)
         return commands.ExitCode.SUCCESS
 
     if statistics_arguments.aggregate:
-        aggregated_data = aggregate_statistics(data)
-        log.stdout.write(json.dumps(dataclasses.asdict(aggregated_data), indent=4))
-    else:
-        path_to_dictionary_statistics = {
-            path: dataclasses.asdict(statistics_data)
-            for (path, statistics_data) in data.items()
-        }
-        log.stdout.write(json.dumps(path_to_dictionary_statistics))
-        if statistics_arguments.log_results:
-            logger = configuration.logger
-            if logger is None:
-                LOG.warning("Skip remote logging since no logger is specified.")
-            else:
-                log_identifier = statistics_arguments.log_identifier
-                run_id = (
-                    log_identifier
-                    if log_identifier is not None
-                    else str(time.time_ns())
-                )
-                log_to_remote(configuration, run_id, path_to_dictionary_statistics)
+        print_json_summary(data)
+        return commands.ExitCode.SUCCESS
 
+    process_json_statistics(data)
     return commands.ExitCode.SUCCESS
 
 
