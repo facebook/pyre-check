@@ -206,6 +206,19 @@ let on_exception = function
   | Server.ChecksumMap.LoadError message ->
       Log.error "Cannot load external wheel properly. %s" message;
       ExitStatus.PyreError
+  | Worker.Worker_exited_abnormally (pid, status)
+  | Base.Exn.Finally (Worker.Worker_exited_abnormally (pid, status), _) ->
+      let message =
+        match status with
+        | Caml.Unix.WEXITED return_code -> Format.sprintf "exited with return code %d" return_code
+        | Caml.Unix.WSIGNALED signal -> Format.sprintf "was killed with signal %d" signal
+        | Caml.Unix.WSTOPPED signal -> Format.sprintf "was stopped with signal %d" signal
+      in
+      Log.error
+        "Pyre encountered an internal exception: Worker_exited_abnormally: process %d %s"
+        pid
+        message;
+      ExitStatus.PyreError
   | _ as exn ->
       Log.error "Pyre encountered an internal exception: %s" (Exn.to_string exn);
       ExitStatus.PyreError
