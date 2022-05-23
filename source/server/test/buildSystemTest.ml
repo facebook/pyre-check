@@ -69,22 +69,22 @@ let test_cleanup context =
 
 
 let test_type_errors context =
-  let test_source_path =
+  let test_source_path = PyrePath.create_absolute "/foo/test.py" in
+  let test_artifact_path =
     (* The real value will be deterimend once the server starts. *)
     ref (PyrePath.create_absolute "uninitialized")
   in
-  let test_artifact_path = PyrePath.create_absolute "/foo/test.py" in
   let build_system_initializer =
     let initialize () =
       let lookup_source path =
-        if PyrePath.equal path !test_source_path then
-          Some test_artifact_path
+        if PyrePath.equal path !test_artifact_path then
+          Some test_source_path
         else
           None
       in
       let lookup_artifact path =
-        if PyrePath.equal path test_artifact_path then
-          [!test_source_path]
+        if PyrePath.equal path test_source_path then
+          [!test_artifact_path]
         else
           []
       in
@@ -101,7 +101,7 @@ let test_type_errors context =
       |> fun { ServerProperties.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
       project_root
     in
-    test_source_path := PyrePath.create_relative ~root:global_root ~relative:"test.py";
+    test_artifact_path := PyrePath.create_relative ~root:global_root ~relative:"test.py";
     let test_error =
       Analysis.AnalysisError.Instantiated.of_yojson
         (`Assoc
