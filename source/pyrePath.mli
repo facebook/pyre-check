@@ -19,10 +19,14 @@ module RelativePath : sig
   val relative : t -> path
 end
 
-type t =
-  | Absolute of AbsolutePath.t
-  | Relative of RelativePath.t
-[@@deriving compare, show, sexp, hash, to_yojson]
+module Raw : sig
+  type t =
+    | Absolute of AbsolutePath.t
+    | Relative of RelativePath.t
+  [@@deriving compare, show, sexp, hash, to_yojson]
+end
+
+type t = Raw.t [@@deriving compare, show, sexp, hash, to_yojson]
 
 val equal : t -> t -> bool
 
@@ -90,3 +94,26 @@ val get_directory : t -> t
 
 (* paths can be files or directories *)
 val get_matching_files_recursively : suffix:string -> paths:t list -> t list
+
+module Built : sig
+  type t [@@deriving show, eq, compare, hash]
+
+  val create : Raw.t -> t
+
+  val raw : t -> Raw.t
+
+  val original_source_path : t -> Raw.t
+
+  val absolute : t -> path
+
+  val create_relative : root:Raw.t -> relative:path -> t
+
+  val get_relative_to_root : root:Raw.t -> path:t -> path option
+
+  val list
+    :  ?file_filter:(string -> bool) ->
+    ?directory_filter:(string -> bool) ->
+    root:Raw.t ->
+    unit ->
+    t list
+end

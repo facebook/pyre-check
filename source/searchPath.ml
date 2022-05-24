@@ -93,8 +93,8 @@ let search_for_path ~search_paths path =
       PyrePath.get_relative_to_root ~root ~path
       >>| (fun relative -> PyrePath.create_relative ~root ~relative)
       >>= function
-      | PyrePath.Absolute _ -> None
-      | PyrePath.Relative relative -> Some relative
+      | PyrePath.Raw.Absolute _ -> None
+      | PyrePath.Raw.Relative relative -> Some relative
     else
       None
   in
