@@ -213,6 +213,12 @@ def dict_with_tainted_key_flows_to_sink():
     _test_sink(d)
 
 
+def dict_with_tainted_key_flows_to_sink_via_setitem():
+    d = {}
+    d[_test_source()] = 1
+    _test_sink(d)
+
+
 def sink_dictionary_through_keys(d: Dict[str, str]) -> None:
     [_test_sink(k) for k in d]
 

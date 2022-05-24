@@ -14,6 +14,7 @@ dictionary.dict_update_sinks_cycle (fun) -> [_test_sink (fun) dict::__getitem__ 
 dictionary.dict_update_taint (fun) -> [_test_source (fun) dict::update (method)]
 dictionary.dict_update_whole_dict (fun) -> [_test_source (fun) dict::update (method)]
 dictionary.dict_with_tainted_key_flows_to_sink (fun) -> [_test_sink (fun) _test_source (fun)]
+dictionary.dict_with_tainted_key_flows_to_sink_via_setitem (fun) -> [_test_sink (fun) _test_source (fun) dict::__setitem__ (override)]
 dictionary.dictionary_assign_to_index (fun) -> [_test_source (fun) dict::__setitem__ (override)]
 dictionary.dictionary_assignment_source (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override)]
 dictionary.dictionary_entry_sink (fun) -> [_test_sink (fun)]
