@@ -9,7 +9,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence, Union
+from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence
 
 import libcst as cst
 
@@ -107,17 +107,18 @@ def parse_path_to_module(path: Path) -> Optional[cst.Module]:
 
 
 def _collect_statistics_for_module(
-    module: Union[cst.Module, cst.MetadataWrapper],
+    module: cst.Module,
     collector_factory: Callable[[], collectors.StatisticsCollector],
 ) -> Dict[str, int]:
     collector = collector_factory()
-    module.visit(collector)
+    module_with_position_metadata = cst.MetadataWrapper(module)
+    module_with_position_metadata.visit(collector)
     return collector.build_json()
 
 
 def _collect_annotation_statistics(module: cst.Module) -> Dict[str, int]:
     return _collect_statistics_for_module(
-        cst.MetadataWrapper(module),
+        module,
         collectors.AnnotationCountCollector,
     )
 

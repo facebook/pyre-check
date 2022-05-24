@@ -572,7 +572,9 @@ class FunctionAnnotationKindTest(unittest.TestCase):
 
 class FixmeCountCollectorTest(unittest.TestCase):
     def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
-        source_module = parse_source(source.replace("FIXME", "pyre-fixme"))
+        source_module = MetadataWrapper(
+            parse_source(source.replace("FIXME", "pyre-fixme"))
+        )
         collector = FixmeCountCollector()
         source_module.visit(collector)
         self.assertDictEqual(collector.build_json(), expected)
@@ -649,7 +651,9 @@ class FixmeCountCollectorTest(unittest.TestCase):
 
 class IgnoreCountCollectorTest(unittest.TestCase):
     def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
-        source_module = parse_source(source.replace("IGNORE", "pyre-ignore"))
+        source_module = MetadataWrapper(
+            parse_source(source.replace("IGNORE", "pyre-ignore"))
+        )
         collector = IgnoreCountCollector()
         source_module.visit(collector)
         self.assertEqual(collector.build_json(), expected)
@@ -670,7 +674,7 @@ class StrictCountCollectorTest(unittest.TestCase):
     def assert_counts(
         self, source: str, expected: Dict[str, int], default_strict: bool
     ) -> None:
-        source_module = parse_source(source)
+        source_module = MetadataWrapper(parse_source(source))
         collector = StrictCountCollector(default_strict)
         source_module.visit(collector)
         self.assertEqual(collector.build_json(), expected)

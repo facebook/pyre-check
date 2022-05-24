@@ -287,6 +287,8 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
 
 
 class SuppressionCountCollector(StatisticsCollector):
+    METADATA_DEPENDENCIES = (PositionProvider,)
+
     def __init__(self, regex: str) -> None:
         self.counts: Dict[str, int] = defaultdict(int)
         self.regex: Pattern[str] = compile(regex)
@@ -322,6 +324,8 @@ class TypeIgnoreCountCollector(SuppressionCountCollector):
 
 
 class StrictCountCollector(StatisticsCollector):
+    METADATA_DEPENDENCIES = (PositionProvider,)
+
     def __init__(self, strict_by_default: bool) -> None:
         self.is_strict: bool = False
         self.is_unsafe: bool = False
