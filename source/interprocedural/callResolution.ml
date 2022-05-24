@@ -99,24 +99,12 @@ let defining_attribute ~resolution parent_type attribute =
   |> Type.primitive_name
   >>= fun class_name ->
   let instantiated_attribute =
-    try
-      GlobalResolution.attribute_from_class_name
-        ~transitive:true
-        ~resolution:global_resolution
-        ~name:attribute
-        ~instantiated:parent_type
-        class_name
-    with
-    | Analysis.ClassHierarchy.Untracked untracked_type ->
-        Log.warning
-          "Found untracked type `%s` when checking for attribute `%s` of `%a`. The attribute will \
-           be considered having type `Any`, which could lead to false negatives if it is a \
-           property."
-          untracked_type
-          attribute
-          Type.pp
-          parent_type;
-        None
+    GlobalResolution.attribute_from_class_name
+      ~transitive:true
+      ~resolution:global_resolution
+      ~name:attribute
+      ~instantiated:parent_type
+      class_name
   in
   instantiated_attribute
   >>= fun instantiated_attribute ->

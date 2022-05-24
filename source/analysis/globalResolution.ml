@@ -268,17 +268,26 @@ let attribute_from_class_name
             |> Option.some
         | None -> None)
   in
-  AttributeResolution.ReadOnly.attribute
-    ~instantiated
-    ~transitive
-    ~accessed_through_class
-    ~special_method
-    ~include_generated_attributes:true
-    ?dependency
-    (attribute_resolution resolution)
-    ~attribute_name:name
-    class_name
-  |> access
+  try
+    AttributeResolution.ReadOnly.attribute
+      ~instantiated
+      ~transitive
+      ~accessed_through_class
+      ~special_method
+      ~include_generated_attributes:true
+      ?dependency
+      (attribute_resolution resolution)
+      ~attribute_name:name
+      class_name
+    |> access
+  with
+  | ClassHierarchy.Untracked untracked_type ->
+      Log.warning
+        "Found untracked type `%s` when checking for attribute `%s` of `%s`."
+        untracked_type
+        name
+        class_name;
+      None
 
 
 let attribute_from_annotation ?special_method resolution ~parent:annotation ~name =
