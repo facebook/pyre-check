@@ -325,45 +325,41 @@ class TypeIgnoreCountCollector(SuppressionCountCollector):
 
 class StrictCountCollector(StatisticsCollector):
     METADATA_DEPENDENCIES = (PositionProvider,)
+    unsafe_regex: Pattern[str] = compile(r" ?#+ *pyre-unsafe")
+    strict_regex: Pattern[str] = compile(r" ?#+ *pyre-strict")
+    ignore_all_regex: Pattern[str] = compile(r" ?#+ *pyre-ignore-all-errors")
+    ignore_all_by_code_regex: Pattern[str] = compile(
+        r" ?#+ *pyre-ignore-all-errors\[[0-9]+[0-9, ]*\]"
+    )
 
     def __init__(self, strict_by_default: bool) -> None:
-        self.is_strict: bool = False
-        self.is_unsafe: bool = False
+        self.strict_by_default: bool = strict_by_default
+        self.has_explicit_strict_comment: bool = False
+        self.has_explicit_unsafe_comment: bool = False
         self.strict_count: int = 0
         self.unsafe_count: int = 0
-        self.strict_by_default: bool = strict_by_default
-        self.unsafe_regex: Pattern[str] = compile(r" ?#+ *pyre-unsafe")
-        self.strict_regex: Pattern[str] = compile(r" ?#+ *pyre-strict")
-        self.ignore_all_regex: Pattern[str] = compile(r" ?#+ *pyre-ignore-all-errors")
-        self.ignore_all_by_code_regex: Pattern[str] = compile(
-            r" ?#+ *pyre-ignore-all-errors\[[0-9]+[0-9, ]*\]"
-        )
 
     def is_unsafe_module(self) -> bool:
-        if self.is_unsafe:
+        if self.has_explicit_unsafe_comment:
             return True
-        elif self.is_strict or self.strict_by_default:
+        elif self.has_explicit_strict_comment or self.strict_by_default:
             return False
         return True
 
     def is_strict_module(self) -> bool:
         return not self.is_unsafe_module()
 
-    def visit_Module(self, node: cst.Module) -> None:
-        self.is_strict = False
-        self.is_unsafe = False
-
     def visit_Comment(self, node: cst.Comment) -> None:
         if self.strict_regex.match(node.value):
-            self.is_strict = True
+            self.has_explicit_strict_comment = True
             return
         if self.unsafe_regex.match(node.value):
-            self.is_unsafe = True
+            self.has_explicit_unsafe_comment = True
             return
         if self.ignore_all_regex.match(
             node.value
         ) and not self.ignore_all_by_code_regex.match(node.value):
-            self.is_unsafe = True
+            self.has_explicit_unsafe_comment = True
 
     def leave_Module(self, original_node: cst.Module) -> None:
         if self.is_unsafe_module():
