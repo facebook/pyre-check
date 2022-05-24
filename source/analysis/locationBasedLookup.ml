@@ -624,8 +624,16 @@ let resolve_definition_for_name ~resolution ~module_reference ~define_name ~stat
       | Some definition -> Some definition
       | None -> (
           (* Resolve prefix to check if this is a method. *)
+          let base_type =
+            match resolve ~resolution base with
+            | Some annotation when Type.is_meta annotation ->
+                (* If it is a call to a class method or static method, `Foo.my_class_method()`, the
+                   resolved base type will be `Type[Foo]`. Extract the class type `Foo`. *)
+                Some (Type.single_parameter annotation)
+            | annotation -> annotation
+          in
           let base_class_summary =
-            resolve ~resolution base
+            base_type
             >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
             >>| Node.value
           in

@@ -518,6 +518,56 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.foo"; node_id = 6; statement_index = 1 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:
+      {|
+        class Foo:
+          @staticmethod
+          def my_static_method() -> None: ...
+
+        def foo() -> None:
+          Foo.my_static_method()
+    |}
+    "7:11"
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_static_method");
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+        class Foo:
+          @classmethod
+          def my_class_method(cls) -> None: ...
+
+        def foo() -> None:
+          Foo.my_class_method()
+    |}
+    "7:11"
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_class_method");
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+        class Foo:
+          def my_method() -> None: ...
+
+        def foo() -> None:
+          Foo.my_method()
+    |}
+    "6:11"
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_method");
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -758,6 +808,53 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     (Some "test:3:6-3:7");
+  assert_resolved_definition
+    ~source:
+      {|
+        class Foo:
+          @classmethod
+          def my_class_method(cls) -> None: ...
+
+        def foo() -> None:
+          Foo.my_class_method()
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_class_method");
+      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some "test:4:2-4:39");
+  assert_resolved_definition
+    ~source:
+      {|
+        class Foo:
+          def my_method() -> None: ...
+
+        def foo() -> None:
+          Foo.my_method()
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_method");
+      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some "test:3:2-3:30");
+  assert_resolved_definition
+    ~source:
+      {|
+        class Foo:
+          @staticmethod
+          def my_static_method() -> None: ...
+
+        def foo() -> None:
+          Foo.my_static_method()
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_static_method");
+      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some "test:4:2-4:37");
   ()
 
 
