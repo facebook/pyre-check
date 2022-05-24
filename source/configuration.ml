@@ -432,7 +432,7 @@ module Analysis = struct
 
   let find_extension { extensions; _ } path =
     List.find extensions ~f:(fun extension ->
-        String.is_suffix ~suffix:(Extension.suffix extension) (PyrePath.absolute path))
+        String.is_suffix ~suffix:(Extension.suffix extension) (PyrePath.Built.absolute path))
 end
 
 module StaticAnalysis = struct

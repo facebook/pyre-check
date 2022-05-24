@@ -13,7 +13,7 @@ module ModuleTracker = Analysis.ModuleTracker
 let touch path = File.create path ~content:"" |> File.write
 
 let create_source_path ~configuration root relative =
-  let path = PyrePath.create_relative ~root ~relative in
+  let path = PyrePath.Built.create_relative ~root ~relative in
   SourcePath.create ~configuration path
 
 
@@ -67,9 +67,9 @@ let test_creation context =
          _;
        } as source_path)
     =
-    let expected_path = PyrePath.create_relative ~root:search_root ~relative in
+    let expected_path = PyrePath.Built.create_relative ~root:search_root ~relative in
     let actual_path = SourcePath.full_path ~configuration source_path in
-    assert_equal ~cmp:PyrePath.equal ~printer:PyrePath.show expected_path actual_path;
+    assert_equal ~cmp:PyrePath.Built.equal ~printer:PyrePath.Built.show expected_path actual_path;
     Option.iter priority ~f:(fun expected_priority ->
         assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_priority actual_priority);
     Option.iter is_stub ~f:(fun expected_is_stub ->
@@ -368,15 +368,15 @@ let test_creation context =
         ~filter_directories:[local_root]
         ()
     in
-    let assert_path = assert_equal ~cmp:PyrePath.equal ~printer:PyrePath.show in
+    let assert_path = assert_equal ~cmp:PyrePath.Built.equal ~printer:PyrePath.Built.show in
     assert_create_fail ~configuration search_root "b.py";
     let source_path_a = create_source_path_exn ~configuration local_root "a.py" in
     assert_path
-      (PyrePath.create_relative ~root:local_root ~relative:"a.py")
+      (PyrePath.Built.create_relative ~root:local_root ~relative:"a.py")
       (SourcePath.full_path ~configuration source_path_a);
     let source_path_b = create_source_path_exn ~configuration search_subdirectory "c.py" in
     assert_path
-      (PyrePath.create_relative ~root:search_subdirectory ~relative:"c.py")
+      (PyrePath.Built.create_relative ~root:search_subdirectory ~relative:"c.py")
       (SourcePath.full_path ~configuration source_path_b)
   in
   let test_priority () =
@@ -1155,7 +1155,7 @@ module IncrementalTest = struct
         let external_root = List.hd_exn search_paths |> SearchPath.get_root in
         List.filter_map external_setups ~f:(update_file ~root:external_root)
       in
-      List.append external_paths paths
+      List.append external_paths paths |> List.map ~f:PyrePath.Built.create
     in
     (* Set up the initial project *)
     let configuration, module_tracker =

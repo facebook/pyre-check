@@ -39,4 +39,4 @@ val create_normalized : string -> t
    filesystem side-effect.*)
 val normalize : t -> t
 
-val search_for_path : search_paths:t list -> PyrePath.t -> search_result option
+val search_for_path : search_paths:t list -> PyrePath.Built.t -> search_result option

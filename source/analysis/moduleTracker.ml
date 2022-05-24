@@ -116,10 +116,11 @@ module Layouts = struct
 
   module FileSystemEvent = struct
     type t =
-      | Update of PyrePath.t
-      | Remove of PyrePath.t
+      | Update of PyrePath.Built.t
+      | Remove of PyrePath.Built.t
 
-    let create path = if PyrePath.file_exists path then Update path else Remove path
+    let create path =
+      if PyrePath.file_exists (PyrePath.Built.raw path) then Update path else Remove path
   end
 
   module IncrementalExplicitUpdate = struct
@@ -143,7 +144,7 @@ module Layouts = struct
       | FileSystemEvent.Update path -> (
           match SourcePath.create ~configuration path with
           | None ->
-              Log.warning "`%a` not found in search path." PyrePath.pp path;
+              Log.warning "`%a` not found in search path." PyrePath.Built.pp path;
               None
           | Some ({ SourcePath.qualifier; _ } as source_path) -> (
               match Hashtbl.find module_to_files qualifier with
@@ -165,7 +166,7 @@ module Layouts = struct
       | FileSystemEvent.Remove path -> (
           match SourcePath.create ~configuration path with
           | None ->
-              Log.warning "`%a` not found in search path." PyrePath.pp path;
+              Log.warning "`%a` not found in search path." PyrePath.Built.pp path;
               None
           | Some ({ SourcePath.qualifier; _ } as source_path) -> (
               Hashtbl.find module_to_files qualifier
@@ -256,7 +257,7 @@ module Layouts = struct
     in
     (* Since `process_filesystem_event` is not idempotent, we don't want duplicated filesystem
        events *)
-    List.dedup_and_sort ~compare:PyrePath.compare paths
+    List.dedup_and_sort ~compare:PyrePath.Built.compare paths
     |> List.map ~f:FileSystemEvent.create
     |> List.filter_map ~f:(process_filesystem_event ~configuration)
     |> merge_updates
@@ -414,16 +415,16 @@ let find_source_paths
         && List.exists ~f:(String.equal extension) valid_suffixes
         && not (mark_visited visited_files path)
       in
-      PyrePath.list ~file_filter ~directory_filter ~root ())
+      PyrePath.Built.list ~file_filter ~directory_filter ~root ())
   |> List.concat
   |> List.filter_map ~f:(SourcePath.create ~configuration)
 
 
 let load_raw_code ~configuration source_path =
   let path = SourcePath.full_path ~configuration source_path in
-  try Ok (File.content_exn (File.create path)) with
+  try Ok (PyrePath.Built.raw path |> File.create |> File.content_exn) with
   | Sys_error error ->
-      Error (Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.pp path error)
+      Error (Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.Built.pp path error)
 
 
 let create configuration =

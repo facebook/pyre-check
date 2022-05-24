@@ -47,7 +47,7 @@ let test_compute_locally_changed_files context =
         ~configuration
         ~old_module_tracker
         ~new_module_tracker
-      |> List.filter_map ~f:(fun path -> PyrePath.get_relative_to_root ~root:local_root ~path)
+      |> List.filter_map ~f:(fun path -> PyrePath.Built.get_relative_to_root ~root:local_root ~path)
     in
     assert_equal
       ~printer:(List.to_string ~f:ident)

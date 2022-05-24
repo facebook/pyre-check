@@ -33,12 +33,14 @@ module SharedMemoryHashes =
       let description = "ChangedPathsHash"
     end)
 
+let hash_of_content analysis_path =
+  PyrePath.Built.raw analysis_path |> File.create |> HashResult.from_file
+
+
 let save_current_paths ~scheduler ~configuration ~module_tracker =
   let save_paths _ source_paths =
     let save_path ({ SourcePath.qualifier; _ } as source_path) =
-      let hash =
-        SourcePath.full_path ~configuration source_path |> File.create |> HashResult.from_file
-      in
+      let hash = SourcePath.full_path ~configuration source_path |> hash_of_content in
       SharedMemoryHashes.remove_batch (SharedMemoryHashes.KeySet.singleton qualifier);
       SharedMemoryHashes.add qualifier hash
     in
@@ -70,7 +72,7 @@ let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker 
     let changed_path ({ SourcePath.qualifier; _ } as source_path) =
       let old_hash = SharedMemoryHashes.get qualifier in
       let path = SourcePath.full_path ~configuration source_path in
-      let current_hash = HashResult.from_file (File.create path) in
+      let current_hash = hash_of_content path in
       if Option.equal HashResult.equal old_hash (Some current_hash) then
         None
       else

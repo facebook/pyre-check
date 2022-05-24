@@ -22,16 +22,16 @@ type t
 
 (** {1 External Interfaces} *)
 
-val update : t -> PyrePath.t list -> PyrePath.t list Lwt.t
+val update : t -> PyrePath.t list -> PyrePath.Built.t list Lwt.t
 (** [update build_system source_paths] notifies [build_system] that certain [source_paths] may have
     been updated on the filesystem. The build system should use the provided info to update its
     internal mapping, and return a list of artifact paths whose content may change by this update.*)
 
-val lookup_source : t -> PyrePath.t -> PyrePath.t option
+val lookup_source : t -> PyrePath.Built.t -> PyrePath.t option
 (** Given an artifact path, return the corresponding source path, which is guaranteed to be unique
     if exists. Return [None] if no such source path exists. *)
 
-val lookup_artifact : t -> PyrePath.t -> PyrePath.t list
+val lookup_artifact : t -> PyrePath.t -> PyrePath.Built.t list
 (** Given an source path, return the corresponding artifact paths. Return the empty list if no such
     artifact path exists. *)
 
@@ -43,9 +43,9 @@ val store : t -> unit
 (* This function allows the client to fully tweak the behavior of a build system. Expose for testing
    purpose only. *)
 val create_for_testing
-  :  ?update:(PyrePath.t list -> PyrePath.t list Lwt.t) ->
-  ?lookup_source:(PyrePath.t -> PyrePath.t option) ->
-  ?lookup_artifact:(PyrePath.t -> PyrePath.t list) ->
+  :  ?update:(PyrePath.t list -> PyrePath.Built.t list Lwt.t) ->
+  ?lookup_source:(PyrePath.Built.t -> PyrePath.t option) ->
+  ?lookup_artifact:(PyrePath.t -> PyrePath.Built.t list) ->
   ?store:(unit -> unit) ->
   unit ->
   t

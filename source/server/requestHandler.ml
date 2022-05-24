@@ -18,16 +18,16 @@ let module_of_path ~module_tracker path =
 let instantiate_path ~build_system ~ast_environment qualifier =
   match AstEnvironment.ReadOnly.get_real_path ast_environment qualifier with
   | None -> None
-  | Some artifact_path ->
+  | Some analysis_path ->
       let path =
-        match BuildSystem.lookup_source build_system artifact_path with
+        match BuildSystem.lookup_source build_system analysis_path with
         | Some source_path -> source_path
         | None ->
             (* NOTE (grievejia): This means the path is under the search roots but is not tracked by
                Buck. Showing the original path here is a compromise: ideally we should instead look
                into configuring Buck-built project in such a way that all source files are tracked
                by Buck. *)
-            artifact_path
+            PyrePath.Built.raw analysis_path
       in
       Some (PyrePath.absolute path)
 
@@ -158,7 +158,7 @@ let process_incremental_update_request
       let changed_paths =
         List.concat_map paths ~f:(BuildSystem.lookup_artifact build_system)
         |> List.append changed_paths_from_rebuild
-        |> List.dedup_and_sort ~compare:PyrePath.compare
+        |> List.dedup_and_sort ~compare:PyrePath.Built.compare
       in
       let _ =
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->

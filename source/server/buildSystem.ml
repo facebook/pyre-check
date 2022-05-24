@@ -8,9 +8,9 @@
 open Base
 
 type t = {
-  update: PyrePath.t list -> PyrePath.t list Lwt.t;
-  lookup_source: PyrePath.t -> PyrePath.t option;
-  lookup_artifact: PyrePath.t -> PyrePath.t list;
+  update: PyrePath.t list -> PyrePath.Built.t list Lwt.t;
+  lookup_source: PyrePath.Built.t -> PyrePath.t option;
+  lookup_artifact: PyrePath.t -> PyrePath.Built.t list;
   store: unit -> unit;
 }
 
@@ -22,10 +22,14 @@ let lookup_artifact { lookup_artifact; _ } = lookup_artifact
 
 let store { store; _ } = store ()
 
+let default_lookup_source analysis_path = Some (PyrePath.Built.raw analysis_path)
+
+let default_lookup_artifact source_path = [PyrePath.Built.create source_path]
+
 let create_for_testing
     ?(update = fun _ -> Lwt.return [])
-    ?(lookup_source = fun path -> Some path)
-    ?(lookup_artifact = fun path -> [path])
+    ?(lookup_source = default_lookup_source)
+    ?(lookup_artifact = default_lookup_artifact)
     ?(store = fun () -> ())
     ()
   =
@@ -136,7 +140,7 @@ module BuckBuildSystem = struct
   end
 
   let initialize_from_state (state : State.t) =
-    let update paths =
+    let update source_paths =
       let incremental_builder =
         let should_renormalize paths =
           let f path =
@@ -155,7 +159,7 @@ module BuckBuildSystem = struct
           in
           List.exists paths ~f
         in
-        if should_renormalize paths then
+        if should_renormalize source_paths then
           {
             IncrementalBuilder.name = "full";
             run =
@@ -167,7 +171,7 @@ module BuckBuildSystem = struct
           let changed_paths, removed_paths =
             (* TODO (T90174546): This check may lead to temporary inconsistent view of the
                filesystem with `ModuleTracker`. *)
-            List.partition_tf paths ~f:PyrePath.file_exists
+            List.partition_tf source_paths ~f:PyrePath.file_exists
           in
           if List.is_empty removed_paths && not (should_reconstruct_build_map changed_paths) then
             {
@@ -177,7 +181,7 @@ module BuckBuildSystem = struct
                   ~build_map:state.build_map
                   ~build_map_index:state.build_map_index
                   ~targets:state.normalized_targets
-                  ~changed_sources:paths;
+                  ~changed_sources:source_paths;
             }
           else
             {
@@ -193,10 +197,10 @@ module BuckBuildSystem = struct
       in
       let open Lwt.Infix in
       with_logging
-        ~integers:(fun changed_artifacts ->
+        ~integers:(fun changed_analysis_paths ->
           [
-            "number_of_user_changed_files", List.length paths;
-            "number_of_updated_files", List.length changed_artifacts;
+            "number_of_user_changed_files", List.length source_paths;
+            "number_of_updated_files", List.length changed_analysis_paths;
           ])
         ~normals:(fun _ ->
           [
@@ -212,13 +216,16 @@ module BuckBuildSystem = struct
                     changed_artifacts;
                   } ->
           State.update ~normalized_targets ~build_map state;
-          Lwt.return changed_artifacts)
+          let changed_analysis_paths = List.map changed_artifacts ~f:PyrePath.Built.create in
+          Lwt.return changed_analysis_paths)
     in
     let lookup_source path =
-      Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder path
+      PyrePath.Built.raw path
+      |> Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder
     in
     let lookup_artifact path =
       Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder path
+      |> List.map ~f:PyrePath.Built.create
     in
     let store () =
       {
@@ -294,9 +301,11 @@ module TrackUnwatchedDependencyBuildSystem = struct
 
 
   let initialize_from_state (state : State.t) =
-    let update paths =
+    let update source_paths =
       let paths =
-        if unwatched_files_may_change ~change_indicator_path:state.change_indicator_path paths then (
+        if
+          unwatched_files_may_change ~change_indicator_path:state.change_indicator_path source_paths
+        then (
           Log.info "Detecting potential changes in unwatched files...";
           (* NOTE(grievejia): If checksum map loading fails, there will be no way for us to figure
              out what has changed in the unwatched directory. Bring down the server immediately to
@@ -310,10 +319,10 @@ module TrackUnwatchedDependencyBuildSystem = struct
         else
           []
       in
-      Lwt.return paths
+      List.map paths ~f:PyrePath.Built.create |> Lwt.return
     in
-    let lookup_source path = Some path in
-    let lookup_artifact path = [path] in
+    let lookup_source = default_lookup_source in
+    let lookup_artifact = default_lookup_artifact in
     let store () = () in
     { update; lookup_source; lookup_artifact; store }
 

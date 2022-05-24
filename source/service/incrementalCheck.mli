@@ -18,5 +18,5 @@ val recheck
   scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.t ->
   errors:errors Ast.Reference.Table.t ->
-  PyrePath.t list ->
+  PyrePath.Built.t list ->
   Ast.Reference.t list * errors

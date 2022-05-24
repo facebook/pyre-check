@@ -80,17 +80,18 @@ let normalize = function
 
 let create_normalized serialized = create serialized |> normalize
 
-let search_for_path ~search_paths path =
+let search_for_path ~search_paths analysis_path =
+  let raw_path = PyrePath.Built.raw analysis_path in
   let under_root search_path =
     let open Option in
     let found =
       match search_path with
-      | Submodule _ -> PyrePath.equal (to_path search_path) path
-      | _ -> PyrePath.directory_contains ~directory:(to_path search_path) path
+      | Submodule _ -> PyrePath.equal (to_path search_path) raw_path
+      | _ -> PyrePath.directory_contains ~directory:(to_path search_path) raw_path
     in
     if found then
       let root = get_root search_path in
-      PyrePath.get_relative_to_root ~root ~path
+      PyrePath.get_relative_to_root ~root ~path:raw_path
       >>| (fun relative -> PyrePath.create_relative ~root ~relative)
       >>= function
       | PyrePath.Raw.Absolute _ -> None

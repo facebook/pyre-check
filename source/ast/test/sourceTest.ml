@@ -242,7 +242,9 @@ let test_extension_suffix _ =
   let root = PyrePath.create_absolute "/root" in
   let assert_qualifier_equal ~configuration ~path expected =
     let actual_qualifier =
-      match SourcePath.create ~configuration (PyrePath.create_relative ~root ~relative:path) with
+      match
+        SourcePath.create ~configuration (PyrePath.Built.create_relative ~root ~relative:path)
+      with
       | Some { SourcePath.qualifier; _ } -> qualifier
       | None -> Reference.create "<UNEXPECTED_NONE>"
     in

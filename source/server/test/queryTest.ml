@@ -944,7 +944,7 @@ let test_handle_query_with_build_system context =
   let build_system_initializer =
     let initialize () =
       let lookup_artifact _ =
-        [PyrePath.create_relative ~root:custom_source_root ~relative:"redirected.py"]
+        [PyrePath.Built.create_relative ~root:custom_source_root ~relative:"redirected.py"]
       in
       Lwt.return (BuildSystem.create_for_testing ~lookup_artifact ())
     in

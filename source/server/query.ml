@@ -801,7 +801,7 @@ let rec process_request ~environment ~build_system ~configuration request =
             AstEnvironment.ReadOnly.get_real_path
               (TypeEnvironment.ReadOnly.ast_environment read_only_environment)
               reference
-            >>| PyrePath.absolute
+            >>| PyrePath.Built.absolute
           in
           let Location.WithPath.{ path; _ } =
             Location.WithModule.instantiate location_with_module ~lookup:module_to_absolute_path
@@ -827,7 +827,9 @@ let rec process_request ~environment ~build_system ~configuration request =
     | PathOfModule module_name ->
         ModuleTracker.ReadOnly.lookup_source_path module_tracker module_name
         >>= (fun source_path ->
-              let path = SourcePath.full_path ~configuration source_path |> PyrePath.absolute in
+              let path =
+                SourcePath.full_path ~configuration source_path |> PyrePath.Built.absolute
+              in
               Some (Single (Base.FoundPath path)))
         |> Option.value
              ~default:

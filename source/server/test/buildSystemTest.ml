@@ -72,12 +72,12 @@ let test_type_errors context =
   let test_source_path = PyrePath.create_absolute "/foo/test.py" in
   let test_artifact_path =
     (* The real value will be deterimend once the server starts. *)
-    ref (PyrePath.create_absolute "uninitialized")
+    ref (PyrePath.create_absolute "uninitialized" |> PyrePath.Built.create)
   in
   let build_system_initializer =
     let initialize () =
       let lookup_source path =
-        if PyrePath.equal path !test_artifact_path then
+        if PyrePath.Built.equal path !test_artifact_path then
           Some test_source_path
         else
           None
@@ -101,7 +101,7 @@ let test_type_errors context =
       |> fun { ServerProperties.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
       project_root
     in
-    test_artifact_path := PyrePath.create_relative ~root:global_root ~relative:"test.py";
+    test_artifact_path := PyrePath.Built.create_relative ~root:global_root ~relative:"test.py";
     let test_error =
       Analysis.AnalysisError.Instantiated.of_yojson
         (`Assoc
@@ -177,12 +177,12 @@ let test_update context =
   let test_source_path = PyrePath.create_absolute "/foo/test.py" in
   let test_artifact_path =
     (* The real value will be deterimend once the server starts. *)
-    ref (PyrePath.create_absolute "uninitialized")
+    ref (PyrePath.create_absolute "uninitialized" |> PyrePath.Built.create)
   in
   let build_system_initializer =
     let initialize () =
       let lookup_source path =
-        if PyrePath.equal path !test_artifact_path then
+        if PyrePath.Built.equal path !test_artifact_path then
           Some test_source_path
         else
           None
@@ -216,9 +216,9 @@ let test_update context =
       |> fun { ServerProperties.configuration = { Configuration.Analysis.project_root; _ }; _ } ->
       project_root
     in
-    test_artifact_path := PyrePath.create_relative ~root ~relative:"test.py";
+    test_artifact_path := PyrePath.Built.create_relative ~root ~relative:"test.py";
 
-    File.create !test_artifact_path ~content:"reveal_type(42)" |> File.write;
+    PyrePath.Built.raw !test_artifact_path |> File.create ~content:"reveal_type(42)" |> File.write;
     Client.send_request client (Request.IncrementalUpdate [PyrePath.absolute test_source_path])
     >>= fun _ ->
     (* Verify that the build system has indeed been updated. *)
@@ -328,6 +328,14 @@ let test_buck_update context =
       expected
       actual
   in
+  let assert_optional_analysis_path ~expected actual =
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: PyrePath.Built.t option]
+      ~printer:(Option.value_map ~default:"NONE" ~f:PyrePath.Built.show)
+      expected
+      actual
+  in
   let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
   let artifact_root = bracket_tmpdir context |> PyrePath.create_absolute in
 
@@ -364,19 +372,19 @@ let test_buck_update context =
   get_buck_build_system ()
   >>= fun buck_build_system ->
   let bar_source = PyrePath.create_relative ~root:source_root ~relative:"foo/bar.py" in
-  let bar_artifact = PyrePath.create_relative ~root:artifact_root ~relative:"bar.py" in
+  let bar_artifact = PyrePath.Built.create_relative ~root:artifact_root ~relative:"bar.py" in
   let baz_source = PyrePath.create_relative ~root:source_root ~relative:"foo/baz.py" in
-  let baz_artifact = PyrePath.create_relative ~root:artifact_root ~relative:"baz.py" in
+  let baz_artifact = PyrePath.Built.create_relative ~root:artifact_root ~relative:"baz.py" in
 
   (* Initially, we build bar.py but not baz.py. *)
   assert_optional_path
     ~expected:(Some bar_source)
     (BuildSystem.lookup_source buck_build_system bar_artifact);
   assert_optional_path ~expected:None (BuildSystem.lookup_source buck_build_system baz_artifact);
-  assert_optional_path
+  assert_optional_analysis_path
     ~expected:(Some bar_artifact)
     (BuildSystem.lookup_artifact buck_build_system bar_source |> List.hd);
-  assert_optional_path
+  assert_optional_analysis_path
     ~expected:None
     (BuildSystem.lookup_artifact buck_build_system baz_source |> List.hd);
 
@@ -391,10 +399,10 @@ let test_buck_update context =
   assert_optional_path
     ~expected:(Some baz_source)
     (BuildSystem.lookup_source buck_build_system baz_artifact);
-  assert_optional_path
+  assert_optional_analysis_path
     ~expected:(Some bar_artifact)
     (BuildSystem.lookup_artifact buck_build_system bar_source |> List.hd);
-  assert_optional_path
+  assert_optional_analysis_path
     ~expected:(Some baz_artifact)
     (BuildSystem.lookup_artifact buck_build_system baz_source |> List.hd);
 
@@ -402,11 +410,11 @@ let test_buck_update context =
 
 
 let assert_paths_no_order ~context ~expected actual =
-  let compare = [%compare: PyrePath.t] in
+  let compare = [%compare: PyrePath.Built.t] in
   assert_equal
     ~ctxt:context
-    ~cmp:[%compare.equal: PyrePath.t list]
-    ~printer:(fun paths -> List.map paths ~f:PyrePath.show |> String.concat ~sep:" ")
+    ~cmp:[%compare.equal: PyrePath.Built.t list]
+    ~printer:(fun paths -> List.map paths ~f:PyrePath.Built.show |> String.concat ~sep:" ")
     (List.sort ~compare expected)
     (List.sort ~compare actual)
 
@@ -451,8 +459,8 @@ let test_buck_update_without_rebuild context =
   BuildSystem.update buck_build_system [bar_source; baz_source]
   >>= fun changed_artifacts ->
   (* After the rebuild, both bar.py and baz.py should be included in build map. *)
-  let bar_artifact = PyrePath.create_relative ~root:artifact_root ~relative:"bar.py" in
-  let baz_artifact = PyrePath.create_relative ~root:artifact_root ~relative:"baz.py" in
+  let bar_artifact = PyrePath.Built.create_relative ~root:artifact_root ~relative:"bar.py" in
+  let baz_artifact = PyrePath.Built.create_relative ~root:artifact_root ~relative:"baz.py" in
   assert_paths_no_order changed_artifacts ~expected:[bar_artifact; baz_artifact];
   Lwt.return_unit
 
@@ -543,9 +551,9 @@ let test_unwatched_dependency_update context =
     updated
     ~expected:
       [
-        PyrePath.create_relative ~root:wheel_root ~relative:"a.py";
-        PyrePath.create_relative ~root:wheel_root ~relative:"b/c.py";
-        PyrePath.create_relative ~root:wheel_root ~relative:"g.py";
+        PyrePath.Built.create_relative ~root:wheel_root ~relative:"a.py";
+        PyrePath.Built.create_relative ~root:wheel_root ~relative:"b/c.py";
+        PyrePath.Built.create_relative ~root:wheel_root ~relative:"g.py";
       ];
 
   Lwt.return_unit

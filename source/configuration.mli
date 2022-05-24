@@ -186,7 +186,7 @@ module Analysis : sig
 
   val extension_suffixes : t -> string list
 
-  val find_extension : t -> PyrePath.t -> Extension.t option
+  val find_extension : t -> PyrePath.Built.t -> Extension.t option
 end
 
 module StaticAnalysis : sig

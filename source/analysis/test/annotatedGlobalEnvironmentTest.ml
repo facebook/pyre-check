@@ -129,7 +129,7 @@ let test_updates context =
     new_source >>| add_file project ~relative:"test.py" |> Option.value ~default:();
     let { ScratchProject.module_tracker; _ } = project in
     let { Configuration.Analysis.local_root; _ } = configuration in
-    let path = PyrePath.create_relative ~root:local_root ~relative:"test.py" in
+    let path = PyrePath.Built.create_relative ~root:local_root ~relative:"test.py" in
     let _, update_result =
       ModuleTracker.update ~paths:[path] module_tracker
       |> (fun updates -> AstEnvironment.Update updates)

@@ -18,4 +18,4 @@ val compute_locally_changed_paths
   configuration:Configuration.Analysis.t ->
   old_module_tracker:Analysis.ModuleTracker.t ->
   new_module_tracker:Analysis.ModuleTracker.t ->
-  PyrePath.t list
+  PyrePath.Built.t list
