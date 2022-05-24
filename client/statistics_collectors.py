@@ -286,7 +286,7 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
         }
 
 
-class CountCollector(StatisticsCollector):
+class SuppressionCountCollector(StatisticsCollector):
     def __init__(self, regex: str) -> None:
         self.counts: Dict[str, int] = defaultdict(int)
         self.regex: Pattern[str] = compile(regex)
@@ -306,14 +306,19 @@ class CountCollector(StatisticsCollector):
         return dict(self.counts)
 
 
-class FixmeCountCollector(CountCollector):
+class FixmeCountCollector(SuppressionCountCollector):
     def __init__(self) -> None:
         super().__init__(r".*# *pyre-fixme(\[(\d* *,? *)*\])?")
 
 
-class IgnoreCountCollector(CountCollector):
+class IgnoreCountCollector(SuppressionCountCollector):
     def __init__(self) -> None:
         super().__init__(r".*# *pyre-ignore(\[(\d* *,? *)*\])?")
+
+
+class TypeIgnoreCountCollector(SuppressionCountCollector):
+    def __init__(self) -> None:
+        super().__init__(r".*# *type: ignore")
 
 
 class StrictCountCollector(StatisticsCollector):
