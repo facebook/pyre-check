@@ -106,33 +106,40 @@ def parse_path_to_module(path: Path) -> Optional[cst.Module]:
         return None
 
 
-def _collect_statistics_for_module(
+def _get_statistics_collector_for_module(
     module: cst.Module,
     collector_factory: Callable[[], collectors.StatisticsCollector],
-) -> Dict[str, int]:
+) -> collectors.StatisticsCollector:
     collector = collector_factory()
     module_with_position_metadata = cst.MetadataWrapper(module)
     module_with_position_metadata.visit(collector)
-    return collector.build_json()
+    return collector
 
 
 def _collect_annotation_statistics(module: cst.Module) -> Dict[str, int]:
-    return _collect_statistics_for_module(
+    collector = _get_statistics_collector_for_module(
         module,
         collectors.AnnotationCountCollector,
     )
+    return collector.build_json()
 
 
 def _collect_fixme_statistics(
     module: cst.Module,
 ) -> Dict[str, int]:
-    return _collect_statistics_for_module(module, collectors.FixmeCountCollector)
+    collector = _get_statistics_collector_for_module(
+        module, collectors.FixmeCountCollector
+    )
+    return collector.build_json()
 
 
 def _collect_ignore_statistics(
     module: cst.Module,
 ) -> Dict[str, int]:
-    return _collect_statistics_for_module(module, collectors.IgnoreCountCollector)
+    collector = _get_statistics_collector_for_module(
+        module, collectors.IgnoreCountCollector
+    )
+    return collector.build_json()
 
 
 def _collect_strict_file_statistics(
@@ -142,7 +149,8 @@ def _collect_strict_file_statistics(
     def collector_factory() -> collectors.StrictCountCollector:
         return collectors.StrictCountCollector(strict_default)
 
-    return _collect_statistics_for_module(module, collector_factory)
+    collector = _get_statistics_collector_for_module(module, collector_factory)
+    return collector.build_json()
 
 
 @dataclasses.dataclass(frozen=True)
