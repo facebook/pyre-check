@@ -9,7 +9,6 @@ from pathlib import Path
 
 import testslide
 
-from ... import command_arguments, configuration
 from ...tests import setup
 from ..statistics import (
     aggregate_statistics,
@@ -26,24 +25,18 @@ class StatisticsTest(testslide.TestCase):
     def test_find_roots__duplicate_directories(self) -> None:
         self.assertCountEqual(
             find_roots(
-                configuration.Configuration(
-                    project_root="/root", dot_pyre_directory=Path("/irrelevant")
-                ),
-                command_arguments.StatisticsArguments(
-                    directories=["/root/foo.py", "/root/bar.py", "/root/foo.py"]
-                ),
+                ["/root/foo.py", "/root/bar.py", "/root/foo.py"],
+                local_root=None,
+                global_root=Path("/root"),
             ),
             [Path("/root/foo.py"), Path("/root/bar.py")],
         )
 
         self.assertCountEqual(
             find_roots(
-                configuration.Configuration(
-                    project_root="/root", dot_pyre_directory=Path("/irrelevant")
-                ),
-                command_arguments.StatisticsArguments(
-                    directories=["/root/foo", "/root/bar", "/root/foo"]
-                ),
+                ["/root/foo", "/root/bar", "/root/foo"],
+                local_root=None,
+                global_root=Path("/root"),
             ),
             [Path("/root/foo"), Path("/root/bar")],
         )
@@ -54,12 +47,9 @@ class StatisticsTest(testslide.TestCase):
             with setup.switch_working_directory(root_path):
                 self.assertCountEqual(
                     find_roots(
-                        configuration.Configuration(
-                            project_root="/root", dot_pyre_directory=Path("/irrelevant")
-                        ),
-                        command_arguments.StatisticsArguments(
-                            directories=["foo.py", "bar.py"]
-                        ),
+                        ["foo.py", "bar.py"],
+                        local_root=None,
+                        global_root=Path("/root"),
                     ),
                     [root_path / "foo.py", root_path / "bar.py"],
                 )
@@ -67,34 +57,27 @@ class StatisticsTest(testslide.TestCase):
     def test_find_roots__local_root(self) -> None:
         self.assertCountEqual(
             find_roots(
-                configuration.Configuration(
-                    project_root="/root",
-                    dot_pyre_directory=Path("/irrelevant"),
-                    relative_local_root="local",
-                ),
-                command_arguments.StatisticsArguments(directories=[]),
+                [],
+                local_root=Path("/root/local"),
+                global_root=Path("/root"),
             ),
             [Path("/root/local")],
         )
 
-    def test_find_roots__project_root(self) -> None:
+    def test_find_roots__global_root(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
             with setup.switch_working_directory(root_path):
                 self.assertCountEqual(
                     find_roots(
-                        configuration.Configuration(
-                            project_root="/root", dot_pyre_directory=Path("/irrelevant")
-                        ),
-                        command_arguments.StatisticsArguments(directories=[]),
+                        [],
+                        local_root=None,
+                        global_root=Path("/root"),
                     ),
                     [Path("/root")],
                 )
 
     def test_find_paths_to_parse(self) -> None:
-        pyre_configuration = configuration.Configuration(
-            project_root="/root", dot_pyre_directory=Path("/irrelevant")
-        )
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
             setup.ensure_files_exist(
@@ -104,12 +87,12 @@ class StatisticsTest(testslide.TestCase):
             setup.ensure_directories_exists(root_path, ["b/d"])
             self.assertCountEqual(
                 find_paths_to_parse(
-                    pyre_configuration,
                     [
                         root_path / "a/s1.py",
                         root_path / "b/s2.py",
                         root_path / "b/s4.txt",
                     ],
+                    excludes=[],
                 ),
                 [
                     root_path / "a/s1.py",
@@ -117,7 +100,7 @@ class StatisticsTest(testslide.TestCase):
                 ],
             )
             self.assertCountEqual(
-                find_paths_to_parse(pyre_configuration, [root_path]),
+                find_paths_to_parse([root_path], excludes=[]),
                 [
                     root_path / "s0.py",
                     root_path / "a/s1.py",
@@ -126,11 +109,7 @@ class StatisticsTest(testslide.TestCase):
                 ],
             )
 
-        pyre_configuration = configuration.Configuration(
-            project_root="/root",
-            dot_pyre_directory=Path("/irrelevant"),
-            excludes=[r".*2\.py"],
-        )
+    def test_find_paths_to_parse_with_exclude(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
             setup.ensure_files_exist(
@@ -140,19 +119,22 @@ class StatisticsTest(testslide.TestCase):
             setup.ensure_directories_exists(root_path, ["b/d"])
             self.assertCountEqual(
                 find_paths_to_parse(
-                    pyre_configuration,
                     [
                         root_path / "a/s1.py",
                         root_path / "b/s2.py",
                         root_path / "b/s4.txt",
                     ],
+                    excludes=[r".*2\.py"],
                 ),
                 [
                     root_path / "a/s1.py",
                 ],
             )
             self.assertCountEqual(
-                find_paths_to_parse(pyre_configuration, [root_path]),
+                find_paths_to_parse(
+                    [root_path],
+                    excludes=[r".*2\.py"],
+                ),
                 [
                     root_path / "s0.py",
                     root_path / "a/s1.py",

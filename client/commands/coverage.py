@@ -87,7 +87,9 @@ def run_coverage(
         ]
     else:
         absolute_paths = [find_root_path(configuration, working_directory_path)]
-    module_paths = statistics.find_paths_to_parse(configuration, absolute_paths)
+    module_paths = statistics.find_paths_to_parse(
+        absolute_paths, excludes=configuration.excludes
+    )
     data = collect_coverage_for_paths(
         module_paths, working_directory, strict_default=configuration.strict
     )

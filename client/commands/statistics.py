@@ -26,23 +26,19 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def find_roots(
-    configuration: configuration_module.Configuration,
-    statistics_arguments: command_arguments.StatisticsArguments,
+    explicitly_specified_directories: Sequence[str],
+    local_root: Optional[Path],
+    global_root: Path,
 ) -> Iterable[Path]:
-    explicit_directories = statistics_arguments.directories
-    if len(explicit_directories) > 0:
+    if len(explicitly_specified_directories) > 0:
 
         def to_absolute_path(given: str) -> Path:
             path = Path(given)
             return path if path.is_absolute() else Path.cwd() / path
 
-        return {to_absolute_path(path) for path in explicit_directories}
+        return {to_absolute_path(path) for path in explicitly_specified_directories}
 
-    local_root = configuration.local_root
-    if local_root is not None:
-        return [Path(local_root)]
-
-    return [Path(configuration.project_root)]
+    return [local_root] if local_root is not None else [global_root]
 
 
 def _is_excluded(path: Path, excludes: Sequence[str]) -> bool:
@@ -68,12 +64,12 @@ def has_py_extension_and_not_ignored(path: Path, excludes: Sequence[str]) -> boo
 
 
 def find_paths_to_parse(
-    configuration: configuration_module.Configuration, paths: Iterable[Path]
+    paths: Iterable[Path], excludes: Sequence[str]
 ) -> Iterable[Path]:
     def _get_paths_for_file(target_file: Path) -> Iterable[Path]:
         return (
             [target_file]
-            if has_py_extension_and_not_ignored(target_file, configuration.excludes)
+            if has_py_extension_and_not_ignored(target_file, excludes)
             else []
         )
 
@@ -81,7 +77,7 @@ def find_paths_to_parse(
         return (
             path
             for path in target_directory.glob("**/*.py")
-            if not _should_ignore(path, configuration.excludes)
+            if not _should_ignore(path, excludes)
         )
 
     return itertools.chain.from_iterable(
@@ -186,6 +182,24 @@ def collect_statistics(
         except RecursionError:
             LOG.warning(f"LibCST encountered recursion error in `{path}`")
     return data
+
+
+def collect_all_statistics(
+    configuration: configuration_module.Configuration,
+    statistics_arguments: command_arguments.StatisticsArguments,
+) -> Dict[str, StatisticsData]:
+    local_root = configuration.local_root
+    return collect_statistics(
+        find_paths_to_parse(
+            find_roots(
+                statistics_arguments.directories,
+                local_root=Path(local_root) if local_root is not None else None,
+                global_root=Path(configuration.project_root),
+            ),
+            excludes=configuration.excludes,
+        ),
+        strict_default=configuration.strict,
+    )
 
 
 @dataclasses.dataclass(frozen=True)
@@ -322,12 +336,7 @@ def run_statistics(
     configuration: configuration_module.Configuration,
     statistics_arguments: command_arguments.StatisticsArguments,
 ) -> commands.ExitCode:
-    data = collect_statistics(
-        find_paths_to_parse(
-            configuration, find_roots(configuration, statistics_arguments)
-        ),
-        strict_default=configuration.strict,
-    )
+    data = collect_all_statistics(configuration, statistics_arguments)
     if statistics_arguments.print_summary:
         print_text_summary(data)
         return commands.ExitCode.SUCCESS
