@@ -1203,7 +1203,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1231,7 +1231,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1259,7 +1259,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1280,7 +1280,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               {
                 name_constraint = Matches (Re2.create_exn "app.route");
                 arguments_constraint = None;
@@ -1311,7 +1311,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               { name_constraint = Matches (Re2.create_exn "d1"); arguments_constraint = None };
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1338,7 +1338,10 @@ let test_apply_rule context =
       {
         name = None;
         query =
-          [DecoratorConstraint { name_constraint = Equals "test.d1"; arguments_constraint = None }];
+          [
+            AnyDecoratorConstraint
+              { name_constraint = Equals "test.d1"; arguments_constraint = None };
+          ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
@@ -1364,7 +1367,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               {
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
@@ -1403,7 +1406,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               {
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
@@ -1442,7 +1445,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               {
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
@@ -1482,7 +1485,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               {
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
@@ -1522,7 +1525,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               {
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
@@ -1569,7 +1572,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               {
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
@@ -1616,7 +1619,7 @@ let test_apply_rule context =
         name = None;
         query =
           [
-            DecoratorConstraint
+            AnyDecoratorConstraint
               {
                 name_constraint = Equals "test.d1";
                 arguments_constraint =
@@ -1701,6 +1704,138 @@ let test_apply_rule context =
         rule_kind = MethodModel;
       }
     ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo" })
+    ~expected:[ModelParser.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+      @d1
+      class A:
+        def foo(): ...
+      @d2
+      class B:
+        def foo(): ...
+      @d3
+      class C:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            ParentConstraint
+              (DecoratorSatisfies
+                 { name_constraint = Matches (Re2.create_exn "d2"); arguments_constraint = None });
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo" })
+    ~expected:[ModelParser.ReturnAnnotation, source "Test"];
+  assert_applied_rules
+    ~source:
+      {|
+      @d1
+      class A:
+        def foo(): ...
+      @d2
+      class B:
+        def foo(): ...
+      @d3
+      class C:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            ParentConstraint
+              (DecoratorSatisfies
+                 { name_constraint = Matches (Re2.create_exn "4"); arguments_constraint = None });
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo" })
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+      @d1
+      class A:
+        def foo(): ...
+      @d2
+      class B:
+        def foo(): ...
+      @d1(1)
+      @d3
+      class C:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            ParentConstraint
+              (DecoratorSatisfies
+                 {
+                   name_constraint = Equals "test.d1";
+                   arguments_constraint =
+                     Some
+                       (ArgumentsConstraint.Contains
+                          [
+                            {
+                              Ast.Expression.Call.Argument.name = None;
+                              value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
+                            };
+                          ]);
+                 });
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo" })
+    ~expected:[];
+  assert_applied_rules
+    ~source:
+      {|
+      @d1
+      class A:
+        def foo(): ...
+      @d2
+      class B:
+        def foo(): ...
+      @d1(1)
+      @d3
+      class C:
+        def foo(): ...
+     |}
+    ~rule:
+      {
+        name = None;
+        query =
+          [
+            ParentConstraint
+              (DecoratorSatisfies
+                 {
+                   name_constraint = Matches (Re2.create_exn "d1");
+                   arguments_constraint =
+                     Some
+                       (ArgumentsConstraint.Contains
+                          [
+                            {
+                              Ast.Expression.Call.Argument.name = None;
+                              value = +Ast.Expression.(Expression.Constant (Constant.Integer 1));
+                            };
+                          ]);
+                 });
+          ];
+        productions = [ReturnTaint [TaintAnnotation (source "Test")]];
+        rule_kind = MethodModel;
+      }
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
 
   (* Test attribute models. *)

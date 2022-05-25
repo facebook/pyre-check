@@ -155,6 +155,20 @@ let matches_decorator_constraint ~name_constraint ~arguments_constraint decorato
   | Some decorator -> decorator_name_matches decorator && decorator_arguments_matches decorator
 
 
+let parent_matches_decorator_constraint
+    ~resolution
+    ~name_constraint
+    ~arguments_constraint
+    class_name
+  =
+  GlobalResolution.class_summary resolution (Type.Primitive class_name)
+  >>| Node.value
+  >>| (fun { decorators; _ } ->
+        List.exists decorators ~f:(fun decorator ->
+            matches_decorator_constraint ~name_constraint ~arguments_constraint decorator))
+  |> Option.value ~default:false
+
+
 let matches_annotation_constraint ~annotation_constraint ~annotation =
   let open Expression in
   match annotation_constraint, annotation with
@@ -218,7 +232,7 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
         callable_type)
   in
   match query_constraint with
-  | ModelQuery.DecoratorConstraint { name_constraint; arguments_constraint } -> (
+  | ModelQuery.AnyDecoratorConstraint { name_constraint; arguments_constraint } -> (
       match get_callable_type () with
       | Some
           {
@@ -277,6 +291,10 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
   | ModelQuery.ParentConstraint (Extends { class_name; is_transitive }) ->
       Target.class_name callable
       >>| is_ancestor ~resolution ~is_transitive class_name
+      |> Option.value ~default:false
+  | ModelQuery.ParentConstraint (DecoratorSatisfies { name_constraint; arguments_constraint }) ->
+      Target.class_name callable
+      >>| parent_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint
       |> Option.value ~default:false
   | _ -> failwith "impossible case"
 
@@ -555,6 +573,10 @@ let rec attribute_matches_constraint query_constraint ~resolution ~name ~annotat
   | ModelQuery.ParentConstraint (Extends { class_name; is_transitive }) ->
       attribute_class_name
       >>| is_ancestor ~resolution ~is_transitive class_name
+      |> Option.value ~default:false
+  | ModelQuery.ParentConstraint (DecoratorSatisfies { name_constraint; arguments_constraint }) ->
+      attribute_class_name
+      >>| parent_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint
       |> Option.value ~default:false
   | _ -> failwith "impossible case"
 

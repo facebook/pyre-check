@@ -4485,7 +4485,7 @@ let test_query_parsing context =
           name = None;
           query =
             [
-              DecoratorConstraint
+              AnyDecoratorConstraint
                 { name_constraint = Matches (Re2.create_exn "foo"); arguments_constraint = None };
             ];
           rule_kind = MethodModel;
@@ -4540,7 +4540,7 @@ let test_query_parsing context =
           name = Some "get_POST_annotated_sources";
           query =
             [
-              DecoratorConstraint
+              AnyDecoratorConstraint
                 {
                   name_constraint = Matches (Re2.create_exn "api_view");
                   arguments_constraint = None;

@@ -117,6 +117,14 @@ module Internal = struct
       [@@deriving compare, show]
     end
 
+    module DecoratorConstraint = struct
+      type t = {
+        name_constraint: name_constraint;
+        arguments_constraint: ArgumentsConstraint.t option;
+      }
+      [@@deriving compare, show]
+    end
+
     module ClassConstraint = struct
       type t =
         | NameSatisfies of name_constraint
@@ -124,17 +132,8 @@ module Internal = struct
             class_name: string;
             is_transitive: bool;
           }
-      [@@deriving compare]
-
-      let pp formatter class_constraint =
-        match class_constraint with
-        | NameSatisfies name_constraint ->
-            Format.fprintf formatter "NameSatisfies(%s)" (show_name_constraint name_constraint)
-        | Extends { class_name; is_transitive } ->
-            Format.fprintf formatter "Extends(%s, is_transitive=%b)" class_name is_transitive
-
-
-      let show = Format.asprintf "%a" pp
+        | DecoratorSatisfies of DecoratorConstraint.t
+      [@@deriving compare, show]
     end
 
     type model_constraint =
@@ -145,10 +144,7 @@ module Internal = struct
       | AnyOf of model_constraint list
       | AllOf of model_constraint list
       | ParentConstraint of ClassConstraint.t
-      | DecoratorConstraint of {
-          name_constraint: name_constraint;
-          arguments_constraint: ArgumentsConstraint.t option;
-        }
+      | AnyDecoratorConstraint of DecoratorConstraint.t
       | Not of model_constraint
     [@@deriving compare, show]
 
@@ -1380,7 +1376,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         | [{ Call.Argument.name = None; Call.Argument.value = decorator_name_constraint }], _ ->
             parse_name_constraint ~path ~location decorator_name_constraint
             >>= fun name_constraint ->
-            Ok (ModelQuery.DecoratorConstraint { name_constraint; arguments_constraint = None })
+            Ok (ModelQuery.AnyDecoratorConstraint { name_constraint; arguments_constraint = None })
         | ( [
               { Call.Argument.name = None; value = first_constraint };
               { Call.Argument.name = None; value = second_constraint };
@@ -1392,7 +1388,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
             with
             | Ok name_constraint, Ok arguments_constraint ->
                 Ok
-                  (ModelQuery.DecoratorConstraint
+                  (ModelQuery.AnyDecoratorConstraint
                      { name_constraint; arguments_constraint = Some arguments_constraint })
             | _ ->
                 parse_name_constraint ~path ~location second_constraint
@@ -1400,7 +1396,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
                 parse_arguments_constraint first_constraint
                 >>= fun arguments_constraint ->
                 Ok
-                  (ModelQuery.DecoratorConstraint
+                  (ModelQuery.AnyDecoratorConstraint
                      { name_constraint; arguments_constraint = Some arguments_constraint }))
         | _ ->
             Error
