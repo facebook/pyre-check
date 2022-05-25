@@ -9,7 +9,6 @@ from typing import List
 
 import testslide
 
-from ... import configuration
 from ...coverage_collector import FileCoverage
 from ...tests import setup
 from ..coverage import collect_coverage_for_paths, find_root_path
@@ -19,20 +18,14 @@ class CoverageTest(testslide.TestCase):
     def test_find_root(self) -> None:
         self.assertEqual(
             find_root_path(
-                configuration.Configuration(
-                    project_root="/root",
-                    dot_pyre_directory=Path("/irrelevant"),
-                    relative_local_root="local",
-                ),
+                local_root=Path("/root/local"),
                 working_directory=Path("/irrelevant"),
             ),
             Path("/root/local"),
         )
         self.assertEqual(
             find_root_path(
-                configuration.Configuration(
-                    project_root="/root", dot_pyre_directory=Path("/irrelevant")
-                ),
+                local_root=None,
                 working_directory=Path("/working/dir"),
             ),
             Path("/working/dir"),
