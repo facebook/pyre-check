@@ -51,8 +51,7 @@ let build_environment_data
         >>| (fun { Ast.SourcePath.is_external; _ } -> not is_external)
         |> Option.value ~default:false
       in
-      AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
-      |> AstEnvironment.UpdateResult.invalidated_modules
+      AnnotatedGlobalEnvironment.UpdateResult.invalidated_modules update_result
       |> List.filter ~f:is_not_external
     in
     global_environment, qualifiers

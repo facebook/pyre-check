@@ -90,9 +90,7 @@ let check
         ~integers:["size", Memory.heap_size ()]
         ();
 
-    ( type_environment,
-      AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result update_result
-      |> AstEnvironment.UpdateResult.invalidated_modules )
+    type_environment, AnnotatedGlobalEnvironment.UpdateResult.invalidated_modules update_result
   in
   let errors =
     Analysis.TypeCheck.legacy_run_on_modules

@@ -150,13 +150,11 @@ module UpdateResult : sig
 
   val locally_triggered_dependencies : t -> DependencyKey.RegisteredSet.t
 
-  val upstream : t -> AstEnvironment.UpdateResult.t
+  val invalidated_modules : t -> AstEnvironment.InvalidatedModules.t
 
   val all_triggered_dependencies : t -> DependencyKey.RegisteredSet.t list
 
   val unannotated_global_environment_update_result : t -> t
-
-  val ast_environment_update_result : t -> AstEnvironment.UpdateResult.t
 
   val read_only : t -> read_only
 end

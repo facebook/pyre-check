@@ -361,12 +361,8 @@ let get_and_preprocess_source
       create_source ~typecheck_flags ~source_path statements |> preprocessing
 
 
-module UpdateResult = struct
-  type t = { invalidated_modules: Reference.t list }
-
-  let invalidated_modules { invalidated_modules; _ } = invalidated_modules
-
-  let create_for_testing () = { invalidated_modules = [] }
+module InvalidatedModules = struct
+  type t = Reference.t list
 end
 
 type trigger =
@@ -395,7 +391,7 @@ let update
         |> List.filter ~f:SourcePath.is_in_project
         |> List.map ~f:SourcePath.qualifier)
       in
-      { UpdateResult.invalidated_modules }
+      invalidated_modules
   | Update module_updates -> (
       match incremental_style with
       | Configuration.Analysis.Shallow ->
@@ -461,7 +457,7 @@ let update
               (RawSources.KeySet.of_list invalidated_modules_before_preprocessing)
             |> RawSources.KeySet.elements
           in
-          { invalidated_modules })
+          invalidated_modules)
 
 
 (* Both `load` and `store` are no-ops here since `Sources` and `WildcardExports` are in shared

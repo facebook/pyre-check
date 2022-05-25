@@ -29,7 +29,7 @@ module type UpdateResultType = sig
     :  t ->
     UnannotatedGlobalEnvironment.UpdateResult.t
 
-  val ast_environment_update_result : t -> AstEnvironment.UpdateResult.t
+  val invalidated_modules : t -> AstEnvironment.InvalidatedModules.t
 end
 
 module type PreviousEnvironment = sig
@@ -78,9 +78,9 @@ module UpdateResult = struct
       PreviousEnvironment.UpdateResult.unannotated_global_environment_update_result upstream
 
 
-    let ast_environment_update_result previous =
+    let invalidated_modules previous =
       unannotated_global_environment_update_result previous
-      |> UnannotatedGlobalEnvironment.UpdateResult.upstream
+      |> UnannotatedGlobalEnvironment.UpdateResult.invalidated_modules
   end
 end
 

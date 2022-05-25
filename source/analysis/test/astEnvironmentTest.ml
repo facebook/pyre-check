@@ -112,7 +112,7 @@ let test_parse_stubs_modules_list context =
 
 
 let test_parse_source context =
-  let ast_environment, ast_environment_update_result =
+  let ast_environment, invalidated_modules =
     ScratchProject.setup
       ~context
       ~include_typeshed_stubs:false
@@ -121,8 +121,9 @@ let test_parse_source context =
   in
   let sources =
     let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-    AstEnvironment.UpdateResult.invalidated_modules ast_environment_update_result
-    |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
+    List.filter_map
+      invalidated_modules
+      ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
   in
   let handles =
     List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
@@ -187,13 +188,11 @@ let test_parse_sources context =
     in
     let module_tracker = Analysis.ModuleTracker.create configuration in
     let ast_environment = Analysis.AstEnvironment.create module_tracker in
-    let update_result = AstEnvironment.update ~scheduler ast_environment ColdStart in
+    let invalidated_modules = AstEnvironment.update ~scheduler ast_environment ColdStart in
     let sources =
-      AstEnvironment.UpdateResult.invalidated_modules update_result
-      |> List.filter_map
-           ~f:
-             (AstEnvironment.ReadOnly.get_processed_source
-                (AstEnvironment.read_only ast_environment))
+      List.filter_map
+        invalidated_modules
+        ~f:(AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment))
     in
     let sorted_handles =
       List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
@@ -212,7 +211,7 @@ let test_parse_sources context =
   let source_handles =
     write_file local_root "new_local.py";
     write_file stub_root "new_stub.pyi";
-    let update_result =
+    let invalidated_modules =
       ModuleTracker.update
         ~paths:
           [
@@ -224,11 +223,9 @@ let test_parse_sources context =
       |> AstEnvironment.update ~scheduler:(mock_scheduler ()) ast_environment
     in
     let sources =
-      AstEnvironment.UpdateResult.invalidated_modules update_result
-      |> List.filter_map
-           ~f:
-             (AstEnvironment.ReadOnly.get_processed_source
-                (AstEnvironment.read_only ast_environment))
+      List.filter_map
+        invalidated_modules
+        ~f:(AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment))
     in
     List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
   in
@@ -589,11 +586,12 @@ let test_parse_repository context =
     let actual =
       ScratchProject.setup ~context ~include_typeshed_stubs:false repository
       |> ScratchProject.parse_sources
-      |> fun (ast_environment, ast_environment_update_result) ->
+      |> fun (ast_environment, invalidated_modules) ->
       let sources =
         let ast_environment = Analysis.AstEnvironment.read_only ast_environment in
-        AstEnvironment.UpdateResult.invalidated_modules ast_environment_update_result
-        |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
+        List.filter_map
+          invalidated_modules
+          ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
       in
       List.map sources ~f:(fun ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) ->
           relative, source)
@@ -697,7 +695,7 @@ module IncrementalTest = struct
           ~in_memory:false
           old_sources
       in
-      let ast_environment, update_result = ScratchProject.parse_sources project in
+      let ast_environment, invalidated_modules = ScratchProject.parse_sources project in
       let read_only_environment = AstEnvironment.read_only ast_environment in
       (if force_load_external_sources then
          (* If we don't do this, external sources are ignored due to lazy loading *)
@@ -709,7 +707,7 @@ module IncrementalTest = struct
          List.iter external_setups ~f:load_source);
       if preprocess_all_sources then
         (* Preprocess invalidated modules (which are internal sources) *)
-        AstEnvironment.UpdateResult.invalidated_modules update_result
+        invalidated_modules
         |> List.iter ~f:(fun qualifier ->
                AstEnvironment.ReadOnly.get_processed_source
                  read_only_environment
@@ -722,7 +720,7 @@ module IncrementalTest = struct
     let paths = update_filesystem_state configuration in
     (* Compute the dependencies *)
     let module_tracker_updates = ModuleTracker.update ~paths module_tracker in
-    let update_result =
+    let invalidated_modules =
       AstEnvironment.update
         ~scheduler:(Test.mock_scheduler ())
         ast_environment
@@ -740,8 +738,7 @@ module IncrementalTest = struct
              (Reference.Set.sexp_of_t actual_set |> Sexp.to_string))
           false
     in
-    AstEnvironment.UpdateResult.invalidated_modules update_result
-    |> assert_parser_dependency expected_dependencies;
+    assert_parser_dependency expected_dependencies invalidated_modules;
 
     Memory.reset_shared_memory ()
 end
@@ -996,14 +993,15 @@ let test_ast_transformer context =
     let actual =
       ScratchProject.setup ~context ~include_typeshed_stubs:false repository
       |> ScratchProject.parse_sources
-      |> fun (ast_environment, ast_environment_update_result) ->
+      |> fun (ast_environment, invalidated_modules) ->
       let sources =
         let transformed_ast_environment =
           AstEnvironment.with_additional_preprocessing ~additional_preprocessing ast_environment
         in
         let ast_environment = Analysis.AstEnvironment.read_only transformed_ast_environment in
-        AstEnvironment.UpdateResult.invalidated_modules ast_environment_update_result
-        |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
+        List.filter_map
+          invalidated_modules
+          ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
       in
       List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; statements; _ } ->
           relative, statements)

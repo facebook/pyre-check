@@ -38,9 +38,8 @@ let recheck
       (Update module_updates)
   in
   let invalidated_modules =
-    AnnotatedGlobalEnvironment.UpdateResult.ast_environment_update_result
+    AnnotatedGlobalEnvironment.UpdateResult.invalidated_modules
       annotated_global_environment_update_result
-    |> AstEnvironment.UpdateResult.invalidated_modules
   in
   let recheck_modules, new_errors, total_rechecked_functions =
     match incremental_style with

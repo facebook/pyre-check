@@ -60,19 +60,15 @@ val load : ModuleTracker.t -> t
 
 val create : ?additional_preprocessing:(Source.t -> Source.t) -> ModuleTracker.t -> t
 
-module UpdateResult : sig
-  type t
-
-  val invalidated_modules : t -> Reference.t list
-
-  val create_for_testing : unit -> t
+module InvalidatedModules : sig
+  type t = Reference.t list
 end
 
 type trigger =
   | Update of ModuleTracker.IncrementalUpdate.t list
   | ColdStart
 
-val update : scheduler:Scheduler.t -> t -> trigger -> UpdateResult.t
+val update : scheduler:Scheduler.t -> t -> trigger -> InvalidatedModules.t
 
 val remove_sources : t -> Reference.t list -> unit
 

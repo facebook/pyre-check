@@ -29,7 +29,7 @@ module UpdateResult : sig
       :  t ->
       UnannotatedGlobalEnvironment.UpdateResult.t
 
-    val ast_environment_update_result : t -> AstEnvironment.UpdateResult.t
+    val invalidated_modules : t -> AstEnvironment.InvalidatedModules.t
   end
 end
 

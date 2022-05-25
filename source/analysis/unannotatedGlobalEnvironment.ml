@@ -346,19 +346,19 @@ module KeyTracker = struct
 
   let get_previous_keys_and_clear
       ({ class_keys; define_keys; unannotated_global_keys } as key_tracker)
-      modified_qualifiers
+      invalidated_modules
     =
-    let previous_classes_list = get_class_keys key_tracker modified_qualifiers in
-    let previous_defines_list = get_define_keys key_tracker modified_qualifiers in
+    let previous_classes_list = get_class_keys key_tracker invalidated_modules in
+    let previous_defines_list = get_define_keys key_tracker invalidated_modules in
     let previous_unannotated_globals_list =
-      get_unannotated_global_keys key_tracker modified_qualifiers
+      get_unannotated_global_keys key_tracker invalidated_modules
     in
     let previous_classes = Type.Primitive.Set.of_list previous_classes_list in
     let previous_defines = Reference.Set.of_list previous_defines_list in
     let previous_unannotated_globals = Reference.Set.of_list previous_unannotated_globals_list in
-    ClassKeys.KeySet.of_list modified_qualifiers |> ClassKeys.remove_batch class_keys;
-    DefineKeys.KeySet.of_list modified_qualifiers |> DefineKeys.remove_batch define_keys;
-    UnannotatedGlobalKeys.KeySet.of_list modified_qualifiers
+    ClassKeys.KeySet.of_list invalidated_modules |> ClassKeys.remove_batch class_keys;
+    DefineKeys.KeySet.of_list invalidated_modules |> DefineKeys.remove_batch define_keys;
+    UnannotatedGlobalKeys.KeySet.of_list invalidated_modules
     |> UnannotatedGlobalKeys.remove_batch unannotated_global_keys;
     PreviousKeys.
       {
@@ -1124,7 +1124,7 @@ module UpdateResult = struct
     define_additions: Reference.Set.t;
     previous_unannotated_globals: Reference.Set.t;
     triggered_dependencies: DependencyKey.RegisteredSet.t;
-    upstream: AstEnvironment.UpdateResult.t;
+    invalidated_modules: AstEnvironment.InvalidatedModules.t;
     read_only: ReadOnly.t;
   }
 
@@ -1144,11 +1144,9 @@ module UpdateResult = struct
 
   let all_triggered_dependencies environment = [locally_triggered_dependencies environment]
 
-  let upstream { upstream; _ } = upstream
+  let invalidated_modules { invalidated_modules; _ } = invalidated_modules
 
   let unannotated_global_environment_update_result = Fn.id
-
-  let ast_environment_update_result = upstream
 
   let read_only { read_only; _ } = read_only
 end
@@ -1158,7 +1156,7 @@ let update_this_and_all_preceding_environments
     ~scheduler
     trigger
   =
-  let upstream = AstEnvironment.update ~scheduler ast_environment trigger in
+  let invalidated_modules = AstEnvironment.update ~scheduler ast_environment trigger in
   let ast_environment = AstEnvironment.read_only ast_environment in
   let map sources =
     let register qualifier =
@@ -1168,7 +1166,6 @@ let update_this_and_all_preceding_environments
     in
     List.iter sources ~f:register
   in
-  let modified_qualifiers = AstEnvironment.UpdateResult.invalidated_modules upstream in
   let update () =
     SharedMemoryKeys.DependencyKey.Registry.collected_iter
       scheduler
@@ -1179,7 +1176,7 @@ let update_this_and_all_preceding_environments
            ~preferred_chunks_per_worker:5
            ())
       ~f:map
-      ~inputs:modified_qualifiers
+      ~inputs:invalidated_modules
   in
   let KeyTracker.PreviousKeys.
         {
@@ -1191,7 +1188,7 @@ let update_this_and_all_preceding_environments
           previous_unannotated_globals;
         }
     =
-    KeyTracker.get_previous_keys_and_clear key_tracker modified_qualifiers
+    KeyTracker.get_previous_keys_and_clear key_tracker invalidated_modules
   in
   match configuration environment with
   | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
@@ -1206,18 +1203,18 @@ let update_this_and_all_preceding_environments
                    ~previous_classes_list
                    ~previous_unannotated_globals_list
                    ~previous_defines_list
-                   ~previous_modules_list:modified_qualifiers
+                   ~previous_modules_list:invalidated_modules
               |> DependencyKey.Transaction.execute ~update
             in
             let current_classes =
-              KeyTracker.get_class_keys key_tracker modified_qualifiers
+              KeyTracker.get_class_keys key_tracker invalidated_modules
               |> Type.Primitive.Set.of_list
             in
             let current_defines =
-              KeyTracker.get_define_keys key_tracker modified_qualifiers |> Reference.Set.of_list
+              KeyTracker.get_define_keys key_tracker invalidated_modules |> Reference.Set.of_list
             in
             let current_unannotated_globals =
-              KeyTracker.get_unannotated_global_keys key_tracker modified_qualifiers
+              KeyTracker.get_unannotated_global_keys key_tracker invalidated_modules
               |> Reference.Set.of_list
             in
             let class_additions = Type.Primitive.Set.diff current_classes previous_classes in
@@ -1252,7 +1249,7 @@ let update_this_and_all_preceding_environments
         define_additions;
         previous_unannotated_globals;
         triggered_dependencies;
-        upstream;
+        invalidated_modules;
         read_only = read_only environment;
       }
   | _ ->
@@ -1266,7 +1263,7 @@ let update_this_and_all_preceding_environments
               ~previous_classes_list
               ~previous_unannotated_globals_list
               ~previous_defines_list
-              ~previous_modules_list:modified_qualifiers;
+              ~previous_modules_list:invalidated_modules;
             update ();
             DependencyKey.RegisteredSet.empty)
       in
@@ -1276,6 +1273,6 @@ let update_this_and_all_preceding_environments
         previous_defines;
         define_additions = Reference.Set.empty;
         triggered_dependencies;
-        upstream;
+        invalidated_modules;
         read_only = read_only environment;
       }
