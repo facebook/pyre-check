@@ -68,6 +68,7 @@ type kind =
   | InvalidArgumentsClause of Expression.t
   | InvalidNameClause of Expression.t
   | InvalidTypeAnnotationClause of Expression.t
+  | InvalidDecoratorClause of Expression.t
   | InvalidTaintAnnotation of {
       taint_annotation: Expression.t;
       reason: string;

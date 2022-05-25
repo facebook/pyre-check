@@ -1,0 +1,6 @@
+@generated
+Overrides
+model_query_parent_decorator.TestC_1::__init__ (override) -> [model_query_parent_decorator.TestC_1::__init__ (method)]
+model_query_parent_decorator.TestC_2::__init__ (override) -> [model_query_parent_decorator.TestC_2::__init__ (method)]
+model_query_parent_decorator.TestC_3::__init__ (override) -> [model_query_parent_decorator.TestC_3::__init__ (method)]
+type::__init__ (override) -> [model_query_parent_decorator.TestC_1::__init__ (override) model_query_parent_decorator.TestC_2::__init__ (override) model_query_parent_decorator.TestC_3::__init__ (override) type::__init__ (method)]

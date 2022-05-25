@@ -4468,6 +4468,61 @@ let test_query_parsing context =
         };
       ]
     ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     find = "methods",
+     where = parent.decorator(name.matches("foo.*")),
+     model = [Returns([TaintSource[Test], TaintSink[Test]])]
+    )
+  |}
+    ~expect:
+      [
+        {
+          name = None;
+          query =
+            [
+              ParentConstraint
+                (DecoratorSatisfies
+                   {
+                     name_constraint = Matches (Re2.create_exn "foo.*");
+                     arguments_constraint = None;
+                   });
+            ];
+          rule_kind = MethodModel;
+          productions =
+            [
+              ReturnTaint
+                [
+                  TaintAnnotation
+                    (ModelParser.Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         via_features = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                         trace_length = None;
+                       });
+                  TaintAnnotation
+                    (ModelParser.Sink
+                       {
+                         sink = Sinks.NamedSink "Test";
+                         breadcrumbs = [];
+                         via_features = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                         trace_length = None;
+                       });
+                ];
+            ];
+        };
+      ]
+    ();
 
   assert_queries
     ~context

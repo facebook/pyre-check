@@ -1,0 +1,16 @@
+ModelQuery(
+  find = "methods",
+  where = [
+    parent.matches("TestC"),
+    parent.extends("model_query_parent_decorator.TestC", is_transitive=True),
+    Not(parent.equals("model_query_parent_decorator.TestC")),
+    name.matches("__init__$"),
+    parent.decorator(name.matches("d1"))
+  ],
+  model = [
+    Parameters(TaintSource[Test], where=[
+        Not(name.equals("self")),
+        Not(name.equals("baz"))
+    ])
+  ]
+)
