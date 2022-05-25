@@ -2670,13 +2670,15 @@ let mock_scheduler () =
   Scheduler.create_sequential ()
 
 
-let update_environments ?(scheduler = mock_scheduler ()) ~ast_environment ast_environment_trigger =
-  let environment = AnnotatedGlobalEnvironment.create ast_environment in
-  ( environment,
-    AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-      environment
-      ~scheduler
-      ast_environment_trigger )
+let update_environments
+    ?(scheduler = mock_scheduler ())
+    ~annotated_global_environment
+    ast_environment_trigger
+  =
+  AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
+    annotated_global_environment
+    ~scheduler
+    ast_environment_trigger
 
 
 let cold_start_environments ?(scheduler = mock_scheduler ()) ~ast_environment () =

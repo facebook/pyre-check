@@ -130,10 +130,10 @@ let test_updates context =
     let { ScratchProject.module_tracker; _ } = project in
     let { Configuration.Analysis.local_root; _ } = configuration in
     let path = PyrePath.Built.create_relative ~root:local_root ~relative:"test.py" in
-    let _, update_result =
+    let update_result =
       ModuleTracker.update ~paths:[path] module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
-      |> update_environments ~ast_environment
+      |> update_environments ~annotated_global_environment
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set

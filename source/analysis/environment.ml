@@ -214,10 +214,11 @@ module EnvironmentTable = struct
       upstream_environment: In.PreviousEnvironment.t;
     }
 
-    let base_table = Table.create ()
-
     let create ast_environment =
-      { table = base_table; upstream_environment = In.PreviousEnvironment.create ast_environment }
+      {
+        table = Table.create ();
+        upstream_environment = In.PreviousEnvironment.create ast_environment;
+      }
 
 
     let ast_environment { upstream_environment; _ } =

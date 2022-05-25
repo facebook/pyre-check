@@ -428,9 +428,8 @@ let test_register_implicit_submodules context =
 
 
 let test_register_globals context =
-  let environment = create_readonly_environment ~context () in
-  let resolution = GlobalResolution.create environment in
-  let assert_global reference expected =
+  let assert_global_with_environment ~environment reference expected =
+    let resolution = GlobalResolution.create environment in
     let actual =
       !&reference
       |> GlobalResolution.global resolution
@@ -444,32 +443,36 @@ let test_register_globals context =
       expected
       actual
   in
-  populate
-    ~context
-    [
-      ( "qualifier.py",
-        {|
-        with_join = 1 or 'asdf'
-        with_resolve = with_join
-        annotated: int = 1
-        unannotated = 'string'
-        stub: int = ...
-        class Class: ...
-        if True:
-          in_branch: int = 1
-        else:
-          in_branch: int = 2
+  let assert_global =
+    let environment =
+      populate
+        ~context
+        [
+          ( "qualifier.py",
+            {|
+              with_join = 1 or 'asdf'
+              with_resolve = with_join
+              annotated: int = 1
+              unannotated = 'string'
+              stub: int = ...
+              class Class: ...
+              if True:
+                in_branch: int = 1
+              else:
+                in_branch: int = 2
 
-        identifier = Class()
-        identifier.access: int = 1
-        identifier().attribute: int = 1
+              identifier = Class()
+              identifier.access: int = 1
+              identifier().attribute: int = 1
 
-        class Foo:
-          attribute: int = 1
-      |}
-      );
-    ]
-  |> ignore;
+              class Foo:
+                attribute: int = 1
+            |}
+          );
+        ]
+    in
+    assert_global_with_environment ~environment
+  in
   assert_global "qualifier.undefined" None;
   assert_global "qualifier.with_join" (Some (Type.union [Type.integer; Type.string]));
   assert_global "qualifier.with_resolve" (Some Type.Any);
@@ -481,30 +484,42 @@ let test_register_globals context =
   assert_global "qualifier.identifier.access" None;
   assert_global "qualifier.identifier().access" None;
   assert_global "Foo.attribute" None;
-  populate
-    ~context
-    [
-      ( "test.py",
-        {|
-        class Class: ...
-        alias = Class
+  let assert_global =
+    let environment =
+      populate
+        ~context
+        [
+          ( "test.py",
+            {|
+              class Class: ...
+              alias = Class
 
-        GLOBAL: Class = ...
-        GLOBAL2: alias = ...
-      |}
-      );
-    ]
-  |> ignore;
+              GLOBAL: Class = ...
+              GLOBAL2: alias = ...
+            |}
+          );
+        ]
+    in
+    assert_global_with_environment ~environment
+  in
   assert_global "test.GLOBAL" (Some (Type.Primitive "test.Class"));
   assert_global "test.GLOBAL2" (Some (Type.Primitive "test.Class"));
-  populate
-    ~context
-    ["tuples.py", {|
-        def f():
-          return 7, 8
-        y, z = f()
-        |}]
-  |> ignore;
+  let assert_global =
+    let environment =
+      populate
+        ~context
+        [
+          ( "tuples.py",
+            {|
+              def f():
+                return 7, 8
+              y, z = f()
+            |}
+          );
+        ]
+    in
+    assert_global_with_environment ~environment
+  in
   assert_global "tuples.y" (Some Type.Top);
   assert_global "tuples.z" (Some Type.Top);
   ()
@@ -1224,7 +1239,7 @@ let test_remove_extra_edges_to_object context =
 
 let test_update_and_compute_dependencies context =
   (* Pre-test setup *)
-  let environment, project =
+  let annotated_global_environment, project =
     create_environments_and_project
       ~context
       ~additional_sources:
@@ -1236,7 +1251,7 @@ let test_update_and_compute_dependencies context =
       ~in_memory:false
       ()
   in
-  let readonly_environment = AnnotatedGlobalEnvironment.read_only environment in
+  let readonly_environment = AnnotatedGlobalEnvironment.read_only annotated_global_environment in
   let dependency_A =
     SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "A"))
   in
@@ -1281,15 +1296,17 @@ let test_update_and_compute_dependencies context =
       delete_file project "source.py";
       let repopulate_source_to = Option.value repopulate_source_to ~default:"" in
       add_file project repopulate_source_to ~relative:"source.py";
-      let _, update_result =
+      let update_result =
         let { ScratchProject.configuration; _ } = project in
         let { Configuration.Analysis.local_root; _ } = configuration in
         let path = PyrePath.Built.create_relative ~root:local_root ~relative:"source.py" in
-        let ast_environment = AnnotatedGlobalEnvironment.ast_environment environment in
+        let ast_environment =
+          AnnotatedGlobalEnvironment.ast_environment annotated_global_environment
+        in
         let module_tracker = AstEnvironment.module_tracker ast_environment in
         ModuleTracker.update ~paths:[path] module_tracker
         |> (fun updates -> AstEnvironment.Update updates)
-        |> update_environments ~ast_environment
+        |> update_environments ~annotated_global_environment
       in
       AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
       |> List.fold

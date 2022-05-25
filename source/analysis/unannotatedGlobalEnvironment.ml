@@ -469,27 +469,13 @@ module ReadWrite = struct
     ast_environment: AstEnvironment.t;
   }
 
-  (* For the moment, all base environments need to use the same first-class tables because otherwise
-     the SharedMemory hash tables will leak memory rather than reusing the same memory in each test.
-     In production we never create multiple base environments, so this restriction is specific to
-     tests where we reuse the same shared memory repeatedly. *)
-  let base_key_tracker = KeyTracker.create ()
-
-  let base_modules = Modules.create ()
-
-  let base_class_summaries = ClassSummaries.create ()
-
-  let base_function_definitions = FunctionDefinitions.create ()
-
-  let base_unannotated_globals = UnannotatedGlobals.create ()
-
   let create ast_environment =
     {
-      key_tracker = base_key_tracker;
-      modules = base_modules;
-      class_summaries = base_class_summaries;
-      function_definitions = base_function_definitions;
-      unannotated_globals = base_unannotated_globals;
+      key_tracker = KeyTracker.create ();
+      modules = Modules.create ();
+      class_summaries = ClassSummaries.create ();
+      function_definitions = FunctionDefinitions.create ();
+      unannotated_globals = UnannotatedGlobals.create ();
       ast_environment;
     }
 
