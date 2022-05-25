@@ -442,6 +442,52 @@ ModelQuery(
 
 This query will model `C.x`, `D.y` and `E.z`.
 
+### `parent.decorator` clause
+
+The `parent.decorator` clause is used to specify constraints on a class decorator, so you can choose to model entities on classes only if the class it is part of has the specified decorator.
+
+The arguments for this clause are identical to the non-class constraint `Decorator`, for more information, please see the [`Decorator` clauses](#decorator-clauses) section.
+
+Example:
+
+```python
+ModelQuery(
+  find = "methods",
+  where = [
+    parent.decorator(
+      name.matches("d1"),
+      arguments.contains(2)
+    ),
+    name.matches("\.__init__$)
+  ],
+  model = [
+    Parameters(TaintSource[Test], where=[
+        Not(name.equals("self")),
+        Not(name.equals("a"))
+    ])
+  ]
+)
+```
+
+For example, the above query when run on the following code:
+```python
+@d1(2)
+class Foo:
+  def __init__(self, a, b):
+     ...
+
+@d1()
+class Bar:
+  def __init(self, a, b):
+    ...
+
+@d2(2)
+class Baz:
+  def __init(self, a, b):
+    ...
+```
+will result in a model for `def Foo.__init__(b: TaintSource[Test])`.
+
 ### `Not` clauses
 
 The `Not` clause negates any existing clause that is valid for the entity being modelled.
