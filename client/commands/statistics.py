@@ -220,40 +220,11 @@ def aggregate_statistics(
     }
 
     for statistics_data in data.values():
-        aggregate_annotations["return_count"] += len(
-            statistics_data.annotations.total_returns
+        annotation_counts = collectors.AnnotationCountCollector.get_result_counts(
+            statistics_data.annotations
         )
-        aggregate_annotations["annotated_return_count"] += len(
-            statistics_data.annotations.annotated_returns
-        )
-        aggregate_annotations["globals_count"] += len(
-            statistics_data.annotations.total_globals
-        )
-        aggregate_annotations["annotated_globals_count"] += len(
-            statistics_data.annotations.annotated_globals
-        )
-        aggregate_annotations["parameter_count"] += len(
-            statistics_data.annotations.total_parameters
-        )
-        aggregate_annotations["annotated_parameter_count"] += len(
-            statistics_data.annotations.annotated_parameters
-        )
-        aggregate_annotations["attribute_count"] += len(
-            statistics_data.annotations.total_attributes
-        )
-        aggregate_annotations["annotated_attribute_count"] += len(
-            statistics_data.annotations.annotated_attributes
-        )
-        aggregate_annotations["function_count"] += len(
-            statistics_data.annotations.total_functions
-        )
-        aggregate_annotations["partially_annotated_function_count"] += len(
-            statistics_data.annotations.partially_annotated_functions
-        )
-        aggregate_annotations["fully_annotated_function_count"] += len(
-            statistics_data.annotations.fully_annotated_functions
-        )
-        aggregate_annotations["line_count"] += statistics_data.annotations.line_count
+        for key in aggregate_annotations.keys():
+            aggregate_annotations[key] += annotation_counts[key]
 
     return AggregatedStatisticsData(
         annotations=aggregate_annotations,

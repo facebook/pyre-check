@@ -331,6 +331,25 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
             ],
         )
 
+    @staticmethod
+    def get_result_counts(result: ModuleAnnotationCount) -> Dict[str, int]:
+        return {
+            "return_count": len(result.total_returns),
+            "annotated_return_count": len(result.annotated_returns),
+            "globals_count": len(result.total_globals),
+            "annotated_globals_count": len(result.annotated_globals),
+            "parameter_count": len(result.total_parameters),
+            "annotated_parameter_count": len(result.annotated_parameters),
+            "attribute_count": len(result.total_attributes),
+            "annotated_attribute_count": len(result.annotated_attributes),
+            "function_count": len(result.total_functions),
+            "partially_annotated_function_count": len(
+                result.partially_annotated_functions
+            ),
+            "fully_annotated_function_count": len(result.fully_annotated_functions),
+            "line_count": result.line_count,
+        }
+
     def build_json(self) -> Dict[str, int]:
         return {
             "return_count": self.return_count(),

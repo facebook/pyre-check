@@ -59,10 +59,13 @@ class AnnotationCollectorTest(unittest.TestCase):
 
 class AnnotationCountCollectorTest(unittest.TestCase):
     def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
-        source_module = MetadataWrapper(parse_source(source))
         collector = AnnotationCountCollector()
+        source_module = MetadataWrapper(parse_source(source))
         source_module.visit(collector)
-        self.assertDictEqual(collector.build_json(), expected)
+        result = collector.build_result()
+        self.assertDictEqual(
+            expected, AnnotationCountCollector.get_result_counts(result)
+        )
 
     def test_count_annotations(self) -> None:
         self.assert_counts(
