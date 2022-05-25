@@ -1151,12 +1151,11 @@ module UpdateResult = struct
   let read_only { read_only; _ } = read_only
 end
 
-let update_this_and_all_preceding_environments
+let update_invalidated_modules
     ({ ast_environment; key_tracker; _ } as environment)
     ~scheduler
-    trigger
+    invalidated_modules
   =
-  let invalidated_modules = AstEnvironment.update ~scheduler ast_environment trigger in
   let ast_environment = AstEnvironment.read_only ast_environment in
   let map sources =
     let register qualifier =
@@ -1190,89 +1189,98 @@ let update_this_and_all_preceding_environments
     =
     KeyTracker.get_previous_keys_and_clear key_tracker invalidated_modules
   in
+  let define_additions, triggered_dependencies =
+    Profiling.track_duration_and_shared_memory_with_dynamic_tags
+      "TableUpdate(Unannotated globals)"
+      ~f:(fun _ ->
+        let (), mutation_triggers =
+          DependencyKey.Transaction.empty ~scheduler
+          |> add_to_transaction
+               environment
+               ~previous_classes_list
+               ~previous_unannotated_globals_list
+               ~previous_defines_list
+               ~previous_modules_list:invalidated_modules
+          |> DependencyKey.Transaction.execute ~update
+        in
+        let current_classes =
+          KeyTracker.get_class_keys key_tracker invalidated_modules |> Type.Primitive.Set.of_list
+        in
+        let current_defines =
+          KeyTracker.get_define_keys key_tracker invalidated_modules |> Reference.Set.of_list
+        in
+        let current_unannotated_globals =
+          KeyTracker.get_unannotated_global_keys key_tracker invalidated_modules
+          |> Reference.Set.of_list
+        in
+        let class_additions = Type.Primitive.Set.diff current_classes previous_classes in
+        let define_additions = Reference.Set.diff current_defines previous_defines in
+        let unannotated_global_additions =
+          Reference.Set.diff current_unannotated_globals previous_unannotated_globals
+        in
+        let addition_triggers =
+          get_all_dependents
+            ~class_additions:(Set.to_list class_additions)
+            ~unannotated_global_additions:(Set.to_list unannotated_global_additions)
+            ~define_additions:(Set.to_list define_additions)
+        in
+        let triggered_dependencies =
+          DependencyKey.RegisteredSet.union addition_triggers mutation_triggers
+        in
+        let tags () =
+          let triggered_dependencies_size =
+            SharedMemoryKeys.DependencyKey.RegisteredSet.cardinal triggered_dependencies
+            |> Format.sprintf "%d"
+          in
+          [
+            "phase_name", "Global discovery";
+            "number_of_triggered_dependencies", triggered_dependencies_size;
+          ]
+        in
+        { Profiling.result = define_additions, triggered_dependencies; tags })
+  in
+  {
+    UpdateResult.previous_classes;
+    previous_defines;
+    define_additions;
+    previous_unannotated_globals;
+    triggered_dependencies;
+    invalidated_modules;
+    read_only = read_only environment;
+  }
+
+
+let cold_start ({ ast_environment; key_tracker; _ } as environment) ~scheduler =
+  (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
+  let invalidated_modules =
+    Reference.empty
+    :: (AstEnvironment.read_only ast_environment |> AstEnvironment.ReadOnly.project_qualifiers)
+  in
+
+  let KeyTracker.PreviousKeys.
+        { previous_classes_list; previous_defines_list; previous_unannotated_globals_list; _ }
+    =
+    KeyTracker.get_previous_keys_and_clear key_tracker invalidated_modules
+  in
+  direct_data_purge
+    environment
+    ~previous_classes_list
+    ~previous_unannotated_globals_list
+    ~previous_defines_list
+    ~previous_modules_list:invalidated_modules;
+  update_invalidated_modules environment ~scheduler invalidated_modules
+
+
+let update_this_and_all_preceding_environments
+    ({ ast_environment; _ } as environment)
+    ~scheduler
+    trigger
+  =
   match configuration environment with
   | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
-      let define_additions, triggered_dependencies =
-        Profiling.track_duration_and_shared_memory_with_dynamic_tags
-          "TableUpdate(Unannotated globals)"
-          ~f:(fun _ ->
-            let (), mutation_triggers =
-              DependencyKey.Transaction.empty ~scheduler
-              |> add_to_transaction
-                   environment
-                   ~previous_classes_list
-                   ~previous_unannotated_globals_list
-                   ~previous_defines_list
-                   ~previous_modules_list:invalidated_modules
-              |> DependencyKey.Transaction.execute ~update
-            in
-            let current_classes =
-              KeyTracker.get_class_keys key_tracker invalidated_modules
-              |> Type.Primitive.Set.of_list
-            in
-            let current_defines =
-              KeyTracker.get_define_keys key_tracker invalidated_modules |> Reference.Set.of_list
-            in
-            let current_unannotated_globals =
-              KeyTracker.get_unannotated_global_keys key_tracker invalidated_modules
-              |> Reference.Set.of_list
-            in
-            let class_additions = Type.Primitive.Set.diff current_classes previous_classes in
-            let define_additions = Reference.Set.diff current_defines previous_defines in
-            let unannotated_global_additions =
-              Reference.Set.diff current_unannotated_globals previous_unannotated_globals
-            in
-            let addition_triggers =
-              get_all_dependents
-                ~class_additions:(Set.to_list class_additions)
-                ~unannotated_global_additions:(Set.to_list unannotated_global_additions)
-                ~define_additions:(Set.to_list define_additions)
-            in
-            let triggered_dependencies =
-              DependencyKey.RegisteredSet.union addition_triggers mutation_triggers
-            in
-            let tags () =
-              let triggered_dependencies_size =
-                SharedMemoryKeys.DependencyKey.RegisteredSet.cardinal triggered_dependencies
-                |> Format.sprintf "%d"
-              in
-              [
-                "phase_name", "Global discovery";
-                "number_of_triggered_dependencies", triggered_dependencies_size;
-              ]
-            in
-            { Profiling.result = define_additions, triggered_dependencies; tags })
-      in
-      {
-        UpdateResult.previous_classes;
-        previous_defines;
-        define_additions;
-        previous_unannotated_globals;
-        triggered_dependencies;
-        invalidated_modules;
-        read_only = read_only environment;
-      }
+      AstEnvironment.update ~scheduler ast_environment trigger
+      |> update_invalidated_modules environment ~scheduler
   | _ ->
-      let triggered_dependencies =
-        Profiling.track_duration_and_shared_memory
-          "LegacyTableUpdate(Unannotated globals)"
-          ~tags:["phase_name", "global discovery"]
-          ~f:(fun _ ->
-            direct_data_purge
-              environment
-              ~previous_classes_list
-              ~previous_unannotated_globals_list
-              ~previous_defines_list
-              ~previous_modules_list:invalidated_modules;
-            update ();
-            DependencyKey.RegisteredSet.empty)
-      in
-      {
-        UpdateResult.previous_classes;
-        previous_unannotated_globals;
-        previous_defines;
-        define_additions = Reference.Set.empty;
-        triggered_dependencies;
-        invalidated_modules;
-        read_only = read_only environment;
-      }
+      (* We'll remove this branch in the next commit, but we know (because AstEnvironment enforces
+         it) that a Shallow mode update can only happen on cold start *)
+      cold_start environment ~scheduler

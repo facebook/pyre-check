@@ -159,6 +159,8 @@ module UpdateResult : sig
   val read_only : t -> read_only
 end
 
+val cold_start : t -> scheduler:Scheduler.t -> UpdateResult.t
+
 val update_this_and_all_preceding_environments
   :  t ->
   scheduler:Scheduler.t ->
