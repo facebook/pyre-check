@@ -1768,8 +1768,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | UnaryOperator { operator = _; operand } ->
         analyze_expression ~resolution ~taint ~state ~expression:operand
     | WalrusOperator { target; value } ->
+        let state = analyze_assignment ~resolution ~target ~value state in
         analyze_expression ~resolution ~taint ~state ~expression:value
-        |> fun state -> analyze_expression ~resolution ~taint ~state ~expression:target
     | Yield None -> state
     | Yield (Some expression)
     | YieldFrom expression ->
