@@ -138,8 +138,6 @@ module EnvironmentTable = struct
       dependency:SharedMemoryKeys.DependencyKey.registered option ->
       Value.t
 
-    val all_keys : UnannotatedGlobalEnvironment.ReadOnly.t -> Key.t list
-
     val serialize_value : Value.t -> string
 
     val show_key : Key.t -> string

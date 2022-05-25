@@ -157,11 +157,6 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
   let legacy_invalidated_keys = UnannotatedGlobalEnvironment.UpdateResult.previous_classes
 
-  let all_keys unannotated_global_environment =
-    UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
-    |> List.map ~f:IndexTracker.index
-
-
   let decode_target { ClassHierarchy.Target.target; parameters } =
     Format.asprintf
       "%s[%a]"

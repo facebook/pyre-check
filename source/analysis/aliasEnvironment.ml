@@ -354,11 +354,6 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
     UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals upstream_update
 
 
-  let all_keys unannotated_global_environment =
-    UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals unannotated_global_environment
-    |> List.map ~f:Reference.show
-
-
   let serialize_value = function
     | Some alias -> Type.show_alias alias
     | None -> "None"

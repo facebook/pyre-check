@@ -116,8 +116,6 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
 
   let legacy_invalidated_keys = UnannotatedGlobalEnvironment.UpdateResult.previous_classes
 
-  let all_keys = UnannotatedGlobalEnvironment.ReadOnly.all_classes
-
   let serialize_value = function
     | Some
         {

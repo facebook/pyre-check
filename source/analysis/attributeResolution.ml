@@ -4816,8 +4816,6 @@ module GlobalAnnotationCache = struct
       List.fold ~init:previous_unannotated_globals ~f:Set.add previous_classes
 
 
-    let all_keys = UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
-
     let show_key = Reference.show
 
     module PreviousEnvironment = AttributeCache

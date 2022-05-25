@@ -68,12 +68,6 @@ module Make (In : In) = struct
        legacy-style invalidate in the way this interface is designed to do *)
     let legacy_invalidated_keys _ = KeySet.empty
 
-    (* All of these functions are used for the shared memory debugging functionality. They all rely
-       on the ability to exhaustively list your keys, which is doable for traditional environments,
-       but the idea of a managed cache is using this for situations where the keys are not known
-       ahead of time. For now we'll just ignore this debugging stuff, and maybe return to it later. *)
-    let all_keys _ = []
-
     let serialize_value _ = "Not used"
 
     let show_key _ = "Not used"
@@ -96,7 +90,7 @@ module Make (In : In) = struct
           UnmanagedCache.clear ()
     in
     (* In both cases we need to produce a UpdateResult, but in the legacy case this will be a
-       basically a no-op because of all_keys = []. *)
+       basically a no-op because of legacy_invalidate_keys = []. *)
     update_this_and_all_preceding_environments this_environment ~scheduler
 
 
