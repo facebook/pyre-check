@@ -2679,6 +2679,12 @@ let update_environments ?(scheduler = mock_scheduler ()) ~ast_environment ast_en
       ast_environment_trigger )
 
 
+let cold_start_environments ?(scheduler = mock_scheduler ()) ~ast_environment () =
+  let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
+  let _ = AnnotatedGlobalEnvironment.cold_start annotated_global_environment ~scheduler in
+  annotated_global_environment
+
+
 module ScratchProject = struct
   type t = {
     context: test_ctxt;
@@ -2841,9 +2847,10 @@ module ScratchProject = struct
 
   let build_global_environment project =
     let ast_environment = build_ast_environment project in
-    let global_environment, update_result = update_environments ~ast_environment ColdStart in
+    let global_environment = cold_start_environments ~ast_environment () in
     let sources =
-      AnnotatedGlobalEnvironment.UpdateResult.invalidated_modules update_result
+      AnnotatedGlobalEnvironment.read_only global_environment
+      |> AnnotatedGlobalEnvironment.ReadOnly.project_qualifiers
       |> List.filter_map
            ~f:
              (AstEnvironment.ReadOnly.get_processed_source

@@ -19,13 +19,10 @@ let test_simple_registration context =
     in
     let ast_environment = ScratchProject.build_ast_environment project in
     let class_metadata_environment = ClassMetadataEnvironment.create ast_environment in
-    let update_result =
-      ClassMetadataEnvironment.update_this_and_all_preceding_environments
-        class_metadata_environment
-        ~scheduler:(mock_scheduler ())
-        ColdStart
+    let read_only =
+      ClassMetadataEnvironment.cold_start ~scheduler:(mock_scheduler ()) class_metadata_environment
+      |> ClassMetadataEnvironment.UpdateResult.read_only
     in
-    let read_only = ClassMetadataEnvironment.UpdateResult.read_only update_result in
     let printer v =
       v >>| ClassMetadataEnvironment.show_class_metadata |> Option.value ~default:"none"
     in
@@ -139,17 +136,12 @@ let test_updates context =
         ~context
     in
     let ast_environment = ScratchProject.build_ast_environment project in
-    let class_metadata_environment = ClassMetadataEnvironment.create ast_environment in
     let configuration = ScratchProject.configuration_of project in
-    let update trigger =
-      let scheduler = Test.mock_scheduler () in
-      ClassMetadataEnvironment.update_this_and_all_preceding_environments
-        class_metadata_environment
-        ~scheduler
-        trigger
+    let class_metadata_environment = ClassMetadataEnvironment.create ast_environment in
+    let read_only =
+      ClassMetadataEnvironment.cold_start ~scheduler:(mock_scheduler ()) class_metadata_environment
+      |> ClassMetadataEnvironment.UpdateResult.read_only
     in
-    let update_result = update ColdStart in
-    let read_only = ClassMetadataEnvironment.UpdateResult.read_only update_result in
     let execute_action (class_name, dependency, expectation) =
       let printer v =
         v >>| ClassMetadataEnvironment.show_class_metadata |> Option.value ~default:"none"
@@ -184,7 +176,9 @@ let test_updates context =
       in
       ModuleTracker.update ~paths module_tracker
       |> (fun updates -> AstEnvironment.Update updates)
-      |> update
+      |> ClassMetadataEnvironment.update_this_and_all_preceding_environments
+           class_metadata_environment
+           ~scheduler:(Test.mock_scheduler ())
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set

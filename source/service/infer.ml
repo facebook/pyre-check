@@ -31,31 +31,17 @@ let build_environment_data
 
   let module_tracker = ModuleTracker.create configuration in
   let ast_environment = AstEnvironment.create module_tracker in
-  let global_environment, qualifiers =
+  let global_environment =
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
-    let update_result =
-      let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
-      AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        annotated_global_environment
-        ~scheduler
-        ColdStart
-    in
-    let global_environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
+    let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
+    let _ = AnnotatedGlobalEnvironment.cold_start annotated_global_environment ~scheduler in
     Statistics.performance ~name:"full environment built" ~timer ();
-    let qualifiers =
-      let is_not_external qualifier =
-        let ast_environment = AstEnvironment.read_only ast_environment in
-        AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
-        >>| (fun { Ast.SourcePath.is_external; _ } -> not is_external)
-        |> Option.value ~default:false
-      in
-      AnnotatedGlobalEnvironment.UpdateResult.invalidated_modules update_result
-      |> List.filter ~f:is_not_external
-    in
-    global_environment, qualifiers
+    AnnotatedGlobalEnvironment.read_only annotated_global_environment
   in
+
+  let qualifiers = AnnotatedGlobalEnvironment.ReadOnly.project_qualifiers global_environment in
   { global_environment; qualifiers }
 
 

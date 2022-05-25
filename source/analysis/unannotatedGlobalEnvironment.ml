@@ -1276,11 +1276,5 @@ let update_this_and_all_preceding_environments
     ~scheduler
     trigger
   =
-  match configuration environment with
-  | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
-      AstEnvironment.update ~scheduler ast_environment trigger
-      |> update_invalidated_modules environment ~scheduler
-  | _ ->
-      (* We'll remove this branch in the next commit, but we know (because AstEnvironment enforces
-         it) that a Shallow mode update can only happen on cold start *)
-      cold_start environment ~scheduler
+  AstEnvironment.update ~scheduler ast_environment trigger
+  |> update_invalidated_modules environment ~scheduler

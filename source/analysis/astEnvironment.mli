@@ -66,9 +66,7 @@ module InvalidatedModules : sig
   type t = Reference.t list
 end
 
-type trigger =
-  | Update of ModuleTracker.IncrementalUpdate.t list
-  | ColdStart
+type trigger = Update of ModuleTracker.IncrementalUpdate.t list
 
 val update : scheduler:Scheduler.t -> t -> trigger -> InvalidatedModules.t
 

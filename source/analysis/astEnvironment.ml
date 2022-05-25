@@ -365,95 +365,80 @@ module InvalidatedModules = struct
   type t = Reference.t list
 end
 
-type trigger =
-  | Update of ModuleTracker.IncrementalUpdate.t list
-  | ColdStart
+type trigger = Update of ModuleTracker.IncrementalUpdate.t list
 
 let update
     ~scheduler
     ({ raw_sources; module_tracker = upstream_tracker; _ } as ast_environment)
-    trigger
+    (Update module_updates)
   =
   let module_tracker = ModuleTracker.read_only upstream_tracker in
   let { Configuration.Analysis.incremental_style; _ } =
     ModuleTracker.ReadOnly.configuration module_tracker
   in
-  match trigger with
-  | ColdStart ->
-      (* The one external module we want to try to force load is `builtins.pyi`. This improves
-         performance later and also will prevent problems with lazy qualifier lookups if, in the
-         future, there are ever nested classes in builtins. *)
-      let _ = LazyRawSources.load ~ast_environment Reference.empty in
+  match incremental_style with
+  | Configuration.Analysis.Shallow ->
+      failwith "We never use Shallow incremental_style to do incremental updates."
+  | Configuration.Analysis.FineGrained ->
+      let changed_source_paths, removed_modules, new_implicits =
+        let categorize = function
+          | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
+          | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
+          | ModuleTracker.IncrementalUpdate.NewImplicit qualifier -> `Trd qualifier
+        in
+        List.partition3_map module_updates ~f:categorize
+      in
+      (* We only want to eagerly reparse sources that have been cached. We have to also invalidate
+         sources that are now deleted or changed from explicit to implicit. *)
+      let reparse_source_paths =
+        List.filter changed_source_paths ~f:(fun { SourcePath.qualifier; _ } ->
+            RawSources.mem raw_sources qualifier)
+      in
+      let reparse_modules =
+        reparse_source_paths |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+      in
+      let modules_with_invalidated_raw_source =
+        List.concat [removed_modules; new_implicits; reparse_modules]
+      in
+      (* Because type checking relies on AstEnvironment.UpdateResult.invalidated_modules to
+         determine which files require re-type-checking, we have to include all new non-external
+         modules, even though they don't really require us to update data in the push phase, or else
+         they'll never be checked. *)
+      let reparse_modules_union_in_project_modules =
+        let fold qualifiers { SourcePath.qualifier; _ } = Reference.Set.add qualifiers qualifier in
+        List.filter changed_source_paths ~f:SourcePath.is_in_project
+        |> List.fold ~init:(Reference.Set.of_list reparse_modules) ~f:fold
+        |> Reference.Set.to_list
+      in
+      let invalidated_modules_before_preprocessing =
+        List.concat [removed_modules; new_implicits; reparse_modules_union_in_project_modules]
+      in
+      let update_raw_sources () =
+        load_raw_sources ~scheduler ~ast_environment reparse_source_paths
+      in
+      let _, preprocessing_dependencies =
+        Profiling.track_duration_and_shared_memory
+          "Parse Raw Sources"
+          ~tags:["phase_name", "Parsing"]
+          ~f:(fun _ ->
+            RawSources.update_and_compute_dependencies
+              raw_sources
+              modules_with_invalidated_raw_source
+              ~update:update_raw_sources
+              ~scheduler)
+      in
       let invalidated_modules =
-        Reference.empty :: ModuleTracker.ReadOnly.project_qualifiers module_tracker
+        let fold_key registered sofar =
+          let qualifier = QualifierDependencyKey.get_key registered in
+          RawSources.KeySet.add qualifier sofar
+        in
+        QualifierDependencyKey.RegisteredSet.fold
+          fold_key
+          preprocessing_dependencies
+          (RawSources.KeySet.of_list invalidated_modules_before_preprocessing)
+        |> RawSources.KeySet.elements
       in
       invalidated_modules
-  | Update module_updates -> (
-      match incremental_style with
-      | Configuration.Analysis.Shallow ->
-          failwith "We never use Shallow incremental_style to do incremental updates."
-      | Configuration.Analysis.FineGrained ->
-          let changed_source_paths, removed_modules, new_implicits =
-            let categorize = function
-              | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
-              | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
-              | ModuleTracker.IncrementalUpdate.NewImplicit qualifier -> `Trd qualifier
-            in
-            List.partition3_map module_updates ~f:categorize
-          in
-          (* We only want to eagerly reparse sources that have been cached. We have to also
-             invalidate sources that are now deleted or changed from explicit to implicit. *)
-          let reparse_source_paths =
-            List.filter changed_source_paths ~f:(fun { SourcePath.qualifier; _ } ->
-                RawSources.mem raw_sources qualifier)
-          in
-          let reparse_modules =
-            reparse_source_paths |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
-          in
-          let modules_with_invalidated_raw_source =
-            List.concat [removed_modules; new_implicits; reparse_modules]
-          in
-          (* Because type checking relies on AstEnvironment.UpdateResult.invalidated_modules to
-             determine which files require re-type-checking, we have to include all new non-external
-             modules, even though they don't really require us to update data in the push phase, or
-             else they'll never be checked. *)
-          let reparse_modules_union_in_project_modules =
-            let fold qualifiers { SourcePath.qualifier; _ } =
-              Reference.Set.add qualifiers qualifier
-            in
-            List.filter changed_source_paths ~f:SourcePath.is_in_project
-            |> List.fold ~init:(Reference.Set.of_list reparse_modules) ~f:fold
-            |> Reference.Set.to_list
-          in
-          let invalidated_modules_before_preprocessing =
-            List.concat [removed_modules; new_implicits; reparse_modules_union_in_project_modules]
-          in
-          let update_raw_sources () =
-            load_raw_sources ~scheduler ~ast_environment reparse_source_paths
-          in
-          let _, preprocessing_dependencies =
-            Profiling.track_duration_and_shared_memory
-              "Parse Raw Sources"
-              ~tags:["phase_name", "Parsing"]
-              ~f:(fun _ ->
-                RawSources.update_and_compute_dependencies
-                  raw_sources
-                  modules_with_invalidated_raw_source
-                  ~update:update_raw_sources
-                  ~scheduler)
-          in
-          let invalidated_modules =
-            let fold_key registered sofar =
-              let qualifier = QualifierDependencyKey.get_key registered in
-              RawSources.KeySet.add qualifier sofar
-            in
-            QualifierDependencyKey.RegisteredSet.fold
-              fold_key
-              preprocessing_dependencies
-              (RawSources.KeySet.of_list invalidated_modules_before_preprocessing)
-            |> RawSources.KeySet.elements
-          in
-          invalidated_modules)
 
 
 (* Both `load` and `store` are no-ops here since `Sources` and `WildcardExports` are in shared

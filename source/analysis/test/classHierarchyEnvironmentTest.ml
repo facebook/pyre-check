@@ -17,14 +17,12 @@ let test_simple_registration context =
     let project = ScratchProject.setup sources ~include_typeshed_stubs:false ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
     let class_hierarchy_environment = ClassHierarchyEnvironment.create ast_environment in
-    let update_result =
-      let scheduler = Test.mock_scheduler () in
-      ClassHierarchyEnvironment.update_this_and_all_preceding_environments
+    let read_only =
+      ClassHierarchyEnvironment.cold_start
+        ~scheduler:(mock_scheduler ())
         class_hierarchy_environment
-        ~scheduler
-        ColdStart
+      |> ClassHierarchyEnvironment.UpdateResult.read_only
     in
-    let read_only = ClassHierarchyEnvironment.UpdateResult.read_only update_result in
     let expected_edges =
       expected_edges
       >>| List.map ~f:(fun name ->
@@ -128,9 +126,9 @@ let test_inferred_generic_base context =
       ScratchProject.setup ["test.py", source] ~context ~incremental_style:FineGrained
     in
     let ast_environment = ScratchProject.build_ast_environment project in
-    let _, update_result = Test.update_environments ~ast_environment ColdStart in
     let read_only =
-      AnnotatedGlobalEnvironment.UpdateResult.read_only update_result
+      Test.cold_start_environments ~ast_environment ()
+      |> AnnotatedGlobalEnvironment.read_only
       |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
       |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
     in
@@ -234,17 +232,14 @@ let test_updates context =
         ~context
     in
     let ast_environment = ScratchProject.build_ast_environment project in
-    let class_hierarchy_environment = ClassHierarchyEnvironment.create ast_environment in
     let configuration = ScratchProject.configuration_of project in
-    let update trigger =
-      let scheduler = Test.mock_scheduler () in
-      ClassHierarchyEnvironment.update_this_and_all_preceding_environments
+    let class_hierarchy_environment = ClassHierarchyEnvironment.create ast_environment in
+    let read_only =
+      ClassHierarchyEnvironment.cold_start
+        ~scheduler:(mock_scheduler ())
         class_hierarchy_environment
-        ~scheduler
-        trigger
+      |> ClassHierarchyEnvironment.UpdateResult.read_only
     in
-    let update_result = update ColdStart in
-    let read_only = ClassHierarchyEnvironment.UpdateResult.read_only update_result in
     let execute_action = function
       | `Edges (class_name, dependency, expectation) ->
           let printer v =
@@ -295,7 +290,11 @@ let test_updates context =
             PyrePath.Built.create_relative ~root:local_root ~relative)
       in
       ModuleTracker.update ~paths module_tracker
-      |> fun updates -> AstEnvironment.Update updates |> update
+      |> fun updates ->
+      AstEnvironment.Update updates
+      |> ClassHierarchyEnvironment.update_this_and_all_preceding_environments
+           class_hierarchy_environment
+           ~scheduler:(Test.mock_scheduler ())
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set

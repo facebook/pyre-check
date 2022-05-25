@@ -146,7 +146,6 @@ let test_parse_source context =
 
 
 let test_parse_sources context =
-  let scheduler = Test.mock_scheduler () in
   (* Following symbolic links is needed to avoid is_external being always false on macos *)
   let create_path = PyrePath.create_absolute ~follow_symbolic_links:true in
   let local_root = create_path (bracket_tmpdir context) in
@@ -188,10 +187,12 @@ let test_parse_sources context =
     in
     let module_tracker = Analysis.ModuleTracker.create configuration in
     let ast_environment = Analysis.AstEnvironment.create module_tracker in
-    let invalidated_modules = AstEnvironment.update ~scheduler ast_environment ColdStart in
+    let project_qualifiers =
+      AstEnvironment.read_only ast_environment |> AstEnvironment.ReadOnly.project_qualifiers
+    in
     let sources =
       List.filter_map
-        invalidated_modules
+        project_qualifiers
         ~f:(AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment))
     in
     let sorted_handles =

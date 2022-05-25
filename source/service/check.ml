@@ -51,22 +51,16 @@ let check
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
-    let global_environment = AnnotatedGlobalEnvironment.create ast_environment in
-    let type_environment = TypeEnvironment.create global_environment in
+    let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
+    let _ = AnnotatedGlobalEnvironment.cold_start annotated_global_environment ~scheduler in
+    let type_environment = TypeEnvironment.create annotated_global_environment in
+    let global_environment = AnnotatedGlobalEnvironment.read_only annotated_global_environment in
 
-    let update_result =
-      AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-        global_environment
-        ~scheduler
-        ColdStart
-    in
     Statistics.performance ~name:"full environment built" ~timer ();
 
-    let global_resolution =
-      AnnotatedGlobalEnvironment.UpdateResult.read_only update_result |> GlobalResolution.create
-    in
+    let global_resolution = GlobalResolution.create global_environment in
     let indices () =
-      AnnotatedGlobalEnvironment.read_only global_environment
+      global_environment
       |> AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment
       |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
     in
@@ -90,7 +84,10 @@ let check
         ~integers:["size", Memory.heap_size ()]
         ();
 
-    type_environment, AnnotatedGlobalEnvironment.UpdateResult.invalidated_modules update_result
+    let project_qualifiers =
+      AnnotatedGlobalEnvironment.ReadOnly.project_qualifiers global_environment
+    in
+    type_environment, project_qualifiers
   in
   let errors =
     Analysis.TypeCheck.legacy_run_on_modules

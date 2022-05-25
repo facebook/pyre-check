@@ -534,9 +534,10 @@ let test_connect_type_order context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let _, update_result = update_environments ~ast_environment ColdStart in
-  let environment = AnnotatedGlobalEnvironment.UpdateResult.read_only update_result in
-  let order = class_hierarchy environment in
+  let global_environment =
+    cold_start_environments ~ast_environment () |> AnnotatedGlobalEnvironment.read_only
+  in
+  let order = class_hierarchy global_environment in
   let assert_successors annotation successors =
     assert_equal
       ~printer:(List.to_string ~f:Type.Primitive.show)
@@ -1136,8 +1137,10 @@ let test_connect_annotations_to_top context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let _, update_result = update_environments ~ast_environment ColdStart in
-  let order = class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result) in
+  let global_environment =
+    cold_start_environments ~ast_environment () |> AnnotatedGlobalEnvironment.read_only
+  in
+  let order = class_hierarchy global_environment in
   assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"]
 
 
@@ -1159,10 +1162,10 @@ let test_deduplicate context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let _, update_result = update_environments ~ast_environment ColdStart in
-  let (module Handler) =
-    class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
+  let global_environment =
+    cold_start_environments ~ast_environment () |> AnnotatedGlobalEnvironment.read_only
   in
+  let (module Handler) = class_hierarchy global_environment in
   let index_of annotation = IndexTracker.index annotation in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
     let assert_targets edges from target parameters create =
@@ -1205,10 +1208,10 @@ let test_remove_extra_edges_to_object context =
       ]
   in
   let ast_environment = ScratchProject.build_ast_environment project in
-  let _, update_result = update_environments ~ast_environment ColdStart in
-  let (module Handler) =
-    class_hierarchy (AnnotatedGlobalEnvironment.UpdateResult.read_only update_result)
+  let global_environment =
+    cold_start_environments ~ast_environment () |> AnnotatedGlobalEnvironment.read_only
   in
+  let (module Handler) = class_hierarchy global_environment in
   let zero_index = IndexTracker.index "test.Zero" in
   let one_index = IndexTracker.index "test.One" in
   let printer = List.to_string ~f:ClassHierarchy.Target.show in
