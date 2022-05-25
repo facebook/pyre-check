@@ -265,8 +265,7 @@ class AnnotationCollector(cst.CSTVisitor):
 
 
 class StatisticsCollector(cst.CSTVisitor):
-    def build_json(self) -> Dict[str, int]:
-        return {}
+    pass
 
 
 class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
@@ -350,24 +349,6 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
             "line_count": result.line_count,
         }
 
-    def build_json(self) -> Dict[str, int]:
-        return {
-            "return_count": self.return_count(),
-            "annotated_return_count": self.annotated_return_count(),
-            "globals_count": self.globals_count(),
-            "annotated_globals_count": self.annotated_globals_count(),
-            "parameter_count": self.parameters_count(),
-            "annotated_parameter_count": self.annotated_parameters_count(),
-            "attribute_count": self.attributes_count(),
-            "annotated_attribute_count": self.annotated_attributes_count(),
-            "function_count": self.function_count(),
-            "partially_annotated_function_count": (
-                self.partially_annotated_functions_count()
-            ),
-            "fully_annotated_function_count": self.fully_annotated_functions_count(),
-            "line_count": self.line_count,
-        }
-
 
 class SuppressionCountCollector(StatisticsCollector):
     METADATA_DEPENDENCIES = (PositionProvider,)
@@ -410,12 +391,6 @@ class SuppressionCountCollector(StatisticsCollector):
 
     def build_result(self) -> ModuleSuppressionCount:
         return ModuleSuppressionCount(code=self.codes, no_code=self.no_code)
-
-    def build_json(self) -> Dict[str, int]:
-        code_counts = {str(code): len(lines) for (code, lines) in self.codes.items()}
-        if len(self.no_code) > 0:
-            code_counts["No Code"] = len(self.no_code)
-        return code_counts
 
 
 class FixmeCountCollector(SuppressionCountCollector):
@@ -492,9 +467,6 @@ class StrictCountCollector(StatisticsCollector):
             if self.is_unsafe_module()
             else self.explicit_strict_comment,
         )
-
-    def build_json(self) -> Dict[str, int]:
-        return {"unsafe_count": self.unsafe_count, "strict_count": self.strict_count}
 
 
 class CodeQualityIssue:
