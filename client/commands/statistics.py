@@ -9,7 +9,7 @@ import json
 import logging
 import re
 from pathlib import Path
-from typing import Callable, Dict, Iterable, Mapping, Optional, Sequence
+from typing import Dict, Iterable, Mapping, Optional, Sequence
 
 import libcst as cst
 
@@ -102,59 +102,49 @@ def parse_path_to_module(path: Path) -> Optional[cst.Module]:
         return None
 
 
-def _get_statistics_collector_for_module(
+def _collect_annotation_statistics(
     module: cst.Module,
-    collector_factory: Callable[[], collectors.StatisticsCollector],
-) -> collectors.StatisticsCollector:
-    collector = collector_factory()
+) -> collectors.ModuleAnnotationCount:
+    collector = collectors.AnnotationCountCollector()
     module_with_position_metadata = cst.MetadataWrapper(module)
     module_with_position_metadata.visit(collector)
-    return collector
-
-
-def _collect_annotation_statistics(module: cst.Module) -> Dict[str, int]:
-    collector = _get_statistics_collector_for_module(
-        module,
-        collectors.AnnotationCountCollector,
-    )
-    return collector.build_json()
+    return collector.build_result()
 
 
 def _collect_fixme_statistics(
     module: cst.Module,
-) -> Dict[str, int]:
-    collector = _get_statistics_collector_for_module(
-        module, collectors.FixmeCountCollector
-    )
-    return collector.build_json()
+) -> collectors.ModuleSuppressionCount:
+    collector = collectors.FixmeCountCollector()
+    module_with_position_metadata = cst.MetadataWrapper(module)
+    module_with_position_metadata.visit(collector)
+    return collector.build_result()
 
 
 def _collect_ignore_statistics(
     module: cst.Module,
-) -> Dict[str, int]:
-    collector = _get_statistics_collector_for_module(
-        module, collectors.IgnoreCountCollector
-    )
-    return collector.build_json()
+) -> collectors.ModuleSuppressionCount:
+    collector = collectors.IgnoreCountCollector()
+    module_with_position_metadata = cst.MetadataWrapper(module)
+    module_with_position_metadata.visit(collector)
+    return collector.build_result()
 
 
 def _collect_strict_file_statistics(
     module: cst.Module,
     strict_default: bool,
-) -> Dict[str, int]:
-    def collector_factory() -> collectors.StrictCountCollector:
-        return collectors.StrictCountCollector(strict_default)
-
-    collector = _get_statistics_collector_for_module(module, collector_factory)
-    return collector.build_json()
+) -> collectors.ModuleStrictCount:
+    collector = collectors.StrictCountCollector(strict_default)
+    module_with_position_metadata = cst.MetadataWrapper(module)
+    module_with_position_metadata.visit(collector)
+    return collector.build_result()
 
 
 @dataclasses.dataclass(frozen=True)
 class StatisticsData:
-    annotations: Dict[str, int] = dataclasses.field(default_factory=dict)
-    fixmes: Dict[str, int] = dataclasses.field(default_factory=dict)
-    ignores: Dict[str, int] = dataclasses.field(default_factory=dict)
-    strict: Dict[str, int] = dataclasses.field(default_factory=dict)
+    annotations: collectors.ModuleAnnotationCount
+    fixmes: collectors.ModuleSuppressionCount
+    ignores: collectors.ModuleSuppressionCount
+    strict: collectors.ModuleStrictCount
 
 
 def collect_statistics(
@@ -230,29 +220,61 @@ def aggregate_statistics(
     }
 
     for statistics_data in data.values():
-        for key in aggregate_annotations.keys():
-            aggregate_annotations[key] += statistics_data.annotations[key]
+        aggregate_annotations["return_count"] += len(
+            statistics_data.annotations.total_returns
+        )
+        aggregate_annotations["annotated_return_count"] += len(
+            statistics_data.annotations.annotated_returns
+        )
+        aggregate_annotations["globals_count"] += len(
+            statistics_data.annotations.total_globals
+        )
+        aggregate_annotations["annotated_globals_count"] += len(
+            statistics_data.annotations.annotated_globals
+        )
+        aggregate_annotations["parameter_count"] += len(
+            statistics_data.annotations.total_parameters
+        )
+        aggregate_annotations["annotated_parameter_count"] += len(
+            statistics_data.annotations.annotated_parameters
+        )
+        aggregate_annotations["attribute_count"] += len(
+            statistics_data.annotations.total_attributes
+        )
+        aggregate_annotations["annotated_attribute_count"] += len(
+            statistics_data.annotations.annotated_attributes
+        )
+        aggregate_annotations["function_count"] += len(
+            statistics_data.annotations.total_functions
+        )
+        aggregate_annotations["partially_annotated_function_count"] += len(
+            statistics_data.annotations.partially_annotated_functions
+        )
+        aggregate_annotations["fully_annotated_function_count"] += len(
+            statistics_data.annotations.fully_annotated_functions
+        )
+        aggregate_annotations["line_count"] += statistics_data.annotations.line_count
 
     return AggregatedStatisticsData(
         annotations=aggregate_annotations,
         fixmes=sum(
-            len(fixmes)
+            len(fixmes.no_code) + len(fixmes.code)
             for fixmes in [statistics_data.fixmes for statistics_data in data.values()]
         ),
         ignores=sum(
-            len(ignores)
+            len(ignores.no_code) + len(ignores.code)
             for ignores in [
                 statistics_data.ignores for statistics_data in data.values()
             ]
         ),
         strict=sum(
-            strictness["strict_count"]
+            1 if strictness.mode == collectors.ModuleModeKind.STRICT else 0
             for strictness in [
                 statistics_data.strict for statistics_data in data.values()
             ]
         ),
         unsafe=sum(
-            strictness["unsafe_count"]
+            1 if strictness.mode == collectors.ModuleModeKind.UNSAFE else 0
             for strictness in [
                 statistics_data.strict for statistics_data in data.values()
             ]
