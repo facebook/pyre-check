@@ -1,7 +1,5 @@
 @generated
 Call dependencies
-model_query_parameters_where.$toplevel (fun) -> []
-model_query_parameters_where.test10_f (fun) -> []
 model_query_parameters_where.test1_alarm1 (fun) -> [_test_sink (fun)]
 model_query_parameters_where.test1_alarm2 (fun) -> [_test_sink (fun)]
 model_query_parameters_where.test1_alarm3 (fun) -> [_test_sink (fun)]
@@ -24,6 +22,8 @@ model_query_parameters_where.test8_alarm1 (fun) -> [_test_sink (fun)]
 model_query_parameters_where.test8_alarm2 (fun) -> [_test_sink (fun)]
 model_query_parameters_where.test8_alarm3 (fun) -> [_test_sink (fun)]
 model_query_parameters_where.test8_alarm4 (fun) -> [_test_sink (fun)]
+model_query_parameters_where.$toplevel (fun) -> []
+model_query_parameters_where.test10_f (fun) -> []
 model_query_parameters_where.test9_f (fun) -> []
 model_query_parameters_where.Test5::$class_toplevel (method) -> []
 model_query_parameters_where.Test5::test5_alarm1 (method) -> []

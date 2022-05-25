@@ -12,22 +12,32 @@
 open Ast
 open Statement
 
+type kind =
+  | Normal
+  | PropertySetter
+[@@deriving show, sexp, compare, hash, eq]
+
+type function_name = {
+  name: string;
+  kind: kind;
+}
+[@@deriving show, sexp, compare, hash, eq]
+
 type method_name = {
   class_name: string;
   method_name: string;
+  kind: kind;
 }
 [@@deriving show, sexp, compare, hash, eq]
 
 type t =
-  | Function of string
+  | Function of function_name
   | Method of method_name
   | Override of method_name
   (* Represents a global variable or field of a class that we want to model,
    * e.g os.environ or HttpRequest.GET *)
   | Object of string
 [@@deriving sexp, compare, hash, eq]
-
-val property_setter_suffix : string
 
 (* Pretty printers. *)
 
@@ -52,13 +62,13 @@ val pp : Format.formatter -> t -> unit
 
 (* Constructors. *)
 
-val create_function : Reference.t -> t
+val create_function : ?kind:kind -> Reference.t -> t
 
-val create_method : Reference.t -> t
+val create_method : ?kind:kind -> Reference.t -> t
 
 val create_property_setter : Reference.t -> t
 
-val create_override : Reference.t -> t
+val create_override : ?kind:kind -> Reference.t -> t
 
 val create_property_setter_override : Reference.t -> t
 
@@ -70,10 +80,6 @@ val create_derived_override : t -> at_type:Reference.t -> t
 
 (* Accessors. *)
 
-val get_method_reference : t -> Reference.t
-
-val get_override_reference : t -> Reference.t
-
 val get_corresponding_method : t -> t
 
 val get_corresponding_override : t -> t
@@ -82,10 +88,11 @@ val class_name : t -> string option
 
 val method_name : t -> string option
 
-(* function or method name, no class or anything else *)
-val get_short_name : t -> string
-
 val override_to_method : t -> t
+
+(* Return the define name of a target. Note that multiple targets can match to the same define name
+   (e.g, property getters and setters). Hence, use this at your own risk. *)
+val define_name : t -> Reference.t
 
 module Map : Core.Map.S with type Key.t = t
 

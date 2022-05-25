@@ -36,7 +36,8 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
   in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let () =
-    OverrideGraph.Heap.from_source ~environment ~source |> OverrideGraph.SharedMemory.from_heap
+    OverrideGraph.Heap.from_source ~environment ~include_unit_tests:true ~source
+    |> OverrideGraph.SharedMemory.from_heap
   in
   let () =
     let errors = TypeEnvironment.ReadOnly.get_errors environment !&"test" in
@@ -631,7 +632,8 @@ let test_prune_callables _ =
     in
     let overrides =
       List.map overrides ~f:(fun (key, values) ->
-          Reference.create key, List.map values ~f:(fun value -> Reference.create value))
+          ( Target.create_method (Reference.create key),
+            List.map values ~f:(fun value -> Reference.create value) ))
       |> OverrideGraph.Heap.of_alist_exn
     in
     let project_callables =

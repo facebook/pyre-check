@@ -1,8 +1,5 @@
 @generated
 Call dependencies
-multiple_sources.$toplevel (fun) -> []
-multiple_sources.a_source (fun) -> []
-multiple_sources.b_source (fun) -> []
 multiple_sources.combine_tainted_user_and_dangerous_vc (fun) -> [multiple_sources.Node::get (method) multiple_sources.Node::send (method) multiple_sources.permissive_context (fun) multiple_sources.user_controlled_input (fun)]
 multiple_sources.combines_tests_and_context (fun) -> []
 multiple_sources.demonstrate_triggered_context (fun) -> [multiple_sources.Node::get (method) multiple_sources.Node::send (method) multiple_sources.user_controlled_input (fun)]
@@ -12,6 +9,9 @@ multiple_sources.issue_with_triggered_context (fun) -> [multiple_sources.demonst
 multiple_sources.issue_with_triggered_input (fun) -> [multiple_sources.demonstrate_triggered_input (fun) multiple_sources.user_controlled_input (fun)]
 multiple_sources.no_issue_with_wrapper_call (fun) -> [multiple_sources.permissive_context (fun) multiple_sources.user_controlled_input (fun)]
 multiple_sources.no_issue_with_wrong_label (fun) -> [multiple_sources.demonstrate_triggered_input (fun) multiple_sources.permissive_context (fun)]
+multiple_sources.$toplevel (fun) -> []
+multiple_sources.a_source (fun) -> []
+multiple_sources.b_source (fun) -> []
 multiple_sources.permissive_context (fun) -> []
 multiple_sources.test_other_input (fun) -> []
 multiple_sources.user_controlled_input (fun) -> []

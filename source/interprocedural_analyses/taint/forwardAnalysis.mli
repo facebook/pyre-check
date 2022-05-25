@@ -15,6 +15,7 @@ val run
   :  ?profiler:TaintProfiler.t ->
   environment:TypeEnvironment.ReadOnly.t ->
   qualifier:Reference.t ->
+  callable:Interprocedural.Target.t ->
   define:Define.t Node.t ->
   call_graph_of_define:Interprocedural.CallGraph.DefineCallGraph.t ->
   get_callee_model:(Interprocedural.Target.t -> Model.t option) ->

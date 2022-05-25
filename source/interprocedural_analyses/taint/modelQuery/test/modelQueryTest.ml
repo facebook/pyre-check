@@ -107,7 +107,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:{|
@@ -120,7 +120,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:{|
@@ -133,7 +133,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
 
   (* Test multiple constraints. *)
@@ -153,7 +153,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.barfoo")
+    ~callable:(Target.Function { name = "test.barfoo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:{|
@@ -171,7 +171,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
 
   (* Method vs. callable productions. *)
@@ -187,7 +187,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
 
   assert_applied_rules
@@ -202,7 +202,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
 
   (* Multiple productions. *)
@@ -222,7 +222,7 @@ let test_apply_rule context =
           ];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ModelParser.ReturnAnnotation, source "Test";
@@ -245,7 +245,7 @@ let test_apply_rule context =
           [AllParametersTaint { excludes = []; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -270,7 +270,7 @@ let test_apply_rule context =
           [AllParametersTaint { excludes = ["x"]; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -291,7 +291,7 @@ let test_apply_rule context =
           [AllParametersTaint { excludes = ["y"]; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -320,7 +320,7 @@ let test_apply_rule context =
           ];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -347,7 +347,7 @@ let test_apply_rule context =
           ];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -378,7 +378,7 @@ let test_apply_rule context =
           ];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -410,7 +410,7 @@ let test_apply_rule context =
           ];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -439,7 +439,7 @@ let test_apply_rule context =
           ];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -465,7 +465,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -491,7 +491,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -521,7 +521,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -552,7 +552,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -580,7 +580,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -606,7 +606,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -632,7 +632,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -651,7 +651,7 @@ let test_apply_rule context =
         productions = [ParameterTaint { where = []; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -678,7 +678,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:{|
@@ -691,7 +691,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:{|
@@ -704,7 +704,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:{|
@@ -717,7 +717,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:{|
@@ -730,7 +730,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   (* Any of. *)
   assert_applied_rules
@@ -751,7 +751,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:{|
@@ -771,7 +771,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:{|
@@ -795,7 +795,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -826,7 +826,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   (* All of. *)
   assert_applied_rules
@@ -848,7 +848,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   (* Some cases where we don't match with "AllOf". *)
   assert_applied_rules
@@ -869,7 +869,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:{|
@@ -889,7 +889,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   (* Named parameters + parametric sources from annotation. *)
   assert_applied_rules
@@ -914,7 +914,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -945,7 +945,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -971,7 +971,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source ~subkind:"B" "Dynamic"];
   (* Named parameters + parametric sinks from annotation. *)
   assert_applied_rules
@@ -993,7 +993,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -1029,7 +1029,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -1060,7 +1060,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -1091,7 +1091,7 @@ let test_apply_rule context =
           ];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
       [
         ( ModelParser.ParameterAnnotation
@@ -1111,7 +1111,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:{|
@@ -1125,7 +1125,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.bar")
+    ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:{|
@@ -1139,7 +1139,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:{|
@@ -1153,7 +1153,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.bar")
+    ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:{|
@@ -1166,7 +1166,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:{|
@@ -1179,7 +1179,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
 
   (* Decorator names. *)
@@ -1209,7 +1209,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -1237,7 +1237,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.bar")
+    ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -1265,7 +1265,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.baz")
+    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -1289,7 +1289,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -1317,7 +1317,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.baz")
+    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -1345,7 +1345,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.baz")
+    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -1384,7 +1384,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.baz")
+    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -1423,7 +1423,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.baz")
+    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -1463,7 +1463,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.baz")
+    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -1503,7 +1503,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.baz")
+    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -1550,7 +1550,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.baz")
+    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -1597,7 +1597,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -1644,7 +1644,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.baz")
+    ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
 
   assert_applied_rules
@@ -1664,7 +1664,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -1683,7 +1683,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.D"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[];
 
   assert_applied_rules
@@ -1703,7 +1703,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -2103,7 +2103,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:{|
@@ -2121,7 +2121,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.barfoo")
+    ~callable:(Target.Function { name = "test.barfoo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -2136,7 +2136,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.foo")
+    ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -2159,7 +2159,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -2182,7 +2182,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -2197,7 +2197,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
       }
-    ~callable:(Target.Function "test.bar")
+    ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules_for_attribute
     ~source:
@@ -2340,7 +2340,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -2361,7 +2361,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -2382,7 +2382,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -2403,7 +2403,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.D"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   ()
 

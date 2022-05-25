@@ -165,85 +165,6 @@
     "callable": "overrides.testBase",
     "callable_line": 77,
     "code": 5002,
-    "line": 80,
-    "start": 20,
-    "end": 21,
-    "filename": "overrides.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "receiver_interval": [ { "lower": 2, "upper": 13 } ],
-            "is_self_call": false,
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 78,
-                "start": 8,
-                "end": 19
-              },
-              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
-              "port": "result"
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "overrides.py",
-                "line": 80,
-                "start": 20,
-                "end": 21
-              },
-              "resolves_to": [ "overrides.B.classMethod" ],
-              "port": "formal(arg)"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "overrides.Base.classMethod",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle":
-      "overrides.testBase:5002:0:Call|overrides.Base.classMethod|0|formal(arg):6304845a214712032ec8b09f3d1a2f41"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "overrides.testBase",
-    "callable_line": 77,
-    "code": 5002,
     "line": 79,
     "start": 14,
     "end": 15,
@@ -317,6 +238,85 @@
     },
     "master_handle":
       "overrides.testBase:5002:0:Call|overrides.Base.methodA|0|formal(arg):d582808863ca13f526636f4be61b3798"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overrides.testBase",
+    "callable_line": 77,
+    "code": 5002,
+    "line": 80,
+    "start": 20,
+    "end": 21,
+    "filename": "overrides.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "receiver_interval": [ { "lower": 2, "upper": 13 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overrides.py",
+                "line": 78,
+                "start": 8,
+                "end": 19
+              },
+              "resolves_to": [ "overrides.B.methodB", "overrides.D.methodB" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overrides.py",
+                "line": 80,
+                "start": 20,
+                "end": 21
+              },
+              "resolves_to": [ "overrides.B.classMethod" ],
+              "port": "formal(arg)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overrides.Base.classMethod",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
+      "overrides.testBase:5002:0:Call|overrides.Base.classMethod|0|formal(arg):6304845a214712032ec8b09f3d1a2f41"
   }
 }
 {

@@ -47,6 +47,7 @@ let assert_taint ~context source expected =
         ?profiler:None
         ~environment:(TypeEnvironment.read_only environment)
         ~qualifier
+        ~callable:call_target
         ~define
         ~call_graph_of_define
         ~get_callee_model:(Registry.get models)

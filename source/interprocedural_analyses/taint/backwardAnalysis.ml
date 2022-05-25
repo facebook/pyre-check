@@ -554,7 +554,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | [
           {
             CallGraph.CallTarget.target =
-              Interprocedural.Target.Method { class_name = "object"; method_name = "__new__" };
+              Interprocedural.Target.Method
+                { class_name = "object"; method_name = "__new__"; kind = Normal };
             _;
           };
         ] ->
@@ -643,7 +644,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             | [
              {
                CallGraph.CallTarget.target =
-                 Interprocedural.Target.Method { class_name = "object"; method_name = "__init__" };
+                 Interprocedural.Target.Method
+                   { class_name = "object"; method_name = "__init__"; kind = Normal };
                _;
              };
             ] ->
@@ -1092,14 +1094,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           | [
               {
                 CallGraph.CallTarget.target =
-                  Method { class_name = "dict"; method_name = "__setitem__" };
+                  Method { class_name = "dict"; method_name = "__setitem__"; kind = Normal };
                 _;
               };
             ]
           | [
               {
                 CallGraph.CallTarget.target =
-                  Override { class_name = "dict"; method_name = "__setitem__" };
+                  Override { class_name = "dict"; method_name = "__setitem__"; kind = Normal };
                 _;
               };
             ] ->
@@ -1611,8 +1613,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           match call_target.target with
           | Interprocedural.Target.Method { method_name; _ } -> callee_from_method_name method_name
           | Override { method_name; _ } -> callee_from_method_name method_name
-          | Function function_name ->
-              { Node.value = Name (Name.Identifier function_name); location = call_location }
+          | Function { name; _ } ->
+              { Node.value = Name (Name.Identifier name); location = call_location }
           | Object _ -> failwith "callees should be either methods or functions"
         in
         apply_callees_and_return_arguments_taint
@@ -2108,6 +2110,7 @@ let run
     ?(profiler = TaintProfiler.none)
     ~environment
     ~qualifier
+    ~callable
     ~define
     ~call_graph_of_define
     ~get_callee_model
@@ -2115,7 +2118,7 @@ let run
     ~triggered_sinks
   =
   let timer = Timer.start () in
-  let ({ Node.value = { Statement.Define.signature = { name; _ }; _ }; _ } as define) =
+  let define =
     (* Apply decorators to make sure we match parameters up correctly. *)
     let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
     Annotated.Define.create define
@@ -2146,9 +2149,11 @@ let run
   let module Fixpoint = Analysis.Fixpoint.Make (State) in
   let initial = State.{ taint = initial_taint } in
   let cfg = Cfg.create define.value in
-  let () = State.log "Backward analysis of callable: `%a`" Reference.pp name in
+  let () =
+    State.log "Backward analysis of callable: `%a`" Interprocedural.Target.pp_pretty callable
+  in
   let entry_state =
-    Metrics.with_alarm name (fun () -> Fixpoint.backward ~cfg ~initial |> Fixpoint.entry) ()
+    Metrics.with_alarm callable (fun () -> Fixpoint.backward ~cfg ~initial |> Fixpoint.entry) ()
   in
   let () =
     match entry_state with
@@ -2172,7 +2177,7 @@ let run
     ~randomly_log_every:1000
     ~always_log_time_threshold:1.0 (* Seconds *)
     ~name:"Backward analysis"
-    ~normals:["callable", Reference.show name]
+    ~normals:["callable", Interprocedural.Target.show_pretty callable]
     ~section:`Taint
     ~timer
     ();

@@ -102,6 +102,7 @@ module Analysis = struct
             ~profiler
             ~environment
             ~qualifier
+            ~callable
             ~define
             ~call_graph_of_define
             ~get_callee_model
@@ -113,6 +114,7 @@ module Analysis = struct
             ~profiler
             ~environment
             ~qualifier
+            ~callable
             ~define
             ~call_graph_of_define
             ~get_callee_model

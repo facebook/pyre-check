@@ -27,7 +27,7 @@ val report
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   callables:Target.Set.t ->
-  skipped_overrides:Ast.Reference.t list ->
+  skipped_overrides:Target.t list ->
   fixpoint_timer:Timer.t ->
   fixpoint_state:Fixpoint.t ->
   Yojson.Safe.json list

@@ -37,7 +37,7 @@ module OverrideGraphSharedMemory = Memory.Serializer (struct
   module Serialized = struct
     type t = {
       overrides: OverrideGraph.Heap.serializable;
-      skipped_overrides: Ast.Reference.t list;
+      skipped_overrides: Target.t list;
     }
 
     let prefix = Prefix.make ()

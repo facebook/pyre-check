@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Ast
-
 let register_alarm callback = Sys.signal Sys.sigalrm (Sys.Signal_handle callback)
 
 let start_alarm time = ignore (Unix.alarm time)
@@ -34,12 +32,12 @@ let with_alarm name f () =
         ~name:"long taint analysis of callable"
         ~section:`Performance
         ~integers:["cutoff time", current_time_in_seconds]
-        ~normals:["callable", Reference.show name]
+        ~normals:["callable", Interprocedural.Target.show_pretty name]
         ();
       let pid = Unix.getpid () in
       Log.info
         "The analysis of %a is taking more than %d seconds (pid = %d)"
-        Reference.pp
+        Interprocedural.Target.pp_pretty
         name
         current_time_in_seconds
         pid)

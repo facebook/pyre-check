@@ -69,6 +69,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ?profiler:None
         ~environment:read_only_environment
         ~qualifier
+        ~callable:call_target
         ~define
         ~call_graph_of_define
         ~get_callee_model:(Registry.get models)
@@ -95,7 +96,7 @@ let test_no_model context =
       [outcome ~kind:`Function "does_not_exist"]
   in
   assert_raises
-    ("Model not found for (Function \"does_not_exist\")"
+    ("Model not found for (Function { name = \"does_not_exist\"; kind = Normal })"
     |> Base.Error.of_string
     |> Base.Error.to_exn)
     assert_no_model

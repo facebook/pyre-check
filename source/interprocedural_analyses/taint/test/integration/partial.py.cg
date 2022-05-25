@@ -1,10 +1,10 @@
 @generated
 Call dependencies
+partial.partial_application_with_named_a (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]
+partial.partial_application_with_named_b (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]
+partial.partial_application_with_tainted (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]
 partial.$toplevel (fun) -> []
 partial.a_flows_to_sink (fun) -> [_test_sink (fun)]
 partial.multiprocessing_not_tainted (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]
 partial.multiprocessing_tainted (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]
 partial.partial_application_with_benign (fun) -> [partial.a_flows_to_sink (fun)]
-partial.partial_application_with_named_a (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]
-partial.partial_application_with_named_b (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]
-partial.partial_application_with_tainted (fun) -> [_test_source (fun) partial.a_flows_to_sink (fun)]

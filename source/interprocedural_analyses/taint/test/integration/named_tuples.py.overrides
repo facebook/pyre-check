@@ -6,5 +6,5 @@ named_tuples.NamedTupleWithTaintedAttribute::__init__ (override) -> [named_tuple
 named_tuples.NamedTupleWithTaintedAttribute::__new__ (override) -> [named_tuples.NamedTupleWithTaintedAttribute::__new__ (method)]
 named_tuples.OldSchoolNamedTuple::__init__ (override) -> [named_tuples.OldSchoolNamedTuple::__init__ (method)]
 named_tuples.OldSchoolNamedTuple::__new__ (override) -> [named_tuples.OldSchoolNamedTuple::__new__ (method)]
-type::__new__ (override) -> [named_tuples.MyNamedTuple::__new__ (override) named_tuples.NamedTupleWithTaintedAttribute::__new__ (override) named_tuples.OldSchoolNamedTuple::__new__ (override) type::__new__ (method)]
 typing.NamedTuple::__init__ (override) -> [named_tuples.MyNamedTuple::__init__ (override) named_tuples.NamedTupleWithTaintedAttribute::__init__ (override) named_tuples.OldSchoolNamedTuple::__init__ (override) typing.NamedTuple::__init__ (method)]
+type::__new__ (override) -> [named_tuples.MyNamedTuple::__new__ (override) named_tuples.NamedTupleWithTaintedAttribute::__new__ (override) named_tuples.OldSchoolNamedTuple::__new__ (override) type::__new__ (method)]

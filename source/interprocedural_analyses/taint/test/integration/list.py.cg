@@ -1,8 +1,8 @@
 @generated
 Call dependencies
+list.create_zipped_source_with_all_tainted (fun) -> [_test_source (fun)]
 list.$toplevel (fun) -> []
 list.create_zipped_source (fun) -> [_test_source (fun)]
-list.create_zipped_source_with_all_tainted (fun) -> [_test_source (fun)]
 list.zipped_element_not_flowing_to_sink (fun) -> [_test_sink (fun)]
 list.zipped_element_to_sink (fun) -> [_test_sink (fun)]
 list.Woot::$class_toplevel (method) -> []

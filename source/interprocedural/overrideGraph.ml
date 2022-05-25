@@ -13,39 +13,39 @@ module GlobalResolution = Analysis.GlobalResolution
 module TypeEnvironment = Analysis.TypeEnvironment
 module AstEnvironment = Analysis.AstEnvironment
 
-(* Override graph in the ocaml heap, storing a mapping from a method to its direct overrides. *)
+(* Override graph in the ocaml heap, storing a mapping from a method to classes overriding it. *)
 module Heap = struct
-  type t = Reference.t list Reference.Map.t
+  type t = Reference.t list Target.Map.t
 
-  let empty = Reference.Map.empty
+  let empty = Target.Map.empty
 
-  let of_alist_exn = Reference.Map.of_alist_exn
+  let of_alist_exn = Target.Map.of_alist_exn
 
   let fold graph ~init ~f =
-    Reference.Map.fold graph ~init ~f:(fun ~key:member ~data:subtypes -> f ~member ~subtypes)
+    Target.Map.fold graph ~init ~f:(fun ~key:member ~data:subtypes -> f ~member ~subtypes)
 
 
-  let equal left right = Reference.Map.equal (List.equal Reference.equal) left right
+  let equal left right = Target.Map.equal (List.equal Reference.equal) left right
 
   let pp formatter overrides =
     let pp_pair formatter (member, subtypes) =
       Format.fprintf
         formatter
         "@,%a -> %s"
-        Reference.pp
+        Target.pp_internal
         member
         (List.map ~f:Reference.show subtypes |> String.concat ~sep:", ")
     in
     let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
-    Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs (Reference.Map.to_alist overrides)
+    Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs (Target.Map.to_alist overrides)
 
 
   let show = Format.asprintf "%a" pp
 
-  let from_source ~environment ~source =
+  let from_source ~environment ~include_unit_tests ~source =
     let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-    if GlobalResolution.source_is_unit_test resolution ~source then
-      Reference.Map.empty
+    if (not include_unit_tests) && GlobalResolution.source_is_unit_test resolution ~source then
+      Target.Map.empty
     else
       let timer = Timer.start () in
       let class_method_overrides { Node.value = { Class.body; name = class_name; _ }; _ } =
@@ -80,13 +80,15 @@ module Heap = struct
           if Reference.equal ancestor_parent class_name then
             None
           else
-            let method_name =
+            let kind =
               if Define.is_property_setter child_method then
-                method_name ^ Target.property_setter_suffix
+                Target.PropertySetter
               else
-                method_name
+                Target.Normal
             in
-            Some (Reference.create ~prefix:ancestor_parent method_name, class_name)
+            Some
+              ( Target.Method { class_name = Reference.show ancestor_parent; method_name; kind },
+                class_name )
         in
         let extract_define = function
           | { Node.value = Statement.Define define; _ } -> Some define
@@ -110,22 +112,24 @@ module Heap = struct
           | Some types -> overriding_type :: types
           | None -> [overriding_type]
         in
-        Reference.Map.update map ancestor_method ~f:update_types
+        Target.Map.update map ancestor_method ~f:update_types
       in
       let record_overrides_list map relations = List.fold relations ~init:map ~f:record_overrides in
       Preprocessing.classes source
       |> List.map ~f:class_method_overrides
-      |> List.fold ~init:Reference.Map.empty ~f:record_overrides_list
-      |> Map.map ~f:(List.dedup_and_sort ~compare:Reference.compare)
+      |> List.fold ~init:Target.Map.empty ~f:record_overrides_list
+      |> Target.Map.map ~f:(List.dedup_and_sort ~compare:Reference.compare)
 
 
   let skip_overrides ~to_skip overrides =
-    Reference.Map.filter_keys ~f:(fun override -> not (Set.mem to_skip override)) overrides
+    Target.Map.filter_keys
+      ~f:(fun override -> not (Reference.Set.mem to_skip (Target.define_name override)))
+      overrides
 
 
   type cap_overrides_result = {
     overrides: t;
-    skipped_overrides: Reference.t list;
+    skipped_overrides: Target.t list;
   }
 
   (* If a method has too many overrides, ignore them. *)
@@ -142,7 +146,7 @@ module Heap = struct
           else begin
             Log.info
               "Omitting overrides for `%s`, as it has %d overrides."
-              (Reference.show member)
+              (Target.show_pretty member)
               number_of_overrides;
             skipped_overrides := member :: !skipped_overrides;
             false
@@ -151,27 +155,27 @@ module Heap = struct
           if number_of_overrides > 50 then
             Log.warning
               "`%s` has %d overrides, this might slow down the analysis considerably."
-              (Reference.show member)
+              (Target.show_pretty member)
               number_of_overrides;
           true
     in
-    let overrides = Reference.Map.filteri overrides ~f:keep_override_edge in
+    let overrides = Target.Map.filteri overrides ~f:keep_override_edge in
     { overrides; skipped_overrides = !skipped_overrides }
 
 
   (* This can be used to cache the whole graph in shared memory. *)
-  type serializable = Reference.t list Reference.Map.Tree.t
+  type serializable = Reference.t list Target.Map.Tree.t
 
-  let to_serializable = Reference.Map.to_tree
+  let to_serializable = Target.Map.to_tree
 
-  let of_serializable = Reference.Map.of_tree
+  let of_serializable = Target.Map.of_tree
 end
 
-(* Override graph in the shared memory, a mapping from a method to its direct overrides. *)
+(* Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)
 module SharedMemory = struct
   module T =
     Memory.WithCache.Make
-      (Analysis.SharedMemoryKeys.ReferenceKey)
+      (Target.SharedMemoryKey)
       (struct
         type t = Reference.t list
 
@@ -189,12 +193,12 @@ module SharedMemory = struct
   (* Records a heap override graph in shared memory. *)
   let from_heap overrides =
     let record_override_edge ~key:member ~data:subtypes = add_overriding_types ~member ~subtypes in
-    Reference.Map.iteri overrides ~f:record_override_edge
+    Target.Map.iteri overrides ~f:record_override_edge
 
 
   (* Remove an override graph from shared memory.
    * This must be called before storing another override graph. *)
-  let cleanup overrides = overrides |> Reference.Map.keys |> T.KeySet.of_list |> T.remove_batch
+  let cleanup overrides = overrides |> Target.Map.keys |> T.KeySet.of_list |> T.remove_batch
 
   let expand_override_targets callees =
     let rec expand_and_gather expanded = function
@@ -202,7 +206,7 @@ module SharedMemory = struct
       | Target.Override _ as override ->
           let make_override at_type = Target.create_derived_override override ~at_type in
           let overrides =
-            let member = Target.get_override_reference override in
+            let member = Target.get_corresponding_method override in
             T.get member |> Option.value ~default:[] |> List.map ~f:make_override
           in
           Target.get_corresponding_method override
@@ -221,6 +225,7 @@ let get_source ~environment qualifier =
 let record_overrides_for_qualifiers
     ~scheduler
     ~environment
+    ~include_unit_tests
     ~skip_overrides
     ~maximum_overrides
     ~qualifiers
@@ -232,7 +237,8 @@ let record_overrides_for_qualifiers
       | None -> overrides
       | Some source ->
           let new_overrides =
-            Heap.from_source ~environment ~source |> Heap.skip_overrides ~to_skip:skip_overrides
+            Heap.from_source ~environment ~include_unit_tests ~source
+            |> Heap.skip_overrides ~to_skip:skip_overrides
           in
           Map.merge_skewed overrides new_overrides ~combine
     in

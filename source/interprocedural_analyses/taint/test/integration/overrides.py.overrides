@@ -1,7 +1,5 @@
 @generated
 Overrides
-overrides.OverloadedOverride::methodA (override) -> [overrides.OverloadedOverride::methodA (method)]
-object::__init__ (override) -> [object::__init__ (method) overrides.Base::__init__ (override)]
 overrides.A::__init__ (override) -> [overrides.A::__init__ (method)]
 overrides.A::methodA (override) -> [overrides.A::methodA (method)]
 overrides.B::__init__ (override) -> [overrides.B::__init__ (method) overrides.C::__init__ (override)]
@@ -17,3 +15,5 @@ overrides.C::methodA (override) -> [overrides.C::methodA (method) overrides.D::m
 overrides.D::__init__ (override) -> [overrides.D::__init__ (method)]
 overrides.D::methodA (override) -> [overrides.D::methodA (method) overrides.OverloadedOverride::methodA (override)]
 overrides.D::methodB (override) -> [overrides.D::methodB (method)]
+overrides.OverloadedOverride::methodA (override) -> [overrides.OverloadedOverride::methodA (method)]
+object::__init__ (override) -> [object::__init__ (method) overrides.Base::__init__ (override)]

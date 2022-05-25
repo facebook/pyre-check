@@ -34,12 +34,14 @@ let test_method_overrides context =
     =
     let expected =
       let create_callables (member, overriding_types) =
-        !&member, List.map overriding_types ~f:Reference.create
+        Target.create_method !&member, List.map overriding_types ~f:Reference.create
       in
       List.map expected ~f:create_callables
     in
     let source, environment, _ = setup ~update_environment_with ~context ~handle source in
-    let overrides_map = OverrideGraph.Heap.from_source ~environment ~source in
+    let overrides_map =
+      OverrideGraph.Heap.from_source ~environment ~include_unit_tests:false ~source
+    in
     let expected_overrides = OverrideGraph.Heap.of_alist_exn expected in
     assert_equal
       ~cmp:OverrideGraph.Heap.equal

@@ -14,9 +14,9 @@ module Heap : sig
 
   val empty : t
 
-  val of_alist_exn : (Reference.t * Reference.t list) list -> t
+  val of_alist_exn : (Target.t * Reference.t list) list -> t
 
-  val fold : t -> init:'a -> f:(member:Reference.t -> subtypes:Reference.t list -> 'a -> 'a) -> 'a
+  val fold : t -> init:'a -> f:(member:Target.t -> subtypes:Reference.t list -> 'a -> 'a) -> 'a
 
   val equal : t -> t -> bool
 
@@ -24,13 +24,17 @@ module Heap : sig
 
   val show : t -> string
 
-  val from_source : environment:Analysis.TypeEnvironment.ReadOnly.t -> source:Source.t -> t
+  val from_source
+    :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+    include_unit_tests:bool ->
+    source:Source.t ->
+    t
 
   val skip_overrides : to_skip:Reference.Set.t -> t -> t
 
   type cap_overrides_result = {
     overrides: t;
-    skipped_overrides: Reference.t list;
+    skipped_overrides: Target.t list;
   }
 
   val cap_overrides : maximum_overrides:int option -> t -> cap_overrides_result
@@ -43,9 +47,9 @@ module Heap : sig
 end
 
 module SharedMemory : sig
-  val get_overriding_types : member:Reference.t -> Reference.t list option
+  val get_overriding_types : member:Target.t -> Reference.t list option
 
-  val overrides_exist : Reference.t -> bool
+  val overrides_exist : Target.t -> bool
 
   val expand_override_targets : Target.t list -> Target.t list
 
@@ -57,6 +61,7 @@ end
 val record_overrides_for_qualifiers
   :  scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  include_unit_tests:bool ->
   skip_overrides:Reference.Set.t ->
   maximum_overrides:int option ->
   qualifiers:Reference.t list ->

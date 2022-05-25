@@ -771,24 +771,24 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
   let get_class_type = GlobalResolution.parse_reference global_resolution in
   let get_actual_target method_name =
     if OverrideGraph.SharedMemory.overrides_exist method_name then
-      Target.create_override method_name
+      Target.get_corresponding_override method_name
     else
-      Target.create_method method_name
+      method_name
   in
   let receiver_type = receiver_type |> strip_meta |> strip_optional |> Type.weaken_literals in
-  let declaring_type = Reference.prefix implementation_target in
-  if
-    declaring_type
-    >>| Reference.equal (Type.class_name receiver_type)
-    |> Option.value ~default:false
-  then (* case a *)
+  let declaring_type, method_name, kind =
+    match implementation_target with
+    | Target.Method { class_name; method_name; kind } ->
+        Reference.create class_name, method_name, kind
+    | _ -> failwith "Unexpected target"
+  in
+  if Reference.equal declaring_type (Type.class_name receiver_type) then (* case a *)
     [get_actual_target implementation_target]
   else
-    let target_callable = Target.create_method implementation_target in
     match OverrideGraph.SharedMemory.get_overriding_types ~member:implementation_target with
     | None ->
         (* case b *)
-        [target_callable]
+        [implementation_target]
     | Some overriding_types ->
         (* case c *)
         let keep_subtypes candidate =
@@ -814,16 +814,15 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
                 receiver_type;
               true
         in
-
         let override_targets =
           let create_override_target class_name =
-            let method_name = Reference.last implementation_target in
-            Reference.create ~prefix:class_name method_name |> get_actual_target
+            get_actual_target
+              (Target.Method { class_name = Reference.show class_name; method_name; kind })
           in
           List.filter overriding_types ~f:keep_subtypes
           |> fun subtypes -> List.map subtypes ~f:create_override_target
         in
-        target_callable :: override_targets
+        implementation_target :: override_targets
 
 
 let collapse_tito ~resolution ~callee ~callable_type =
@@ -881,7 +880,7 @@ let rec resolve_callees_from_type
           let targets =
             match callee_kind with
             | Method { is_direct_call = true } -> [Target.create_method name]
-            | _ -> compute_indirect_targets ~resolution ~receiver_type name
+            | _ -> compute_indirect_targets ~resolution ~receiver_type (Target.create_method name)
           in
           let targets =
             List.map
@@ -975,7 +974,11 @@ let rec resolve_callees_from_type
                 in
                 let target =
                   Target.Method
-                    { Target.class_name = primitive_callable_name; method_name = "__call__" }
+                    {
+                      Target.class_name = primitive_callable_name;
+                      method_name = "__call__";
+                      kind = Normal;
+                    }
                 in
                 CallCallees.create
                   ~call_targets:
@@ -1233,7 +1236,7 @@ let resolve_recognized_callees ~resolution ~call_indexer ~callee ~return_type ~c
               ~implicit_dunder_call:false
               ~collapse_tito
               ~return_type:(Some return_type)
-              (Target.Function name);
+              (Target.Function { name; kind = Normal });
           ]
         ()
   | _ -> None
@@ -1263,7 +1266,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
                ~implicit_dunder_call:false
                ~return_type:(Some (return_type ()))
                ~collapse_tito
-               (Target.Function (Reference.show name)))
+               (Target.Function { name = Reference.show name; kind = Normal }))
       | Some
           (ResolvedReference.ModuleAttribute
             {
@@ -1288,7 +1291,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
                    ~implicit_dunder_call:false
                    ~collapse_tito
                    ~return_type:(Some (return_type ()))
-                   (Target.Method { Target.class_name; method_name = attribute }))
+                   (Target.Method { Target.class_name; method_name = attribute; kind = Normal }))
           | _ -> None)
       | _ -> None)
   | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
@@ -1320,7 +1323,8 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
                    ~implicit_dunder_call:false
                    ~return_type:(Some (return_type ()))
                    ~collapse_tito
-                   (Target.Method { Target.class_name = base_class; method_name = attribute }))
+                   (Target.Method
+                      { Target.class_name = base_class; method_name = attribute; kind = Normal }))
           | None -> None)
       | _ -> None)
   | _ -> None
@@ -1422,27 +1426,12 @@ let resolve_attribute_access_properties
     in
     let parent = Annotated.Attribute.parent property |> Reference.create in
     let property_targets =
+      let kind = if setter then Target.PropertySetter else Target.Normal in
       if Type.is_meta base_annotation then
-        [Target.create_method (Reference.create ~prefix:parent attribute)]
+        [Target.create_method ~kind (Reference.create ~prefix:parent attribute)]
       else
-        let callee = Reference.create ~prefix:parent attribute in
+        let callee = Target.create_method ~kind (Reference.create ~prefix:parent attribute) in
         compute_indirect_targets ~resolution ~receiver_type:base_annotation callee
-    in
-    let property_targets =
-      if setter then
-        let to_setter target =
-          match target with
-          | Target.Override { Target.class_name; method_name } ->
-              Target.Override
-                { Target.class_name; method_name = method_name ^ Target.property_setter_suffix }
-          | Target.Method { Target.class_name; method_name } ->
-              Target.Method
-                { Target.class_name; method_name = method_name ^ Target.property_setter_suffix }
-          | _ -> target
-        in
-        List.map property_targets ~f:to_setter
-      else
-        property_targets
     in
     List.map
       ~f:

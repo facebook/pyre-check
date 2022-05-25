@@ -1,12 +1,12 @@
 @generated
 Call dependencies
+maximum_tito_depth.tito_min_disjoint_max_consecutive (fun) -> [maximum_tito_depth.tito_one (fun) maximum_tito_depth.tito_two (fun) maximum_tito_depth.tito_zero (fun)]
 maximum_tito_depth.$toplevel (fun) -> []
 maximum_tito_depth.issue (fun) -> [_test_sink (fun) _test_source (fun) maximum_tito_depth.tito_three (fun)]
 maximum_tito_depth.non_issue (fun) -> [_test_sink (fun) _test_source (fun) maximum_tito_depth.tito_four (fun)]
 maximum_tito_depth.tito_four (fun) -> [maximum_tito_depth.tito_three (fun)]
 maximum_tito_depth.tito_max_consecutive (fun) -> [maximum_tito_depth.tito_one (fun) maximum_tito_depth.tito_two (fun) maximum_tito_depth.tito_zero (fun)]
 maximum_tito_depth.tito_min_disjoint (fun) -> [maximum_tito_depth.tito_one (fun) maximum_tito_depth.tito_zero (fun)]
-maximum_tito_depth.tito_min_disjoint_max_consecutive (fun) -> [maximum_tito_depth.tito_one (fun) maximum_tito_depth.tito_two (fun) maximum_tito_depth.tito_zero (fun)]
 maximum_tito_depth.tito_obscure (fun) -> [maximum_tito_depth.C::tito (method) object::__init__ (method) object::__new__ (method)]
 maximum_tito_depth.tito_one (fun) -> [maximum_tito_depth.tito_zero (fun)]
 maximum_tito_depth.tito_three (fun) -> [maximum_tito_depth.tito_two (fun)]

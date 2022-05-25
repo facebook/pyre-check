@@ -566,7 +566,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | [
        {
          CallGraph.CallTarget.target =
-           Interprocedural.Target.Method { class_name = "object"; method_name = "__new__" };
+           Interprocedural.Target.Method
+             { class_name = "object"; method_name = "__new__"; kind = Normal };
          _;
        };
       ] ->
@@ -1126,14 +1127,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             | [
                 {
                   CallGraph.CallTarget.target =
-                    Method { class_name = "dict"; method_name = "__setitem__" };
+                    Method { class_name = "dict"; method_name = "__setitem__"; kind = Normal };
                   _;
                 };
               ]
             | [
                 {
                   CallGraph.CallTarget.target =
-                    Override { class_name = "dict"; method_name = "__setitem__" };
+                    Override { class_name = "dict"; method_name = "__setitem__"; kind = Normal };
                   _;
                 };
               ] ->
@@ -1726,8 +1727,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             | Interprocedural.Target.Method { method_name; _ } ->
                 callee_from_method_name method_name
             | Override { method_name; _ } -> callee_from_method_name method_name
-            | Function function_name ->
-                { Node.value = Name (Name.Identifier function_name); location = call_location }
+            | Function { name; _ } ->
+                { Node.value = Name (Name.Identifier name); location = call_location }
             | Object _ -> failwith "callees should be either methods or functions"
           in
           let new_taint, new_state =
@@ -2257,12 +2258,13 @@ let run
     ?(profiler = TaintProfiler.none)
     ~environment
     ~qualifier
+    ~callable
     ~define
     ~call_graph_of_define
     ~get_callee_model
     ~existing_model
   =
-  let { Node.value = { Statement.Define.signature = { name; parameters; _ }; _ }; _ } = define in
+  let { Node.value = { Statement.Define.signature = { parameters; _ }; _ }; _ } = define in
   let module FunctionContext = struct
     let qualifier = qualifier
 
@@ -2294,7 +2296,7 @@ let run
       (Statement.Define.name define.Node.value)
       CallGraph.DefineCallGraph.pp
       call_graph_of_define;
-  State.log "Forward analysis of callable: `%a`" Reference.pp name;
+  State.log "Forward analysis of callable: `%a`" Interprocedural.Target.pp_pretty callable;
   let timer = Timer.start () in
   let cfg = Cfg.create define.value in
   let initial =
@@ -2303,7 +2305,7 @@ let run
   in
   let () = State.log "Processing CFG:@.%a" Cfg.pp cfg in
   let exit_state =
-    Metrics.with_alarm name (fun () -> Fixpoint.forward ~cfg ~initial |> Fixpoint.exit) ()
+    Metrics.with_alarm callable (fun () -> Fixpoint.forward ~cfg ~initial |> Fixpoint.exit) ()
   in
   let () =
     match exit_state with
@@ -2337,7 +2339,7 @@ let run
     ~always_log_time_threshold:1.0 (* Seconds *)
     ~name:"Forward analysis"
     ~section:`Taint
-    ~normals:["callable", Reference.show name]
+    ~normals:["callable", Interprocedural.Target.show_pretty callable]
     ~timer
     ();
   model, issues, FunctionContext.triggered_sinks

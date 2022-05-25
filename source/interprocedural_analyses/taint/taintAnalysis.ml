@@ -327,6 +327,7 @@ let run_taint_analysis
           Interprocedural.OverrideGraph.record_overrides_for_qualifiers
             ~scheduler
             ~environment:(Analysis.TypeEnvironment.read_only environment)
+            ~include_unit_tests:false
             ~skip_overrides
             ~maximum_overrides:(TaintConfiguration.get_maximum_overrides_to_analyze ())
             ~qualifiers)

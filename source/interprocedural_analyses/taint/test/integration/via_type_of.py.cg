@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+via_type_of.test_via_type_of_does_not_propagate (fun) -> [via_type_of.meta (fun)]
 via_type_of.$toplevel (fun) -> []
 via_type_of.meta (fun) -> [via_type_of.return_via_parameter_type (fun)]
 via_type_of.return_via_parameter_type (fun) -> []
@@ -25,7 +26,6 @@ via_type_of.test_numerals (fun) -> [via_type_of.return_via_parameter_type (fun)]
 via_type_of.test_sink (fun) -> [via_type_of.sink_via_type_of (fun)]
 via_type_of.test_strings (fun) -> [via_type_of.return_via_parameter_type (fun)]
 via_type_of.test_tito (fun) -> [_test_source (fun) via_type_of.tito (fun)]
-via_type_of.test_via_type_of_does_not_propagate (fun) -> [via_type_of.meta (fun)]
 via_type_of.tito (fun) -> []
 via_type_of.Test1_C::$class_toplevel (method) -> []
 via_type_of.Test2_C::$class_toplevel (method) -> []

@@ -554,7 +554,7 @@ let initialize
   (* Overrides must be done first, as they influence the call targets. *)
   let overrides =
     let overrides =
-      OverrideGraph.Heap.from_source ~environment ~source
+      OverrideGraph.Heap.from_source ~environment ~include_unit_tests:true ~source
       |> OverrideGraph.Heap.skip_overrides ~to_skip:skip_overrides
     in
     let () = OverrideGraph.SharedMemory.from_heap overrides in

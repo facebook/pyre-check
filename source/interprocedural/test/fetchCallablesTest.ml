@@ -42,9 +42,9 @@ let test_callables context =
     |}
     ~expected:
       [
-        Target.Function "test.$toplevel";
-        Target.Method { class_name = "test.C"; method_name = "$class_toplevel" };
-        Target.Method { class_name = "test.C"; method_name = "foo" };
+        Target.Function { name = "test.$toplevel"; kind = Normal };
+        Target.Method { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
+        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
       ];
   assert_callables
     ~additional_sources:["placeholder.py", "# pyre-placeholder-stub"]
@@ -56,9 +56,9 @@ let test_callables context =
     |}
     ~expected:
       [
-        Target.Function "test.$toplevel";
-        Target.Method { class_name = "test.C"; method_name = "$class_toplevel" };
-        Target.Method { class_name = "test.C"; method_name = "foo" };
+        Target.Function { name = "test.$toplevel"; kind = Normal };
+        Target.Method { class_name = "test.C"; method_name = "$class_toplevel"; kind = Normal };
+        Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal };
       ];
   assert_callables
     {|
@@ -81,7 +81,7 @@ let test_callables context =
           |}
         );
       ]
-    ~expected:[Target.Function "test.$toplevel"];
+    ~expected:[Target.Function { name = "test.$toplevel"; kind = Normal }];
 
   assert_callables
     ~source_filename:"test.pyi"
@@ -91,7 +91,7 @@ let test_callables context =
         def foo() -> int:
           ...
     |}
-    ~expected:[Target.Method { class_name = "test.Toplevel"; method_name = "foo" }]
+    ~expected:[Target.Method { class_name = "test.Toplevel"; method_name = "foo"; kind = Normal }]
 
 
 let () = "staticAnalysis" >::: ["callables" >:: test_callables] |> Test.run

@@ -7,7 +7,6 @@
 
 open Core
 open Pyre
-open Ast
 open Interprocedural
 module Json = Yojson.Safe
 
@@ -167,8 +166,8 @@ let save_results_to_directory
           [
             ( "skipped_overrides",
               `List
-                (List.map skipped_overrides ~f:(fun override -> `String (Reference.show override)))
-            );
+                (List.map skipped_overrides ~f:(fun override ->
+                     `String (Target.show_pretty override))) );
           ]
       in
       Json.Util.combine global_statistics (statistics ())

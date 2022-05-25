@@ -1,13 +1,13 @@
 @generated
 Overrides
+string_conversion.A::__init__ (override) -> [string_conversion.A::__init__ (method)]
+string_conversion.A::__str__ (override) -> [string_conversion.A::__str__ (method)]
+string_conversion.B::__str__ (override) -> [string_conversion.B::__str__ (method)]
+string_conversion.C::__str__ (override) -> [string_conversion.C::__str__ (method)]
+string_conversion.D::__str__ (override) -> [string_conversion.D::__str__ (method)]
 string_conversion.OverrideStr::__str__ (override) -> [string_conversion.OverrideStr::__str__ (method)]
 string_conversion.ReprIsTainted::__repr__ (override) -> [string_conversion.ReprIsTainted::__repr__ (method)]
 string_conversion.StrIsTainted::__str__ (override) -> [string_conversion.StrIsTainted::__str__ (method)]
 object::__init__ (override) -> [object::__init__ (method) string_conversion.A::__init__ (override)]
 object::__repr__ (override) -> [object::__repr__ (method) string_conversion.ReprIsTainted::__repr__ (override)]
 object::__str__ (override) -> [object::__str__ (method) string_conversion.A::__str__ (override) string_conversion.B::__str__ (override) string_conversion.C::__str__ (override) string_conversion.D::__str__ (override) string_conversion.OverrideStr::__str__ (override) string_conversion.StrIsTainted::__str__ (override)]
-string_conversion.A::__init__ (override) -> [string_conversion.A::__init__ (method)]
-string_conversion.A::__str__ (override) -> [string_conversion.A::__str__ (method)]
-string_conversion.B::__str__ (override) -> [string_conversion.B::__str__ (method)]
-string_conversion.C::__str__ (override) -> [string_conversion.C::__str__ (method)]
-string_conversion.D::__str__ (override) -> [string_conversion.D::__str__ (method)]

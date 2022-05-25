@@ -1,7 +1,5 @@
 @generated
 Call dependencies
-implicit_sinks.$toplevel (fun) -> []
-implicit_sinks.inline_issue_dot_format (fun) -> [_test_source (fun) str::format (method)]
 implicit_sinks.inline_issue_format_string (fun) -> [_test_source (fun)]
 implicit_sinks.inline_issue_format_string_proper_tito (fun) -> [_test_source (fun) str::__str__ (method)]
 implicit_sinks.inline_issue_lhs_add_literal (fun) -> [_test_source (fun)]
@@ -12,3 +10,5 @@ implicit_sinks.propagate_sink_format_string (fun) -> []
 implicit_sinks.propagate_sink_lhs_add_literal (fun) -> []
 implicit_sinks.propagate_sink_percent_format (fun) -> []
 implicit_sinks.propagate_sink_rhs_add_literal (fun) -> [str::__add__ (method)]
+implicit_sinks.$toplevel (fun) -> []
+implicit_sinks.inline_issue_dot_format (fun) -> [_test_source (fun) str::format (method)]

@@ -48,8 +48,7 @@ let test_get_module_and_definition context =
       def foo(self, value: int) -> None:
         self._foo = value
   |}
-    ~target:
-      (Target.Method { class_name = "test.C"; method_name = "foo" ^ Target.property_setter_suffix })
+    ~target:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = PropertySetter })
     ~expected:
       (Some
          ( Reference.create "test",
@@ -84,7 +83,7 @@ let test_resolve_method context =
      |}
     ~class_type:(Primitive "test.Foo")
     ~method_name:"method"
-    (Some (Target.Method { class_name = "cls"; method_name = "named" }));
+    (Some (Target.Method { class_name = "cls"; method_name = "named"; kind = Normal }));
   assert_get_resolve_method
     ~source:
       {|
@@ -94,7 +93,7 @@ let test_resolve_method context =
      |}
     ~class_type:(Primitive "test.Foo")
     ~method_name:"method"
-    (Some (Target.Method { class_name = "cls"; method_name = "named" }));
+    (Some (Target.Method { class_name = "cls"; method_name = "named"; kind = Normal }));
   ()
 
 

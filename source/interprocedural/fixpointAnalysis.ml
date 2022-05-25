@@ -417,7 +417,7 @@ module Make (Analysis : ANALYSIS) = struct
     let overrides =
       (* TODO(T117715045): This should be a parameter of the functor. *)
       OverrideGraph.SharedMemory.get_overriding_types
-        ~member:(Target.get_override_reference callable)
+        ~member:(Target.get_corresponding_method callable)
       |> Option.value ~default:[]
       |> List.map ~f:(fun at_type -> Target.create_derived_override callable ~at_type)
     in
@@ -748,7 +748,7 @@ struct
       ~always_log_time_threshold:1.0 (* Seconds *)
       ~name:"Override analysis"
       ~section:`Interprocedural
-      ~normals:["callable", callable |> Target.get_override_reference |> Reference.show]
+      ~normals:["callable", Target.show_pretty callable]
       ~timer
       ()
 

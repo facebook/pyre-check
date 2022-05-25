@@ -1,11 +1,11 @@
 @generated
 Call dependencies
+attach_features.modeled_sink_with_optionals (fun) -> [_test_sink (fun)]
 attach_features.$toplevel (fun) -> []
 attach_features.attach_to_returned_sink (fun) -> [_test_source (fun)]
 attach_features.attach_without_tito (fun) -> []
 attach_features.inferred_is_propagated (fun) -> [attach_features.source_with_inferred (fun)]
 attach_features.inferred_sink (fun) -> [_test_sink (fun)]
-attach_features.modeled_sink_with_optionals (fun) -> [_test_sink (fun)]
 attach_features.no_tito (fun) -> [attach_features.attach_without_tito (fun)]
 attach_features.sink_is_propagated (fun) -> [attach_features.inferred_sink (fun)]
 attach_features.source (fun) -> []

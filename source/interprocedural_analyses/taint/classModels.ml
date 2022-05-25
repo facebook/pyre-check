@@ -62,7 +62,7 @@ let infer ~environment ~user_models =
       attributes class_name >>| List.map ~f:Annotated.Attribute.name |> Option.value ~default:[]
     in
     [
-      ( Target.Method { Target.class_name; method_name = "__init__" },
+      ( Target.Method { Target.class_name; method_name = "__init__"; kind = Normal },
         {
           Model.forward = Model.Forward.empty;
           backward =
@@ -95,7 +95,7 @@ let infer ~environment ~user_models =
       (* Should not omit this model. Otherwise the mode is "obscure", thus leading to a tito model,
          which joins the taint on every element of the tuple. *)
       [
-        ( Target.Method { Target.class_name; method_name = "__new__" },
+        ( Target.Method { Target.class_name; method_name = "__new__"; kind = Normal },
           {
             Model.forward = Model.Forward.empty;
             backward = Model.Backward.empty;

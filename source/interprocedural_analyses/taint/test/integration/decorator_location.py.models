@@ -85,6 +85,78 @@
     "callable": "decorator_location.main",
     "callable_line": 98,
     "code": 5002,
+    "line": 105,
+    "start": 19,
+    "end": 33,
+    "filename": "decorator_location.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "decorator_location.py",
+              "line": 105,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "decorator_location.py",
+                "line": 105,
+                "start": 19,
+                "end": 33
+              },
+              "resolves_to": [ "decorator_location.handle_request" ],
+              "port": "formal(request)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator_location.handle_request",
+      "index": 1,
+      "parameter": "formal(request)"
+    },
+    "master_handle":
+      "decorator_location.main:5002:0:Call|decorator_location.handle_request|1|formal(request):3091b7eeaeb9168762c2959242487aac"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator_location.main",
+    "callable_line": 98,
+    "code": 5002,
     "line": 101,
     "start": 8,
     "end": 22,
@@ -155,78 +227,6 @@
     },
     "master_handle":
       "decorator_location.main:5002:0:Call|decorator_location.baz|0|formal(x):e305d13e20261144972c6aebbaa0efa9"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "decorator_location.main",
-    "callable_line": 98,
-    "code": 5002,
-    "line": 105,
-    "start": 19,
-    "end": 33,
-    "filename": "decorator_location.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "decorator_location.py",
-              "line": 105,
-              "start": 19,
-              "end": 33
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "length": 2,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "decorator_location.py",
-                "line": 105,
-                "start": 19,
-                "end": 33
-              },
-              "resolves_to": [ "decorator_location.handle_request" ],
-              "port": "formal(request)"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "decorator_location.handle_request",
-      "index": 1,
-      "parameter": "formal(request)"
-    },
-    "master_handle":
-      "decorator_location.main:5002:0:Call|decorator_location.handle_request|1|formal(request):3091b7eeaeb9168762c2959242487aac"
   }
 }
 {

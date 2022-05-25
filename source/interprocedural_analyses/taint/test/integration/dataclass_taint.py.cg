@@ -1,14 +1,14 @@
 @generated
 Call dependencies
-dataclass_taint.$toplevel (fun) -> []
-dataclass_taint.bad_is_tainted (fun) -> [_test_sink (fun) _test_source (fun) dataclass_taint.DataClass::__init__ (method) object::__new__ (method)]
-dataclass_taint.benign_is_untainted (fun) -> [_test_sink (fun) _test_source (fun) dataclass_taint.DataClass::__init__ (method) object::__new__ (method)]
 dataclass_taint.issue_in_dataclass_constructor (fun) -> [_test_source (fun) dataclass_taint.DataClassWIthInit::__init__ (method) object::__new__ (method)]
 dataclass_taint.test_class_attr_model_tainted_directly (fun) -> [_test_source (fun) dataclass_taint.DataClassWithClassAttributeTaintedDirectly::__init__ (method) object::__new__ (method)]
 dataclass_taint.test_class_attr_model_tainted_in_constructor (fun) -> [_test_source (fun) dataclass_taint.DataClassWithClassAttributeTaintedInConstructor::__init__ (method) object::__new__ (method)]
 dataclass_taint.test_dataclass_with_other_source (fun) -> [_test_sink (fun)]
 dataclass_taint.test_dataclass_with_source (fun) -> [_test_sink (fun)]
 dataclass_taint.test_weird_dataclass_taint (fun) -> [dataclass_taint.WeirdDataClass::__init__ (method) object::__new__ (method)]
+dataclass_taint.$toplevel (fun) -> []
+dataclass_taint.bad_is_tainted (fun) -> [_test_sink (fun) _test_source (fun) dataclass_taint.DataClass::__init__ (method) object::__new__ (method)]
+dataclass_taint.benign_is_untainted (fun) -> [_test_sink (fun) _test_source (fun) dataclass_taint.DataClass::__init__ (method) object::__new__ (method)]
 dataclass_taint.DataClassWithClassAttributeTaintedDirectly::$class_toplevel (method) -> []
 dataclass_taint.DataClassWithClassAttributeTaintedInConstructor::$class_toplevel (method) -> []
 dataclass_taint.DataClass::$class_toplevel (method) -> []

@@ -160,7 +160,7 @@ let union left right =
 let from_overrides overrides =
   let override_map, all_overrides =
     let add ~member:method_name ~subtypes (override_map, all_overrides) =
-      let key = Target.create_override method_name in
+      let key = Target.get_corresponding_override method_name in
       let data =
         List.map subtypes ~f:(fun at_type -> Target.create_derived_override key ~at_type)
       in
