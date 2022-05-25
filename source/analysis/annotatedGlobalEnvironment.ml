@@ -117,6 +117,10 @@ module ReadOnly = struct
     |> ClassHierarchyEnvironment.ReadOnly.alias_environment
     |> AliasEnvironment.ReadOnly.unannotated_global_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+
+
+  let project_qualifiers environment =
+    ast_environment environment |> AstEnvironment.ReadOnly.project_qualifiers
 end
 
 module UpdateResult = GlobalLocationTable.UpdateResult

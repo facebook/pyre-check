@@ -53,6 +53,8 @@ module ReadOnly : sig
 
   val source_paths : t -> Ast.SourcePath.t list
 
+  val project_qualifiers : t -> Ast.Reference.t list
+
   (* This function returns all explicit modules (i.e. those backed up by a source path) that are
      tracked *)
   val tracked_explicit_modules : t -> Ast.Reference.t list

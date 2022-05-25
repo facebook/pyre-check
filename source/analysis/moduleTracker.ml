@@ -541,6 +541,11 @@ module ReadOnly = struct
   let tracked_explicit_modules tracker = source_paths tracker |> List.map ~f:SourcePath.qualifier
 
   let get_raw_code { get_raw_code; _ } = get_raw_code
+
+  let project_qualifiers tracker =
+    source_paths tracker
+    |> List.filter ~f:SourcePath.is_in_project
+    |> List.map ~f:SourcePath.qualifier
 end
 
 let read_only

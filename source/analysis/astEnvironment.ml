@@ -385,11 +385,7 @@ let update
          future, there are ever nested classes in builtins. *)
       let _ = LazyRawSources.load ~ast_environment Reference.empty in
       let invalidated_modules =
-        Reference.empty
-        ::
-        (ModuleTracker.ReadOnly.source_paths module_tracker
-        |> List.filter ~f:SourcePath.is_in_project
-        |> List.map ~f:SourcePath.qualifier)
+        Reference.empty :: ModuleTracker.ReadOnly.project_qualifiers module_tracker
       in
       invalidated_modules
   | Update module_updates -> (
@@ -519,6 +515,10 @@ module ReadOnly = struct
     let { Configuration.Analysis.local_root; _ } = configuration read_only in
     get_real_path read_only qualifier
     >>= fun path -> PyrePath.Built.get_relative_to_root ~root:local_root ~path
+
+
+  let project_qualifiers { module_tracker; _ } =
+    ModuleTracker.ReadOnly.project_qualifiers module_tracker
 end
 
 let remove_sources { raw_sources; _ } = RawSources.remove_sources raw_sources

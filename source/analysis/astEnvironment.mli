@@ -45,6 +45,8 @@ module ReadOnly : sig
   val all_explicit_modules : t -> Reference.t list
 
   val is_module_tracked : t -> Reference.t -> bool
+
+  val project_qualifiers : t -> Ast.Reference.t list
 end
 
 val module_tracker : t -> ModuleTracker.t
