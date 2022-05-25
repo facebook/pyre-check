@@ -102,7 +102,7 @@ let run_infer_local ~configuration ~build_system ~paths_to_modify () =
   let result =
     Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
         let ({ Service.Infer.global_environment; _ } as environment_data) =
-          Service.Infer.build_environment_data ~configuration ~scheduler ()
+          Service.Infer.build_environment_data ~configuration ()
         in
         let filename_lookup qualifier =
           let ast_environment =

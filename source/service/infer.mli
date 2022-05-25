@@ -10,11 +10,7 @@ type environment_data = {
   qualifiers: Ast.Reference.t list;
 }
 
-val build_environment_data
-  :  configuration:Configuration.Analysis.t ->
-  scheduler:Scheduler.t ->
-  unit ->
-  environment_data
+val build_environment_data : configuration:Configuration.Analysis.t -> unit -> environment_data
 
 val should_analyze_file : paths_to_modify:PyrePath.t list -> PyrePath.t -> bool
 

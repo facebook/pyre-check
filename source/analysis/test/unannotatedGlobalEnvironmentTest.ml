@@ -24,11 +24,7 @@ let create_with_location value start end_ = Node.create value ~location:(locatio
 let create_and_cold_start project =
   let ast_environment = ScratchProject.build_ast_environment project in
   let unannotated_global_environment = UnannotatedGlobalEnvironment.create ast_environment in
-  let _ =
-    UnannotatedGlobalEnvironment.cold_start
-      unannotated_global_environment
-      ~scheduler:(mock_scheduler ())
-  in
+  let _ = UnannotatedGlobalEnvironment.cold_start unannotated_global_environment in
   unannotated_global_environment
 
 

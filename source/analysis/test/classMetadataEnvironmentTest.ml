@@ -19,10 +19,7 @@ let test_simple_registration context =
     in
     let ast_environment = ScratchProject.build_ast_environment project in
     let class_metadata_environment = ClassMetadataEnvironment.create ast_environment in
-    let read_only =
-      ClassMetadataEnvironment.cold_start ~scheduler:(mock_scheduler ()) class_metadata_environment
-      |> ClassMetadataEnvironment.UpdateResult.read_only
-    in
+    let read_only = ClassMetadataEnvironment.cold_start class_metadata_environment in
     let printer v =
       v >>| ClassMetadataEnvironment.show_class_metadata |> Option.value ~default:"none"
     in
@@ -138,10 +135,7 @@ let test_updates context =
     let ast_environment = ScratchProject.build_ast_environment project in
     let configuration = ScratchProject.configuration_of project in
     let class_metadata_environment = ClassMetadataEnvironment.create ast_environment in
-    let read_only =
-      ClassMetadataEnvironment.cold_start ~scheduler:(mock_scheduler ()) class_metadata_environment
-      |> ClassMetadataEnvironment.UpdateResult.read_only
-    in
+    let read_only = ClassMetadataEnvironment.cold_start class_metadata_environment in
     let execute_action (class_name, dependency, expectation) =
       let printer v =
         v >>| ClassMetadataEnvironment.show_class_metadata |> Option.value ~default:"none"

@@ -17,7 +17,6 @@ type environment_data = {
 let build_environment_data
     ~configuration:
       ({ Configuration.Analysis.project_root; source_paths; search_paths; _ } as configuration)
-    ~scheduler
     ()
   =
   (* Sanity check environment. *)
@@ -36,7 +35,7 @@ let build_environment_data
 
     let timer = Timer.start () in
     let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
-    let _ = AnnotatedGlobalEnvironment.cold_start annotated_global_environment ~scheduler in
+    let _ = AnnotatedGlobalEnvironment.cold_start annotated_global_environment in
     Statistics.performance ~name:"full environment built" ~timer ();
     AnnotatedGlobalEnvironment.read_only annotated_global_environment
   in

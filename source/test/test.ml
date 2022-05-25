@@ -2681,9 +2681,9 @@ let update_environments
     ast_environment_trigger
 
 
-let cold_start_environments ?(scheduler = mock_scheduler ()) ~ast_environment () =
+let cold_start_environments ~ast_environment () =
   let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
-  let _ = AnnotatedGlobalEnvironment.cold_start annotated_global_environment ~scheduler in
+  let _ = AnnotatedGlobalEnvironment.cold_start annotated_global_environment in
   annotated_global_environment
 
 

@@ -47,7 +47,7 @@ module type PreviousEnvironment = sig
 
   val read_only : t -> ReadOnly.t
 
-  val cold_start : t -> scheduler:Scheduler.t -> UpdateResult.t
+  val cold_start : t -> ReadOnly.t
 
   val update_this_and_all_preceding_environments
     :  t ->
@@ -103,7 +103,7 @@ module type S = sig
 
   val read_only : t -> ReadOnly.t
 
-  val cold_start : t -> scheduler:Scheduler.t -> UpdateResult.t
+  val cold_start : t -> ReadOnly.t
 
   val update_this_and_all_preceding_environments
     :  t ->
@@ -194,7 +194,7 @@ module EnvironmentTable = struct
 
     val read_only : t -> ReadOnly.t
 
-    val cold_start : t -> scheduler:Scheduler.t -> UpdateResult.t
+    val cold_start : t -> ReadOnly.t
 
     val update_this_and_all_preceding_environments
       :  t ->
@@ -351,13 +351,16 @@ module EnvironmentTable = struct
       }
 
 
-    let cold_start ({ upstream_environment; _ } as this_environment) ~scheduler =
-      let upstream_update = In.PreviousEnvironment.cold_start upstream_environment ~scheduler in
-      {
-        UpdateResult.triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
-        upstream = upstream_update;
-        read_only = read_only this_environment;
-      }
+    let cold_start { table; upstream_environment } =
+      let name = Format.sprintf "LegacyTableUpdate(%s)" In.Value.description in
+      Profiling.track_duration_and_shared_memory
+        name
+        ~tags:["phase_name", In.Value.description]
+        ~f:(fun _ ->
+          {
+            ReadOnly.table;
+            upstream_environment = In.PreviousEnvironment.cold_start upstream_environment;
+          })
 
 
     let update_this_and_all_preceding_environments

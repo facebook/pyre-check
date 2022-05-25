@@ -17,12 +17,7 @@ let test_simple_registration context =
     let project = ScratchProject.setup sources ~include_typeshed_stubs:false ~context in
     let ast_environment = ScratchProject.build_ast_environment project in
     let class_hierarchy_environment = ClassHierarchyEnvironment.create ast_environment in
-    let read_only =
-      ClassHierarchyEnvironment.cold_start
-        ~scheduler:(mock_scheduler ())
-        class_hierarchy_environment
-      |> ClassHierarchyEnvironment.UpdateResult.read_only
-    in
+    let read_only = ClassHierarchyEnvironment.cold_start class_hierarchy_environment in
     let expected_edges =
       expected_edges
       >>| List.map ~f:(fun name ->
@@ -234,12 +229,7 @@ let test_updates context =
     let ast_environment = ScratchProject.build_ast_environment project in
     let configuration = ScratchProject.configuration_of project in
     let class_hierarchy_environment = ClassHierarchyEnvironment.create ast_environment in
-    let read_only =
-      ClassHierarchyEnvironment.cold_start
-        ~scheduler:(mock_scheduler ())
-        class_hierarchy_environment
-      |> ClassHierarchyEnvironment.UpdateResult.read_only
-    in
+    let read_only = ClassHierarchyEnvironment.cold_start class_hierarchy_environment in
     let execute_action = function
       | `Edges (class_name, dependency, expectation) ->
           let printer v =

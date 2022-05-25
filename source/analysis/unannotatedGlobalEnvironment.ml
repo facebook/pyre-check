@@ -1121,21 +1121,20 @@ module UpdateResult = struct
   let read_only { read_only; _ } = read_only
 end
 
-let cold_start ({ ast_environment; _ } as environment) ~scheduler:_ =
-  (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
-  let ast_read_only = AstEnvironment.read_only ast_environment in
-  AstEnvironment.ReadOnly.get_processed_source ast_read_only ~track_dependency:true Reference.empty
-  >>| set_module_data environment
-  |> Option.value ~default:();
-  {
-    UpdateResult.previous_classes = Type.Primitive.Set.empty;
-    previous_defines = Reference.Set.empty;
-    define_additions = Reference.Set.empty;
-    previous_unannotated_globals = Reference.Set.empty;
-    triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
-    invalidated_modules = [];
-    read_only = read_only environment;
-  }
+let cold_start ({ ast_environment; _ } as environment) =
+  Profiling.track_duration_and_shared_memory
+    "LegacyTableUpdate(Unannotated globals)"
+    ~tags:["phase_name", "global discovery"]
+    ~f:(fun _ ->
+      (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
+      let ast_read_only = AstEnvironment.read_only ast_environment in
+      AstEnvironment.ReadOnly.get_processed_source
+        ast_read_only
+        ~track_dependency:true
+        Reference.empty
+      >>| set_module_data environment
+      |> Option.value ~default:();
+      read_only environment)
 
 
 let update_this_and_all_preceding_environments
