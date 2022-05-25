@@ -37,7 +37,7 @@ class LoggerCategory(Enum):
 def log(
     category: LoggerCategory,
     logger: str,
-    integers: Optional[Mapping[str, int]] = None,
+    integers: Optional[Mapping[str, Optional[int]]] = None,
     normals: Optional[Mapping[str, Optional[str]]] = None,
 ) -> None:
     try:
