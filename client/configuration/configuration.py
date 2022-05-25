@@ -998,15 +998,6 @@ class Configuration:
                 vaild_extensions.append(extension.command_line_argument())
         return vaild_extensions
 
-    def get_isolation_prefix_respecting_override(self) -> Optional[str]:
-        """We need this to disable an isolation prefix set in a configuration.
-        Merely omitting the CLI flag would not disable the isolation prefix
-        because we would just fall back to the configuration value.
-
-        With this, we can pass `--isolation-prefix ''` as a CLI argument or
-        override `isolation_prefix` as `""` in a local configuration."""
-        return None if self.isolation_prefix == "" else self.isolation_prefix
-
     def get_python_version(self) -> python_version_module.PythonVersion:
         python_version = self.python_version
         if python_version is not None:
