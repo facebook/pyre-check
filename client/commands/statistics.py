@@ -19,7 +19,7 @@ from .. import (
     log,
     statistics_collectors as collectors,
 )
-from . import commands
+from . import commands, frontend_configuration
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -185,20 +185,20 @@ def collect_statistics(
 
 
 def collect_all_statistics(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     statistics_arguments: command_arguments.StatisticsArguments,
 ) -> Dict[str, StatisticsData]:
-    local_root = configuration.local_root
+    local_root = configuration.get_local_root()
     return collect_statistics(
         find_paths_to_parse(
             find_roots(
                 statistics_arguments.directories,
                 local_root=Path(local_root) if local_root is not None else None,
-                global_root=Path(configuration.project_root),
+                global_root=Path(configuration.get_global_root()),
             ),
-            excludes=configuration.excludes,
+            excludes=configuration.get_excludes(),
         ),
-        strict_default=configuration.strict,
+        strict_default=configuration.is_strict(),
     )
 
 
@@ -333,7 +333,7 @@ def process_json_statistics(
 
 
 def run_statistics(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     statistics_arguments: command_arguments.StatisticsArguments,
 ) -> commands.ExitCode:
     data = collect_all_statistics(configuration, statistics_arguments)
@@ -355,7 +355,9 @@ def run(
 ) -> commands.ExitCode:
     try:
         LOG.info("Collecting statistics...")
-        return run_statistics(configuration, statistics_arguments)
+        return run_statistics(
+            frontend_configuration.OpenSource(configuration), statistics_arguments
+        )
     except Exception as error:
         raise commands.ClientException(
             f"Exception occurred during statistics collection: {error}"

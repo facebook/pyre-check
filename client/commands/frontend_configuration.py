@@ -6,7 +6,7 @@
 import abc
 import json
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from ..configuration import configuration as configuration_module
 
@@ -39,6 +39,14 @@ class Base(abc.ABC):
 
     @abc.abstractmethod
     def get_relative_local_root(self) -> Optional[str]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def get_excludes(self) -> List[str]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def is_strict(self) -> bool:
         raise NotImplementedError
 
     def get_local_root(self) -> Optional[Path]:
@@ -77,3 +85,9 @@ class OpenSource(Base):
 
     def get_relative_local_root(self) -> Optional[str]:
         return self.configuration.relative_local_root
+
+    def get_excludes(self) -> List[str]:
+        return list(self.configuration.excludes)
+
+    def is_strict(self) -> bool:
+        return self.configuration.strict
