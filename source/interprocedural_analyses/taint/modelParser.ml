@@ -117,23 +117,25 @@ module Internal = struct
       [@@deriving compare, show]
     end
 
-    type class_constraint =
-      | NameSatisfies of name_constraint
-      | Extends of {
-          class_name: string;
-          is_transitive: bool;
-        }
-    [@@deriving compare]
+    module ClassConstraint = struct
+      type t =
+        | NameSatisfies of name_constraint
+        | Extends of {
+            class_name: string;
+            is_transitive: bool;
+          }
+      [@@deriving compare]
 
-    let pp_class_constraint formatter class_constraint =
-      match class_constraint with
-      | NameSatisfies name_constraint ->
-          Format.fprintf formatter "NameSatisfies(%s)" (show_name_constraint name_constraint)
-      | Extends { class_name; is_transitive } ->
-          Format.fprintf formatter "Extends(%s, is_transitive=%b)" class_name is_transitive
+      let pp formatter class_constraint =
+        match class_constraint with
+        | NameSatisfies name_constraint ->
+            Format.fprintf formatter "NameSatisfies(%s)" (show_name_constraint name_constraint)
+        | Extends { class_name; is_transitive } ->
+            Format.fprintf formatter "Extends(%s, is_transitive=%b)" class_name is_transitive
 
 
-    let show_class_constraint = Format.asprintf "%a" pp_class_constraint
+      let show = Format.asprintf "%a" pp
+    end
 
     type model_constraint =
       | NameConstraint of name_constraint
@@ -142,7 +144,7 @@ module Internal = struct
       | AnyParameterConstraint of ParameterConstraint.t
       | AnyOf of model_constraint list
       | AllOf of model_constraint list
-      | ParentConstraint of class_constraint
+      | ParentConstraint of ClassConstraint.t
       | DecoratorConstraint of {
           name_constraint: name_constraint;
           arguments_constraint: ArgumentsConstraint.t option;
@@ -1516,7 +1518,9 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
                   | "matches" -> ModelQuery.Matches (Re2.create_exn class_name)
                   | _ -> failwith "impossible case"
                 in
-                Ok (ModelQuery.ParentConstraint (ModelQuery.NameSatisfies name_constraint))
+                Ok
+                  (ModelQuery.ParentConstraint
+                     (ModelQuery.ClassConstraint.NameSatisfies name_constraint))
             | _ ->
                 Error
                   (model_verification_error
