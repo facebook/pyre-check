@@ -355,7 +355,7 @@ let test_simple_global_registration context =
 
 
 let test_builtin_modules context =
-  let ast_environment =
+  let read_only =
     let ast_environment =
       let sources = ["builtins.py", "foo: int = 42"] in
       let project =
@@ -378,19 +378,19 @@ let test_builtin_modules context =
   in
   assert_bool
     "empty qualifier module exists"
-    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment Reference.empty);
+    (UnannotatedGlobalEnvironment.ReadOnly.module_exists read_only Reference.empty);
   assert_bool
     "random qualifier doesn't exist"
-    (not (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"derp"));
+    (not (UnannotatedGlobalEnvironment.ReadOnly.module_exists read_only !&"derp"));
   assert_bool
     "`builtins` exists"
-    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"builtins");
+    (UnannotatedGlobalEnvironment.ReadOnly.module_exists read_only !&"builtins");
   assert_bool
     "`future.builtins` exists"
-    (UnannotatedGlobalEnvironment.ReadOnly.module_exists ast_environment !&"future.builtins");
+    (UnannotatedGlobalEnvironment.ReadOnly.module_exists read_only !&"future.builtins");
 
   let assert_nonempty qualifier =
-    match UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata ast_environment qualifier with
+    match UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata read_only qualifier with
     | None -> assert_failure "Module does not exist"
     | Some metadata ->
         assert_bool "empty stub not expected" (not (Module.empty_stub metadata));
@@ -433,8 +433,8 @@ let test_resolve_exports context =
         ~scheduler:(mock_scheduler ())
         ColdStart
     in
-    let unannotated_global_environment = UpdateResult.read_only update_result in
-    let actual = ReadOnly.resolve_exports unannotated_global_environment ?from reference in
+    let read_only = UpdateResult.read_only update_result in
+    let actual = ReadOnly.resolve_exports read_only ?from reference in
     assert_equal
       ~ctxt:context
       ~cmp:[%compare.equal: ResolvedReference.t option]
