@@ -656,22 +656,6 @@ let get_all_dependents ~class_additions ~unannotated_global_additions ~define_ad
     |> UnannotatedGlobals.get_all_dependents)
 
 
-let direct_data_purge
-    { modules; class_summaries; function_definitions; unannotated_globals; _ }
-    ~previous_classes_list
-    ~previous_unannotated_globals_list
-    ~previous_defines_list
-    ~previous_modules_list
-  =
-  Modules.KeySet.of_list previous_modules_list |> Modules.remove_batch modules;
-  ClassSummaries.KeySet.of_list previous_classes_list |> ClassSummaries.remove_batch class_summaries;
-  FunctionDefinitions.KeySet.of_list previous_defines_list
-  |> FunctionDefinitions.remove_batch function_definitions;
-  UnannotatedGlobals.KeySet.of_list previous_unannotated_globals_list
-  |> UnannotatedGlobals.remove_batch unannotated_globals;
-  ()
-
-
 module ReadOnly = struct
   type t = {
     ast_environment: AstEnvironment.ReadOnly.t;
@@ -1137,11 +1121,29 @@ module UpdateResult = struct
   let read_only { read_only; _ } = read_only
 end
 
-let update_invalidated_modules
+let cold_start ({ ast_environment; _ } as environment) ~scheduler:_ =
+  (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
+  let ast_read_only = AstEnvironment.read_only ast_environment in
+  AstEnvironment.ReadOnly.get_processed_source ast_read_only ~track_dependency:true Reference.empty
+  >>| set_module_data environment
+  |> Option.value ~default:();
+  {
+    UpdateResult.previous_classes = Type.Primitive.Set.empty;
+    previous_defines = Reference.Set.empty;
+    define_additions = Reference.Set.empty;
+    previous_unannotated_globals = Reference.Set.empty;
+    triggered_dependencies = SharedMemoryKeys.DependencyKey.RegisteredSet.empty;
+    invalidated_modules = [];
+    read_only = read_only environment;
+  }
+
+
+let update_this_and_all_preceding_environments
     ({ ast_environment; key_tracker; _ } as environment)
     ~scheduler
-    invalidated_modules
+    trigger
   =
+  let invalidated_modules = AstEnvironment.update ~scheduler ast_environment trigger in
   let ast_environment = AstEnvironment.read_only ast_environment in
   let map sources =
     let register qualifier =
@@ -1234,33 +1236,3 @@ let update_invalidated_modules
     invalidated_modules;
     read_only = read_only environment;
   }
-
-
-let cold_start ({ ast_environment; key_tracker; _ } as environment) ~scheduler =
-  (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
-  let invalidated_modules =
-    Reference.empty
-    :: (AstEnvironment.read_only ast_environment |> AstEnvironment.ReadOnly.project_qualifiers)
-  in
-
-  let KeyTracker.PreviousKeys.
-        { previous_classes_list; previous_defines_list; previous_unannotated_globals_list; _ }
-    =
-    KeyTracker.get_previous_keys_and_clear key_tracker invalidated_modules
-  in
-  direct_data_purge
-    environment
-    ~previous_classes_list
-    ~previous_unannotated_globals_list
-    ~previous_defines_list
-    ~previous_modules_list:invalidated_modules;
-  update_invalidated_modules environment ~scheduler invalidated_modules
-
-
-let update_this_and_all_preceding_environments
-    ({ ast_environment; _ } as environment)
-    ~scheduler
-    trigger
-  =
-  AstEnvironment.update ~scheduler ast_environment trigger
-  |> update_invalidated_modules environment ~scheduler

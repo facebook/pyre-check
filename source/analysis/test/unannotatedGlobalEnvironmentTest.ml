@@ -729,6 +729,11 @@ let assert_updates
         UnannotatedGlobalEnvironment.ReadOnly.class_exists read_only ~dependency class_name
         |> assert_equal expectation
     | `AllClasses expectation ->
+        let _force_lazy_loading_of_module_ =
+          UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata
+            read_only
+            (Reference.create "test")
+        in
         UnannotatedGlobalEnvironment.ReadOnly.all_classes read_only
         |> assert_equal ~printer:(List.to_string ~f:Fn.id) expectation
     | `Global (global_name, dependency, expectation) ->
