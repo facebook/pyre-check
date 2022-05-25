@@ -8,7 +8,7 @@ import dataclasses
 from collections import defaultdict
 from enum import Enum
 from re import compile
-from typing import Any, Dict, Iterable, List, Pattern, Sequence
+from typing import Any, Dict, Iterable, List, Optional, Pattern, Sequence
 
 import libcst as cst
 from libcst.metadata import CodeRange, PositionProvider
@@ -19,6 +19,40 @@ class AnnotationInfo:
     node: cst.CSTNode
     is_annotated: bool
     code_range: CodeRange
+
+
+@dataclasses.dataclass(frozen=True)
+class ModuleAnnotationCount:
+    line_count: int
+    total_functions: List[CodeRange]
+    partially_annotated_functions: List[CodeRange]
+    fully_annotated_functions: List[CodeRange]
+    total_parameters: List[CodeRange]
+    annotated_parameters: List[CodeRange]
+    total_returns: List[CodeRange]
+    annotated_returns: List[CodeRange]
+    total_globals: List[CodeRange]
+    annotated_globals: List[CodeRange]
+    total_attributes: List[CodeRange]
+    annotated_attributes: List[CodeRange]
+
+
+@dataclasses.dataclass(frozen=True)
+class ModuleSuppressionCount:
+    code: Dict[int, List[int]]
+    no_code: List[int]
+
+
+class ModuleModeKind(Enum):
+    UNSAFE = 0
+    STRICT = 1
+    IGNORE_ALL = 2
+
+
+@dataclasses.dataclass(frozen=True)
+class ModuleStrictCount:
+    mode: ModuleModeKind
+    explicit_comment_line: Optional[int]
 
 
 class FunctionAnnotationKind(Enum):
@@ -267,6 +301,34 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
     def fully_annotated_functions_count(self) -> int:
         return len([f for f in self.functions if f.is_fully_annotated])
 
+    def build_result(self) -> ModuleAnnotationCount:
+        return ModuleAnnotationCount(
+            line_count=self.line_count,
+            total_functions=[function.code_range for function in self.functions],
+            partially_annotated_functions=[
+                function.code_range
+                for function in self.functions
+                if function.is_partially_annotated
+            ],
+            fully_annotated_functions=[
+                function.code_range
+                for function in self.functions
+                if function.is_fully_annotated
+            ],
+            total_parameters=[p.code_range for p in list(self.parameters())],
+            annotated_parameters=[
+                p.code_range for p in self.parameters() if p.is_annotated
+            ],
+            total_returns=[r.code_range for r in list(self.returns())],
+            annotated_returns=[r.code_range for r in self.returns() if r.is_annotated],
+            total_globals=[g.code_range for g in self.globals],
+            annotated_globals=[g.code_range for g in self.globals if g.is_annotated],
+            total_attributes=[a.code_range for a in self.attributes],
+            annotated_attributes=[
+                a.code_range for a in self.attributes if a.is_annotated
+            ],
+        )
+
     def build_json(self) -> Dict[str, int]:
         return {
             "return_count": self.return_count(),
@@ -303,6 +365,9 @@ class SuppressionCountCollector(StatisticsCollector):
                 codes = ["No Code"]
             for code in codes:
                 self.counts[code.strip()] += 1
+
+    def build_result(self) -> ModuleSuppressionCount:
+        return ModuleSuppressionCount(code={}, no_code=[])
 
     def build_json(self) -> Dict[str, int]:
         return dict(self.counts)
@@ -366,6 +431,14 @@ class StrictCountCollector(StatisticsCollector):
             self.unsafe_count += 1
         else:
             self.strict_count += 1
+
+    def build_result(self) -> ModuleStrictCount:
+        return ModuleStrictCount(
+            mode=ModuleModeKind.UNSAFE
+            if self.is_unsafe_module()
+            else ModuleModeKind.STRICT,
+            explicit_comment_line=None,
+        )
 
     def build_json(self) -> Dict[str, int]:
         return {"unsafe_count": self.unsafe_count, "strict_count": self.strict_count}
