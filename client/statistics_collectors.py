@@ -5,13 +5,15 @@
 
 
 import dataclasses
-from collections import defaultdict
+import logging
 from enum import Enum
 from re import compile
 from typing import Any, Dict, Iterable, List, Optional, Pattern, Sequence
 
 import libcst as cst
 from libcst.metadata import CodeRange, PositionProvider
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -352,25 +354,49 @@ class SuppressionCountCollector(StatisticsCollector):
     METADATA_DEPENDENCIES = (PositionProvider,)
 
     def __init__(self, regex: str) -> None:
-        self.counts: Dict[str, int] = defaultdict(int)
+        self.no_code: List[int] = []
+        self.codes: Dict[int, List[int]] = {}
         self.regex: Pattern[str] = compile(regex)
 
+    def error_codes(self, line: str) -> Optional[List[int]]:
+        match = self.regex.match(line)
+        if match is None:
+            # No suppression on line
+            return None
+        code_group = match.group(1)
+        if code_group is None:
+            # Code-less error suppression
+            return []
+        code_strings = code_group.strip("[] ").split(",")
+        try:
+            codes = [int(code) for code in code_strings]
+            return codes
+        except ValueError:
+            LOG.warning("Invalid error suppression code: %s", line)
+            return []
+
     def visit_Comment(self, node: cst.Comment) -> None:
-        match = self.regex.match(node.value)
-        if match:
-            code_group = match.group(1)
-            if code_group:
-                codes = code_group.strip("[] ").split(",")
+        error_codes = self.error_codes(node.value)
+        if error_codes is None:
+            return
+        suppression_line = self.get_metadata(PositionProvider, node).start.line
+        if len(error_codes) == 0:
+            self.no_code.append(suppression_line)
+            return
+        for code in error_codes:
+            if code in self.codes:
+                self.codes[code].append(suppression_line)
             else:
-                codes = ["No Code"]
-            for code in codes:
-                self.counts[code.strip()] += 1
+                self.codes[code] = [suppression_line]
 
     def build_result(self) -> ModuleSuppressionCount:
-        return ModuleSuppressionCount(code={}, no_code=[])
+        return ModuleSuppressionCount(code=self.codes, no_code=self.no_code)
 
     def build_json(self) -> Dict[str, int]:
-        return dict(self.counts)
+        code_counts = {str(code): len(lines) for (code, lines) in self.codes.items()}
+        if len(self.no_code) > 0:
+            code_counts["No Code"] = len(self.no_code)
+        return code_counts
 
 
 class FixmeCountCollector(SuppressionCountCollector):

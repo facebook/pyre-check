@@ -5,7 +5,7 @@
 
 import textwrap
 import unittest
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import libcst as cst
 from libcst.metadata import CodePosition, CodeRange, MetadataWrapper
@@ -572,30 +572,40 @@ class FunctionAnnotationKindTest(unittest.TestCase):
 
 
 class FixmeCountCollectorTest(unittest.TestCase):
-    def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
+    def assert_counts(
+        self,
+        source: str,
+        expected_codes: Dict[int, List[int]],
+        expected_no_codes: List[int],
+    ) -> None:
         source_module = MetadataWrapper(
             parse_source(source.replace("FIXME", "pyre-fixme"))
         )
         collector = FixmeCountCollector()
         source_module.visit(collector)
-        self.assertDictEqual(collector.build_json(), expected)
+        result = collector.build_result()
+        self.assertEqual(expected_codes, result.code)
+        self.assertEqual(expected_no_codes, result.no_code)
 
     def test_count_fixmes(self) -> None:
-        self.assert_counts("# FIXME[2]: Example Error Message", {"2": 1})
+        self.assert_counts("# FIXME[2]: Example Error Message", {2: [1]}, [])
         self.assert_counts(
             "# FIXME[3]: Example Error Message \n\n\n # FIXME[34]: Example",
-            {"3": 1, "34": 1},
+            {3: [1], 34: [4]},
+            [],
         )
         self.assert_counts(
             "# FIXME[2]: Example Error Message\n\n\n# FIXME[2]: message",
-            {"2": 2},
+            {2: [1, 4]},
+            [],
         )
         self.assert_counts(
             """
             def foo(x: str) -> int:
                 return x  # FIXME[7]
             """,
-            {"7": 1},
+            {7: [3]},
+            [],
         )
         self.assert_counts(
             """
@@ -603,42 +613,48 @@ class FixmeCountCollectorTest(unittest.TestCase):
                 # FIXME[7]: comments
                 return x
             """,
-            {"7": 1},
+            {7: [3]},
+            [],
         )
         self.assert_counts(
             """
             def foo(x: str) -> int:
                 return x # unrelated # FIXME[7]
             """,
-            {"7": 1},
+            {7: [3]},
+            [],
         )
         self.assert_counts(
             """
             def foo(x: str) -> int:
                 return x # unrelated   #  FIXME[7] comments
             """,
-            {"7": 1},
+            {7: [3]},
+            [],
         )
         self.assert_counts(
             """
             def foo(x: str) -> int:
                 return x  # FIXME
             """,
-            {"No Code": 1},
+            {},
+            [3],
         )
         self.assert_counts(
             """
             def foo(x: str) -> int:
                 return x  # FIXME: comments
             """,
-            {"No Code": 1},
+            {},
+            [3],
         )
         self.assert_counts(
             """
             def foo(x: str) -> int:
                 return x # FIXME[7, 8]
             """,
-            {"7": 1, "8": 1},
+            {7: [3], 8: [3]},
+            [],
         )
         self.assert_counts(
             """
@@ -646,28 +662,48 @@ class FixmeCountCollectorTest(unittest.TestCase):
             def foo(x: str) -> int:
                 return x # FIXME[7, 8]
             """,
-            {"7": 1, "8": 2},
+            {7: [4], 8: [2, 4]},
+            [],
+        )
+        # Invalid suppression
+        self.assert_counts(
+            """
+            # FIXME[8,]
+            def foo(x: str) -> int:
+                return x
+            """,
+            {},
+            [2],
         )
 
 
 class IgnoreCountCollectorTest(unittest.TestCase):
-    def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
+    def assert_counts(
+        self,
+        source: str,
+        expected_codes: Dict[int, List[int]],
+        expected_no_codes: List[int],
+    ) -> None:
         source_module = MetadataWrapper(
             parse_source(source.replace("IGNORE", "pyre-ignore"))
         )
         collector = IgnoreCountCollector()
         source_module.visit(collector)
-        self.assertEqual(collector.build_json(), expected)
+        result = collector.build_result()
+        self.assertEqual(expected_codes, result.code)
+        self.assertEqual(expected_no_codes, result.no_code)
 
     def test_count_ignores(self) -> None:
-        self.assert_counts("# IGNORE[2]: Example Error Message", {"2": 1})
+        self.assert_counts("# IGNORE[2]: Example Error Message", {2: [1]}, [])
         self.assert_counts(
             "# IGNORE[3]: Example Error Message \n\n\n # pyre-ignore[34]: Example",
-            {"3": 1, "34": 1},
+            {3: [1], 34: [4]},
+            [],
         )
         self.assert_counts(
             "# IGNORE[2]: Example Error Message\n\n\n# pyre-ignore[2]: message",
-            {"2": 2},
+            {2: [1, 4]},
+            [],
         )
 
 
