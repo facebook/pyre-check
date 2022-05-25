@@ -7,9 +7,9 @@
 
 import unittest
 from io import StringIO
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, List, Optional, Type, TypedDict, TypeVar, Union
 
-from typing_extensions import TypedDict
+import typing_extensions
 
 from .. import safe_json
 
@@ -35,6 +35,11 @@ class MovieWithUnion(Movie):
 
 class MovieWithNonRequiredField(Movie, total=False):
     not_required: str
+
+
+class MovieAlternative(typing_extensions.TypedDict):
+    name: str
+    year: int
 
 
 class BasicTestCase(unittest.TestCase):
@@ -245,6 +250,13 @@ class BasicTestCase(unittest.TestCase):
         self._assert_loads_fails(
             '{"name": "The Matrix", "year": 1999}',
             MovieWithNonRequiredField,
+        )
+
+        # `typing_extensions.TypedDict` should also work
+        self._assert_loads(
+            '{"name": "The Matrix", "year": 1999}',
+            MovieAlternative,
+            {"name": "The Matrix", "year": 1999},
         )
 
 

@@ -9,12 +9,7 @@ import json
 import sys
 from typing import Any, cast, Dict, IO, List, Type, TypeVar, Union
 
-if sys.version_info[:2] >= (3, 9):
-    # pyre-fixme[21]: Could not find name `_TypedDictMeta` in `typing`.
-    from typing import _TypedDictMeta
-else:
-    # pyre-fixme[21]: Could not find name `_TypedDictMeta` in `typing_extensions`.
-    from typing_extensions import _TypedDictMeta
+import typing_extensions
 from typing_inspect import get_origin, is_optional_type
 
 
@@ -42,7 +37,7 @@ def _is_dictionary(target_type: Type[object]) -> bool:
 
 
 def _is_typed_dictionary(target_type: Type[object]) -> bool:
-    return isinstance(target_type, _TypedDictMeta)  # pyre-ignore: private API.
+    return typing_extensions.is_typeddict(target_type)
 
 
 def _validate_list(value: object, target_type: Type[List[object]]) -> None:
