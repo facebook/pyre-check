@@ -12,8 +12,12 @@ from typing import Any, Dict, Iterable, List, Optional, Pattern, Sequence
 
 import libcst as cst
 from libcst.metadata import CodeRange, PositionProvider
+from typing_extensions import TypeAlias
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+ErrorCode: TypeAlias = int
+LineNumber: TypeAlias = int
 
 
 @dataclasses.dataclass(frozen=True)
@@ -24,7 +28,7 @@ class AnnotationInfo:
 
 
 @dataclasses.dataclass(frozen=True)
-class ModuleAnnotationCount:
+class ModuleAnnotationData:
     line_count: int
     total_functions: List[CodeRange]
     partially_annotated_functions: List[CodeRange]
@@ -40,21 +44,21 @@ class ModuleAnnotationCount:
 
 
 @dataclasses.dataclass(frozen=True)
-class ModuleSuppressionCount:
-    code: Dict[int, List[int]]
-    no_code: List[int]
+class ModuleSuppressionData:
+    code: Dict[ErrorCode, List[LineNumber]]
+    no_code: List[LineNumber]
 
 
-class ModuleModeKind(str, Enum):
+class ModuleMode(str, Enum):
     UNSAFE = "UNSAFE"
     STRICT = "STRICT"
     IGNORE_ALL = "IGNORE_ALL"
 
 
 @dataclasses.dataclass(frozen=True)
-class ModuleStrictCount:
-    mode: ModuleModeKind
-    explicit_comment_line: Optional[int]
+class ModuleStrictData:
+    mode: ModuleMode
+    explicit_comment_line: Optional[LineNumber]
 
 
 class FunctionAnnotationKind(Enum):
@@ -287,8 +291,8 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
     def annotated_attributes(self) -> List[AnnotationInfo]:
         return [a for a in self.attributes if a.is_annotated]
 
-    def build_result(self) -> ModuleAnnotationCount:
-        return ModuleAnnotationCount(
+    def build_result(self) -> ModuleAnnotationData:
+        return ModuleAnnotationData(
             line_count=self.line_count,
             total_functions=[function.code_range for function in self.functions],
             partially_annotated_functions=[
@@ -310,7 +314,7 @@ class AnnotationCountCollector(StatisticsCollector, AnnotationCollector):
         )
 
     @staticmethod
-    def get_result_counts(result: ModuleAnnotationCount) -> Dict[str, int]:
+    def get_result_counts(result: ModuleAnnotationData) -> Dict[str, int]:
         return {
             "return_count": len(result.total_returns),
             "annotated_return_count": len(result.annotated_returns),
@@ -337,7 +341,7 @@ class SuppressionCountCollector(StatisticsCollector):
         self.codes: Dict[int, List[int]] = {}
         self.regex: Pattern[str] = compile(regex)
 
-    def error_codes(self, line: str) -> Optional[List[int]]:
+    def error_codes(self, line: str) -> Optional[List[ErrorCode]]:
         match = self.regex.match(line)
         if match is None:
             # No suppression on line
@@ -368,8 +372,8 @@ class SuppressionCountCollector(StatisticsCollector):
             else:
                 self.codes[code] = [suppression_line]
 
-    def build_result(self) -> ModuleSuppressionCount:
-        return ModuleSuppressionCount(code=self.codes, no_code=self.no_code)
+    def build_result(self) -> ModuleSuppressionData:
+        return ModuleSuppressionData(code=self.codes, no_code=self.no_code)
 
 
 class FixmeCountCollector(SuppressionCountCollector):
@@ -398,15 +402,15 @@ class StrictCountCollector(StatisticsCollector):
 
     def __init__(self, strict_by_default: bool) -> None:
         self.strict_by_default: bool = strict_by_default
-        self.explicit_strict_comment: Optional[int] = None
-        self.explicit_unsafe_comment: Optional[int] = None
+        self.explicit_strict_comment_line: Optional[int] = None
+        self.explicit_unsafe_comment_line: Optional[int] = None
         self.strict_count: int = 0
         self.unsafe_count: int = 0
 
     def is_unsafe_module(self) -> bool:
-        if self.explicit_unsafe_comment is not None:
+        if self.explicit_unsafe_comment_line is not None:
             return True
-        elif self.explicit_strict_comment is not None or self.strict_by_default:
+        elif self.explicit_strict_comment_line is not None or self.strict_by_default:
             return False
         return True
 
@@ -415,19 +419,19 @@ class StrictCountCollector(StatisticsCollector):
 
     def visit_Comment(self, node: cst.Comment) -> None:
         if self.strict_regex.match(node.value):
-            self.explicit_strict_comment = self.get_metadata(
+            self.explicit_strict_comment_line = self.get_metadata(
                 PositionProvider, node
             ).start.line
             return
         if self.unsafe_regex.match(node.value):
-            self.explicit_unsafe_comment = self.get_metadata(
+            self.explicit_unsafe_comment_line = self.get_metadata(
                 PositionProvider, node
             ).start.line
             return
         if self.ignore_all_regex.match(
             node.value
         ) and not self.ignore_all_by_code_regex.match(node.value):
-            self.explicit_unsafe_comment = self.get_metadata(
+            self.explicit_unsafe_comment_line = self.get_metadata(
                 PositionProvider, node
             ).start.line
 
@@ -437,14 +441,12 @@ class StrictCountCollector(StatisticsCollector):
         else:
             self.strict_count += 1
 
-    def build_result(self) -> ModuleStrictCount:
-        return ModuleStrictCount(
-            mode=ModuleModeKind.UNSAFE
+    def build_result(self) -> ModuleStrictData:
+        return ModuleStrictData(
+            mode=ModuleMode.UNSAFE if self.is_unsafe_module() else ModuleMode.STRICT,
+            explicit_comment_line=self.explicit_unsafe_comment_line
             if self.is_unsafe_module()
-            else ModuleModeKind.STRICT,
-            explicit_comment_line=self.explicit_unsafe_comment
-            if self.is_unsafe_module()
-            else self.explicit_strict_comment,
+            else self.explicit_strict_comment_line,
         )
 
 

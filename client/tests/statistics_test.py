@@ -16,7 +16,7 @@ from ..statistics_collectors import (
     FixmeCountCollector,
     FunctionAnnotationKind,
     IgnoreCountCollector,
-    ModuleModeKind,
+    ModuleMode,
     StrictCountCollector,
 )
 
@@ -715,7 +715,7 @@ class StrictCountCollectorTest(unittest.TestCase):
         self,
         source: str,
         default_strict: bool,
-        mode: ModuleModeKind,
+        mode: ModuleMode,
         explicit_comment_line: Optional[int],
     ) -> None:
         source_module = MetadataWrapper(parse_source(source))
@@ -734,7 +734,7 @@ class StrictCountCollectorTest(unittest.TestCase):
                 return 1
             """,
             default_strict=True,
-            mode=ModuleModeKind.UNSAFE,
+            mode=ModuleMode.UNSAFE,
             explicit_comment_line=2,
         )
         self.assert_counts(
@@ -744,7 +744,7 @@ class StrictCountCollectorTest(unittest.TestCase):
                 return 1
             """,
             default_strict=False,
-            mode=ModuleModeKind.STRICT,
+            mode=ModuleMode.STRICT,
             explicit_comment_line=2,
         )
         self.assert_counts(
@@ -753,7 +753,7 @@ class StrictCountCollectorTest(unittest.TestCase):
                 return 1
             """,
             default_strict=False,
-            mode=ModuleModeKind.UNSAFE,
+            mode=ModuleMode.UNSAFE,
             explicit_comment_line=None,
         )
         self.assert_counts(
@@ -762,7 +762,7 @@ class StrictCountCollectorTest(unittest.TestCase):
                 return 1
             """,
             default_strict=True,
-            mode=ModuleModeKind.STRICT,
+            mode=ModuleMode.STRICT,
             explicit_comment_line=None,
         )
         self.assert_counts(
@@ -772,7 +772,7 @@ class StrictCountCollectorTest(unittest.TestCase):
                 return 1
             """,
             default_strict=True,
-            mode=ModuleModeKind.UNSAFE,
+            mode=ModuleMode.UNSAFE,
             explicit_comment_line=2,
         )
         self.assert_counts(
@@ -781,7 +781,7 @@ class StrictCountCollectorTest(unittest.TestCase):
                 return x
             """,
             default_strict=False,
-            mode=ModuleModeKind.UNSAFE,
+            mode=ModuleMode.UNSAFE,
             explicit_comment_line=None,
         )
         self.assert_counts(
@@ -791,7 +791,7 @@ class StrictCountCollectorTest(unittest.TestCase):
                 return x
             """,
             default_strict=False,
-            mode=ModuleModeKind.STRICT,
+            mode=ModuleMode.STRICT,
             explicit_comment_line=2,
         )
         self.assert_counts(
@@ -801,6 +801,6 @@ class StrictCountCollectorTest(unittest.TestCase):
                 return x
             """,
             default_strict=True,
-            mode=ModuleModeKind.STRICT,
+            mode=ModuleMode.STRICT,
             explicit_comment_line=None,
         )

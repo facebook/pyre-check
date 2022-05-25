@@ -104,7 +104,7 @@ def parse_path_to_module(path: Path) -> Optional[cst.Module]:
 
 def _collect_annotation_statistics(
     module: cst.Module,
-) -> collectors.ModuleAnnotationCount:
+) -> collectors.ModuleAnnotationData:
     collector = collectors.AnnotationCountCollector()
     module_with_position_metadata = cst.MetadataWrapper(module)
     module_with_position_metadata.visit(collector)
@@ -113,7 +113,7 @@ def _collect_annotation_statistics(
 
 def _collect_fixme_statistics(
     module: cst.Module,
-) -> collectors.ModuleSuppressionCount:
+) -> collectors.ModuleSuppressionData:
     collector = collectors.FixmeCountCollector()
     module_with_position_metadata = cst.MetadataWrapper(module)
     module_with_position_metadata.visit(collector)
@@ -122,7 +122,7 @@ def _collect_fixme_statistics(
 
 def _collect_ignore_statistics(
     module: cst.Module,
-) -> collectors.ModuleSuppressionCount:
+) -> collectors.ModuleSuppressionData:
     collector = collectors.IgnoreCountCollector()
     module_with_position_metadata = cst.MetadataWrapper(module)
     module_with_position_metadata.visit(collector)
@@ -132,7 +132,7 @@ def _collect_ignore_statistics(
 def _collect_strict_file_statistics(
     module: cst.Module,
     strict_default: bool,
-) -> collectors.ModuleStrictCount:
+) -> collectors.ModuleStrictData:
     collector = collectors.StrictCountCollector(strict_default)
     module_with_position_metadata = cst.MetadataWrapper(module)
     module_with_position_metadata.visit(collector)
@@ -141,10 +141,10 @@ def _collect_strict_file_statistics(
 
 @dataclasses.dataclass(frozen=True)
 class StatisticsData:
-    annotations: collectors.ModuleAnnotationCount
-    fixmes: collectors.ModuleSuppressionCount
-    ignores: collectors.ModuleSuppressionCount
-    strict: collectors.ModuleStrictCount
+    annotations: collectors.ModuleAnnotationData
+    fixmes: collectors.ModuleSuppressionData
+    ignores: collectors.ModuleSuppressionData
+    strict: collectors.ModuleStrictData
 
 
 def collect_statistics(
@@ -239,13 +239,13 @@ def aggregate_statistics(
             ]
         ),
         strict=sum(
-            1 if strictness.mode == collectors.ModuleModeKind.STRICT else 0
+            1 if strictness.mode == collectors.ModuleMode.STRICT else 0
             for strictness in [
                 statistics_data.strict for statistics_data in data.values()
             ]
         ),
         unsafe=sum(
-            1 if strictness.mode == collectors.ModuleModeKind.UNSAFE else 0
+            1 if strictness.mode == collectors.ModuleMode.UNSAFE else 0
             for strictness in [
                 statistics_data.strict for statistics_data in data.values()
             ]
