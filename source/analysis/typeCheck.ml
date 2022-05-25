@@ -2695,13 +2695,13 @@ module State (Context : Context) = struct
         let { Resolved.resolution; resolved; errors; _ } =
           forward_comprehension ~resolution ~errors:[] ~element ~generators
         in
-        {
-          resolution;
-          errors;
-          resolved = Type.generator_expression resolved;
-          resolved_annotation = None;
-          base = None;
-        }
+        let result = List.exists ~f:(fun generator -> generator.async) generators in
+        let generator =
+          match result with
+          | true -> Type.async_generator ~yield_type:resolved ()
+          | false -> Type.generator_expression resolved
+        in
+        { resolution; errors; resolved = generator; resolved_annotation = None; base = None }
     | Lambda { Lambda.body; parameters } ->
         let resolution_with_parameters =
           let add_parameter resolution { Node.value = { Parameter.name; _ }; _ } =

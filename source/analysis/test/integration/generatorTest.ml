@@ -376,6 +376,36 @@ let test_check_yield_from context =
         reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `None`."];
+  assert_type_errors
+    {|
+      from typing import AsyncGenerator, AsyncIterator
+      async def foo(n: int) -> AsyncGenerator[int, None]:
+        for i in range(n):
+            yield i
+      async def bar(n: int) -> AsyncGenerator[int, None]:
+        return (2 * i async for i in foo(n))
+    |}
+    [];
+  assert_type_errors
+    {|
+      from typing import AsyncGenerator, Generator, AsyncIterator
+
+      async def g0(x: int) -> AsyncGenerator[int, None]:
+          for y in range(x):
+              yield y
+
+      def g1() -> Generator[int, None, None]:
+          return (y for x in range(5) async for y in g0(x))
+
+      async def h() -> None:
+          print("async in inner generator")
+          for x in g1():
+              print(x)
+    |}
+    [
+      "Incompatible return type [7]: Expected `Generator[int, None, None]` but got \
+       `AsyncGenerator[int, typing.Any]`.";
+    ];
   ()
 
 
