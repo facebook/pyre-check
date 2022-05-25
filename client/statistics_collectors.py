@@ -399,15 +399,15 @@ class StrictCountCollector(StatisticsCollector):
 
     def __init__(self, strict_by_default: bool) -> None:
         self.strict_by_default: bool = strict_by_default
-        self.has_explicit_strict_comment: bool = False
-        self.has_explicit_unsafe_comment: bool = False
+        self.explicit_strict_comment: Optional[int] = None
+        self.explicit_unsafe_comment: Optional[int] = None
         self.strict_count: int = 0
         self.unsafe_count: int = 0
 
     def is_unsafe_module(self) -> bool:
-        if self.has_explicit_unsafe_comment:
+        if self.explicit_unsafe_comment is not None:
             return True
-        elif self.has_explicit_strict_comment or self.strict_by_default:
+        elif self.explicit_strict_comment is not None or self.strict_by_default:
             return False
         return True
 
@@ -416,15 +416,21 @@ class StrictCountCollector(StatisticsCollector):
 
     def visit_Comment(self, node: cst.Comment) -> None:
         if self.strict_regex.match(node.value):
-            self.has_explicit_strict_comment = True
+            self.explicit_strict_comment = self.get_metadata(
+                PositionProvider, node
+            ).start.line
             return
         if self.unsafe_regex.match(node.value):
-            self.has_explicit_unsafe_comment = True
+            self.explicit_unsafe_comment = self.get_metadata(
+                PositionProvider, node
+            ).start.line
             return
         if self.ignore_all_regex.match(
             node.value
         ) and not self.ignore_all_by_code_regex.match(node.value):
-            self.has_explicit_unsafe_comment = True
+            self.explicit_unsafe_comment = self.get_metadata(
+                PositionProvider, node
+            ).start.line
 
     def leave_Module(self, original_node: cst.Module) -> None:
         if self.is_unsafe_module():
@@ -437,7 +443,9 @@ class StrictCountCollector(StatisticsCollector):
             mode=ModuleModeKind.UNSAFE
             if self.is_unsafe_module()
             else ModuleModeKind.STRICT,
-            explicit_comment_line=None,
+            explicit_comment_line=self.explicit_unsafe_comment
+            if self.is_unsafe_module()
+            else self.explicit_strict_comment,
         )
 
     def build_json(self) -> Dict[str, int]:

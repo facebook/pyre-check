@@ -5,7 +5,7 @@
 
 import textwrap
 import unittest
-from typing import Dict
+from typing import Dict, Optional
 
 import libcst as cst
 from libcst.metadata import CodePosition, CodeRange, MetadataWrapper
@@ -16,6 +16,7 @@ from ..statistics_collectors import (
     FixmeCountCollector,
     FunctionAnnotationKind,
     IgnoreCountCollector,
+    ModuleModeKind,
     StrictCountCollector,
 )
 
@@ -672,12 +673,18 @@ class IgnoreCountCollectorTest(unittest.TestCase):
 
 class StrictCountCollectorTest(unittest.TestCase):
     def assert_counts(
-        self, source: str, expected: Dict[str, int], default_strict: bool
+        self,
+        source: str,
+        default_strict: bool,
+        mode: ModuleModeKind,
+        explicit_comment_line: Optional[int],
     ) -> None:
         source_module = MetadataWrapper(parse_source(source))
         collector = StrictCountCollector(default_strict)
         source_module.visit(collector)
-        self.assertEqual(collector.build_json(), expected)
+        result = collector.build_result()
+        self.assertEqual(mode, result.mode)
+        self.assertEqual(explicit_comment_line, result.explicit_comment_line)
 
     def test_strict_files(self) -> None:
         self.assert_counts(
@@ -687,8 +694,9 @@ class StrictCountCollectorTest(unittest.TestCase):
             def foo():
                 return 1
             """,
-            {"strict_count": 0, "unsafe_count": 1},
-            True,
+            default_strict=True,
+            mode=ModuleModeKind.UNSAFE,
+            explicit_comment_line=2,
         )
         self.assert_counts(
             """
@@ -696,24 +704,27 @@ class StrictCountCollectorTest(unittest.TestCase):
             def foo():
                 return 1
             """,
-            {"strict_count": 1, "unsafe_count": 0},
-            False,
+            default_strict=False,
+            mode=ModuleModeKind.STRICT,
+            explicit_comment_line=2,
         )
         self.assert_counts(
             """
             def foo():
                 return 1
             """,
-            {"strict_count": 0, "unsafe_count": 1},
-            False,
+            default_strict=False,
+            mode=ModuleModeKind.UNSAFE,
+            explicit_comment_line=None,
         )
         self.assert_counts(
             """
             def foo():
                 return 1
             """,
-            {"strict_count": 1, "unsafe_count": 0},
-            True,
+            default_strict=True,
+            mode=ModuleModeKind.STRICT,
+            explicit_comment_line=None,
         )
         self.assert_counts(
             """
@@ -721,16 +732,18 @@ class StrictCountCollectorTest(unittest.TestCase):
             def foo():
                 return 1
             """,
-            {"strict_count": 0, "unsafe_count": 1},
-            True,
+            default_strict=True,
+            mode=ModuleModeKind.UNSAFE,
+            explicit_comment_line=2,
         )
         self.assert_counts(
             """
             def foo(x: str) -> int:
                 return x
             """,
-            {"strict_count": 0, "unsafe_count": 1},
-            False,
+            default_strict=False,
+            mode=ModuleModeKind.UNSAFE,
+            explicit_comment_line=None,
         )
         self.assert_counts(
             """
@@ -738,8 +751,9 @@ class StrictCountCollectorTest(unittest.TestCase):
             def foo(x: str) -> int:
                 return x
             """,
-            {"strict_count": 1, "unsafe_count": 0},
-            False,
+            default_strict=False,
+            mode=ModuleModeKind.STRICT,
+            explicit_comment_line=2,
         )
         self.assert_counts(
             """
@@ -747,6 +761,7 @@ class StrictCountCollectorTest(unittest.TestCase):
             def foo(x: str) -> int:
                 return x
             """,
-            {"strict_count": 1, "unsafe_count": 0},
-            True,
+            default_strict=True,
+            mode=ModuleModeKind.STRICT,
+            explicit_comment_line=None,
         )
