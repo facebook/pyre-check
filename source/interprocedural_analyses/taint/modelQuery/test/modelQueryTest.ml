@@ -1730,7 +1730,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
   assert_applied_rules
     ~source:
@@ -1757,7 +1757,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -1796,7 +1796,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
   assert_applied_rules
     ~source:
@@ -1835,7 +1835,7 @@ let test_apply_rule context =
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
       }
-    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo" })
+    ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
 
   (* Test attribute models. *)

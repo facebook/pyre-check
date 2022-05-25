@@ -1334,7 +1334,7 @@ let parse_decorator_constraint ~path ~location ({ Node.value; _ } as constraint_
       | [{ Call.Argument.name = None; Call.Argument.value = decorator_name_constraint }] ->
           parse_name_constraint ~path ~location decorator_name_constraint
           >>= fun name_constraint ->
-          Ok ({ name_constraint; arguments_constraint = None } : ModelQuery.DecoratorConstraint.t)
+          Ok { ModelQuery.DecoratorConstraint.name_constraint; arguments_constraint = None }
       | [
        { Call.Argument.name = None; value = first_constraint };
        { Call.Argument.name = None; value = second_constraint };
@@ -1345,16 +1345,20 @@ let parse_decorator_constraint ~path ~location ({ Node.value; _ } as constraint_
           with
           | Ok name_constraint, Ok arguments_constraint ->
               Ok
-                ({ name_constraint; arguments_constraint = Some arguments_constraint }
-                  : ModelQuery.DecoratorConstraint.t)
+                {
+                  ModelQuery.DecoratorConstraint.name_constraint;
+                  arguments_constraint = Some arguments_constraint;
+                }
           | _ ->
               parse_name_constraint ~path ~location second_constraint
               >>= fun name_constraint ->
               parse_arguments_constraint ~path ~location first_constraint
               >>= fun arguments_constraint ->
               Ok
-                ({ name_constraint; arguments_constraint = Some arguments_constraint }
-                  : ModelQuery.DecoratorConstraint.t))
+                {
+                  ModelQuery.DecoratorConstraint.name_constraint;
+                  arguments_constraint = Some arguments_constraint;
+                })
       | _ ->
           Error
             (model_verification_error

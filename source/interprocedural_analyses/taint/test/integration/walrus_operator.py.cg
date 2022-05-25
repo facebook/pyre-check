@@ -1,5 +1,5 @@
 @generated
 Call dependencies
-walrus_operator.$toplevel (fun) -> []
 walrus_operator.walrus_operator_backward (fun) -> []
+walrus_operator.$toplevel (fun) -> []
 walrus_operator.walrus_operator_forward (fun) -> [_test_source (fun)]
