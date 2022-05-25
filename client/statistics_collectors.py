@@ -45,10 +45,10 @@ class ModuleSuppressionCount:
     no_code: List[int]
 
 
-class ModuleModeKind(Enum):
-    UNSAFE = 0
-    STRICT = 1
-    IGNORE_ALL = 2
+class ModuleModeKind(str, Enum):
+    UNSAFE = "UNSAFE"
+    STRICT = "STRICT"
+    IGNORE_ALL = "IGNORE_ALL"
 
 
 @dataclasses.dataclass(frozen=True)
