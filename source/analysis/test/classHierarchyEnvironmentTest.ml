@@ -124,7 +124,9 @@ let test_simple_registration context =
 
 let test_inferred_generic_base context =
   let assert_registers source name expected =
-    let project = ScratchProject.setup ["test.py", source] ~context ~incremental_style:Shallow in
+    let project =
+      ScratchProject.setup ["test.py", source] ~context ~incremental_style:FineGrained
+    in
     let ast_environment = ScratchProject.build_ast_environment project in
     let _, update_result = Test.update_environments ~ast_environment ColdStart in
     let read_only =
