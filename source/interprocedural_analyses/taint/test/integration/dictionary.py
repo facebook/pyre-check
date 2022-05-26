@@ -414,3 +414,25 @@ def setitem_models(d3: Dict[str, Any], x):
     # of dict. This is incorrect, but can lead to higher SNR.
     d3["c"] = x
     return d1, d2, d3
+
+
+def backward_weak_update(d: Dict[Any, Any]):
+    # This translates to d["x"] = 0; d[**keys] = "x";
+    # We need to infer that d's keys are a sink, by doing weak updates.
+    d["x"] = 0
+    _test_sink(d.keys())  # d[**keys] is a sink
+
+
+def walrus_operator(y):
+    d = {}
+    d[(x := _test_source())] = (x := y)
+    # We do a weak update on `d.**keys`, which join the results of both
+    # clearing and not clearing the taint on `d.**keys`
+    return d, x
+
+
+def forward_weak_update():
+    d = {}
+    d[_test_source()] = 0
+    d["x"] = 0  # Should not strong update d.**keys
+    return d

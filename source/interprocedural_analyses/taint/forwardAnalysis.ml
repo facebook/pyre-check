@@ -1118,7 +1118,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          { Node.value = Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } as callee;
        arguments = [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] as arguments;
       } ->
-          let taint, state = analyze_expression ~resolution ~state ~expression:value in
           let ({ CallGraph.CallCallees.call_targets; _ } as callees) =
             get_call_callees ~location ~call:{ Call.callee; arguments }
           in
@@ -1147,21 +1146,36 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                because we assume in most cases, we run into an expression whose type is exactly
                `dict`, rather than a (strict) subtype of `dict` that overrides `__setitem__`. *)
             let state =
+              let value_taint, state = analyze_expression ~resolution ~state ~expression:value in
               analyze_assignment
                 ~resolution
                 ~fields:[AccessPath.get_index index]
                 base
-                taint
-                taint
+                value_taint
+                value_taint
                 state
             in
-            taint, state
+            let state =
+              let key_taint, state = analyze_expression ~resolution ~state ~expression:index in
+              (* Smash the taint of ALL keys into one place, i.e., a special field of the
+                 dictionary: `d[**keys] = index`. *)
+              analyze_assignment
+                ~resolution
+                ~fields:[AccessPath.dictionary_keys]
+                ~weak:true
+                base
+                key_taint
+                key_taint
+                state
+            in
+            (* Since `dict.__setitem__` returns None, we return no taint here. *)
+            ForwardState.Tree.empty, state
           else
             (* Use the custom model of `__setitem__`. We treat `e.__setitem__(k, v)` as `e =
                e.__setitem__(k, v)` where method `__setitem__` returns the updated self. Due to
-               modeling with the assignment, the user-provided models of `__setitem__` will be
+               modeling with the assignment, the user-provided models of `__setitem__` will be`
                ignored, if they are inconsistent with treating `__setitem__` as returning an updated
-               self.*)
+               self. *)
             let taint, state =
               apply_callees
                 ~resolution
@@ -1928,6 +1942,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   and analyze_assignment
       ~resolution
+      ?(weak = false)
       ?(fields = [])
       ({ Node.location; value } as target)
       taint
@@ -1938,13 +1953,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Starred (Once target | Twice target) ->
         (* This is approximate. Unless we can get the tuple type on the right to tell how many total
            elements there will be, we just pick up the entire collection. *)
-        analyze_assignment ~resolution target surrounding_taint surrounding_taint state
+        analyze_assignment ~resolution ~weak target surrounding_taint surrounding_taint state
     | List targets
     | Tuple targets ->
         let analyze_target_element i state target =
           let index = Abstract.TreeDomain.Label.Index (string_of_int i) in
           let indexed_taint = ForwardState.Tree.read [index] taint in
-          analyze_assignment ~resolution target indexed_taint taint state
+          analyze_assignment ~resolution ~weak target indexed_taint taint state
         in
         List.foldi targets ~f:analyze_target_element ~init:state
     (* Assignments of the form a[1][2] = 3 translate to a.__getitem__(1).__setitem__(2, 3).*)
@@ -1959,6 +1974,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (* Fields should only get propagated for getitem/setitem chains. These fields are not
              * reversed, as `a[0][1]` is parsed as `(a[0])[1]`, and `[1]` will appear as the
              * first attribute. *)
+          ~weak
           ~fields:(index :: fields)
           base
           taint
@@ -1978,7 +1994,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
         (* Propagate taint. *)
         let access_path = AccessPath.of_expression target >>| AccessPath.extend ~path:fields in
-        store_taint_option access_path taint state
+        store_taint_option ~weak access_path taint state
 
 
   and analyze_condition ~resolution expression state =

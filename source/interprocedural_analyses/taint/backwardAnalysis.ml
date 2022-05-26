@@ -1113,6 +1113,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              `base[index] = value`. This is incorrect, but can lead to higher SNR, because we assume
              in most cases, we run into an expression whose type is exactly `dict`, rather than a
              (strict) subtype of `dict` that overrides `__setitem__`. *)
+          let state =
+            (* Since we smash the taint of ALL keys, we do a weak update here to avoid removing the
+               taint in `**keys`. That is, we join the state before analyzing the assignment to
+               `**keys` and the state afterwards. *)
+            analyze_assignment
+              ~weak:true
+              ~resolution
+              ~fields:[AccessPath.dictionary_keys]
+              ~target:base
+              ~value:index
+              state
+          in
           analyze_assignment
             ~resolution
             ~fields:[AccessPath.get_index index]
@@ -1124,7 +1136,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              e.__setitem__(k, v)` where method `__setitem__` returns the updated self. Due to
              modeling with the assignment, the user-provided models of `__setitem__` will be
              ignored, if they are inconsistent with treating `__setitem__` as returning an updated
-             self.*)
+             self. *)
           let taint = compute_assignment_taint ~resolution base state |> fst in
           apply_callees
             ~resolution
@@ -1838,7 +1850,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         taint, false
 
 
-  and analyze_assignment ~resolution ?(fields = []) ~target ~value state =
+  and analyze_assignment ?(weak = false) ~resolution ?(fields = []) ~target ~value state =
     let taint = compute_assignment_taint ~resolution target state |> fst |> read_tree fields in
     let state =
       let rec clear_taint state target =
@@ -1857,7 +1869,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 }
             | None -> state)
       in
-      clear_taint state target
+      if weak then (* Weak updates do not remove the taint. *)
+        state
+      else
+        clear_taint state target
     in
     analyze_expression ~resolution ~taint ~state ~expression:value
 

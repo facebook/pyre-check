@@ -75,6 +75,79 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "dictionary.dict_with_tainted_key_flows_to_sink_via_setitem",
+    "callable_line": 216,
+    "code": 5002,
+    "line": 219,
+    "start": 15,
+    "end": 16,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 218,
+              "start": 6,
+              "end": 20
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 219,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
+      "dictionary.dict_with_tainted_key_flows_to_sink_via_setitem:5002:0:Call|_test_sink|0|formal(arg):e79564a854e7fc6e0e87504e8ef82c23"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dictionary.flow_through_keywords",
     "callable_line": 157,
     "code": 5002,
@@ -1437,6 +1510,34 @@
 {
   "kind": "model",
   "data": {
+    "callable": "dictionary.backward_weak_update",
+    "sinks": [
+      {
+        "port": "formal(d)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 423,
+              "start": 15,
+              "end": 23
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "dictionary.backwards_field_assignment",
     "tito": [
       {
@@ -1479,6 +1580,34 @@
               },
               "resolves_to": [ "dictionary.sink_dictionary_through_keys" ],
               "port": "formal(d).**keys"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.copy_untainted_values_with_tainted_keys",
+    "sources": [
+      {
+        "port": "result.**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 204,
+              "start": 9,
+              "end": 23
             }
           }
         ]
@@ -2030,6 +2159,34 @@
               "line": 174,
               "start": 14,
               "end": 28
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.forward_weak_update",
+    "sources": [
+      {
+        "port": "result.**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 436,
+              "start": 6,
+              "end": 20
             }
           }
         ]
@@ -2705,6 +2862,65 @@
               "start": 15,
               "end": 33
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.walrus_operator",
+    "sources": [
+      {
+        "port": "result[0].**keys",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 428,
+              "start": 12,
+              "end": 26
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[1]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 428,
+              "start": 12,
+              "end": 26
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[0]" ], "kind": "LocalReturn" } ],
+            "decl": null
           }
         ]
       }
