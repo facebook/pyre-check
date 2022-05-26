@@ -10,6 +10,10 @@ open OUnit2
 open Server
 open ServerTest
 
+let create_relative_source_path ~root ~relative =
+  PyrePath.create_relative ~root ~relative |> SourcePath.create
+
+
 let test_initialize context =
   let internal_state = ref "uninitiailzed" in
   let build_system_initializer =
@@ -69,7 +73,7 @@ let test_cleanup context =
 
 
 let test_type_errors context =
-  let test_source_path = PyrePath.create_absolute "/foo/test.py" in
+  let test_source_path = PyrePath.create_absolute "/foo/test.py" |> SourcePath.create in
   let test_artifact_path =
     (* The real value will be deterimend once the server starts. *)
     ref (PyrePath.create_absolute "uninitialized" |> ArtifactPath.create)
@@ -83,7 +87,7 @@ let test_type_errors context =
           None
       in
       let lookup_artifact path =
-        if PyrePath.equal path test_source_path then
+        if SourcePath.equal path test_source_path then
           [!test_artifact_path]
         else
           []
@@ -129,7 +133,9 @@ let test_type_errors context =
     let test2_error =
       (* `test2.py` is intentionally not tracked by the build system. The expected behavior here is
          to show its original path. *)
-      let test2_artifact_path = PyrePath.create_relative ~root:global_root ~relative:"test2.py" in
+      let test2_artifact_path =
+        create_relative_source_path ~root:global_root ~relative:"test2.py"
+      in
       Analysis.AnalysisError.Instantiated.of_yojson
         (`Assoc
           [
@@ -137,7 +143,7 @@ let test_type_errors context =
             "column", `Int 0;
             "stop_line", `Int 1;
             "stop_column", `Int 11;
-            "path", `String (PyrePath.absolute test2_artifact_path);
+            "path", `String (SourcePath.raw test2_artifact_path |> PyrePath.absolute);
             "code", `Int (-1);
             "name", `String "Revealed type";
             ( "description",
@@ -174,7 +180,7 @@ let test_type_errors context =
 
 let test_update context =
   let internal_state = ref "unupdated" in
-  let test_source_path = PyrePath.create_absolute "/foo/test.py" in
+  let test_source_path = PyrePath.create_absolute "/foo/test.py" |> SourcePath.create in
   let test_artifact_path =
     (* The real value will be deterimend once the server starts. *)
     ref (PyrePath.create_absolute "uninitialized" |> ArtifactPath.create)
@@ -188,7 +194,7 @@ let test_update context =
           None
       in
       let lookup_artifact path =
-        if PyrePath.equal path test_source_path then
+        if SourcePath.equal path test_source_path then
           [!test_artifact_path]
         else
           []
@@ -196,8 +202,8 @@ let test_update context =
       let update actual_paths =
         assert_equal
           ~ctxt:context
-          ~cmp:[%compare.equal: PyrePath.t list]
-          ~printer:(fun paths -> List.map paths ~f:PyrePath.show |> String.concat ~sep:", ")
+          ~cmp:[%compare.equal: SourcePath.t list]
+          ~printer:(fun paths -> List.map paths ~f:SourcePath.show |> String.concat ~sep:", ")
           [test_source_path]
           actual_paths;
         internal_state := "updated";
@@ -219,7 +225,9 @@ let test_update context =
     test_artifact_path := Test.relative_artifact_path ~root ~relative:"test.py";
 
     ArtifactPath.raw !test_artifact_path |> File.create ~content:"reveal_type(42)" |> File.write;
-    Client.send_request client (Request.IncrementalUpdate [PyrePath.absolute test_source_path])
+    Client.send_request
+      client
+      (Request.IncrementalUpdate [SourcePath.raw test_source_path |> PyrePath.absolute])
     >>= fun _ ->
     (* Verify that the build system has indeed been updated. *)
     assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id "updated" !internal_state;
@@ -271,8 +279,8 @@ let test_buck_renormalize context =
   in
 
   let source_root = bracket_tmpdir context |> PyrePath.create_absolute in
-  let foo_source = PyrePath.create_relative ~root:source_root ~relative:"foo.py" in
-  File.create foo_source ~content:"" |> File.write;
+  let foo_source = create_relative_source_path ~root:source_root ~relative:"foo.py" in
+  File.create (SourcePath.raw foo_source) ~content:"" |> File.write;
   let get_buck_build_system () =
     let interface =
       let normalize_targets targets =
@@ -310,10 +318,12 @@ let test_buck_renormalize context =
   (* Normalization will happen if target file has changes. *)
   BuildSystem.update
     buck_build_system
-    [PyrePath.create_relative ~root:source_root ~relative:"bar/TARGETS"]
+    [create_relative_source_path ~root:source_root ~relative:"bar/TARGETS"]
   >>= fun _ ->
   assert_normalize_counter 2;
-  BuildSystem.update buck_build_system [PyrePath.create_relative ~root:source_root ~relative:"BUCK"]
+  BuildSystem.update
+    buck_build_system
+    [create_relative_source_path ~root:source_root ~relative:"BUCK"]
   >>= fun _ ->
   assert_normalize_counter 3;
   Lwt.return_unit
@@ -323,8 +333,8 @@ let test_buck_update context =
   let assert_optional_path ~expected actual =
     assert_equal
       ~ctxt:context
-      ~cmp:[%compare.equal: PyrePath.t option]
-      ~printer:(Option.value_map ~default:"NONE" ~f:PyrePath.show)
+      ~cmp:[%compare.equal: SourcePath.t option]
+      ~printer:(Option.value_map ~default:"NONE" ~f:SourcePath.show)
       expected
       actual
   in
@@ -371,9 +381,9 @@ let test_buck_update context =
   let open Lwt.Infix in
   get_buck_build_system ()
   >>= fun buck_build_system ->
-  let bar_source = PyrePath.create_relative ~root:source_root ~relative:"foo/bar.py" in
+  let bar_source = create_relative_source_path ~root:source_root ~relative:"foo/bar.py" in
   let bar_artifact = Test.relative_artifact_path ~root:artifact_root ~relative:"bar.py" in
-  let baz_source = PyrePath.create_relative ~root:source_root ~relative:"foo/baz.py" in
+  let baz_source = create_relative_source_path ~root:source_root ~relative:"foo/baz.py" in
   let baz_artifact = Test.relative_artifact_path ~root:artifact_root ~relative:"baz.py" in
 
   (* Initially, we build bar.py but not baz.py. *)
@@ -389,7 +399,7 @@ let test_buck_update context =
     (BuildSystem.lookup_artifact buck_build_system baz_source |> List.hd);
 
   (* Rebuild the project. The fake TARGET file is needed to force a full rebuild. *)
-  let fake_target_file = PyrePath.create_relative ~root:source_root ~relative:"TARGETS" in
+  let fake_target_file = create_relative_source_path ~root:source_root ~relative:"TARGETS" in
   BuildSystem.update buck_build_system [bar_source; baz_source; fake_target_file]
   >>= fun _ ->
   (* After the rebuild, both bar.py and baz.py should be included in build map. *)
@@ -452,10 +462,10 @@ let test_buck_update_without_rebuild context =
   let open Lwt.Infix in
   get_buck_build_system ()
   >>= fun buck_build_system ->
-  let bar_source = PyrePath.create_relative ~root:source_root ~relative:"foo/bar.py" in
-  let baz_source = PyrePath.create_relative ~root:source_root ~relative:"foo/baz.py" in
-  File.create bar_source ~content:"" |> File.write;
-  File.create baz_source ~content:"" |> File.write;
+  let bar_source = create_relative_source_path ~root:source_root ~relative:"foo/bar.py" in
+  let baz_source = create_relative_source_path ~root:source_root ~relative:"foo/baz.py" in
+  File.create (SourcePath.raw bar_source) ~content:"" |> File.write;
+  File.create (SourcePath.raw baz_source) ~content:"" |> File.write;
   BuildSystem.update buck_build_system [bar_source; baz_source]
   >>= fun changed_artifacts ->
   (* After the rebuild, both bar.py and baz.py should be included in build map. *)
@@ -482,7 +492,7 @@ let test_unwatched_dependency_no_failure_on_initialize context =
   BuildSystem.Initializer.run test_initializer
   >>= fun build_system ->
   (* Initialization should not crash, even when the checksum path does not exist *)
-  let bucket_path = PyrePath.create_relative ~root:bucket_root ~relative:bucket in
+  let bucket_path = create_relative_source_path ~root:bucket_root ~relative:bucket in
   Lwt.catch
     (fun () ->
       (* Update should crash, if the checksum path does not exist *)
@@ -497,7 +507,7 @@ let test_unwatched_dependency_update context =
   let assert_paths_no_order = assert_paths_no_order ~context in
   let bucket_root = bracket_tmpdir context |> PyrePath.create_absolute in
   let bucket = "BUCKET" in
-  let bucket_path = PyrePath.create_relative ~root:bucket_root ~relative:bucket in
+  let bucket_path = create_relative_source_path ~root:bucket_root ~relative:bucket in
   let wheel_root = bracket_tmpdir context |> PyrePath.create_absolute in
   let checksum_path = "CHECKSUM" in
   let checksum_full_path = PyrePath.create_relative ~root:wheel_root ~relative:checksum_path in
@@ -522,7 +532,7 @@ let test_unwatched_dependency_update context =
   in
   BuildSystem.Initializer.run instagram_initializer
   >>= fun build_system ->
-  let test_path = PyrePath.create_absolute "/some/source/file.py" in
+  let test_path = PyrePath.create_absolute "/some/source/file.py" |> SourcePath.create in
   (* Normal update does not yield additional changed paths. *)
   BuildSystem.update build_system [test_path]
   >>= fun updated ->

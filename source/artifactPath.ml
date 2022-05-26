@@ -12,4 +12,4 @@ let create raw = ArtifactPath raw
 let raw (ArtifactPath raw) = raw
 
 let original_source_path (ArtifactPath raw) =
-  raw |> PyrePath.follow_symbolic_link |> Option.value ~default:raw
+  raw |> PyrePath.follow_symbolic_link |> Option.value ~default:raw |> SourcePath.create

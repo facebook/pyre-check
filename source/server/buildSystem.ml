@@ -8,9 +8,9 @@
 open Base
 
 type t = {
-  update: PyrePath.t list -> ArtifactPath.t list Lwt.t;
-  lookup_source: ArtifactPath.t -> PyrePath.t option;
-  lookup_artifact: PyrePath.t -> ArtifactPath.t list;
+  update: SourcePath.t list -> ArtifactPath.t list Lwt.t;
+  lookup_source: ArtifactPath.t -> SourcePath.t option;
+  lookup_artifact: SourcePath.t -> ArtifactPath.t list;
   store: unit -> unit;
 }
 
@@ -22,9 +22,9 @@ let lookup_artifact { lookup_artifact; _ } = lookup_artifact
 
 let store { store; _ } = store ()
 
-let default_lookup_source analysis_path = Some (ArtifactPath.raw analysis_path)
+let default_lookup_source analysis_path = Some (ArtifactPath.raw analysis_path |> SourcePath.create)
 
-let default_lookup_artifact source_path = [ArtifactPath.create source_path]
+let default_lookup_artifact source_path = [SourcePath.raw source_path |> ArtifactPath.create]
 
 let create_for_testing
     ?(update = fun _ -> Lwt.return [])
@@ -141,6 +141,7 @@ module BuckBuildSystem = struct
 
   let initialize_from_state (state : State.t) =
     let update source_paths =
+      let raw_paths = List.map source_paths ~f:SourcePath.raw in
       let incremental_builder =
         let should_renormalize paths =
           let f path =
@@ -159,7 +160,7 @@ module BuckBuildSystem = struct
           in
           List.exists paths ~f
         in
-        if should_renormalize source_paths then
+        if should_renormalize raw_paths then
           {
             IncrementalBuilder.name = "full";
             run =
@@ -171,7 +172,7 @@ module BuckBuildSystem = struct
           let changed_paths, removed_paths =
             (* TODO (T90174546): This check may lead to temporary inconsistent view of the
                filesystem with `ModuleTracker`. *)
-            List.partition_tf source_paths ~f:PyrePath.file_exists
+            List.partition_tf raw_paths ~f:PyrePath.file_exists
           in
           if List.is_empty removed_paths && not (should_reconstruct_build_map changed_paths) then
             {
@@ -181,7 +182,7 @@ module BuckBuildSystem = struct
                   ~build_map:state.build_map
                   ~build_map_index:state.build_map_index
                   ~targets:state.normalized_targets
-                  ~changed_sources:source_paths;
+                  ~changed_sources:raw_paths;
             }
           else
             {
@@ -222,9 +223,11 @@ module BuckBuildSystem = struct
     let lookup_source path =
       ArtifactPath.raw path
       |> Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder
+      |> Option.map ~f:SourcePath.create
     in
     let lookup_artifact path =
-      Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder path
+      SourcePath.raw path
+      |> Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder
       |> List.map ~f:ArtifactPath.create
     in
     let store () =
@@ -302,9 +305,9 @@ module TrackUnwatchedDependencyBuildSystem = struct
 
   let initialize_from_state (state : State.t) =
     let update source_paths =
+      let raw_paths = List.map source_paths ~f:SourcePath.raw in
       let paths =
-        if
-          unwatched_files_may_change ~change_indicator_path:state.change_indicator_path source_paths
+        if unwatched_files_may_change ~change_indicator_path:state.change_indicator_path raw_paths
         then (
           Log.info "Detecting potential changes in unwatched files...";
           (* NOTE(grievejia): If checksum map loading fails, there will be no way for us to figure

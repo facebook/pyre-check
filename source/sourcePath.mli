@@ -10,5 +10,3 @@ type t [@@deriving show, eq, compare, hash]
 val create : PyrePath.t -> t
 
 val raw : t -> PyrePath.t
-
-val original_source_path : t -> SourcePath.t

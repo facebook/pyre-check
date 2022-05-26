@@ -30,7 +30,7 @@ let get_lookup ~configuration ~build_system ~environment path =
   let generate_lookup_for_nonexistent_path error_reason = Result.Error error_reason in
   let full_path =
     let { Configuration.Analysis.local_root = root; _ } = configuration in
-    PyrePath.create_relative ~root ~relative:path
+    PyrePath.create_relative ~root ~relative:path |> SourcePath.create
   in
   match BuildSystem.lookup_artifact build_system full_path with
   | [] -> generate_lookup_for_nonexistent_path FileNotFound

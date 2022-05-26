@@ -21,7 +21,7 @@ let instantiate_path ~build_system ~ast_environment qualifier =
   | Some analysis_path ->
       let path =
         match BuildSystem.lookup_source build_system analysis_path with
-        | Some source_path -> source_path
+        | Some source_path -> source_path |> SourcePath.raw
         | None ->
             (* NOTE (grievejia): This means the path is under the search roots but is not tracked by
                Buck. Showing the original path here is a compromise: ideally we should instead look
@@ -58,7 +58,7 @@ let process_display_type_error_request
     | [] -> Hashtbl.keys error_table
     | _ ->
         let get_module_for_source_path path =
-          let path = PyrePath.create_absolute path in
+          let path = PyrePath.create_absolute path |> SourcePath.create in
           match BuildSystem.lookup_artifact build_system path with
           | [] -> None
           | artifact_path :: _ ->
@@ -129,6 +129,7 @@ let process_incremental_update_request
       |> StartupNotification.produce ~log_path:configuration.log_directory;
       Stop.log_and_stop_waiting_server ~reason:"critical file update" ~properties ()
   | None ->
+      let source_paths = List.map paths ~f:SourcePath.create in
       let create_status_update_response status () = Response.StatusUpdate status in
       let create_type_errors_response () =
         let errors =
@@ -149,14 +150,14 @@ let process_incremental_update_request
         ~with_response:(create_status_update_response Response.ServerStatus.Rebuilding)
         subscriptions
       >>= fun () ->
-      BuildSystem.update build_system paths
+      BuildSystem.update build_system source_paths
       >>= fun changed_paths_from_rebuild ->
       notify_all_subscriptions
         ~with_response:(create_status_update_response Response.ServerStatus.Rechecking)
         subscriptions
       >>= fun () ->
       let changed_paths =
-        List.concat_map paths ~f:(BuildSystem.lookup_artifact build_system)
+        List.concat_map source_paths ~f:(BuildSystem.lookup_artifact build_system)
         |> List.append changed_paths_from_rebuild
         |> List.dedup_and_sort ~compare:ArtifactPath.compare
       in

@@ -95,9 +95,10 @@ let is_internal_path
     ~configuration:{ Configuration.Analysis.filter_directories; ignore_all_errors; _ }
     path
   =
-  let source_path = ArtifactPath.original_source_path path in
+  let original_raw_path = ArtifactPath.original_source_path path |> SourcePath.raw in
   let source_path_is_covered item =
-    PyrePath.equal item source_path || PyrePath.directory_contains ~directory:item source_path
+    PyrePath.equal item original_raw_path
+    || PyrePath.directory_contains ~directory:item original_raw_path
   in
   let filter_directories = Option.value filter_directories ~default:[] in
   let ignore_all_errors = Option.value ignore_all_errors ~default:[] in

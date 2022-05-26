@@ -131,13 +131,23 @@
  (libraries core sexplib ppxlib ppx_deriving pyrelib.log))
 
 (library
+ (name sourcePath)
+ (public_name pyrelib.sourcepath)
+ (modules sourcePath)
+ (preprocess
+  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
+    ppx_compare ppx_sexp_conv))
+ (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path))
+
+(library
  (name artifactPath)
  (public_name pyrelib.artifactpath)
  (modules artifactPath)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))
- (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path))
+ (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path
+  pyrelib.sourcepath))
 
 (library
  (name searchPath)

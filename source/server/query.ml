@@ -772,7 +772,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         in
         GlobalResolution.is_compatible_with global_resolution ~left ~right
         |> fun result -> Single (Base.Compatibility { actual = left; expected = right; result })
-    | ModulesOfPath path -> Single (Base.FoundModules (modules_of_path path))
+    | ModulesOfPath path -> Single (Base.FoundModules (SourcePath.create path |> modules_of_path))
     | LessOrEqual (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in
@@ -782,7 +782,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         let module_of_path path =
           let relative_path =
             let { Configuration.Analysis.local_root = root; _ } = configuration in
-            PyrePath.create_relative ~root ~relative:(PyrePath.absolute path)
+            PyrePath.create_relative ~root ~relative:(PyrePath.absolute path) |> SourcePath.create
           in
           match modules_of_path relative_path with
           | [found_module] -> Some found_module
@@ -852,7 +852,7 @@ let rec process_request ~environment ~build_system ~configuration request =
           let module_of_path path =
             let relative_path =
               let { Configuration.Analysis.local_root = root; _ } = configuration in
-              PyrePath.create_relative ~root ~relative:(PyrePath.absolute path)
+              PyrePath.create_relative ~root ~relative:(PyrePath.absolute path) |> SourcePath.create
             in
             match modules_of_path relative_path with
             | [found_module] -> Some found_module
