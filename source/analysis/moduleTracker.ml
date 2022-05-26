@@ -116,11 +116,11 @@ module Layouts = struct
 
   module FileSystemEvent = struct
     type t =
-      | Update of PyrePath.Built.t
-      | Remove of PyrePath.Built.t
+      | Update of ArtifactPath.t
+      | Remove of ArtifactPath.t
 
     let create path =
-      if PyrePath.file_exists (PyrePath.Built.raw path) then Update path else Remove path
+      if PyrePath.file_exists (ArtifactPath.raw path) then Update path else Remove path
   end
 
   module IncrementalExplicitUpdate = struct
@@ -144,7 +144,7 @@ module Layouts = struct
       | FileSystemEvent.Update path -> (
           match ModulePath.create ~configuration path with
           | None ->
-              Log.warning "`%a` not found in search path." PyrePath.Built.pp path;
+              Log.warning "`%a` not found in search path." ArtifactPath.pp path;
               None
           | Some ({ ModulePath.qualifier; _ } as source_path) -> (
               match Hashtbl.find module_to_files qualifier with
@@ -166,7 +166,7 @@ module Layouts = struct
       | FileSystemEvent.Remove path -> (
           match ModulePath.create ~configuration path with
           | None ->
-              Log.warning "`%a` not found in search path." PyrePath.Built.pp path;
+              Log.warning "`%a` not found in search path." ArtifactPath.pp path;
               None
           | Some ({ ModulePath.qualifier; _ } as source_path) -> (
               Hashtbl.find module_to_files qualifier
@@ -257,7 +257,7 @@ module Layouts = struct
     in
     (* Since `process_filesystem_event` is not idempotent, we don't want duplicated filesystem
        events *)
-    List.dedup_and_sort ~compare:PyrePath.Built.compare paths
+    List.dedup_and_sort ~compare:ArtifactPath.compare paths
     |> List.map ~f:FileSystemEvent.create
     |> List.filter_map ~f:(process_filesystem_event ~configuration)
     |> merge_updates
@@ -415,16 +415,16 @@ let find_source_paths
         && List.exists ~f:(String.equal extension) valid_suffixes
         && not (mark_visited visited_files path)
       in
-      PyrePath.Built.list ~file_filter ~directory_filter ~root ())
+      PyrePath.list ~file_filter ~directory_filter ~root () |> List.map ~f:ArtifactPath.create)
   |> List.concat
   |> List.filter_map ~f:(ModulePath.create ~configuration)
 
 
 let load_raw_code ~configuration source_path =
   let path = ModulePath.full_path ~configuration source_path in
-  try Ok (PyrePath.Built.raw path |> File.create |> File.content_exn) with
+  try Ok (ArtifactPath.raw path |> File.create |> File.content_exn) with
   | Sys_error error ->
-      Error (Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.Built.pp path error)
+      Error (Format.asprintf "Cannot open file `%a` due to: %s" ArtifactPath.pp path error)
 
 
 let create configuration =

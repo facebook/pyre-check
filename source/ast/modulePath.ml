@@ -95,7 +95,7 @@ let is_internal_path
     ~configuration:{ Configuration.Analysis.filter_directories; ignore_all_errors; _ }
     path
   =
-  let source_path = PyrePath.Built.original_source_path path in
+  let source_path = ArtifactPath.original_source_path path in
   let source_path_is_covered item =
     PyrePath.equal item source_path || PyrePath.directory_contains ~directory:item source_path
   in
@@ -113,7 +113,7 @@ let should_type_check
 
 
 let create ~configuration:({ Configuration.Analysis.excludes; _ } as configuration) path =
-  let absolute_path = PyrePath.Built.absolute path in
+  let absolute_path = ArtifactPath.raw path |> PyrePath.absolute in
   let create ?extension path =
     let search_paths = Configuration.Analysis.search_paths configuration in
     let is_external = not (should_type_check ~configuration path) in
@@ -147,7 +147,7 @@ let full_path ~configuration { relative; priority; _ } =
     Configuration.Analysis.search_paths configuration
     |> fun search_paths -> List.nth_exn search_paths priority |> SearchPath.get_root
   in
-  PyrePath.Built.create_relative ~root ~relative
+  PyrePath.create_relative ~root ~relative |> ArtifactPath.create
 
 
 (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module

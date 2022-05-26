@@ -131,13 +131,23 @@
  (libraries core sexplib ppxlib ppx_deriving pyrelib.log))
 
 (library
+ (name artifactPath)
+ (public_name pyrelib.artifactpath)
+ (modules artifactPath)
+ (preprocess
+  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
+    ppx_compare ppx_sexp_conv))
+ (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path))
+
+(library
  (name searchPath)
  (public_name pyrelib.search_path)
  (modules searchPath)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))
- (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path))
+ (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path
+  pyrelib.artifactpath))
 
 (library
  (name jsonParsing)
@@ -161,8 +171,9 @@
  (modules pyre)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
-    ppx_compare ppx_sexp_conv))
- (libraries core sexplib ppxlib ppx_deriving hack_parallel pyrelib.path))
+    ppx_compare))
+ (libraries core sexplib ppxlib ppx_deriving hack_parallel pyrelib.path
+   pyrelib.artifactpath))
 
 (library
  (name configuration)
@@ -182,7 +193,7 @@
     ppx_compare ppx_sexp_conv))
  (libraries pyrelib.pyreParser pyrelib.analysis pyrelib.ast pyrelib.service
    pyrelib.commands pyrelib.configuration pyrelib.pyre pyrelib.taint
-   pyrelib.timer pyrelib.path pyrelib.file pyrelib.version))
+   pyrelib.timer pyrelib.path pyrelib.artifactpath pyrelib.file pyrelib.version))
 
 (tests
  (names

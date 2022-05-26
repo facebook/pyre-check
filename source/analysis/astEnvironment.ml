@@ -499,7 +499,7 @@ module ReadOnly = struct
        subdirectory. Instead, find the real filesystem relative path for the qualifier. *)
     let { Configuration.Analysis.local_root; _ } = configuration read_only in
     get_real_path read_only qualifier
-    >>= fun path -> PyrePath.Built.get_relative_to_root ~root:local_root ~path
+    >>= fun path -> PyrePath.get_relative_to_root ~root:local_root ~path:(ArtifactPath.raw path)
 
 
   let project_qualifiers { module_tracker; _ } =

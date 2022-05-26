@@ -34,7 +34,7 @@ val source_paths : t -> Ast.ModulePath.t list
 
 val configuration : t -> Configuration.Analysis.t
 
-val update : paths:PyrePath.Built.t list -> t -> IncrementalUpdate.t list
+val update : paths:ArtifactPath.t list -> t -> IncrementalUpdate.t list
 
 module Serializer : sig
   val store_layouts : t -> unit
@@ -49,7 +49,7 @@ module ReadOnly : sig
 
   val lookup_source_path : t -> Ast.Reference.t -> Ast.ModulePath.t option
 
-  val lookup_path : t -> PyrePath.Built.t -> PathLookup.t
+  val lookup_path : t -> ArtifactPath.t -> PathLookup.t
 
   val source_paths : t -> Ast.ModulePath.t list
 

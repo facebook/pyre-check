@@ -1299,7 +1299,7 @@ let test_update_and_compute_dependencies context =
       let update_result =
         let { ScratchProject.configuration; _ } = project in
         let { Configuration.Analysis.local_root; _ } = configuration in
-        let path = PyrePath.Built.create_relative ~root:local_root ~relative:"source.py" in
+        let path = Test.relative_artifact_path ~root:local_root ~relative:"source.py" in
         let ast_environment =
           AnnotatedGlobalEnvironment.ast_environment annotated_global_environment
         in

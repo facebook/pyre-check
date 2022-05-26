@@ -34,7 +34,7 @@ module SharedMemoryHashes =
     end)
 
 let hash_of_content analysis_path =
-  PyrePath.Built.raw analysis_path |> File.create |> HashResult.from_file
+  ArtifactPath.raw analysis_path |> File.create |> HashResult.from_file
 
 
 let save_current_paths ~scheduler ~configuration ~module_tracker =

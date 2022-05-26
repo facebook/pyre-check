@@ -12,6 +12,10 @@ open Ast
 open Pyre
 open Statement
 
+let relative_artifact_path ~root ~relative =
+  PyrePath.create_relative ~root ~relative |> ArtifactPath.create
+
+
 let initialize () =
   Log.GlobalState.initialize_for_tests ();
   Memory.initialize_for_tests ();

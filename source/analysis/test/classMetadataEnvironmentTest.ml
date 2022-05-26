@@ -166,7 +166,7 @@ let test_updates context =
       let { Configuration.Analysis.local_root; _ } = configuration in
       let paths =
         List.map new_sources ~f:(fun (relative, _) ->
-            PyrePath.Built.create_relative ~root:local_root ~relative)
+            Test.relative_artifact_path ~root:local_root ~relative)
       in
       ModuleTracker.update ~paths module_tracker
       |> (fun updates -> AstEnvironment.Update updates)

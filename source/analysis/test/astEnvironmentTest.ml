@@ -46,16 +46,16 @@ let test_basic context =
         assert_failure message
     | Some source_path ->
         let actual = ModulePath.full_path ~configuration source_path in
-        assert_equal ~cmp:PyrePath.Built.equal ~printer:PyrePath.Built.show expected actual
+        assert_equal ~cmp:ArtifactPath.equal ~printer:ArtifactPath.show expected actual
   in
   assert_source_path
     !&"a"
     ~ast_environment
-    ~expected:(PyrePath.Built.create_relative ~root:local_root ~relative:handle_a);
+    ~expected:(Test.relative_artifact_path ~root:local_root ~relative:handle_a);
   assert_source_path
     !&"b"
     ~ast_environment
-    ~expected:(PyrePath.Built.create_relative ~root:local_root ~relative:handle_b);
+    ~expected:(Test.relative_artifact_path ~root:local_root ~relative:handle_b);
   ()
 
 
@@ -216,8 +216,8 @@ let test_parse_sources context =
       ModuleTracker.update
         ~paths:
           [
-            PyrePath.Built.create_relative ~root:local_root ~relative:"new_local.py";
-            PyrePath.Built.create_relative ~root:stub_root ~relative:"new_stub.pyi";
+            Test.relative_artifact_path ~root:local_root ~relative:"new_local.py";
+            Test.relative_artifact_path ~root:stub_root ~relative:"new_stub.pyi";
           ]
         (AstEnvironment.module_tracker ast_environment)
       |> (fun updates -> AstEnvironment.Update updates)
@@ -683,7 +683,7 @@ module IncrementalTest = struct
         let external_root = List.hd_exn search_paths |> SearchPath.get_root in
         List.filter_map external_setups ~f:(update_file ~root:external_root)
       in
-      List.append external_paths paths |> List.map ~f:PyrePath.Built.create
+      List.append external_paths paths |> List.map ~f:ArtifactPath.create
     in
     (* Set up the initial project *)
     let old_external_sources = get_old_inputs external_setups in

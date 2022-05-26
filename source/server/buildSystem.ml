@@ -8,9 +8,9 @@
 open Base
 
 type t = {
-  update: PyrePath.t list -> PyrePath.Built.t list Lwt.t;
-  lookup_source: PyrePath.Built.t -> PyrePath.t option;
-  lookup_artifact: PyrePath.t -> PyrePath.Built.t list;
+  update: PyrePath.t list -> ArtifactPath.t list Lwt.t;
+  lookup_source: ArtifactPath.t -> PyrePath.t option;
+  lookup_artifact: PyrePath.t -> ArtifactPath.t list;
   store: unit -> unit;
 }
 
@@ -22,9 +22,9 @@ let lookup_artifact { lookup_artifact; _ } = lookup_artifact
 
 let store { store; _ } = store ()
 
-let default_lookup_source analysis_path = Some (PyrePath.Built.raw analysis_path)
+let default_lookup_source analysis_path = Some (ArtifactPath.raw analysis_path)
 
-let default_lookup_artifact source_path = [PyrePath.Built.create source_path]
+let default_lookup_artifact source_path = [ArtifactPath.create source_path]
 
 let create_for_testing
     ?(update = fun _ -> Lwt.return [])
@@ -216,16 +216,16 @@ module BuckBuildSystem = struct
                     changed_artifacts;
                   } ->
           State.update ~normalized_targets ~build_map state;
-          let changed_analysis_paths = List.map changed_artifacts ~f:PyrePath.Built.create in
+          let changed_analysis_paths = List.map changed_artifacts ~f:ArtifactPath.create in
           Lwt.return changed_analysis_paths)
     in
     let lookup_source path =
-      PyrePath.Built.raw path
+      ArtifactPath.raw path
       |> Buck.Builder.lookup_source ~index:state.build_map_index ~builder:state.builder
     in
     let lookup_artifact path =
       Buck.Builder.lookup_artifact ~index:state.build_map_index ~builder:state.builder path
-      |> List.map ~f:PyrePath.Built.create
+      |> List.map ~f:ArtifactPath.create
     in
     let store () =
       {
@@ -319,7 +319,7 @@ module TrackUnwatchedDependencyBuildSystem = struct
         else
           []
       in
-      List.map paths ~f:PyrePath.Built.create |> Lwt.return
+      List.map paths ~f:ArtifactPath.create |> Lwt.return
     in
     let lookup_source = default_lookup_source in
     let lookup_artifact = default_lookup_artifact in

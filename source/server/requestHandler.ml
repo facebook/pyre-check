@@ -27,7 +27,7 @@ let instantiate_path ~build_system ~ast_environment qualifier =
                Buck. Showing the original path here is a compromise: ideally we should instead look
                into configuring Buck-built project in such a way that all source files are tracked
                by Buck. *)
-            PyrePath.Built.raw analysis_path
+            ArtifactPath.raw analysis_path
       in
       Some (PyrePath.absolute path)
 
@@ -158,7 +158,7 @@ let process_incremental_update_request
       let changed_paths =
         List.concat_map paths ~f:(BuildSystem.lookup_artifact build_system)
         |> List.append changed_paths_from_rebuild
-        |> List.dedup_and_sort ~compare:PyrePath.Built.compare
+        |> List.dedup_and_sort ~compare:ArtifactPath.compare
       in
       let _ =
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->

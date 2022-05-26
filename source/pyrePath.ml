@@ -23,45 +23,41 @@ module RelativePath = struct
   let relative { relative; _ } = relative
 end
 
-module Raw = struct
-  type t =
-    | Absolute of AbsolutePath.t
-    | Relative of RelativePath.t
-  [@@deriving sexp, hash]
+type t =
+  | Absolute of AbsolutePath.t
+  | Relative of RelativePath.t
+[@@deriving sexp, hash]
 
-  let absolute = function
-    | Absolute path -> path
-    | Relative { root; relative } -> root ^/ relative
-
-
-  let create_absolute ?(follow_symbolic_links = false) path =
-    if follow_symbolic_links then
-      Absolute (Filename.realpath path)
-    else
-      Absolute path
+let absolute = function
+  | Absolute path -> path
+  | Relative { root; relative } -> root ^/ relative
 
 
-  let create_relative ~root ~relative =
-    let root =
-      let root = absolute root in
-      if not (String.is_suffix ~suffix:"/" root) then root ^ "/" else root
-    in
-    let relative = String.chop_prefix ~prefix:root relative |> Option.value ~default:relative in
-    Relative { root; relative }
+let create_absolute ?(follow_symbolic_links = false) path =
+  if follow_symbolic_links then
+    Absolute (Filename.realpath path)
+  else
+    Absolute path
 
 
-  let show = absolute
+let create_relative ~root ~relative =
+  let root =
+    let root = absolute root in
+    if not (String.is_suffix ~suffix:"/" root) then root ^ "/" else root
+  in
+  let relative = String.chop_prefix ~prefix:root relative |> Option.value ~default:relative in
+  Relative { root; relative }
 
-  let to_yojson path = `String (show path)
 
-  let equal left right = String.equal (absolute left) (absolute right)
+let show = absolute
 
-  let compare left right = String.compare (absolute left) (absolute right)
+let to_yojson path = `String (show path)
 
-  let pp format path = Format.fprintf format "%s" (absolute path)
-end
+let equal left right = String.equal (absolute left) (absolute right)
 
-include Raw
+let compare left right = String.compare (absolute left) (absolute right)
+
+let pp format path = Format.fprintf format "%s" (absolute path)
 
 let get_directory path = absolute path |> Filename.dirname |> create_absolute
 
@@ -299,27 +295,3 @@ let get_matching_files_recursively ~suffix ~paths =
       []
   in
   List.concat_map ~f:expand paths
-
-
-module Built = struct
-  type t = Raw.t [@@deriving show, eq, compare, hash]
-
-  let create = Fn.id
-
-  let raw = Fn.id
-
-  let absolute = absolute
-
-  (** All build systems either leave source paths untouched, or use an implementation where the
-      analysis path is a symbolic link that points to the source path. Note that we will need to
-      refactor so that this function is under the BuildSystem control if that ever changes. *)
-  let original_source_path analysis_path =
-    analysis_path |> follow_symbolic_link |> Option.value ~default:analysis_path
-
-
-  let create_relative = Raw.create_relative
-
-  let get_relative_to_root = get_relative_to_root
-
-  let list = list
-end

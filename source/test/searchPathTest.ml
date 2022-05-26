@@ -131,19 +131,19 @@ let test_search_for_path context =
   in
   assert_path
     ~search_paths
-    ~path:(PyrePath.Built.create_relative ~root ~relative:"a/file.py")
+    ~path:(Test.relative_artifact_path ~root ~relative:"a/file.py")
     ~expected:"a/file.py";
   assert_path
     ~search_paths
-    ~path:(PyrePath.Built.create_relative ~root ~relative:"b/c/file.py")
+    ~path:(Test.relative_artifact_path ~root ~relative:"b/c/file.py")
     ~expected:"c/file.py";
   assert_path
     ~search_paths
-    ~path:(PyrePath.Built.create_relative ~root ~relative:"b/other/file.py")
+    ~path:(Test.relative_artifact_path ~root ~relative:"b/other/file.py")
     ~expected:"b/other/file.py";
   assert_path
     ~search_paths
-    ~path:(PyrePath.Built.create_relative ~root ~relative:"b.py")
+    ~path:(Test.relative_artifact_path ~root ~relative:"b.py")
     ~expected:"b.py"
 
 

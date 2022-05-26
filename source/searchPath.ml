@@ -81,7 +81,7 @@ let normalize = function
 let create_normalized serialized = create serialized |> normalize
 
 let search_for_path ~search_paths analysis_path =
-  let raw_path = PyrePath.Built.raw analysis_path in
+  let raw_path = ArtifactPath.raw analysis_path in
   let under_root search_path =
     let open Option in
     let found =
@@ -94,8 +94,8 @@ let search_for_path ~search_paths analysis_path =
       PyrePath.get_relative_to_root ~root ~path:raw_path
       >>| (fun relative -> PyrePath.create_relative ~root ~relative)
       >>= function
-      | PyrePath.Raw.Absolute _ -> None
-      | PyrePath.Raw.Relative relative -> Some relative
+      | PyrePath.Absolute _ -> None
+      | PyrePath.Relative relative -> Some relative
     else
       None
   in

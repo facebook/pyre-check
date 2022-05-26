@@ -137,7 +137,7 @@ module Cache = struct
         ~configuration
         ~old_module_tracker
         ~new_module_tracker
-      |> List.map ~f:PyrePath.Built.raw
+      |> List.map ~f:ArtifactPath.raw
       |> List.filter ~f:(fun path -> not (is_pysa_model path || is_taint_config path))
     in
     match changed_paths with
