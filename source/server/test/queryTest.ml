@@ -390,6 +390,24 @@ let test_handle_query_basic context =
     ~query:"path_of_module(notexist)"
     (Error "No path found for module `notexist`")
   >>= fun () ->
+  assert_type_query_response
+    ~source:""
+    ~handle:"Foo.java"
+    ~query:"types(path='Foo.java')"
+    (Error "Not able to get lookups in: `Foo.java` (file not found)")
+  >>= fun () ->
+  assert_type_query_response
+    ~source:""
+    ~query:"types(path='non_existent.py')"
+    (Error "Not able to get lookups in: `non_existent.py` (file not found)")
+  >>= fun () ->
+  let temporary_directory = OUnit2.bracket_tmpdir context in
+  assert_type_query_response
+    ~source:""
+    ~handle:(Format.sprintf "%s" temporary_directory)
+    ~query:(Format.sprintf "types(path='%s')" temporary_directory)
+    (Error (Format.sprintf "Not able to get lookups in: `%s` (file not found)" temporary_directory))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:{|
       def foo(x: int = 10, y: str = "bar") -> None:
