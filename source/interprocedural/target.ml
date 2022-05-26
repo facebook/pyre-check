@@ -211,9 +211,6 @@ type definitions_result = {
   has_multiple_definitions: bool;
 }
 
-(* This is the source of truth for the mapping of callables to definitions.
- * All parts of the analysis should use this (or `get_module_and_definition`)
- * rather than walking over source files. *)
 let get_definitions ~resolution define_name =
   GlobalResolution.function_definition resolution define_name
   >>| fun ({ FunctionDefinition.qualifier; _ } as definitions) ->

@@ -144,7 +144,6 @@ let get_source ~environment qualifier =
   AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
 
 
-(* Traverse the AST to find all callables (functions and methods). *)
 let from_qualifiers ~scheduler ~environment ~configuration ~include_unit_tests ~qualifiers =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let map callables qualifiers =

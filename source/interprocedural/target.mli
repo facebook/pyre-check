@@ -90,9 +90,9 @@ val method_name : t -> string option
 
 val override_to_method : t -> t
 
-(* Return the define name of a target. Note that multiple targets can match to the same define name
-   (e.g, property getters and setters). Hence, use this at your own risk. *)
 val define_name : t -> Reference.t
+(** Return the define name of a target. Note that multiple targets can match to the same define name
+    (e.g, property getters and setters). Hence, use this at your own risk. *)
 
 module Map : Core.Map.S with type Key.t = t
 
@@ -114,6 +114,8 @@ val get_definitions
   :  resolution:Analysis.GlobalResolution.t ->
   Reference.t ->
   definitions_result option
+(** This is the source of truth for the mapping of callables to definitions. All parts of the
+    analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
 
 val get_module_and_definition
   :  resolution:Analysis.GlobalResolution.t ->

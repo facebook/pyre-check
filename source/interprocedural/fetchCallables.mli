@@ -22,6 +22,7 @@ val from_source
   include_unit_tests:bool ->
   source:Source.t ->
   t
+(** Traverse the AST to find all callables (functions and methods). *)
 
 val from_qualifiers
   :  scheduler:Scheduler.t ->

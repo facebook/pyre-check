@@ -7,8 +7,7 @@
 
 open Ast
 
-(* See `.ml` for documentation of modules and functions. *)
-
+(** Override graph in the ocaml heap, storing a mapping from a method to classes overriding it. *)
 module Heap : sig
   type t
 
@@ -38,14 +37,17 @@ module Heap : sig
   }
 
   val cap_overrides : maximum_overrides:int option -> t -> cap_overrides_result
+  (** If a method has too many overrides, ignore them. *)
 
   type serializable
+  (** This can be used to cache the whole graph in shared memory. *)
 
   val to_serializable : t -> serializable
 
   val of_serializable : serializable -> t
 end
 
+(** Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)
 module SharedMemory : sig
   val get_overriding_types : member:Target.t -> Reference.t list option
 
@@ -54,8 +56,11 @@ module SharedMemory : sig
   val expand_override_targets : Target.t list -> Target.t list
 
   val from_heap : Heap.t -> unit
+  (** Records a heap override graph in shared memory. *)
 
   val cleanup : Heap.t -> unit
+  (** Remove an override graph from shared memory. This must be called before storing another
+      override graph. *)
 end
 
 val record_overrides_for_qualifiers
@@ -66,3 +71,5 @@ val record_overrides_for_qualifiers
   maximum_overrides:int option ->
   qualifiers:Reference.t list ->
   Heap.cap_overrides_result
+(** Compute the override graph, which maps overide_targets (parent methods which are overridden) to
+    all concrete methods overriding them, and save it to shared memory. *)

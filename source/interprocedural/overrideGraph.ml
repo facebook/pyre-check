@@ -13,7 +13,8 @@ module GlobalResolution = Analysis.GlobalResolution
 module TypeEnvironment = Analysis.TypeEnvironment
 module AstEnvironment = Analysis.AstEnvironment
 
-(* Override graph in the ocaml heap, storing a mapping from a method to classes overriding it. *)
+(* See `.mli` for documentation of modules and functions. *)
+
 module Heap = struct
   type t = Reference.t list Target.Map.t
 
@@ -132,7 +133,6 @@ module Heap = struct
     skipped_overrides: Target.t list;
   }
 
-  (* If a method has too many overrides, ignore them. *)
   let cap_overrides ~maximum_overrides overrides =
     (* Keep the information of whether we're skipping overrides in a ref that we accumulate while we
        filter the map. *)
@@ -163,7 +163,6 @@ module Heap = struct
     { overrides; skipped_overrides = !skipped_overrides }
 
 
-  (* This can be used to cache the whole graph in shared memory. *)
   type serializable = Reference.t list Target.Map.Tree.t
 
   let to_serializable = Target.Map.to_tree
@@ -171,7 +170,6 @@ module Heap = struct
   let of_serializable = Target.Map.of_tree
 end
 
-(* Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)
 module SharedMemory = struct
   module T =
     Memory.WithCache.Make
@@ -190,14 +188,11 @@ module SharedMemory = struct
 
   let overrides_exist member = T.mem member
 
-  (* Records a heap override graph in shared memory. *)
   let from_heap overrides =
     let record_override_edge ~key:member ~data:subtypes = add_overriding_types ~member ~subtypes in
     Target.Map.iteri overrides ~f:record_override_edge
 
 
-  (* Remove an override graph from shared memory.
-   * This must be called before storing another override graph. *)
   let cleanup overrides = overrides |> Target.Map.keys |> T.KeySet.of_list |> T.remove_batch
 
   let expand_override_targets callees =
@@ -220,8 +215,6 @@ let get_source ~environment qualifier =
   AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
 
 
-(* Compute the override graph, which maps overide_targets (parent methods which are overridden) to
-   all concrete methods overriding them, and save it to shared memory. *)
 let record_overrides_for_qualifiers
     ~scheduler
     ~environment

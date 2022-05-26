@@ -9,8 +9,10 @@ open Ast
 module TypeEnvironment = Analysis.TypeEnvironment
 module Kind = AnalysisKind
 
-(* See `.ml` for documentation of modules and functions. *)
-
+(** Represents the set of information that must be propagated from callees to callers during an
+    interprocedural analysis, within the global fixpoint. Each iteration should produce a model for
+    each callable (function, method). This must have an abstract domain structure (e.g, join, widen,
+    less_or_equal, etc.) *)
 module type MODEL = sig
   type t [@@deriving show]
 
@@ -21,8 +23,14 @@ module type MODEL = sig
   val reached_fixpoint : iteration:int -> callable:Target.t -> previous:t -> next:t -> bool
 
   val strip_for_callsite : t -> t
+  (** Remove aspects from the model that are not needed at call sites. Just for optimization. *)
 end
 
+(** Represents the result of the analysis.
+
+    Each iteration should produce results for each callable (function, method). Results from the
+    previous iterations are discarded. This is usually used for a set of errors. In the taint
+    analysis, this represents valid issues. *)
 module type RESULT = sig
   type t
 
@@ -47,6 +55,7 @@ module type LOGGER = sig
     callables_to_analyze:Target.t list ->
     number_of_callables:int ->
     unit
+  (** This is called at the begining of each iteration. *)
 
   val iteration_end
     :  iteration:int ->
@@ -54,24 +63,30 @@ module type LOGGER = sig
     number_of_callables:int ->
     timer:Timer.t ->
     unit
+  (** This is called at the end of each iteration. *)
 
   val iteration_progress
     :  iteration:int ->
     callables_processed:int ->
     number_of_callables:int ->
     unit
+  (** This is called after a worker made progress on an iteration. *)
 
   val is_expensive_callable : callable:Target.t -> timer:Timer.t -> bool
 
   val override_analysis_end : callable:Target.t -> timer:Timer.t -> unit
+  (** This is called after analyzing an override target (i.e, joining models of overriding methods). *)
 
   val on_analyze_define_exception : iteration:int -> callable:Target.t -> exn:exn -> unit
 
   val on_global_fixpoint_exception : exn:exn -> unit
 end
 
+(** Must be implemented to perform a global fixpoint. *)
 module type ANALYSIS = sig
   type context
+  (** Passed down from the top level call to the `analyze_define` function. This should be cheap to
+      marshal, since it will be sent to multiple workers. *)
 
   module Model : MODEL
 
@@ -84,6 +99,7 @@ module type ANALYSIS = sig
   val empty_model : Model.t
 
   val obscure_model : Model.t
+  (** Model for obscure callables (usually, stubs) *)
 
   val analyze_define
     :  context:context ->
@@ -93,9 +109,14 @@ module type ANALYSIS = sig
     previous_model:Model.t ->
     get_callee_model:(Target.t -> Model.t option) ->
     Result.t * Model.t
+  (** Analyze a function or method definition.
+
+      `get_callee_model` can be used to get the model of a callee, as long as it was registered in
+      the call graph. *)
 end
 
 module Make (Analysis : ANALYSIS) : sig
+  (** Represents a mapping from target to models, living in the ocaml heap. *)
   module Registry : sig
     type t
 
@@ -156,6 +177,8 @@ module Make (Analysis : ANALYSIS) : sig
   val get_iterations : t -> int
 
   val cleanup : t -> unit
+  (** Remove the fixpoint state from the shared memory. This must be called before computing another
+      fixpoint. *)
 end
 
 module WithoutLogging : LOGGER
