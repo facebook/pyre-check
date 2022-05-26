@@ -1122,19 +1122,12 @@ module UpdateResult = struct
 end
 
 let cold_start ({ ast_environment; _ } as environment) =
-  Profiling.track_duration_and_shared_memory
-    "LegacyTableUpdate(Unannotated globals)"
-    ~tags:["phase_name", "global discovery"]
-    ~f:(fun _ ->
-      (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
-      let ast_read_only = AstEnvironment.read_only ast_environment in
-      AstEnvironment.ReadOnly.get_processed_source
-        ast_read_only
-        ~track_dependency:true
-        Reference.empty
-      >>| set_module_data environment
-      |> Option.value ~default:();
-      read_only environment)
+  (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
+  let ast_read_only = AstEnvironment.read_only ast_environment in
+  AstEnvironment.ReadOnly.get_processed_source ast_read_only ~track_dependency:true Reference.empty
+  >>| set_module_data environment
+  |> Option.value ~default:();
+  read_only environment
 
 
 let update_this_and_all_preceding_environments

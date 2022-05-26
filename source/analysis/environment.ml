@@ -352,15 +352,10 @@ module EnvironmentTable = struct
 
 
     let cold_start { table; upstream_environment } =
-      let name = Format.sprintf "LegacyTableUpdate(%s)" In.Value.description in
-      Profiling.track_duration_and_shared_memory
-        name
-        ~tags:["phase_name", In.Value.description]
-        ~f:(fun _ ->
-          {
-            ReadOnly.table;
-            upstream_environment = In.PreviousEnvironment.cold_start upstream_environment;
-          })
+      {
+        ReadOnly.table;
+        upstream_environment = In.PreviousEnvironment.cold_start upstream_environment;
+      }
 
 
     let update_this_and_all_preceding_environments
