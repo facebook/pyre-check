@@ -11,7 +11,7 @@ open Analysis
 
 let module_of_path ~module_tracker path =
   match ModuleTracker.ReadOnly.lookup_path module_tracker path with
-  | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } -> Some qualifier
+  | ModuleTracker.PathLookup.Found { ModulePath.qualifier; _ } -> Some qualifier
   | _ -> None
 
 

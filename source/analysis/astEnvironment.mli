@@ -12,7 +12,7 @@ type t
 
 module ParserError : sig
   type t = {
-    source_path: SourcePath.t;
+    source_path: ModulePath.t;
     location: Location.t;
     is_suppressed: bool;
     message: string;
@@ -34,7 +34,7 @@ module ReadOnly : sig
 
   val get_raw_source : t -> Reference.t -> (Source.t, ParserError.t) Result.t option
 
-  val get_source_path : t -> Reference.t -> SourcePath.t option
+  val get_source_path : t -> Reference.t -> ModulePath.t option
 
   val get_relative : t -> Reference.t -> string option
 

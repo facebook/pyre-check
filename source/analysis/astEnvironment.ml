@@ -12,7 +12,7 @@ open PyreParser
 
 module ParserError = struct
   type t = {
-    source_path: SourcePath.t;
+    source_path: ModulePath.t;
     location: Location.t;
     is_suppressed: bool;
     message: string;
@@ -41,13 +41,13 @@ module RawSources = struct
       (QualifierDependencyKey)
       (RawSourceValue)
 
-  let add_parsed_source table ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+  let add_parsed_source table ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) =
     add table qualifier (Result.Ok source)
 
 
   let add_unparsed_source
       table
-      ({ ParserError.source_path = { SourcePath.qualifier; _ }; _ } as error)
+      ({ ParserError.source_path = { ModulePath.qualifier; _ }; _ } as error)
     =
     add table qualifier (Result.Error error)
 
@@ -72,7 +72,7 @@ let create ?additional_preprocessing module_tracker =
   { module_tracker; raw_sources = RawSources.create (); additional_preprocessing }
 
 
-let wildcard_exports_of ({ Source.source_path = { SourcePath.is_stub; _ }; _ } as source) =
+let wildcard_exports_of ({ Source.source_path = { ModulePath.is_stub; _ }; _ } as source) =
   let open Expression in
   let open UnannotatedGlobal in
   let extract_dunder_all = function
@@ -135,7 +135,7 @@ let parse_source
     ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
     ~context
     ~module_tracker
-    ({ SourcePath.qualifier; _ } as source_path)
+    ({ ModulePath.qualifier; _ } as source_path)
   =
   let parse raw_code =
     let typecheck_flags = Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n') in
@@ -353,7 +353,7 @@ let get_and_preprocess_source
       |> InlineDecorator.inline_decorators ~get_source:(fun qualifier ->
              LazyRawSources.get ~ast_environment qualifier >>= Result.ok)
   | Result.Error
-      { ParserError.source_path = { SourcePath.qualifier; relative; _ } as source_path; _ } ->
+      { ParserError.source_path = { ModulePath.qualifier; relative; _ } as source_path; _ } ->
       (* Files that have parser errors fall back into getattr-any. *)
       let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
       let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
@@ -391,11 +391,11 @@ let update
       (* We only want to eagerly reparse sources that have been cached. We have to also invalidate
          sources that are now deleted or changed from explicit to implicit. *)
       let reparse_source_paths =
-        List.filter changed_source_paths ~f:(fun { SourcePath.qualifier; _ } ->
+        List.filter changed_source_paths ~f:(fun { ModulePath.qualifier; _ } ->
             RawSources.mem raw_sources qualifier)
       in
       let reparse_modules =
-        reparse_source_paths |> List.map ~f:(fun { SourcePath.qualifier; _ } -> qualifier)
+        reparse_source_paths |> List.map ~f:(fun { ModulePath.qualifier; _ } -> qualifier)
       in
       let modules_with_invalidated_raw_source =
         List.concat [removed_modules; new_implicits; reparse_modules]
@@ -405,8 +405,8 @@ let update
          modules, even though they don't really require us to update data in the push phase, or else
          they'll never be checked. *)
       let reparse_modules_union_in_project_modules =
-        let fold qualifiers { SourcePath.qualifier; _ } = Reference.Set.add qualifiers qualifier in
-        List.filter changed_source_paths ~f:SourcePath.is_in_project
+        let fold qualifiers { ModulePath.qualifier; _ } = Reference.Set.add qualifiers qualifier in
+        List.filter changed_source_paths ~f:ModulePath.is_in_project
         |> List.fold ~init:(Reference.Set.of_list reparse_modules) ~f:fold
         |> Reference.Set.to_list
       in
@@ -486,16 +486,16 @@ module ReadOnly = struct
 
   let get_relative read_only qualifier =
     let open Option in
-    get_source_path read_only qualifier >>| fun { SourcePath.relative; _ } -> relative
+    get_source_path read_only qualifier >>| fun { ModulePath.relative; _ } -> relative
 
 
   let get_real_path read_only qualifier =
     let configuration = configuration read_only in
-    get_source_path read_only qualifier >>| SourcePath.full_path ~configuration
+    get_source_path read_only qualifier >>| ModulePath.full_path ~configuration
 
 
   let get_real_path_relative read_only qualifier =
-    (* SourcePath.relative refers to the renamed path when search paths are provided with a root and
+    (* ModulePath.relative refers to the renamed path when search paths are provided with a root and
        subdirectory. Instead, find the real filesystem relative path for the qualifier. *)
     let { Configuration.Analysis.local_root; _ } = configuration read_only in
     get_real_path read_only qualifier

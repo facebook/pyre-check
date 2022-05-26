@@ -39,8 +39,8 @@ let hash_of_content analysis_path =
 
 let save_current_paths ~scheduler ~configuration ~module_tracker =
   let save_paths _ source_paths =
-    let save_path ({ SourcePath.qualifier; _ } as source_path) =
-      let hash = SourcePath.full_path ~configuration source_path |> hash_of_content in
+    let save_path ({ ModulePath.qualifier; _ } as source_path) =
+      let hash = ModulePath.full_path ~configuration source_path |> hash_of_content in
       SharedMemoryHashes.remove_batch (SharedMemoryHashes.KeySet.singleton qualifier);
       SharedMemoryHashes.add qualifier hash
     in
@@ -69,9 +69,9 @@ end
 let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker ~new_module_tracker =
   let timer = Timer.start () in
   let changed_paths changed new_source_paths =
-    let changed_path ({ SourcePath.qualifier; _ } as source_path) =
+    let changed_path ({ ModulePath.qualifier; _ } as source_path) =
       let old_hash = SharedMemoryHashes.get qualifier in
-      let path = SourcePath.full_path ~configuration source_path in
+      let path = ModulePath.full_path ~configuration source_path in
       let current_hash = hash_of_content path in
       if Option.equal HashResult.equal old_hash (Some current_hash) then
         None
@@ -93,14 +93,14 @@ let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker 
   let removed_paths =
     let tracked_set =
       ModuleTracker.all_source_paths new_module_tracker
-      |> List.map ~f:(fun { SourcePath.priority; relative; _ } -> priority, relative)
+      |> List.map ~f:(fun { ModulePath.priority; relative; _ } -> priority, relative)
       |> IndexedRelativePath.Hash_set.of_list
     in
     ModuleTracker.all_source_paths old_module_tracker
-    |> List.filter ~f:(fun { SourcePath.priority; relative; _ } ->
+    |> List.filter ~f:(fun { ModulePath.priority; relative; _ } ->
            let key = priority, relative in
            not (Hash_set.mem tracked_set key))
-    |> List.map ~f:(SourcePath.full_path ~configuration)
+    |> List.map ~f:(ModulePath.full_path ~configuration)
   in
   Statistics.performance ~name:"computed locally changed files" ~timer ();
   changed_paths @ removed_paths

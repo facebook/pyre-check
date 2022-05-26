@@ -32,7 +32,7 @@ let join left right =
   }
 
 
-let gather_raw_callables ~resolution ~source:{ Source.source_path = { SourcePath.qualifier; _ }; _ }
+let gather_raw_callables ~resolution ~source:{ Source.source_path = { ModulePath.qualifier; _ }; _ }
   =
   (* Ignoring parameters that are also function definitions,
    * i.e def f(g): if not g: def g(): ...; g() *)
@@ -113,16 +113,16 @@ let from_source ~configuration ~resolution ~include_unit_tests ~source =
       Target.Map.empty
   in
   let callables =
-    if Ast.SourcePath.is_stub source.source_path then
+    if Ast.ModulePath.is_stub source.source_path then
       Target.Map.filter callables ~f:(fun { Node.value = define; _ } ->
           not (Define.is_toplevel define || Define.is_class_toplevel define))
     else
       callables
   in
   let is_internal =
-    Ast.SourcePath.is_internal_path
+    Ast.ModulePath.is_internal_path
       ~configuration
-      (Ast.SourcePath.full_path ~configuration source.source_path)
+      (Ast.ModulePath.full_path ~configuration source.source_path)
   in
   let add_callable ~key:callable ~data:{ Node.value = define; _ } result =
     if Define.is_stub define then

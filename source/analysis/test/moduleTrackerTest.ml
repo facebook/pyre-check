@@ -14,7 +14,7 @@ let touch path = File.create path ~content:"" |> File.write
 
 let create_source_path ~configuration root relative =
   let path = PyrePath.Built.create_relative ~root ~relative in
-  SourcePath.create ~configuration path
+  ModulePath.create ~configuration path
 
 
 let create_source_path_exn ~configuration root relative =
@@ -60,7 +60,7 @@ let test_creation context =
       ~search_root
       ~relative
       ({
-         SourcePath.priority = actual_priority;
+         ModulePath.priority = actual_priority;
          is_stub = actual_is_stub;
          is_external = actual_is_external;
          is_init = actual_is_init;
@@ -68,7 +68,7 @@ let test_creation context =
        } as source_path)
     =
     let expected_path = PyrePath.Built.create_relative ~root:search_root ~relative in
-    let actual_path = SourcePath.full_path ~configuration source_path in
+    let actual_path = ModulePath.full_path ~configuration source_path in
     assert_equal ~cmp:PyrePath.Built.equal ~printer:PyrePath.Built.show expected_path actual_path;
     Option.iter priority ~f:(fun expected_priority ->
         assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_priority actual_priority);
@@ -81,18 +81,18 @@ let test_creation context =
   in
   let assert_same_module_greater
       ~configuration
-      ({ SourcePath.qualifier = left_qualifier; _ } as left)
-      ({ SourcePath.qualifier = right_qualifier; _ } as right)
+      ({ ModulePath.qualifier = left_qualifier; _ } as left)
+      ({ ModulePath.qualifier = right_qualifier; _ } as right)
     =
     assert_equal ~cmp:Reference.equal ~printer:Reference.show left_qualifier right_qualifier;
-    let compare_result = SourcePath.same_module_compare ~configuration left right in
+    let compare_result = ModulePath.same_module_compare ~configuration left right in
     let message =
       Format.asprintf
         "\'%a\' is supposed to be greater than \'%a\'"
         Sexp.pp_hum
-        (SourcePath.sexp_of_t left)
+        (ModulePath.sexp_of_t left)
         Sexp.pp_hum
-        (SourcePath.sexp_of_t right)
+        (ModulePath.sexp_of_t right)
     in
     assert_bool message (compare_result > 0)
   in
@@ -373,11 +373,11 @@ let test_creation context =
     let source_path_a = create_source_path_exn ~configuration local_root "a.py" in
     assert_path
       (PyrePath.Built.create_relative ~root:local_root ~relative:"a.py")
-      (SourcePath.full_path ~configuration source_path_a);
+      (ModulePath.full_path ~configuration source_path_a);
     let source_path_b = create_source_path_exn ~configuration search_subdirectory "c.py" in
     assert_path
       (PyrePath.Built.create_relative ~root:search_subdirectory ~relative:"c.py")
-      (SourcePath.full_path ~configuration source_path_b)
+      (ModulePath.full_path ~configuration source_path_b)
   in
   let test_priority () =
     let local_root =
@@ -1022,13 +1022,13 @@ let test_creation context =
         ()
       |> ModuleTracker.create
       |> ModuleTracker.all_source_paths
-      |> List.sort ~compare:SourcePath.compare
+      |> List.sort ~compare:ModulePath.compare
     in
     let source_paths_original = setup local_root external_root0 external_root1 in
     let source_paths_copy = setup local_root_copy external_root0_copy external_root1_copy in
     assert_equal
-      ~cmp:(List.equal SourcePath.equal)
-      ~printer:(List.to_string ~f:(Format.asprintf "%a" SourcePath.pp))
+      ~cmp:(List.equal ModulePath.equal)
+      ~printer:(List.to_string ~f:(Format.asprintf "%a" ModulePath.pp))
       source_paths_original
       source_paths_copy
   in
@@ -1175,7 +1175,7 @@ module IncrementalTest = struct
     let updates = ModuleTracker.update ~paths module_tracker in
     let actual =
       let create_event = function
-        | ModuleTracker.IncrementalUpdate.NewExplicit { SourcePath.relative; is_external; _ } ->
+        | ModuleTracker.IncrementalUpdate.NewExplicit { ModulePath.relative; is_external; _ } ->
             Event.NewExplicit { relative; is_external }
         | ModuleTracker.IncrementalUpdate.NewImplicit qualifier ->
             Event.NewImplicit (Reference.show qualifier)
@@ -1194,17 +1194,17 @@ module IncrementalTest = struct
     (* Also check that the module tracker is in a consistent state: we should track exactly the same
        modules and source files after the update as if we build a fresh module tracker from scratch. *)
     let actual_source_paths =
-      ModuleTracker.all_source_paths module_tracker |> List.sort ~compare:SourcePath.compare
+      ModuleTracker.all_source_paths module_tracker |> List.sort ~compare:ModulePath.compare
     in
     let expected_source_paths =
       ModuleTracker.create configuration
       |> ModuleTracker.all_source_paths
-      |> List.sort ~compare:SourcePath.compare
+      |> List.sort ~compare:ModulePath.compare
     in
     assert_equal
-      ~cmp:(List.equal SourcePath.equal)
+      ~cmp:(List.equal ModulePath.equal)
       ~printer:(fun source_paths ->
-        [%message (source_paths : SourcePath.t list)] |> Sexp.to_string_hum)
+        [%message (source_paths : ModulePath.t list)] |> Sexp.to_string_hum)
       expected_source_paths
       actual_source_paths
 end

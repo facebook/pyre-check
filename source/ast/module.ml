@@ -102,7 +102,7 @@ let create_for_testing ~stub =
 
 let create
     ({
-       Source.source_path = { SourcePath.is_stub; qualifier; _ } as source_path;
+       Source.source_path = { ModulePath.is_stub; qualifier; _ } as source_path;
        statements;
        typecheck_flags = { Source.TypecheckFlags.local_mode; _ };
        _;
@@ -175,7 +175,7 @@ let create
     let rec aliased_exports aliases { Node.value; _ } =
       match value with
       | Statement.Import { Import.from = Some from; imports } ->
-          let from = SourcePath.expand_relative_import source_path ~from in
+          let from = ModulePath.expand_relative_import source_path ~from in
           let export aliases { Node.value = { Import.name; alias }; _ } =
             let alias =
               match alias with

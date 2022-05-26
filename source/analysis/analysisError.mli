@@ -39,7 +39,7 @@ type invalid_class_instantiation =
 [@@deriving compare, sexp, show, hash]
 
 type module_reference =
-  | ExplicitModule of SourcePath.t
+  | ExplicitModule of ModulePath.t
   | ImplicitModule of Reference.t
 [@@deriving compare, sexp, show, hash]
 
@@ -54,7 +54,7 @@ type class_origin =
 type origin =
   | Class of {
       class_origin: class_origin;
-      parent_source_path: SourcePath.t option;
+      parent_source_path: ModulePath.t option;
     }
   | Module of module_reference
 

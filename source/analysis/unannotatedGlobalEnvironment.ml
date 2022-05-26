@@ -503,7 +503,7 @@ let set_unannotated_global { unannotated_globals; _ } ~name unannotated_global =
 
 let set_class_summaries
     ({ key_tracker; _ } as environment)
-    ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+    ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source)
   =
   (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
   let module ClassCollector = Visit.MakeStatementVisitor (struct
@@ -549,7 +549,7 @@ let set_class_summaries
 
 let set_function_definitions
     ({ key_tracker; _ } as environment)
-    ({ Source.source_path = { SourcePath.qualifier; is_external; _ }; _ } as source)
+    ({ Source.source_path = { ModulePath.qualifier; is_external; _ }; _ } as source)
   =
   match is_external with
   | true ->
@@ -568,7 +568,7 @@ let set_function_definitions
 
 let set_unannotated_globals
     ({ key_tracker; _ } as environment)
-    ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source)
+    ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source)
   =
   let write { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
     let name = Reference.create name |> Reference.combine qualifier in
@@ -614,7 +614,7 @@ let set_unannotated_globals
   globals |> List.map ~f:write |> KeyTracker.add_unannotated_global_keys key_tracker qualifier
 
 
-let set_module_data environment ({ Source.source_path = { SourcePath.qualifier; _ }; _ } as source) =
+let set_module_data environment ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) =
   set_class_summaries environment source;
   set_function_definitions environment source;
   set_unannotated_globals environment source;

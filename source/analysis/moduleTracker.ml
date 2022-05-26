@@ -11,15 +11,15 @@ open Pyre
 
 module PathLookup = struct
   type t =
-    | Found of Ast.SourcePath.t
-    | ShadowedBy of Ast.SourcePath.t
+    | Found of Ast.ModulePath.t
+    | ShadowedBy of Ast.ModulePath.t
     | NotFound
   [@@deriving show, sexp, compare]
 end
 
 module IncrementalUpdate = struct
   type t =
-    | NewExplicit of Ast.SourcePath.t
+    | NewExplicit of Ast.ModulePath.t
     | NewImplicit of Ast.Reference.t
     | Delete of Reference.t
   [@@deriving show, sexp, compare]
@@ -29,7 +29,7 @@ end
 
 module Layouts = struct
   type t = {
-    module_to_files: SourcePath.t list Reference.Table.t;
+    module_to_files: ModulePath.t list Reference.Table.t;
     submodule_refcounts: int Reference.Table.t;
   }
 
@@ -37,11 +37,11 @@ module Layouts = struct
     let rec insert sofar = function
       | [] -> List.rev_append sofar [inserted]
       | current_file :: rest as existing -> (
-          match SourcePath.same_module_compare ~configuration inserted current_file with
+          match ModulePath.same_module_compare ~configuration inserted current_file with
           | 0 ->
               (* We have the following precondition for files that are in the same module: *)
               (* `same_module_compare a b = 0` implies `equal a b` *)
-              assert (SourcePath.equal inserted current_file);
+              assert (ModulePath.equal inserted current_file);
 
               (* Duplicate entry detected. Do nothing *)
               existing_files
@@ -55,15 +55,15 @@ module Layouts = struct
     let rec remove sofar = function
       | [] -> existing_files
       | current_file :: rest -> (
-          match SourcePath.same_module_compare ~configuration removed current_file with
+          match ModulePath.same_module_compare ~configuration removed current_file with
           | 0 ->
               let () =
                 (* For removed files, we only check for equality on relative path & priority. *)
                 (* There's a corner case (where symlink is involved) that may cause `removed` to
                    have a different `is_external` flag. *)
                 let partially_equal
-                    { SourcePath.relative = left_relative; priority = left_priority; _ }
-                    { SourcePath.relative = right_relative; priority = right_priority; _ }
+                    { ModulePath.relative = left_relative; priority = left_priority; _ }
+                    { ModulePath.relative = right_relative; priority = right_priority; _ }
                   =
                   String.equal left_relative right_relative
                   && Int.equal left_priority right_priority
@@ -79,7 +79,7 @@ module Layouts = struct
 
   let create_module_to_files ~configuration source_paths =
     let module_to_files = Reference.Table.create () in
-    let process_source_path ({ SourcePath.qualifier; _ } as source_path) =
+    let process_source_path ({ ModulePath.qualifier; _ } as source_path) =
       let update_table = function
         | None -> [source_path]
         | Some source_paths -> insert_source_path ~configuration ~inserted:source_path source_paths
@@ -125,8 +125,8 @@ module Layouts = struct
 
   module IncrementalExplicitUpdate = struct
     type t =
-      | New of SourcePath.t
-      | Changed of SourcePath.t
+      | New of ModulePath.t
+      | Changed of ModulePath.t
       | Delete of Reference.t
     [@@deriving sexp, compare]
   end
@@ -142,11 +142,11 @@ module Layouts = struct
     (* Process a single filesystem event *)
     let process_filesystem_event ~configuration = function
       | FileSystemEvent.Update path -> (
-          match SourcePath.create ~configuration path with
+          match ModulePath.create ~configuration path with
           | None ->
               Log.warning "`%a` not found in search path." PyrePath.Built.pp path;
               None
-          | Some ({ SourcePath.qualifier; _ } as source_path) -> (
+          | Some ({ ModulePath.qualifier; _ } as source_path) -> (
               match Hashtbl.find module_to_files qualifier with
               | None ->
                   (* New file for a new module *)
@@ -158,17 +158,17 @@ module Layouts = struct
                   in
                   let new_source_path = List.hd_exn new_source_paths in
                   Hashtbl.set module_to_files ~key:qualifier ~data:new_source_paths;
-                  if SourcePath.equal new_source_path source_path then
+                  if ModulePath.equal new_source_path source_path then
                     (* Updating a shadowing file means the module gets changed *)
                     Some (IncrementalExplicitUpdate.Changed source_path)
                   else (* Updating a shadowed file should not trigger any reanalysis *)
                     None))
       | FileSystemEvent.Remove path -> (
-          match SourcePath.create ~configuration path with
+          match ModulePath.create ~configuration path with
           | None ->
               Log.warning "`%a` not found in search path." PyrePath.Built.pp path;
               None
-          | Some ({ SourcePath.qualifier; _ } as source_path) -> (
+          | Some ({ ModulePath.qualifier; _ } as source_path) -> (
               Hashtbl.find module_to_files qualifier
               >>= fun source_paths ->
               match source_paths with
@@ -184,7 +184,7 @@ module Layouts = struct
                       Some (IncrementalExplicitUpdate.Delete qualifier)
                   | new_source_path :: _ as new_source_paths ->
                       Hashtbl.set module_to_files ~key:qualifier ~data:new_source_paths;
-                      if SourcePath.equal old_source_path new_source_path then
+                      if ModulePath.equal old_source_path new_source_path then
                         (* Removing a shadowed file should not trigger any reanalysis *)
                         None
                       else (* Removing source_path un-shadows another source file. *)
@@ -195,7 +195,7 @@ module Layouts = struct
       let table = Reference.Table.create () in
       let process_update update =
         match update with
-        | IncrementalExplicitUpdate.New ({ SourcePath.qualifier; _ } as source_path) ->
+        | IncrementalExplicitUpdate.New ({ ModulePath.qualifier; _ } as source_path) ->
             let update = function
               | None -> update
               | Some (IncrementalExplicitUpdate.Delete _) ->
@@ -215,7 +215,7 @@ module Layouts = struct
                   failwith message
             in
             Hashtbl.update table qualifier ~f:update
-        | IncrementalExplicitUpdate.Changed ({ SourcePath.qualifier; _ } as source_path) ->
+        | IncrementalExplicitUpdate.Changed ({ ModulePath.qualifier; _ } as source_path) ->
             let update = function
               | None
               | Some (IncrementalExplicitUpdate.Changed _) ->
@@ -278,7 +278,7 @@ module Layouts = struct
         in
         match event with
         | IncrementalExplicitUpdate.Changed _ -> ()
-        | IncrementalExplicitUpdate.New { SourcePath.qualifier; _ } ->
+        | IncrementalExplicitUpdate.New { ModulePath.qualifier; _ } ->
             do_update (Some qualifier) ~f:(fun count -> count + 1)
         | IncrementalExplicitUpdate.Delete qualifier ->
             do_update (Some qualifier) ~f:(fun count -> count - 1)
@@ -329,8 +329,8 @@ module Layouts = struct
       let deleted_qualifiers = Reference.Hash_set.create () in
       let explicits =
         let process_explicit_update = function
-          | IncrementalExplicitUpdate.New ({ SourcePath.qualifier; _ } as source_path)
-          | IncrementalExplicitUpdate.Changed ({ SourcePath.qualifier; _ } as source_path) ->
+          | IncrementalExplicitUpdate.New ({ ModulePath.qualifier; _ } as source_path)
+          | IncrementalExplicitUpdate.Changed ({ ModulePath.qualifier; _ } as source_path) ->
               Hash_set.add new_qualifiers qualifier;
               IncrementalUpdate.NewExplicit source_path
           | IncrementalExplicitUpdate.Delete qualifier ->
@@ -372,7 +372,7 @@ end
 type t = {
   layouts: Layouts.t;
   configuration: Configuration.Analysis.t;
-  get_raw_code: SourcePath.t -> (string, string) Result.t;
+  get_raw_code: ModulePath.t -> (string, string) Result.t;
 }
 
 let find_source_paths
@@ -417,11 +417,11 @@ let find_source_paths
       in
       PyrePath.Built.list ~file_filter ~directory_filter ~root ())
   |> List.concat
-  |> List.filter_map ~f:(SourcePath.create ~configuration)
+  |> List.filter_map ~f:(ModulePath.create ~configuration)
 
 
 let load_raw_code ~configuration source_path =
-  let path = SourcePath.full_path ~configuration source_path in
+  let path = ModulePath.full_path ~configuration source_path in
   try Ok (PyrePath.Built.raw path |> File.create |> File.content_exn) with
   | Sys_error error ->
       Error (Format.asprintf "Cannot open file `%a` due to: %s" PyrePath.Built.pp path error)
@@ -445,12 +445,12 @@ let create_for_testing configuration source_path_code_pairs =
   let in_memory_sources =
     let table = Reference.Table.create () in
     let add_pair (source_path, code) =
-      Reference.Table.set table ~key:(SourcePath.qualifier source_path) ~data:code
+      Reference.Table.set table ~key:(ModulePath.qualifier source_path) ~data:code
     in
     List.iter source_path_code_pairs ~f:add_pair;
     table
   in
-  let get_raw_code ({ SourcePath.qualifier; _ } as source_path) =
+  let get_raw_code ({ ModulePath.qualifier; _ } as source_path) =
     match Reference.Table.find in_memory_sources qualifier with
     | Some code -> Ok code
     | None -> load_raw_code ~configuration source_path
@@ -480,7 +480,7 @@ module Serializer = struct
     type nonrec t = Layouts.t
 
     module Serialized = struct
-      type t = (Reference.t * SourcePath.t list) list * (Reference.t * int) list
+      type t = (Reference.t * ModulePath.t list) list * (Reference.t * int) list
 
       let prefix = Prefix.make ()
 
@@ -507,10 +507,10 @@ end
 
 module ReadOnly = struct
   type t = {
-    lookup_source_path: Reference.t -> SourcePath.t option;
+    lookup_source_path: Reference.t -> ModulePath.t option;
     is_module_tracked: Reference.t -> bool;
-    get_raw_code: SourcePath.t -> (string, string) Result.t;
-    source_paths: unit -> SourcePath.t list;
+    get_raw_code: ModulePath.t -> (string, string) Result.t;
+    source_paths: unit -> ModulePath.t list;
     configuration: unit -> Configuration.Analysis.t;
   }
 
@@ -524,13 +524,13 @@ module ReadOnly = struct
 
   let lookup_path tracker path =
     let configuration = configuration tracker in
-    match SourcePath.create ~configuration path with
+    match ModulePath.create ~configuration path with
     | None -> PathLookup.NotFound
-    | Some { SourcePath.relative; priority; qualifier; _ } -> (
+    | Some { ModulePath.relative; priority; qualifier; _ } -> (
         match lookup_source_path tracker qualifier with
         | None -> PathLookup.NotFound
         | Some
-            ({ SourcePath.relative = tracked_relative; priority = tracked_priority; _ } as
+            ({ ModulePath.relative = tracked_relative; priority = tracked_priority; _ } as
             source_path) ->
             if String.equal relative tracked_relative && Int.equal priority tracked_priority then
               PathLookup.Found source_path
@@ -538,14 +538,14 @@ module ReadOnly = struct
               PathLookup.ShadowedBy source_path)
 
 
-  let tracked_explicit_modules tracker = source_paths tracker |> List.map ~f:SourcePath.qualifier
+  let tracked_explicit_modules tracker = source_paths tracker |> List.map ~f:ModulePath.qualifier
 
   let get_raw_code { get_raw_code; _ } = get_raw_code
 
   let project_qualifiers tracker =
     source_paths tracker
-    |> List.filter ~f:SourcePath.is_in_project
-    |> List.map ~f:SourcePath.qualifier
+    |> List.filter ~f:ModulePath.is_in_project
+    |> List.map ~f:ModulePath.qualifier
 end
 
 let read_only

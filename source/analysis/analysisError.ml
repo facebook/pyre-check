@@ -48,7 +48,7 @@ type invalid_class_instantiation =
 [@@deriving compare, sexp, show, hash]
 
 type module_reference =
-  | ExplicitModule of SourcePath.t
+  | ExplicitModule of ModulePath.t
   | ImplicitModule of Reference.t
 [@@deriving compare, sexp, show, hash]
 
@@ -63,7 +63,7 @@ type class_origin =
 type origin =
   | Class of {
       class_origin: class_origin;
-      parent_source_path: SourcePath.t option;
+      parent_source_path: ModulePath.t option;
     }
   | Module of module_reference
 
@@ -2301,7 +2301,7 @@ let rec messages ~concise ~signature location kind =
         | Module module_reference ->
             let name =
               match module_reference with
-              | ExplicitModule { SourcePath.qualifier; _ } -> qualifier
+              | ExplicitModule { ModulePath.qualifier; _ } -> qualifier
               | ImplicitModule qualifier -> qualifier
             in
             Format.asprintf "Module `%a`" pp_reference name
@@ -2310,7 +2310,7 @@ let rec messages ~concise ~signature location kind =
       | Class
           {
             class_origin = ClassType class_type;
-            parent_source_path = Some { SourcePath.relative; is_stub = true; _ };
+            parent_source_path = Some { ModulePath.relative; is_stub = true; _ };
           }
         when not (Type.is_optional_primitive class_type) ->
           let stub_trace =
@@ -2325,7 +2325,7 @@ let rec messages ~concise ~signature location kind =
               (private_attribute_warning ())
           in
           [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute; stub_trace]
-      | Module (ExplicitModule { SourcePath.relative; is_stub = true; _ }) ->
+      | Module (ExplicitModule { ModulePath.relative; is_stub = true; _ }) ->
           let stub_trace =
             Format.asprintf
               "This module is shadowed by a stub file at `%s`. Ensure `%a` is defined in the stub \
@@ -2349,7 +2349,7 @@ let rec messages ~concise ~signature location kind =
   | UndefinedImport (UndefinedName { from; name }) when concise ->
       let from_name, is_stub =
         match from with
-        | ExplicitModule { SourcePath.qualifier; is_stub; _ } -> qualifier, is_stub
+        | ExplicitModule { ModulePath.qualifier; is_stub; _ } -> qualifier, is_stub
         | ImplicitModule qualifier -> qualifier, false
       in
       [
@@ -2377,7 +2377,7 @@ let rec messages ~concise ~signature location kind =
            https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import"
         in
         match from with
-        | ExplicitModule { SourcePath.qualifier; relative; is_stub = true; _ } ->
+        | ExplicitModule { ModulePath.qualifier; relative; is_stub = true; _ } ->
             ( qualifier,
               Format.asprintf
                 "This module is shadowed by a stub file at `%s`. Ensure `%a` is defined in the \
@@ -2385,7 +2385,7 @@ let rec messages ~concise ~signature location kind =
                 relative
                 pp_identifier
                 name )
-        | ExplicitModule { SourcePath.qualifier; _ } -> qualifier, common_reasons_trace
+        | ExplicitModule { ModulePath.qualifier; _ } -> qualifier, common_reasons_trace
         | ImplicitModule qualifier -> qualifier, common_reasons_trace
       in
       [
@@ -2925,8 +2925,8 @@ let less_or_equal ~resolution left right =
       | Class { class_origin = ClassType left; _ }, Class { class_origin = ClassType right; _ } ->
           GlobalResolution.less_or_equal resolution ~left ~right
       | Module (ImplicitModule left), Module (ImplicitModule right)
-      | ( Module (ExplicitModule { SourcePath.qualifier = left; _ }),
-          Module (ExplicitModule { SourcePath.qualifier = right; _ }) ) ->
+      | ( Module (ExplicitModule { ModulePath.qualifier = left; _ }),
+          Module (ExplicitModule { ModulePath.qualifier = right; _ }) ) ->
           Reference.equal_sanitized left right
       | _ -> false)
   | UndefinedType left, UndefinedType right -> Type.equal left right
@@ -3337,7 +3337,7 @@ let join ~resolution left right =
             attribute = right_attribute;
           } )
       when Identifier.equal_sanitized left_attribute right_attribute
-           && Option.equal SourcePath.equal left_module right_module ->
+           && Option.equal ModulePath.equal left_module right_module ->
         let annotation = GlobalResolution.join resolution left right in
         UndefinedAttribute
           {
@@ -3351,7 +3351,7 @@ let join ~resolution left right =
         UndefinedAttribute { origin = Module (ImplicitModule left); attribute = left_attribute }
     | ( UndefinedAttribute { origin = Module (ExplicitModule left); attribute = left_attribute },
         UndefinedAttribute { origin = Module (ExplicitModule right); attribute = right_attribute } )
-      when Identifier.equal_sanitized left_attribute right_attribute && SourcePath.equal left right
+      when Identifier.equal_sanitized left_attribute right_attribute && ModulePath.equal left right
       ->
         UndefinedAttribute { origin = Module (ExplicitModule left); attribute = left_attribute }
     | UndefinedType left, UndefinedType right when Type.equal left right -> UndefinedType left
@@ -3592,7 +3592,7 @@ let join_at_source ~resolution errors =
     | { kind = UndefinedImport (UndefinedName { name; from }); _ } ->
         let module_qualifier =
           match from with
-          | ExplicitModule { SourcePath.qualifier; _ } -> qualifier
+          | ExplicitModule { ModulePath.qualifier; _ } -> qualifier
           | ImplicitModule qualifier -> qualifier
         in
         Format.asprintf
@@ -3727,7 +3727,7 @@ let filter ~resolution errors =
       | MissingOverloadImplementation _ -> (
           let ast_environment = GlobalResolution.ast_environment resolution in
           match AstEnvironment.ReadOnly.get_source_path ast_environment module_reference with
-          | Some { SourcePath.is_stub; _ } -> is_stub
+          | Some { ModulePath.is_stub; _ } -> is_stub
           | _ -> false)
       | _ -> false
     in

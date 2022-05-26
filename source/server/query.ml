@@ -603,7 +603,7 @@ let rec process_request ~environment ~build_system ~configuration request =
     let modules_of_path path =
       let module_of_path path =
         match ModuleTracker.ReadOnly.lookup_path module_tracker path with
-        | ModuleTracker.PathLookup.Found { SourcePath.qualifier; _ } -> Some qualifier
+        | ModuleTracker.PathLookup.Found { ModulePath.qualifier; _ } -> Some qualifier
         | ShadowedBy _
         | NotFound ->
             None
@@ -828,7 +828,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         ModuleTracker.ReadOnly.lookup_source_path module_tracker module_name
         >>= (fun source_path ->
               let path =
-                SourcePath.full_path ~configuration source_path |> PyrePath.Built.absolute
+                ModulePath.full_path ~configuration source_path |> PyrePath.Built.absolute
               in
               Some (Single (Base.FoundPath path)))
         |> Option.value

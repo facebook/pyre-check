@@ -7,7 +7,7 @@
 
 module IncrementalUpdate : sig
   type t =
-    | NewExplicit of Ast.SourcePath.t
+    | NewExplicit of Ast.ModulePath.t
     | NewImplicit of Ast.Reference.t
     | Delete of Ast.Reference.t
   [@@deriving show, sexp, compare, eq]
@@ -15,8 +15,8 @@ end
 
 module PathLookup : sig
   type t =
-    | Found of Ast.SourcePath.t
-    | ShadowedBy of Ast.SourcePath.t
+    | Found of Ast.ModulePath.t
+    | ShadowedBy of Ast.ModulePath.t
     | NotFound
   [@@deriving show, sexp, compare]
 end
@@ -25,12 +25,12 @@ type t
 
 val create : Configuration.Analysis.t -> t
 
-val create_for_testing : Configuration.Analysis.t -> (Ast.SourcePath.t * string) list -> t
+val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
 
 (* This function returns all SourcePaths that are tracked, including the shadowed ones. *)
-val all_source_paths : t -> Ast.SourcePath.t list
+val all_source_paths : t -> Ast.ModulePath.t list
 
-val source_paths : t -> Ast.SourcePath.t list
+val source_paths : t -> Ast.ModulePath.t list
 
 val configuration : t -> Configuration.Analysis.t
 
@@ -47,11 +47,11 @@ module ReadOnly : sig
 
   val configuration : t -> Configuration.Analysis.t
 
-  val lookup_source_path : t -> Ast.Reference.t -> Ast.SourcePath.t option
+  val lookup_source_path : t -> Ast.Reference.t -> Ast.ModulePath.t option
 
   val lookup_path : t -> PyrePath.Built.t -> PathLookup.t
 
-  val source_paths : t -> Ast.SourcePath.t list
+  val source_paths : t -> Ast.ModulePath.t list
 
   val project_qualifiers : t -> Ast.Reference.t list
 
@@ -62,7 +62,7 @@ module ReadOnly : sig
   val is_module_tracked : t -> Ast.Reference.t -> bool
 
   (* Either `Ok (raw_code)` or `Error (message)` *)
-  val get_raw_code : t -> Ast.SourcePath.t -> (string, string) Result.t
+  val get_raw_code : t -> Ast.ModulePath.t -> (string, string) Result.t
 end
 
 val read_only : t -> ReadOnly.t

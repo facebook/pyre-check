@@ -932,7 +932,7 @@ end
 let infer_local
     ~configuration
     ~global_resolution
-    ~source:{ Source.source_path = { SourcePath.qualifier; _ }; _ }
+    ~source:{ Source.source_path = { ModulePath.qualifier; _ }; _ }
     ~define:
       ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
@@ -999,7 +999,7 @@ let infer_local
 (* Infer parameter types of an overriding method when the base method is annotated. *)
 let infer_parameters_from_parent
     ~global_resolution
-    ~source:{ Source.source_path = { SourcePath.qualifier; _ }; _ }
+    ~source:{ Source.source_path = { ModulePath.qualifier; _ }; _ }
     ~define:({ Node.value = { Define.signature = { parent; parameters; _ }; _ }; _ } as define)
   =
   let overridden_callable =
@@ -1083,7 +1083,7 @@ let merge_errors ~global_resolution errors =
 let legacy_infer_for_define
     ~configuration
     ~global_resolution
-    ~source:({ Source.source_path = { SourcePath.qualifier; relative; _ }; _ } as source)
+    ~source:({ Source.source_path = { ModulePath.qualifier; relative; _ }; _ } as source)
     ~define:({ Node.location; value = { Define.signature = { name; _ }; _ } } as define)
   =
   try

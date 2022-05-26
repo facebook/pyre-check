@@ -98,7 +98,7 @@ let add_local_mode_errors
     {
       Source.typecheck_flags =
         { Source.TypecheckFlags.unused_local_modes; local_mode = actual_mode; _ };
-      source_path = { SourcePath.qualifier; _ };
+      source_path = { ModulePath.qualifier; _ };
       _;
     }
     errors
@@ -139,7 +139,7 @@ let filter_errors
 let run_on_source
     ~configuration
     ~global_resolution
-    ~source:({ Source.typecheck_flags; source_path = { SourcePath.qualifier; _ }; _ } as source)
+    ~source:({ Source.typecheck_flags; source_path = { ModulePath.qualifier; _ }; _ } as source)
     errors_by_define
   =
   filter_errors ~configuration ~global_resolution ~typecheck_flags errors_by_define
@@ -164,9 +164,9 @@ let run ~scheduler ~configuration ~environment sources =
       match AstEnvironment.ReadOnly.get_raw_source ast_environment module_name with
       | None -> []
       | Some
-          ( Result.Ok { Source.source_path = { SourcePath.is_external; _ }; _ }
+          ( Result.Ok { Source.source_path = { ModulePath.is_external; _ }; _ }
           | Result.Error
-              { AstEnvironment.ParserError.source_path = { SourcePath.is_external; _ }; _ } )
+              { AstEnvironment.ParserError.source_path = { ModulePath.is_external; _ }; _ } )
         when is_external ->
           []
       | Some (Result.Error { AstEnvironment.ParserError.is_suppressed; _ }) when is_suppressed -> []

@@ -214,26 +214,26 @@ let test_mode _ =
 
 let test_qualifier _ =
   let qualifier = Reference.create_from_list in
-  assert_equal (SourcePath.qualifier_of_relative "module.py") (qualifier ["module"]);
+  assert_equal (ModulePath.qualifier_of_relative "module.py") (qualifier ["module"]);
   assert_equal
-    (SourcePath.qualifier_of_relative "module/submodule.py")
+    (ModulePath.qualifier_of_relative "module/submodule.py")
     (qualifier ["module"; "submodule"]);
-  assert_equal (SourcePath.qualifier_of_relative "builtins.pyi") (qualifier []);
-  assert_equal (SourcePath.qualifier_of_relative "future/builtins.pyi") (qualifier []);
+  assert_equal (ModulePath.qualifier_of_relative "builtins.pyi") (qualifier []);
+  assert_equal (ModulePath.qualifier_of_relative "future/builtins.pyi") (qualifier []);
   assert_equal
-    (SourcePath.qualifier_of_relative "module/builtins.py")
+    (ModulePath.qualifier_of_relative "module/builtins.py")
     (qualifier ["module"; "builtins"]);
-  assert_equal (SourcePath.qualifier_of_relative "module/__init__.pyi") (qualifier ["module"]);
+  assert_equal (ModulePath.qualifier_of_relative "module/__init__.pyi") (qualifier ["module"]);
   assert_equal
-    (SourcePath.qualifier_of_relative "foo/bar-stubs/baz.py")
+    (ModulePath.qualifier_of_relative "foo/bar-stubs/baz.py")
     (qualifier ["foo"; "bar"; "baz"]);
   assert_equal
-    (SourcePath.qualifier_of_relative "foo/bar-stubs/__init__.pyi")
+    (ModulePath.qualifier_of_relative "foo/bar-stubs/__init__.pyi")
     (qualifier ["foo"; "bar"]);
   (* It's unclear what should be done in this case. For now, strip the `-stubs` suffix for all
      directories. *)
   assert_equal
-    (SourcePath.qualifier_of_relative "foo-stubs/bar-stubs/baz.pyi")
+    (ModulePath.qualifier_of_relative "foo-stubs/bar-stubs/baz.pyi")
     (qualifier ["foo"; "bar"; "baz"]);
   ()
 
@@ -243,9 +243,9 @@ let test_extension_suffix _ =
   let assert_qualifier_equal ~configuration ~path expected =
     let actual_qualifier =
       match
-        SourcePath.create ~configuration (PyrePath.Built.create_relative ~root ~relative:path)
+        ModulePath.create ~configuration (PyrePath.Built.create_relative ~root ~relative:path)
       with
-      | Some { SourcePath.qualifier; _ } -> qualifier
+      | Some { ModulePath.qualifier; _ } -> qualifier
       | None -> Reference.create "<UNEXPECTED_NONE>"
     in
     assert_equal ~printer:Reference.show (Reference.create expected) actual_qualifier
@@ -274,7 +274,7 @@ let test_expand_relative_import _ =
       ~cmp:Reference.equal
       ~printer:Reference.show
       (Reference.create expected)
-      (SourcePath.expand_relative_import source_path ~from)
+      (ModulePath.expand_relative_import source_path ~from)
   in
   assert_export ~relative:"module/qualifier.py" ~from:"." ~expected:"module";
   assert_export

@@ -92,7 +92,7 @@ let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
     match PyreNewParser.parse_module ~context ~enable_type_comment:true source with
     | Result.Ok statements ->
         let typecheck_flags =
-          let qualifier = SourcePath.qualifier_of_relative handle in
+          let qualifier = ModulePath.qualifier_of_relative handle in
           Source.TypecheckFlags.parse ~qualifier (String.split source ~on:'\n')
         in
         let source = Source.create ~typecheck_flags ~relative:handle statements in
@@ -2711,7 +2711,7 @@ module ScratchProject = struct
   let clean_ast_shared_memory module_tracker ast_environment =
     let deletions =
       ModuleTracker.source_paths module_tracker
-      |> List.map ~f:SourcePath.qualifier
+      |> List.map ~f:ModulePath.qualifier
       |> List.map ~f:(fun qualifier -> ModuleTracker.IncrementalUpdate.Delete qualifier)
     in
     AstEnvironment.update ~scheduler:(mock_scheduler ()) ast_environment (Update deletions)
@@ -2768,7 +2768,7 @@ module ScratchProject = struct
       if in_memory then
         let to_source_path_code_pair (relative, content) ~is_external =
           let code = trim_extra_indentation content in
-          let source_path = SourcePath.create_for_testing ~relative ~is_external ~priority:1 in
+          let source_path = ModulePath.create_for_testing ~relative ~is_external ~priority:1 in
           source_path, code
         in
         let source_path_code_pairs =
@@ -2820,7 +2820,7 @@ module ScratchProject = struct
   let source_paths_of { module_tracker; _ } = ModuleTracker.source_paths module_tracker
 
   let qualifiers_of { module_tracker; _ } =
-    ModuleTracker.source_paths module_tracker |> List.map ~f:SourcePath.qualifier
+    ModuleTracker.source_paths module_tracker |> List.map ~f:ModulePath.qualifier
 
 
   let build_ast_environment { context; module_tracker; _ } =
@@ -2865,7 +2865,7 @@ module ScratchProject = struct
     let { BuiltGlobalEnvironment.sources; global_environment } = build_global_environment project in
     let type_environment = TypeEnvironment.create global_environment in
     let configuration = configuration_of project in
-    List.map sources ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
+    List.map sources ~f:(fun { Source.source_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
     |> TypeCheck.legacy_run_on_modules
          ~scheduler:(Scheduler.create_sequential ())
          ~configuration
@@ -2879,7 +2879,7 @@ module ScratchProject = struct
     let errors =
       List.map
         built_type_environment.sources
-        ~f:(fun { Source.source_path = { SourcePath.qualifier; _ }; _ } -> qualifier)
+        ~f:(fun { Source.source_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
       |> Postprocessing.run
            ~scheduler:(Scheduler.create_sequential ())
            ~configuration:(configuration_of project)
@@ -2921,7 +2921,7 @@ let assert_errors
     errors
   =
   let in_memory = List.is_empty update_environment_with in
-  (if SourcePath.qualifier_of_relative handle |> Reference.is_empty then
+  (if ModulePath.qualifier_of_relative handle |> Reference.is_empty then
      let message =
        Format.sprintf
          "Cannot use %s as test file name: Empty qualifier in test is no longer acceptable."
@@ -2954,7 +2954,7 @@ let assert_errors
       in
       let configuration = { configuration with debug; strict } in
       let source =
-        List.find_exn sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } ->
+        List.find_exn sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; _ } ->
             String.equal handle relative)
       in
       check ~configuration ~environment ~source

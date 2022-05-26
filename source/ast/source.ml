@@ -201,7 +201,7 @@ end
 
 type t = {
   typecheck_flags: TypecheckFlags.t;
-  source_path: SourcePath.t;
+  source_path: ModulePath.t;
   top_level_unbound_names: Statement.Define.NameAccess.t list;
   statements: Statement.t list;
 }
@@ -218,7 +218,7 @@ let location_insensitive_compare left right =
   match TypecheckFlags.compare left.typecheck_flags right.typecheck_flags with
   | x when x <> 0 -> x
   | _ -> (
-      match SourcePath.compare left.source_path right.source_path with
+      match ModulePath.compare left.source_path right.source_path with
       | x when x <> 0 -> x
       | _ -> (
           match
@@ -301,7 +301,7 @@ let create
     ?(priority = 0)
     statements
   =
-  let source_path = SourcePath.create_for_testing ~relative ~is_external ~priority in
+  let source_path = ModulePath.create_for_testing ~relative ~is_external ~priority in
   create_from_source_path ~typecheck_flags ~source_path statements
 
 
@@ -310,7 +310,7 @@ let ignore_lines { typecheck_flags = { TypecheckFlags.ignore_lines; _ }; _ } = i
 let statements { statements; _ } = statements
 
 let top_level_define
-    { source_path = { SourcePath.qualifier; _ }; top_level_unbound_names; statements; _ }
+    { source_path = { ModulePath.qualifier; _ }; top_level_unbound_names; statements; _ }
   =
   Statement.Define.create_toplevel
     ~qualifier:(Some qualifier)

@@ -45,7 +45,7 @@ let test_basic context =
         in
         assert_failure message
     | Some source_path ->
-        let actual = SourcePath.full_path ~configuration source_path in
+        let actual = ModulePath.full_path ~configuration source_path in
         assert_equal ~cmp:PyrePath.Built.equal ~printer:PyrePath.Built.show expected actual
   in
   assert_source_path
@@ -126,7 +126,7 @@ let test_parse_source context =
       ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
   in
   let handles =
-    List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
+    List.map sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; _ } -> relative)
   in
   assert_equal handles ["x.py"];
   let source =
@@ -135,7 +135,7 @@ let test_parse_source context =
       !&"x"
   in
   assert_equal (Option.is_some source) true;
-  let { Source.source_path = { SourcePath.relative; _ }; statements; _ } =
+  let { Source.source_path = { ModulePath.relative; _ }; statements; _ } =
     Option.value_exn source
   in
   assert_equal relative "x.py";
@@ -196,7 +196,7 @@ let test_parse_sources context =
         ~f:(AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment))
     in
     let sorted_handles =
-      List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
+      List.map sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; _ } -> relative)
       |> List.sort ~compare:String.compare
     in
     sorted_handles, ast_environment
@@ -228,7 +228,7 @@ let test_parse_sources context =
         invalidated_modules
         ~f:(AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment))
     in
-    List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; _ } -> relative)
+    List.map sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; _ } -> relative)
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
      consistently gets mapped to the correct handle. *)
@@ -594,7 +594,7 @@ let test_parse_repository context =
           invalidated_modules
           ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
       in
-      List.map sources ~f:(fun ({ Source.source_path = { SourcePath.relative; _ }; _ } as source) ->
+      List.map sources ~f:(fun ({ Source.source_path = { ModulePath.relative; _ }; _ } as source) ->
           relative, source)
       |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
              String.compare left_handle right_handle)
@@ -701,7 +701,7 @@ module IncrementalTest = struct
       (if force_load_external_sources then
          (* If we don't do this, external sources are ignored due to lazy loading *)
          let load_source { handle; _ } =
-           let qualifier = SourcePath.qualifier_of_relative handle in
+           let qualifier = ModulePath.qualifier_of_relative handle in
            let _ = AstEnvironment.ReadOnly.get_raw_source read_only_environment qualifier in
            ()
          in
@@ -1004,7 +1004,7 @@ let test_ast_transformer context =
           invalidated_modules
           ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
       in
-      List.map sources ~f:(fun { Source.source_path = { SourcePath.relative; _ }; statements; _ } ->
+      List.map sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; statements; _ } ->
           relative, statements)
       |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
              String.compare left_handle right_handle)

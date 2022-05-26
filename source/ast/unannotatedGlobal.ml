@@ -72,7 +72,7 @@ module Collector = struct
     [@@deriving sexp, compare]
   end
 
-  let from_source { Source.statements; source_path = { SourcePath.qualifier; _ }; _ } =
+  let from_source { Source.statements; source_path = { ModulePath.qualifier; _ }; _ } =
     let rec visit_statement ~qualifier globals { Node.value; location } =
       match value with
       | Statement.Assign
