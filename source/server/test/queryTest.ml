@@ -83,6 +83,7 @@ let test_parse_query context =
   assert_fails_to_parse "type(a.b, c.d)";
   assert_fails_to_parse "typecheck(1+2)";
   assert_parses "types(path='a.py')" (TypesInFiles ["a.py"]);
+  assert_parses "types(path='a.pyi')" (TypesInFiles ["a.pyi"]);
   assert_parses "types('a.py')" (TypesInFiles ["a.py"]);
   assert_fails_to_parse "types(a.py:1:2)";
   assert_fails_to_parse "types(a.py)";
@@ -525,6 +526,51 @@ let test_handle_query_basic context =
                    2, 4, 2, 5, Type.literal_integer 4;
                    3, 0, 3, 1, Type.integer;
                    3, 4, 3, 5, Type.literal_integer 3;
+                 ]
+                 |> create_types_at_locations;
+             };
+           ]))
+  >>= fun () ->
+  assert_type_query_response_with_local_root
+    ~source:{|
+              def identity(a: int) -> int: ...
+            |}
+    ~handle:"test_stub.pyi"
+    ~query:"types(path='test_stub.pyi')"
+    (fun _ ->
+      Single
+        (Base.TypesByPath
+           [
+             {
+               Base.path = "test_stub.pyi";
+               types =
+                 [
+                   ( 2,
+                     4,
+                     2,
+                     12,
+                     Type.Callable
+                       {
+                         Type.Callable.kind = Type.Callable.Named !&"test_stub.identity";
+                         implementation =
+                           {
+                             Type.Callable.annotation = Type.integer;
+                             parameters =
+                               Type.Callable.Defined
+                                 [
+                                   Named
+                                     {
+                                       name = "$parameter$a";
+                                       annotation = Type.integer;
+                                       default = false;
+                                     };
+                                 ];
+                           };
+                         overloads = [];
+                       } );
+                   2, 16, 2, 19, Type.meta Type.integer;
+                   2, 24, 2, 27, Type.meta Type.integer;
+                   2, 29, 2, 32, Type.Any;
                  ]
                  |> create_types_at_locations;
              };
