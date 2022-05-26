@@ -122,7 +122,10 @@ let test_narrowest_match _ =
              {
                symbol_with_definition =
                  Expression
-                   { (parse_single_expression expression) with location = parse_location location };
+                   {
+                     (parse_single_expression ~coerce_special_methods:true expression) with
+                     location = parse_location location;
+                   };
                cfg_data = { define_name = !&"test.foo"; node_id = 0; statement_index = 0 };
                use_postcondition_info = false;
              })
@@ -150,6 +153,22 @@ let test_narrowest_match _ =
     ]
     (Some "library.return_str().capitalize");
   assert_narrowest [] None;
+  (* Pick `my_dictionary` over `my_dictionary.__getitem__` even though they have the same "location"
+     range. *)
+  assert_narrowest
+    [
+      "my_dictionary['foo']", "5:2-5:24";
+      "my_dictionary.__getitem__", "5:2-5:15";
+      "my_dictionary", "5:2-5:15";
+    ]
+    (Some "my_dictionary");
+  assert_narrowest
+    [
+      "my_dictionary['foo']", "5:2-5:24";
+      "my_dictionary", "5:2-5:15";
+      "my_dictionary.__getitem__", "5:2-5:15";
+    ]
+    (Some "my_dictionary");
   ()
 
 
@@ -565,6 +584,50 @@ let test_find_narrowest_spanning_symbol context =
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_method");
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+        from typing import Dict
+
+        def foo(my_dictionary: Dict[str, int]) -> None:
+          my_dictionary["hello"]
+    |}
+    "5:9"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Expression.Name (Name.Identifier "$parameter$my_dictionary")
+             |> Node.create_with_default_location);
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+        from typing import Dict
+
+        def foo(my_dictionary: Dict[str, int]) -> None:
+          my_dictionary.__getitem__("hello")
+    |}
+    "5:22"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Expression.Name
+                (Name.Attribute
+                   {
+                     base =
+                       Node.create_with_default_location
+                         (Expression.Name (Name.Identifier "$parameter$my_dictionary"));
+                     attribute = "__getitem__";
+                     special = false;
+                   })
+             |> Node.create_with_default_location);
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });

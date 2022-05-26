@@ -514,7 +514,12 @@ let narrowest_match symbol_data_list =
     then
       -1
     else
-      0
+      (* Prefer the expression `foo` over the invisible `foo.__dunder_method__`, since the user
+         probably intends the former. *)
+      match Node.value left, Node.value right with
+      | Expression.Name (Name.Attribute { special = true; _ }), _ -> 1
+      | _, Expression.Name (Name.Attribute { special = true; _ }) -> -1
+      | _ -> 0
   in
   List.min_elt ~compare:compare_by_length symbol_data_list
 
