@@ -34,6 +34,12 @@ let expand_relative_imports
   Transform.transform qualifier source |> Transform.source
 
 
+let is_type_variable_definition callee =
+  name_is ~name:"typing.TypeVar" callee
+  || name_is ~name:"$local_typing$TypeVar" callee
+  || name_is ~name:"typing_extensions.IntVar" callee
+
+
 let transform_string_annotation_expression ~relative =
   let rec transform_expression
       ({
@@ -78,9 +84,7 @@ let transform_string_annotation_expression ~relative =
               value
           | _ -> Call { callee; arguments = List.map ~f:transform_argument arguments })
       | Expression.Call { callee; arguments = variable_name :: remaining_arguments }
-        when name_is ~name:"typing.TypeVar" callee
-             || name_is ~name:"$local_typing$TypeVar" callee
-             || name_is ~name:"typing_extensions.IntVar" callee ->
+        when is_type_variable_definition callee ->
           Expression.Call
             {
               callee;
@@ -119,10 +123,18 @@ let transform_annotations ~transform_annotation_expression source =
 
     let transform_children state _ = state, true
 
+    let transform_assign ~assign:({ Assign.annotation; value = assign_value; _ } as assign) =
+      match Node.value assign_value with
+      | Expression.Call { callee; _ } when is_type_variable_definition callee ->
+          {
+            assign with
+            Assign.annotation = annotation >>| transform_annotation_expression;
+            Assign.value = transform_annotation_expression assign_value;
+          }
+      | _ -> { assign with Assign.annotation = annotation >>| transform_annotation_expression }
+
+
     let statement _ ({ Node.value; _ } as statement) =
-      let transform_assign ~assign:({ Assign.annotation; _ } as assign) =
-        { assign with Assign.annotation = annotation >>| transform_annotation_expression }
-      in
       let transform_define
           ({ Define.signature = { parameters; return_annotation; _ }; _ } as define)
         =

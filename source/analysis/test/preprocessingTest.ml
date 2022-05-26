@@ -285,6 +285,13 @@ let test_expand_string_annotations _ =
       class Foo(BaseClass, BaseClass2, metaclass=BaseClass3, arbitrary="BaseClass4"):
         pass
     |};
+  assert_expand
+    {|
+      T = typing.TypeVar("T", bound='typing.List[Any]')
+    |}
+    {|
+      T = typing.TypeVar("T", bound=typing.List[Any])
+    |};
   ()
 
 
@@ -334,6 +341,20 @@ let test_expand_type_alias_body _ =
     |}
     {|
       typing.TypeVar("T", int, A)
+    |};
+  assert_expand
+    {|
+      typing.TypeVar("T", bound='Union[Any, Any]')
+    |}
+    {|
+      typing.TypeVar("T", bound=Union[Any, Any])
+    |};
+  assert_expand
+    {|
+      typing.TypeVar("T", bound=Union[Any, 'Any'])
+    |}
+    {|
+      typing.TypeVar("T", bound=Union[Any, Any])
     |};
   ()
 

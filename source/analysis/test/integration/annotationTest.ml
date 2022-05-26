@@ -1892,6 +1892,36 @@ let test_check_annotation_with_any context =
     ]
 
 
+let test_check_variable_bounds_with_any context =
+  assert_type_errors
+    ~context
+    {|
+      from typing import TypeVar, Any, List
+      T = TypeVar("T", bound=List[Any])
+    |}
+    ["Prohibited any [33]: `T` cannot alias to a type containing `Any`."]
+
+
+let test_check_variable_bounds_with_quoted_bound context =
+  assert_type_errors
+    ~context
+    {|
+      from typing import TypeVar, Any, List
+      T = TypeVar("T", bound="List[Any]")
+    |}
+    ["Prohibited any [33]: `T` cannot alias to a type containing `Any`."]
+
+
+let test_check_variable_bounds_with_quoted_any context =
+  assert_type_errors
+    ~context
+    {|
+      from typing import TypeVar, Any, List
+      T = TypeVar("T", bound=List["Any"])
+    |}
+    ["Prohibited any [33]: `T` cannot alias to a type containing `Any`."]
+
+
 let test_check_typevar_arithmetic context =
   let assert_type_errors = assert_type_errors ~context in
   let assert_default_type_errors = assert_default_type_errors ~context in
@@ -3811,6 +3841,9 @@ let () =
          "check_pyre_extensions_generic" >:: test_check_pyre_extensions_generic;
          "check_safe_cast" >:: test_check_safe_cast;
          "check_annotation_with_any" >:: test_check_annotation_with_any;
+         "check_variable_bounds_with_any" >:: test_check_variable_bounds_with_any;
+         "check_variable_bounds_with_quoted_any" >:: test_check_variable_bounds_with_quoted_any;
+         "check_variable_bounds_with_quoted_bound" >:: test_check_variable_bounds_with_quoted_bound;
          "check_typevar_arithmetic" >:: test_check_typevar_arithmetic;
          "check_literal_arithmetic" >:: test_check_literal_arithmetic;
          "check_int_expression_arithmetic" >:: test_check_int_expression_arithmetic;
