@@ -631,6 +631,47 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
+  (* When the cursor is on the square bracket, we return the entire expression. *)
+  assert_narrowest_expression
+    ~source:
+      {|
+        from typing import Dict
+
+        def foo(my_dictionary: Dict[str, int]) -> None:
+          my_dictionary["hello"]
+    |}
+    "5:15"
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Expression.Call
+                {
+                  callee =
+                    Expression.Name
+                      (Name.Attribute
+                         {
+                           base =
+                             Node.create_with_default_location
+                               (Expression.Name (Name.Identifier "$parameter$my_dictionary"));
+                           attribute = "__getitem__";
+                           special = true;
+                         })
+                    |> Node.create_with_default_location;
+                  arguments =
+                    [
+                      {
+                        name = None;
+                        value =
+                          Expression.Constant (String { value = "hello"; kind = String })
+                          |> Node.create_with_default_location;
+                      };
+                    ];
+                }
+             |> Node.create_with_default_location);
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
   ()
 
 
