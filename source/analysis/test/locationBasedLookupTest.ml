@@ -185,7 +185,20 @@ let test_find_narrowest_spanning_symbol context =
     ]
   in
   let open LocationBasedLookup in
-  let assert_narrowest_expression ?(external_sources = []) ~source position expected =
+  let assert_narrowest_expression ?(external_sources = []) ~source expected =
+    let cursor_position =
+      let cursor_pattern = "^-- CURSOR" in
+      let extract_cursor_position line_number line =
+        String.substr_index line ~pattern:cursor_pattern
+        >>| fun column -> { Location.line = line_number; column }
+      in
+      let cursor_position =
+        trim_extra_indentation source
+        |> String.split_lines
+        |> List.find_mapi ~f:extract_cursor_position
+      in
+      Option.value_exn ~message:"Expected a comment pointing to the cursor" cursor_position
+    in
     let type_environment =
       let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] ~external_sources
@@ -201,14 +214,14 @@ let test_find_narrowest_spanning_symbol context =
       (LocationBasedLookup.find_narrowest_spanning_symbol
          ~type_environment
          ~module_reference:!&"test"
-         (parse_position position))
+         cursor_position)
   in
   assert_narrowest_expression
     ~source:{|
         def getint() -> int:
+        #   ^-- CURSOR
           return 12
     |}
-    "2:4"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "test.getint");
@@ -218,16 +231,17 @@ let test_find_narrowest_spanning_symbol context =
   assert_narrowest_expression
     ~source:{|
         def getint() -> int:
+        #  ^-- CURSOR
           return 12
     |}
-    "2:3"
     None;
   assert_narrowest_expression
-    ~source:{|
+    ~source:
+      {|
         def getint() -> int:
+        #               ^-- CURSOR
           return 12
     |}
-    "2:16"
     (Some
        {
          symbol_with_definition = TypeAnnotation (parse_single_expression "int");
@@ -238,8 +252,8 @@ let test_find_narrowest_spanning_symbol context =
     ~external_sources
     ~source:{|
         from library import Base
+        #                   ^-- CURSOR
     |}
-    "2:20"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "library.Base");
@@ -247,10 +261,11 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = false;
        });
   assert_narrowest_expression
-    ~source:{|
+    ~source:
+      {|
         def foo(a: int, b: str) -> None: ...
+        #               ^-- CURSOR
     |}
-    "2:16"
     (Some
        {
          symbol_with_definition =
@@ -260,11 +275,12 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = true;
        });
   assert_narrowest_expression
-    ~source:{|
+    ~source:
+      {|
         def foo(a: int, b: str) -> None:
           x = a
+        #     ^-- CURSOR
     |}
-    "3:6"
     (Some
        {
          symbol_with_definition =
@@ -274,11 +290,12 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = false;
        });
   assert_narrowest_expression
-    ~source:{|
+    ~source:
+      {|
         def foo() -> None:
           xs: list[str] = ["a", "b"]
+        # ^-- CURSOR
     |}
-    "3:2"
     (Some
        {
          symbol_with_definition =
@@ -289,11 +306,12 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = true;
        });
   assert_narrowest_expression
-    ~source:{|
+    ~source:
+      {|
         def foo() -> None:
           xs: list[str] = ["a", "b"]
+        #                 ^-- CURSOR
     |}
-    "3:18"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression {|["a", "b"]|});
@@ -301,11 +319,12 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = false;
        });
   assert_narrowest_expression
-    ~source:{|
+    ~source:
+      {|
         def foo() -> None:
           xs: list[str] = ["a", "b"]
+        #     ^-- CURSOR
     |}
-    "3:6"
     (Some
        {
          symbol_with_definition = TypeAnnotation (parse_single_expression "list[str]");
@@ -319,8 +338,8 @@ let test_find_narrowest_spanning_symbol context =
         from library import Base
         def foo() -> None:
           print(Base())
+        #       ^-- CURSOR
     |}
-    "4:8"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "library.Base");
@@ -337,8 +356,8 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           getint() + 2
+        #          ^-- CURSOR
     |}
-    "6:11"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "test.getint() + 2");
@@ -353,8 +372,8 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           return_str().capitalize().lower()
+        #              ^-- CURSOR
     |}
-    "6:19"
     (Some
        {
          symbol_with_definition =
@@ -363,12 +382,13 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = false;
        });
   assert_narrowest_expression
-    ~source:{|
+    ~source:
+      {|
       class Foo:
         def bar(self) -> None:
             print(self.foo())
+        #         ^-- CURSOR
     |}
-    "4:12"
     (Some
        {
          symbol_with_definition =
@@ -384,11 +404,10 @@ let test_find_narrowest_spanning_symbol context =
       class Foo:
         def bar(self) -> None:
             print(self.foo())
-
+        #              ^-- CURSOR
         def foo(self) -> int:
           return 42
     |}
-    "4:17"
     (Some
        {
          symbol_with_definition =
@@ -413,8 +432,8 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           takes_int(x=42)
+        #             ^-- CURSOR
     |}
-    "5:14"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "42");
@@ -430,8 +449,8 @@ let test_find_narrowest_spanning_symbol context =
           some_attribute: Foo = Foo()
 
         Bar().some_attribute
+        #             ^-- CURSOR
     |}
-    "7:12"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "test.Bar().some_attribute");
@@ -445,8 +464,8 @@ let test_find_narrowest_spanning_symbol context =
 
         class Bar:
           some_attribute: Foo = Foo()
+        #                 ^-- CURSOR
     |}
-    "5:18"
     (Some
        {
          symbol_with_definition = TypeAnnotation (parse_single_expression "test.Foo");
@@ -468,8 +487,8 @@ let test_find_narrowest_spanning_symbol context =
 
         def test() -> None:
           Bar().foo().bar()
+        #             ^-- CURSOR
     |}
-    "13:14"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "(test.Bar()).foo().bar");
@@ -480,8 +499,8 @@ let test_find_narrowest_spanning_symbol context =
     ~source:{|
         def foo(x: str) -> None:
           print(x)
+        #       ^-- CURSOR
     |}
-    "3:8"
     (Some
        {
          symbol_with_definition =
@@ -491,12 +510,13 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = false;
        });
   assert_narrowest_expression
-    ~source:{|
+    ~source:
+      {|
         def foo() -> None:
           x = 42
           print(x)
+        #       ^-- CURSOR
     |}
-    "4:8"
     (Some
        {
          symbol_with_definition =
@@ -512,8 +532,8 @@ let test_find_narrowest_spanning_symbol context =
         def foo() -> None:
           with open() as f:
             f.readline()
+        #   ^-- CURSOR
     |}
-    "4:4"
     (Some
        {
          symbol_with_definition =
@@ -523,12 +543,13 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = false;
        });
   assert_narrowest_expression
-    ~source:{|
+    ~source:
+      {|
         def foo() -> None:
           for x in [1]:
             print(x)
+        #         ^-- CURSOR
     |}
-    "4:10"
     (Some
        {
          symbol_with_definition =
@@ -546,8 +567,8 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           Foo.my_static_method()
+        #         ^-- CURSOR
     |}
-    "7:11"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_static_method");
@@ -563,8 +584,8 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           Foo.my_class_method()
+        #         ^-- CURSOR
     |}
-    "7:11"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_class_method");
@@ -579,8 +600,8 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           Foo.my_method()
+        #         ^-- CURSOR
     |}
-    "6:11"
     (Some
        {
          symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_method");
@@ -594,8 +615,8 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo(my_dictionary: Dict[str, int]) -> None:
           my_dictionary["hello"]
+        #         ^-- CURSOR
     |}
-    "5:9"
     (Some
        {
          symbol_with_definition =
@@ -612,8 +633,8 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo(my_dictionary: Dict[str, int]) -> None:
           my_dictionary.__getitem__("hello")
+        #                 ^-- CURSOR
     |}
-    "5:22"
     (Some
        {
          symbol_with_definition =
@@ -639,8 +660,8 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo(my_dictionary: Dict[str, int]) -> None:
           my_dictionary["hello"]
+        #              ^-- CURSOR
     |}
-    "5:15"
     (Some
        {
          symbol_with_definition =
