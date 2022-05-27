@@ -989,87 +989,6 @@ let test_parser_update context =
   ()
 
 
-let test_ast_transformer context =
-  let assert_transformed repository ~additional_preprocessing ~expected =
-    let actual =
-      ScratchProject.setup ~context ~include_typeshed_stubs:false repository
-      |> ScratchProject.parse_sources
-      |> fun (ast_environment, invalidated_modules) ->
-      let sources =
-        let transformed_ast_environment =
-          AstEnvironment.with_additional_preprocessing ~additional_preprocessing ast_environment
-        in
-        let ast_environment = Analysis.AstEnvironment.read_only transformed_ast_environment in
-        List.filter_map
-          invalidated_modules
-          ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
-      in
-      List.map sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; statements; _ } ->
-          relative, statements)
-      |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
-             String.compare left_handle right_handle)
-    in
-    let equal (expected_handle, expected_source) (handle, statements) =
-      let equal left right = Statement.location_insensitive_compare left right = 0 in
-      String.equal expected_handle handle && List.equal equal expected_source statements
-    in
-    let printer (handle, statements) =
-      Format.sprintf
-        "%s: %s"
-        handle
-        (List.map statements ~f:Statement.show |> String.concat ~sep:"; ")
-    in
-    assert_equal ~cmp:(List.equal equal) ~printer:(List.to_string ~f:printer) expected actual
-  in
-  let open Statement in
-  let open Expression in
-  assert_transformed
-    ["a.py", "def foo() -> int: ..."]
-    ~additional_preprocessing:None
-    ~expected:
-      [
-        ( "a.py",
-          [
-            +Statement.Define
-               {
-                 Define.signature =
-                   {
-                     Define.Signature.name = !&"a.foo";
-                     parameters = [];
-                     decorators = [];
-                     return_annotation = Some !"int";
-                     async = false;
-                     generator = false;
-                     parent = None;
-                     nesting_define = None;
-                   };
-                 captures = [];
-                 unbound_names = [];
-                 body = [+Statement.Expression (+Expression.Constant Constant.Ellipsis)];
-               };
-          ] );
-      ];
-  let remove_first_statement ({ Source.statements; _ } as source) =
-    { source with statements = List.tl_exn statements }
-  in
-  assert_transformed
-    ["a.py", "def foo() -> int: ...\nbar: int = 1\n"]
-    ~additional_preprocessing:(Some remove_first_statement)
-    ~expected:
-      [
-        ( "a.py",
-          [
-            +Statement.Assign
-               {
-                 Assign.target = !"$local_a$bar";
-                 value = +Expression.Constant (Constant.Integer 1);
-                 annotation = Some !"int";
-               };
-          ] );
-      ];
-  ()
-
-
 let () =
   "ast_environment"
   >::: [
@@ -1080,6 +999,5 @@ let () =
          "ast_change" >:: test_ast_change;
          "parse_repository" >:: test_parse_repository;
          "parser_update" >:: test_parser_update;
-         "ast_transformer" >:: test_ast_transformer;
        ]
   |> Test.run

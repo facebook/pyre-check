@@ -65,12 +65,9 @@ end
 type t = {
   module_tracker: ModuleTracker.t;
   raw_sources: RawSources.t;
-  additional_preprocessing: (Source.t -> Source.t) option;
 }
 
-let create ?additional_preprocessing module_tracker =
-  { module_tracker; raw_sources = RawSources.create (); additional_preprocessing }
-
+let create module_tracker = { module_tracker; raw_sources = RawSources.create () }
 
 let wildcard_exports_of ({ Source.source_path = { ModulePath.is_stub; _ }; _ } as source) =
   let open Expression in
@@ -332,17 +329,8 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
   Transform.transform () source |> Transform.source
 
 
-let get_and_preprocess_source
-    ?dependency
-    ({ additional_preprocessing; _ } as ast_environment)
-    qualifier
-  =
-  let preprocessing =
-    match additional_preprocessing with
-    | Some additional_preprocessing ->
-        fun source -> Preprocessing.preprocess_phase1 source |> additional_preprocessing
-    | None -> Preprocessing.preprocess_phase1
-  in
+let get_and_preprocess_source ?dependency ast_environment qualifier =
+  let preprocessing = Preprocessing.preprocess_phase1 in
   (* Preprocessing a module depends on the module itself is implicitly assumed in `update`. No need
      to explicitly record the dependency. *)
   LazyRawSources.get ~ast_environment qualifier ?dependency:None
@@ -446,7 +434,7 @@ let update
    (de-)serialization for us. *)
 let store _ = ()
 
-let load = create ?additional_preprocessing:None
+let load = create
 
 module ReadOnly = struct
   type t = {
@@ -528,6 +516,3 @@ let read_only ({ module_tracker; _ } as ast_environment) =
 let module_tracker { module_tracker; _ } = module_tracker
 
 let configuration { module_tracker; _ } = ModuleTracker.configuration module_tracker
-
-let with_additional_preprocessing ~additional_preprocessing environment =
-  { environment with additional_preprocessing }
