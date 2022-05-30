@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Pyre
 module Hashtbl = Caml.Hashtbl
 module Set = Caml.Set
 
@@ -68,7 +67,7 @@ type 'keyset transaction_element = {
 
 module DependencyKey = struct
   module type S = sig
-    type key [@@deriving compare, sexp, hash]
+    type key
 
     type registered
 
@@ -76,38 +75,9 @@ module DependencyKey = struct
 
     module KeySet : Set.S with type elt = key
 
-    val get_key : registered -> key
-
     val mark : registered -> depends_on:EncodedDependency.t -> unit
 
     val query : EncodedDependency.t -> RegisteredSet.t
-
-    module Registry : sig
-      type serialized
-
-      val register : key -> registered
-
-      val store : unit -> unit
-
-      val load : unit -> unit
-
-      val collected_map_reduce
-        :  Scheduler.t ->
-        policy:Scheduler.Policy.t ->
-        initial:'state ->
-        map:('state -> 'input list -> 'intermediate) ->
-        reduce:('intermediate -> 'state -> 'state) ->
-        inputs:'input list ->
-        unit ->
-        'state
-
-      val collected_iter
-        :  Scheduler.t ->
-        policy:Scheduler.Policy.t ->
-        f:('input list -> unit) ->
-        inputs:'input list ->
-        unit
-    end
 
     module Transaction : sig
       type t
@@ -122,140 +92,36 @@ module DependencyKey = struct
     end
   end
 
-  module type Key = sig
-    type t [@@deriving compare, sexp, hash]
+  module type In = sig
+    type key [@@deriving compare, sexp]
+
+    type registered [@@deriving compare, sexp]
+
+    module RegisteredSet : Set.S with type elt = registered
+
+    module KeySet : Set.S with type elt = key
+
+    module Registry : sig
+      val encode : registered -> EncodedDependency.t
+
+      val decode : EncodedDependency.t -> registered list option
+    end
   end
 
-  module Make (Key : Key) : S with type key = Key.t = struct
-    type key = Key.t [@@deriving compare, sexp, hash]
+  module Make (In : In) = struct
+    type key = In.key
 
-    module KeySet = Caml.Set.Make (Key)
+    type registered = In.registered
 
-    type registered = {
-      hash: EncodedDependency.t;
-      key: key;
-    }
-    [@@deriving compare, sexp]
+    module KeySet = In.KeySet
+    module RegisteredSet = In.RegisteredSet
 
-    module RegisteredSet = Caml.Set.Make (struct
-      type t = registered [@@deriving compare, sexp]
-    end)
-
-    module Table = EncodedDependency.Table
-
-    module Registry = struct
-      type table = key list Table.t
-
-      let add_to_table table ~hash ~key =
-        let append dependency = function
-          | Some existing ->
-              let equal left right = Int.equal (compare_key left right) 0 in
-              if List.mem existing dependency ~equal then
-                existing
-              else
-                dependency :: existing
-          | None -> [dependency]
-        in
-        Table.update table hash ~f:(append key)
-
-
-      type t =
-        | Master of table
-        | Worker of key list
-
-      module Serializable = struct
-        module Serialized = struct
-          type nonrec t = key list
-
-          let prefix = Prefix.make ()
-
-          let description = "Decoder storage"
-        end
-
-        type t = table
-
-        let serialize table = Table.data table |> List.concat_no_order
-
-        let deserialize keys =
-          let table = Table.create ~size:(List.length keys) () in
-          let add key = add_to_table table ~hash:(EncodedDependency.make ~hash:Key.hash key) ~key in
-          List.iter keys ~f:add;
-          table
-      end
-
-      module Storage = Memory.Serializer (Serializable)
-
-      let global : t ref = ref (Master (Table.create ()))
-
-      let store () =
-        match !global with
-        | Master table -> Storage.store table
-        | Worker _ -> failwith "trying to store from worker"
-
-
-      let load () = global := Master (Storage.load ())
-
-      let register key =
-        let hash = EncodedDependency.make ~hash:Key.hash key in
-        let () =
-          match !global with
-          | Master table -> add_to_table table ~key ~hash
-          | Worker keys -> global := Worker (key :: keys)
-        in
-        { hash; key }
-
-
-      type serialized = Serializable.Serialized.t
-
-      let encode { hash; _ } = hash
-
-      let decode hash =
-        match !global with
-        | Master table -> Table.find table hash >>| List.map ~f:(fun key -> { hash; key })
-        | Worker _ -> failwith "Can only decode from master"
-
-
-      let collected_map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs () =
-        let map sofar inputs =
-          if Scheduler.is_master () then
-            map sofar inputs, []
-          else (
-            global := Worker [];
-            let payload = map sofar inputs in
-            match !global with
-            | Worker keys -> payload, keys
-            | Master _ -> failwith "can't set worker back to master")
-        in
-        let reduce (payload, keys) sofar =
-          let register key =
-            let (_ : registered) = register key in
-            ()
-          in
-          List.iter keys ~f:register;
-          reduce payload sofar
-        in
-        Scheduler.map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs ()
-
-
-      let collected_iter scheduler ~policy ~f ~inputs =
-        collected_map_reduce
-          scheduler
-          ~policy
-          ~initial:()
-          ~map:(fun _ inputs -> f inputs)
-          ~reduce:(fun _ _ -> ())
-          ~inputs
-          ()
-    end
-
-    let get_key { key; _ } = key
-
-    let mark registered ~depends_on = DependencyGraph.add depends_on (Registry.encode registered)
+    let mark registered ~depends_on = DependencyGraph.add depends_on (In.Registry.encode registered)
 
     let query trigger =
       DependencyGraph.get trigger
       |> EncodedDependencySet.fold ~init:RegisteredSet.empty ~f:(fun sofar hash ->
-             match Registry.decode hash with
+             match In.Registry.decode hash with
              | Some keys ->
                  let add sofar key = RegisteredSet.add key sofar in
                  List.fold keys ~init:sofar ~f:add

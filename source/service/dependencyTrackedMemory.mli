@@ -28,7 +28,7 @@ end
 
 module DependencyKey : sig
   module type S = sig
-    type key [@@deriving compare, sexp, hash]
+    type key
 
     type registered
 
@@ -36,38 +36,9 @@ module DependencyKey : sig
 
     module KeySet : Set.S with type elt = key
 
-    val get_key : registered -> key
-
     val mark : registered -> depends_on:EncodedDependency.t -> unit
 
     val query : EncodedDependency.t -> RegisteredSet.t
-
-    module Registry : sig
-      type serialized
-
-      val register : key -> registered
-
-      val store : unit -> unit
-
-      val load : unit -> unit
-
-      val collected_map_reduce
-        :  Scheduler.t ->
-        policy:Scheduler.Policy.t ->
-        initial:'state ->
-        map:('state -> 'input list -> 'intermediate) ->
-        reduce:('intermediate -> 'state -> 'state) ->
-        inputs:'input list ->
-        unit ->
-        'state
-
-      val collected_iter
-        :  Scheduler.t ->
-        policy:Scheduler.Policy.t ->
-        f:('input list -> unit) ->
-        inputs:'input list ->
-        unit
-    end
 
     module Transaction : sig
       type t
@@ -82,11 +53,28 @@ module DependencyKey : sig
     end
   end
 
-  module type Key = sig
-    type t [@@deriving compare, sexp, hash]
+  module type In = sig
+    type key [@@deriving compare, sexp]
+
+    type registered [@@deriving compare, sexp]
+
+    module RegisteredSet : Set.S with type elt = registered
+
+    module KeySet : Set.S with type elt = key
+
+    module Registry : sig
+      val encode : registered -> EncodedDependency.t
+
+      val decode : EncodedDependency.t -> registered list option
+    end
   end
 
-  module Make (Key : Key) : S with type key = Key.t
+  module Make (In : In) :
+    S
+      with type key = In.key
+       and type registered = In.registered
+       and module RegisteredSet = In.RegisteredSet
+       and module KeySet = In.KeySet
 end
 
 module DependencyKind : sig

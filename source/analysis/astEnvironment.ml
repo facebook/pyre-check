@@ -30,15 +30,11 @@ module RawSourceValue = struct
   let compare = Result.compare Source.compare ParserError.compare
 end
 
-module QualifierDependencyKey = DependencyTrackedMemory.DependencyKey.Make (struct
-  type t = Reference.t [@@deriving compare, sexp, hash]
-end)
-
 module RawSources = struct
   include
     DependencyTrackedMemory.DependencyTrackedTableNoCache
       (SharedMemoryKeys.ReferenceKey)
-      (QualifierDependencyKey)
+      (SharedMemoryKeys.DependencyKey)
       (RawSourceValue)
 
   let add_parsed_source table ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) =
@@ -54,9 +50,9 @@ module RawSources = struct
 
   let update_and_compute_dependencies table ~update ~scheduler qualifiers =
     let keys = KeySet.of_list qualifiers in
-    QualifierDependencyKey.Transaction.empty ~scheduler
+    SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler
     |> add_to_transaction table ~keys
-    |> QualifierDependencyKey.Transaction.execute ~update
+    |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
 
 
   let remove_sources table qualifiers = KeySet.of_list qualifiers |> remove_batch table
@@ -417,10 +413,17 @@ let update
       in
       let invalidated_modules =
         let fold_key registered sofar =
-          let qualifier = QualifierDependencyKey.get_key registered in
+          let qualifier =
+            match SharedMemoryKeys.DependencyKey.get_key registered with
+            | SharedMemoryKeys.WildcardImport qualifier -> qualifier
+            | _ ->
+                (* Due to shared-memory limitations we cannot express this restriction in the type
+                   system, but it is key to reasoning about the dependency graph *)
+                failwith "RawSources should never have non-WildCardImport dependencies"
+          in
           RawSources.KeySet.add qualifier sofar
         in
-        QualifierDependencyKey.RegisteredSet.fold
+        SharedMemoryKeys.DependencyKey.RegisteredSet.fold
           fold_key
           preprocessing_dependencies
           (RawSources.KeySet.of_list invalidated_modules_before_preprocessing)
@@ -500,7 +503,7 @@ let read_only ({ module_tracker; _ } as ast_environment) =
   let get_processed_source ~track_dependency qualifier =
     let dependency =
       if track_dependency then
-        Some (QualifierDependencyKey.Registry.register qualifier)
+        Some (SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier))
       else
         None
     in
