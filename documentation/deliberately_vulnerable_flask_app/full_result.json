@@ -102,5 +102,93 @@
     "path": "app.py",
     "stop_column": 36,
     "stop_line": 28
+  },
+  {
+    "line": 65,
+    "column": 20,
+    "stop_line": 65,
+    "stop_column": 27,
+    "path": "app.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description": "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "define": "app.potential_rce_3"
+  },
+  {
+    "line": 65,
+    "column": 42,
+    "stop_line": 65,
+    "stop_column": 51,
+    "path": "app.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description": "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "define": "app.potential_rce_3"
+  },
+  {
+    "line": 70,
+    "column": 41,
+    "stop_line": 70,
+    "stop_column": 50,
+    "path": "app.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description": "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "define": "app.potential_rce_4"
+  },
+  {
+    "line": 70,
+    "column": 22,
+    "stop_line": 70,
+    "stop_column": 29,
+    "path": "app.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description": "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "define": "app.potential_rce_4"
+  },
+  {
+    "line": 75,
+    "column": 21,
+    "stop_line": 75,
+    "stop_column": 28,
+    "path": "app.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description": "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "define": "app.potential_rce_5"
+  },
+  {
+    "line": 75,
+    "column": 34,
+    "stop_line": 75,
+    "stop_column": 43,
+    "path": "app.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description": "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "define": "app.potential_rce_5"
+  },
+  {
+    "line": 80,
+    "column": 13,
+    "stop_line": 80,
+    "stop_column": 20,
+    "path": "app.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description": "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "define": "app.potential_rce_6"
+  },
+  {
+    "line": 80,
+    "column": 28,
+    "stop_line": 80,
+    "stop_column": 37,
+    "path": "app.py",
+    "code": 6065,
+    "name": "Commandline arguments injection may result in RCE",
+    "description": "Commandline arguments injection may result in RCE [6065]: Data from [UserControlled] source(s) may reach [ExecArgSink] sink(s)",
+    "define": "app.potential_rce_6"
   }
 ]
