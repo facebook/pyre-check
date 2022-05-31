@@ -111,35 +111,8 @@ let pp formatter edges =
   Target.Map.to_alist edges |> List.sort ~compare |> List.iter ~f:pp_edge
 
 
-let dump call_graph ~path =
-  let module Buffer = Caml.Buffer in
-  let buffer = Buffer.create 1024 in
-  Buffer.add_string buffer "{\n";
-  let remove_trailing_comma () =
-    Buffer.truncate buffer (Buffer.length buffer - 2);
-    Buffer.add_string buffer "\n"
-  in
-  let add_edges ~key:source ~data:targets =
-    let add_edge target = Format.asprintf "    \"%s\",\n" target |> Buffer.add_string buffer in
-    if not (List.is_empty targets) then (
-      Format.asprintf "  \"%s\": [\n" (Target.external_name source) |> Buffer.add_string buffer;
-      List.map targets ~f:Target.external_name
-      |> List.sort ~compare:String.compare
-      |> List.iter ~f:add_edge;
-      remove_trailing_comma ();
-      Buffer.add_string buffer "  ],\n")
-  in
-  Map.iteri call_graph ~f:add_edges;
-  remove_trailing_comma ();
-  Buffer.add_string buffer "}";
-
-  (* Write to file. *)
-  Log.warning "Emitting the contents of the call graph to `%s`" (PyrePath.absolute path);
-  path |> File.create ~content:(Buffer.contents buffer) |> File.write
-
-
 let from_callgraph callgraph =
-  let add ~key:target ~data:callees result =
+  let add ~target ~callees result =
     let callees =
       List.filter
         ~f:(function
@@ -149,7 +122,7 @@ let from_callgraph callgraph =
     in
     Target.Map.set result ~key:target ~data:callees
   in
-  Target.Map.fold callgraph ~f:add ~init:Target.Map.empty
+  CallGraph.ProgramCallGraphHeap.fold callgraph ~f:add ~init:Target.Map.empty
 
 
 let union left right =

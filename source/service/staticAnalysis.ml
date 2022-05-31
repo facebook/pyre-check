@@ -404,43 +404,6 @@ let build_class_intervals class_hierarchy_graph =
     ()
 
 
-(* Build the callgraph, a map from caller to callees. The overrides must be computed first because
-   we depend on a global shared memory graph to include overrides in the call graph. Without it,
-   we'll underanalyze and have an inconsistent fixpoint. *)
-let build_call_graph
-    ~scheduler
-    ~static_analysis_configuration
-    ~environment
-    ~attribute_targets
-    ~callables
-  =
-  let call_graph =
-    let build_call_graph call_graph callable =
-      Interprocedural.CallGraph.call_graph_of_callable
-        ~static_analysis_configuration
-        ~store_shared_memory:true
-        ~environment
-        ~attribute_targets
-        ~global_call_graph:call_graph
-        ~callable
-    in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~initial:Target.Map.empty
-      ~map:(fun _ callables -> List.fold callables ~init:Target.Map.empty ~f:build_call_graph)
-      ~reduce:(Map.merge_skewed ~combine:(fun ~key:_ left _ -> left))
-      ~inputs:callables
-      ()
-  in
-  let () =
-    match static_analysis_configuration.Configuration.StaticAnalysis.dump_call_graph with
-    | Some path -> DependencyGraph.from_callgraph call_graph |> DependencyGraph.dump ~path
-    | None -> ()
-  in
-  call_graph
-
-
 (* Merge overrides and callgraph into a combined dependency graph, and prune anything not linked to
    the callables we are actually analyzing. Then reverse the graph, which maps dependers to
    dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that

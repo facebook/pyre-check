@@ -90,7 +90,7 @@ module Analysis = struct
         TaintProfiler.none
     in
     let call_graph_of_define =
-      match Interprocedural.CallGraph.SharedMemory.get ~callable with
+      match Interprocedural.CallGraph.ProgramCallGraphSharedMemory.get ~callable with
       | Some call_graph -> call_graph
       | None ->
           Format.asprintf "Missing call graph for `%a`" Interprocedural.Target.pp callable

@@ -39,17 +39,9 @@ val build_class_hierarchy_graph
 
 val build_class_intervals : ClassHierarchyGraph.t -> unit
 
-val build_call_graph
-  :  scheduler:Scheduler.t ->
-  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  environment:TypeEnvironment.ReadOnly.t ->
-  attribute_targets:Target.HashSet.t ->
-  callables:Target.t list ->
-  Target.t list Target.Map.t
-
 val build_dependency_graph
   :  initial_callables:FetchCallables.t ->
-  callgraph:DependencyGraph.callgraph ->
+  callgraph:CallGraph.ProgramCallGraphHeap.t ->
   override_dependencies:Target.t list Target.Map.t ->
   DependencyGraph.t * Target.t list * Target.t list
 

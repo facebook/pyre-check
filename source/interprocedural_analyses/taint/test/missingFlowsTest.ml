@@ -67,7 +67,7 @@ let assert_fixpoint
       ~max_iterations:100
       ~epoch:Fixpoint.Epoch.initial
   in
-  assert_bool "Callgraph is empty!" (Target.Map.length callgraph > 0);
+  assert_bool "Call graph is empty!" (not (CallGraph.ProgramCallGraphHeap.is_empty callgraph));
   assert_equal
     ~msg:"Fixpoint iterations"
     expect_iterations

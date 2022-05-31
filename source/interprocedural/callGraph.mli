@@ -191,6 +191,9 @@ module DefineCallGraph : sig
 
   (* For testing purpose only. *)
   val equal_ignoring_types : t -> t -> bool
+
+  val all_targets : t -> Target.t list
+  (** Return all callees of the call graph, as a sorted list. *)
 end
 
 val call_graph_of_define
@@ -203,19 +206,49 @@ val call_graph_of_define
 
 val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
 
-module SharedMemory : sig
-  val add : callable:Target.t -> call_graph:DefineCallGraph.t -> unit
-
-  val get : callable:Target.t -> DefineCallGraph.t option
-
-  val remove : Target.t list -> unit
-end
-
 val call_graph_of_callable
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  store_shared_memory:bool ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   attribute_targets:Target.HashSet.t ->
-  global_call_graph:DependencyGraph.callgraph ->
   callable:Target.t ->
-  DependencyGraph.callgraph
+  DefineCallGraph.t
+
+(** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
+    `DefineCallGraph.t`. *)
+module ProgramCallGraphSharedMemory : sig
+  val set : callable:Target.t -> call_graph:DefineCallGraph.t -> unit
+
+  val get : callable:Target.t -> DefineCallGraph.t option
+end
+
+(** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its
+    callees. *)
+module ProgramCallGraphHeap : sig
+  type t
+
+  val empty : t
+
+  val is_empty : t -> bool
+
+  val of_alist_exn : (Target.t * Target.t list) list -> t
+
+  val add_or_exn : callable:Target.t -> callees:Target.t list -> t -> t
+
+  val fold : t -> init:'a -> f:(target:Target.t -> callees:Target.t list -> 'a -> 'a) -> 'a
+
+  val to_target_graph : t -> TargetGraph.t
+end
+
+val build_whole_program_call_graph
+  :  scheduler:Scheduler.t ->
+  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
+  store_shared_memory:bool ->
+  attribute_targets:Target.HashSet.t ->
+  callables:Target.t list ->
+  ProgramCallGraphHeap.t
+(** Build the whole call graph of the program.
+
+    The overrides must be computed first because we depend on a global shared memory graph to
+    include overrides in the call graph. Without it, we'll underanalyze and have an inconsistent
+    fixpoint. *)

@@ -24,6 +24,6 @@ val add_obscure_models
 (* Return the initial set of models, updated for the missing-flows=type analysis. *)
 val add_unknown_callee_models
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  callgraph:Target.t list Target.Map.t ->
+  callgraph:CallGraph.ProgramCallGraphHeap.t ->
   initial_models:Registry.t ->
   Registry.t

@@ -29,11 +29,9 @@ val pp : Format.formatter -> t -> unit
 
 val pp_partitions : Format.formatter -> Target.t list list -> unit
 
-val dump : t -> path:PyrePath.t -> unit
-
 val from_overrides : OverrideGraph.Heap.t -> t
 
-val from_callgraph : callgraph -> t
+val from_callgraph : CallGraph.ProgramCallGraphHeap.t -> t
 
 val union : t -> t -> t
 

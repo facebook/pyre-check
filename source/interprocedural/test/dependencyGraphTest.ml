@@ -58,15 +58,17 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
     |> FetchCallables.get_callables
   in
   let fold call_graph callable =
-    CallGraph.call_graph_of_callable
-      ~static_analysis_configuration
-      ~store_shared_memory:false
-      ~environment
-      ~attribute_targets:(Target.HashSet.create ())
-      ~global_call_graph:call_graph
-      ~callable
+    let callees =
+      CallGraph.call_graph_of_callable
+        ~static_analysis_configuration
+        ~environment
+        ~attribute_targets:(Target.HashSet.create ())
+        ~callable
+      |> CallGraph.DefineCallGraph.all_targets
+    in
+    CallGraph.ProgramCallGraphHeap.add_or_exn call_graph ~callable ~callees
   in
-  List.fold ~init:Target.Map.empty ~f:fold callables
+  List.fold ~init:CallGraph.ProgramCallGraphHeap.empty ~f:fold callables
 
 
 let create_callable = function
@@ -495,15 +497,17 @@ let test_strongly_connected_components context =
     in
     let call_graph =
       let fold call_graph callable =
-        CallGraph.call_graph_of_callable
-          ~static_analysis_configuration
-          ~store_shared_memory:false
-          ~environment
-          ~attribute_targets:(Target.HashSet.create ())
-          ~global_call_graph:call_graph
-          ~callable
+        let callees =
+          CallGraph.call_graph_of_callable
+            ~static_analysis_configuration
+            ~environment
+            ~attribute_targets:(Target.HashSet.create ())
+            ~callable
+          |> CallGraph.DefineCallGraph.all_targets
+        in
+        CallGraph.ProgramCallGraphHeap.add_or_exn call_graph ~callable ~callees
       in
-      List.fold ~init:Target.Map.empty ~f:fold callables
+      List.fold ~init:CallGraph.ProgramCallGraphHeap.empty ~f:fold callables
     in
     let partitions =
       let edges = DependencyGraph.from_callgraph call_graph in
@@ -628,7 +632,7 @@ let test_prune_callables _ =
       List.map callgraph ~f:(fun (key, values) ->
           ( Target.create_method (Reference.create key),
             List.map values ~f:(fun value -> create (Reference.create value)) ))
-      |> Target.Map.of_alist_exn
+      |> CallGraph.ProgramCallGraphHeap.of_alist_exn
     in
     let overrides =
       List.map overrides ~f:(fun (key, values) ->

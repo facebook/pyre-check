@@ -419,7 +419,7 @@ let get_initial_models ~context =
 
 type test_environment = {
   static_analysis_configuration: Configuration.StaticAnalysis.t;
-  callgraph: DependencyGraph.callgraph;
+  callgraph: CallGraph.ProgramCallGraphHeap.t;
   overrides: DependencyGraph.t;
   callables_to_analyze: Target.t list;
   initial_callables: Target.t list;
@@ -566,10 +566,11 @@ let initialize
   let () = TaintConfiguration.register taint_configuration in
   (* The call graph building depends on initial models for global targets. *)
   let callgraph =
-    Service.StaticAnalysis.build_call_graph
+    Interprocedural.CallGraph.build_whole_program_call_graph
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~environment
+      ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)
       ~callables:initial_callables
   in

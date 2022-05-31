@@ -338,10 +338,11 @@ let run_taint_analysis
     Log.info "Building call graph...";
     let timer = Timer.start () in
     let callgraph =
-      Service.StaticAnalysis.build_call_graph
+      Interprocedural.CallGraph.build_whole_program_call_graph
         ~scheduler
         ~static_analysis_configuration
         ~environment:(Analysis.TypeEnvironment.read_only environment)
+        ~store_shared_memory:true
         ~attribute_targets:(Registry.object_targets initial_models)
         ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
     in

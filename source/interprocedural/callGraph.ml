@@ -642,6 +642,12 @@ module DefineCallGraph = struct
 
   let equal_ignoring_types call_graph_left call_graph_right =
     Location.Map.equal LocationCallees.equal_ignoring_types call_graph_left call_graph_right
+
+
+  let all_targets call_graph =
+    Location.Map.data call_graph
+    |> List.concat_map ~f:LocationCallees.all_targets
+    |> List.dedup_and_sort ~compare:Target.compare
 end
 
 (* Produce call targets with a textual order index.
@@ -2045,7 +2051,20 @@ let call_graph_of_define
   call_graph
 
 
-module SharedMemory = struct
+let call_graph_of_callable ~static_analysis_configuration ~environment ~attribute_targets ~callable =
+  let resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
+  match Target.get_module_and_definition callable ~resolution with
+  | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
+  | Some (qualifier, define) ->
+      call_graph_of_define
+        ~static_analysis_configuration
+        ~environment
+        ~attribute_targets
+        ~qualifier
+        ~define:(Node.value define)
+
+
+module ProgramCallGraphSharedMemory = struct
   include
     Memory.WithCache.Make
       (Target.SharedMemoryKey)
@@ -2057,38 +2076,80 @@ module SharedMemory = struct
         let description = "call graphs of defines"
       end)
 
-  let add ~callable ~call_graph = add callable (Location.Map.to_tree call_graph)
+  let set ~callable ~call_graph = add callable (Location.Map.to_tree call_graph)
 
   let get ~callable = get callable >>| Location.Map.of_tree
-
-  let remove callables = KeySet.of_list callables |> remove_batch
 end
 
-let call_graph_of_callable
+module ProgramCallGraphHeap = struct
+  type t = Target.t list Target.Map.t
+
+  let empty = Target.Map.empty
+
+  let is_empty = Target.Map.is_empty
+
+  let of_alist_exn = Target.Map.of_alist_exn
+
+  let add_or_exn ~callable ~callees call_graph =
+    Target.Map.update call_graph callable ~f:(function
+        | None -> callees
+        | Some _ ->
+            Format.asprintf "Program call graph already has callees for `%a`" Target.pp callable
+            |> failwith)
+
+
+  let fold graph ~init ~f =
+    Target.Map.fold graph ~init ~f:(fun ~key:target ~data:callees -> f ~target ~callees)
+
+
+  let merge_disjoint left right =
+    Map.merge_skewed ~combine:(fun ~key:_ _ _ -> failwith "call graphs are not disjoint") left right
+
+
+  let to_target_graph graph = graph
+end
+
+let build_whole_program_call_graph
+    ~scheduler
     ~static_analysis_configuration
-    ~store_shared_memory
     ~environment
+    ~store_shared_memory
     ~attribute_targets
-    ~global_call_graph
-    ~callable
+    ~callables
   =
-  let resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
-  match Target.get_module_and_definition callable ~resolution with
-  | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
-  | Some (qualifier, define) ->
-      let call_graph_of_define =
-        call_graph_of_define
+  let call_graph =
+    let build_call_graph whole_program_call_graph callable =
+      let callable_call_graph =
+        call_graph_of_callable
           ~static_analysis_configuration
           ~environment
           ~attribute_targets
-          ~qualifier
-          ~define:(Node.value define)
+          ~callable
       in
       let () =
         if store_shared_memory then
-          SharedMemory.add ~callable ~call_graph:call_graph_of_define
+          ProgramCallGraphSharedMemory.set ~callable ~call_graph:callable_call_graph
       in
-      Location.Map.data call_graph_of_define
-      |> List.concat_map ~f:LocationCallees.all_targets
-      |> List.dedup_and_sort ~compare:Target.compare
-      |> fun callees -> Target.Map.set global_call_graph ~key:callable ~data:callees
+      ProgramCallGraphHeap.add_or_exn
+        whole_program_call_graph
+        ~callable
+        ~callees:(DefineCallGraph.all_targets callable_call_graph)
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+      ~initial:ProgramCallGraphHeap.empty
+      ~map:(fun _ callables ->
+        List.fold callables ~init:ProgramCallGraphHeap.empty ~f:build_call_graph)
+      ~reduce:ProgramCallGraphHeap.merge_disjoint
+      ~inputs:callables
+      ()
+  in
+  let () =
+    match static_analysis_configuration.Configuration.StaticAnalysis.dump_call_graph with
+    | Some path ->
+        Log.warning "Emitting the contents of the call graph to `%s`" (PyrePath.absolute path);
+        call_graph |> ProgramCallGraphHeap.to_target_graph |> TargetGraph.dump ~path
+    | None -> ()
+  in
+  call_graph

@@ -103,7 +103,7 @@ let add_unknown_callee_models
   match find_missing_flows with
   | Some Type ->
       Log.info "Initializing models for unknown callees...";
-      let gather_unknown_callees ~key:_ ~data:callees unknown_callees =
+      let gather_unknown_callees ~target:_ ~callees unknown_callees =
         List.fold
           ~init:unknown_callees
           ~f:(fun unknown_callees target ->
@@ -114,7 +114,10 @@ let add_unknown_callee_models
           callees
       in
       let unknown_callees =
-        Target.Map.fold ~init:Target.Set.empty ~f:gather_unknown_callees callgraph
+        CallGraph.ProgramCallGraphHeap.fold
+          ~init:Target.Set.empty
+          ~f:gather_unknown_callees
+          callgraph
       in
       let add_model target models =
         Registry.set models ~target ~model:(unknown_callee_model target)
