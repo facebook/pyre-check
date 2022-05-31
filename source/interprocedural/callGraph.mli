@@ -10,6 +10,7 @@ open Analysis
 open Ast
 open Expression
 
+(** Represents type information about the return type of a call. *)
 module ReturnType : sig
   type t = {
     is_boolean: bool;
@@ -30,6 +31,7 @@ module ReturnType : sig
   val from_annotation : resolution:GlobalResolution.t -> Type.t -> t
 end
 
+(** A specific target of a given call, with extra information. *)
 module CallTarget : sig
   type t = {
     target: Target.t;
@@ -62,7 +64,7 @@ module CallTarget : sig
     t
 end
 
-(* Information about an argument being a callable. *)
+(** Information about an argument being a callable. *)
 module HigherOrderParameter : sig
   type t = {
     index: int;
@@ -71,7 +73,7 @@ module HigherOrderParameter : sig
   [@@deriving eq, show]
 end
 
-(* An aggregate of all possible callees at a call site. *)
+(** An aggregate of all possible callees at a call site. *)
 module CallCallees : sig
   type t = {
     (* Normal call targets. *)
@@ -104,7 +106,7 @@ module CallCallees : sig
   val pp_option : Format.formatter -> t option -> unit
 end
 
-(* An aggregrate of all possible callees for a given attribute access. *)
+(** An aggregrate of all possible callees for a given attribute access. *)
 module AttributeAccessCallees : sig
   type t = {
     property_targets: CallTarget.t list;
@@ -118,17 +120,17 @@ module AttributeAccessCallees : sig
   val empty : t
 end
 
-(* An aggregate of all possible callees for a given identifier expression. *)
+(** An aggregate of all possible callees for a given identifier expression, i.e `foo`. *)
 module IdentifierCallees : sig
   type t = { global_targets: CallTarget.t list } [@@deriving eq, show]
 end
 
-(* An aggregate of all implicit callees for any expression used in a f string *)
+(** An aggregate of all implicit callees for any expression used in a f-string. *)
 module FormatStringCallees : sig
   type t = { call_targets: CallTarget.t list } [@@deriving eq, show]
 end
 
-(* An aggregate of all possible callees for an arbitrary expression. *)
+(** An aggregate of all possible callees for an arbitrary expression. *)
 module ExpressionCallees : sig
   type t = {
     call: CallCallees.t option;
@@ -149,8 +151,9 @@ module ExpressionCallees : sig
   val from_format_string : FormatStringCallees.t -> t
 end
 
-(* An aggregate of all possible callees for an arbitrary location.
- * Note that multiple expressions might have the same location. *)
+(** An aggregate of all possible callees for an arbitrary location.
+
+    Note that multiple expressions might have the same location. *)
 module LocationCallees : sig
   type t =
     | Singleton of ExpressionCallees.t
@@ -158,6 +161,7 @@ module LocationCallees : sig
   [@@deriving eq, show]
 end
 
+(** The call graph of a function or method definition. *)
 module DefineCallGraph : sig
   type t [@@deriving eq, show]
 
