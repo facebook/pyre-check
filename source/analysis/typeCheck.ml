@@ -2695,9 +2695,9 @@ module State (Context : Context) = struct
         let { Resolved.resolution; resolved; errors; _ } =
           forward_comprehension ~resolution ~errors:[] ~element ~generators
         in
-        let result = List.exists ~f:(fun generator -> generator.async) generators in
+        let has_async_generator = List.exists ~f:(fun generator -> generator.async) generators in
         let generator =
-          match result with
+          match has_async_generator with
           | true -> Type.async_generator ~yield_type:resolved ()
           | false -> Type.generator_expression resolved
         in
