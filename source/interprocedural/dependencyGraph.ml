@@ -40,7 +40,7 @@ module Reversed = struct
       in
       Target.Map.set result ~key:target ~data:callees
     in
-    CallGraph.ProgramCallGraphHeap.fold callgraph ~f:add ~init:Target.Map.empty
+    CallGraph.WholeProgramCallGraph.fold callgraph ~f:add ~init:Target.Map.empty
 
 
   let from_overrides overrides =

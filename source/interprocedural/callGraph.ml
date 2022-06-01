@@ -2064,7 +2064,7 @@ let call_graph_of_callable ~static_analysis_configuration ~environment ~attribut
         ~define:(Node.value define)
 
 
-module ProgramCallGraphSharedMemory = struct
+module DefineCallGraphSharedMemory = struct
   include
     Memory.WithCache.Make
       (Target.SharedMemoryKey)
@@ -2081,7 +2081,7 @@ module ProgramCallGraphSharedMemory = struct
   let get ~callable = get callable >>| Location.Map.of_tree
 end
 
-module ProgramCallGraphHeap = struct
+module WholeProgramCallGraph = struct
   type t = Target.t list Target.Map.t
 
   let empty = Target.Map.empty
@@ -2128,9 +2128,9 @@ let build_whole_program_call_graph
       in
       let () =
         if store_shared_memory then
-          ProgramCallGraphSharedMemory.set ~callable ~call_graph:callable_call_graph
+          DefineCallGraphSharedMemory.set ~callable ~call_graph:callable_call_graph
       in
-      ProgramCallGraphHeap.add_or_exn
+      WholeProgramCallGraph.add_or_exn
         whole_program_call_graph
         ~callable
         ~callees:(DefineCallGraph.all_targets callable_call_graph)
@@ -2138,10 +2138,10 @@ let build_whole_program_call_graph
     Scheduler.map_reduce
       scheduler
       ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-      ~initial:ProgramCallGraphHeap.empty
+      ~initial:WholeProgramCallGraph.empty
       ~map:(fun _ callables ->
-        List.fold callables ~init:ProgramCallGraphHeap.empty ~f:build_call_graph)
-      ~reduce:ProgramCallGraphHeap.merge_disjoint
+        List.fold callables ~init:WholeProgramCallGraph.empty ~f:build_call_graph)
+      ~reduce:WholeProgramCallGraph.merge_disjoint
       ~inputs:callables
       ()
   in
@@ -2149,7 +2149,7 @@ let build_whole_program_call_graph
     match static_analysis_configuration.Configuration.StaticAnalysis.dump_call_graph with
     | Some path ->
         Log.warning "Emitting the contents of the call graph to `%s`" (PyrePath.absolute path);
-        call_graph |> ProgramCallGraphHeap.to_target_graph |> TargetGraph.dump ~path
+        call_graph |> WholeProgramCallGraph.to_target_graph |> TargetGraph.dump ~path
     | None -> ()
   in
   call_graph

@@ -66,9 +66,9 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
         ~callable
       |> CallGraph.DefineCallGraph.all_targets
     in
-    CallGraph.ProgramCallGraphHeap.add_or_exn call_graph ~callable ~callees
+    CallGraph.WholeProgramCallGraph.add_or_exn call_graph ~callable ~callees
   in
-  List.fold ~init:CallGraph.ProgramCallGraphHeap.empty ~f:fold callables
+  List.fold ~init:CallGraph.WholeProgramCallGraph.empty ~f:fold callables
 
 
 let create_callable = function
@@ -505,7 +505,7 @@ let test_prune_callables _ =
       List.map callgraph ~f:(fun (key, values) ->
           ( Target.create_method (Reference.create key),
             List.map values ~f:(fun value -> create (Reference.create value)) ))
-      |> CallGraph.ProgramCallGraphHeap.of_alist_exn
+      |> CallGraph.WholeProgramCallGraph.of_alist_exn
     in
     let overrides =
       List.map overrides ~f:(fun (key, values) ->

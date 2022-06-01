@@ -215,7 +215,7 @@ val call_graph_of_callable
 
 (** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
     `DefineCallGraph.t`. *)
-module ProgramCallGraphSharedMemory : sig
+module DefineCallGraphSharedMemory : sig
   val set : callable:Target.t -> call_graph:DefineCallGraph.t -> unit
 
   val get : callable:Target.t -> DefineCallGraph.t option
@@ -223,7 +223,7 @@ end
 
 (** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its
     callees. *)
-module ProgramCallGraphHeap : sig
+module WholeProgramCallGraph : sig
   type t
 
   val empty : t
@@ -246,7 +246,7 @@ val build_whole_program_call_graph
   store_shared_memory:bool ->
   attribute_targets:Target.HashSet.t ->
   callables:Target.t list ->
-  ProgramCallGraphHeap.t
+  WholeProgramCallGraph.t
 (** Build the whole call graph of the program.
 
     The overrides must be computed first because we depend on a global shared memory graph to

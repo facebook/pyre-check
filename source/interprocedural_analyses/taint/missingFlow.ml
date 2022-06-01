@@ -114,7 +114,7 @@ let add_unknown_callee_models
           callees
       in
       let unknown_callees =
-        CallGraph.ProgramCallGraphHeap.fold
+        CallGraph.WholeProgramCallGraph.fold
           ~init:Target.Set.empty
           ~f:gather_unknown_callees
           call_graph

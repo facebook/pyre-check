@@ -419,7 +419,7 @@ let get_initial_models ~context =
 
 type test_environment = {
   static_analysis_configuration: Configuration.StaticAnalysis.t;
-  call_graph: CallGraph.ProgramCallGraphHeap.t;
+  call_graph: CallGraph.WholeProgramCallGraph.t;
   overrides: OverrideGraph.Heap.t;
   initial_callables: FetchCallables.t;
   stubs: Target.t list;

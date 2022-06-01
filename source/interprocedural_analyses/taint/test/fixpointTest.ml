@@ -48,7 +48,7 @@ let assert_fixpoint
       ~epoch:Fixpoint.Epoch.initial
   in
 
-  assert_bool "Call graph is empty!" (not (CallGraph.ProgramCallGraphHeap.is_empty call_graph));
+  assert_bool "Call graph is empty!" (not (CallGraph.WholeProgramCallGraph.is_empty call_graph));
   assert_equal
     ~msg:"Fixpoint iterations"
     expect_iterations

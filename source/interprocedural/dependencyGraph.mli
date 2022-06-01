@@ -26,7 +26,7 @@ module Reversed : sig
   val disjoint_union : t -> t -> t
   (** Merge two reverse dependency graph that do not have common callees. *)
 
-  val from_call_graph : CallGraph.ProgramCallGraphHeap.t -> t
+  val from_call_graph : CallGraph.WholeProgramCallGraph.t -> t
   (** Create a reverse dependency graph from a call graph. *)
 
   val from_overrides : OverrideGraph.Heap.t -> t
@@ -59,7 +59,7 @@ type whole_program_dependency_graph = {
 val build_whole_program_dependency_graph
   :  prune:bool ->
   initial_callables:FetchCallables.t ->
-  call_graph:CallGraph.ProgramCallGraphHeap.t ->
+  call_graph:CallGraph.WholeProgramCallGraph.t ->
   overrides:OverrideGraph.Heap.t ->
   whole_program_dependency_graph
 (** Merge overrides and callgraph into a combined dependency graph, and prune anything not linked to

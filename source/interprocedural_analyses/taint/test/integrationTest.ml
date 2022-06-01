@@ -96,7 +96,7 @@ let test_integration path context =
           "@%s\nCall dependencies\n%a"
           "generated"
           TargetGraph.pp
-          (CallGraph.ProgramCallGraphHeap.to_target_graph call_graph)
+          (CallGraph.WholeProgramCallGraph.to_target_graph call_graph)
       in
       create_expected_and_actual_files ~suffix:".cg" actual
     in
