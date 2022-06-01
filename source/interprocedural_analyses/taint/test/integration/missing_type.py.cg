@@ -1,7 +1,7 @@
 @generated
 Call dependencies
-missing_type.test_unknown_sink_attribute (fun) -> [_test_source (fun)]
-missing_type.test_unknown_source_attribute (fun) -> [_test_sink (fun)]
+missing_type.test_unknown_sink_attribute (fun) -> [_test_source (fun) missing_type.UnknownSinkAttribute.unknown (object)]
+missing_type.test_unknown_source_attribute (fun) -> [_test_sink (fun) missing_type.UnknownSourceAttribute.unknown (object)]
 missing_type.$toplevel (fun) -> []
 missing_type.test_unknown_sink_def (fun) -> [_test_source (fun)]
 missing_type.test_unknown_source_def (fun) -> [_test_sink (fun)]

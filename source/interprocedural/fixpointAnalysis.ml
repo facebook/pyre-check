@@ -479,8 +479,6 @@ module Make (Analysis : ANALYSIS) = struct
     { callables_processed = List.length callables; expensive_callables }
 
 
-  type dependency_graph = Target.t list Target.Map.t
-
   let compute_callables_to_reanalyze ~dependency_graph ~all_callables ~previous_callables ~step =
     let might_change_if_reanalyzed =
       List.fold previous_callables ~init:Target.Set.empty ~f:(fun accumulator callable ->
@@ -489,7 +487,7 @@ module Make (Analysis : ANALYSIS) = struct
           else
             (* callable must be re-analyzed next iteration because its result has changed, and
                therefore its callers must also be reanalyzed. *)
-            let callers = Target.Map.find dependency_graph callable |> Option.value ~default:[] in
+            let callers = DependencyGraph.dependencies dependency_graph callable in
             List.fold
               callers
               ~init:(Target.Set.add callable accumulator)

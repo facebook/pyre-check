@@ -18,3 +18,4 @@ module ClassHierarchyGraph = ClassHierarchyGraph
 module ClassInterval = ClassInterval
 module IntervalSet = IntervalSet
 module FetchCallables = FetchCallables
+module TargetGraph = TargetGraph

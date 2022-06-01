@@ -10,7 +10,6 @@ open Pyre
 module Target = Interprocedural.Target
 module TypeEnvironment = Analysis.TypeEnvironment
 module AstEnvironment = Analysis.AstEnvironment
-module DependencyGraph = Interprocedural.DependencyGraph
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 module OverrideGraph = Interprocedural.OverrideGraph
@@ -402,24 +401,6 @@ let build_class_intervals class_hierarchy_graph =
     ~phase_name:"Computing class intervals"
     ~timer
     ()
-
-
-(* Merge overrides and callgraph into a combined dependency graph, and prune anything not linked to
-   the callables we are actually analyzing. Then reverse the graph, which maps dependers to
-   dependees (i.e. override targets to overrides + callers to callees) into a scheduling graph that
-   maps dependees to dependers. *)
-let build_dependency_graph ~initial_callables ~callgraph ~override_dependencies =
-  let override_targets = Target.Map.keys override_dependencies in
-  let dependencies, callables_to_analyze =
-    let dependencies =
-      DependencyGraph.from_callgraph callgraph |> DependencyGraph.union override_dependencies
-    in
-    let { DependencyGraph.dependencies; pruned_callables } =
-      DependencyGraph.prune dependencies ~initial_callables
-    in
-    DependencyGraph.reverse dependencies, pruned_callables
-  in
-  dependencies, callables_to_analyze, override_targets
 
 
 let purge_shared_memory ~environment ~qualifiers =

@@ -39,10 +39,4 @@ val build_class_hierarchy_graph
 
 val build_class_intervals : ClassHierarchyGraph.t -> unit
 
-val build_dependency_graph
-  :  initial_callables:FetchCallables.t ->
-  callgraph:CallGraph.ProgramCallGraphHeap.t ->
-  override_dependencies:Target.t list Target.Map.t ->
-  DependencyGraph.t * Target.t list * Target.t list
-
 val purge_shared_memory : environment:TypeEnvironment.t -> qualifiers:Reference.t list -> unit

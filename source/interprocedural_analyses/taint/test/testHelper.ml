@@ -419,12 +419,10 @@ let get_initial_models ~context =
 
 type test_environment = {
   static_analysis_configuration: Configuration.StaticAnalysis.t;
-  callgraph: CallGraph.ProgramCallGraphHeap.t;
-  overrides: DependencyGraph.t;
-  callables_to_analyze: Target.t list;
-  initial_callables: Target.t list;
+  call_graph: CallGraph.ProgramCallGraphHeap.t;
+  overrides: OverrideGraph.Heap.t;
+  initial_callables: FetchCallables.t;
   stubs: Target.t list;
-  override_targets: Target.t list;
   initial_models: Registry.t;
   environment: TypeEnvironment.ReadOnly.t;
 }
@@ -498,7 +496,7 @@ let initialize
       ~source
   in
   let stubs = Interprocedural.FetchCallables.get_stubs initial_callables in
-  let initial_callables = Interprocedural.FetchCallables.get_callables initial_callables in
+  let callables = Interprocedural.FetchCallables.get_callables initial_callables in
   let user_models, skip_overrides =
     let models_source =
       match models_source, add_initial_models with
@@ -515,7 +513,7 @@ let initialize
             ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~configuration:taint_configuration
-            ~callables:(Some (Target.HashSet.of_list initial_callables))
+            ~callables:(Some (Target.HashSet.of_list callables))
             ~stubs:(Target.HashSet.of_list stubs)
             ()
         in
@@ -534,7 +532,7 @@ let initialize
             ~rule_filter:None
             ~rules
             ~models
-            ~callables:(List.rev_append stubs initial_callables)
+            ~callables:(List.rev_append stubs callables)
             ~stubs:(Target.HashSet.of_list stubs)
             ~environment
         in
@@ -553,42 +551,35 @@ let initialize
   let initial_models = Registry.merge inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
   let overrides =
-    let overrides =
-      OverrideGraph.Heap.from_source ~environment ~include_unit_tests:true ~source
-      |> OverrideGraph.Heap.skip_overrides ~to_skip:skip_overrides
-    in
-    let () = OverrideGraph.SharedMemory.from_heap overrides in
-    DependencyGraph.from_overrides overrides
+    OverrideGraph.Heap.from_source ~environment ~include_unit_tests:true ~source
+    |> OverrideGraph.Heap.skip_overrides ~to_skip:skip_overrides
   in
+  let () = OverrideGraph.SharedMemory.from_heap overrides in
 
-  let override_targets = Target.Map.keys overrides in
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
   (* The call graph building depends on initial models for global targets. *)
-  let callgraph =
+  let call_graph =
     Interprocedural.CallGraph.build_whole_program_call_graph
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~environment
       ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)
-      ~callables:initial_callables
+      ~callables
   in
-  let callables_to_analyze = List.rev_append override_targets initial_callables in
   let initial_models =
-    MissingFlow.add_unknown_callee_models ~static_analysis_configuration ~callgraph ~initial_models
+    MissingFlow.add_unknown_callee_models ~static_analysis_configuration ~call_graph ~initial_models
   in
   let class_hierarchy_graph = ClassHierarchyGraph.from_source ~environment ~source in
   Interprocedural.IntervalSet.compute_intervals class_hierarchy_graph
   |> Interprocedural.IntervalSet.SharedMemory.store;
   {
     static_analysis_configuration;
-    callgraph;
+    call_graph;
     overrides;
-    callables_to_analyze;
     initial_callables;
     stubs;
-    override_targets;
     initial_models;
     environment;
   }

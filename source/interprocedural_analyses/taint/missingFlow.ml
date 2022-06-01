@@ -94,7 +94,7 @@ let add_obscure_models
 
 let add_unknown_callee_models
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
-    ~callgraph
+    ~call_graph
     ~initial_models
   =
   let find_missing_flows =
@@ -117,7 +117,7 @@ let add_unknown_callee_models
         CallGraph.ProgramCallGraphHeap.fold
           ~init:Target.Set.empty
           ~f:gather_unknown_callees
-          callgraph
+          call_graph
       in
       let add_model target models =
         Registry.set models ~target ~model:(unknown_callee_model target)

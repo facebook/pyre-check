@@ -332,12 +332,11 @@ let run_taint_analysis
             ~maximum_overrides:(TaintConfiguration.get_maximum_overrides_to_analyze ())
             ~qualifiers)
     in
-    let override_dependencies = Interprocedural.DependencyGraph.from_overrides overrides in
     Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
 
     Log.info "Building call graph...";
     let timer = Timer.start () in
-    let callgraph =
+    let call_graph =
       Interprocedural.CallGraph.build_whole_program_call_graph
         ~scheduler
         ~static_analysis_configuration
@@ -350,11 +349,18 @@ let run_taint_analysis
 
     Log.info "Computing dependencies...";
     let timer = Timer.start () in
-    let dependency_graph, callables_to_analyze, override_targets =
-      Service.StaticAnalysis.build_dependency_graph
+    let {
+      Interprocedural.DependencyGraph.dependency_graph;
+      override_targets;
+      callables_kept;
+      callables_to_analyze;
+    }
+      =
+      Interprocedural.DependencyGraph.build_whole_program_dependency_graph
+        ~prune:true
         ~initial_callables
-        ~callgraph
-        ~override_dependencies
+        ~call_graph
+        ~overrides
     in
     Statistics.performance
       ~name:"Computed dependencies"
@@ -365,7 +371,7 @@ let run_taint_analysis
     let initial_models =
       MissingFlow.add_unknown_callee_models
         ~static_analysis_configuration
-        ~callgraph
+        ~call_graph
         ~initial_models
     in
 
@@ -381,8 +387,7 @@ let run_taint_analysis
     Log.info
       "Analysis fixpoint started for %d overrides and %d functions..."
       (List.length override_targets)
-      (List.length callables_to_analyze);
-    let callables_to_analyze = List.rev_append override_targets callables_to_analyze in
+      (List.length callables_kept);
     let fixpoint_timer = Timer.start () in
     let fixpoint_state =
       Taint.Fixpoint.compute

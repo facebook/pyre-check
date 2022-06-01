@@ -23,24 +23,15 @@ let assert_fixpoint
     ~expect:{ iterations = expect_iterations; expect }
   =
   let scheduler = Test.mock_scheduler () in
-  let {
-    callables_to_analyze;
-    callgraph;
-    environment;
-    overrides;
-    initial_models;
-    initial_callables;
-    stubs;
-    override_targets;
-    _;
-  }
-    =
+  let { call_graph; environment; overrides; initial_models; initial_callables; stubs; _ } =
     initialize ?models_source ~handle:"qualifier.py" ~context source
   in
-  let dependency_graph =
-    DependencyGraph.from_callgraph callgraph
-    |> DependencyGraph.union overrides
-    |> DependencyGraph.reverse
+  let { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ } =
+    Interprocedural.DependencyGraph.build_whole_program_dependency_graph
+      ~prune:false
+      ~initial_callables
+      ~call_graph
+      ~overrides
   in
   let fixpoint_state =
     Fixpoint.compute
@@ -48,7 +39,7 @@ let assert_fixpoint
       ~type_environment:environment
       ~context:{ Fixpoint.Analysis.environment }
       ~dependency_graph
-      ~initial_callables
+      ~initial_callables:(Interprocedural.FetchCallables.get_callables initial_callables)
       ~stubs
       ~override_targets
       ~callables_to_analyze
@@ -57,7 +48,7 @@ let assert_fixpoint
       ~epoch:Fixpoint.Epoch.initial
   in
 
-  assert_bool "Call graph is empty!" (not (CallGraph.ProgramCallGraphHeap.is_empty callgraph));
+  assert_bool "Call graph is empty!" (not (CallGraph.ProgramCallGraphHeap.is_empty call_graph));
   assert_equal
     ~msg:"Fixpoint iterations"
     expect_iterations

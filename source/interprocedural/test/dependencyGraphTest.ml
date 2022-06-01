@@ -98,8 +98,9 @@ let compare_dependency_graph call_graph ~expected =
 let assert_call_graph ?update_environment_with ~context source ~expected =
   let graph =
     create_call_graph ?update_environment_with ~context source
-    |> DependencyGraph.from_callgraph
-    |> Target.Map.to_alist
+    |> DependencyGraph.Reversed.from_call_graph
+    |> DependencyGraph.Reversed.to_target_graph
+    |> TargetGraph.to_alist
   in
   compare_dependency_graph graph ~expected
 
@@ -107,9 +108,10 @@ let assert_call_graph ?update_environment_with ~context source ~expected =
 let assert_reverse_call_graph ~context source ~expected =
   let graph =
     create_call_graph ~context source
-    |> DependencyGraph.from_callgraph
-    |> DependencyGraph.reverse
-    |> Target.Map.to_alist
+    |> DependencyGraph.Reversed.from_call_graph
+    |> DependencyGraph.Reversed.reverse
+    |> DependencyGraph.to_target_graph
+    |> TargetGraph.to_alist
   in
   compare_dependency_graph graph ~expected
 
@@ -482,135 +484,6 @@ let test_type_collection context =
     ~expected:[4, 0, "$local_0$a.foo.(...).foo.(...)", "test2.A.foo"]
 
 
-let test_strongly_connected_components context =
-  let assert_strongly_connected_components source ~handle ~expected =
-    let expected = List.map expected ~f:(List.map ~f:create_callable) in
-    let source, environment, configuration = setup ~context ~handle source in
-    let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-    let callables =
-      FetchCallables.from_source
-        ~configuration
-        ~resolution:(TypeEnvironment.ReadOnly.global_resolution environment)
-        ~include_unit_tests:true
-        ~source
-      |> FetchCallables.get_callables
-    in
-    let call_graph =
-      let fold call_graph callable =
-        let callees =
-          CallGraph.call_graph_of_callable
-            ~static_analysis_configuration
-            ~environment
-            ~attribute_targets:(Target.HashSet.create ())
-            ~callable
-          |> CallGraph.DefineCallGraph.all_targets
-        in
-        CallGraph.ProgramCallGraphHeap.add_or_exn call_graph ~callable ~callees
-      in
-      List.fold ~init:CallGraph.ProgramCallGraphHeap.empty ~f:fold callables
-    in
-    let partitions =
-      let edges = DependencyGraph.from_callgraph call_graph in
-      DependencyGraph.partition ~edges
-    in
-    let printer partitions = Format.asprintf "%a" DependencyGraph.pp_partitions partitions in
-    assert_equal ~printer expected partitions
-  in
-  assert_strongly_connected_components
-    {|
-    class Foo:
-      def __init__(self):
-        pass
-
-      def c1(self):
-        return self.c1()
-
-      def c2(self):
-        return self.c1()
-    |}
-    ~handle:"s0.py"
-    ~expected:
-      [
-        [`Function "s0.$toplevel"];
-        [`Method "s0.Foo.$class_toplevel"];
-        [`Method "s0.Foo.__init__"];
-        [`Method "s0.Foo.c1"];
-        [`Method "s0.Foo.c2"];
-      ];
-  assert_strongly_connected_components
-    {|
-    class Foo:
-      def __init__(self):
-        pass
-
-      def c1(self):
-        return self.c2()
-
-      def c2(self):
-        return self.c1()
-
-      def c3(self):
-        return self.c4()
-
-      def c4(self):
-        return self.c3() + self.c2()
-
-      def c5(self):
-        return self.c5()
-    |}
-    ~handle:"s1.py"
-    ~expected:
-      [
-        [`Function "s1.$toplevel"];
-        [`Method "s1.Foo.$class_toplevel"];
-        [`Method "s1.Foo.__init__"];
-        [`Method "s1.Foo.c1"; `Method "s1.Foo.c2"];
-        [`Method "s1.Foo.c3"; `Method "s1.Foo.c4"];
-        [`Method "s1.Foo.c5"];
-      ];
-  assert_strongly_connected_components
-    {|
-    class Foo:
-      def __init__(self):
-        pass
-
-      def c1(self):
-        return self.c2()
-
-      def c2(self):
-        return self.c1()
-
-      def c3(self):
-        b = Bar()
-        return b.c2()
-
-    class Bar:
-      def __init__(self):
-        return Foo()
-
-      def c1(self):
-        f = Foo()
-        return f.c1()
-
-      def c2(self):
-        f = Foo()
-        return f.c3()
-    |}
-    ~handle:"s2.py"
-    ~expected:
-      [
-        [`Function "s2.$toplevel"];
-        [`Method "s2.Bar.$class_toplevel"];
-        [`Method "object.__new__"];
-        [`Method "s2.Foo.__init__"];
-        [`Method "s2.Bar.__init__"];
-        [`Method "s2.Foo.c1"; `Method "s2.Foo.c2"];
-        [`Method "s2.Bar.c1"];
-        [`Method "s2.Bar.c2"; `Method "s2.Foo.c3"];
-        [`Method "s2.Foo.$class_toplevel"];
-      ]
-
-
 let test_prune_callables _ =
   let open Ast in
   let open Interprocedural in
@@ -653,13 +526,19 @@ let test_prune_callables _ =
         stubs = [];
       }
     in
-    let overrides = DependencyGraph.from_overrides overrides in
+    let overrides = DependencyGraph.Reversed.from_overrides overrides in
     let dependencies =
-      DependencyGraph.from_callgraph callgraph |> DependencyGraph.union overrides
+      DependencyGraph.Reversed.from_call_graph callgraph
+      |> DependencyGraph.Reversed.disjoint_union overrides
     in
-    let { DependencyGraph.dependencies = actual_dependencies; pruned_callables = actual_callables } =
-      DependencyGraph.prune dependencies ~initial_callables
+    let {
+      DependencyGraph.Reversed.reverse_dependency_graph = actual_dependencies;
+      callables_kept = actual_callables;
+    }
+      =
+      DependencyGraph.Reversed.prune dependencies ~initial_callables
     in
+    let actual_dependencies = DependencyGraph.Reversed.to_target_graph actual_dependencies in
     assert_equal
       ~cmp:(List.equal Target.equal)
       ~printer:(List.to_string ~f:Target.show_pretty)
@@ -670,13 +549,15 @@ let test_prune_callables _ =
       ~cmp:
         (List.equal (fun (left_key, left_values) (right_key, right_values) ->
              Target.equal left_key right_key && List.equal Target.equal left_values right_values))
-      ~printer:
-        (List.to_string ~f:(fun (key, values) ->
-             Format.asprintf
-               "%a: %s"
-               Target.pp_pretty
-               key
-               (List.to_string values ~f:Target.show_pretty)))
+      ~printer:(fun graph ->
+        graph
+        |> List.map ~f:(fun (key, values) ->
+               Format.asprintf
+                 "%a -> %s"
+                 Target.pp_pretty
+                 key
+                 (List.to_string values ~f:Target.show_pretty))
+        |> String.concat ~sep:"\n")
       (List.map expected_dependencies ~f:(fun (key, values) ->
            ( create (Reference.create key),
              List.map values ~f:(fun value -> create (Reference.create value)) )))
@@ -739,7 +620,7 @@ let test_prune_callables _ =
         "external.called_by_override", [];
         "external.C.m", [];
         "external.D.m", ["external.called_by_override"];
-        "O|external.C.m", ["external.C.m"; "O|external.D.m"];
+        "O|external.C.m", ["O|external.D.m"; "external.C.m"];
         "O|external.D.m", ["external.D.m"];
       ];
   (* The calls go away if we don't have the override between C and D. *)
@@ -797,8 +678,8 @@ let test_prune_callables _ =
         "external.C.m", [];
         "external.D.m", [];
         "external.E.m", ["external.called_by_override"];
-        "O|external.C.m", ["external.C.m"; "O|external.D.m"];
-        "O|external.D.m", ["external.D.m"; "O|external.E.m"];
+        "O|external.C.m", ["O|external.D.m"; "external.C.m"];
+        "O|external.D.m", ["O|external.E.m"; "external.D.m"];
         "O|external.E.m", ["external.E.m"];
       ];
   (* Strongly connected components are handled fine. *)
@@ -835,7 +716,6 @@ let () =
          "type_collection" >:: test_type_collection;
          "build" >:: test_construction;
          "build_reverse" >:: test_construction_reverse;
-         "strongly_connected_components" >:: test_strongly_connected_components;
          "prune_callables" >:: test_prune_callables;
        ]
   |> Test.run

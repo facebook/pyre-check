@@ -153,14 +153,11 @@ module Make (Analysis : ANALYSIS) : sig
 
   type t
 
-  (* TODO(T117715045): Define a proper dependency graph module and type. *)
-  type dependency_graph = Target.t list Target.Map.t
-
   val compute
     :  scheduler:Scheduler.t ->
     type_environment:TypeEnvironment.ReadOnly.t ->
     context:Analysis.context ->
-    dependency_graph:dependency_graph ->
+    dependency_graph:DependencyGraph.t ->
     initial_callables:Target.t list ->
     stubs:Target.t list ->
     override_targets:Target.t list ->

@@ -9,6 +9,8 @@ open Core
 
 type t = Target.t list Target.Map.t
 
+let to_alist = Target.Map.to_alist
+
 let dump ~path graph =
   let module Buffer = Caml.Buffer in
   let buffer = Buffer.create 1024 in
@@ -33,3 +35,18 @@ let dump ~path graph =
 
   (* Write to file. *)
   path |> File.create ~content:(Buffer.contents buffer) |> File.write
+
+
+let pp formatter edges =
+  let pp_edge (callable, data) =
+    let targets =
+      List.map data ~f:Target.show_pretty_with_kind
+      |> List.sort ~compare:String.compare
+      |> String.concat ~sep:" "
+    in
+    Format.fprintf formatter "%a -> [%s]\n" Target.pp_pretty_with_kind callable targets
+  in
+  let compare (left, _) (right, _) =
+    String.compare (Target.show_internal left) (Target.show_internal right)
+  in
+  Target.Map.to_alist edges |> List.sort ~compare |> List.iter ~f:pp_edge

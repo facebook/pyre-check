@@ -91,34 +91,35 @@ let test_integration path context =
     in
     let handle = PyrePath.show path |> String.split ~on:'/' |> List.last_exn in
     let create_call_graph_files call_graph =
-      let dependencies = DependencyGraph.from_callgraph call_graph in
       let actual =
-        Format.asprintf "@%s\nCall dependencies\n%a" "generated" DependencyGraph.pp dependencies
+        Format.asprintf
+          "@%s\nCall dependencies\n%a"
+          "generated"
+          TargetGraph.pp
+          (CallGraph.ProgramCallGraphHeap.to_target_graph call_graph)
       in
       create_expected_and_actual_files ~suffix:".cg" actual
     in
     let create_overrides_files overrides =
-      let actual = Format.asprintf "@%s\nOverrides\n%a" "generated" DependencyGraph.pp overrides in
+      let actual =
+        Format.asprintf
+          "@%s\nOverrides\n%a"
+          "generated"
+          TargetGraph.pp
+          (DependencyGraph.Reversed.to_target_graph
+             (DependencyGraph.Reversed.from_overrides overrides))
+      in
       create_expected_and_actual_files ~suffix:".overrides" actual
     in
-    let {
-      callables_to_analyze;
-      callgraph;
-      environment;
-      overrides;
-      initial_models;
-      initial_callables;
-      stubs;
-      override_targets;
-      _;
-    }
-      =
+    let { call_graph; environment; overrides; initial_models; initial_callables; stubs; _ } =
       initialize ~handle ?models_source ~add_initial_models ~taint_configuration ~context source
     in
-    let dependency_graph =
-      DependencyGraph.from_callgraph callgraph
-      |> DependencyGraph.union overrides
-      |> DependencyGraph.reverse
+    let { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ } =
+      DependencyGraph.build_whole_program_dependency_graph
+        ~prune:false
+        ~initial_callables
+        ~call_graph
+        ~overrides
     in
     let fixpoint_state =
       Fixpoint.compute
@@ -126,7 +127,7 @@ let test_integration path context =
         ~type_environment:environment
         ~context:{ Fixpoint.Analysis.environment }
         ~dependency_graph
-        ~initial_callables
+        ~initial_callables:(FetchCallables.get_callables initial_callables)
         ~stubs
         ~override_targets
         ~callables_to_analyze
@@ -147,7 +148,7 @@ let test_integration path context =
       externalization
     in
 
-    let divergent_files = [create_call_graph_files callgraph; create_overrides_files overrides] in
+    let divergent_files = [create_call_graph_files call_graph; create_overrides_files overrides] in
     let serialized_models =
       List.rev_append (Registry.targets initial_models) callables_to_analyze
       |> Target.Set.of_list
