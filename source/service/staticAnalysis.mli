@@ -24,5 +24,3 @@ module Cache : sig
     (unit -> OverrideGraph.Heap.cap_overrides_result) ->
     OverrideGraph.Heap.cap_overrides_result
 end
-
-val parse_and_save_decorators_to_skip : inline_decorators:bool -> Configuration.Analysis.t -> unit

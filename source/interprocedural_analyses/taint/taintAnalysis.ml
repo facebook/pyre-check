@@ -36,6 +36,28 @@ let initialize_configuration
     ()
 
 
+let parse_and_save_decorators_to_skip
+    ~inline_decorators
+    { Configuration.Analysis.taint_model_paths; _ }
+  =
+  Analysis.InlineDecorator.set_should_inline_decorators inline_decorators;
+  if inline_decorators then (
+    let timer = Timer.start () in
+    Log.info "Getting decorators to skip when inlining...";
+    let model_sources = ModelParser.get_model_sources ~paths:taint_model_paths in
+    let decorators_to_skip =
+      List.concat_map model_sources ~f:(fun (path, source) ->
+          Analysis.InlineDecorator.decorators_to_skip ~path source)
+    in
+    List.iter decorators_to_skip ~f:(fun decorator ->
+        Analysis.InlineDecorator.DecoratorsToSkip.add decorator decorator);
+    Statistics.performance
+      ~name:"Getting decorators to skip when inlining"
+      ~phase_name:"Getting decorators to skip when inlining"
+      ~timer
+      ())
+
+
 (** Perform a full type check and build a type environment. *)
 let type_check ~scheduler ~configuration ~cache =
   Service.StaticAnalysis.Cache.type_environment cache (fun () ->
@@ -287,8 +309,10 @@ let run_taint_analysis
 
     (* Collect decorators to skip before type-checking because decorator inlining happens in an
        early phase of type-checking and needs to know which decorators to skip. *)
-    Service.StaticAnalysis.parse_and_save_decorators_to_skip ~inline_decorators configuration;
+    let () = parse_and_save_decorators_to_skip ~inline_decorators configuration in
+
     let cache = Service.StaticAnalysis.Cache.load ~scheduler ~configuration ~enabled:use_cache in
+
     let environment = type_check ~scheduler ~configuration ~cache in
 
     let qualifiers =
