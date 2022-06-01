@@ -321,21 +321,6 @@ module Cache = struct
         class_hierarchy_graph
 end
 
-(* Perform a full type check and build a type environment. *)
-let type_check ~scheduler ~configuration ~cache =
-  Cache.type_environment cache (fun () ->
-      let configuration =
-        (* In order to get an accurate call graph and type information, we need to ensure that we
-           schedule a type check for external files. *)
-        { configuration with Configuration.Analysis.analyze_external_sources = true }
-      in
-      Check.check
-        ~scheduler
-        ~configuration
-        ~call_graph_builder:(module Analysis.Callgraph.NullBuilder)
-      |> fun { environment; _ } -> environment)
-
-
 let parse_and_save_decorators_to_skip
     ~inline_decorators
     { Configuration.Analysis.taint_model_paths; _ }
@@ -356,11 +341,3 @@ let parse_and_save_decorators_to_skip
       ~phase_name:"Getting decorators to skip when inlining"
       ~timer
       ())
-
-
-let purge_shared_memory ~environment ~qualifiers =
-  (* Aggressively remove things we do not need anymore from the shared memory. *)
-  let ast_environment = TypeEnvironment.ast_environment environment in
-  AstEnvironment.remove_sources ast_environment qualifiers;
-  Memory.SharedMemory.collect `aggressive;
-  ()

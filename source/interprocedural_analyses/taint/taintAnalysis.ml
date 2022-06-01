@@ -36,6 +36,21 @@ let initialize_configuration
     ()
 
 
+(** Perform a full type check and build a type environment. *)
+let type_check ~scheduler ~configuration ~cache =
+  Service.StaticAnalysis.Cache.type_environment cache (fun () ->
+      let configuration =
+        (* In order to get an accurate call graph and type information, we need to ensure that we
+           schedule a type check for external files. *)
+        { configuration with Configuration.Analysis.analyze_external_sources = true }
+      in
+      Service.Check.check
+        ~scheduler
+        ~configuration
+        ~call_graph_builder:(module Analysis.Callgraph.NullBuilder)
+      |> fun { environment; _ } -> environment)
+
+
 let join_parse_result
     {
       ModelParser.models = models_left;
@@ -246,6 +261,14 @@ let initialize_models ~scheduler ~static_analysis_configuration ~environment ~ca
   { ModelParser.models; skip_overrides; queries = []; errors }
 
 
+(** Aggressively remove things we do not need anymore from the shared memory. *)
+let purge_shared_memory ~environment ~qualifiers =
+  let ast_environment = Analysis.TypeEnvironment.ast_environment environment in
+  Analysis.AstEnvironment.remove_sources ast_environment qualifiers;
+  Memory.SharedMemory.collect `aggressive;
+  ()
+
+
 let run_taint_analysis
     ~static_analysis_configuration:
       ({
@@ -266,7 +289,7 @@ let run_taint_analysis
        early phase of type-checking and needs to know which decorators to skip. *)
     Service.StaticAnalysis.parse_and_save_decorators_to_skip ~inline_decorators configuration;
     let cache = Service.StaticAnalysis.Cache.load ~scheduler ~configuration ~enabled:use_cache in
-    let environment = Service.StaticAnalysis.type_check ~scheduler ~configuration ~cache in
+    let environment = type_check ~scheduler ~configuration ~cache in
 
     let qualifiers =
       Analysis.TypeEnvironment.module_tracker environment
@@ -395,7 +418,7 @@ let run_taint_analysis
 
     Log.info "Purging shared memory...";
     let timer = Timer.start () in
-    let () = Service.StaticAnalysis.purge_shared_memory ~environment ~qualifiers in
+    let () = purge_shared_memory ~environment ~qualifiers in
     Statistics.performance
       ~name:"Purged shared memory"
       ~phase_name:"Purging shared memory"
