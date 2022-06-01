@@ -131,3 +131,27 @@ let join ({ roots = _; edges = edges_left } as left) { roots = roots_right; edge
   in
   let roots = ClassNameSet.fold add_root roots_right roots in
   { roots; edges }
+
+
+let get_source ~environment qualifier =
+  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+  AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
+
+
+let from_qualifiers ~scheduler ~environment ~qualifiers =
+  let build_class_hierarchy_graph _ qualifiers =
+    List.fold qualifiers ~init:empty ~f:(fun accumulator qualifier ->
+        match get_source ~environment qualifier with
+        | Some source ->
+            let graph = from_source ~environment ~source in
+            join accumulator graph
+        | None -> accumulator)
+  in
+  Scheduler.map_reduce
+    scheduler
+    ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
+    ~initial:empty
+    ~map:build_class_hierarchy_graph
+    ~reduce:join
+    ~inputs:qualifiers
+    ()

@@ -358,51 +358,6 @@ let parse_and_save_decorators_to_skip
       ())
 
 
-let get_source ~environment qualifier =
-  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
-  AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
-
-
-let build_class_hierarchy_graph ~scheduler ~cache ~environment ~qualifiers =
-  Cache.class_hierarchy_graph cache (fun () ->
-      let timer = Timer.start () in
-      let build_class_hierarchy_graph _ qualifiers =
-        List.fold qualifiers ~init:ClassHierarchyGraph.empty ~f:(fun accumulator qualifier ->
-            match get_source ~environment qualifier with
-            | Some source ->
-                let graph = ClassHierarchyGraph.from_source ~environment ~source in
-                ClassHierarchyGraph.join accumulator graph
-            | None -> accumulator)
-      in
-      let class_hierarchy_graph =
-        Scheduler.map_reduce
-          scheduler
-          ~policy:(Scheduler.Policy.legacy_fixed_chunk_count ())
-          ~initial:ClassHierarchyGraph.empty
-          ~map:build_class_hierarchy_graph
-          ~reduce:ClassHierarchyGraph.join
-          ~inputs:qualifiers
-          ()
-      in
-      Statistics.performance
-        ~name:"Computed class hierarchy graph"
-        ~phase_name:"Computing class hierarchy graph"
-        ~timer
-        ();
-      class_hierarchy_graph)
-
-
-let build_class_intervals class_hierarchy_graph =
-  let timer = Timer.start () in
-  Interprocedural.IntervalSet.compute_intervals class_hierarchy_graph
-  |> Interprocedural.IntervalSet.SharedMemory.store;
-  Statistics.performance
-    ~name:"Computed class intervals"
-    ~phase_name:"Computing class intervals"
-    ~timer
-    ()
-
-
 let purge_shared_memory ~environment ~qualifiers =
   (* Aggressively remove things we do not need anymore from the shared memory. *)
   let ast_environment = TypeEnvironment.ast_environment environment in

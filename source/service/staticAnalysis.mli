@@ -14,6 +14,8 @@ module Cache : sig
 
   val load : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> enabled:bool -> t
 
+  val class_hierarchy_graph : t -> (unit -> ClassHierarchyGraph.t) -> ClassHierarchyGraph.t
+
   val initial_callables : t -> (unit -> FetchCallables.t) -> FetchCallables.t
 
   val override_graph
@@ -29,14 +31,5 @@ val type_check
   TypeEnvironment.t
 
 val parse_and_save_decorators_to_skip : inline_decorators:bool -> Configuration.Analysis.t -> unit
-
-val build_class_hierarchy_graph
-  :  scheduler:Scheduler.t ->
-  cache:Cache.t ->
-  environment:TypeEnvironment.ReadOnly.t ->
-  qualifiers:Reference.t list ->
-  ClassHierarchyGraph.t
-
-val build_class_intervals : ClassHierarchyGraph.t -> unit
 
 val purge_shared_memory : environment:TypeEnvironment.t -> qualifiers:Reference.t list -> unit

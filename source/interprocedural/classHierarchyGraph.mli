@@ -37,3 +37,9 @@ val create : roots:class_name list -> edges:(class_name * class_name list) list 
 val roots : t -> ClassNameSet.t
 
 val join : t -> t -> t
+
+val from_qualifiers
+  :  scheduler:Scheduler.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
+  qualifiers:Reference.t list ->
+  t

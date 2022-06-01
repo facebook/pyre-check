@@ -277,14 +277,32 @@ let run_taint_analysis
     let read_only_environment = Analysis.TypeEnvironment.read_only environment in
 
     let class_hierarchy_graph =
-      Service.StaticAnalysis.build_class_hierarchy_graph
-        ~scheduler
-        ~cache
-        ~environment:read_only_environment
-        ~qualifiers
+      Service.StaticAnalysis.Cache.class_hierarchy_graph cache (fun () ->
+          let timer = Timer.start () in
+          let class_hierarchy_graph =
+            Interprocedural.ClassHierarchyGraph.from_qualifiers
+              ~scheduler
+              ~environment:read_only_environment
+              ~qualifiers
+          in
+          Statistics.performance
+            ~name:"Computed class hierarchy graph"
+            ~phase_name:"Computing class hierarchy graph"
+            ~timer
+            ();
+          class_hierarchy_graph)
     in
 
-    let _ = Service.StaticAnalysis.build_class_intervals class_hierarchy_graph in
+    let () =
+      let timer = Timer.start () in
+      Interprocedural.IntervalSet.compute_intervals class_hierarchy_graph
+      |> Interprocedural.IntervalSet.SharedMemory.store;
+      Statistics.performance
+        ~name:"Computed class intervals"
+        ~phase_name:"Computing class intervals"
+        ~timer
+        ()
+    in
 
     let initial_callables =
       Service.StaticAnalysis.Cache.initial_callables cache (fun () ->
