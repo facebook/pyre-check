@@ -466,15 +466,6 @@ module ReadOnly = struct
     get_raw_source: Reference.t -> (Source.t, ParserError.t) Result.t option;
   }
 
-  let create
-      ~module_tracker
-      ?(get_processed_source = fun ~track_dependency:_ _ -> None)
-      ?(get_raw_source = fun _ -> None)
-      ()
-    =
-    { module_tracker; get_processed_source; get_raw_source }
-
-
   let configuration { module_tracker; _ } = ModuleTracker.ReadOnly.configuration module_tracker
 
   let get_source_path { module_tracker; _ } =

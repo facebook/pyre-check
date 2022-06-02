@@ -23,13 +23,6 @@ end
 module ReadOnly : sig
   type t
 
-  val create
-    :  module_tracker:ModuleTracker.ReadOnly.t ->
-    ?get_processed_source:(track_dependency:bool -> Reference.t -> Source.t option) ->
-    ?get_raw_source:(Reference.t -> (Source.t, ParserError.t) Result.t option) ->
-    unit ->
-    t
-
   val get_processed_source : t -> ?track_dependency:bool -> Reference.t -> Source.t option
 
   val get_raw_source : t -> Reference.t -> (Source.t, ParserError.t) Result.t option
