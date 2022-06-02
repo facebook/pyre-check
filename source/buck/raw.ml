@@ -62,8 +62,8 @@ exception
 [@@deriving sexp_of]
 
 type t = {
-  query: ?isolation_prefix:string -> string list -> string Lwt.t;
-  build: ?isolation_prefix:string -> string list -> string Lwt.t;
+  query: ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t;
+  build: ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t;
 }
 
 let create_for_testing ~query ~build () = { query; build }
@@ -82,6 +82,11 @@ let isolation_prefix_to_buck2_arguments = function
   | Some isolation_prefix ->
       (* Consistent directory location with Buck v1 *)
       ["--isolation-dir"; Format.sprintf "%s-buck-out" isolation_prefix]
+
+
+let mode_to_buck_arguments = function
+  | None -> []
+  | Some mode -> [mode]
 
 
 let consume_stderr ~log_buffer stderr_channel =
@@ -137,7 +142,7 @@ let on_completion ~arguments ~log_buffer = function
 
 let create ?(additional_log_size = 0) () =
   let open Lwt.Infix in
-  let invoke_buck ?isolation_prefix arguments =
+  let invoke_buck ?mode ?isolation_prefix arguments =
     arguments
     |> Core.List.map ~f:(Format.sprintf "'%s'")
     |> Core.String.concat ~sep:" "
@@ -152,24 +157,36 @@ let create ?(additional_log_size = 0) () =
         Lwt_io.flush output_channel
         >>= fun () ->
         let arguments =
-          List.append
-            (isolation_prefix_to_buck_arguments isolation_prefix)
-            [Format.sprintf "@%s" filename]
+          List.concat
+            [
+              isolation_prefix_to_buck_arguments isolation_prefix;
+              mode_to_buck_arguments mode;
+              [Format.sprintf "@%s" filename];
+            ]
         in
         let consume_stderr = consume_stderr ~log_buffer in
         LwtSubprocess.run "buck1" ~arguments ~consume_stderr)
     >>= fun result ->
-    let arguments = List.append (isolation_prefix_to_buck_arguments isolation_prefix) arguments in
+    let arguments =
+      List.concat
+        [
+          isolation_prefix_to_buck_arguments isolation_prefix; mode_to_buck_arguments mode; arguments;
+        ]
+    in
     on_completion ~arguments ~log_buffer result
   in
-  let query ?isolation_prefix arguments = invoke_buck ?isolation_prefix ("query" :: arguments) in
-  let build ?isolation_prefix arguments = invoke_buck ?isolation_prefix ("build" :: arguments) in
+  let query ?mode ?isolation_prefix arguments =
+    invoke_buck ?mode ?isolation_prefix ("query" :: arguments)
+  in
+  let build ?mode ?isolation_prefix arguments =
+    invoke_buck ?mode ?isolation_prefix ("build" :: arguments)
+  in
   { query; build }
 
 
 let create_v2 ?(additional_log_size = 0) () =
   let open Lwt.Infix in
-  let invoke_buck ?isolation_prefix arguments =
+  let invoke_buck ?mode ?isolation_prefix arguments =
     arguments
     |> Core.List.map ~f:(Format.sprintf "'%s'")
     |> Core.String.concat ~sep:" "
@@ -184,18 +201,32 @@ let create_v2 ?(additional_log_size = 0) () =
         Lwt_io.flush output_channel
         >>= fun () ->
         let arguments =
-          List.append
-            (isolation_prefix_to_buck2_arguments isolation_prefix)
-            [Format.sprintf "@%s" filename]
+          List.concat
+            [
+              isolation_prefix_to_buck2_arguments isolation_prefix;
+              mode_to_buck_arguments mode;
+              [Format.sprintf "@%s" filename];
+            ]
         in
         let consume_stderr = consume_stderr ~log_buffer in
         LwtSubprocess.run "buck2" ~arguments ~consume_stderr)
     >>= fun result ->
-    let arguments = List.append (isolation_prefix_to_buck2_arguments isolation_prefix) arguments in
+    let arguments =
+      List.concat
+        [
+          isolation_prefix_to_buck2_arguments isolation_prefix;
+          mode_to_buck_arguments mode;
+          arguments;
+        ]
+    in
     on_completion ~arguments ~log_buffer result
   in
-  let query ?isolation_prefix arguments = invoke_buck ?isolation_prefix ("query" :: arguments) in
-  let build ?isolation_prefix arguments = invoke_buck ?isolation_prefix ("build" :: arguments) in
+  let query ?mode ?isolation_prefix arguments =
+    invoke_buck ?mode ?isolation_prefix ("query" :: arguments)
+  in
+  let build ?mode ?isolation_prefix arguments =
+    invoke_buck ?mode ?isolation_prefix ("build" :: arguments)
+  in
   { query; build }
 
 

@@ -332,26 +332,26 @@ module Raw : sig
       default, the size is set to 0, which means no additional log will be kept. *)
 
   val create_for_testing
-    :  query:(?isolation_prefix:string -> string list -> string Lwt.t) ->
-    build:(?isolation_prefix:string -> string list -> string Lwt.t) ->
+    :  query:(?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t) ->
+    build:(?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t) ->
     unit ->
     t
   (** Create an instance of [Raw.t] from custom [query] and [build] behavior. Useful for unit
       testing. *)
 
-  val query : t -> ?isolation_prefix:string -> string list -> string Lwt.t
+  val query : t -> ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
   (** Shell out to `buck query` with the given cli arguments. Returns the content of stdout. If the
       return code is not 0, raise [BuckError].
 
-      Note that isolation prefix is intentionally required to be specified separately, since Buck
-      interpret it a bit differently from the rest of the arguments. *)
+      Note that mode and isolation prefix are intentionally required to be specified separately,
+      since Buck interpret them a bit differently from the rest of the arguments. *)
 
-  val build : t -> ?isolation_prefix:string -> string list -> string Lwt.t
+  val build : t -> ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
   (** Shell out to `buck build` with the given cli arguments. Returns the content of stdout. If the
       return code is not 0, raise [BuckError].
 
-      Note that isolation prefix is intentionally required to be specified separately, since Buck
-      interpret it a bit differently from the rest of the arguments. *)
+      Note that mode and isolation prefix are intentionally required to be specified separately,
+      since Buck interpret them a bit differently from the rest of the arguments. *)
 end
 
 (** This module contains high-level interfaces for invoking [buck] as an external tool. It relies on

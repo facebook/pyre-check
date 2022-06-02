@@ -86,7 +86,6 @@ module V1 = struct
             ["--json"];
             (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
             ["--config"; "client.id=pyre"];
-            Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
             [
               (* Build all python-related rules. *)
               "kind(\"python_binary|python_library|python_test\", %s)"
@@ -105,7 +104,7 @@ module V1 = struct
             ];
             target_specifications;
           ]
-        |> Raw.query ?isolation_prefix raw
+        |> Raw.query ?mode ?isolation_prefix raw
 
 
   let query_buck_for_changed_targets
@@ -130,7 +129,6 @@ module V1 = struct
               [
                 ["--json"];
                 ["--config"; "client.id=pyre"];
-                Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
                 [
                   (* This will get only those owner targets that are beneath our targets or the
                      dependencies of our targets. *)
@@ -141,7 +139,7 @@ module V1 = struct
                    paths. *)
                 ["--output-attributes"; "srcs"; "buck.base_path"; "buck.base_module"; "base_module"];
               ]
-            |> Raw.query ?isolation_prefix raw)
+            |> Raw.query ?mode ?isolation_prefix raw)
 
 
   let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix; use_buck2 = _ } targets =
@@ -154,11 +152,10 @@ module V1 = struct
             ["--show-full-json-output"];
             (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
             ["--config"; "client.id=pyre"];
-            Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
             List.map targets ~f:(fun target ->
                 Format.sprintf "%s%s" (Target.show target) source_database_suffix);
           ]
-        |> Raw.build ?isolation_prefix raw
+        |> Raw.build ?mode ?isolation_prefix raw
 end
 
 module V2 = struct
@@ -179,7 +176,6 @@ module V2 = struct
             ["--console=simple"];
             (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
             ["--config"; "client.id=pyre"];
-            Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
             [
               "kind(\"python_binary|python_library|python_test\", %s)"
               (* Don't bother with generated rules. *)
@@ -194,7 +190,7 @@ module V2 = struct
             ];
             target_specifications;
           ]
-        |> Raw.query ?isolation_prefix raw
+        |> Raw.query ?mode ?isolation_prefix raw
 
 
   let query_buck_for_changed_targets ~targets:_ _ _ =
@@ -213,11 +209,10 @@ module V2 = struct
             ["--show-full-json-output"];
             (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
             ["--config"; "client.id=pyre"];
-            Option.value_map mode ~default:[] ~f:(fun mode -> [mode]);
             List.map targets ~f:(fun target ->
                 Format.sprintf "%s%s" (Target.show target) source_database_suffix);
           ]
-        |> Raw.build ?isolation_prefix raw
+        |> Raw.build ?mode ?isolation_prefix raw
 end
 
 let get_source_database_suffix { BuckOptions.use_buck2; _ } =
