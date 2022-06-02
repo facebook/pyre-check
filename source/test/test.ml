@@ -2883,6 +2883,16 @@ module ScratchProject = struct
     TypeCheck.resolution
       global_resolution (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
       (module TypeCheck.DummyContext)
+
+
+  let add_file { configuration = { Configuration.Analysis.local_root; _ }; _ } content ~relative =
+    let content = trim_extra_indentation content in
+    let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
+    File.write file
+
+
+  let delete_file { configuration = { Configuration.Analysis.local_root; _ }; _ } ~relative =
+    PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
 end
 
 type test_update_environment_with_t = {

@@ -1277,25 +1277,10 @@ let test_update_and_compute_dependencies context =
     let assert_state (primitive, expected) =
       global untracked_global_resolution primitive |> Option.is_some |> assert_equal expected
     in
-    let add_file
-        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
-        content
-        ~relative
-      =
-      let content = trim_extra_indentation content in
-      let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
-      File.write file
-    in
-    let delete_file
-        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
-        relative
-      =
-      PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
-    in
     let dependents =
-      delete_file project "source.py";
+      ScratchProject.delete_file project ~relative:"source.py";
       let repopulate_source_to = Option.value repopulate_source_to ~default:"" in
-      add_file project repopulate_source_to ~relative:"source.py";
+      ScratchProject.add_file project repopulate_source_to ~relative:"source.py";
       let update_result =
         let { ScratchProject.configuration; _ } = project in
         let { Configuration.Analysis.local_root; _ } = configuration in

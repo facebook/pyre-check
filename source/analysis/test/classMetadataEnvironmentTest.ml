@@ -144,23 +144,10 @@ let test_updates context =
       |> assert_equal ~printer expectation
     in
     List.iter middle_actions ~f:execute_action;
-    let delete_file
-        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
-        relative
-      =
-      PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
-    in
-    let add_file
-        { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
-        ~relative
-        content
-      =
-      let content = trim_extra_indentation content in
-      let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
-      File.write file
-    in
-    List.iter original_sources ~f:(fun (path, _) -> delete_file project path);
-    List.iter new_sources ~f:(fun (relative, content) -> add_file project ~relative content);
+    List.iter original_sources ~f:(fun (relative, _) ->
+        ScratchProject.delete_file project ~relative);
+    List.iter new_sources ~f:(fun (relative, content) ->
+        ScratchProject.add_file project ~relative content);
     let update_result =
       let { Configuration.Analysis.local_root; _ } = configuration in
       List.map new_sources ~f:(fun (relative, _) ->

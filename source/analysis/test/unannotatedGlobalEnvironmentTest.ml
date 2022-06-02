@@ -789,24 +789,9 @@ let assert_updates
           actual
   in
   List.iter middle_actions ~f:execute_action;
-  let add_file
-      { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
-      content
-      ~relative
-    =
-    let content = trim_extra_indentation content in
-    let file = File.create ~content (PyrePath.create_relative ~root:local_root ~relative) in
-    File.write file
-  in
-  let delete_file
-      { ScratchProject.configuration = { Configuration.Analysis.local_root; _ }; _ }
-      relative
-    =
-    PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
-  in
   if Option.is_some original_source then
-    delete_file project "test.py";
-  new_source >>| add_file project ~relative:"test.py" |> Option.value ~default:();
+    ScratchProject.delete_file project ~relative:"test.py";
+  new_source >>| ScratchProject.add_file project ~relative:"test.py" |> Option.value ~default:();
   let { Configuration.Analysis.local_root; _ } = configuration in
   let path = Test.relative_artifact_path ~root:local_root ~relative:"test.py" in
   let update_result =
