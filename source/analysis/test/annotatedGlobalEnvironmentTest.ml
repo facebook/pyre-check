@@ -112,8 +112,8 @@ let test_updates context =
     new_source >>| ScratchProject.add_file project ~relative:"test.py" |> Option.value ~default:();
     let { Configuration.Analysis.local_root; _ } = configuration in
     let update_result =
-      update_environments
-        ~annotated_global_environment
+      ScratchProject.update_global_environment
+        project
         [Test.relative_artifact_path ~root:local_root ~relative:"test.py"]
     in
     let printer set =

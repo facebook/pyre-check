@@ -2674,22 +2674,12 @@ let mock_scheduler () =
   Scheduler.create_sequential ()
 
 
-let update_environments
-    ?(scheduler = mock_scheduler ())
-    ~annotated_global_environment
-    ast_environment_trigger
-  =
-  AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-    annotated_global_environment
-    ~scheduler
-    ast_environment_trigger
-
-
 module ScratchProject = struct
   type t = {
     context: test_ctxt;
     configuration: Configuration.Analysis.t;
     type_environment: TypeEnvironment.t;
+    in_memory: bool;
   }
 
   module BuiltTypeEnvironment = struct
@@ -2788,7 +2778,7 @@ module ScratchProject = struct
     let global_environment = AnnotatedGlobalEnvironment.create ast_environment in
     let _ = AnnotatedGlobalEnvironment.cold_start global_environment in
     let type_environment = TypeEnvironment.create global_environment in
-    { context; configuration; type_environment }
+    { context; configuration; type_environment; in_memory }
 
 
   (* Incremental checks already call ModuleTracker.update, so we don't need to update the state
@@ -2904,6 +2894,20 @@ module ScratchProject = struct
 
   let delete_file { configuration = { Configuration.Analysis.local_root; _ }; _ } ~relative =
     PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
+
+
+  let update_global_environment
+      ({ in_memory; _ } as project)
+      ?(scheduler = mock_scheduler ())
+      artifact_paths
+    =
+    if in_memory then
+      failwith "Cannot call update_global_environment on an in-memory scratch project";
+    let global_environment = global_environment project in
+    AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
+      global_environment
+      ~scheduler
+      artifact_paths
 end
 
 type test_update_environment_with_t = {

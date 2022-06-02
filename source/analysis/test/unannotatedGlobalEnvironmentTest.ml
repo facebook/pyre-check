@@ -809,10 +809,8 @@ let assert_updates
   let { Configuration.Analysis.local_root; _ } = configuration in
   let path = Test.relative_artifact_path ~root:local_root ~relative:"test.py" in
   let update_result =
-    UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-      unannotated_global_environment
-      ~scheduler:(mock_scheduler ())
-      [path]
+    ScratchProject.update_global_environment project [path]
+    |> AnnotatedGlobalEnvironment.Testing.UpdateResult.unannotated_global_environment
   in
   let printer set =
     SharedMemoryKeys.DependencyKey.RegisteredSet.elements set

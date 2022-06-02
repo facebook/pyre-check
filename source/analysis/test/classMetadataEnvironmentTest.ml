@@ -156,9 +156,8 @@ let test_updates context =
       let { Configuration.Analysis.local_root; _ } = configuration in
       List.map new_sources ~f:(fun (relative, _) ->
           Test.relative_artifact_path ~root:local_root ~relative)
-      |> ClassMetadataEnvironment.update_this_and_all_preceding_environments
-           class_metadata_environment
-           ~scheduler:(Test.mock_scheduler ())
+      |> ScratchProject.update_global_environment project ~scheduler:(Test.mock_scheduler ())
+      |> AnnotatedGlobalEnvironment.Testing.UpdateResult.class_metadata_environment
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set

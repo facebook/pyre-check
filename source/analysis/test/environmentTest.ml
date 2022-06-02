@@ -1235,7 +1235,7 @@ let test_remove_extra_edges_to_object context =
 
 let test_update_and_compute_dependencies context =
   (* Pre-test setup *)
-  let annotated_global_environment, project =
+  let global_environment, project =
     create_environments_and_project
       ~context
       ~additional_sources:
@@ -1247,7 +1247,7 @@ let test_update_and_compute_dependencies context =
       ~in_memory:false
       ()
   in
-  let readonly_environment = AnnotatedGlobalEnvironment.read_only annotated_global_environment in
+  let readonly_environment = AnnotatedGlobalEnvironment.read_only global_environment in
   let dependency_A =
     SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "A"))
   in
@@ -1281,7 +1281,7 @@ let test_update_and_compute_dependencies context =
         let { ScratchProject.configuration; _ } = project in
         let { Configuration.Analysis.local_root; _ } = configuration in
         let path = Test.relative_artifact_path ~root:local_root ~relative:"source.py" in
-        update_environments ~annotated_global_environment [path]
+        ScratchProject.update_global_environment project [path]
       in
       AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
       |> List.fold

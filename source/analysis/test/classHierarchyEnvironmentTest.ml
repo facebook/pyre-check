@@ -263,9 +263,8 @@ let test_updates context =
       let { Configuration.Analysis.local_root; _ } = configuration in
       List.map ["test.py", ()] ~f:(fun (relative, _) ->
           Test.relative_artifact_path ~root:local_root ~relative)
-      |> ClassHierarchyEnvironment.update_this_and_all_preceding_environments
-           class_hierarchy_environment
-           ~scheduler:(Test.mock_scheduler ())
+      |> ScratchProject.update_global_environment project
+      |> AnnotatedGlobalEnvironment.Testing.UpdateResult.class_hierarchy_environment
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set
