@@ -1,5 +1,5 @@
 (tests
- (names targetTest callGraphTest DependencyGraphTest classHierarchyGraphTest
+ (names targetTest callGraphTest dependencyGraphTest classHierarchyGraphTest
    classIntervalTest intervalSetTest callResolutionTest fetchCallablesTest
    overrideGraphTest changedPathsTest)
  (preprocess
