@@ -15,8 +15,10 @@ open Test
 let test_simple_registration context =
   let assert_registers sources name ~expected_edges ~expected_extends_placeholder_stub =
     let project = ScratchProject.setup sources ~include_typeshed_stubs:false ~context in
-    let ast_environment = ScratchProject.build_ast_environment project in
-    let class_hierarchy_environment = ClassHierarchyEnvironment.create ast_environment in
+    let class_hierarchy_environment =
+      ScratchProject.global_environment project
+      |> AnnotatedGlobalEnvironment.Testing.class_hierarchy_environment
+    in
     let read_only = ClassHierarchyEnvironment.cold_start class_hierarchy_environment in
     let expected_edges =
       expected_edges
@@ -120,12 +122,10 @@ let test_inferred_generic_base context =
     let project =
       ScratchProject.setup ["test.py", source] ~context ~incremental_style:FineGrained
     in
-    let ast_environment = ScratchProject.build_ast_environment project in
     let read_only =
-      Test.cold_start_environments ~ast_environment ()
-      |> AnnotatedGlobalEnvironment.read_only
-      |> AnnotatedGlobalEnvironment.ReadOnly.class_metadata_environment
-      |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+      ScratchProject.global_environment project
+      |> AnnotatedGlobalEnvironment.Testing.class_hierarchy_environment
+      |> ClassHierarchyEnvironment.read_only
     in
     let expected =
       expected

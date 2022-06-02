@@ -15,10 +15,9 @@ open Test
 let test_simple_registration context =
   let assert_registers source name ?original expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
-    let ast_environment = ScratchProject.build_ast_environment project in
-    let annotated_global_environment = cold_start_environments ~ast_environment () in
     let read_only =
-      AnnotatedGlobalEnvironment.read_only annotated_global_environment
+      ScratchProject.global_environment project
+      |> AnnotatedGlobalEnvironment.read_only
       |> AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution
     in
     let location_insensitive_compare left right =
@@ -85,8 +84,7 @@ let test_updates context =
         sources
         ~context
     in
-    let ast_environment = ScratchProject.build_ast_environment project in
-    let annotated_global_environment = cold_start_environments ~ast_environment () in
+    let annotated_global_environment = ScratchProject.global_environment project in
     let configuration = ScratchProject.configuration_of project in
     let read_only =
       AnnotatedGlobalEnvironment.read_only annotated_global_environment

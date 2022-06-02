@@ -548,9 +548,8 @@ let test_connect_type_order context =
         );
       ]
   in
-  let ast_environment = ScratchProject.build_ast_environment project in
   let global_environment =
-    cold_start_environments ~ast_environment () |> AnnotatedGlobalEnvironment.read_only
+    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.read_only
   in
   let order = class_hierarchy global_environment in
   let assert_successors annotation successors =
@@ -1151,9 +1150,8 @@ let test_connect_annotations_to_top context =
         );
       ]
   in
-  let ast_environment = ScratchProject.build_ast_environment project in
   let global_environment =
-    cold_start_environments ~ast_environment () |> AnnotatedGlobalEnvironment.read_only
+    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.read_only
   in
   let order = class_hierarchy global_environment in
   assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"]
@@ -1176,9 +1174,8 @@ let test_deduplicate context =
         );
       ]
   in
-  let ast_environment = ScratchProject.build_ast_environment project in
   let global_environment =
-    cold_start_environments ~ast_environment () |> AnnotatedGlobalEnvironment.read_only
+    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.read_only
   in
   let (module Handler) = class_hierarchy global_environment in
   let index_of annotation = IndexTracker.index annotation in
@@ -1222,9 +1219,8 @@ let test_remove_extra_edges_to_object context =
         );
       ]
   in
-  let ast_environment = ScratchProject.build_ast_environment project in
   let global_environment =
-    cold_start_environments ~ast_environment () |> AnnotatedGlobalEnvironment.read_only
+    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.read_only
   in
   let (module Handler) = class_hierarchy global_environment in
   let zero_index = IndexTracker.index "test.Zero" in

@@ -2685,12 +2685,6 @@ let update_environments
     ast_environment_trigger
 
 
-let cold_start_environments ~ast_environment () =
-  let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
-  let _ = AnnotatedGlobalEnvironment.cold_start annotated_global_environment in
-  annotated_global_environment
-
-
 module ScratchProject = struct
   type t = {
     context: test_ctxt;
@@ -2791,7 +2785,8 @@ module ScratchProject = struct
       (* Clean shared memory up after the test *)
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
-    let global_environment = cold_start_environments ~ast_environment () in
+    let global_environment = AnnotatedGlobalEnvironment.create ast_environment in
+    let _ = AnnotatedGlobalEnvironment.cold_start global_environment in
     let type_environment = TypeEnvironment.create global_environment in
     { context; configuration; type_environment }
 
