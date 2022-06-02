@@ -14,28 +14,30 @@ module type ReadOnly = sig
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 end
 
-module type UpdateResultType = sig
-  type t
+module UpdateResult = struct
+  module type S = sig
+    type t
 
-  type read_only
+    type read_only
 
-  val locally_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t
+    val locally_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t
 
-  val all_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t list
+    val all_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t list
 
-  val read_only : t -> read_only
+    val read_only : t -> read_only
 
-  val unannotated_global_environment_update_result
-    :  t ->
-    UnannotatedGlobalEnvironment.UpdateResult.t
+    val unannotated_global_environment_update_result
+      :  t ->
+      UnannotatedGlobalEnvironment.UpdateResult.t
 
-  val invalidated_modules : t -> Ast.Reference.t list
+    val invalidated_modules : t -> Ast.Reference.t list
+  end
 end
 
 module type PreviousEnvironment = sig
   module ReadOnly : ReadOnly
 
-  module UpdateResult : UpdateResultType with type read_only := ReadOnly.t
+  module UpdateResult : UpdateResult.S with type read_only := ReadOnly.t
 
   type t
 
@@ -54,10 +56,6 @@ module type PreviousEnvironment = sig
     scheduler:Scheduler.t ->
     ArtifactPath.t list ->
     UpdateResult.t
-end
-
-module UpdateResult = struct
-  module type S = UpdateResultType
 end
 
 module type S = sig
