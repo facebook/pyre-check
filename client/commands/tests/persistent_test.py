@@ -23,6 +23,7 @@ from .. import (
     backend_arguments,
     language_server_protocol as lsp,
     start,
+    subscription,
 )
 from ..async_server_connection import (
     BackgroundTask,
@@ -34,7 +35,6 @@ from ..async_server_connection import (
     TextReader,
     TextWriter,
 )
-from ..incremental import InvalidServerResponse
 from ..persistent import (
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
     DefinitionLocationQuery,
@@ -42,7 +42,6 @@ from ..persistent import (
     InitializationFailure,
     InitializationSuccess,
     LocationTypeLookup,
-    parse_subscription_response,
     PyreQueryHandler,
     PyreQueryState,
     PyreServer,
@@ -50,14 +49,11 @@ from ..persistent import (
     PyreServerStartOptions,
     PyreServerStartOptionsReader,
     ServerState,
-    StatusUpdateSubscription,
-    SubscriptionResponse,
     to_coverage_result,
     try_initialize,
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
     TypeCoverageQuery,
-    TypeErrorSubscription,
     TypesQuery,
     uncovered_range_to_diagnostic,
 )
@@ -249,84 +245,6 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIsInstance(result, InitializationExit)
 
-    def test_parse_subscription(self) -> None:
-        def assert_parsed(response: str, expected: SubscriptionResponse) -> None:
-            self.assertEqual(
-                parse_subscription_response(response),
-                expected,
-            )
-
-        def assert_not_parsed(response: str) -> None:
-            with self.assertRaises(InvalidServerResponse):
-                parse_subscription_response(response)
-
-        assert_not_parsed("derp")
-        assert_not_parsed("{}")
-        assert_not_parsed("[]")
-        assert_not_parsed('["Error"]')
-        assert_not_parsed('{"name": "foo", "no_body": []}')
-        assert_not_parsed('{"body": [], "no_name": "foo"}')
-        assert_not_parsed('{"name": "foo", "body": ["Malformed"]}')
-        assert_not_parsed('{"name": "foo", "body": ["TypeErrors", {}]}')
-        assert_not_parsed('{"name": "foo", "body": ["StatusUpdate", 42]}')
-        assert_not_parsed('{"name": "foo", "body": ["StatusUpdate", []]}')
-
-        assert_parsed(
-            json.dumps({"name": "foo", "body": ["TypeErrors", []]}),
-            expected=SubscriptionResponse(name="foo", body=TypeErrorSubscription()),
-        )
-        assert_parsed(
-            json.dumps(
-                {
-                    "name": "foo",
-                    "body": [
-                        "TypeErrors",
-                        [
-                            {
-                                "line": 1,
-                                "column": 1,
-                                "stop_line": 2,
-                                "stop_column": 2,
-                                "path": "test.py",
-                                "code": 42,
-                                "name": "Fake name",
-                                "description": "Fake description",
-                            },
-                        ],
-                    ],
-                }
-            ),
-            expected=SubscriptionResponse(
-                name="foo",
-                body=TypeErrorSubscription(
-                    [
-                        error.Error(
-                            line=1,
-                            column=1,
-                            stop_line=2,
-                            stop_column=2,
-                            path=Path("test.py"),
-                            code=42,
-                            name="Fake name",
-                            description="Fake description",
-                        ),
-                    ]
-                ),
-            ),
-        )
-        assert_parsed(
-            json.dumps(
-                {
-                    "name": "foo",
-                    "body": ["StatusUpdate", ["derp"]],
-                }
-            ),
-            expected=SubscriptionResponse(
-                name="foo",
-                body=StatusUpdateSubscription(kind="derp"),
-            ),
-        )
-
     @setup.async_test
     async def test_open_close(self) -> None:
         server_state = ServerState()
@@ -415,13 +333,13 @@ class PersistentTest(testslide.TestCase):
             server_state=server_state,
         )
         await server_handler.handle_status_update_subscription(
-            StatusUpdateSubscription(kind="Rebuilding")
+            subscription.StatusUpdate(kind="Rebuilding")
         )
         await server_handler.handle_status_update_subscription(
-            StatusUpdateSubscription(kind="Rechecking")
+            subscription.StatusUpdate(kind="Rechecking")
         )
         await server_handler.handle_type_error_subscription(
-            TypeErrorSubscription(
+            subscription.TypeErrors(
                 errors=[
                     error.Error(
                         line=1,
@@ -464,10 +382,10 @@ class PersistentTest(testslide.TestCase):
             server_state=server_state,
         )
         await server_handler.handle_status_update_subscription(
-            StatusUpdateSubscription(kind="Rebuilding")
+            subscription.StatusUpdate(kind="Rebuilding")
         )
         await server_handler.handle_status_update_subscription(
-            StatusUpdateSubscription(kind="Rechecking")
+            subscription.StatusUpdate(kind="Rechecking")
         )
 
         client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
