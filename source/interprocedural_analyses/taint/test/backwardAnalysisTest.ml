@@ -25,7 +25,7 @@ let assert_taint ~context source expected =
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let source =
     AstEnvironment.ReadOnly.get_processed_source
-      (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only)
+      (TypeEnvironment.ReadOnly.ast_environment environment)
       qualifier
     |> fun option -> Option.value_exn option
   in
@@ -37,7 +37,7 @@ let assert_taint ~context source expected =
     let call_graph_of_define =
       Interprocedural.CallGraph.call_graph_of_define
         ~static_analysis_configuration
-        ~environment:(TypeEnvironment.read_only environment)
+        ~environment
         ~attribute_targets:(Registry.object_targets initial_models)
         ~qualifier
         ~define:(Ast.Node.value define)
@@ -45,7 +45,7 @@ let assert_taint ~context source expected =
     let backward =
       BackwardAnalysis.run
         ?profiler:None
-        ~environment:(TypeEnvironment.read_only environment)
+        ~environment
         ~qualifier
         ~callable:call_target
         ~define
@@ -60,14 +60,7 @@ let assert_taint ~context source expected =
   let models = List.fold ~f:analyze_and_store_in_order ~init:initial_models defines in
   let get_model = Registry.get models in
   let get_errors _ = [] in
-  List.iter
-    ~f:
-      (check_expectation
-         ~environment:(TypeEnvironment.read_only environment)
-         ~get_model
-         ~get_errors)
-    expected;
-  TypeEnvironment.invalidate environment [qualifier]
+  List.iter ~f:(check_expectation ~environment ~get_model ~get_errors) expected
 
 
 let test_plus_taint_in_taint_out context =

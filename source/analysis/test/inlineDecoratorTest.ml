@@ -92,9 +92,7 @@ let test_decorator_body context =
       ScratchProject.setup ~context ~external_sources:additional_sources [handle, ""]
       |> ScratchProject.build_ast_environment
     in
-    let get_source =
-      AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment)
-    in
+    let get_source = AstEnvironment.ReadOnly.get_processed_source ast_environment in
     let get_expected_define expected =
       let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
         ScratchProject.setup ~context ~external_sources:[] [expected_handle, expected]
@@ -161,9 +159,7 @@ let get_expected_actual_sources ~context ~additional_sources ~handle source expe
     ScratchProject.setup ~context ~external_sources:additional_sources [handle, source]
     |> ScratchProject.build_ast_environment
   in
-  let get_source =
-    AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment)
-  in
+  let get_source = AstEnvironment.ReadOnly.get_processed_source ast_environment in
   let actual =
     get_source !&"test"
     >>| (fun source -> InlineDecorator.inline_decorators ~get_source source)

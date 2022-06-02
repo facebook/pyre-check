@@ -23,7 +23,7 @@ let generate_lookup ~context ?(environment_sources = []) source =
       ScratchProject.setup ~context ["test.py", source] ~external_sources:environment_sources
       |> ScratchProject.build_type_environment
     in
-    TypeEnvironment.read_only type_environment
+    type_environment
   in
   let lookup = LocationBasedLookup.create_of_module environment !&"test" in
   Memory.reset_shared_memory ();
@@ -204,7 +204,7 @@ let test_find_narrowest_spanning_symbol context =
         ScratchProject.setup ~context ["test.py", source] ~external_sources
         |> ScratchProject.build_type_environment
       in
-      TypeEnvironment.read_only type_environment
+      type_environment
     in
     assert_equal
       ~cmp:(fun left right ->
@@ -703,7 +703,7 @@ let test_resolve_definition_for_symbol context =
         ScratchProject.setup ~context ["test.py", source] ~external_sources
         |> ScratchProject.build_type_environment
       in
-      TypeEnvironment.read_only type_environment
+      type_environment
     in
     assert_equal
       ~cmp:[%compare.equal: Location.WithModule.t option]

@@ -466,18 +466,20 @@ module ReadOnly = struct
     get_raw_source: Reference.t -> (Source.t, ParserError.t) Result.t option;
   }
 
-  let configuration { module_tracker; _ } = ModuleTracker.ReadOnly.configuration module_tracker
+  let module_tracker { module_tracker; _ } = module_tracker
 
-  let get_source_path { module_tracker; _ } =
-    ModuleTracker.ReadOnly.lookup_source_path module_tracker
+  let configuration environment = module_tracker environment |> ModuleTracker.ReadOnly.configuration
 
-
-  let is_module_tracked { module_tracker; _ } =
-    ModuleTracker.ReadOnly.is_module_tracked module_tracker
+  let get_source_path environment =
+    module_tracker environment |> ModuleTracker.ReadOnly.lookup_source_path
 
 
-  let all_explicit_modules { module_tracker; _ } =
-    ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
+  let is_module_tracked environment =
+    module_tracker environment |> ModuleTracker.ReadOnly.is_module_tracked
+
+
+  let all_explicit_modules environment =
+    module_tracker environment |> ModuleTracker.ReadOnly.tracked_explicit_modules
 
 
   let get_processed_source { get_processed_source; _ } ?(track_dependency = false) =

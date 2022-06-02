@@ -26,7 +26,7 @@ let test_inferred_generic_base context =
     in
     let source =
       AstEnvironment.ReadOnly.get_processed_source
-        (AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only)
+        (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
         qualifier
     in
     let source = Option.value_exn source in
@@ -40,9 +40,7 @@ let test_inferred_generic_base context =
       in
       List.find_map ~f:target statements |> value |> Node.map ~f:(ClassSummary.create ~qualifier)
     in
-    let resolution =
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
-    in
+    let resolution = GlobalResolution.create global_environment in
     let parse_annotation =
       GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
     in

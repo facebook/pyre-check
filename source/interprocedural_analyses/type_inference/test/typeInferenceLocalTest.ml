@@ -189,21 +189,12 @@ let test_backward_resolution_handling context =
   assert_backward [] "star_int_to_int(*[], y)" []
 
 
-let setup_environment scratch_project =
-  let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-    scratch_project |> ScratchProject.build_global_environment
-  in
-  global_environment
-
-
 module Setup = struct
   let set_up_project ~context code =
     let ({ ScratchProject.configuration; _ } as project) =
       ScratchProject.setup ~context ["test.py", code]
     in
-    let environment =
-      setup_environment project |> TypeEnvironment.create |> TypeEnvironment.read_only
-    in
+    let environment = ScratchProject.type_environment project in
     environment, configuration
 
 

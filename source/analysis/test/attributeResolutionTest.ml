@@ -538,7 +538,6 @@ let test_check_arguments_against_parameters context =
       ScratchProject.setup ~context ["test.py", ""]
       |> ScratchProject.build_global_environment
       |> (fun { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } -> global_environment)
-      |> AnnotatedGlobalEnvironment.read_only
       |> GlobalResolution.create
       |> GlobalResolution.full_order
     in

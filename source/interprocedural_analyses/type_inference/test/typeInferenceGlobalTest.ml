@@ -8,7 +8,6 @@
 open Core
 open OUnit2
 open Ast
-open Analysis
 open Test
 
 let environment_data scratch_project =
@@ -28,11 +27,7 @@ let type_inference_result ~context ~test_source =
       ~scheduler
       ~filename_lookup:(fun _ -> None)
       ~paths_to_modify:None
-      Service.Infer.
-        {
-          global_environment = AnnotatedGlobalEnvironment.read_only global_environment;
-          qualifiers = [Reference.create "test"];
-        }
+      Service.Infer.{ global_environment; qualifiers = [Reference.create "test"] }
   in
   global_result
 

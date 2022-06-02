@@ -58,23 +58,8 @@ let create_environment ~context ?include_typeshed_stubs ?include_helpers ?additi
   |> fst
 
 
-let create_readonly_environment
-    ~context
-    ?include_typeshed_stubs
-    ?include_helpers
-    ?additional_sources
-    ()
-  =
-  create_environment ~context ?include_typeshed_stubs ?include_helpers ?additional_sources ()
-  |> AnnotatedGlobalEnvironment.read_only
-
-
 let populate ?include_typeshed_stubs ?include_helpers sources =
-  create_readonly_environment
-    ?include_typeshed_stubs
-    ?include_helpers
-    ~additional_sources:sources
-    ()
+  create_environment ?include_typeshed_stubs ?include_helpers ~additional_sources:sources ()
 
 
 let order_and_environment ~context source =
@@ -412,7 +397,7 @@ let test_register_aliases context =
 
 
 let test_register_implicit_submodules context =
-  let environment = create_readonly_environment ~context ~additional_sources:["a/b/c.py", ""] () in
+  let environment = create_environment ~context ~additional_sources:["a/b/c.py", ""] () in
   let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
   let global_resolution = GlobalResolution.create environment in
   assert_bool
@@ -548,9 +533,7 @@ let test_connect_type_order context =
         );
       ]
   in
-  let global_environment =
-    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.read_only
-  in
+  let global_environment = ScratchProject.global_environment project in
   let order = class_hierarchy global_environment in
   let assert_successors annotation successors =
     assert_equal
@@ -1150,9 +1133,7 @@ let test_connect_annotations_to_top context =
         );
       ]
   in
-  let global_environment =
-    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.read_only
-  in
+  let global_environment = ScratchProject.global_environment project in
   let order = class_hierarchy global_environment in
   assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"]
 
@@ -1174,9 +1155,7 @@ let test_deduplicate context =
         );
       ]
   in
-  let global_environment =
-    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.read_only
-  in
+  let global_environment = ScratchProject.global_environment project in
   let (module Handler) = class_hierarchy global_environment in
   let index_of annotation = IndexTracker.index annotation in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
@@ -1219,9 +1198,7 @@ let test_remove_extra_edges_to_object context =
         );
       ]
   in
-  let global_environment =
-    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.read_only
-  in
+  let global_environment = ScratchProject.global_environment project in
   let (module Handler) = class_hierarchy global_environment in
   let zero_index = IndexTracker.index "test.Zero" in
   let one_index = IndexTracker.index "test.One" in
@@ -1247,7 +1224,6 @@ let test_update_and_compute_dependencies context =
       ~in_memory:false
       ()
   in
-  let readonly_environment = AnnotatedGlobalEnvironment.read_only global_environment in
   let dependency_A =
     SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "A"))
   in
@@ -1255,12 +1231,12 @@ let test_update_and_compute_dependencies context =
     SharedMemoryKeys.DependencyKey.Registry.register (TypeCheckDefine (Reference.create "B"))
   in
   (* Establish dependencies *)
-  let untracked_global_resolution = GlobalResolution.create readonly_environment in
+  let untracked_global_resolution = GlobalResolution.create global_environment in
   let dependency_tracked_global_resolution_A =
-    GlobalResolution.create ~dependency:dependency_A readonly_environment
+    GlobalResolution.create ~dependency:dependency_A global_environment
   in
   let dependency_tracked_global_resolution_B =
-    GlobalResolution.create ~dependency:dependency_B readonly_environment
+    GlobalResolution.create ~dependency:dependency_B global_environment
   in
   let global resolution name = GlobalResolution.global resolution (Reference.create name) in
   (* A read Foo *)

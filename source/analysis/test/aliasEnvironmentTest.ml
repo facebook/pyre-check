@@ -15,11 +15,10 @@ open Test
 let test_simple_registration context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~include_typeshed_stubs:false ~context in
-    let alias_environment =
+    let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.alias_environment
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.alias_environment
     in
-    let read_only = AliasEnvironment.cold_start alias_environment in
     let expected = expected >>| fun expected -> Type.TypeAlias (Type.Primitive expected) in
     let printer v = v >>| Type.show_alias |> Option.value ~default:"none" in
     assert_equal ~printer expected (AliasEnvironment.ReadOnly.get_alias read_only name)
@@ -59,11 +58,10 @@ let test_simple_registration context =
 let test_harder_registrations context =
   let assert_registers ?external_sources ~expected_alias source name =
     let project = ScratchProject.setup ?external_sources ["test.py", source] ~context in
-    let alias_environment =
+    let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.alias_environment
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.alias_environment
     in
-    let read_only = AliasEnvironment.cold_start alias_environment in
     let printer alias =
       alias >>| Type.sexp_of_alias >>| Sexp.to_string_hum |> Option.value ~default:"none"
     in
@@ -309,11 +307,10 @@ let test_updates context =
         ~context
     in
     let configuration = ScratchProject.configuration_of project in
-    let alias_environment =
+    let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.alias_environment
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.alias_environment
     in
-    let read_only = AliasEnvironment.cold_start alias_environment in
     let execute_action (alias_name, dependency, expectation) =
       let printer v =
         v >>| Type.sexp_of_alias >>| Sexp.to_string_hum |> Option.value ~default:"none"

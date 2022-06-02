@@ -1363,12 +1363,10 @@ let test_source_is_unit_test context =
       ScratchProject.setup ~context (["test.py", source] @ extra_sources)
       |> ScratchProject.build_global_environment
     in
-    let resolution =
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
-    in
+    let resolution = GlobalResolution.create global_environment in
     let source =
       AstEnvironment.ReadOnly.get_processed_source
-        (AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only)
+        (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
         (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
@@ -1400,16 +1398,14 @@ let test_fallback_attribute context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let global_resolution =
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
-    in
+    let global_resolution = GlobalResolution.create global_environment in
     let resolution = TypeCheck.resolution global_resolution (module TypeCheck.DummyContext) in
 
     let attribute =
       let qualifier = Reference.create "test" in
       let source =
         AstEnvironment.ReadOnly.get_processed_source
-          (AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only)
+          (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
           qualifier
       in
       let last_statement_exn = function

@@ -1169,7 +1169,7 @@ module IncrementalTest = struct
           old_sources
       in
       let configuration = ScratchProject.configuration_of project in
-      let module_tracker = ScratchProject.module_tracker project in
+      let module_tracker = ScratchProject.ReadWrite.module_tracker project in
       configuration, module_tracker
     in
     (* Compute the updates *)

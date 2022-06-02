@@ -26,8 +26,7 @@ let test_global_registration context =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.read_only
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
     in
     assert_equal (UnannotatedGlobalEnvironment.ReadOnly.class_exists read_only name) expected
   in
@@ -47,8 +46,7 @@ let test_define_registration context =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.read_only
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
     in
     let actual = UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module read_only !&"test" in
     let expected = List.sort expected ~compare:Reference.compare in
@@ -244,8 +242,7 @@ let test_simple_global_registration context =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.read_only
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
     in
     let printer global =
       global >>| UnannotatedGlobal.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
@@ -352,8 +349,7 @@ let test_builtin_modules context =
         sources
     in
     ScratchProject.global_environment project
-    |> AnnotatedGlobalEnvironment.Testing.unannotated_global_environment
-    |> UnannotatedGlobalEnvironment.read_only
+    |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
   in
   assert_bool
     "empty qualifier module exists"
@@ -404,8 +400,7 @@ let test_resolve_exports context =
     in
     let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.read_only
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
     in
     let actual = ReadOnly.resolve_exports read_only ?from reference in
     assert_equal
@@ -719,11 +714,10 @@ let assert_updates
       ~context
   in
   let configuration = ScratchProject.configuration_of project in
-  let unannotated_global_environment =
+  let read_only =
     ScratchProject.global_environment project
-    |> AnnotatedGlobalEnvironment.Testing.unannotated_global_environment
+    |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
   in
-  let read_only = UnannotatedGlobalEnvironment.read_only unannotated_global_environment in
   let execute_action = function
     | `Get (class_name, dependency, expected_number_of_statements) ->
         let printer number =

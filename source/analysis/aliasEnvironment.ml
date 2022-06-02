@@ -445,3 +445,4 @@ end
 
 module AliasReadOnly = ReadOnly
 module UpdateResult = Aliases.UpdateResult
+module Testing = Aliases.Testing

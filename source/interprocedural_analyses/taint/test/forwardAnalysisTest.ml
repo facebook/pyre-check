@@ -28,14 +28,13 @@ let assert_taint ?models ?models_source ~context source expect =
   let { Test.ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
     Test.ScratchProject.build_type_environment project
   in
-  let read_only_environment = TypeEnvironment.read_only environment in
   let source =
     AstEnvironment.ReadOnly.get_processed_source
-      (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only)
+      (TypeEnvironment.ReadOnly.ast_environment environment)
       qualifier
     |> fun option -> Option.value_exn option
   in
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution read_only_environment in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   let models =
     models >>| Test.trim_extra_indentation |> Option.value ~default:TestHelper.initial_models_source
   in
@@ -59,7 +58,7 @@ let assert_taint ?models ?models_source ~context source expect =
     let call_graph_of_define =
       CallGraph.call_graph_of_define
         ~static_analysis_configuration
-        ~environment:read_only_environment
+        ~environment
         ~attribute_targets:(Registry.object_targets models)
         ~qualifier
         ~define:(Ast.Node.value define)
@@ -67,7 +66,7 @@ let assert_taint ?models ?models_source ~context source expect =
     let forward, _errors, _ =
       ForwardAnalysis.run
         ?profiler:None
-        ~environment:read_only_environment
+        ~environment
         ~qualifier
         ~callable:call_target
         ~define
@@ -81,8 +80,7 @@ let assert_taint ?models ?models_source ~context source expect =
   let models = List.fold ~f:analyze_and_store_in_order ~init:initial_models defines in
   let get_model = Registry.get models in
   let get_errors _ = [] in
-  List.iter ~f:(check_expectation ~environment:read_only_environment ~get_model ~get_errors) expect;
-  TypeEnvironment.invalidate environment [qualifier]
+  List.iter ~f:(check_expectation ~environment ~get_model ~get_errors) expect
 
 
 let test_no_model context =

@@ -7,7 +7,6 @@
 
 open Core
 open OUnit2
-open Analysis
 open Ast
 open Interprocedural
 open Test
@@ -26,7 +25,7 @@ let setup ?(update_environment_with = []) ~context ~handle source =
     List.find_exn sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; _ } ->
         String.equal relative handle)
   in
-  source, TypeEnvironment.read_only type_environment, project.configuration
+  source, type_environment, project.configuration
 
 
 let test_method_overrides context =

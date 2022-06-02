@@ -57,10 +57,7 @@ let test_apply_rule context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution =
-      Analysis.AnnotatedGlobalEnvironment.read_only global_environment
-      |> Analysis.GlobalResolution.create
-    in
+    let resolution = Analysis.GlobalResolution.create global_environment in
     let actual =
       TaintModelQuery.ModelQuery.apply_callable_query_rule
         ~verbose:false
@@ -78,10 +75,7 @@ let test_apply_rule context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution =
-      Analysis.AnnotatedGlobalEnvironment.read_only global_environment
-      |> Analysis.GlobalResolution.create
-    in
+    let resolution = Analysis.GlobalResolution.create global_environment in
     let actual =
       TaintModelQuery.ModelQuery.apply_attribute_query_rule
         ~verbose:false

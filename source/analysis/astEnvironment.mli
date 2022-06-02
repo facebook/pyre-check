@@ -27,6 +27,8 @@ module ReadOnly : sig
 
   val get_raw_source : t -> Reference.t -> (Source.t, ParserError.t) Result.t option
 
+  val module_tracker : t -> ModuleTracker.ReadOnly.t
+
   val get_source_path : t -> Reference.t -> ModulePath.t option
 
   val get_relative : t -> Reference.t -> string option

@@ -127,59 +127,59 @@ module UpdateResult = GlobalLocationTable.UpdateResult
 module AnnotatedReadOnly = ReadOnly
 
 module Testing = struct
-  include GlobalLocationTable.Testing
+  module ReadOnly = struct
+    include GlobalLocationTable.Testing.ReadOnly
 
-  let annotated_global_environment = Fn.id
-
-  let attribute_resolution environment =
-    GlobalLocationTable.Testing.upstream_environment environment
-
-
-  let class_metadata_environment environment =
-    attribute_resolution environment |> AttributeResolution.Testing.upstream_environment
-
-
-  let class_hierarchy_environment environment =
-    class_metadata_environment environment |> ClassMetadataEnvironment.Testing.upstream_environment
-
-
-  let alias_environment environment =
-    class_hierarchy_environment environment
-    |> ClassHierarchyEnvironment.Testing.upstream_environment
-
-
-  let empty_stub_environment environment =
-    alias_environment environment |> AliasEnvironment.Testing.upstream_environment
-
-
-  let unannotated_global_environment environment =
-    empty_stub_environment environment |> EmptyStubEnvironment.Testing.upstream_environment
-
-
-  module UpdateResult = struct
     let annotated_global_environment = Fn.id
 
-    let attribute_resolution update_result =
-      GlobalLocationTable.Testing.upstream_result update_result
+    let attribute_resolution environment = Testing.ReadOnly.upstream environment
 
+    let class_metadata_environment environment =
+      attribute_resolution environment |> AttributeResolution.Testing.ReadOnly.upstream
+
+
+    let class_hierarchy_environment environment =
+      class_metadata_environment environment |> ClassMetadataEnvironment.Testing.ReadOnly.upstream
+
+
+    let alias_environment environment =
+      class_hierarchy_environment environment |> ClassHierarchyEnvironment.Testing.ReadOnly.upstream
+
+
+    let empty_stub_environment environment =
+      alias_environment environment |> AliasEnvironment.Testing.ReadOnly.upstream
+
+
+    let unannotated_global_environment environment =
+      empty_stub_environment environment |> EmptyStubEnvironment.Testing.ReadOnly.upstream
+  end
+
+  module UpdateResult = struct
+    include GlobalLocationTable.Testing.UpdateResult
+
+    let annotated_global_environment = Fn.id
+
+    let attribute_resolution update_result = upstream update_result
 
     let class_metadata_environment update_result =
-      attribute_resolution update_result |> AttributeResolution.Testing.upstream_result
+      attribute_resolution update_result |> AttributeResolution.Testing.UpdateResult.upstream
 
 
     let class_hierarchy_environment update_result =
-      class_metadata_environment update_result |> ClassMetadataEnvironment.Testing.upstream_result
+      class_metadata_environment update_result
+      |> ClassMetadataEnvironment.Testing.UpdateResult.upstream
 
 
     let alias_environment update_result =
-      class_hierarchy_environment update_result |> ClassHierarchyEnvironment.Testing.upstream_result
+      class_hierarchy_environment update_result
+      |> ClassHierarchyEnvironment.Testing.UpdateResult.upstream
 
 
     let empty_stub_environment update_result =
-      alias_environment update_result |> AliasEnvironment.Testing.upstream_result
+      alias_environment update_result |> AliasEnvironment.Testing.UpdateResult.upstream
 
 
     let unannotated_global_environment update_result =
-      empty_stub_environment update_result |> EmptyStubEnvironment.Testing.upstream_result
+      empty_stub_environment update_result |> EmptyStubEnvironment.Testing.UpdateResult.upstream
   end
 end

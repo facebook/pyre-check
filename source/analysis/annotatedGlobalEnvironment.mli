@@ -33,19 +33,21 @@ include
      and module PreviousEnvironment = AttributeResolution
 
 module Testing : sig
-  val annotated_global_environment : t -> t
+  module ReadOnly : sig
+    val annotated_global_environment : ReadOnly.t -> ReadOnly.t
 
-  val attribute_resolution : t -> AttributeResolution.t
+    val attribute_resolution : ReadOnly.t -> AttributeResolution.ReadOnly.t
 
-  val class_metadata_environment : t -> ClassMetadataEnvironment.t
+    val class_metadata_environment : ReadOnly.t -> ClassMetadataEnvironment.ReadOnly.t
 
-  val class_hierarchy_environment : t -> ClassHierarchyEnvironment.t
+    val class_hierarchy_environment : ReadOnly.t -> ClassHierarchyEnvironment.ReadOnly.t
 
-  val alias_environment : t -> AliasEnvironment.t
+    val alias_environment : ReadOnly.t -> AliasEnvironment.ReadOnly.t
 
-  val empty_stub_environment : t -> EmptyStubEnvironment.t
+    val empty_stub_environment : ReadOnly.t -> EmptyStubEnvironment.ReadOnly.t
 
-  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
+    val unannotated_global_environment : ReadOnly.t -> UnannotatedGlobalEnvironment.ReadOnly.t
+  end
 
   module UpdateResult : sig
     val annotated_global_environment : UpdateResult.t -> UpdateResult.t

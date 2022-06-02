@@ -2685,14 +2685,14 @@ module ScratchProject = struct
   module BuiltTypeEnvironment = struct
     type t = {
       sources: Source.t list;
-      type_environment: TypeEnvironment.t;
+      type_environment: TypeEnvironment.ReadOnly.t;
     }
   end
 
   module BuiltGlobalEnvironment = struct
     type t = {
       sources: Source.t list;
-      global_environment: AnnotatedGlobalEnvironment.t;
+      global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
     }
   end
 
@@ -2807,33 +2807,31 @@ module ScratchProject = struct
     File.write file
 
 
-  let type_environment { type_environment; _ } = type_environment
+  let type_environment { type_environment; _ } = type_environment |> TypeEnvironment.read_only
 
-  let global_environment project = type_environment project |> TypeEnvironment.global_environment
+  let global_environment project =
+    type_environment project |> TypeEnvironment.ReadOnly.global_environment
+
 
   let ast_environment project =
-    global_environment project |> AnnotatedGlobalEnvironment.ast_environment
+    global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
 
 
-  let module_tracker project = ast_environment project |> AstEnvironment.module_tracker
+  let module_tracker project = ast_environment project |> AstEnvironment.ReadOnly.module_tracker
 
   let configuration_of { configuration; _ } = configuration
 
-  let source_paths_of project = module_tracker project |> ModuleTracker.source_paths
+  let source_paths_of project = module_tracker project |> ModuleTracker.ReadOnly.source_paths
 
   let qualifiers_of project = source_paths_of project |> List.map ~f:ModulePath.qualifier
 
   let project_qualifiers project =
-    ast_environment project
-    |> AstEnvironment.read_only
-    |> AstEnvironment.ReadOnly.project_qualifiers
+    ast_environment project |> AstEnvironment.ReadOnly.project_qualifiers
 
 
   let get_project_sources project =
     let ast_environment =
-      global_environment project
-      |> AnnotatedGlobalEnvironment.read_only
-      |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
+      global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
     in
     project_qualifiers project
     |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
@@ -2847,8 +2845,7 @@ module ScratchProject = struct
     { BuiltGlobalEnvironment.sources; global_environment }
 
 
-  let build_type_environment ?call_graph_builder project =
-    let type_environment = type_environment project in
+  let build_type_environment ?call_graph_builder ({ type_environment; _ } as project) =
     let sources = get_project_sources project in
     let configuration = configuration_of project in
     List.map sources ~f:(fun { Source.source_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
@@ -2857,7 +2854,7 @@ module ScratchProject = struct
          ~configuration
          ~environment:type_environment
          ?call_graph_builder;
-    { BuiltTypeEnvironment.sources; type_environment }
+    { BuiltTypeEnvironment.sources; type_environment = TypeEnvironment.read_only type_environment }
 
 
   let build_type_environment_and_postprocess ?call_graph_builder project =
@@ -2869,14 +2866,14 @@ module ScratchProject = struct
       |> Postprocessing.run
            ~scheduler:(Scheduler.create_sequential ())
            ~configuration:(configuration_of project)
-           ~environment:(TypeEnvironment.read_only built_type_environment.type_environment)
+           ~environment:built_type_environment.type_environment
     in
     built_type_environment, errors
 
 
   let build_global_resolution project =
     let { BuiltGlobalEnvironment.global_environment; _ } = build_global_environment project in
-    AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    GlobalResolution.create global_environment
 
 
   let build_resolution project =
@@ -2897,17 +2894,26 @@ module ScratchProject = struct
 
 
   let update_global_environment
-      ({ in_memory; _ } as project)
+      { type_environment; in_memory; _ }
       ?(scheduler = mock_scheduler ())
       artifact_paths
     =
     if in_memory then
       failwith "Cannot call update_global_environment on an in-memory scratch project";
-    let global_environment = global_environment project in
+    let global_environment = TypeEnvironment.global_environment type_environment in
     AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
       global_environment
       ~scheduler
       artifact_paths
+
+
+  module ReadWrite = struct
+    (* Because module tracker updates aren't exposed directly through UpdateResult, grey-box tests
+       of ModuleTracker updates require access to the read-write tracker. We put this in a ReadWrite
+       module to emphasize that it would be easy to make mistakes using it. *)
+    let module_tracker { type_environment; _ } =
+      TypeEnvironment.ast_environment type_environment |> AstEnvironment.module_tracker
+  end
 end
 
 type test_update_environment_with_t = {
@@ -2957,10 +2963,11 @@ let assert_errors
           ScratchProject.build_global_environment project
         in
         let configuration = ScratchProject.configuration_of project in
+        let { ScratchProject.type_environment; _ } = project in
         ( configuration,
           sources,
-          AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.read_only,
-          TypeEnvironment.create global_environment )
+          AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment,
+          type_environment )
       in
       let configuration = { configuration with debug; strict } in
       let source =
@@ -3013,9 +3020,7 @@ let assert_equivalent_attributes ~context source expected =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context [handle, source] |> ScratchProject.build_global_environment
     in
-    let global_resolution =
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
-    in
+    let global_resolution = GlobalResolution.create global_environment in
     let compare_by_name left right =
       String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
     in

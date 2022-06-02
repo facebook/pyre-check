@@ -8,7 +8,6 @@
 open Core
 open OUnit2
 open Test
-open Analysis
 open Ast
 open Interprocedural
 open ClassHierarchyGraph
@@ -26,7 +25,7 @@ let test_from_source context =
           ~f:(fun ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) ->
             Option.some_if (String.equal (Reference.show qualifier) "test") source)
       in
-      test_source, TypeEnvironment.read_only type_environment
+      test_source, type_environment
     in
     let class_hierarchy = from_source ~environment ~source:test_source in
     assert_equal

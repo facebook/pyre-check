@@ -17,11 +17,10 @@ let test_simple_registration context =
     let project =
       ScratchProject.setup [source_name ^ ".py", source] ~include_typeshed_stubs:false ~context
     in
-    let class_metadata_environment =
+    let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.class_metadata_environment
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.class_metadata_environment
     in
-    let read_only = ClassMetadataEnvironment.read_only class_metadata_environment in
     let printer v =
       v >>| ClassMetadataEnvironment.show_class_metadata |> Option.value ~default:"none"
     in
@@ -135,11 +134,10 @@ let test_updates context =
         ~context
     in
     let configuration = ScratchProject.configuration_of project in
-    let class_metadata_environment =
+    let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.class_metadata_environment
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.class_metadata_environment
     in
-    let read_only = ClassMetadataEnvironment.cold_start class_metadata_environment in
     let execute_action (class_name, dependency, expectation) =
       let printer v =
         v >>| ClassMetadataEnvironment.show_class_metadata |> Option.value ~default:"none"

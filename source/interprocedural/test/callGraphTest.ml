@@ -64,7 +64,7 @@ let test_call_graph_of_define context =
           (Preprocessing.defines ~include_nested:true ~include_toplevels:true test_source)
           ~f:find_define,
         test_source,
-        TypeEnvironment.read_only type_environment,
+        type_environment,
         project.configuration )
     in
     let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
@@ -4517,9 +4517,7 @@ let test_return_type_from_annotation context =
   let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
     Test.ScratchProject.build_type_environment project
   in
-  let resolution =
-    TypeEnvironment.read_only type_environment |> TypeEnvironment.ReadOnly.global_resolution
-  in
+  let resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let assert_from_annotation annotation expected =
     let actual = ReturnType.from_annotation ~resolution annotation in
     assert_equal ~printer:ReturnType.show ~cmp:ReturnType.equal expected actual

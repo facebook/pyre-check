@@ -27,7 +27,7 @@ let setup ?(update_environment_with = []) ~context ~handle source =
     List.find_exn sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; _ } ->
         String.equal relative handle)
   in
-  source, TypeEnvironment.read_only type_environment, project.configuration
+  source, type_environment, project.configuration
 
 
 let create_call_graph ?(update_environment_with = []) ~context source_text =
@@ -407,11 +407,11 @@ let test_type_collection context =
       in
       let source =
         AstEnvironment.ReadOnly.get_processed_source
-          (TypeEnvironment.ast_environment environment |> AstEnvironment.read_only)
+          (TypeEnvironment.ReadOnly.ast_environment environment)
           (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
         |> fun option -> Option.value_exn option
       in
-      source, TypeEnvironment.read_only environment
+      source, environment
     in
     let defines =
       Preprocessing.defines ~include_toplevels:true source

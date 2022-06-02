@@ -19,9 +19,7 @@ let set_up_environment ?source ?rules ~context ~model_source () =
     | None -> model_source
     | Some source -> source
   in
-  let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-    ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
-  in
+  let project = ScratchProject.setup ~context ["test.py", source] in
   let configuration =
     let rules =
       match rules with
@@ -57,10 +55,7 @@ let set_up_environment ?source ?rules ~context ~model_source () =
   in
   let source = Test.trim_extra_indentation model_source in
   let resolution =
-    let global_resolution =
-      Analysis.AnnotatedGlobalEnvironment.read_only global_environment
-      |> Analysis.GlobalResolution.create
-    in
+    let global_resolution = ScratchProject.build_global_resolution project in
     TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
   in
 
@@ -85,9 +80,7 @@ let set_up_environment ?source ?rules ~context ~model_source () =
        (List.to_string errors ~f:ModelVerificationError.display))
     (List.is_empty errors);
 
-  let environment =
-    Analysis.TypeEnvironment.create global_environment |> Analysis.TypeEnvironment.read_only
-  in
+  let environment = ScratchProject.type_environment project in
   parse_result, environment, skip_overrides
 
 

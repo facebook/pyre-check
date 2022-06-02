@@ -17,7 +17,6 @@ let test_simple_registration context =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.read_only
       |> AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution
     in
     let location_insensitive_compare left right =
@@ -84,10 +83,9 @@ let test_updates context =
         sources
         ~context
     in
-    let annotated_global_environment = ScratchProject.global_environment project in
     let configuration = ScratchProject.configuration_of project in
     let read_only =
-      AnnotatedGlobalEnvironment.read_only annotated_global_environment
+      ScratchProject.global_environment project
       |> AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution
     in
     let execute_action = function

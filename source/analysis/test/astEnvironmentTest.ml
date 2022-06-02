@@ -34,13 +34,12 @@ let test_basic context =
     ScratchProject.setup ~context [handle_a, source_a; handle_b, source_b; handle_c, source_c]
   in
   let configuration = ScratchProject.configuration_of project in
-  let module_tracker = ScratchProject.module_tracker project in
+  let ast_environment =
+    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
+  in
   let { Configuration.Analysis.local_root; _ } = configuration in
-  let ast_environment = AstEnvironment.create module_tracker in
   let assert_source_path ~ast_environment ~expected reference =
-    match
-      AstEnvironment.ReadOnly.get_source_path (AstEnvironment.read_only ast_environment) reference
-    with
+    match AstEnvironment.ReadOnly.get_source_path ast_environment reference with
     | None ->
         let message =
           Format.asprintf "Cannot find reference %a in the AST environment" Reference.pp reference
@@ -81,11 +80,7 @@ let test_parse_stubs_modules_list context =
   in
   let assert_function_matches_name ~qualifier ?(is_stub = false) define =
     let name =
-      match
-        Analysis.AstEnvironment.ReadOnly.get_processed_source
-          (AstEnvironment.read_only ast_environment)
-          qualifier
-      with
+      match Analysis.AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier with
       | Some
           {
             Source.statements =
@@ -120,7 +115,6 @@ let test_parse_source context =
       ~include_typeshed_stubs:false
       ["x.py", "def foo()->int:\n    return 1\n"]
     |> ScratchProject.build_ast_environment
-    |> AstEnvironment.read_only
   in
   let sources =
     List.filter_map
@@ -586,7 +580,6 @@ let test_parse_repository context =
         let ast_environment =
           ScratchProject.setup ~context ~include_typeshed_stubs:false repository
           |> ScratchProject.build_ast_environment
-          |> AstEnvironment.read_only
         in
         List.filter_map
           (AstEnvironment.ReadOnly.project_qualifiers ast_environment)
@@ -686,41 +679,40 @@ module IncrementalTest = struct
     (* Set up the initial project *)
     let old_external_sources = get_old_inputs external_setups in
     let old_sources = get_old_inputs setups in
-    let configuration, ast_environment =
-      let ({ ScratchProject.configuration; _ } as project) =
-        ScratchProject.setup
-          ~context
-          ~external_sources:old_external_sources
-          ~in_memory:false
-          old_sources
-      in
+    let project =
+      ScratchProject.setup
+        ~context
+        ~external_sources:old_external_sources
+        ~in_memory:false
+        old_sources
+    in
+    let configuration = ScratchProject.configuration_of project in
+    let () =
       let ast_environment = ScratchProject.build_ast_environment project in
-      let read_only_environment = AstEnvironment.read_only ast_environment in
       (if force_load_external_sources then
          (* If we don't do this, external sources are ignored due to lazy loading *)
          let load_source { handle; _ } =
            let qualifier = ModulePath.qualifier_of_relative handle in
-           let _ = AstEnvironment.ReadOnly.get_raw_source read_only_environment qualifier in
+           let _ = AstEnvironment.ReadOnly.get_raw_source ast_environment qualifier in
            ()
          in
          List.iter external_setups ~f:load_source);
       if preprocess_all_sources then
         (* Preprocess invalidated modules (which are internal sources) *)
-        AstEnvironment.ReadOnly.project_qualifiers read_only_environment
+        AstEnvironment.ReadOnly.project_qualifiers ast_environment
         |> List.iter ~f:(fun qualifier ->
                AstEnvironment.ReadOnly.get_processed_source
-                 read_only_environment
+                 ast_environment
                  ~track_dependency:true
                  qualifier
-               |> ignore);
-      configuration, ast_environment
+               |> ignore)
     in
     (* Update filesystem *)
     (* Compute the dependencies *)
     let invalidated_modules =
       update_filesystem_state configuration
-      |> AstEnvironment.update ~scheduler:(Test.mock_scheduler ()) ast_environment
-      |> AstEnvironment.UpdateResult.invalidated_modules
+      |> ScratchProject.update_global_environment project
+      |> AnnotatedGlobalEnvironment.UpdateResult.invalidated_modules
     in
     (* Check dependency expectations *)
     let assert_parser_dependency expected actual =

@@ -17,7 +17,7 @@ let assert_errors ?(show_error_traces = false) ~context input_source expected_er
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, type_errors =
       ScratchProject.build_type_environment_and_postprocess project
     in
-    TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only, type_errors
+    TypeEnvironment.ReadOnly.ast_environment type_environment, type_errors
   in
   let descriptions =
     List.map type_errors ~f:(fun error ->

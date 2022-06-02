@@ -460,7 +460,6 @@ let initialize
   let static_analysis_configuration =
     Configuration.StaticAnalysis.create configuration ?find_missing_flows ()
   in
-  let environment = TypeEnvironment.read_only environment in
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
   let source =
     AstEnvironment.ReadOnly.get_processed_source

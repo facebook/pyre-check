@@ -4978,16 +4978,19 @@ module AttributeReadOnly = ReadOnly
 include TypeParameterValidationTypes
 
 module Testing = struct
-  let upstream_environment environment =
-    GlobalAnnotationCache.Testing.upstream_environment environment
-    |> AttributeCache.Testing.upstream_environment
-    |> MetaclassCache.Testing.upstream_environment
-    |> ParseAnnotationCache.Testing.upstream_environment
+  module ReadOnly = struct
+    let upstream environment =
+      GlobalAnnotationCache.Testing.ReadOnly.upstream environment
+      |> AttributeCache.Testing.ReadOnly.upstream
+      |> MetaclassCache.Testing.ReadOnly.upstream
+      |> ParseAnnotationCache.Testing.ReadOnly.upstream
+  end
 
-
-  let upstream_result update_result =
-    GlobalAnnotationCache.Testing.upstream_result update_result
-    |> AttributeCache.Testing.upstream_result
-    |> MetaclassCache.Testing.upstream_result
-    |> ParseAnnotationCache.Testing.upstream_result
+  module UpdateResult = struct
+    let upstream update_result =
+      GlobalAnnotationCache.Testing.UpdateResult.upstream update_result
+      |> AttributeCache.Testing.UpdateResult.upstream
+      |> MetaclassCache.Testing.UpdateResult.upstream
+      |> ParseAnnotationCache.Testing.UpdateResult.upstream
+  end
 end

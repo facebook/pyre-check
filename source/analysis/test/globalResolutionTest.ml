@@ -179,9 +179,7 @@ let test_constructors context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution =
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
-    in
+    let resolution = GlobalResolution.create global_environment in
     let instantiated =
       parse_single_expression instantiated
       |> GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
@@ -483,7 +481,7 @@ let test_class_attributes context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+    GlobalResolution.create global_environment
   in
   let resolution =
     setup
@@ -883,7 +881,7 @@ let test_attribute_type context =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+      GlobalResolution.create global_environment
     in
     let parse annotation =
       parse_single_expression ~preprocess:true annotation
@@ -932,7 +930,7 @@ let test_invalid_type_parameters context =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+      GlobalResolution.create global_environment
     in
     let actual_mismatches, actual_transformed_type =
       GlobalResolution.check_invalid_type_parameters global_resolution given_type
@@ -1169,7 +1167,7 @@ let test_meet context =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+      GlobalResolution.create global_environment
     in
     let parse annotation =
       parse_single_expression ~preprocess:true annotation
@@ -1196,7 +1194,7 @@ let test_join context =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+      GlobalResolution.create global_environment
     in
     let parse annotation =
       parse_single_expression ~preprocess:true annotation
@@ -1935,9 +1933,7 @@ let test_constraints context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution =
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
-    in
+    let resolution = GlobalResolution.create global_environment in
     let constraints =
       GlobalResolution.constraints ~target ~resolution ?parameters ~instantiated ()
     in
@@ -2196,9 +2192,7 @@ let test_metaclasses context =
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
-    let resolution =
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
-    in
+    let resolution = GlobalResolution.create global_environment in
     assert_equal (Some (Type.Primitive metaclass)) (GlobalResolution.metaclass ~resolution target)
   in
   assert_metaclass ~source:{|

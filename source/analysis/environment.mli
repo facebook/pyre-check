@@ -83,9 +83,13 @@ module type S = sig
     UpdateResult.t
 
   module Testing : sig
-    val upstream_environment : t -> PreviousEnvironment.t
+    module ReadOnly : sig
+      val upstream : ReadOnly.t -> PreviousEnvironment.ReadOnly.t
+    end
 
-    val upstream_result : UpdateResult.t -> PreviousEnvironment.UpdateResult.t
+    module UpdateResult : sig
+      val upstream : UpdateResult.t -> PreviousEnvironment.UpdateResult.t
+    end
   end
 end
 
@@ -175,9 +179,13 @@ module EnvironmentTable : sig
       UpdateResult.t
 
     module Testing : sig
-      val upstream_environment : t -> In.PreviousEnvironment.t
+      module ReadOnly : sig
+        val upstream : ReadOnly.t -> In.PreviousEnvironment.ReadOnly.t
+      end
 
-      val upstream_result : UpdateResult.t -> In.PreviousEnvironment.UpdateResult.t
+      module UpdateResult : sig
+        val upstream : UpdateResult.t -> In.PreviousEnvironment.UpdateResult.t
+      end
     end
   end
 

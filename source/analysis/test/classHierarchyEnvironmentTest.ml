@@ -15,11 +15,10 @@ open Test
 let test_simple_registration context =
   let assert_registers sources name ~expected_edges ~expected_extends_placeholder_stub =
     let project = ScratchProject.setup sources ~include_typeshed_stubs:false ~context in
-    let class_hierarchy_environment =
+    let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.class_hierarchy_environment
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.class_hierarchy_environment
     in
-    let read_only = ClassHierarchyEnvironment.cold_start class_hierarchy_environment in
     let expected_edges =
       expected_edges
       >>| List.map ~f:(fun name ->
@@ -124,8 +123,7 @@ let test_inferred_generic_base context =
     in
     let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.class_hierarchy_environment
-      |> ClassHierarchyEnvironment.read_only
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.class_hierarchy_environment
     in
     let expected =
       expected
@@ -227,11 +225,10 @@ let test_updates context =
         ~context
     in
     let configuration = ScratchProject.configuration_of project in
-    let class_hierarchy_environment =
+    let read_only =
       ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.class_hierarchy_environment
+      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.class_hierarchy_environment
     in
-    let read_only = ClassHierarchyEnvironment.cold_start class_hierarchy_environment in
     let execute_action = function
       | `Edges (class_name, dependency, expectation) ->
           let printer v =

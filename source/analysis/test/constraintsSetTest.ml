@@ -122,7 +122,7 @@ let make_assert_functions context =
     |}
       context
   in
-  let resolution = AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create in
+  let resolution = GlobalResolution.create environment in
   let default_postprocess annotation = Type.Variable.mark_all_variables_as_bound annotation in
   let prep annotation =
     let aliases ?replace_unbound_parameters_with_any:_ a =
@@ -185,9 +185,7 @@ let make_assert_functions context =
     =
     let handler =
       let class_hierarchy =
-        AnnotatedGlobalEnvironment.read_only environment
-        |> GlobalResolution.create
-        |> GlobalResolution.class_hierarchy
+        GlobalResolution.create environment |> GlobalResolution.class_hierarchy
       in
       let metaclass name ~assumptions:_ = GlobalResolution.metaclass ~resolution name in
       let order =
@@ -247,9 +245,7 @@ let make_assert_functions context =
                 | Type.Tuple ordered_type -> ordered_type
                 | _ -> failwith "expected tuple"
               in
-              let global_resolution =
-                AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create
-              in
+              let global_resolution = GlobalResolution.create environment in
               match GlobalResolution.aliases global_resolution primitive with
               | Some (Type.VariableAlias (ParameterVariadic variable)) ->
                   Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
@@ -1001,7 +997,7 @@ let test_instantiate_protocol_parameters context =
       expected
     =
     let environment = environment ?source context in
-    let resolution = AnnotatedGlobalEnvironment.read_only environment |> GlobalResolution.create in
+    let resolution = GlobalResolution.create environment in
     let substitute name =
       name
       |> String.substr_replace_all ~pattern:"P" ~with_:"test.P"
@@ -1213,11 +1209,7 @@ let test_mark_escaped_as_escaped context =
     Type.Callable.create ~annotation:variable ~parameters:(Type.Callable.Defined []) ()
   in
   let result =
-    let class_hierarchy =
-      AnnotatedGlobalEnvironment.read_only environment
-      |> GlobalResolution.create
-      |> GlobalResolution.class_hierarchy
-    in
+    let class_hierarchy = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
     let order =
       {
         ConstraintsSet.class_hierarchy = hierarchy class_hierarchy;

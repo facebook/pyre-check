@@ -108,9 +108,7 @@ let test_unresolved_select context =
           ]
         |> ScratchProject.build_global_environment
       in
-      let global_resolution =
-        AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
-      in
+      let global_resolution = GlobalResolution.create global_environment in
       let resolution =
         TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
         |> Resolution.new_local
@@ -138,8 +136,7 @@ let test_unresolved_select context =
         let arguments, expression =
           match
             AstEnvironment.ReadOnly.get_processed_source
-              (AnnotatedGlobalEnvironment.ast_environment global_environment
-              |> AstEnvironment.read_only)
+              (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
               (Reference.create "test")
             >>| Source.statements
             >>| List.rev

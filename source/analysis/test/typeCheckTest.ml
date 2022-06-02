@@ -2106,7 +2106,7 @@ let test_unpack_callable_and_self_argument context =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+      GlobalResolution.create global_environment
     in
     let actual =
       TypeCheck.unpack_callable_and_self_argument
@@ -2128,7 +2128,7 @@ let test_unpack_callable_and_self_argument context =
       let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
       in
-      AnnotatedGlobalEnvironment.read_only global_environment |> GlobalResolution.create
+      GlobalResolution.create global_environment
     in
     let expected =
       expected
