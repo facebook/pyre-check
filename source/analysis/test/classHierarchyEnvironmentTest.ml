@@ -226,9 +226,11 @@ let test_updates context =
         sources
         ~context
     in
-    let ast_environment = ScratchProject.build_ast_environment project in
     let configuration = ScratchProject.configuration_of project in
-    let class_hierarchy_environment = ClassHierarchyEnvironment.create ast_environment in
+    let class_hierarchy_environment =
+      ScratchProject.global_environment project
+      |> AnnotatedGlobalEnvironment.Testing.class_hierarchy_environment
+    in
     let read_only = ClassHierarchyEnvironment.cold_start class_hierarchy_environment in
     let execute_action = function
       | `Edges (class_name, dependency, expectation) ->
