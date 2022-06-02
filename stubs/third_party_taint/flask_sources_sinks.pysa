@@ -79,6 +79,7 @@ def werkzeug.utils.secure_filename(filename: Sanitize[TaintInTaintOut[TaintSink[
 def werkzeug.utils.secure_filename(filename: Sanitize[TaintInTaintOut[TaintSink[FileSystem_Other]]]): ...
 
 ModelQuery(
+  name = "get_route_sources_sinks",
   find = "functions",
   where = [
     Decorator(name.matches("app.route")),
@@ -90,6 +91,7 @@ ModelQuery(
 )
 
 ModelQuery(
+  name = "get_errorhandler_sinks",
   find = "functions",
   where = [
     Decorator(name.matches("app.errorhandler")),

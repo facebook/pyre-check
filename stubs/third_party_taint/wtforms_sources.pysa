@@ -1,4 +1,5 @@
 ModelQuery(
+  name = "get_wtforms_sources",
   find = "attributes",
   where = [
     AnyOf(

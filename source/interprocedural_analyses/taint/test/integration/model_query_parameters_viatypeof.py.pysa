@@ -2,12 +2,14 @@ def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
 def _test_source() -> TaintSource[Test, Via[special_source]]: ...
 
 ModelQuery(
+  name = "get_test1_sinks",
   find="functions",
   where=[name.matches("test1_f")],
   model=Parameters(TaintSink[Test, ViaTypeOf])
 )
 
 ModelQuery(
+  name = "get_test2_sinks",
   find="methods",
   where=[parent.matches("Test2_C")],
   model=Parameters(TaintSink[Test, ViaTypeOf], where=[Not(name.matches("self"))])

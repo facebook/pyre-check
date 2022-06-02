@@ -2,6 +2,7 @@ def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
 def _test_source() -> TaintSource[Test, Via[special_source]]: ...
 
 ModelQuery(
+  name = "get_Test1_sources",
   find = "attributes",
   where = [
     parent.matches("Test1_"),
@@ -13,6 +14,7 @@ ModelQuery(
 )
 
 ModelQuery(
+  name = "get_Test2_sources",
   find = "methods",
   where = [
     parent.matches("Test2_"),
