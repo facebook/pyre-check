@@ -28,7 +28,9 @@ let test_compute_locally_changed_files context =
       let project = ScratchProject.setup ~context ~in_memory:false sources in
       let configuration = ScratchProject.configuration_of project in
       let module_tracker = ScratchProject.module_tracker project in
-      let () = Service.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker in
+      let () =
+        Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker
+      in
       configuration, module_tracker
     in
     let { Configuration.Analysis.local_root; _ } = configuration in
@@ -42,7 +44,7 @@ let test_compute_locally_changed_files context =
     List.iter files ~f:write_new_file;
     let new_module_tracker = Analysis.ModuleTracker.create configuration in
     let actual =
-      Service.ChangedPaths.compute_locally_changed_paths
+      Interprocedural.ChangedPaths.compute_locally_changed_paths
         ~scheduler
         ~configuration
         ~old_module_tracker

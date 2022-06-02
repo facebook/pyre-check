@@ -60,7 +60,7 @@ let parse_and_save_decorators_to_skip
 
 (** Perform a full type check and build a type environment. *)
 let type_check ~scheduler ~configuration ~cache =
-  Service.StaticAnalysis.Cache.type_environment cache (fun () ->
+  Cache.type_environment cache (fun () ->
       let configuration =
         (* In order to get an accurate call graph and type information, we need to ensure that we
            schedule a type check for external files. *)
@@ -311,7 +311,7 @@ let run_taint_analysis
        early phase of type-checking and needs to know which decorators to skip. *)
     let () = parse_and_save_decorators_to_skip ~inline_decorators configuration in
 
-    let cache = Service.StaticAnalysis.Cache.load ~scheduler ~configuration ~enabled:use_cache in
+    let cache = Cache.load ~scheduler ~configuration ~enabled:use_cache in
 
     let environment = type_check ~scheduler ~configuration ~cache in
 
@@ -324,7 +324,7 @@ let run_taint_analysis
     let read_only_environment = Analysis.TypeEnvironment.read_only environment in
 
     let class_hierarchy_graph =
-      Service.StaticAnalysis.Cache.class_hierarchy_graph cache (fun () ->
+      Cache.class_hierarchy_graph cache (fun () ->
           let timer = Timer.start () in
           let class_hierarchy_graph =
             Interprocedural.ClassHierarchyGraph.from_qualifiers
@@ -352,7 +352,7 @@ let run_taint_analysis
     in
 
     let initial_callables =
-      Service.StaticAnalysis.Cache.initial_callables cache (fun () ->
+      Cache.initial_callables cache (fun () ->
           let timer = Timer.start () in
           let initial_callables =
             Interprocedural.FetchCallables.from_qualifiers
@@ -388,7 +388,7 @@ let run_taint_analysis
     Log.info "Computing overrides...";
     let timer = Timer.start () in
     let { Interprocedural.OverrideGraph.Heap.overrides; skipped_overrides } =
-      Service.StaticAnalysis.Cache.override_graph cache (fun () ->
+      Cache.override_graph cache (fun () ->
           Interprocedural.OverrideGraph.record_overrides_for_qualifiers
             ~scheduler
             ~environment:(Analysis.TypeEnvironment.read_only environment)

@@ -32,3 +32,4 @@ module Sources = Sources
 module ExitStatus = ExitStatus
 module Fixpoint = Fixpoint
 module Registry = Registry
+module Cache = Cache

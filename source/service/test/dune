@@ -1,6 +1,6 @@
 (tests
  (names dependencyTrackedMemoryTest ignoreTest memoryTest schedulerTest
-   checkTest inferTest changedPathsTest)
+   checkTest inferTest)
  (preprocess
   (pps ppx_deriving.show ppx_sexp_conv ppx_compare ppx_sexp_message ppx_hash))
  (libraries oUnit pyrelib.ast pyrelib.analysis pyrelib.test pyrelib.service
