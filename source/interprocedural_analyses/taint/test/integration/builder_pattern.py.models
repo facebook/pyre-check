@@ -257,40 +257,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{builder_pattern.Builder::__init__}",
-    "tito": [
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Ovr{object::__init__}",
-    "tito": [
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "_cookies",
     "sources": [
       {

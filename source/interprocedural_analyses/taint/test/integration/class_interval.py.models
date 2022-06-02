@@ -470,42 +470,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.A1::m1}",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "caller_interval": [ { "lower": 11, "upper": 12 } ],
-            "receiver_interval": [ { "lower": 8, "upper": 13 } ],
-            "is_self_call": true,
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "builtins.pyi",
-                "line": -1,
-                "start": -1,
-                "end": -1
-              },
-              "resolves_to": [ "class_interval.C1.m2" ],
-              "port": "formal(x)"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "Ovr{class_interval.A1::m2}",
     "sinks": [
       {

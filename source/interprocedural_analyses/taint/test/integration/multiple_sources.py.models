@@ -336,62 +336,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{multiple_sources.Node::__init__}",
-    "tito": [
-      {
-        "port": "formal(id)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Ovr{object::__init__}",
-    "tito": [
-      {
-        "port": "formal(id)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "multiple_sources.Node.__init__",
     "tito": [
       {

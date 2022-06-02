@@ -116,7 +116,7 @@ let test_integration path context =
     in
     let { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ } =
       DependencyGraph.build_whole_program_dependency_graph
-        ~prune:false
+        ~prune:true
         ~initial_callables
         ~call_graph
         ~overrides

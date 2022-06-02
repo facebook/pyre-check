@@ -585,68 +585,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{object::__init__}",
-    "tito": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "[r]" ], "kind": "LocalReturn" } ],
-            "local_features": [ { "via": "tito" } ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "local_features": [ { "via": "tito" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Ovr{overrides.A::__init__}",
-    "tito": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": [ "[r]" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "local_features": [ { "via": "tito" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "Ovr{overrides.A::methodA}",
     "sinks": [
       {
@@ -668,40 +606,6 @@
               "start": -1,
               "end": -1
             }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Ovr{overrides.B::__init__}",
-    "tito": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": [ "[r]" ],
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "local_features": [ { "via": "tito" } ],
-            "decl": null
           }
         ]
       }
@@ -762,34 +666,6 @@
               "start": -1,
               "end": -1
             }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Ovr{overrides.Base::__init__}",
-    "tito": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "[r]" ], "kind": "LocalReturn" } ],
-            "local_features": [ { "via": "tito" } ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "local_features": [ { "via": "tito" } ],
-            "decl": null
           }
         ]
       }
@@ -903,40 +779,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.C::__init__}",
-    "tito": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": [ "[r]" ],
-                "length": 2,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "local_features": [ { "via": "tito" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "Ovr{overrides.C::methodA}",
     "sinks": [
       {
@@ -968,40 +810,6 @@
         "taint": [
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Ovr{overrides.D::__init__}",
-    "tito": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": [ "[r]" ],
-                "length": 3,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "local_features": [ { "via": "tito" } ],
             "decl": null
           }
         ]

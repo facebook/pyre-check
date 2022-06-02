@@ -470,62 +470,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{higher_order_functions.Callable::__init__}",
-    "tito": [
-      {
-        "port": "formal(value)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[value]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Ovr{object::__init__}",
-    "tito": [
-      {
-        "port": "formal(value)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[value]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "_cookies",
     "sources": [
       {

@@ -103,45 +103,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{callables.AbstractEventProcessor::__init__}",
-    "tito": [
-      {
-        "port": "formal(benign)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(tainted)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[tainted]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "Ovr{callables.AbstractEventProcessor::async_call_tainted}",
     "sinks": [
       {
@@ -253,90 +214,6 @@
               "start": -1,
               "end": -1
             }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Ovr{callables.ProcessorInfo::__init__}",
-    "tito": [
-      {
-        "port": "formal(processor_type)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": [ "[processor_type]" ],
-                "kind": "LocalReturn"
-              }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Ovr{type::__init__}",
-    "tito": [
-      {
-        "port": "formal(benign)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(tainted)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[tainted]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(processor_type)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": [ "[processor_type]" ],
-                "kind": "LocalReturn"
-              }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
           }
         ]
       }

@@ -60,35 +60,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{type::__call__}",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 1; name = arg; positional_only = false}"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "decl": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "callable_classes.CallableProtocol.__call__",
     "sources": [
       {
