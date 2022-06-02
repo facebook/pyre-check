@@ -82,6 +82,12 @@ module type S = sig
     scheduler:Scheduler.t ->
     ArtifactPath.t list ->
     UpdateResult.t
+
+  module Testing : sig
+    val upstream_environment : t -> PreviousEnvironment.t
+
+    val upstream_result : UpdateResult.t -> PreviousEnvironment.UpdateResult.t
+  end
 end
 
 module EnvironmentTable = struct
@@ -173,6 +179,12 @@ module EnvironmentTable = struct
       scheduler:Scheduler.t ->
       ArtifactPath.t list ->
       UpdateResult.t
+
+    module Testing : sig
+      val upstream_environment : t -> In.PreviousEnvironment.t
+
+      val upstream_result : UpdateResult.t -> In.PreviousEnvironment.UpdateResult.t
+    end
   end
 
   module Make (In : In) (Table : Table with type value = In.Value.t and type key = In.Key.t) =
@@ -365,6 +377,13 @@ module EnvironmentTable = struct
         ~scheduler
         artifact_paths
       |> update_only_this_environment this_environment ~scheduler
+
+
+    module Testing = struct
+      let upstream_environment { upstream_environment; _ } = upstream_environment
+
+      let upstream_result { UpdateResult.upstream; _ } = upstream
+    end
   end
 
   module WithCache (In : In) =

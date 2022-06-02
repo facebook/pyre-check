@@ -268,3 +268,9 @@ let update_this_and_all_preceding_environments
 
 module HierarchyReadOnly = ReadOnly
 module UpdateResult = Edges.UpdateResult
+
+module Testing = struct
+  let upstream_environment { edges } = Edges.Testing.upstream_environment edges
+
+  let upstream_result = Edges.Testing.upstream_result
+end

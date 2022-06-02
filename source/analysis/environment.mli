@@ -81,6 +81,12 @@ module type S = sig
     scheduler:Scheduler.t ->
     ArtifactPath.t list ->
     UpdateResult.t
+
+  module Testing : sig
+    val upstream_environment : t -> PreviousEnvironment.t
+
+    val upstream_result : UpdateResult.t -> PreviousEnvironment.UpdateResult.t
+  end
 end
 
 (* The following is a special form of a shared memory table optimized for incremental type checking.
@@ -167,6 +173,12 @@ module EnvironmentTable : sig
       scheduler:Scheduler.t ->
       ArtifactPath.t list ->
       UpdateResult.t
+
+    module Testing : sig
+      val upstream_environment : t -> In.PreviousEnvironment.t
+
+      val upstream_result : UpdateResult.t -> In.PreviousEnvironment.UpdateResult.t
+    end
   end
 
   module WithCache (In : In) : S with module In = In
