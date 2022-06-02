@@ -25,9 +25,9 @@ let test_compute_locally_changed_files context =
         List.filter_map files ~f:(fun { relative; old_content; _ } ->
             old_content >>| fun content -> relative, content)
       in
-      let { ScratchProject.configuration; module_tracker; _ } =
-        ScratchProject.setup ~context ~in_memory:false sources
-      in
+      let project = ScratchProject.setup ~context ~in_memory:false sources in
+      let configuration = ScratchProject.configuration_of project in
+      let module_tracker = ScratchProject.module_tracker project in
       let () = Service.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker in
       configuration, module_tracker
     in

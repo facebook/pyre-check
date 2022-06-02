@@ -1161,13 +1161,15 @@ module IncrementalTest = struct
     let configuration, module_tracker =
       let old_external_sources = get_old_inputs external_setups in
       let old_sources = get_old_inputs setups in
-      let { ScratchProject.configuration; module_tracker; _ } =
+      let project =
         ScratchProject.setup
           ~context
           ~external_sources:old_external_sources
           ~in_memory:false
           old_sources
       in
+      let configuration = ScratchProject.configuration_of project in
+      let module_tracker = ScratchProject.module_tracker project in
       configuration, module_tracker
     in
     (* Compute the updates *)

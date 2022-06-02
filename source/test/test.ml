@@ -2695,7 +2695,7 @@ module ScratchProject = struct
   type t = {
     context: test_ctxt;
     configuration: Configuration.Analysis.t;
-    module_tracker: ModuleTracker.t;
+    type_environment: TypeEnvironment.t;
   }
 
   module BuiltTypeEnvironment = struct
@@ -2780,7 +2780,20 @@ module ScratchProject = struct
         List.iter external_sources ~f:(add_source ~root:external_root);
         ModuleTracker.create configuration
     in
-    { context; configuration; module_tracker }
+    let ast_environment = AstEnvironment.create module_tracker in
+    let () =
+      (* Clean shared memory up before the test *)
+      AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
+      let set_up_shared_memory _ = () in
+      let tear_down_shared_memory () _ =
+        AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment
+      in
+      (* Clean shared memory up after the test *)
+      OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
+    in
+    let global_environment = cold_start_environments ~ast_environment () in
+    let type_environment = TypeEnvironment.create global_environment in
+    { context; configuration; type_environment }
 
 
   (* Incremental checks already call ModuleTracker.update, so we don't need to update the state
@@ -2809,46 +2822,49 @@ module ScratchProject = struct
     File.write file
 
 
+  let type_environment { type_environment; _ } = type_environment
+
+  let global_environment project = type_environment project |> TypeEnvironment.global_environment
+
+  let ast_environment project =
+    global_environment project |> AnnotatedGlobalEnvironment.ast_environment
+
+
+  let module_tracker project = ast_environment project |> AstEnvironment.module_tracker
+
   let configuration_of { configuration; _ } = configuration
 
-  let source_paths_of { module_tracker; _ } = ModuleTracker.source_paths module_tracker
+  let source_paths_of project = module_tracker project |> ModuleTracker.source_paths
 
-  let qualifiers_of { module_tracker; _ } =
-    ModuleTracker.source_paths module_tracker |> List.map ~f:ModulePath.qualifier
+  let qualifiers_of project = source_paths_of project |> List.map ~f:ModulePath.qualifier
+
+  let project_qualifiers project =
+    ast_environment project
+    |> AstEnvironment.read_only
+    |> AstEnvironment.ReadOnly.project_qualifiers
 
 
-  let build_ast_environment { context; module_tracker; _ } =
-    let ast_environment = AstEnvironment.create module_tracker in
-    let () =
-      (* Clean shared memory up before the test *)
-      AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
-      let set_up_shared_memory _ = () in
-      let tear_down_shared_memory () _ =
-        AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment
-      in
-      (* Clean shared memory up after the test *)
-      OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
+  let get_project_sources project =
+    let ast_environment =
+      global_environment project
+      |> AnnotatedGlobalEnvironment.read_only
+      |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
     in
-    ast_environment
+    project_qualifiers project
+    |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
 
+
+  let build_ast_environment = ast_environment
 
   let build_global_environment project =
-    let ast_environment = build_ast_environment project in
-    let global_environment = cold_start_environments ~ast_environment () in
-    let sources =
-      AnnotatedGlobalEnvironment.read_only global_environment
-      |> AnnotatedGlobalEnvironment.ReadOnly.project_qualifiers
-      |> List.filter_map
-           ~f:
-             (AstEnvironment.ReadOnly.get_processed_source
-                (AstEnvironment.read_only ast_environment))
-    in
+    let global_environment = global_environment project in
+    let sources = get_project_sources project in
     { BuiltGlobalEnvironment.sources; global_environment }
 
 
   let build_type_environment ?call_graph_builder project =
-    let { BuiltGlobalEnvironment.sources; global_environment } = build_global_environment project in
-    let type_environment = TypeEnvironment.create global_environment in
+    let type_environment = type_environment project in
+    let sources = get_project_sources project in
     let configuration = configuration_of project in
     List.map sources ~f:(fun { Source.source_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
     |> TypeCheck.legacy_run_on_modules

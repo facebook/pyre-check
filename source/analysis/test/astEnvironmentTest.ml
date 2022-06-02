@@ -30,9 +30,11 @@ let test_basic context =
       def baz() -> int:
         return 42
       |} in
-  let { ScratchProject.configuration; module_tracker; _ } =
+  let project =
     ScratchProject.setup ~context [handle_a, source_a; handle_b, source_b; handle_c, source_c]
   in
+  let configuration = ScratchProject.configuration_of project in
+  let module_tracker = ScratchProject.module_tracker project in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let ast_environment = AstEnvironment.create module_tracker in
   let assert_source_path ~ast_environment ~expected reference =
