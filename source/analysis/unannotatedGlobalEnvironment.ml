@@ -877,7 +877,8 @@ module UpdateResult = struct
     define_additions: Reference.Set.t;
     previous_unannotated_globals: Reference.Set.t;
     triggered_dependencies: DependencyKey.RegisteredSet.t;
-    invalidated_modules: AstEnvironment.InvalidatedModules.t;
+    invalidated_modules: Reference.t list;
+    module_updates: ModuleTracker.IncrementalUpdate.t list;
     read_only: ReadOnly.t;
   }
 
@@ -899,6 +900,8 @@ module UpdateResult = struct
 
   let invalidated_modules { invalidated_modules; _ } = invalidated_modules
 
+  let module_updates { module_updates; _ } = module_updates
+
   let unannotated_global_environment_update_result = Fn.id
 
   let read_only { read_only; _ } = read_only
@@ -916,9 +919,13 @@ let cold_start ({ ast_environment; _ } as environment) =
 let update_this_and_all_preceding_environments
     ({ ast_environment; key_tracker; _ } as environment)
     ~scheduler
-    trigger
+    artifact_paths
   =
-  let invalidated_modules = AstEnvironment.update ~scheduler ast_environment trigger in
+  let invalidated_modules, module_updates =
+    let update_result = AstEnvironment.update ~scheduler ast_environment artifact_paths in
+    ( AstEnvironment.UpdateResult.invalidated_modules update_result,
+      AstEnvironment.UpdateResult.module_updates update_result )
+  in
   let ast_environment = AstEnvironment.read_only ast_environment in
   let map sources =
     let register qualifier =
@@ -1009,5 +1016,6 @@ let update_this_and_all_preceding_environments
     previous_unannotated_globals;
     triggered_dependencies;
     invalidated_modules;
+    module_updates;
     read_only = read_only environment;
   }

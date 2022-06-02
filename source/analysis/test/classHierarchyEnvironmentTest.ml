@@ -273,15 +273,9 @@ let test_updates context =
       delete_file project "test.py";
     Option.iter new_source ~f:(add_file project "test.py");
     let update_result =
-      let { ScratchProject.module_tracker; _ } = project in
       let { Configuration.Analysis.local_root; _ } = configuration in
-      let paths =
-        List.map ["test.py", ()] ~f:(fun (relative, _) ->
-            Test.relative_artifact_path ~root:local_root ~relative)
-      in
-      ModuleTracker.update ~paths module_tracker
-      |> fun updates ->
-      AstEnvironment.Update updates
+      List.map ["test.py", ()] ~f:(fun (relative, _) ->
+          Test.relative_artifact_path ~root:local_root ~relative)
       |> ClassHierarchyEnvironment.update_this_and_all_preceding_environments
            class_hierarchy_environment
            ~scheduler:(Test.mock_scheduler ())

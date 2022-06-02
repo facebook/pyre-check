@@ -150,7 +150,9 @@ module UpdateResult : sig
 
   val locally_triggered_dependencies : t -> DependencyKey.RegisteredSet.t
 
-  val invalidated_modules : t -> AstEnvironment.InvalidatedModules.t
+  val invalidated_modules : t -> Reference.t list
+
+  val module_updates : t -> ModuleTracker.IncrementalUpdate.t list
 
   val all_triggered_dependencies : t -> DependencyKey.RegisteredSet.t list
 
@@ -164,5 +166,5 @@ val cold_start : t -> ReadOnly.t
 val update_this_and_all_preceding_environments
   :  t ->
   scheduler:Scheduler.t ->
-  AstEnvironment.trigger ->
+  ArtifactPath.t list ->
   UpdateResult.t

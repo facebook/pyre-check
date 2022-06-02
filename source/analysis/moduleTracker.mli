@@ -34,7 +34,7 @@ val source_paths : t -> Ast.ModulePath.t list
 
 val configuration : t -> Configuration.Analysis.t
 
-val update : paths:ArtifactPath.t list -> t -> IncrementalUpdate.t list
+val update : t -> artifact_paths:ArtifactPath.t list -> IncrementalUpdate.t list
 
 module Serializer : sig
   val store_layouts : t -> unit

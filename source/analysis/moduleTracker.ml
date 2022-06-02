@@ -138,7 +138,7 @@ module Layouts = struct
     [@@deriving sexp, compare]
   end
 
-  let update_explicit_modules ~configuration ~paths module_to_files =
+  let update_explicit_modules ~configuration ~artifact_paths module_to_files =
     (* Process a single filesystem event *)
     let process_filesystem_event ~configuration = function
       | FileSystemEvent.Update path -> (
@@ -257,7 +257,7 @@ module Layouts = struct
     in
     (* Since `process_filesystem_event` is not idempotent, we don't want duplicated filesystem
        events *)
-    List.dedup_and_sort ~compare:ArtifactPath.compare paths
+    List.dedup_and_sort ~compare:ArtifactPath.compare artifact_paths
     |> List.map ~f:FileSystemEvent.create
     |> List.filter_map ~f:(process_filesystem_event ~configuration)
     |> merge_updates
@@ -320,8 +320,8 @@ module Layouts = struct
     aggregate_updates events |> commit_updates
 
 
-  let update ~configuration ~paths { module_to_files; submodule_refcounts } =
-    let explicit_updates = update_explicit_modules module_to_files ~configuration ~paths in
+  let update ~configuration ~artifact_paths { module_to_files; submodule_refcounts } =
+    let explicit_updates = update_explicit_modules module_to_files ~configuration ~artifact_paths in
     let implicit_updates = update_submodules submodule_refcounts ~events:explicit_updates in
     (* Explicit updates should shadow implicit updates *)
     let updates =
@@ -468,9 +468,9 @@ let source_paths { layouts = { module_to_files; _ }; _ } =
 
 let configuration { configuration; _ } = configuration
 
-let update ~paths { layouts; configuration; _ } =
+let update { layouts; configuration; _ } ~artifact_paths =
   let timer = Timer.start () in
-  let result = Layouts.update ~configuration ~paths layouts in
+  let result = Layouts.update ~configuration ~artifact_paths layouts in
   Statistics.performance ~name:"module tracker updated" ~timer ~phase_name:"Module tracking" ();
   result
 

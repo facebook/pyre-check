@@ -162,14 +162,9 @@ let test_updates context =
     List.iter original_sources ~f:(fun (path, _) -> delete_file project path);
     List.iter new_sources ~f:(fun (relative, content) -> add_file project ~relative content);
     let update_result =
-      let { ScratchProject.module_tracker; _ } = project in
       let { Configuration.Analysis.local_root; _ } = configuration in
-      let paths =
-        List.map new_sources ~f:(fun (relative, _) ->
-            Test.relative_artifact_path ~root:local_root ~relative)
-      in
-      ModuleTracker.update ~paths module_tracker
-      |> (fun updates -> AstEnvironment.Update updates)
+      List.map new_sources ~f:(fun (relative, _) ->
+          Test.relative_artifact_path ~root:local_root ~relative)
       |> ClassMetadataEnvironment.update_this_and_all_preceding_environments
            class_metadata_environment
            ~scheduler:(Test.mock_scheduler ())

@@ -2598,9 +2598,9 @@ let test_expand_type_checking_imports _ =
 
 let test_expand_wildcard_imports context =
   let assert_expanded external_sources check_source expected =
-    let ast_environment, _ =
+    let ast_environment =
       ScratchProject.setup ~context ~external_sources ["test.py", check_source]
-      |> ScratchProject.parse_sources
+      |> ScratchProject.build_ast_environment
     in
     assert_equal
       ~cmp:(List.equal (fun left right -> Statement.location_insensitive_compare left right = 0))

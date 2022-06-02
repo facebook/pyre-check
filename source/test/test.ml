@@ -2712,16 +2712,6 @@ module ScratchProject = struct
     }
   end
 
-  let clean_ast_shared_memory module_tracker ast_environment =
-    let deletions =
-      ModuleTracker.source_paths module_tracker
-      |> List.map ~f:ModulePath.qualifier
-      |> List.map ~f:(fun qualifier -> ModuleTracker.IncrementalUpdate.Delete qualifier)
-    in
-    AstEnvironment.update ~scheduler:(mock_scheduler ()) ast_environment (Update deletions)
-    |> ignore
-
-
   let setup
       ?(incremental_style = Configuration.Analysis.FineGrained)
       ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
@@ -2831,24 +2821,15 @@ module ScratchProject = struct
     let ast_environment = AstEnvironment.create module_tracker in
     let () =
       (* Clean shared memory up before the test *)
-      clean_ast_shared_memory module_tracker ast_environment;
+      AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
       let set_up_shared_memory _ = () in
-      let tear_down_shared_memory () _ = clean_ast_shared_memory module_tracker ast_environment in
+      let tear_down_shared_memory () _ =
+        AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment
+      in
       (* Clean shared memory up after the test *)
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
     ast_environment
-
-
-  let parse_sources ({ module_tracker; _ } as project) =
-    let ast_environment = build_ast_environment project in
-    let ast_environment_update_result =
-      Analysis.ModuleTracker.source_paths module_tracker
-      |> List.map ~f:(fun source_path -> ModuleTracker.IncrementalUpdate.NewExplicit source_path)
-      |> (fun updates -> AstEnvironment.Update updates)
-      |> Analysis.AstEnvironment.update ~scheduler:(mock_scheduler ()) ast_environment
-    in
-    ast_environment, ast_environment_update_result
 
 
   let build_global_environment project =

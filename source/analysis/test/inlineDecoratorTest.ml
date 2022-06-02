@@ -88,9 +88,9 @@ let test_decorator_body context =
       ]
     in
     let handle = "test.py" in
-    let ast_environment, _ =
+    let ast_environment =
       ScratchProject.setup ~context ~external_sources:additional_sources [handle, ""]
-      |> ScratchProject.parse_sources
+      |> ScratchProject.build_ast_environment
     in
     let get_source =
       AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment)
@@ -157,9 +157,9 @@ let test_decorator_body context =
 let get_expected_actual_sources ~context ~additional_sources ~handle source expected =
   Memory.reset_shared_memory ();
   InlineDecorator.set_should_inline_decorators true;
-  let ast_environment, _ =
+  let ast_environment =
     ScratchProject.setup ~context ~external_sources:additional_sources [handle, source]
-    |> ScratchProject.parse_sources
+    |> ScratchProject.build_ast_environment
   in
   let get_source =
     AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment)

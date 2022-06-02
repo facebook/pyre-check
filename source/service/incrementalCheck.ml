@@ -12,12 +12,9 @@ open Pyre
 
 type errors = Analysis.AnalysisError.t list [@@deriving show]
 
-let recheck ~configuration ~scheduler ~environment ~errors paths =
+let recheck ~configuration ~scheduler ~environment ~errors artifact_paths =
   let timer = Timer.start () in
-  let ast_environment = TypeEnvironment.ast_environment environment in
   let annotated_global_environment = TypeEnvironment.global_environment environment in
-  let module_tracker = AstEnvironment.module_tracker ast_environment in
-  let module_updates = ModuleTracker.update module_tracker ~paths in
   Scheduler.once_per_worker scheduler ~configuration ~f:SharedMemory.invalidate_caches;
   SharedMemory.invalidate_caches ();
   SharedMemory.collect `aggressive;
@@ -28,7 +25,7 @@ let recheck ~configuration ~scheduler ~environment ~errors paths =
     AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
       annotated_global_environment
       ~scheduler
-      (Update module_updates)
+      artifact_paths
   in
   let invalidated_modules =
     AnnotatedGlobalEnvironment.UpdateResult.invalidated_modules
@@ -121,12 +118,16 @@ let recheck ~configuration ~scheduler ~environment ~errors paths =
       let key = AnalysisError.module_reference error in
       Hashtbl.add_multi errors ~key ~data:error);
 
+  let module_updates =
+    UnannotatedGlobalEnvironment.UpdateResult.module_updates
+      unannotated_global_environment_update_result
+  in
   Statistics.performance
     ~name:"incremental check"
     ~timer
     ~integers:
       [
-        "number of changed files", List.length paths;
+        "number of changed files", List.length artifact_paths;
         "number of module tracker updates", List.length module_updates;
         "number of parser updates", List.length invalidated_modules;
         "number of rechecked modules", List.length recheck_modules;

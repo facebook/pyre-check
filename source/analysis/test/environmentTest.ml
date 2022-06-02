@@ -1300,13 +1300,7 @@ let test_update_and_compute_dependencies context =
         let { ScratchProject.configuration; _ } = project in
         let { Configuration.Analysis.local_root; _ } = configuration in
         let path = Test.relative_artifact_path ~root:local_root ~relative:"source.py" in
-        let ast_environment =
-          AnnotatedGlobalEnvironment.ast_environment annotated_global_environment
-        in
-        let module_tracker = AstEnvironment.module_tracker ast_environment in
-        ModuleTracker.update ~paths:[path] module_tracker
-        |> (fun updates -> AstEnvironment.Update updates)
-        |> update_environments ~annotated_global_environment
+        update_environments ~annotated_global_environment [path]
       in
       AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
       |> List.fold

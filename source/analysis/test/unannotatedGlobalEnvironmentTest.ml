@@ -807,15 +807,13 @@ let assert_updates
   if Option.is_some original_source then
     delete_file project "test.py";
   new_source >>| add_file project ~relative:"test.py" |> Option.value ~default:();
-  let { ScratchProject.module_tracker; _ } = project in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let path = Test.relative_artifact_path ~root:local_root ~relative:"test.py" in
   let update_result =
-    ModuleTracker.update ~paths:[path] module_tracker
-    |> (fun updates -> AstEnvironment.Update updates)
-    |> UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
-         unannotated_global_environment
-         ~scheduler:(mock_scheduler ())
+    UnannotatedGlobalEnvironment.update_this_and_all_preceding_environments
+      unannotated_global_environment
+      ~scheduler:(mock_scheduler ())
+      [path]
   in
   let printer set =
     SharedMemoryKeys.DependencyKey.RegisteredSet.elements set

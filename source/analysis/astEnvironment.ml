@@ -345,20 +345,25 @@ let get_and_preprocess_source ?dependency ast_environment qualifier =
       create_source ~typecheck_flags ~source_path statements |> preprocessing
 
 
-module InvalidatedModules = struct
-  type t = Reference.t list
+module UpdateResult = struct
+  type t = {
+    invalidated_modules: Reference.t list;
+    module_updates: ModuleTracker.IncrementalUpdate.t list;
+  }
+
+  let invalidated_modules { invalidated_modules; _ } = invalidated_modules
+
+  let module_updates { module_updates; _ } = module_updates
 end
 
-type trigger = Update of ModuleTracker.IncrementalUpdate.t list
-
-let update
+(* This code is factored out so that in tests we can use it as a hack to free up memory *)
+let process_module_updates
     ~scheduler
-    ({ raw_sources; module_tracker = upstream_tracker; _ } as ast_environment)
-    (Update module_updates)
+    ({ raw_sources; module_tracker; _ } as ast_environment)
+    module_updates
   =
-  let module_tracker = ModuleTracker.read_only upstream_tracker in
   let { Configuration.Analysis.incremental_style; _ } =
-    ModuleTracker.ReadOnly.configuration module_tracker
+    module_tracker |> ModuleTracker.read_only |> ModuleTracker.ReadOnly.configuration
   in
   match incremental_style with
   | Configuration.Analysis.Shallow ->
@@ -429,7 +434,22 @@ let update
           (RawSources.KeySet.of_list invalidated_modules_before_preprocessing)
         |> RawSources.KeySet.elements
       in
-      invalidated_modules
+      { UpdateResult.invalidated_modules; module_updates }
+
+
+let update ~scheduler ({ module_tracker; _ } as ast_environment) artifact_paths =
+  ModuleTracker.update module_tracker ~artifact_paths
+  |> process_module_updates ~scheduler ast_environment
+
+
+let clear_memory_for_tests ~scheduler ({ module_tracker; _ } as ast_environment) =
+  let _ =
+    ModuleTracker.source_paths module_tracker
+    |> List.map ~f:ModulePath.qualifier
+    |> List.map ~f:(fun qualifier -> ModuleTracker.IncrementalUpdate.Delete qualifier)
+    |> process_module_updates ~scheduler ast_environment
+  in
+  ()
 
 
 (* Both `load` and `store` are no-ops here since `Sources` and `WildcardExports` are in shared

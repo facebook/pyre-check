@@ -62,13 +62,17 @@ val load : ModuleTracker.t -> t
 
 val create : ModuleTracker.t -> t
 
-module InvalidatedModules : sig
-  type t = Reference.t list
+module UpdateResult : sig
+  type t
+
+  val invalidated_modules : t -> Reference.t list
+
+  val module_updates : t -> ModuleTracker.IncrementalUpdate.t list
 end
 
-type trigger = Update of ModuleTracker.IncrementalUpdate.t list
+val update : scheduler:Scheduler.t -> t -> ArtifactPath.t list -> UpdateResult.t
 
-val update : scheduler:Scheduler.t -> t -> trigger -> InvalidatedModules.t
+val clear_memory_for_tests : scheduler:Scheduler.t -> t -> unit
 
 val remove_sources : t -> Reference.t list -> unit
 

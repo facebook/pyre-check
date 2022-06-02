@@ -29,7 +29,7 @@ module UpdateResult : sig
       :  t ->
       UnannotatedGlobalEnvironment.UpdateResult.t
 
-    val invalidated_modules : t -> AstEnvironment.InvalidatedModules.t
+    val invalidated_modules : t -> Ast.Reference.t list
   end
 end
 
@@ -53,7 +53,7 @@ module type PreviousEnvironment = sig
   val update_this_and_all_preceding_environments
     :  t ->
     scheduler:Scheduler.t ->
-    AstEnvironment.trigger ->
+    ArtifactPath.t list ->
     UpdateResult.t
 end
 
@@ -79,7 +79,7 @@ module type S = sig
   val update_this_and_all_preceding_environments
     :  t ->
     scheduler:Scheduler.t ->
-    AstEnvironment.trigger ->
+    ArtifactPath.t list ->
     UpdateResult.t
 end
 
@@ -165,7 +165,7 @@ module EnvironmentTable : sig
     val update_this_and_all_preceding_environments
       :  t ->
       scheduler:Scheduler.t ->
-      AstEnvironment.trigger ->
+      ArtifactPath.t list ->
       UpdateResult.t
   end
 

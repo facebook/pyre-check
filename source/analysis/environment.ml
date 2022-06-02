@@ -29,7 +29,7 @@ module type UpdateResultType = sig
     :  t ->
     UnannotatedGlobalEnvironment.UpdateResult.t
 
-  val invalidated_modules : t -> AstEnvironment.InvalidatedModules.t
+  val invalidated_modules : t -> Ast.Reference.t list
 end
 
 module type PreviousEnvironment = sig
@@ -52,7 +52,7 @@ module type PreviousEnvironment = sig
   val update_this_and_all_preceding_environments
     :  t ->
     scheduler:Scheduler.t ->
-    AstEnvironment.trigger ->
+    ArtifactPath.t list ->
     UpdateResult.t
 end
 
@@ -108,7 +108,7 @@ module type S = sig
   val update_this_and_all_preceding_environments
     :  t ->
     scheduler:Scheduler.t ->
-    AstEnvironment.trigger ->
+    ArtifactPath.t list ->
     UpdateResult.t
 end
 
@@ -199,7 +199,7 @@ module EnvironmentTable = struct
     val update_this_and_all_preceding_environments
       :  t ->
       scheduler:Scheduler.t ->
-      AstEnvironment.trigger ->
+      ArtifactPath.t list ->
       UpdateResult.t
   end
 
@@ -361,12 +361,12 @@ module EnvironmentTable = struct
     let update_this_and_all_preceding_environments
         ({ upstream_environment; _ } as this_environment)
         ~scheduler
-        ast_environment_trigger
+        artifact_paths
       =
       In.PreviousEnvironment.update_this_and_all_preceding_environments
         upstream_environment
         ~scheduler
-        ast_environment_trigger
+        artifact_paths
       |> update_only_this_environment this_environment ~scheduler
   end
 
