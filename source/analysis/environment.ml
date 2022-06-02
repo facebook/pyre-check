@@ -58,32 +58,6 @@ end
 
 module UpdateResult = struct
   module type S = UpdateResultType
-
-  module Make (PreviousEnvironment : PreviousEnvironment) (ReadOnly : ReadOnly) = struct
-    type read_only = ReadOnly.t
-
-    type t = {
-      upstream: PreviousEnvironment.UpdateResult.t;
-      triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
-      read_only: ReadOnly.t;
-    }
-
-    let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
-
-    let all_triggered_dependencies { triggered_dependencies; upstream; _ } =
-      triggered_dependencies :: PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream
-
-
-    let read_only { read_only; _ } = read_only
-
-    let unannotated_global_environment_update_result { upstream; _ } =
-      PreviousEnvironment.UpdateResult.unannotated_global_environment_update_result upstream
-
-
-    let invalidated_modules previous =
-      unannotated_global_environment_update_result previous
-      |> UnannotatedGlobalEnvironment.UpdateResult.invalidated_modules
-  end
 end
 
 module type S = sig
@@ -260,7 +234,32 @@ module EnvironmentTable = struct
       }
 
 
-    module UpdateResult = UpdateResult.Make (In.PreviousEnvironment) (ReadOnly)
+    module UpdateResult = struct
+      type read_only = ReadOnly.t
+
+      type t = {
+        upstream: In.PreviousEnvironment.UpdateResult.t;
+        triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
+        read_only: ReadOnly.t;
+      }
+
+      let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
+
+      let all_triggered_dependencies { triggered_dependencies; upstream; _ } =
+        triggered_dependencies
+        :: In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream
+
+
+      let read_only { read_only; _ } = read_only
+
+      let unannotated_global_environment_update_result { upstream; _ } =
+        In.PreviousEnvironment.UpdateResult.unannotated_global_environment_update_result upstream
+
+
+      let invalidated_modules previous =
+        unannotated_global_environment_update_result previous
+        |> UnannotatedGlobalEnvironment.UpdateResult.invalidated_modules
+    end
 
     module TriggerMap = Map.Make (struct
       type t = In.trigger [@@deriving sexp, compare]
