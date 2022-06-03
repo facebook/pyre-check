@@ -38,11 +38,11 @@ let has_significant_summary ~fixpoint_state ~port:root ~path ~callee =
           not (Domains.BackwardTaint.is_bottom taint))
 
 
-let issues_to_json ~fixpoint_state ~filename_lookup issues =
+let issues_to_json ~fixpoint_state ~filename_lookup ~override_graph issues =
   let issue_to_json issue =
     let json =
       Issue.to_json
-        ~expand_overrides:true
+        ~expand_overrides:(Some override_graph)
         ~is_valid_callee:(has_significant_summary ~fixpoint_state)
         ~filename_lookup
         issue
@@ -82,13 +82,13 @@ let extract_errors ~scheduler ~callables ~fixpoint_state =
   |> List.concat_no_order
 
 
-let externalize ~fixpoint_state ~filename_lookup callable result model =
-  let issues = issues_to_json ~fixpoint_state ~filename_lookup result in
+let externalize ~fixpoint_state ~filename_lookup ~override_graph callable result model =
+  let issues = issues_to_json ~fixpoint_state ~filename_lookup ~override_graph result in
   if not (Model.should_externalize model) then
     issues
   else
     Model.to_json
-      ~expand_overrides:true
+      ~expand_overrides:(Some override_graph)
       ~is_valid_callee:(has_significant_summary ~fixpoint_state)
       ~filename_lookup:(Some filename_lookup)
       callable
@@ -96,22 +96,24 @@ let externalize ~fixpoint_state ~filename_lookup callable result model =
     :: issues
 
 
-let fetch_and_externalize ~fixpoint_state ~filename_lookup callable =
+let fetch_and_externalize ~fixpoint_state ~filename_lookup ~override_graph callable =
   let model =
     Fixpoint.get_model fixpoint_state callable |> Option.value ~default:Model.empty_model
   in
   let result = Fixpoint.get_result fixpoint_state callable in
-  externalize ~fixpoint_state ~filename_lookup callable result model
+  externalize ~fixpoint_state ~filename_lookup ~override_graph callable result model
 
 
-let emit_externalization ~fixpoint_state ~filename_lookup emitter callable =
-  fetch_and_externalize ~fixpoint_state ~filename_lookup callable |> List.iter ~f:emitter
+let emit_externalization ~fixpoint_state ~filename_lookup ~override_graph emitter callable =
+  fetch_and_externalize ~fixpoint_state ~filename_lookup ~override_graph callable
+  |> List.iter ~f:emitter
 
 
 let save_results_to_directory
     ~result_directory
     ~local_root
     ~filename_lookup
+    ~override_graph
     ~skipped_overrides
     ~callables
     ~fixpoint_state
@@ -141,7 +143,9 @@ let save_results_to_directory
     in
     Json.to_outbuf out_buffer header_with_version;
     Bi_outbuf.add_string out_buffer "\n";
-    Target.Set.iter (emit_externalization ~fixpoint_state ~filename_lookup array_emitter) callables;
+    Target.Set.iter
+      (emit_externalization ~fixpoint_state ~filename_lookup ~override_graph array_emitter)
+      callables;
     Bi_outbuf.flush_output_writer out_buffer;
     close_out out_channel
   in
@@ -207,6 +211,7 @@ let report
         _;
       }
     ~filename_lookup
+    ~override_graph
     ~callables
     ~skipped_overrides
     ~fixpoint_timer
@@ -246,6 +251,7 @@ let report
         ~result_directory
         ~local_root
         ~filename_lookup
+        ~override_graph
         ~skipped_overrides
         ~callables
         ~fixpoint_state

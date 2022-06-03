@@ -32,7 +32,7 @@ module Forward = struct
       (json_to_string
          ~indent:"    "
          (ForwardState.to_json
-            ~expand_overrides:false
+            ~expand_overrides:None
             ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
             ~filename_lookup:None
             source_taint))
@@ -75,14 +75,14 @@ module Backward = struct
       (json_to_string
          ~indent:"    "
          (BackwardState.to_json
-            ~expand_overrides:false
+            ~expand_overrides:None
             ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
             ~filename_lookup:None
             taint_in_taint_out))
       (json_to_string
          ~indent:"    "
          (BackwardState.to_json
-            ~expand_overrides:false
+            ~expand_overrides:None
             ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
             ~filename_lookup:None
             sink_taint))

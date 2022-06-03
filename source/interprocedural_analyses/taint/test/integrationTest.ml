@@ -115,7 +115,8 @@ let test_integration path context =
       whole_program_call_graph;
       define_call_graphs;
       environment;
-      overrides;
+      override_graph_heap;
+      override_graph_shared_memory;
       initial_models;
       initial_callables;
       stubs;
@@ -129,14 +130,15 @@ let test_integration path context =
         ~prune:true
         ~initial_callables
         ~call_graph:whole_program_call_graph
-        ~overrides
+        ~overrides:override_graph_heap
     in
     let fixpoint_state =
       Fixpoint.compute
         ~scheduler:(Test.mock_scheduler ())
         ~type_environment:environment
-        ~context:{ Fixpoint.Context.type_environment = environment; define_call_graphs }
+        ~override_graph:override_graph_shared_memory
         ~dependency_graph
+        ~context:{ Fixpoint.Context.type_environment = environment; define_call_graphs }
         ~initial_callables:(FetchCallables.get_callables initial_callables)
         ~stubs
         ~override_targets
@@ -151,7 +153,11 @@ let test_integration path context =
           Analysis.TypeEnvironment.ReadOnly.ast_environment environment
           |> Analysis.AstEnvironment.ReadOnly.get_relative
         in
-        Taint.Reporting.fetch_and_externalize ~fixpoint_state ~filename_lookup callable
+        Taint.Reporting.fetch_and_externalize
+          ~fixpoint_state
+          ~filename_lookup
+          ~override_graph:override_graph_shared_memory
+          callable
         |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
         |> String.concat ~sep:""
       in
@@ -159,7 +165,7 @@ let test_integration path context =
     in
 
     let divergent_files =
-      [create_call_graph_files whole_program_call_graph; create_overrides_files overrides]
+      [create_call_graph_files whole_program_call_graph; create_overrides_files override_graph_heap]
     in
     let serialized_models =
       List.rev_append (Registry.targets initial_models) callables_to_analyze
@@ -170,7 +176,7 @@ let test_integration path context =
       |> String.concat ~sep:""
     in
     let () = Fixpoint.cleanup fixpoint_state in
-    let () = OverrideGraph.SharedMemory.cleanup overrides in
+    let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory override_graph_heap in
     divergent_files, serialized_models
   in
   let divergent_files =

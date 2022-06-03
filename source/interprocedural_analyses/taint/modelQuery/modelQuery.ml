@@ -30,7 +30,7 @@ end = struct
             "callable", `String (Target.external_name callable);
             ( "model",
               Model.to_json
-                ~expand_overrides:false
+                ~expand_overrides:None
                 ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
                 ~filename_lookup:None
                 callable

@@ -100,7 +100,7 @@ val apply_sanitizers : t -> t
 val should_externalize : t -> bool
 
 val to_json
-  :  expand_overrides:bool ->
+  :  expand_overrides:Interprocedural.OverrideGraph.SharedMemory.t option ->
   is_valid_callee:
     (port:AccessPath.Root.t ->
     path:Abstract.TreeDomain.Label.path ->

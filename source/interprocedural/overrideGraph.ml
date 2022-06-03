@@ -182,20 +182,27 @@ module SharedMemory = struct
         let description = "overriding types"
       end)
 
-  let add_overriding_types ~member ~subtypes = T.add member subtypes
+  type t = Handle
 
-  let get_overriding_types ~member = T.get member
+  let get_for_testing_only () = Handle
 
-  let overrides_exist member = T.mem member
+  let add_overriding_types Handle ~member ~subtypes = T.add member subtypes
+
+  let get_overriding_types Handle ~member = T.get member
+
+  let overrides_exist Handle member = T.mem member
 
   let from_heap overrides =
-    let record_override_edge ~key:member ~data:subtypes = add_overriding_types ~member ~subtypes in
-    Target.Map.iteri overrides ~f:record_override_edge
+    let record_override_edge ~key:member ~data:subtypes =
+      add_overriding_types Handle ~member ~subtypes
+    in
+    let () = Target.Map.iteri overrides ~f:record_override_edge in
+    Handle
 
 
-  let cleanup overrides = overrides |> Target.Map.keys |> T.KeySet.of_list |> T.remove_batch
+  let cleanup Handle overrides = overrides |> Target.Map.keys |> T.KeySet.of_list |> T.remove_batch
 
-  let expand_override_targets callees =
+  let expand_override_targets Handle callees =
     let rec expand_and_gather expanded = function
       | (Target.Function _ | Target.Method _ | Target.Object _) as real -> real :: expanded
       | Target.Override _ as override ->
@@ -215,7 +222,13 @@ let get_source ~environment qualifier =
   AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
 
 
-let record_overrides_for_qualifiers
+type whole_program_overrides = {
+  override_graph_heap: Heap.t;
+  override_graph_shared_memory: SharedMemory.t;
+  skipped_overrides: Target.t list;
+}
+
+let build_whole_program_overrides
     ~scheduler
     ~environment
     ~include_unit_tests
@@ -244,8 +257,8 @@ let record_overrides_for_qualifiers
       ~inputs:qualifiers
       ()
   in
-  let ({ Heap.overrides; _ } as cap_override_result) =
+  let { Heap.overrides = override_graph_heap; skipped_overrides } =
     Heap.cap_overrides ~maximum_overrides overrides
   in
-  let () = SharedMemory.from_heap overrides in
-  cap_override_result
+  let override_graph_shared_memory = SharedMemory.from_heap override_graph_heap in
+  { override_graph_heap; override_graph_shared_memory; skipped_overrides }

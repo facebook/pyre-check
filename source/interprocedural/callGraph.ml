@@ -771,12 +771,12 @@ let strip_meta annotation =
  *  1) the override target if it exists in the override shared mem
  *  2) the real target otherwise
  *)
-let compute_indirect_targets ~resolution ~receiver_type implementation_target =
+let compute_indirect_targets ~resolution ~override_graph ~receiver_type implementation_target =
   (* Target name must be the resolved implementation target *)
   let global_resolution = Resolution.global_resolution resolution in
   let get_class_type = GlobalResolution.parse_reference global_resolution in
   let get_actual_target method_name =
-    if OverrideGraph.SharedMemory.overrides_exist method_name then
+    if OverrideGraph.SharedMemory.overrides_exist override_graph method_name then
       Target.get_corresponding_override method_name
     else
       method_name
@@ -791,7 +791,9 @@ let compute_indirect_targets ~resolution ~receiver_type implementation_target =
   if Reference.equal declaring_type (Type.class_name receiver_type) then (* case a *)
     [get_actual_target implementation_target]
   else
-    match OverrideGraph.SharedMemory.get_overriding_types ~member:implementation_target with
+    match
+      OverrideGraph.SharedMemory.get_overriding_types override_graph ~member:implementation_target
+    with
     | None ->
         (* case b *)
         [implementation_target]
@@ -865,6 +867,7 @@ let collapse_tito ~resolution ~callee ~callable_type =
 
 let rec resolve_callees_from_type
     ~resolution
+    ~override_graph
     ~call_indexer
     ?(dunder_call = false)
     ?receiver_type
@@ -886,7 +889,12 @@ let rec resolve_callees_from_type
           let targets =
             match callee_kind with
             | Method { is_direct_call = true } -> [Target.create_method name]
-            | _ -> compute_indirect_targets ~resolution ~receiver_type (Target.create_method name)
+            | _ ->
+                compute_indirect_targets
+                  ~resolution
+                  ~override_graph
+                  ~receiver_type
+                  (Target.create_method name)
           in
           let targets =
             List.map
@@ -926,6 +934,7 @@ let rec resolve_callees_from_type
     ->
       resolve_callees_from_type
         ~resolution
+        ~override_graph
         ~call_indexer
         ~receiver_type
         ~return_type
@@ -936,6 +945,7 @@ let rec resolve_callees_from_type
       let first_targets =
         resolve_callees_from_type
           ~resolution
+          ~override_graph
           ~call_indexer
           ~callee_kind
           ?receiver_type
@@ -946,6 +956,7 @@ let rec resolve_callees_from_type
       List.fold elements ~init:first_targets ~f:(fun combined_targets new_target ->
           resolve_callees_from_type
             ~resolution
+            ~override_graph
             ~call_indexer
             ?receiver_type
             ~return_type
@@ -954,7 +965,7 @@ let rec resolve_callees_from_type
             new_target
           |> CallCallees.join combined_targets)
   | Type.Parametric { name = "type"; parameters = [Single class_type] } ->
-      resolve_constructor_callee ~resolution ~call_indexer class_type
+      resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_type
       |> Option.value ~default:CallCallees.unresolved
   | callable_type -> (
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
@@ -1004,6 +1015,7 @@ let rec resolve_callees_from_type
           if not dunder_call then
             resolve_callees_from_type
               ~resolution
+              ~override_graph
               ~call_indexer
               ~return_type
               ~dunder_call:true
@@ -1014,7 +1026,7 @@ let rec resolve_callees_from_type
             CallCallees.unresolved)
 
 
-and resolve_constructor_callee ~resolution ~call_indexer class_type =
+and resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_type =
   let meta_type = Type.meta class_type in
   match
     ( CallResolution.resolve_attribute_access_ignoring_untracked
@@ -1035,6 +1047,7 @@ and resolve_constructor_callee ~resolution ~call_indexer class_type =
       let new_callees =
         resolve_callees_from_type
           ~resolution
+          ~override_graph
           ~call_indexer
           ~receiver_type:meta_type
           ~return_type:(lazy class_type)
@@ -1045,6 +1058,7 @@ and resolve_constructor_callee ~resolution ~call_indexer class_type =
       let init_callees =
         resolve_callees_from_type
           ~resolution
+          ~override_graph
           ~call_indexer
           ~receiver_type:meta_type
           ~return_type:(lazy Type.none)
@@ -1070,6 +1084,7 @@ and resolve_constructor_callee ~resolution ~call_indexer class_type =
 
 let resolve_callee_from_defining_expression
     ~resolution
+    ~override_graph
     ~call_indexer
     ~callee:{ Node.value = callee; _ }
     ~return_type
@@ -1087,6 +1102,7 @@ let resolve_callee_from_defining_expression
       >>| fun undecorated_signature ->
       resolve_callees_from_type
         ~resolution
+        ~override_graph
         ~call_indexer
         ~return_type
         ~callee_kind:Function
@@ -1136,6 +1152,7 @@ let resolve_callee_from_defining_expression
           Some
             (resolve_callees_from_type
                ~resolution
+               ~override_graph
                ~call_indexer
                ~return_type
                ~receiver_type:implementing_class
@@ -1193,7 +1210,14 @@ let redirect_special_calls ~resolution call =
   | None -> Annotated.Call.redirect_special_calls ~resolution call
 
 
-let resolve_recognized_callees ~resolution ~call_indexer ~callee ~return_type ~callee_type =
+let resolve_recognized_callees
+    ~resolution
+    ~override_graph
+    ~call_indexer
+    ~callee
+    ~return_type
+    ~callee_type
+  =
   (* Special treatment for a set of hardcoded decorators returning callable classes. *)
   match Node.value callee, callee_type with
   | ( _,
@@ -1205,6 +1229,7 @@ let resolve_recognized_callees ~resolution ~call_indexer ~callee ~return_type ~c
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
       resolve_callee_from_defining_expression
         ~resolution
+        ~override_graph
         ~call_indexer
         ~callee
         ~return_type
@@ -1217,6 +1242,7 @@ let resolve_recognized_callees ~resolution ~call_indexer ~callee ~return_type ~c
       |> fun implementing_class ->
       resolve_callee_from_defining_expression
         ~resolution
+        ~override_graph
         ~call_indexer
         ~callee
         ~return_type
@@ -1336,10 +1362,16 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~collapse_tito 
   | _ -> None
 
 
-let resolve_regular_callees ~resolution ~call_indexer ~return_type ~callee =
+let resolve_regular_callees ~resolution ~override_graph ~call_indexer ~return_type ~callee =
   let callee_type = CallResolution.resolve_ignoring_optional ~resolution callee in
   let recognized_callees =
-    resolve_recognized_callees ~resolution ~call_indexer ~callee ~return_type ~callee_type
+    resolve_recognized_callees
+      ~resolution
+      ~override_graph
+      ~call_indexer
+      ~callee
+      ~return_type
+      ~callee_type
     |> Option.value ~default:CallCallees.unresolved
   in
   if CallCallees.is_partially_resolved recognized_callees then
@@ -1350,6 +1382,7 @@ let resolve_regular_callees ~resolution ~call_indexer ~return_type ~callee =
     let calleees_from_type =
       resolve_callees_from_type
         ~resolution
+        ~override_graph
         ~call_indexer
         ~return_type
         ~callee_kind
@@ -1369,7 +1402,12 @@ let resolve_regular_callees ~resolution ~call_indexer ~return_type ~callee =
       |> Option.value ~default:CallCallees.unresolved
 
 
-let resolve_callees ~resolution ~call_indexer ~call:({ Call.callee; arguments } as call) =
+let resolve_callees
+    ~resolution
+    ~override_graph
+    ~call_indexer
+    ~call:({ Call.callee; arguments } as call)
+  =
   let higher_order_parameter =
     let get_higher_order_function_targets index { Call.Argument.value = argument; _ } =
       let return_type =
@@ -1378,7 +1416,14 @@ let resolve_callees ~resolution ~call_indexer ~call:({ Call.callee; arguments } 
           |> Node.create_with_default_location
           |> CallResolution.resolve_ignoring_untracked ~resolution)
       in
-      match resolve_regular_callees ~resolution ~call_indexer ~return_type ~callee:argument with
+      match
+        resolve_regular_callees
+          ~resolution
+          ~override_graph
+          ~call_indexer
+          ~return_type
+          ~callee:argument
+      with
       | { CallCallees.call_targets = _ :: _ as regular_targets; _ } ->
           Some { HigherOrderParameter.index; call_targets = regular_targets }
       | _ -> None
@@ -1394,7 +1439,9 @@ let resolve_callees ~resolution ~call_indexer ~call:({ Call.callee; arguments } 
       |> Node.create_with_default_location
       |> CallResolution.resolve_ignoring_untracked ~resolution)
   in
-  let regular_callees = resolve_regular_callees ~resolution ~call_indexer ~return_type ~callee in
+  let regular_callees =
+    resolve_regular_callees ~resolution ~override_graph ~call_indexer ~return_type ~callee
+  in
   { regular_callees with higher_order_parameter }
 
 
@@ -1416,6 +1463,7 @@ type attribute_access_properties = {
 
 let resolve_attribute_access_properties
     ~resolution
+    ~override_graph
     ~call_indexer
     ~base_annotation
     ~attribute
@@ -1437,7 +1485,7 @@ let resolve_attribute_access_properties
         [Target.create_method ~kind (Reference.create ~prefix:parent attribute)]
       else
         let callee = Target.create_method ~kind (Reference.create ~prefix:parent attribute) in
-        compute_indirect_targets ~resolution ~receiver_type:base_annotation callee
+        compute_indirect_targets ~resolution ~override_graph ~receiver_type:base_annotation callee
     in
     List.map
       ~f:
@@ -1536,6 +1584,7 @@ let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~
 
 let resolve_attribute_access
     ~resolution
+    ~override_graph
     ~call_indexer
     ~attribute_targets
     ~base
@@ -1548,6 +1597,7 @@ let resolve_attribute_access
   let { property_targets; is_attribute } =
     resolve_attribute_access_properties
       ~resolution
+      ~override_graph
       ~call_indexer
       ~base_annotation
       ~attribute
@@ -1607,6 +1657,8 @@ module DefineCallGraphFixpoint (Context : sig
 
   val callees_at_location : UnprocessedLocationCallees.t Location.Table.t
 
+  val override_graph : OverrideGraph.SharedMemory.t
+
   val call_indexer : CallTargetIndexer.t
 
   val is_missing_flow_type_analysis : bool
@@ -1620,6 +1672,8 @@ struct
     resolution: Resolution.t;
     assignment_target: assignment_target option;
   }
+
+  let override_graph = Context.override_graph
 
   let call_indexer = Context.call_indexer
 
@@ -1682,7 +1736,7 @@ struct
         match value with
         | Expression.Call call ->
             let call = redirect_special_calls ~resolution call in
-            resolve_callees ~resolution ~call_indexer ~call
+            resolve_callees ~resolution ~override_graph ~call_indexer ~call
             |> add_unknown_callee ~expression
             |> ExpressionCallees.from_call
             |> register_targets ~expression_identifier:(call_identifier call)
@@ -1695,6 +1749,7 @@ struct
             in
             resolve_attribute_access
               ~resolution
+              ~override_graph
               ~call_indexer
               ~attribute_targets
               ~base
@@ -1712,7 +1767,7 @@ struct
             match ComparisonOperator.override ~location comparison with
             | Some { Node.value = Expression.Call call; _ } ->
                 let call = redirect_special_calls ~resolution call in
-                resolve_callees ~resolution ~call_indexer ~call
+                resolve_callees ~resolution ~override_graph ~call_indexer ~call
                 |> add_unknown_callee ~expression
                 |> ExpressionCallees.from_call
                 |> register_targets ~expression_identifier:(call_identifier call)
@@ -1737,6 +1792,7 @@ struct
                       CallTargetIndexer.generate_fresh_indices call_indexer;
                       resolve_regular_callees
                         ~resolution
+                        ~override_graph
                         ~call_indexer
                         ~return_type:(lazy Type.string)
                         ~callee
@@ -1776,6 +1832,7 @@ struct
             } ->
             resolve_attribute_access
               ~resolution
+              ~override_graph
               ~call_indexer
               ~attribute_targets
               ~base
@@ -1815,6 +1872,7 @@ struct
             } ->
             resolve_attribute_access
               ~resolution
+              ~override_graph
               ~call_indexer
               ~attribute_targets
               ~base:self
@@ -1979,6 +2037,7 @@ end
 let call_graph_of_define
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
     ~environment
+    ~override_graph
     ~attribute_targets
     ~qualifier
     ~define:({ Define.signature = { Define.Signature.name; parent; _ }; _ } as define)
@@ -1995,6 +2054,8 @@ let call_graph_of_define
     let parent = parent
 
     let callees_at_location = callees_at_location
+
+    let override_graph = override_graph
 
     let call_indexer = CallTargetIndexer.create ()
 
@@ -2051,7 +2112,13 @@ let call_graph_of_define
   call_graph
 
 
-let call_graph_of_callable ~static_analysis_configuration ~environment ~attribute_targets ~callable =
+let call_graph_of_callable
+    ~static_analysis_configuration
+    ~environment
+    ~override_graph
+    ~attribute_targets
+    ~callable
+  =
   let resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
   match Target.get_module_and_definition callable ~resolution with
   | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
@@ -2059,6 +2126,7 @@ let call_graph_of_callable ~static_analysis_configuration ~environment ~attribut
       call_graph_of_define
         ~static_analysis_configuration
         ~environment
+        ~override_graph
         ~attribute_targets
         ~qualifier
         ~define:(Node.value define)
@@ -2120,6 +2188,7 @@ let build_whole_program_call_graph
     ~scheduler
     ~static_analysis_configuration
     ~environment
+    ~override_graph
     ~store_shared_memory
     ~attribute_targets
     ~callables
@@ -2131,6 +2200,7 @@ let build_whole_program_call_graph
         call_graph_of_callable
           ~static_analysis_configuration
           ~environment
+          ~override_graph
           ~attribute_targets
           ~callable
       in

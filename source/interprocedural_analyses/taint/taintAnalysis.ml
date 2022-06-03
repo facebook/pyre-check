@@ -387,9 +387,14 @@ let run_taint_analysis
 
     Log.info "Computing overrides...";
     let timer = Timer.start () in
-    let { Interprocedural.OverrideGraph.Heap.overrides; skipped_overrides } =
+    let {
+      Interprocedural.OverrideGraph.override_graph_heap;
+      override_graph_shared_memory;
+      skipped_overrides;
+    }
+      =
       Cache.override_graph cache (fun () ->
-          Interprocedural.OverrideGraph.record_overrides_for_qualifiers
+          Interprocedural.OverrideGraph.build_whole_program_overrides
             ~scheduler
             ~environment:(Analysis.TypeEnvironment.read_only environment)
             ~include_unit_tests:false
@@ -406,6 +411,7 @@ let run_taint_analysis
         ~scheduler
         ~static_analysis_configuration
         ~environment:(Analysis.TypeEnvironment.read_only environment)
+        ~override_graph:override_graph_shared_memory
         ~store_shared_memory:true
         ~attribute_targets:(Registry.object_targets initial_models)
         ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
@@ -425,7 +431,7 @@ let run_taint_analysis
         ~prune:true
         ~initial_callables
         ~call_graph:whole_program_call_graph
-        ~overrides
+        ~overrides:override_graph_heap
     in
     Statistics.performance
       ~name:"Computed dependencies"
@@ -458,12 +464,13 @@ let run_taint_analysis
       Taint.Fixpoint.compute
         ~scheduler
         ~type_environment:(Analysis.TypeEnvironment.read_only environment)
+        ~override_graph:override_graph_shared_memory
+        ~dependency_graph
         ~context:
           {
             Taint.Fixpoint.Context.type_environment = Analysis.TypeEnvironment.read_only environment;
             define_call_graphs;
           }
-        ~dependency_graph
         ~initial_callables:(Interprocedural.FetchCallables.get_callables initial_callables)
         ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
         ~override_targets
@@ -490,6 +497,7 @@ let run_taint_analysis
         ~scheduler
         ~static_analysis_configuration
         ~filename_lookup
+        ~override_graph:override_graph_shared_memory
         ~callables
         ~skipped_overrides
         ~fixpoint_timer

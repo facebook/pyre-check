@@ -27,7 +27,8 @@ let assert_fixpoint
     whole_program_call_graph;
     define_call_graphs;
     environment;
-    overrides;
+    override_graph_heap;
+    override_graph_shared_memory;
     initial_models;
     initial_callables;
     stubs;
@@ -41,14 +42,15 @@ let assert_fixpoint
       ~prune:false
       ~initial_callables
       ~call_graph:whole_program_call_graph
-      ~overrides
+      ~overrides:override_graph_heap
   in
   let fixpoint_state =
     Fixpoint.compute
       ~scheduler
       ~type_environment:environment
-      ~context:{ Fixpoint.Context.type_environment = environment; define_call_graphs }
+      ~override_graph:override_graph_shared_memory
       ~dependency_graph
+      ~context:{ Fixpoint.Context.type_environment = environment; define_call_graphs }
       ~initial_callables:(Interprocedural.FetchCallables.get_callables initial_callables)
       ~stubs
       ~override_targets

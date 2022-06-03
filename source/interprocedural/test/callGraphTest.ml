@@ -68,21 +68,25 @@ let test_call_graph_of_define context =
         project.configuration )
     in
     let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-    let overrides =
+    let override_graph_heap =
       OverrideGraph.Heap.from_source ~environment ~include_unit_tests:false ~source:test_source
     in
-    let () = OverrideGraph.SharedMemory.from_heap overrides in
-    assert_equal
-      ~cmp
-      ~printer:DefineCallGraph.show
-      expected
-      (CallGraph.call_graph_of_define
-         ~static_analysis_configuration
-         ~environment
-         ~attribute_targets:(Target.HashSet.of_list object_targets)
-         ~qualifier:(Reference.create "test")
-         ~define);
-    OverrideGraph.SharedMemory.cleanup overrides
+    let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
+    let () =
+      assert_equal
+        ~cmp
+        ~printer:DefineCallGraph.show
+        expected
+        (CallGraph.call_graph_of_define
+           ~static_analysis_configuration
+           ~environment
+           ~override_graph:override_graph_shared_memory
+           ~attribute_targets:(Target.HashSet.of_list object_targets)
+           ~qualifier:(Reference.create "test")
+           ~define)
+    in
+    let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory override_graph_heap in
+    ()
   in
   assert_call_graph_of_define
     ~source:{|

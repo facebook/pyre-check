@@ -421,7 +421,8 @@ type test_environment = {
   static_analysis_configuration: Configuration.StaticAnalysis.t;
   whole_program_call_graph: CallGraph.WholeProgramCallGraph.t;
   define_call_graphs: CallGraph.DefineCallGraphSharedMemory.t;
-  overrides: OverrideGraph.Heap.t;
+  override_graph_heap: OverrideGraph.Heap.t;
+  override_graph_shared_memory: OverrideGraph.SharedMemory.t;
   initial_callables: FetchCallables.t;
   stubs: Target.t list;
   initial_models: Registry.t;
@@ -550,11 +551,11 @@ let initialize
   let inferred_models = ClassModels.infer ~environment ~user_models in
   let initial_models = Registry.merge inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
-  let overrides =
+  let override_graph_heap =
     OverrideGraph.Heap.from_source ~environment ~include_unit_tests:true ~source
     |> OverrideGraph.Heap.skip_overrides ~to_skip:skip_overrides
   in
-  let () = OverrideGraph.SharedMemory.from_heap overrides in
+  let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
 
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
@@ -564,6 +565,7 @@ let initialize
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~environment
+      ~override_graph:override_graph_shared_memory
       ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)
       ~callables
@@ -581,7 +583,8 @@ let initialize
     static_analysis_configuration;
     whole_program_call_graph;
     define_call_graphs;
-    overrides;
+    override_graph_heap;
+    override_graph_shared_memory;
     initial_callables;
     stubs;
     initial_models;

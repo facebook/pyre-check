@@ -156,8 +156,9 @@ module Make (Analysis : ANALYSIS) : sig
   val compute
     :  scheduler:Scheduler.t ->
     type_environment:TypeEnvironment.ReadOnly.t ->
-    context:Analysis.context ->
+    override_graph:OverrideGraph.SharedMemory.t ->
     dependency_graph:DependencyGraph.t ->
+    context:Analysis.context ->
     initial_callables:Target.t list ->
     stubs:Target.t list ->
     override_targets:Target.t list ->

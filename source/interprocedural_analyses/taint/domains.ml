@@ -77,11 +77,11 @@ module CallInfo = struct
   let show = Format.asprintf "%a" pp
 
   (* Only called when emitting models before we compute the json so we can dedup *)
-  let expand_overrides ~is_valid_callee trace =
+  let expand_overrides ~override_graph ~is_valid_callee trace =
     match trace with
     | CallSite { location; callees; port; path } ->
         let callees =
-          Interprocedural.OverrideGraph.SharedMemory.expand_override_targets callees
+          Interprocedural.OverrideGraph.SharedMemory.expand_override_targets override_graph callees
           |> List.filter ~f:(fun callee -> is_valid_callee ~port ~path ~callee)
         in
         CallSite { location; callees; port; path }
@@ -443,7 +443,7 @@ module type TAINT_DOMAIN = sig
     t
 
   val to_json
-    :  expand_overrides:bool ->
+    :  expand_overrides:Interprocedural.OverrideGraph.SharedMemory.t option ->
     is_valid_callee:
       (port:AccessPath.Root.t ->
       path:Abstract.TreeDomain.Label.path ->
@@ -735,10 +735,14 @@ end = struct
       `Assoc json
     in
     let taint =
-      if expand_overrides then
-        Map.transform Key Map ~f:(CallInfo.expand_overrides ~is_valid_callee) taint
-      else
-        taint
+      match expand_overrides with
+      | Some override_graph ->
+          Map.transform
+            Key
+            Map
+            ~f:(CallInfo.expand_overrides ~override_graph ~is_valid_callee)
+            taint
+      | None -> taint
     in
     let elements = Map.to_alist taint |> List.map ~f:trace_to_json in
     `List elements

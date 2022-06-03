@@ -35,7 +35,7 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
     setup ~update_environment_with ~context ~handle:"test.py" source_text
   in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-  let () =
+  let override_graph =
     OverrideGraph.Heap.from_source ~environment ~include_unit_tests:true ~source
     |> OverrideGraph.SharedMemory.from_heap
   in
@@ -62,6 +62,7 @@ let create_call_graph ?(update_environment_with = []) ~context source_text =
       CallGraph.call_graph_of_callable
         ~static_analysis_configuration
         ~environment
+        ~override_graph
         ~attribute_targets:(Target.HashSet.create ())
         ~callable
       |> CallGraph.DefineCallGraph.all_targets

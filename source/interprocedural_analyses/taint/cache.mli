@@ -20,5 +20,5 @@ val initial_callables : t -> (unit -> FetchCallables.t) -> FetchCallables.t
 
 val override_graph
   :  t ->
-  (unit -> OverrideGraph.Heap.cap_overrides_result) ->
-  OverrideGraph.Heap.cap_overrides_result
+  (unit -> OverrideGraph.whole_program_overrides) ->
+  OverrideGraph.whole_program_overrides

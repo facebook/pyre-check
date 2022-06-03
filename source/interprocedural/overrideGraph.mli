@@ -49,27 +49,38 @@ end
 
 (** Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)
 module SharedMemory : sig
-  val get_overriding_types : member:Target.t -> Reference.t list option
+  type t
 
-  val overrides_exist : Target.t -> bool
+  val get_for_testing_only : unit -> t
+  (** Return the current override graph in shared memory. Only exposed for tests. *)
 
-  val expand_override_targets : Target.t list -> Target.t list
+  val get_overriding_types : t -> member:Target.t -> Reference.t list option
 
-  val from_heap : Heap.t -> unit
+  val overrides_exist : t -> Target.t -> bool
+
+  val expand_override_targets : t -> Target.t list -> Target.t list
+
+  val from_heap : Heap.t -> t
   (** Records a heap override graph in shared memory. *)
 
-  val cleanup : Heap.t -> unit
+  val cleanup : t -> Heap.t -> unit
   (** Remove an override graph from shared memory. This must be called before storing another
       override graph. *)
 end
 
-val record_overrides_for_qualifiers
+type whole_program_overrides = {
+  override_graph_heap: Heap.t;
+  override_graph_shared_memory: SharedMemory.t;
+  skipped_overrides: Target.t list;
+}
+
+val build_whole_program_overrides
   :  scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   include_unit_tests:bool ->
   skip_overrides:Reference.Set.t ->
   maximum_overrides:int option ->
   qualifiers:Reference.t list ->
-  Heap.cap_overrides_result
+  whole_program_overrides
 (** Compute the override graph, which maps overide_targets (parent methods which are overridden) to
     all concrete methods overriding them, and save it to shared memory. *)

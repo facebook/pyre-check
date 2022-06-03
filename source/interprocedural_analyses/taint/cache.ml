@@ -31,11 +31,12 @@ module InitialCallablesSharedMemory = Memory.Serializer (struct
 end)
 
 module OverrideGraphSharedMemory = Memory.Serializer (struct
-  type t = OverrideGraph.Heap.cap_overrides_result
+  type t = OverrideGraph.whole_program_overrides
 
   module Serialized = struct
     type t = {
-      overrides: OverrideGraph.Heap.serializable;
+      override_graph_heap: OverrideGraph.Heap.serializable;
+      override_graph_shared_memory: OverrideGraph.SharedMemory.t;
       skipped_overrides: Target.t list;
     }
 
@@ -44,13 +45,22 @@ module OverrideGraphSharedMemory = Memory.Serializer (struct
     let description = "Cached override graph"
   end
 
-  let serialize { OverrideGraph.Heap.overrides; skipped_overrides } =
-    { Serialized.overrides = OverrideGraph.Heap.to_serializable overrides; skipped_overrides }
-
-
-  let deserialize { Serialized.overrides; skipped_overrides } =
+  let serialize
+      { OverrideGraph.override_graph_heap; override_graph_shared_memory; skipped_overrides }
+    =
     {
-      OverrideGraph.Heap.overrides = OverrideGraph.Heap.of_serializable overrides;
+      Serialized.override_graph_heap = OverrideGraph.Heap.to_serializable override_graph_heap;
+      override_graph_shared_memory;
+      skipped_overrides;
+    }
+
+
+  let deserialize
+      { Serialized.override_graph_heap; override_graph_shared_memory; skipped_overrides }
+    =
+    {
+      OverrideGraph.override_graph_heap = OverrideGraph.Heap.of_serializable override_graph_heap;
+      override_graph_shared_memory;
       skipped_overrides;
     }
 end)
