@@ -155,9 +155,9 @@ end)
 module CallInfoIntervals = struct
   type call_info_intervals = {
     (* The interval of the class that literally contains this call site *)
-    caller_interval: Interprocedural.IntervalSet.t;
+    caller_interval: Interprocedural.ClassIntervalSet.t;
     (* The interval of the receiver object for this call site *)
-    receiver_interval: Interprocedural.IntervalSet.t;
+    receiver_interval: Interprocedural.ClassIntervalSet.t;
     (* Whether this call site is a call on `self` *)
     is_self_call: bool;
   }
@@ -166,22 +166,22 @@ module CallInfoIntervals = struct
      such that SAPP will not intersect class intervals. *)
   let top =
     {
-      caller_interval = Interprocedural.IntervalSet.top;
-      receiver_interval = Interprocedural.IntervalSet.top;
+      caller_interval = Interprocedural.ClassIntervalSet.top;
+      receiver_interval = Interprocedural.ClassIntervalSet.top;
       is_self_call = false;
     }
 
 
   let is_top { caller_interval; receiver_interval; is_self_call } =
-    Interprocedural.IntervalSet.is_top caller_interval
-    && Interprocedural.IntervalSet.is_top receiver_interval
+    Interprocedural.ClassIntervalSet.is_top caller_interval
+    && Interprocedural.ClassIntervalSet.is_top receiver_interval
     && is_self_call == false
 
 
   let to_json { caller_interval; receiver_interval; is_self_call } =
     let list = ["is_self_call", `Bool is_self_call] in
     let intervals_to_list intervals =
-      let intervals = Interprocedural.IntervalSet.to_list intervals in
+      let intervals = Interprocedural.ClassIntervalSet.to_list intervals in
       List.map intervals ~f:(fun interval ->
           `Assoc
             [
@@ -190,15 +190,15 @@ module CallInfoIntervals = struct
             ])
     in
     let list =
-      if Interprocedural.IntervalSet.is_top receiver_interval then
+      if Interprocedural.ClassIntervalSet.is_top receiver_interval then
         list
       else (* Output for SAPP to use *)
         ("receiver_interval", `List (intervals_to_list receiver_interval)) :: list
     in
     let list =
       if
-        Interprocedural.IntervalSet.is_empty caller_interval
-        || Interprocedural.IntervalSet.is_top caller_interval
+        Interprocedural.ClassIntervalSet.is_empty caller_interval
+        || Interprocedural.ClassIntervalSet.is_top caller_interval
       then
         list
       else (* Output for debug purposes *)
@@ -214,8 +214,8 @@ module CallInfoIntervals = struct
 
     let bottom =
       {
-        caller_interval = Interprocedural.IntervalSet.bottom;
-        receiver_interval = Interprocedural.IntervalSet.bottom;
+        caller_interval = Interprocedural.ClassIntervalSet.bottom;
+        receiver_interval = Interprocedural.ClassIntervalSet.bottom;
         is_self_call = true;
       }
 
@@ -224,9 +224,9 @@ module CallInfoIntervals = struct
       Format.fprintf
         formatter
         "@[caller_interval: [%a] receiver_interval: [%a] is_self_call: [%b]@]"
-        Interprocedural.IntervalSet.pp
+        Interprocedural.ClassIntervalSet.pp
         caller_interval
-        Interprocedural.IntervalSet.pp
+        Interprocedural.ClassIntervalSet.pp
         receiver_interval
         is_self_call
 
@@ -247,10 +247,10 @@ module CallInfoIntervals = struct
             is_self_call = is_self_call_right;
           }
       =
-      Interprocedural.IntervalSet.less_or_equal
+      Interprocedural.ClassIntervalSet.less_or_equal
         ~left:caller_interval_left
         ~right:caller_interval_right
-      && Interprocedural.IntervalSet.less_or_equal
+      && Interprocedural.ClassIntervalSet.less_or_equal
            ~left:receiver_interval_left
            ~right:receiver_interval_right
       && not ((not is_self_call_left) && is_self_call_right)
@@ -270,9 +270,9 @@ module CallInfoIntervals = struct
       =
       {
         caller_interval =
-          Interprocedural.IntervalSet.join caller_interval_left caller_interval_right;
+          Interprocedural.ClassIntervalSet.join caller_interval_left caller_interval_right;
         receiver_interval =
-          Interprocedural.IntervalSet.join receiver_interval_left receiver_interval_right;
+          Interprocedural.ClassIntervalSet.join receiver_interval_left receiver_interval_right;
         (* The result of joining two calls is a call on `self` iff. both calls are on `self`. *)
         is_self_call = is_self_call_left && is_self_call_right;
       }
@@ -292,9 +292,9 @@ module CallInfoIntervals = struct
       =
       {
         caller_interval =
-          Interprocedural.IntervalSet.meet caller_interval_left caller_interval_right;
+          Interprocedural.ClassIntervalSet.meet caller_interval_left caller_interval_right;
         receiver_interval =
-          Interprocedural.IntervalSet.meet receiver_interval_left receiver_interval_right;
+          Interprocedural.ClassIntervalSet.meet receiver_interval_left receiver_interval_right;
         (* The result of meeting two calls is a call on `self` iff. one of the calls is on `self`. *)
         is_self_call = is_self_call_left || is_self_call_right;
       }
@@ -432,8 +432,8 @@ module type TAINT_DOMAIN = sig
     path:Abstract.TreeDomain.Label.path ->
     element:t ->
     is_self_call:bool ->
-    caller_class_interval:Interprocedural.IntervalSet.t ->
-    receiver_class_interval:Interprocedural.IntervalSet.t ->
+    caller_class_interval:Interprocedural.ClassIntervalSet.t ->
+    receiver_class_interval:Interprocedural.ClassIntervalSet.t ->
     t
 
   (* Return the taint with only essential elements. *)
@@ -989,12 +989,13 @@ end = struct
               LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
             in
             let intersect left right =
-              let new_interval = IntervalSet.meet left right in
+              let new_interval = ClassIntervalSet.meet left right in
               let should_propagate =
                 (* Propagate if the intersection is not empty, and there exists a descendant
                    relation between left and right *)
-                (not (IntervalSet.is_empty new_interval))
-                && (IntervalSet.equal left new_interval || IntervalSet.equal right new_interval)
+                (not (ClassIntervalSet.is_empty new_interval))
+                && (ClassIntervalSet.equal left new_interval
+                   || ClassIntervalSet.equal right new_interval)
               in
               new_interval, should_propagate
             in

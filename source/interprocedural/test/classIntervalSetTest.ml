@@ -13,12 +13,16 @@ open ClassHierarchyGraph
 let of_list list = List.map list ~f:(fun (lower, upper) -> ClassInterval.create lower upper)
 
 let assert_equal_interval_set ~actual ~expected =
-  assert_equal expected actual ~cmp:(List.equal ClassInterval.equal) ~printer:IntervalSet.show_list
+  assert_equal
+    expected
+    actual
+    ~cmp:(List.equal ClassInterval.equal)
+    ~printer:ClassIntervalSet.show_list
 
 
 let test_of_list _ =
   let assert_of_list ~input ~expected =
-    let actual = of_list input |> IntervalSet.of_list |> IntervalSet.to_list in
+    let actual = of_list input |> ClassIntervalSet.of_list |> ClassIntervalSet.to_list in
     let expected = of_list expected in
     assert_equal_interval_set ~expected ~actual
   in
@@ -41,9 +45,9 @@ let test_of_list _ =
 
 let test_meet _ =
   let assert_meet ~left ~right ~expected =
-    let left = of_list left |> IntervalSet.of_list in
-    let right = of_list right |> IntervalSet.of_list in
-    let actual = IntervalSet.meet left right |> IntervalSet.to_list in
+    let left = of_list left |> ClassIntervalSet.of_list in
+    let right = of_list right |> ClassIntervalSet.of_list in
+    let actual = ClassIntervalSet.meet left right |> ClassIntervalSet.to_list in
     let expected = of_list expected in
     assert_equal_interval_set ~expected ~actual
   in
@@ -68,9 +72,9 @@ let test_meet _ =
 
 let test_join _ =
   let assert_join ~left ~right ~expected =
-    let left = of_list left |> IntervalSet.of_list in
-    let right = of_list right |> IntervalSet.of_list in
-    let actual = IntervalSet.join left right |> IntervalSet.to_list in
+    let left = of_list left |> ClassIntervalSet.of_list in
+    let right = of_list right |> ClassIntervalSet.of_list in
+    let actual = ClassIntervalSet.join left right |> ClassIntervalSet.to_list in
     let expected = of_list expected in
     assert_equal_interval_set ~expected ~actual
   in
@@ -97,9 +101,9 @@ let test_join _ =
 
 let test_less_or_equal _ =
   let assert_less_or_equal ~left ~right ~expected =
-    let left = of_list left |> IntervalSet.of_list in
-    let right = of_list right |> IntervalSet.of_list in
-    assert_equal expected (IntervalSet.less_or_equal ~left ~right)
+    let left = of_list left |> ClassIntervalSet.of_list in
+    let right = of_list right |> ClassIntervalSet.of_list in
+    assert_equal expected (ClassIntervalSet.less_or_equal ~left ~right)
   in
   assert_less_or_equal ~left:[1, 2] ~right:[2, 3] ~expected:false;
   assert_less_or_equal ~left:[2, 3] ~right:[1, 2] ~expected:false;
@@ -117,15 +121,15 @@ let test_class_intervals _ =
         let intervals =
           List.map intervals ~f:(function lower, upper -> ClassInterval.create lower upper)
         in
-        ClassNameMap.add class_name (IntervalSet.of_list intervals) accumulator)
+        ClassNameMap.add class_name (ClassIntervalSet.of_list intervals) accumulator)
   in
   let assert_class_intervals ~class_hierarchy_graph ~expected =
-    let intervals = IntervalSet.compute_intervals class_hierarchy_graph in
+    let intervals = ClassIntervalSet.compute_intervals class_hierarchy_graph in
     assert_equal
       expected
       intervals
-      ~printer:(ClassNameMap.show ~pp_value:IntervalSet.pp)
-      ~cmp:(ClassNameMap.equal IntervalSet.equal)
+      ~printer:(ClassNameMap.show ~pp_value:ClassIntervalSet.pp)
+      ~cmp:(ClassNameMap.equal ClassIntervalSet.equal)
   in
   assert_class_intervals
     ~class_hierarchy_graph:

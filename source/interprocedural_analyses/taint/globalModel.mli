@@ -17,7 +17,7 @@ val from_expression
   get_callee_model:(Target.t -> Model.t option) ->
   qualifier:Reference.t ->
   expression:Expression.t ->
-  interval:IntervalSet.t ->
+  interval:ClassIntervalSet.t ->
   t
 
 val get_source : t -> Domains.ForwardState.Tree.t

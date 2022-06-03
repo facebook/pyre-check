@@ -13,7 +13,7 @@ open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
 module CallResolution = Interprocedural.CallResolution
-module IntervalSet = Interprocedural.IntervalSet
+module ClassIntervalSet = Interprocedural.ClassIntervalSet
 
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
@@ -32,7 +32,7 @@ module type FUNCTION_CONTEXT = sig
 
   val triggered_sinks : ForwardAnalysis.triggered_sinks
 
-  val caller_class_interval : IntervalSet.t
+  val caller_class_interval : ClassIntervalSet.t
 end
 
 let ( |>> ) (taint, state) f = f taint, state
@@ -392,7 +392,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> BackwardState.Tree.join taint_tree
     in
     let is_self_call = Ast.Expression.is_self_call ~callee in
-    let receiver_class_interval = IntervalSet.SharedMemory.of_type receiver_type in
+    let receiver_class_interval = ClassIntervalSet.SharedMemory.of_type receiver_type in
     let analyze_argument
         (arguments_taint, state)
         { CallModel.ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches }
@@ -2157,7 +2157,7 @@ let run
 
     let triggered_sinks = triggered_sinks
 
-    let caller_class_interval = IntervalSet.SharedMemory.of_definition definition
+    let caller_class_interval = ClassIntervalSet.SharedMemory.of_definition definition
   end
   in
   let module State = State (FunctionContext) in
