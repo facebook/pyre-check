@@ -35,7 +35,6 @@ let build_environment_data
 
     let timer = Timer.start () in
     let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
-    let _ = AnnotatedGlobalEnvironment.cold_start annotated_global_environment in
     Statistics.performance ~name:"full environment built" ~timer ();
     AnnotatedGlobalEnvironment.read_only annotated_global_environment
   in

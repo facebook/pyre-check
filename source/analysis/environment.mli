@@ -48,8 +48,6 @@ module type PreviousEnvironment = sig
 
   val read_only : t -> ReadOnly.t
 
-  val cold_start : t -> ReadOnly.t
-
   val update_this_and_all_preceding_environments
     :  t ->
     scheduler:Scheduler.t ->
@@ -73,8 +71,6 @@ module type S = sig
   val configuration : t -> Configuration.Analysis.t
 
   val read_only : t -> ReadOnly.t
-
-  val cold_start : t -> ReadOnly.t
 
   val update_this_and_all_preceding_environments
     :  t ->
@@ -169,8 +165,6 @@ module EnvironmentTable : sig
     val configuration : t -> Configuration.Analysis.t
 
     val read_only : t -> ReadOnly.t
-
-    val cold_start : t -> ReadOnly.t
 
     val update_this_and_all_preceding_environments
       :  t ->

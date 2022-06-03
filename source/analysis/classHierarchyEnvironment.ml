@@ -249,8 +249,6 @@ let configuration { edges } = Edges.configuration edges
 
 let read_only { edges } = Edges.read_only edges
 
-let cold_start { edges } = Edges.cold_start edges
-
 let update_this_and_all_preceding_environments
     ({ edges } as this_environment)
     ~scheduler
