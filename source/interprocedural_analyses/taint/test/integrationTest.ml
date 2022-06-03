@@ -158,6 +158,7 @@ let test_integration path context =
       |> String.concat ~sep:""
     in
     let () = Fixpoint.cleanup fixpoint_state in
+    let () = OverrideGraph.SharedMemory.cleanup overrides in
     divergent_files, serialized_models
   in
   let divergent_files =
