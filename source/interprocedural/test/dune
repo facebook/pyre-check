@@ -1,7 +1,7 @@
 (tests
  (names targetTest callGraphTest dependencyGraphTest classHierarchyGraphTest
-   classIntervalTest classIntervalSetTest callResolutionTest fetchCallablesTest
-   overrideGraphTest changedPathsTest)
+   classIntervalTest classIntervalSetTest classIntervalSetGraphTest
+   callResolutionTest fetchCallablesTest overrideGraphTest changedPathsTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_compare ppx_sexp_conv
     ppx_sexp_message ppx_hash))

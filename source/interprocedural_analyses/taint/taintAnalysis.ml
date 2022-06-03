@@ -342,8 +342,10 @@ let run_taint_analysis
 
     let () =
       let timer = Timer.start () in
-      Interprocedural.ClassIntervalSet.compute_intervals class_hierarchy_graph
-      |> Interprocedural.ClassIntervalSet.SharedMemory.store;
+      let () =
+        Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
+        |> Interprocedural.ClassIntervalSetGraph.SharedMemory.from_heap
+      in
       Statistics.performance
         ~name:"Computed class intervals"
         ~phase_name:"Computing class intervals"

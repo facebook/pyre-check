@@ -39,17 +39,3 @@ val upper_bound_exn : t -> int
 val less_or_equal : left:t -> right:t -> bool
 
 val pp : Format.formatter -> t -> unit
-
-val compute_intervals : ClassHierarchyGraph.t -> t ClassHierarchyGraph.ClassNameMap.t
-
-module SharedMemory : sig
-  val add : class_name:ClassHierarchyGraph.class_name -> interval:t -> unit
-
-  val get : class_name:ClassHierarchyGraph.class_name -> t option
-
-  val store : t ClassHierarchyGraph.ClassNameMap.t -> unit
-
-  val of_type : Type.t option -> t
-
-  val of_definition : Ast.Statement.Define.t Ast.Node.t -> t
-end

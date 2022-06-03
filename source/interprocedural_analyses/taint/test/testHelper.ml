@@ -577,8 +577,10 @@ let initialize
       ~initial_models
   in
   let class_hierarchy_graph = ClassHierarchyGraph.from_source ~environment ~source in
-  Interprocedural.ClassIntervalSet.compute_intervals class_hierarchy_graph
-  |> Interprocedural.ClassIntervalSet.SharedMemory.store;
+  let () =
+    Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
+    |> Interprocedural.ClassIntervalSetGraph.SharedMemory.from_heap
+  in
   {
     static_analysis_configuration;
     whole_program_call_graph;

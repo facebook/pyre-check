@@ -17,6 +17,7 @@ module Error = Error
 module ClassHierarchyGraph = ClassHierarchyGraph
 module ClassInterval = ClassInterval
 module ClassIntervalSet = ClassIntervalSet
+module ClassIntervalSetGraph = ClassIntervalSetGraph
 module FetchCallables = FetchCallables
 module TargetGraph = TargetGraph
 module ChangedPaths = ChangedPaths
