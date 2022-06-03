@@ -2076,9 +2076,11 @@ module DefineCallGraphSharedMemory = struct
         let description = "call graphs of defines"
       end)
 
-  let set ~callable ~call_graph = add callable (Location.Map.to_tree call_graph)
+  type t = Handle
 
-  let get ~callable = get callable >>| Location.Map.of_tree
+  let set Handle ~callable ~call_graph = add callable (Location.Map.to_tree call_graph)
+
+  let get Handle ~callable = get callable >>| Location.Map.of_tree
 end
 
 module WholeProgramCallGraph = struct
@@ -2109,6 +2111,11 @@ module WholeProgramCallGraph = struct
   let to_target_graph graph = graph
 end
 
+type call_graphs = {
+  whole_program_call_graph: WholeProgramCallGraph.t;
+  define_call_graphs: DefineCallGraphSharedMemory.t;
+}
+
 let build_whole_program_call_graph
     ~scheduler
     ~static_analysis_configuration
@@ -2117,7 +2124,8 @@ let build_whole_program_call_graph
     ~attribute_targets
     ~callables
   =
-  let call_graph =
+  let define_call_graphs = DefineCallGraphSharedMemory.Handle in
+  let whole_program_call_graph =
     let build_call_graph whole_program_call_graph callable =
       let callable_call_graph =
         call_graph_of_callable
@@ -2128,7 +2136,10 @@ let build_whole_program_call_graph
       in
       let () =
         if store_shared_memory then
-          DefineCallGraphSharedMemory.set ~callable ~call_graph:callable_call_graph
+          DefineCallGraphSharedMemory.set
+            define_call_graphs
+            ~callable
+            ~call_graph:callable_call_graph
       in
       WholeProgramCallGraph.add_or_exn
         whole_program_call_graph
@@ -2149,7 +2160,7 @@ let build_whole_program_call_graph
     match static_analysis_configuration.Configuration.StaticAnalysis.dump_call_graph with
     | Some path ->
         Log.warning "Emitting the contents of the call graph to `%s`" (PyrePath.absolute path);
-        call_graph |> WholeProgramCallGraph.to_target_graph |> TargetGraph.dump ~path
+        whole_program_call_graph |> WholeProgramCallGraph.to_target_graph |> TargetGraph.dump ~path
     | None -> ()
   in
-  call_graph
+  { whole_program_call_graph; define_call_graphs }

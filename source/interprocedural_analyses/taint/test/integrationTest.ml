@@ -111,21 +111,31 @@ let test_integration path context =
       in
       create_expected_and_actual_files ~suffix:".overrides" actual
     in
-    let { call_graph; environment; overrides; initial_models; initial_callables; stubs; _ } =
+    let {
+      whole_program_call_graph;
+      define_call_graphs;
+      environment;
+      overrides;
+      initial_models;
+      initial_callables;
+      stubs;
+      _;
+    }
+      =
       initialize ~handle ?models_source ~add_initial_models ~taint_configuration ~context source
     in
     let { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ } =
       DependencyGraph.build_whole_program_dependency_graph
         ~prune:true
         ~initial_callables
-        ~call_graph
+        ~call_graph:whole_program_call_graph
         ~overrides
     in
     let fixpoint_state =
       Fixpoint.compute
         ~scheduler:(Test.mock_scheduler ())
         ~type_environment:environment
-        ~context:{ Fixpoint.Analysis.environment }
+        ~context:{ Fixpoint.Context.type_environment = environment; define_call_graphs }
         ~dependency_graph
         ~initial_callables:(FetchCallables.get_callables initial_callables)
         ~stubs
@@ -148,7 +158,9 @@ let test_integration path context =
       externalization
     in
 
-    let divergent_files = [create_call_graph_files call_graph; create_overrides_files overrides] in
+    let divergent_files =
+      [create_call_graph_files whole_program_call_graph; create_overrides_files overrides]
+    in
     let serialized_models =
       List.rev_append (Registry.targets initial_models) callables_to_analyze
       |> Target.Set.of_list

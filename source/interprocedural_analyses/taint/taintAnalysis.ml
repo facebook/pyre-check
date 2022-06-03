@@ -401,7 +401,7 @@ let run_taint_analysis
 
     Log.info "Building call graph...";
     let timer = Timer.start () in
-    let call_graph =
+    let { Interprocedural.CallGraph.whole_program_call_graph; define_call_graphs } =
       Interprocedural.CallGraph.build_whole_program_call_graph
         ~scheduler
         ~static_analysis_configuration
@@ -424,7 +424,7 @@ let run_taint_analysis
       Interprocedural.DependencyGraph.build_whole_program_dependency_graph
         ~prune:true
         ~initial_callables
-        ~call_graph
+        ~call_graph:whole_program_call_graph
         ~overrides
     in
     Statistics.performance
@@ -436,7 +436,7 @@ let run_taint_analysis
     let initial_models =
       MissingFlow.add_unknown_callee_models
         ~static_analysis_configuration
-        ~call_graph
+        ~call_graph:whole_program_call_graph
         ~initial_models
     in
 
@@ -459,7 +459,10 @@ let run_taint_analysis
         ~scheduler
         ~type_environment:(Analysis.TypeEnvironment.read_only environment)
         ~context:
-          { Taint.Fixpoint.Analysis.environment = Analysis.TypeEnvironment.read_only environment }
+          {
+            Taint.Fixpoint.Context.type_environment = Analysis.TypeEnvironment.read_only environment;
+            define_call_graphs;
+          }
         ~dependency_graph
         ~initial_callables:(Interprocedural.FetchCallables.get_callables initial_callables)
         ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)

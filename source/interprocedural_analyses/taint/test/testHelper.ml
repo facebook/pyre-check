@@ -419,7 +419,8 @@ let get_initial_models ~context =
 
 type test_environment = {
   static_analysis_configuration: Configuration.StaticAnalysis.t;
-  call_graph: CallGraph.WholeProgramCallGraph.t;
+  whole_program_call_graph: CallGraph.WholeProgramCallGraph.t;
+  define_call_graphs: CallGraph.DefineCallGraphSharedMemory.t;
   overrides: OverrideGraph.Heap.t;
   initial_callables: FetchCallables.t;
   stubs: Target.t list;
@@ -558,7 +559,7 @@ let initialize
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
   (* The call graph building depends on initial models for global targets. *)
-  let call_graph =
+  let { Interprocedural.CallGraph.whole_program_call_graph; define_call_graphs } =
     Interprocedural.CallGraph.build_whole_program_call_graph
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
@@ -568,14 +569,18 @@ let initialize
       ~callables
   in
   let initial_models =
-    MissingFlow.add_unknown_callee_models ~static_analysis_configuration ~call_graph ~initial_models
+    MissingFlow.add_unknown_callee_models
+      ~static_analysis_configuration
+      ~call_graph:whole_program_call_graph
+      ~initial_models
   in
   let class_hierarchy_graph = ClassHierarchyGraph.from_source ~environment ~source in
   Interprocedural.IntervalSet.compute_intervals class_hierarchy_graph
   |> Interprocedural.IntervalSet.SharedMemory.store;
   {
     static_analysis_configuration;
-    call_graph;
+    whole_program_call_graph;
+    define_call_graphs;
     overrides;
     initial_callables;
     stubs;

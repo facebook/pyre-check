@@ -28,7 +28,17 @@ let assert_fixpoint
   let taint_configuration =
     TaintConfiguration.apply_missing_flows TaintConfiguration.default missing_flows
   in
-  let { call_graph; environment; overrides; initial_models; initial_callables; stubs; _ } =
+  let {
+    whole_program_call_graph;
+    define_call_graphs;
+    environment;
+    overrides;
+    initial_models;
+    initial_callables;
+    stubs;
+    _;
+  }
+    =
     initialize
       ?models_source
       ~find_missing_flows:(TaintConfiguration.missing_flows_kind_to_string missing_flows)
@@ -41,14 +51,14 @@ let assert_fixpoint
     DependencyGraph.build_whole_program_dependency_graph
       ~prune:false
       ~initial_callables
-      ~call_graph
+      ~call_graph:whole_program_call_graph
       ~overrides
   in
   let fixpoint_state =
     Fixpoint.compute
       ~scheduler
       ~type_environment:environment
-      ~context:{ Fixpoint.Analysis.environment }
+      ~context:{ Fixpoint.Context.type_environment = environment; define_call_graphs }
       ~dependency_graph
       ~initial_callables:(FetchCallables.get_callables initial_callables)
       ~stubs
@@ -58,7 +68,9 @@ let assert_fixpoint
       ~max_iterations:100
       ~epoch:Fixpoint.Epoch.initial
   in
-  assert_bool "Call graph is empty!" (not (CallGraph.WholeProgramCallGraph.is_empty call_graph));
+  assert_bool
+    "Call graph is empty!"
+    (not (CallGraph.WholeProgramCallGraph.is_empty whole_program_call_graph));
   assert_equal
     ~msg:"Fixpoint iterations"
     expect_iterations

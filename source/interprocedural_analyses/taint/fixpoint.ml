@@ -9,8 +9,15 @@ open Core
 open Pyre
 module TypeEnvironment = Analysis.TypeEnvironment
 
+module Context = struct
+  type t = {
+    type_environment: TypeEnvironment.ReadOnly.t;
+    define_call_graphs: Interprocedural.CallGraph.DefineCallGraphSharedMemory.t;
+  }
+end
+
 module Analysis = struct
-  type context = { environment: TypeEnvironment.ReadOnly.t }
+  type context = Context.t
 
   module Model = struct
     include Model
@@ -74,7 +81,8 @@ module Analysis = struct
   end
 
   let analyze_define_with_sanitizers_and_modes
-      ~environment
+      ~type_environment
+      ~define_call_graphs
       ~qualifier
       ~callable
       ~define
@@ -90,7 +98,9 @@ module Analysis = struct
         TaintProfiler.none
     in
     let call_graph_of_define =
-      match Interprocedural.CallGraph.DefineCallGraphSharedMemory.get ~callable with
+      match
+        Interprocedural.CallGraph.DefineCallGraphSharedMemory.get define_call_graphs ~callable
+      with
       | Some call_graph -> call_graph
       | None ->
           Format.asprintf "Missing call graph for `%a`" Interprocedural.Target.pp callable
@@ -100,7 +110,7 @@ module Analysis = struct
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis" ~f:(fun () ->
           ForwardAnalysis.run
             ~profiler
-            ~environment
+            ~environment:type_environment
             ~qualifier
             ~callable
             ~define
@@ -112,7 +122,7 @@ module Analysis = struct
       TaintProfiler.track_duration ~profiler ~name:"Backward analysis" ~f:(fun () ->
           BackwardAnalysis.run
             ~profiler
-            ~environment
+            ~environment:type_environment
             ~qualifier
             ~callable
             ~define
@@ -137,7 +147,7 @@ module Analysis = struct
 
 
   let analyze_define
-      ~context:{ environment }
+      ~context:{ Context.type_environment; define_call_graphs }
       ~qualifier
       ~callable
       ~define:
@@ -152,7 +162,7 @@ module Analysis = struct
     let open Analysis in
     let open Ast in
     let module_reference =
-      let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+      let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
       let annotated_global_environment =
         GlobalResolution.annotated_global_environment global_resolution
       in
@@ -170,7 +180,8 @@ module Analysis = struct
       [], previous_model
     else
       analyze_define_with_sanitizers_and_modes
-        ~environment
+        ~type_environment
+        ~define_call_graphs
         ~qualifier
         ~callable
         ~define
