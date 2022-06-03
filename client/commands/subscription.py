@@ -41,7 +41,20 @@ def _parse_status_update_subscription(response: object) -> StatusUpdate:
     return StatusUpdate(kind=kind)
 
 
-Body = Union[TypeErrors, StatusUpdate]
+@dataclasses.dataclass(frozen=True)
+class Error:
+    message: str
+
+
+def _parse_error_subscription(response: object) -> Error:
+    if not isinstance(response, str):
+        raise incremental.InvalidServerResponse(
+            f"Response kind of an error must be a string. Got {response}"
+        )
+    return Error(message=response)
+
+
+Body = Union[TypeErrors, StatusUpdate, Error]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -56,6 +69,7 @@ class Response:
             # The response JSON is expected to have the following forms:
             # `{"name": "foo", "body": ["TypeErrors", [error_json, ...]]}`
             # `{"name": "foo", "body": ["StatusUpdate", ["message_kind", ...]]}`
+            # `{"name": "foo", "body": ["Error", "error message"]}`
             if isinstance(response_json, dict):
                 name = response_json.get("name", None)
                 body = response_json.get("body", None)
@@ -73,6 +87,10 @@ class Response:
                     elif tag == "StatusUpdate":
                         return Response(
                             name=name, body=_parse_status_update_subscription(body[1])
+                        )
+                    elif tag == "Error":
+                        return Response(
+                            name=name, body=_parse_error_subscription(body[1])
                         )
             raise incremental.InvalidServerResponse(
                 f"Unexpected JSON subscription from server: {response_json}"

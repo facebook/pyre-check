@@ -10,7 +10,7 @@ import testslide
 
 from ... import error
 from ..incremental import InvalidServerResponse
-from ..subscription import Response, StatusUpdate, TypeErrors
+from ..subscription import Error, Response, StatusUpdate, TypeErrors
 
 
 class SubscriptionTest(testslide.TestCase):
@@ -89,5 +89,17 @@ class SubscriptionTest(testslide.TestCase):
             expected=Response(
                 name="foo",
                 body=StatusUpdate(kind="derp"),
+            ),
+        )
+        assert_parsed(
+            json.dumps(
+                {
+                    "name": "foo",
+                    "body": ["Error", "rip and tear!"],
+                }
+            ),
+            expected=Response(
+                name="foo",
+                body=Error(message="rip and tear!"),
             ),
         )
