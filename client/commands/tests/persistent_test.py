@@ -46,6 +46,7 @@ from ..persistent import (
     PyreQueryState,
     PyreServer,
     PyreServerHandler,
+    PyreServerShutdown,
     PyreServerStartOptions,
     PyreServerStartOptionsReader,
     ServerState,
@@ -365,6 +366,22 @@ class PersistentTest(testslide.TestCase):
         self.assertIn("textDocument/publishDiagnostics", client_messages[2])
         # Notify the user that incremental check has finished
         self.assertIn("window/showStatus", client_messages[3])
+
+    @setup.async_test
+    async def test_subscription_error(self) -> None:
+        def fake_server_start_options_reader() -> PyreServerStartOptions:
+            # Server start option is not relevant to this test
+            raise NotImplementedError
+
+        server_handler = PyreServerHandler(
+            server_start_options_reader=fake_server_start_options_reader,
+            client_output_channel=TextWriter(MemoryBytesWriter()),
+            server_state=ServerState(),
+        )
+        with self.assertRaises(PyreServerShutdown):
+            await server_handler.handle_error_subscription(
+                subscription.Error(message="Doom Eternal")
+            )
 
     @setup.async_test
     async def test_busy_status_clear_diagnostics(self) -> None:

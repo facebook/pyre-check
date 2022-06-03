@@ -1359,6 +1359,10 @@ async def _write_notification(
     )
 
 
+class PyreServerShutdown(Exception):
+    pass
+
+
 class PyreServerHandler(connection.BackgroundTask):
     server_start_options_reader: PyreServerStartOptionsReader
     remote_logging: Optional[backend_arguments.RemoteLogging]
@@ -1481,6 +1485,13 @@ class PyreServerHandler(connection.BackgroundTask):
                 level=lsp.MessageType.WARNING,
             )
 
+    async def handle_error_subscription(
+        self, error_subscription: subscription.Error
+    ) -> None:
+        message = error_subscription.message
+        LOG.info(f"Received error from subscription channel: {message}")
+        raise PyreServerShutdown(message)
+
     async def _handle_subscription_body(
         self, subscription_body: subscription.Body
     ) -> None:
@@ -1488,6 +1499,8 @@ class PyreServerHandler(connection.BackgroundTask):
             await self.handle_type_error_subscription(subscription_body)
         elif isinstance(subscription_body, subscription.StatusUpdate):
             await self.handle_status_update_subscription(subscription_body)
+        elif isinstance(subscription_body, subscription.Error):
+            await self.handle_error_subscription(subscription_body)
 
     async def _subscribe_to_type_error(
         self,
@@ -1711,6 +1724,8 @@ class PyreServerHandler(connection.BackgroundTask):
         except asyncio.CancelledError:
             error_message = "Explicit termination request"
             raise
+        except PyreServerShutdown as error:
+            error_message = f"Pyre server shutdown: {error}"
         except BaseException:
             error_message = traceback.format_exc()
             raise
