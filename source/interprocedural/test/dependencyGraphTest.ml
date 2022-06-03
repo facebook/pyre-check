@@ -542,9 +542,8 @@ let test_prune_callables _ =
     assert_equal
       ~cmp:(List.equal Target.equal)
       ~printer:(List.to_string ~f:Target.show_pretty)
-      (List.map expected_callables ~f:(fun callable ->
-           Target.create_method (Reference.create callable)))
-      (List.sort ~compare:Target.compare actual_callables);
+      (List.map expected_callables ~f:(fun callable -> create (Reference.create callable)))
+      actual_callables;
     assert_equal
       ~cmp:
         (List.equal (fun (left_key, left_values) (right_key, right_values) ->
@@ -612,7 +611,15 @@ let test_prune_callables _ =
         "external.unrelated";
       ]
     ~expected_callables:
-      ["a.foo"; "external.bar"; "external.called_by_override"; "external.C.m"; "external.D.m"]
+      [
+        "a.foo";
+        "external.bar";
+        "O|external.C.m";
+        "external.C.m";
+        "O|external.D.m";
+        "external.D.m";
+        "external.called_by_override";
+      ]
     ~expected_dependencies:
       [
         "a.foo", ["external.bar"];
@@ -670,7 +677,16 @@ let test_prune_callables _ =
         "external.unrelated";
       ]
     ~expected_callables:
-      ["a.foo"; "external.called_by_override"; "external.C.m"; "external.D.m"; "external.E.m"]
+      [
+        "a.foo";
+        "O|external.C.m";
+        "external.C.m";
+        "O|external.D.m";
+        "external.D.m";
+        "O|external.E.m";
+        "external.E.m";
+        "external.called_by_override";
+      ]
     ~expected_dependencies:
       [
         "a.foo", ["O|external.C.m"];

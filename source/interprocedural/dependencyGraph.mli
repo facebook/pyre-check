@@ -34,6 +34,8 @@ module Reversed : sig
 
   type prune_result = {
     reverse_dependency_graph: t;
+    (* All targets reachable by internal callables, in the depth first search order, without
+       duplicates. *)
     callables_kept: Target.t list;
   }
 

@@ -102,6 +102,8 @@ module Reversed = struct
 
   type prune_result = {
     reverse_dependency_graph: t;
+    (* All targets reachable by internal callables, in the depth first search order, without
+       duplicates. *)
     callables_kept: Target.t list;
   }
 
@@ -111,9 +113,7 @@ module Reversed = struct
        During the pruning, we make the edges from the method to the override explicit to make sure
        the DFS captures the interesting overrides. *)
     let callables_to_keep =
-      depth_first_search reverse_dependency_graph internal_callables
-      |> List.concat
-      |> List.dedup_and_sort ~compare:Target.compare
+      depth_first_search reverse_dependency_graph internal_callables |> List.concat
     in
     let reverse_dependency_graph =
       (* We only keep the keys which were in the original dependency graph to avoid introducing
@@ -123,15 +123,7 @@ module Reversed = struct
       in
       Target.Map.of_alist_exn (List.filter_map callables_to_keep ~f:to_edge)
     in
-    let callables_to_keep = Target.Set.of_list callables_to_keep in
-    {
-      reverse_dependency_graph;
-      callables_kept =
-        initial_callables
-        |> FetchCallables.get_callables
-        |> List.filter_map ~f:(fun callable ->
-               Option.some_if (Target.Set.mem callable callables_to_keep) callable);
-    }
+    { reverse_dependency_graph; callables_kept = callables_to_keep }
 
 
   let to_target_graph = Fn.id
@@ -158,15 +150,28 @@ let build_whole_program_dependency_graph ~prune ~initial_callables ~call_graph ~
   let reverse_dependency_graph =
     Reversed.from_call_graph call_graph |> Reversed.disjoint_union reverse_dependency_graph
   in
-  let reverse_dependency_graph, callables_kept =
-    if prune then
-      let { Reversed.reverse_dependency_graph; callables_kept } =
-        Reversed.prune reverse_dependency_graph ~initial_callables
-      in
-      reverse_dependency_graph, callables_kept
-    else
-      reverse_dependency_graph, FetchCallables.get_callables initial_callables
-  in
-  let dependency_graph = Reversed.reverse reverse_dependency_graph in
-  let callables_to_analyze = List.rev_append override_targets callables_kept in
-  { dependency_graph; override_targets; callables_kept; callables_to_analyze }
+  if not prune then
+    let dependency_graph = Reversed.reverse reverse_dependency_graph in
+    let callables_kept = FetchCallables.get_callables initial_callables in
+    let callables_to_analyze = List.rev_append override_targets callables_kept in
+    { dependency_graph; override_targets; callables_kept; callables_to_analyze }
+  else
+    let { Reversed.reverse_dependency_graph; callables_kept } =
+      Reversed.prune reverse_dependency_graph ~initial_callables
+    in
+    let dependency_graph = Reversed.reverse reverse_dependency_graph in
+    (* Analyze overrides in the reverse weak topological order. *)
+    let override_targets_to_analyze, callables_to_analyze =
+      List.partition_tf callables_kept ~f:(function
+          | Target.Override _ -> true
+          | _ -> false)
+    in
+    let override_targets_to_analyze = List.rev override_targets_to_analyze in
+    (* Analyze callables sorted by name, for better cache locality. *)
+    let callables_to_analyze = Target.HashSet.of_list callables_to_analyze in
+    let callables_to_analyze =
+      FetchCallables.get_callables initial_callables
+      |> List.filter ~f:(fun callable -> Hash_set.mem callables_to_analyze callable)
+    in
+    let callables_to_analyze = override_targets_to_analyze @ callables_to_analyze in
+    { dependency_graph; override_targets; callables_kept; callables_to_analyze }
