@@ -160,18 +160,15 @@ let build_whole_program_dependency_graph ~prune ~initial_callables ~call_graph ~
       Reversed.prune reverse_dependency_graph ~initial_callables
     in
     let dependency_graph = Reversed.reverse reverse_dependency_graph in
-    (* Analyze overrides in the reverse weak topological order. *)
-    let override_targets_to_analyze, callables_to_analyze =
-      List.partition_tf callables_kept ~f:(function
-          | Target.Override _ -> true
-          | _ -> false)
+    (* Analyze callables in the reverse weak topological order. *)
+    let initial_callable_set =
+      FetchCallables.get_callables initial_callables |> Target.HashSet.of_list
     in
-    let override_targets_to_analyze = List.rev override_targets_to_analyze in
-    (* Analyze callables sorted by name, for better cache locality. *)
-    let callables_to_analyze = Target.HashSet.of_list callables_to_analyze in
     let callables_to_analyze =
-      FetchCallables.get_callables initial_callables
-      |> List.filter ~f:(fun callable -> Hash_set.mem callables_to_analyze callable)
+      callables_kept
+      |> List.filter ~f:(function
+             | Target.Override _ -> true
+             | callable -> Hash_set.mem initial_callable_set callable)
+      |> List.rev
     in
-    let callables_to_analyze = override_targets_to_analyze @ callables_to_analyze in
     { dependency_graph; override_targets; callables_kept; callables_to_analyze }
