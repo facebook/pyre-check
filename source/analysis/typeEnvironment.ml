@@ -9,6 +9,35 @@ open Ast
 open Core
 module Error = AnalysisError
 
+module ReadOnly = struct
+  type t = {
+    global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
+    get_errors: Reference.t -> Error.t list;
+    get_local_annotations: Reference.t -> LocalAnnotationMap.ReadOnly.t option;
+  }
+
+  let create ?(get_errors = fun _ -> []) ?(get_local_annotations = fun _ -> None) global_environment
+    =
+    { global_environment; get_errors; get_local_annotations }
+
+
+  let global_environment { global_environment; _ } = global_environment
+
+  let global_resolution { global_environment; _ } = GlobalResolution.create global_environment
+
+  let ast_environment { global_environment; _ } =
+    AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
+
+
+  let unannotated_global_environment { global_environment; _ } =
+    AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment global_environment
+
+
+  let get_errors { get_errors; _ } = get_errors
+
+  let get_local_annotations { get_local_annotations; _ } = get_local_annotations
+end
+
 module AnalysisErrorValue = struct
   type t = Error.t list
 
@@ -79,35 +108,6 @@ let create global_environment =
     get_local_annotations;
   }
 
-
-module ReadOnly = struct
-  type t = {
-    global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
-    get_errors: Reference.t -> Error.t list;
-    get_local_annotations: Reference.t -> LocalAnnotationMap.ReadOnly.t option;
-  }
-
-  let create ?(get_errors = fun _ -> []) ?(get_local_annotations = fun _ -> None) global_environment
-    =
-    { global_environment; get_errors; get_local_annotations }
-
-
-  let global_environment { global_environment; _ } = global_environment
-
-  let global_resolution { global_environment; _ } = GlobalResolution.create global_environment
-
-  let ast_environment { global_environment; _ } =
-    AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
-
-
-  let unannotated_global_environment { global_environment; _ } =
-    AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment global_environment
-
-
-  let get_errors { get_errors; _ } = get_errors
-
-  let get_local_annotations { get_local_annotations; _ } = get_local_annotations
-end
 
 let read_only { global_environment; get_errors; get_local_annotations; _ } =
   ReadOnly.create
