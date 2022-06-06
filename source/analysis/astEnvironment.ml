@@ -242,293 +242,313 @@ module UpdateResult = struct
   let module_updates { module_updates; _ } = module_updates
 end
 
-module RawSourceValue = struct
-  type t = (Source.t, ParserError.t) Result.t
+module FromReadonlyUpstream = struct
+  module RawSourceValue = struct
+    type t = (Source.t, ParserError.t) Result.t
 
-  let prefix = Prefix.make ()
+    let prefix = Prefix.make ()
 
-  let description = "Unprocessed source"
+    let description = "Unprocessed source"
 
-  let compare = Result.compare Source.compare ParserError.compare
-end
+    let compare = Result.compare Source.compare ParserError.compare
+  end
 
-module RawSources = struct
-  include
-    DependencyTrackedMemory.DependencyTrackedTableNoCache
-      (SharedMemoryKeys.ReferenceKey)
-      (SharedMemoryKeys.DependencyKey)
-      (RawSourceValue)
+  module RawSources = struct
+    include
+      DependencyTrackedMemory.DependencyTrackedTableNoCache
+        (SharedMemoryKeys.ReferenceKey)
+        (SharedMemoryKeys.DependencyKey)
+        (RawSourceValue)
 
-  let add_parsed_source table ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) =
-    add table qualifier (Result.Ok source)
+    let add_parsed_source table ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) =
+      add table qualifier (Result.Ok source)
 
 
-  let add_unparsed_source
-      table
-      ({ ParserError.source_path = { ModulePath.qualifier; _ }; _ } as error)
+    let add_unparsed_source
+        table
+        ({ ParserError.source_path = { ModulePath.qualifier; _ }; _ } as error)
+      =
+      add table qualifier (Result.Error error)
+
+
+    let update_and_compute_dependencies table ~update ~scheduler qualifiers =
+      let keys = KeySet.of_list qualifiers in
+      SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler
+      |> add_to_transaction table ~keys
+      |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
+
+
+    let remove_sources table qualifiers = KeySet.of_list qualifiers |> remove_batch table
+  end
+
+  type t = {
+    module_tracker: ModuleTracker.ReadOnly.t;
+    raw_sources: RawSources.t;
+  }
+
+  let create module_tracker = { module_tracker; raw_sources = RawSources.create () }
+
+  type parse_result =
+    | Success of Source.t
+    | Error of {
+        location: Location.t;
+        message: string;
+        is_suppressed: bool;
+      }
+
+  let parse_source
+      ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
+      ~context
+      ~module_tracker
+      ({ ModulePath.qualifier; _ } as source_path)
     =
-    add table qualifier (Result.Error error)
+    let parse raw_code =
+      let typecheck_flags =
+        Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n')
+      in
+      match
+        PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context raw_code
+      with
+      | Ok statements -> Success (create_source ~typecheck_flags ~source_path statements)
+      | Error { PyreNewParser.Error.line; column; end_line; end_column; message } ->
+          let is_suppressed =
+            let { Source.TypecheckFlags.local_mode; ignore_codes; _ } = typecheck_flags in
+            match Source.mode ~configuration ~local_mode with
+            | Source.Declare -> true
+            | _ ->
+                (* NOTE: The number needs to be updated when the error code changes. *)
+                List.exists ignore_codes ~f:(Int.equal 404)
+          in
+          let location =
+            (* CPython set line/column number to -1 in some exceptional cases. *)
+            let replace_invalid_position number = if number <= 0 then 1 else number in
+            let start =
+              {
+                Location.line = replace_invalid_position line;
+                column = replace_invalid_position column;
+              }
+            in
+            let stop =
+              (* Work around CPython bug where the end location sometimes precedes start location. *)
+              if [%compare: int * int] (line, column) (end_line, end_column) > 0 then
+                start
+              else
+                {
+                  Location.line = replace_invalid_position end_line;
+                  column = replace_invalid_position end_column;
+                }
+            in
+            { Location.start; stop }
+          in
+          Error { location; message; is_suppressed }
+    in
+    match ModuleTracker.ReadOnly.get_raw_code module_tracker source_path with
+    | Ok raw_code -> parse raw_code
+    | Error message ->
+        Error
+          {
+            location =
+              {
+                Location.start = { Location.line = 1; column = 1 };
+                stop = { Location.line = 1; column = 1 };
+              };
+            message;
+            is_suppressed = false;
+          }
 
 
-  let update_and_compute_dependencies table ~update ~scheduler qualifiers =
-    let keys = KeySet.of_list qualifiers in
-    SharedMemoryKeys.DependencyKey.Transaction.empty ~scheduler
-    |> add_to_transaction table ~keys
-    |> SharedMemoryKeys.DependencyKey.Transaction.execute ~update
+  let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } source_path =
+    let configuration = ModuleTracker.ReadOnly.configuration module_tracker in
+    let do_parse context =
+      match parse_source ~configuration ~context ~module_tracker source_path with
+      | Success source ->
+          let source =
+            let {
+              Configuration.Analysis.python_major_version;
+              python_minor_version;
+              python_micro_version;
+              _;
+            }
+              =
+              configuration
+            in
+            Preprocessing.replace_version_specific_code
+              ~major_version:python_major_version
+              ~minor_version:python_minor_version
+              ~micro_version:python_micro_version
+              source
+            |> Preprocessing.preprocess_phase0
+          in
+          RawSources.add_parsed_source raw_sources source
+      | Error { location; message; is_suppressed } ->
+          RawSources.add_unparsed_source
+            raw_sources
+            { ParserError.source_path; location; message; is_suppressed }
+    in
+    PyreNewParser.with_context do_parse
 
 
-  let remove_sources table qualifiers = KeySet.of_list qualifiers |> remove_batch table
+  let load_raw_sources ~scheduler ~ast_environment source_paths =
+    Scheduler.iter
+      scheduler
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:100
+           ~preferred_chunks_per_worker:5
+           ())
+      ~f:(List.iter ~f:(load_raw_source ~ast_environment))
+      ~inputs:source_paths
+
+
+  module LazyRawSources = struct
+    let load ~ast_environment:({ module_tracker; _ } as ast_environment) qualifier =
+      match ModuleTracker.ReadOnly.lookup_source_path module_tracker qualifier with
+      | Some source_path ->
+          load_raw_source ~ast_environment source_path;
+          true
+      | None -> false
+
+
+    let get ~ast_environment:({ raw_sources; _ } as ast_environment) ?dependency qualifier =
+      match RawSources.get raw_sources ?dependency qualifier with
+      | Some _ as source -> source
+      | None ->
+          if load ~ast_environment qualifier then
+            RawSources.get raw_sources ?dependency qualifier
+          else
+            None
+  end
+
+  (* This code is factored out so that in tests we can use it as a hack to free up memory *)
+  let process_module_updates ~scheduler ({ raw_sources; _ } as ast_environment) module_updates =
+    let changed_source_paths, removed_modules, new_implicits =
+      let categorize = function
+        | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
+        | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
+        | ModuleTracker.IncrementalUpdate.NewImplicit qualifier -> `Trd qualifier
+      in
+      List.partition3_map module_updates ~f:categorize
+    in
+    (* We only want to eagerly reparse sources that have been cached. We have to also invalidate
+       sources that are now deleted or changed from explicit to implicit. *)
+    let reparse_source_paths =
+      List.filter changed_source_paths ~f:(fun { ModulePath.qualifier; _ } ->
+          RawSources.mem raw_sources qualifier)
+    in
+    let reparse_modules =
+      reparse_source_paths |> List.map ~f:(fun { ModulePath.qualifier; _ } -> qualifier)
+    in
+    let modules_with_invalidated_raw_source =
+      List.concat [removed_modules; new_implicits; reparse_modules]
+    in
+    (* Because type checking relies on AstEnvironment.UpdateResult.invalidated_modules to determine
+       which files require re-type-checking, we have to include all new non-external modules, even
+       though they don't really require us to update data in the push phase, or else they'll never
+       be checked. *)
+    let reparse_modules_union_in_project_modules =
+      let fold qualifiers { ModulePath.qualifier; _ } = Reference.Set.add qualifiers qualifier in
+      List.filter changed_source_paths ~f:ModulePath.is_in_project
+      |> List.fold ~init:(Reference.Set.of_list reparse_modules) ~f:fold
+      |> Reference.Set.to_list
+    in
+    let invalidated_modules_before_preprocessing =
+      List.concat [removed_modules; new_implicits; reparse_modules_union_in_project_modules]
+    in
+    let update_raw_sources () = load_raw_sources ~scheduler ~ast_environment reparse_source_paths in
+    let _, preprocessing_dependencies =
+      Profiling.track_duration_and_shared_memory
+        "Parse Raw Sources"
+        ~tags:["phase_name", "Parsing"]
+        ~f:(fun _ ->
+          RawSources.update_and_compute_dependencies
+            raw_sources
+            modules_with_invalidated_raw_source
+            ~update:update_raw_sources
+            ~scheduler)
+    in
+    let invalidated_modules =
+      let fold_key registered sofar =
+        let qualifier =
+          match SharedMemoryKeys.DependencyKey.get_key registered with
+          | SharedMemoryKeys.WildcardImport qualifier -> qualifier
+          | _ ->
+              (* Due to shared-memory limitations we cannot express this restriction in the type
+                 system, but it is key to reasoning about the dependency graph *)
+              failwith "RawSources should never have non-WildCardImport dependencies"
+        in
+        RawSources.KeySet.add qualifier sofar
+      in
+      SharedMemoryKeys.DependencyKey.RegisteredSet.fold
+        fold_key
+        preprocessing_dependencies
+        (RawSources.KeySet.of_list invalidated_modules_before_preprocessing)
+      |> RawSources.KeySet.elements
+    in
+    { UpdateResult.invalidated_modules; module_updates }
+
+
+  let remove_sources { raw_sources; _ } = RawSources.remove_sources raw_sources
+
+  let read_only ({ module_tracker; _ } as ast_environment) =
+    { ReadOnly.module_tracker; get_raw_source = LazyRawSources.get ~ast_environment }
+
+
+  let configuration { module_tracker; _ } = ModuleTracker.ReadOnly.configuration module_tracker
 end
 
-type t = {
-  module_tracker: ModuleTracker.t;
-  raw_sources: RawSources.t;
-}
-
-let create configuration =
-  { module_tracker = ModuleTracker.create configuration; raw_sources = RawSources.create () }
-
-
-let create_for_testing configuration source_path_code_pairs =
-  {
-    module_tracker = ModuleTracker.create_for_testing configuration source_path_code_pairs;
-    raw_sources = RawSources.create ();
+module Base = struct
+  type t = {
+    module_tracker: ModuleTracker.t;
+    from_readonly_upstream: FromReadonlyUpstream.t;
   }
 
-
-let load configuration =
-  {
-    module_tracker = ModuleTracker.Serializer.from_stored_layouts ~configuration ();
-    raw_sources = RawSources.create ();
-  }
-
-
-let store { module_tracker; _ } = ModuleTracker.Serializer.store_layouts module_tracker
-
-type parse_result =
-  | Success of Source.t
-  | Error of {
-      location: Location.t;
-      message: string;
-      is_suppressed: bool;
+  let from_module_tracker module_tracker =
+    {
+      module_tracker;
+      from_readonly_upstream = ModuleTracker.read_only module_tracker |> FromReadonlyUpstream.create;
     }
 
-let parse_source
-    ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
-    ~context
-    ~module_tracker
-    ({ ModulePath.qualifier; _ } as source_path)
-  =
-  let parse raw_code =
-    let typecheck_flags = Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n') in
-    match
-      PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context raw_code
-    with
-    | Ok statements -> Success (create_source ~typecheck_flags ~source_path statements)
-    | Error { PyreNewParser.Error.line; column; end_line; end_column; message } ->
-        let is_suppressed =
-          let { Source.TypecheckFlags.local_mode; ignore_codes; _ } = typecheck_flags in
-          match Source.mode ~configuration ~local_mode with
-          | Source.Declare -> true
-          | _ ->
-              (* NOTE: The number needs to be updated when the error code changes. *)
-              List.exists ignore_codes ~f:(Int.equal 404)
-        in
-        let location =
-          (* CPython set line/column number to -1 in some exceptional cases. *)
-          let replace_invalid_position number = if number <= 0 then 1 else number in
-          let start =
-            {
-              Location.line = replace_invalid_position line;
-              column = replace_invalid_position column;
-            }
-          in
-          let stop =
-            (* Work around CPython bug where the end location sometimes precedes start location. *)
-            if [%compare: int * int] (line, column) (end_line, end_column) > 0 then
-              start
-            else
-              {
-                Location.line = replace_invalid_position end_line;
-                column = replace_invalid_position end_column;
-              }
-          in
-          { Location.start; stop }
-        in
-        Error { location; message; is_suppressed }
-  in
-  match ModuleTracker.ReadOnly.get_raw_code module_tracker source_path with
-  | Ok raw_code -> parse raw_code
-  | Error message ->
-      Error
-        {
-          location =
-            {
-              Location.start = { Location.line = 1; column = 1 };
-              stop = { Location.line = 1; column = 1 };
-            };
-          message;
-          is_suppressed = false;
-        }
+
+  let create configuration = ModuleTracker.create configuration |> from_module_tracker
+
+  let create_for_testing configuration source_path_code_pairs =
+    ModuleTracker.create_for_testing configuration source_path_code_pairs |> from_module_tracker
 
 
-let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } source_path =
-  let module_tracker = ModuleTracker.read_only module_tracker in
-  let configuration = ModuleTracker.ReadOnly.configuration module_tracker in
-  let do_parse context =
-    match parse_source ~configuration ~context ~module_tracker source_path with
-    | Success source ->
-        let source =
-          let {
-            Configuration.Analysis.python_major_version;
-            python_minor_version;
-            python_micro_version;
-            _;
-          }
-            =
-            configuration
-          in
-          Preprocessing.replace_version_specific_code
-            ~major_version:python_major_version
-            ~minor_version:python_minor_version
-            ~micro_version:python_micro_version
-            source
-          |> Preprocessing.preprocess_phase0
-        in
-        RawSources.add_parsed_source raw_sources source
-    | Error { location; message; is_suppressed } ->
-        RawSources.add_unparsed_source
-          raw_sources
-          { ParserError.source_path; location; message; is_suppressed }
-  in
-  PyreNewParser.with_context do_parse
+  let load configuration =
+    ModuleTracker.Serializer.from_stored_layouts ~configuration () |> from_module_tracker
 
 
-let load_raw_sources ~scheduler ~ast_environment source_paths =
-  Scheduler.iter
-    scheduler
-    ~policy:
-      (Scheduler.Policy.fixed_chunk_count
-         ~minimum_chunks_per_worker:1
-         ~minimum_chunk_size:100
-         ~preferred_chunks_per_worker:5
-         ())
-    ~f:(List.iter ~f:(load_raw_source ~ast_environment))
-    ~inputs:source_paths
+  let store { module_tracker; _ } = ModuleTracker.Serializer.store_layouts module_tracker
+
+  let update ~scheduler { module_tracker; from_readonly_upstream } artifact_paths =
+    ModuleTracker.update module_tracker ~artifact_paths
+    |> FromReadonlyUpstream.process_module_updates ~scheduler from_readonly_upstream
 
 
-module LazyRawSources = struct
-  let load ~ast_environment:({ module_tracker; _ } as ast_environment) qualifier =
-    let module_tracker = ModuleTracker.read_only module_tracker in
-    match ModuleTracker.ReadOnly.lookup_source_path module_tracker qualifier with
-    | Some source_path ->
-        load_raw_source ~ast_environment source_path;
-        true
-    | None -> false
+  let clear_memory_for_tests ~scheduler { module_tracker; from_readonly_upstream } =
+    let _ =
+      ModuleTracker.source_paths module_tracker
+      |> List.map ~f:ModulePath.qualifier
+      |> List.map ~f:(fun qualifier -> ModuleTracker.IncrementalUpdate.Delete qualifier)
+      |> FromReadonlyUpstream.process_module_updates ~scheduler from_readonly_upstream
+    in
+    ()
 
 
-  let get ~ast_environment:({ raw_sources; _ } as ast_environment) ?dependency qualifier =
-    match RawSources.get raw_sources ?dependency qualifier with
-    | Some _ as source -> source
-    | None ->
-        if load ~ast_environment qualifier then
-          RawSources.get raw_sources ?dependency qualifier
-        else
-          None
+  let module_tracker { module_tracker; _ } = module_tracker
+
+  let configuration { from_readonly_upstream; _ } =
+    FromReadonlyUpstream.configuration from_readonly_upstream
+
+
+  let remove_sources { from_readonly_upstream; _ } qualifiers =
+    FromReadonlyUpstream.remove_sources from_readonly_upstream qualifiers
+
+
+  let read_only { from_readonly_upstream; _ } =
+    FromReadonlyUpstream.read_only from_readonly_upstream
 end
 
-(* This code is factored out so that in tests we can use it as a hack to free up memory *)
-let process_module_updates ~scheduler ({ raw_sources; _ } as ast_environment) module_updates =
-  let changed_source_paths, removed_modules, new_implicits =
-    let categorize = function
-      | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
-      | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
-      | ModuleTracker.IncrementalUpdate.NewImplicit qualifier -> `Trd qualifier
-    in
-    List.partition3_map module_updates ~f:categorize
-  in
-  (* We only want to eagerly reparse sources that have been cached. We have to also invalidate
-     sources that are now deleted or changed from explicit to implicit. *)
-  let reparse_source_paths =
-    List.filter changed_source_paths ~f:(fun { ModulePath.qualifier; _ } ->
-        RawSources.mem raw_sources qualifier)
-  in
-  let reparse_modules =
-    reparse_source_paths |> List.map ~f:(fun { ModulePath.qualifier; _ } -> qualifier)
-  in
-  let modules_with_invalidated_raw_source =
-    List.concat [removed_modules; new_implicits; reparse_modules]
-  in
-  (* Because type checking relies on AstEnvironment.UpdateResult.invalidated_modules to determine
-     which files require re-type-checking, we have to include all new non-external modules, even
-     though they don't really require us to update data in the push phase, or else they'll never be
-     checked. *)
-  let reparse_modules_union_in_project_modules =
-    let fold qualifiers { ModulePath.qualifier; _ } = Reference.Set.add qualifiers qualifier in
-    List.filter changed_source_paths ~f:ModulePath.is_in_project
-    |> List.fold ~init:(Reference.Set.of_list reparse_modules) ~f:fold
-    |> Reference.Set.to_list
-  in
-  let invalidated_modules_before_preprocessing =
-    List.concat [removed_modules; new_implicits; reparse_modules_union_in_project_modules]
-  in
-  let update_raw_sources () = load_raw_sources ~scheduler ~ast_environment reparse_source_paths in
-  let _, preprocessing_dependencies =
-    Profiling.track_duration_and_shared_memory
-      "Parse Raw Sources"
-      ~tags:["phase_name", "Parsing"]
-      ~f:(fun _ ->
-        RawSources.update_and_compute_dependencies
-          raw_sources
-          modules_with_invalidated_raw_source
-          ~update:update_raw_sources
-          ~scheduler)
-  in
-  let invalidated_modules =
-    let fold_key registered sofar =
-      let qualifier =
-        match SharedMemoryKeys.DependencyKey.get_key registered with
-        | SharedMemoryKeys.WildcardImport qualifier -> qualifier
-        | _ ->
-            (* Due to shared-memory limitations we cannot express this restriction in the type
-               system, but it is key to reasoning about the dependency graph *)
-            failwith "RawSources should never have non-WildCardImport dependencies"
-      in
-      RawSources.KeySet.add qualifier sofar
-    in
-    SharedMemoryKeys.DependencyKey.RegisteredSet.fold
-      fold_key
-      preprocessing_dependencies
-      (RawSources.KeySet.of_list invalidated_modules_before_preprocessing)
-    |> RawSources.KeySet.elements
-  in
-  { UpdateResult.invalidated_modules; module_updates }
-
-
-let update ~scheduler ({ module_tracker; _ } as ast_environment) artifact_paths =
-  ModuleTracker.update module_tracker ~artifact_paths
-  |> process_module_updates ~scheduler ast_environment
-
-
-let clear_memory_for_tests ~scheduler ({ module_tracker; _ } as ast_environment) =
-  let _ =
-    ModuleTracker.source_paths module_tracker
-    |> List.map ~f:ModulePath.qualifier
-    |> List.map ~f:(fun qualifier -> ModuleTracker.IncrementalUpdate.Delete qualifier)
-    |> process_module_updates ~scheduler ast_environment
-  in
-  ()
-
-
-let remove_sources { raw_sources; _ } = RawSources.remove_sources raw_sources
-
-let read_only ({ module_tracker; _ } as ast_environment) =
-  {
-    ReadOnly.module_tracker = ModuleTracker.read_only module_tracker;
-    get_raw_source = LazyRawSources.get ~ast_environment;
-  }
-
-
-let module_tracker { module_tracker; _ } = module_tracker
-
-let configuration { module_tracker; _ } = ModuleTracker.configuration module_tracker
+include Base
