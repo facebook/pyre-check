@@ -25,6 +25,8 @@ module ReadOnly : sig
 
   val get_processed_source : t -> ?track_dependency:bool -> Reference.t -> Source.t option
 
+  val configuration : t -> Configuration.Analysis.t
+
   val get_raw_source : t -> Reference.t -> (Source.t, ParserError.t) Result.t option
 
   val module_tracker : t -> ModuleTracker.ReadOnly.t
