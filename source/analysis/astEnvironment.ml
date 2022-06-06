@@ -63,7 +63,25 @@ type t = {
   raw_sources: RawSources.t;
 }
 
-let create module_tracker = { module_tracker; raw_sources = RawSources.create () }
+let create configuration =
+  { module_tracker = ModuleTracker.create configuration; raw_sources = RawSources.create () }
+
+
+let create_for_testing configuration source_path_code_pairs =
+  {
+    module_tracker = ModuleTracker.create_for_testing configuration source_path_code_pairs;
+    raw_sources = RawSources.create ();
+  }
+
+
+let load configuration =
+  {
+    module_tracker = ModuleTracker.Serializer.from_stored_layouts ~configuration ();
+    raw_sources = RawSources.create ();
+  }
+
+
+let store { module_tracker; _ } = ModuleTracker.Serializer.store_layouts module_tracker
 
 let wildcard_exports_of ({ Source.source_path = { ModulePath.is_stub; _ }; _ } as source) =
   let open Expression in
@@ -438,13 +456,6 @@ let clear_memory_for_tests ~scheduler ({ module_tracker; _ } as ast_environment)
   in
   ()
 
-
-(* Both `load` and `store` are no-ops here since `Sources` and `WildcardExports` are in shared
-   memory, and `Memory.load_shared_memory`/`Memory.save_shared_memory` will take care of the
-   (de-)serialization for us. *)
-let store _ = ()
-
-let load = create
 
 module ReadOnly = struct
   type t = {

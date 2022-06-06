@@ -41,11 +41,7 @@ let check
   search_paths |> List.iter ~f:check_search_path_exists;
   (* Profiling helper *)
   Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
-
-  (* Find sources to parse *)
-  let module_tracker = Analysis.ModuleTracker.create configuration in
-  (* Parse sources. *)
-  let ast_environment = Analysis.AstEnvironment.create module_tracker in
+  let ast_environment = Analysis.AstEnvironment.create configuration in
   let environment, qualifiers =
     let open Analysis in
     Log.info "Building type environment...";

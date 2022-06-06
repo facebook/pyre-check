@@ -28,8 +28,7 @@ let build_environment_data
   check_directory_exists project_root;
   search_paths |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
 
-  let module_tracker = ModuleTracker.create configuration in
-  let ast_environment = AstEnvironment.create module_tracker in
+  let ast_environment = AstEnvironment.create configuration in
   let global_environment =
     Log.info "Building type environment...";
 

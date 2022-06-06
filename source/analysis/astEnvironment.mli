@@ -48,14 +48,15 @@ val module_tracker : t -> ModuleTracker.t
 
 val configuration : t -> Configuration.Analysis.t
 
-(* Store the environment to saved-state *)
+val create : Configuration.Analysis.t -> t
+
+val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+
+(* Load and store the environment to and from saved-state *)
+
+val load : Configuration.Analysis.t -> t
+
 val store : t -> unit
-
-(* Load the environment from saved-state. Taking a `ModuleTracker` parameter just to signal that
-   loading an `AstEnvironment` must be done after loading a `ModuleTracker` *)
-val load : ModuleTracker.t -> t
-
-val create : ModuleTracker.t -> t
 
 module UpdateResult : sig
   type t

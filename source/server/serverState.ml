@@ -74,8 +74,7 @@ end)
 let load_stored_configuration = StoredConfiguration.load
 
 let load ~configuration ~build_system () =
-  let module_tracker = Analysis.ModuleTracker.Serializer.from_stored_layouts ~configuration () in
-  let ast_environment = Analysis.AstEnvironment.load module_tracker in
+  let ast_environment = Analysis.AstEnvironment.load configuration in
   let type_environment =
     Analysis.AnnotatedGlobalEnvironment.create ast_environment |> Analysis.TypeEnvironment.create
   in

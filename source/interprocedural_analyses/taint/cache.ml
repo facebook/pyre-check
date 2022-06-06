@@ -81,7 +81,7 @@ module ClassHierarchyGraphSharedMemory = Memory.Serializer (struct
   let deserialize = Fn.id
 end)
 
-type cached = { module_tracker: Analysis.ModuleTracker.t }
+type cached = { ast_environment: AstEnvironment.t }
 
 type error =
   | InvalidByCodeChange
@@ -130,12 +130,13 @@ let initialize_shared_memory ~configuration =
         Ok ())
 
 
-let load_module_tracker ~scheduler ~configuration =
+let load_ast_environment ~scheduler ~configuration =
   let open Result in
   Log.info "Determining if source files have changed since cache was created.";
   exception_to_error ~error:LoadError ~message:"loading module tracker from cache" ~f:(fun () ->
-      Ok (Analysis.ModuleTracker.Serializer.from_stored_layouts ~configuration ()))
-  >>= fun old_module_tracker ->
+      Ok (AstEnvironment.load configuration))
+  >>= fun ast_environment ->
+  let old_module_tracker = AstEnvironment.module_tracker ast_environment in
   let new_module_tracker = Analysis.ModuleTracker.create configuration in
   let changed_paths =
     let is_pysa_model path = String.is_suffix ~suffix:".pysa" (PyrePath.get_suffix_path path) in
@@ -149,7 +150,7 @@ let load_module_tracker ~scheduler ~configuration =
     |> List.filter ~f:(fun path -> not (is_pysa_model path || is_taint_config path))
   in
   match changed_paths with
-  | [] -> Ok new_module_tracker
+  | [] -> Ok ast_environment
   | _ ->
       Log.warning "Changes to source files detected, ignoring existing cache.";
       Error InvalidByCodeChange
@@ -160,13 +161,13 @@ let load ~scheduler ~configuration ~enabled =
     { cache = Error Disabled; save_cache = false; scheduler; configuration }
   else
     let open Result in
-    let module_tracker =
+    let ast_environment =
       initialize_shared_memory ~configuration
-      >>= fun () -> load_module_tracker ~scheduler ~configuration
+      >>= fun () -> load_ast_environment ~scheduler ~configuration
     in
     let cache =
-      match module_tracker with
-      | Ok module_tracker -> Ok { module_tracker }
+      match ast_environment with
+      | Ok ast_environment -> Ok { ast_environment }
       | Error error ->
           Memory.reset_shared_memory ();
           Error error
@@ -174,9 +175,8 @@ let load ~scheduler ~configuration ~enabled =
     { cache; save_cache = true; scheduler; configuration }
 
 
-let load_type_environment ~module_tracker =
+let load_type_environment ~ast_environment =
   exception_to_error ~error:LoadError ~message:"loading type environment from cache" ~f:(fun () ->
-      let ast_environment = AstEnvironment.load module_tracker in
       let environment =
         Analysis.AnnotatedGlobalEnvironment.create ast_environment |> TypeEnvironment.create
       in
@@ -188,10 +188,9 @@ let load_type_environment ~module_tracker =
 let save_type_environment ~scheduler ~configuration ~environment =
   exception_to_error ~error:() ~message:"saving type environment to cache" ~f:(fun () ->
       Memory.SharedMemory.collect `aggressive;
-      let module_tracker = TypeEnvironment.module_tracker environment in
       let ast_environment = TypeEnvironment.ast_environment environment in
+      let module_tracker = TypeEnvironment.module_tracker environment in
       Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;
-      Analysis.ModuleTracker.Serializer.store_layouts module_tracker;
       AstEnvironment.store ast_environment;
       Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
       Log.info "Saved type environment to cache shared memory.";
@@ -201,7 +200,7 @@ let save_type_environment ~scheduler ~configuration ~environment =
 let type_environment { cache; save_cache; scheduler; configuration } f =
   let type_environment =
     match cache with
-    | Ok { module_tracker } -> load_type_environment ~module_tracker |> Result.ok
+    | Ok { ast_environment } -> load_type_environment ~ast_environment |> Result.ok
     | _ -> None
   in
   match type_environment with

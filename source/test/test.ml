@@ -2741,7 +2741,7 @@ module ScratchProject = struct
       else
         external_sources
     in
-    let module_tracker =
+    let ast_environment =
       if in_memory then
         let to_source_path_code_pair (relative, content) ~is_external =
           let code = trim_extra_indentation content in
@@ -2752,7 +2752,7 @@ module ScratchProject = struct
           List.map sources ~f:(to_source_path_code_pair ~is_external:false)
           @ List.map external_sources ~f:(to_source_path_code_pair ~is_external:true)
         in
-        ModuleTracker.create_for_testing configuration source_path_code_pairs
+        AstEnvironment.create_for_testing configuration source_path_code_pairs
       else
         let add_source ~root (relative, content) =
           let content = trim_extra_indentation content in
@@ -2761,9 +2761,8 @@ module ScratchProject = struct
         in
         List.iter sources ~f:(add_source ~root:local_root);
         List.iter external_sources ~f:(add_source ~root:external_root);
-        ModuleTracker.create configuration
+        AstEnvironment.create configuration
     in
-    let ast_environment = AstEnvironment.create module_tracker in
     let () =
       (* Clean shared memory up before the test *)
       AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
