@@ -71,6 +71,177 @@ let wildcard_exports_of ({ Source.source_path = { ModulePath.is_stub; _ }; _ } a
       |> List.dedup_and_sort ~compare:Identifier.compare
 
 
+module ReadOnly = struct
+  type t = {
+    module_tracker: ModuleTracker.ReadOnly.t;
+    get_raw_source:
+      ?dependency:SharedMemoryKeys.DependencyKey.registered ->
+      Reference.t ->
+      (Source.t, ParserError.t) Result.t option;
+  }
+
+  let module_tracker { module_tracker; _ } = module_tracker
+
+  let configuration environment = module_tracker environment |> ModuleTracker.ReadOnly.configuration
+
+  let get_source_path environment =
+    module_tracker environment |> ModuleTracker.ReadOnly.lookup_source_path
+
+
+  let is_module_tracked environment =
+    module_tracker environment |> ModuleTracker.ReadOnly.is_module_tracked
+
+
+  let all_explicit_modules environment =
+    module_tracker environment |> ModuleTracker.ReadOnly.tracked_explicit_modules
+
+
+  let get_raw_source { get_raw_source; _ } = get_raw_source
+
+  let get_relative read_only qualifier =
+    let open Option in
+    get_source_path read_only qualifier >>| fun { ModulePath.relative; _ } -> relative
+
+
+  let get_real_path read_only qualifier =
+    let configuration = configuration read_only in
+    get_source_path read_only qualifier >>| ModulePath.full_path ~configuration
+
+
+  let get_real_path_relative read_only qualifier =
+    (* ModulePath.relative refers to the renamed path when search paths are provided with a root and
+       subdirectory. Instead, find the real filesystem relative path for the qualifier. *)
+    let { Configuration.Analysis.local_root; _ } = configuration read_only in
+    get_real_path read_only qualifier
+    >>= fun path -> PyrePath.get_relative_to_root ~root:local_root ~path:(ArtifactPath.raw path)
+
+
+  let project_qualifiers { module_tracker; _ } =
+    ModuleTracker.ReadOnly.project_qualifiers module_tracker
+
+
+  let expand_wildcard_imports ?dependency environment source =
+    let open Statement in
+    let module Transform = Transform.MakeStatementTransformer (struct
+      include Transform.Identity
+
+      type t = unit
+
+      let get_transitive_exports qualifier =
+        let module Visitor = Visit.MakeStatementVisitor (struct
+          type t = Reference.t list
+
+          let visit_children _ = false
+
+          let statement _ collected_imports { Node.value; _ } =
+            match value with
+            | Statement.Import { Import.from = Some from; imports }
+              when List.exists imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
+                       String.equal (Reference.show name) "*") ->
+                from :: collected_imports
+            | _ -> collected_imports
+        end)
+        in
+        let visited_modules = Reference.Hash_set.create () in
+        let transitive_exports = Identifier.Hash_set.create () in
+        let worklist = Queue.of_list [qualifier] in
+        let rec search_wildcard_imports () =
+          match Queue.dequeue worklist with
+          | None -> ()
+          | Some qualifier ->
+              let _ =
+                match Hash_set.strict_add visited_modules qualifier with
+                | Error _ -> ()
+                | Ok () -> (
+                    match get_raw_source environment ?dependency qualifier with
+                    | None
+                    | Some (Result.Error _) ->
+                        ()
+                    | Some (Result.Ok source) ->
+                        wildcard_exports_of source |> List.iter ~f:(Hash_set.add transitive_exports);
+                        Visitor.visit [] source |> Queue.enqueue_all worklist)
+              in
+              search_wildcard_imports ()
+        in
+        search_wildcard_imports ();
+        Hash_set.to_list transitive_exports |> List.sort ~compare:Identifier.compare
+
+
+      let statement state ({ Node.value; _ } as statement) =
+        match value with
+        | Statement.Import { Import.from = Some from; imports } -> (
+            let starred_import =
+              List.find imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
+                  String.equal (Reference.show name) "*")
+            in
+            match starred_import with
+            | Some _ ->
+                let expanded_import =
+                  match get_transitive_exports from with
+                  | [] -> []
+                  | exports ->
+                      List.map exports ~f:(fun name ->
+                          {
+                            Node.value = { Import.name = Reference.create name; alias = Some name };
+                            location = Location.any;
+                          })
+                      |> (fun expanded ->
+                           Statement.Import { Import.from = Some from; imports = expanded })
+                      |> fun value -> [{ statement with Node.value }]
+                in
+                state, expanded_import
+            | None -> state, [statement])
+        | _ -> state, [statement]
+    end)
+    in
+    Transform.transform () source |> Transform.source
+
+
+  let get_and_preprocess_source ?dependency environment qualifier =
+    let preprocessing = Preprocessing.preprocess_phase1 in
+    (* Preprocessing a module depends on the module itself is implicitly assumed in `update`. No
+       need to explicitly record the dependency. *)
+    get_raw_source environment ?dependency:None qualifier
+    >>| function
+    | Result.Ok source ->
+        expand_wildcard_imports ?dependency environment source
+        |> preprocessing
+        |> InlineDecorator.inline_decorators ~get_source:(fun qualifier ->
+               get_raw_source ?dependency environment qualifier >>= Result.ok)
+    | Result.Error
+        { ParserError.source_path = { ModulePath.qualifier; relative; _ } as source_path; _ } ->
+        (* Files that have parser errors fall back into getattr-any. *)
+        let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
+        let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
+        let statements = Parser.parse_exn ~relative fallback_source in
+        create_source ~typecheck_flags ~source_path statements |> preprocessing
+
+
+  let get_processed_source environment ?(track_dependency = false) qualifier =
+    let dependency =
+      if track_dependency then
+        Some (SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier))
+      else
+        None
+    in
+    get_and_preprocess_source ?dependency environment qualifier
+
+
+  (* Hide the ?dependency optional argument, which is only for internal use *)
+  let get_raw_source environment qualifier = get_raw_source environment qualifier
+end
+
+module UpdateResult = struct
+  type t = {
+    invalidated_modules: Reference.t list;
+    module_updates: ModuleTracker.IncrementalUpdate.t list;
+  }
+
+  let invalidated_modules { invalidated_modules; _ } = invalidated_modules
+
+  let module_updates { module_updates; _ } = module_updates
+end
+
 module RawSourceValue = struct
   type t = (Source.t, ParserError.t) Result.t
 
@@ -266,17 +437,6 @@ module LazyRawSources = struct
           None
 end
 
-module UpdateResult = struct
-  type t = {
-    invalidated_modules: Reference.t list;
-    module_updates: ModuleTracker.IncrementalUpdate.t list;
-  }
-
-  let invalidated_modules { invalidated_modules; _ } = invalidated_modules
-
-  let module_updates { module_updates; _ } = module_updates
-end
-
 (* This code is factored out so that in tests we can use it as a hack to free up memory *)
 let process_module_updates ~scheduler ({ raw_sources; _ } as ast_environment) module_updates =
   let changed_source_paths, removed_modules, new_implicits =
@@ -359,166 +519,6 @@ let clear_memory_for_tests ~scheduler ({ module_tracker; _ } as ast_environment)
   in
   ()
 
-
-module ReadOnly = struct
-  type t = {
-    module_tracker: ModuleTracker.ReadOnly.t;
-    get_raw_source:
-      ?dependency:SharedMemoryKeys.DependencyKey.registered ->
-      Reference.t ->
-      (Source.t, ParserError.t) Result.t option;
-  }
-
-  let module_tracker { module_tracker; _ } = module_tracker
-
-  let configuration environment = module_tracker environment |> ModuleTracker.ReadOnly.configuration
-
-  let get_source_path environment =
-    module_tracker environment |> ModuleTracker.ReadOnly.lookup_source_path
-
-
-  let is_module_tracked environment =
-    module_tracker environment |> ModuleTracker.ReadOnly.is_module_tracked
-
-
-  let all_explicit_modules environment =
-    module_tracker environment |> ModuleTracker.ReadOnly.tracked_explicit_modules
-
-
-  let get_raw_source { get_raw_source; _ } = get_raw_source
-
-  let get_relative read_only qualifier =
-    let open Option in
-    get_source_path read_only qualifier >>| fun { ModulePath.relative; _ } -> relative
-
-
-  let get_real_path read_only qualifier =
-    let configuration = configuration read_only in
-    get_source_path read_only qualifier >>| ModulePath.full_path ~configuration
-
-
-  let get_real_path_relative read_only qualifier =
-    (* ModulePath.relative refers to the renamed path when search paths are provided with a root and
-       subdirectory. Instead, find the real filesystem relative path for the qualifier. *)
-    let { Configuration.Analysis.local_root; _ } = configuration read_only in
-    get_real_path read_only qualifier
-    >>= fun path -> PyrePath.get_relative_to_root ~root:local_root ~path:(ArtifactPath.raw path)
-
-
-  let project_qualifiers { module_tracker; _ } =
-    ModuleTracker.ReadOnly.project_qualifiers module_tracker
-
-
-  let expand_wildcard_imports ?dependency environment source =
-    let open Statement in
-    let module Transform = Transform.MakeStatementTransformer (struct
-      include Transform.Identity
-
-      type t = unit
-
-      let get_transitive_exports qualifier =
-        let module Visitor = Visit.MakeStatementVisitor (struct
-          type t = Reference.t list
-
-          let visit_children _ = false
-
-          let statement _ collected_imports { Node.value; _ } =
-            match value with
-            | Statement.Import { Import.from = Some from; imports }
-              when List.exists imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
-                       String.equal (Reference.show name) "*") ->
-                from :: collected_imports
-            | _ -> collected_imports
-        end)
-        in
-        let visited_modules = Reference.Hash_set.create () in
-        let transitive_exports = Identifier.Hash_set.create () in
-        let worklist = Queue.of_list [qualifier] in
-        let rec search_wildcard_imports () =
-          match Queue.dequeue worklist with
-          | None -> ()
-          | Some qualifier ->
-              let _ =
-                match Hash_set.strict_add visited_modules qualifier with
-                | Error _ -> ()
-                | Ok () -> (
-                    match get_raw_source environment ?dependency qualifier with
-                    | None
-                    | Some (Result.Error _) ->
-                        ()
-                    | Some (Result.Ok source) ->
-                        wildcard_exports_of source |> List.iter ~f:(Hash_set.add transitive_exports);
-                        Visitor.visit [] source |> Queue.enqueue_all worklist)
-              in
-              search_wildcard_imports ()
-        in
-        search_wildcard_imports ();
-        Hash_set.to_list transitive_exports |> List.sort ~compare:Identifier.compare
-
-
-      let statement state ({ Node.value; _ } as statement) =
-        match value with
-        | Statement.Import { Import.from = Some from; imports } -> (
-            let starred_import =
-              List.find imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
-                  String.equal (Reference.show name) "*")
-            in
-            match starred_import with
-            | Some _ ->
-                let expanded_import =
-                  match get_transitive_exports from with
-                  | [] -> []
-                  | exports ->
-                      List.map exports ~f:(fun name ->
-                          {
-                            Node.value = { Import.name = Reference.create name; alias = Some name };
-                            location = Location.any;
-                          })
-                      |> (fun expanded ->
-                           Statement.Import { Import.from = Some from; imports = expanded })
-                      |> fun value -> [{ statement with Node.value }]
-                in
-                state, expanded_import
-            | None -> state, [statement])
-        | _ -> state, [statement]
-    end)
-    in
-    Transform.transform () source |> Transform.source
-
-
-  let get_and_preprocess_source ?dependency environment qualifier =
-    let preprocessing = Preprocessing.preprocess_phase1 in
-    (* Preprocessing a module depends on the module itself is implicitly assumed in `update`. No
-       need to explicitly record the dependency. *)
-    get_raw_source environment ?dependency:None qualifier
-    >>| function
-    | Result.Ok source ->
-        expand_wildcard_imports ?dependency environment source
-        |> preprocessing
-        |> InlineDecorator.inline_decorators ~get_source:(fun qualifier ->
-               get_raw_source ?dependency environment qualifier >>= Result.ok)
-    | Result.Error
-        { ParserError.source_path = { ModulePath.qualifier; relative; _ } as source_path; _ } ->
-        (* Files that have parser errors fall back into getattr-any. *)
-        let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
-        let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
-        let statements = Parser.parse_exn ~relative fallback_source in
-        create_source ~typecheck_flags ~source_path statements |> preprocessing
-
-
-  let get_processed_source environment ?(track_dependency = false) qualifier =
-    let dependency =
-      if track_dependency then
-        Some (SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier))
-      else
-        None
-    in
-    get_and_preprocess_source ?dependency environment qualifier
-
-
-  (* Hide the ?dependency optional argument, which is only for internal use *)
-  let get_raw_source environment qualifier = get_raw_source environment qualifier
-end
 
 let remove_sources { raw_sources; _ } = RawSources.remove_sources raw_sources
 

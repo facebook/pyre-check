@@ -44,6 +44,14 @@ module ReadOnly : sig
   val project_qualifiers : t -> Ast.Reference.t list
 end
 
+module UpdateResult : sig
+  type t
+
+  val invalidated_modules : t -> Reference.t list
+
+  val module_updates : t -> ModuleTracker.IncrementalUpdate.t list
+end
+
 val module_tracker : t -> ModuleTracker.t
 
 val configuration : t -> Configuration.Analysis.t
@@ -57,14 +65,6 @@ val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string)
 val load : Configuration.Analysis.t -> t
 
 val store : t -> unit
-
-module UpdateResult : sig
-  type t
-
-  val invalidated_modules : t -> Reference.t list
-
-  val module_updates : t -> ModuleTracker.IncrementalUpdate.t list
-end
 
 val update : scheduler:Scheduler.t -> t -> ArtifactPath.t list -> UpdateResult.t
 
