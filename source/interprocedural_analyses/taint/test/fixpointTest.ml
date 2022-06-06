@@ -32,6 +32,7 @@ let assert_fixpoint
     initial_models;
     initial_callables;
     stubs;
+    class_interval_graph;
     _;
   }
     =
@@ -50,7 +51,12 @@ let assert_fixpoint
       ~type_environment:environment
       ~override_graph:override_graph_shared_memory
       ~dependency_graph
-      ~context:{ Fixpoint.Context.type_environment = environment; define_call_graphs }
+      ~context:
+        {
+          Fixpoint.Context.type_environment = environment;
+          class_interval_graph;
+          define_call_graphs;
+        }
       ~initial_callables:(Interprocedural.FetchCallables.get_callables initial_callables)
       ~stubs
       ~override_targets

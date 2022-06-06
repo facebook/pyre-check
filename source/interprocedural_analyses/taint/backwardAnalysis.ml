@@ -25,6 +25,8 @@ module type FUNCTION_CONTEXT = sig
 
   val environment : TypeEnvironment.ReadOnly.t
 
+  val class_interval_graph : Interprocedural.ClassIntervalSetGraph.SharedMemory.t
+
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
   val get_callee_model : Interprocedural.Target.t -> Model.t option
@@ -60,6 +62,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let profiler = FunctionContext.profiler
+
+  let class_interval_graph = FunctionContext.class_interval_graph
 
   let log format =
     if FunctionContext.debug then
@@ -392,7 +396,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let is_self_call = Ast.Expression.is_self_call ~callee in
     let receiver_class_interval =
-      Interprocedural.ClassIntervalSetGraph.SharedMemory.of_type receiver_type
+      Interprocedural.ClassIntervalSetGraph.SharedMemory.of_type class_interval_graph receiver_type
     in
     let analyze_argument
         (arguments_taint, state)
@@ -2125,6 +2129,7 @@ let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_ba
 let run
     ?(profiler = TaintProfiler.none)
     ~environment
+    ~class_interval_graph
     ~qualifier
     ~callable
     ~define
@@ -2152,6 +2157,8 @@ let run
 
     let environment = environment
 
+    let class_interval_graph = class_interval_graph
+
     let call_graph_of_define = call_graph_of_define
 
     let get_callee_model = get_callee_model
@@ -2159,7 +2166,9 @@ let run
     let triggered_sinks = triggered_sinks
 
     let caller_class_interval =
-      Interprocedural.ClassIntervalSetGraph.SharedMemory.of_definition definition
+      Interprocedural.ClassIntervalSetGraph.SharedMemory.of_definition
+        class_interval_graph
+        definition
   end
   in
   let module State = State (FunctionContext) in

@@ -113,23 +113,32 @@ module SharedMemory = struct
         let description = "class intervals of classes"
       end)
 
-  let add ~class_name ~interval = add class_name interval
+  type t = Handle
 
-  let get ~class_name = get class_name
+  let get_for_testing_only () = Handle
+
+  let add Handle ~class_name ~interval = add class_name interval
+
+  let get Handle ~class_name = get class_name
 
   let from_heap intervals =
-    ClassNameMap.iter (fun class_name interval -> add ~class_name ~interval) intervals
+    let () =
+      ClassNameMap.iter (fun class_name interval -> add Handle ~class_name ~interval) intervals
+    in
+    Handle
 
 
-  let of_class class_name = get ~class_name |> Option.value ~default:ClassIntervalSet.top
+  let of_class Handle class_name =
+    get Handle ~class_name |> Option.value ~default:ClassIntervalSet.top
 
-  let of_type = function
-    | Some (Type.Primitive class_name) -> of_class class_name
+
+  let of_type Handle = function
+    | Some (Type.Primitive class_name) -> of_class Handle class_name
     | _ -> ClassIntervalSet.top
 
 
-  let of_definition definition =
+  let of_definition Handle definition =
     match Target.create definition |> Target.class_name with
-    | Some class_name -> of_class class_name
+    | Some class_name -> of_class Handle class_name
     | None -> ClassIntervalSet.top
 end

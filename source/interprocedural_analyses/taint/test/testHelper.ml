@@ -427,6 +427,7 @@ type test_environment = {
   stubs: Target.t list;
   initial_models: Registry.t;
   environment: TypeEnvironment.ReadOnly.t;
+  class_interval_graph: ClassIntervalSetGraph.SharedMemory.t;
 }
 
 let set_up_decorator_inlining ~handle models =
@@ -577,7 +578,7 @@ let initialize
       ~initial_models
   in
   let class_hierarchy_graph = ClassHierarchyGraph.from_source ~environment ~source in
-  let () =
+  let class_interval_graph =
     Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
     |> Interprocedural.ClassIntervalSetGraph.SharedMemory.from_heap
   in
@@ -591,4 +592,5 @@ let initialize
     stubs;
     initial_models;
     environment;
+    class_interval_graph;
   }

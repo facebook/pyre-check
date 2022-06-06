@@ -12,6 +12,7 @@ module TypeEnvironment = Analysis.TypeEnvironment
 module Context = struct
   type t = {
     type_environment: TypeEnvironment.ReadOnly.t;
+    class_interval_graph: Interprocedural.ClassIntervalSetGraph.SharedMemory.t;
     define_call_graphs: Interprocedural.CallGraph.DefineCallGraphSharedMemory.t;
   }
 end
@@ -82,6 +83,7 @@ module Analysis = struct
 
   let analyze_define_with_sanitizers_and_modes
       ~type_environment
+      ~class_interval_graph
       ~define_call_graphs
       ~qualifier
       ~callable
@@ -111,6 +113,7 @@ module Analysis = struct
           ForwardAnalysis.run
             ~profiler
             ~environment:type_environment
+            ~class_interval_graph
             ~qualifier
             ~callable
             ~define
@@ -123,6 +126,7 @@ module Analysis = struct
           BackwardAnalysis.run
             ~profiler
             ~environment:type_environment
+            ~class_interval_graph
             ~qualifier
             ~callable
             ~define
@@ -147,7 +151,7 @@ module Analysis = struct
 
 
   let analyze_define
-      ~context:{ Context.type_environment; define_call_graphs }
+      ~context:{ Context.type_environment; class_interval_graph; define_call_graphs }
       ~qualifier
       ~callable
       ~define:
@@ -181,6 +185,7 @@ module Analysis = struct
     else
       analyze_define_with_sanitizers_and_modes
         ~type_environment
+        ~class_interval_graph
         ~define_call_graphs
         ~qualifier
         ~callable

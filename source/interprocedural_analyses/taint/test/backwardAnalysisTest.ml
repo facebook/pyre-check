@@ -47,6 +47,7 @@ let assert_taint ~context source expected =
       BackwardAnalysis.run
         ?profiler:None
         ~environment
+        ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.get_for_testing_only ())
         ~qualifier
         ~callable:call_target
         ~define

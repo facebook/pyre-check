@@ -14,13 +14,18 @@ end
 
 (** Mapping from a class name to its class interval set, stored in shared memory. *)
 module SharedMemory : sig
-  val add : class_name:ClassHierarchyGraph.class_name -> interval:ClassIntervalSet.t -> unit
+  type t
 
-  val get : class_name:ClassHierarchyGraph.class_name -> ClassIntervalSet.t option
+  val from_heap : Heap.t -> t
 
-  val from_heap : Heap.t -> unit
+  val get_for_testing_only : unit -> t
+  (** Return the current class interval graph in shared memory. Only exposed for tests. *)
 
-  val of_type : Type.t option -> ClassIntervalSet.t
+  val add : t -> class_name:ClassHierarchyGraph.class_name -> interval:ClassIntervalSet.t -> unit
 
-  val of_definition : Ast.Statement.Define.t Ast.Node.t -> ClassIntervalSet.t
+  val get : t -> class_name:ClassHierarchyGraph.class_name -> ClassIntervalSet.t option
+
+  val of_type : t -> Type.t option -> ClassIntervalSet.t
+
+  val of_definition : t -> Ast.Statement.Define.t Ast.Node.t -> ClassIntervalSet.t
 end

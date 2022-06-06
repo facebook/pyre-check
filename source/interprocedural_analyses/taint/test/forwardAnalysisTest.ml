@@ -68,6 +68,7 @@ let assert_taint ?models ?models_source ~context source expect =
       ForwardAnalysis.run
         ?profiler:None
         ~environment
+        ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.get_for_testing_only ())
         ~qualifier
         ~callable:call_target
         ~define

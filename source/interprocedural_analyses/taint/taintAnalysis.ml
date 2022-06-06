@@ -340,9 +340,9 @@ let run_taint_analysis
           class_hierarchy_graph)
     in
 
-    let () =
+    let class_interval_graph =
       let timer = Timer.start () in
-      let () =
+      let class_interval_graph =
         Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
         |> Interprocedural.ClassIntervalSetGraph.SharedMemory.from_heap
       in
@@ -350,7 +350,8 @@ let run_taint_analysis
         ~name:"Computed class intervals"
         ~phase_name:"Computing class intervals"
         ~timer
-        ()
+        ();
+      class_interval_graph
     in
 
     let initial_callables =
@@ -471,6 +472,7 @@ let run_taint_analysis
         ~context:
           {
             Taint.Fixpoint.Context.type_environment = Analysis.TypeEnvironment.read_only environment;
+            class_interval_graph;
             define_call_graphs;
           }
         ~initial_callables:(Interprocedural.FetchCallables.get_callables initial_callables)

@@ -12,6 +12,7 @@ open Statement
 val run
   :  ?profiler:TaintProfiler.t ->
   environment:TypeEnvironment.ReadOnly.t ->
+  class_interval_graph:Interprocedural.ClassIntervalSetGraph.SharedMemory.t ->
   qualifier:Reference.t ->
   callable:Interprocedural.Target.t ->
   define:Define.t Node.t ->

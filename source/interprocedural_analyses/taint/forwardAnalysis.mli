@@ -14,6 +14,7 @@ type triggered_sinks = (AccessPath.Root.t * Sinks.t) list Location.Table.t
 val run
   :  ?profiler:TaintProfiler.t ->
   environment:TypeEnvironment.ReadOnly.t ->
+  class_interval_graph:Interprocedural.ClassIntervalSetGraph.SharedMemory.t ->
   qualifier:Reference.t ->
   callable:Interprocedural.Target.t ->
   define:Define.t Node.t ->
