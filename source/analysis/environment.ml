@@ -41,8 +41,6 @@ module type PreviousEnvironment = sig
 
   val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
 
-  val load : Configuration.Analysis.t -> t
-
   val ast_environment : t -> AstEnvironment.t
 
   val configuration : t -> Configuration.Analysis.t
@@ -54,6 +52,10 @@ module type PreviousEnvironment = sig
     scheduler:Scheduler.t ->
     ArtifactPath.t list ->
     UpdateResult.t
+
+  val store : t -> unit
+
+  val load : Configuration.Analysis.t -> t
 end
 
 module type S = sig
@@ -69,8 +71,6 @@ module type S = sig
 
   val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
 
-  val load : Configuration.Analysis.t -> t
-
   val ast_environment : t -> AstEnvironment.t
 
   val configuration : t -> Configuration.Analysis.t
@@ -82,6 +82,10 @@ module type S = sig
     scheduler:Scheduler.t ->
     ArtifactPath.t list ->
     UpdateResult.t
+
+  val store : t -> unit
+
+  val load : Configuration.Analysis.t -> t
 
   module Testing : sig
     module ReadOnly : sig
@@ -172,8 +176,6 @@ module EnvironmentTable = struct
 
     val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
 
-    val load : Configuration.Analysis.t -> t
-
     val ast_environment : t -> AstEnvironment.t
 
     val configuration : t -> Configuration.Analysis.t
@@ -185,6 +187,10 @@ module EnvironmentTable = struct
       scheduler:Scheduler.t ->
       ArtifactPath.t list ->
       UpdateResult.t
+
+    val store : t -> unit
+
+    val load : Configuration.Analysis.t -> t
 
     module Testing : sig
       module ReadOnly : sig
@@ -368,13 +374,6 @@ module EnvironmentTable = struct
         |> from_upstream_environment
 
 
-      (* All SharedMemory tables should have been populated (in a separate, imperative step) when we
-         loaded SharedMemory global state from the saved-state file. So all we have to do is call
-         `load` and create an otherwise empty environment. *)
-      let load configuration =
-        In.PreviousEnvironment.load configuration |> from_upstream_environment
-
-
       let configuration { upstream_environment; _ } =
         In.PreviousEnvironment.configuration upstream_environment
 
@@ -397,6 +396,16 @@ module EnvironmentTable = struct
           ~scheduler
           artifact_paths
         |> FromReadonlyUpstream.update_only_this_environment from_readonly_upstream ~scheduler
+
+
+      (* All SharedMemory tables are populated and stored in separate, imperative steps that must be
+         run after storing / before loading These functions only handle serializing and
+         deserializing the non-SharedMemory data *)
+
+      let store { upstream_environment; _ } = In.PreviousEnvironment.store upstream_environment
+
+      let load configuration =
+        In.PreviousEnvironment.load configuration |> from_upstream_environment
     end
 
     include Base

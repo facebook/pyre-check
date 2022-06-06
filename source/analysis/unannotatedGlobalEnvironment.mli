@@ -157,8 +157,6 @@ val create : Configuration.Analysis.t -> t
 
 val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
 
-val load : Configuration.Analysis.t -> t
-
 val ast_environment : t -> AstEnvironment.t
 
 val configuration : t -> Configuration.Analysis.t
@@ -170,3 +168,7 @@ val update_this_and_all_preceding_environments
   scheduler:Scheduler.t ->
   ArtifactPath.t list ->
   UpdateResult.t
+
+val store : t -> unit
+
+val load : Configuration.Analysis.t -> t

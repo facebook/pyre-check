@@ -84,9 +84,8 @@ let load ~configuration ~build_system () =
 
 let store ~path ~configuration { type_environment; error_table; build_system; _ } =
   Memory.SharedMemory.collect `aggressive;
-  Analysis.TypeEnvironment.module_tracker type_environment
-  |> Analysis.ModuleTracker.Serializer.store_layouts;
-  Analysis.TypeEnvironment.ast_environment type_environment |> Analysis.AstEnvironment.store;
+  Analysis.TypeEnvironment.global_environment type_environment
+  |> Analysis.AnnotatedGlobalEnvironment.store;
   StoredConfiguration.store configuration;
   ServerErrors.store error_table;
   BuildSystem.store build_system;

@@ -247,6 +247,8 @@ let create_for_testing configuration source_path_code_pairs =
   { edges = Edges.create_for_testing configuration source_path_code_pairs }
 
 
+let store { edges } = Edges.store edges
+
 let load configuration = { edges = Edges.load configuration }
 
 let ast_environment { edges } = Edges.ast_environment edges

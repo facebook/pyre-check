@@ -1050,14 +1050,6 @@ module Base = struct
     { ast_environment; from_readonly_upstream }
 
 
-  let load configuration =
-    let ast_environment = AstEnvironment.load configuration in
-    let from_readonly_upstream =
-      AstEnvironment.read_only ast_environment |> FromReadonlyUpstream.create
-    in
-    { ast_environment; from_readonly_upstream }
-
-
   let update_this_and_all_preceding_environments
       { ast_environment; from_readonly_upstream }
       ~scheduler
@@ -1080,6 +1072,19 @@ module Base = struct
 
 
   let ast_environment { ast_environment; _ } = ast_environment
+
+  (* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
+     before loading / after storing. These functions only handle serializing and deserializing the
+     non-SharedMemory data *)
+  let load configuration =
+    let ast_environment = AstEnvironment.load configuration in
+    let from_readonly_upstream =
+      AstEnvironment.read_only ast_environment |> FromReadonlyUpstream.create
+    in
+    { ast_environment; from_readonly_upstream }
+
+
+  let store { ast_environment; _ } = AstEnvironment.store ast_environment
 end
 
 include Base

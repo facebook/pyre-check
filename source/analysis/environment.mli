@@ -40,8 +40,6 @@ module type PreviousEnvironment = sig
 
   val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
 
-  val load : Configuration.Analysis.t -> t
-
   val ast_environment : t -> AstEnvironment.t
 
   val configuration : t -> Configuration.Analysis.t
@@ -53,6 +51,10 @@ module type PreviousEnvironment = sig
     scheduler:Scheduler.t ->
     ArtifactPath.t list ->
     UpdateResult.t
+
+  val store : t -> unit
+
+  val load : Configuration.Analysis.t -> t
 end
 
 module type S = sig
@@ -68,8 +70,6 @@ module type S = sig
 
   val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
 
-  val load : Configuration.Analysis.t -> t
-
   val ast_environment : t -> AstEnvironment.t
 
   val configuration : t -> Configuration.Analysis.t
@@ -81,6 +81,10 @@ module type S = sig
     scheduler:Scheduler.t ->
     ArtifactPath.t list ->
     UpdateResult.t
+
+  val store : t -> unit
+
+  val load : Configuration.Analysis.t -> t
 
   module Testing : sig
     module ReadOnly : sig
@@ -166,8 +170,6 @@ module EnvironmentTable : sig
 
     val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
 
-    val load : Configuration.Analysis.t -> t
-
     val ast_environment : t -> AstEnvironment.t
 
     val configuration : t -> Configuration.Analysis.t
@@ -179,6 +181,10 @@ module EnvironmentTable : sig
       scheduler:Scheduler.t ->
       ArtifactPath.t list ->
       UpdateResult.t
+
+    val store : t -> unit
+
+    val load : Configuration.Analysis.t -> t
 
     module Testing : sig
       module ReadOnly : sig

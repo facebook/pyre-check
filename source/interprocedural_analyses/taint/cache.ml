@@ -189,10 +189,10 @@ let load_type_environment ~global_environment =
 let save_type_environment ~scheduler ~configuration ~environment =
   exception_to_error ~error:() ~message:"saving type environment to cache" ~f:(fun () ->
       Memory.SharedMemory.collect `aggressive;
-      let ast_environment = TypeEnvironment.ast_environment environment in
+      let global_environment = TypeEnvironment.global_environment environment in
       let module_tracker = TypeEnvironment.module_tracker environment in
       Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;
-      AstEnvironment.store ast_environment;
+      AnnotatedGlobalEnvironment.store global_environment;
       Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
       Log.info "Saved type environment to cache shared memory.";
       Ok ())
