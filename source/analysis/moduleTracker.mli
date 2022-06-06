@@ -21,27 +21,6 @@ module PathLookup : sig
   [@@deriving show, sexp, compare]
 end
 
-type t
-
-val create : Configuration.Analysis.t -> t
-
-val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
-
-(* This function returns all SourcePaths that are tracked, including the shadowed ones. *)
-val all_source_paths : t -> Ast.ModulePath.t list
-
-val source_paths : t -> Ast.ModulePath.t list
-
-val configuration : t -> Configuration.Analysis.t
-
-val update : t -> artifact_paths:ArtifactPath.t list -> IncrementalUpdate.t list
-
-module Serializer : sig
-  val store_layouts : t -> unit
-
-  val from_stored_layouts : configuration:Configuration.Analysis.t -> unit -> t
-end
-
 module ReadOnly : sig
   type t
 
@@ -63,6 +42,27 @@ module ReadOnly : sig
 
   (* Either `Ok (raw_code)` or `Error (message)` *)
   val get_raw_code : t -> Ast.ModulePath.t -> (string, string) Result.t
+end
+
+type t
+
+val create : Configuration.Analysis.t -> t
+
+val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+
+(* This function returns all SourcePaths that are tracked, including the shadowed ones. *)
+val all_source_paths : t -> Ast.ModulePath.t list
+
+val source_paths : t -> Ast.ModulePath.t list
+
+val configuration : t -> Configuration.Analysis.t
+
+val update : t -> artifact_paths:ArtifactPath.t list -> IncrementalUpdate.t list
+
+module Serializer : sig
+  val store_layouts : t -> unit
+
+  val from_stored_layouts : configuration:Configuration.Analysis.t -> unit -> t
 end
 
 val read_only : t -> ReadOnly.t

@@ -27,6 +27,49 @@ module IncrementalUpdate = struct
   let equal = [%compare.equal: t]
 end
 
+module ReadOnly = struct
+  type t = {
+    lookup_source_path: Reference.t -> ModulePath.t option;
+    is_module_tracked: Reference.t -> bool;
+    get_raw_code: ModulePath.t -> (string, string) Result.t;
+    source_paths: unit -> ModulePath.t list;
+    configuration: unit -> Configuration.Analysis.t;
+  }
+
+  let configuration { configuration; _ } = configuration ()
+
+  let lookup_source_path { lookup_source_path; _ } = lookup_source_path
+
+  let source_paths { source_paths; _ } = source_paths ()
+
+  let is_module_tracked { is_module_tracked; _ } = is_module_tracked
+
+  let lookup_path tracker path =
+    let configuration = configuration tracker in
+    match ModulePath.create ~configuration path with
+    | None -> PathLookup.NotFound
+    | Some { ModulePath.relative; priority; qualifier; _ } -> (
+        match lookup_source_path tracker qualifier with
+        | None -> PathLookup.NotFound
+        | Some
+            ({ ModulePath.relative = tracked_relative; priority = tracked_priority; _ } as
+            source_path) ->
+            if String.equal relative tracked_relative && Int.equal priority tracked_priority then
+              PathLookup.Found source_path
+            else
+              PathLookup.ShadowedBy source_path)
+
+
+  let tracked_explicit_modules tracker = source_paths tracker |> List.map ~f:ModulePath.qualifier
+
+  let get_raw_code { get_raw_code; _ } = get_raw_code
+
+  let project_qualifiers tracker =
+    source_paths tracker
+    |> List.filter ~f:ModulePath.is_in_project
+    |> List.map ~f:ModulePath.qualifier
+end
+
 module Layouts = struct
   type t = {
     module_to_files: ModulePath.t list Reference.Table.t;
@@ -531,49 +574,6 @@ module Serializer = struct
       is_updatable = configuration_allows_update configuration;
       get_raw_code = load_raw_code ~configuration;
     }
-end
-
-module ReadOnly = struct
-  type t = {
-    lookup_source_path: Reference.t -> ModulePath.t option;
-    is_module_tracked: Reference.t -> bool;
-    get_raw_code: ModulePath.t -> (string, string) Result.t;
-    source_paths: unit -> ModulePath.t list;
-    configuration: unit -> Configuration.Analysis.t;
-  }
-
-  let configuration { configuration; _ } = configuration ()
-
-  let lookup_source_path { lookup_source_path; _ } = lookup_source_path
-
-  let source_paths { source_paths; _ } = source_paths ()
-
-  let is_module_tracked { is_module_tracked; _ } = is_module_tracked
-
-  let lookup_path tracker path =
-    let configuration = configuration tracker in
-    match ModulePath.create ~configuration path with
-    | None -> PathLookup.NotFound
-    | Some { ModulePath.relative; priority; qualifier; _ } -> (
-        match lookup_source_path tracker qualifier with
-        | None -> PathLookup.NotFound
-        | Some
-            ({ ModulePath.relative = tracked_relative; priority = tracked_priority; _ } as
-            source_path) ->
-            if String.equal relative tracked_relative && Int.equal priority tracked_priority then
-              PathLookup.Found source_path
-            else
-              PathLookup.ShadowedBy source_path)
-
-
-  let tracked_explicit_modules tracker = source_paths tracker |> List.map ~f:ModulePath.qualifier
-
-  let get_raw_code { get_raw_code; _ } = get_raw_code
-
-  let project_qualifiers tracker =
-    source_paths tracker
-    |> List.filter ~f:ModulePath.is_in_project
-    |> List.map ~f:ModulePath.qualifier
 end
 
 let read_only
