@@ -76,13 +76,24 @@ let test_apply_rule context =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = Analysis.GlobalResolution.create global_environment in
+    let annotation_expression =
+      annotation
+      >>= fun annotation ->
+      try
+        let parsed = PyreParser.Parser.parse_exn [annotation] in
+        match parsed with
+        | [{ Ast.Node.value = Expression expression; _ }] -> Some expression
+        | _ -> None
+      with
+      | _ -> None
+    in
     let actual =
       TaintModelQuery.ModelQuery.apply_attribute_query_rule
         ~verbose:false
         ~resolution
         ~rule
         ~name:(Ast.Reference.create name)
-        ~annotation:(annotation >>| Type.expression)
+        ~annotation:annotation_expression
     in
     assert_equal
       ~cmp:(List.equal (fun left right -> ModelParser.compare_taint_annotation left right = 0))
@@ -1953,7 +1964,7 @@ let test_apply_rule context =
         rule_kind = AttributeModel;
       }
     ~name:"test.C.x"
-    ~annotation:(Some Type.integer)
+    ~annotation:(Some "int")
     ~expected:[source "Test"];
   assert_applied_rules_for_attribute
     ~source:{|
@@ -1969,7 +1980,7 @@ let test_apply_rule context =
         rule_kind = AttributeModel;
       }
     ~name:"test.C.y"
-    ~annotation:(Some Type.string)
+    ~annotation:(Some "str")
     ~expected:[];
   assert_applied_rules_for_attribute
     ~source:
@@ -1993,7 +2004,7 @@ let test_apply_rule context =
         rule_kind = AttributeModel;
       }
     ~name:"test.C.x"
-    ~annotation:(Some (Type.meta (Type.Primitive "Foo1")))
+    ~annotation:(Some "typing.Type[Foo1]")
     ~expected:[source "Test"];
   assert_applied_rules_for_attribute
     ~source:
@@ -2017,7 +2028,7 @@ let test_apply_rule context =
         rule_kind = AttributeModel;
       }
     ~name:"test.C.y"
-    ~annotation:(Some (Type.meta (Type.Primitive "Foo2")))
+    ~annotation:(Some "typing.Type[Foo2]")
     ~expected:[source "Test"];
   assert_applied_rules_for_attribute
     ~source:
@@ -2041,7 +2052,7 @@ let test_apply_rule context =
         rule_kind = AttributeModel;
       }
     ~name:"test.C.z"
-    ~annotation:(Some (Type.meta (Type.Primitive "Bar")))
+    ~annotation:(Some "typing.Type[Bar]")
     ~expected:[];
   assert_applied_rules_for_attribute
     ~source:
@@ -2059,7 +2070,7 @@ let test_apply_rule context =
         rule_kind = AttributeModel;
       }
     ~name:"test.C.x"
-    ~annotation:(Some Type.integer)
+    ~annotation:(Some "int")
     ~expected:[];
   assert_applied_rules_for_attribute
     ~source:
@@ -2077,7 +2088,7 @@ let test_apply_rule context =
         rule_kind = AttributeModel;
       }
     ~name:"test.C.y"
-    ~annotation:(Some (Type.Annotated Type.string))
+    ~annotation:(Some "typing.Annotated[str, \"foo\"]")
     ~expected:[source "Test"];
 
   (* Test 'Not' clause *)
