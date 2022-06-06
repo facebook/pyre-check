@@ -372,6 +372,7 @@ end
 type t = {
   layouts: Layouts.t;
   configuration: Configuration.Analysis.t;
+  is_updatable: bool;
   get_raw_code: ModulePath.t -> (string, string) Result.t;
 }
 
@@ -427,14 +428,21 @@ let load_raw_code ~configuration source_path =
       Error (Format.asprintf "Cannot open file `%a` due to: %s" ArtifactPath.pp path error)
 
 
+let configuration_allows_update { Configuration.Analysis.incremental_style; _ } =
+  match incremental_style with
+  | Configuration.Analysis.Shallow -> false
+  | Configuration.Analysis.FineGrained -> true
+
+
 let create configuration =
   Log.info "Building module tracker...";
   let timer = Timer.start () in
   let source_paths = find_source_paths configuration in
   let layouts = Layouts.create ~configuration source_paths in
   let get_raw_code = load_raw_code ~configuration in
+  let is_updatable = configuration_allows_update configuration in
   Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
-  { layouts; configuration; get_raw_code }
+  { layouts; configuration; is_updatable; get_raw_code }
 
 
 let create_for_testing configuration source_path_code_pairs =
@@ -455,7 +463,7 @@ let create_for_testing configuration source_path_code_pairs =
     | Some code -> Ok code
     | None -> load_raw_code ~configuration source_path
   in
-  { layouts; configuration; get_raw_code }
+  { layouts; configuration; is_updatable = false; get_raw_code }
 
 
 let all_source_paths { layouts = { module_to_files; _ }; _ } =
@@ -468,8 +476,23 @@ let source_paths { layouts = { module_to_files; _ }; _ } =
 
 let configuration { configuration; _ } = configuration
 
-let update { layouts; configuration; _ } ~artifact_paths =
+let assert_can_update { configuration; is_updatable; _ } =
+  if not is_updatable then
+    let message =
+      match configuration.incremental_style with
+      | Configuration.Analysis.Shallow ->
+          "Environments without dependency tracking cannot be updated"
+      | Configuration.Analysis.FineGrained ->
+          (* This is a hack to provide better errors - the only way to hit this case is if we made
+             the tracker using `create_for_testing`. *)
+          "Environments created via create_for_testing with in-memory sources cannot be updated"
+    in
+    failwith message
+
+
+let update ({ layouts; configuration; _ } as project) ~artifact_paths =
   let timer = Timer.start () in
+  assert_can_update project;
   let result = Layouts.update ~configuration ~artifact_paths layouts in
   Statistics.performance ~name:"module tracker updated" ~timer ~phase_name:"Module tracking" ();
   result
@@ -502,7 +525,12 @@ module Serializer = struct
 
   let from_stored_layouts ~configuration () =
     let layouts = Layouts.load () in
-    { layouts; configuration; get_raw_code = load_raw_code ~configuration }
+    {
+      layouts;
+      configuration;
+      is_updatable = configuration_allows_update configuration;
+      get_raw_code = load_raw_code ~configuration;
+    }
 end
 
 module ReadOnly = struct
@@ -549,7 +577,8 @@ module ReadOnly = struct
 end
 
 let read_only
-    ({ layouts = { module_to_files; submodule_refcounts }; configuration; get_raw_code } as tracker)
+    ({ layouts = { module_to_files; submodule_refcounts }; configuration; get_raw_code; _ } as
+    tracker)
   =
   let lookup_source_path module_name =
     match Hashtbl.find module_to_files module_name with

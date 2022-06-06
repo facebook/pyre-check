@@ -2679,7 +2679,6 @@ module ScratchProject = struct
     context: test_ctxt;
     configuration: Configuration.Analysis.t;
     type_environment: TypeEnvironment.t;
-    in_memory: bool;
   }
 
   module BuiltTypeEnvironment = struct
@@ -2777,7 +2776,7 @@ module ScratchProject = struct
     in
     let global_environment = AnnotatedGlobalEnvironment.create ast_environment in
     let type_environment = TypeEnvironment.create global_environment in
-    { context; configuration; type_environment; in_memory }
+    { context; configuration; type_environment }
 
 
   (* Incremental checks already call ModuleTracker.update, so we don't need to update the state
@@ -2893,12 +2892,10 @@ module ScratchProject = struct
 
 
   let update_global_environment
-      { type_environment; in_memory; _ }
+      { type_environment; _ }
       ?(scheduler = mock_scheduler ())
       artifact_paths
     =
-    if in_memory then
-      failwith "Cannot call update_global_environment on an in-memory scratch project";
     let global_environment = TypeEnvironment.global_environment type_environment in
     AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
       global_environment
