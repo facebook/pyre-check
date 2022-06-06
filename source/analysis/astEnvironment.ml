@@ -20,6 +20,57 @@ module ParserError = struct
   [@@deriving sexp, compare, hash]
 end
 
+let create_source ~typecheck_flags ~source_path statements =
+  Source.create_from_source_path
+    ~collect_format_strings_with_ignores:Visit.collect_format_strings_with_ignores
+    ~typecheck_flags
+    ~source_path
+    statements
+
+
+let wildcard_exports_of ({ Source.source_path = { ModulePath.is_stub; _ }; _ } as source) =
+  let open Expression in
+  let open UnannotatedGlobal in
+  let extract_dunder_all = function
+    | {
+        Collector.Result.name = "__all__";
+        unannotated_global =
+          SimpleAssign { value = { Node.value = Expression.(List names | Tuple names); _ }; _ };
+      } ->
+        let to_identifier = function
+          | { Node.value = Expression.Constant (Constant.String { value = name; _ }); _ } ->
+              Some name
+          | _ -> None
+        in
+        Some (List.filter_map ~f:to_identifier names)
+    | _ -> None
+  in
+  let unannotated_globals = Collector.from_source source in
+  match List.find_map unannotated_globals ~f:extract_dunder_all with
+  | Some names -> names |> List.dedup_and_sort ~compare:Identifier.compare
+  | _ ->
+      let unannotated_globals =
+        (* Stubs have a slightly different rule with re-export *)
+        let filter_unaliased_import = function
+          | {
+              Collector.Result.unannotated_global =
+                Imported
+                  (ImportEntry.Module { implicit_alias; _ } | ImportEntry.Name { implicit_alias; _ });
+              _;
+            } ->
+              not implicit_alias
+          | _ -> true
+        in
+        if is_stub then
+          List.filter unannotated_globals ~f:filter_unaliased_import
+        else
+          unannotated_globals
+      in
+      List.map unannotated_globals ~f:(fun { Collector.Result.name; _ } -> name)
+      |> List.filter ~f:(fun name -> not (String.is_prefix name ~prefix:"_"))
+      |> List.dedup_and_sort ~compare:Identifier.compare
+
+
 module RawSourceValue = struct
   type t = (Source.t, ParserError.t) Result.t
 
@@ -83,49 +134,6 @@ let load configuration =
 
 let store { module_tracker; _ } = ModuleTracker.Serializer.store_layouts module_tracker
 
-let wildcard_exports_of ({ Source.source_path = { ModulePath.is_stub; _ }; _ } as source) =
-  let open Expression in
-  let open UnannotatedGlobal in
-  let extract_dunder_all = function
-    | {
-        Collector.Result.name = "__all__";
-        unannotated_global =
-          SimpleAssign { value = { Node.value = Expression.(List names | Tuple names); _ }; _ };
-      } ->
-        let to_identifier = function
-          | { Node.value = Expression.Constant (Constant.String { value = name; _ }); _ } ->
-              Some name
-          | _ -> None
-        in
-        Some (List.filter_map ~f:to_identifier names)
-    | _ -> None
-  in
-  let unannotated_globals = Collector.from_source source in
-  match List.find_map unannotated_globals ~f:extract_dunder_all with
-  | Some names -> names |> List.dedup_and_sort ~compare:Identifier.compare
-  | _ ->
-      let unannotated_globals =
-        (* Stubs have a slightly different rule with re-export *)
-        let filter_unaliased_import = function
-          | {
-              Collector.Result.unannotated_global =
-                Imported
-                  (ImportEntry.Module { implicit_alias; _ } | ImportEntry.Name { implicit_alias; _ });
-              _;
-            } ->
-              not implicit_alias
-          | _ -> true
-        in
-        if is_stub then
-          List.filter unannotated_globals ~f:filter_unaliased_import
-        else
-          unannotated_globals
-      in
-      List.map unannotated_globals ~f:(fun { Collector.Result.name; _ } -> name)
-      |> List.filter ~f:(fun name -> not (String.is_prefix name ~prefix:"_"))
-      |> List.dedup_and_sort ~compare:Identifier.compare
-
-
 type parse_result =
   | Success of Source.t
   | Error of {
@@ -133,14 +141,6 @@ type parse_result =
       message: string;
       is_suppressed: bool;
     }
-
-let create_source ~typecheck_flags ~source_path statements =
-  Source.create_from_source_path
-    ~collect_format_strings_with_ignores:Visit.collect_format_strings_with_ignores
-    ~typecheck_flags
-    ~source_path
-    statements
-
 
 let parse_source
     ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
