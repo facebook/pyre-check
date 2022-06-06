@@ -74,9 +74,8 @@ end)
 let load_stored_configuration = StoredConfiguration.load
 
 let load ~configuration ~build_system () =
-  let ast_environment = Analysis.AstEnvironment.load configuration in
   let type_environment =
-    Analysis.AnnotatedGlobalEnvironment.create ast_environment |> Analysis.TypeEnvironment.create
+    Analysis.AnnotatedGlobalEnvironment.load configuration |> Analysis.TypeEnvironment.create
   in
   Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
   let error_table = ServerErrors.load () in

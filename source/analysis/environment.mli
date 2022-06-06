@@ -40,7 +40,11 @@ module type PreviousEnvironment = sig
 
   type t
 
-  val create : AstEnvironment.t -> t
+  val create : Configuration.Analysis.t -> t
+
+  val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+
+  val load : Configuration.Analysis.t -> t
 
   val ast_environment : t -> AstEnvironment.t
 
@@ -64,7 +68,11 @@ module type S = sig
 
   type t
 
-  val create : AstEnvironment.t -> t
+  val create : Configuration.Analysis.t -> t
+
+  val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+
+  val load : Configuration.Analysis.t -> t
 
   val ast_environment : t -> AstEnvironment.t
 
@@ -158,7 +166,11 @@ module EnvironmentTable : sig
 
     type t
 
-    val create : AstEnvironment.t -> t
+    val create : Configuration.Analysis.t -> t
+
+    val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+
+    val load : Configuration.Analysis.t -> t
 
     val ast_environment : t -> AstEnvironment.t
 

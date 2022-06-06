@@ -241,7 +241,13 @@ end
 
 type t = { edges: Edges.t }
 
-let create ast_environment = { edges = Edges.create ast_environment }
+let create configuration = { edges = Edges.create configuration }
+
+let create_for_testing configuration source_path_code_pairs =
+  { edges = Edges.create_for_testing configuration source_path_code_pairs }
+
+
+let load configuration = { edges = Edges.load configuration }
 
 let ast_environment { edges } = Edges.ast_environment edges
 

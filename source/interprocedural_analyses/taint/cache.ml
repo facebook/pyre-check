@@ -10,6 +10,7 @@ open Pyre
 module Target = Interprocedural.Target
 module TypeEnvironment = Analysis.TypeEnvironment
 module AstEnvironment = Analysis.AstEnvironment
+module AnnotatedGlobalEnvironment = Analysis.AnnotatedGlobalEnvironment
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 module OverrideGraph = Interprocedural.OverrideGraph
@@ -81,7 +82,7 @@ module ClassHierarchyGraphSharedMemory = Memory.Serializer (struct
   let deserialize = Fn.id
 end)
 
-type cached = { ast_environment: AstEnvironment.t }
+type cached = { global_environment: AnnotatedGlobalEnvironment.t }
 
 type error =
   | InvalidByCodeChange
@@ -130,13 +131,15 @@ let initialize_shared_memory ~configuration =
         Ok ())
 
 
-let load_ast_environment ~scheduler ~configuration =
+let load_global_environment ~scheduler ~configuration =
   let open Result in
   Log.info "Determining if source files have changed since cache was created.";
   exception_to_error ~error:LoadError ~message:"loading module tracker from cache" ~f:(fun () ->
-      Ok (AstEnvironment.load configuration))
-  >>= fun ast_environment ->
-  let old_module_tracker = AstEnvironment.module_tracker ast_environment in
+      Ok (AnnotatedGlobalEnvironment.load configuration))
+  >>= fun global_environment ->
+  let old_module_tracker =
+    AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.module_tracker
+  in
   let new_module_tracker = Analysis.ModuleTracker.create configuration in
   let changed_paths =
     let is_pysa_model path = String.is_suffix ~suffix:".pysa" (PyrePath.get_suffix_path path) in
@@ -150,7 +153,7 @@ let load_ast_environment ~scheduler ~configuration =
     |> List.filter ~f:(fun path -> not (is_pysa_model path || is_taint_config path))
   in
   match changed_paths with
-  | [] -> Ok ast_environment
+  | [] -> Ok global_environment
   | _ ->
       Log.warning "Changes to source files detected, ignoring existing cache.";
       Error InvalidByCodeChange
@@ -161,13 +164,13 @@ let load ~scheduler ~configuration ~enabled =
     { cache = Error Disabled; save_cache = false; scheduler; configuration }
   else
     let open Result in
-    let ast_environment =
+    let global_environment =
       initialize_shared_memory ~configuration
-      >>= fun () -> load_ast_environment ~scheduler ~configuration
+      >>= fun () -> load_global_environment ~scheduler ~configuration
     in
     let cache =
-      match ast_environment with
-      | Ok ast_environment -> Ok { ast_environment }
+      match global_environment with
+      | Ok global_environment -> Ok { global_environment }
       | Error error ->
           Memory.reset_shared_memory ();
           Error error
@@ -175,11 +178,9 @@ let load ~scheduler ~configuration ~enabled =
     { cache; save_cache = true; scheduler; configuration }
 
 
-let load_type_environment ~ast_environment =
+let load_type_environment ~global_environment =
   exception_to_error ~error:LoadError ~message:"loading type environment from cache" ~f:(fun () ->
-      let environment =
-        Analysis.AnnotatedGlobalEnvironment.create ast_environment |> TypeEnvironment.create
-      in
+      let environment = TypeEnvironment.create global_environment in
       Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
       Log.info "Loaded cached type environment.";
       Ok environment)
@@ -200,7 +201,7 @@ let save_type_environment ~scheduler ~configuration ~environment =
 let type_environment { cache; save_cache; scheduler; configuration } f =
   let type_environment =
     match cache with
-    | Ok { ast_environment } -> load_type_environment ~ast_environment |> Result.ok
+    | Ok { global_environment } -> load_type_environment ~global_environment |> Result.ok
     | _ -> None
   in
   match type_environment with

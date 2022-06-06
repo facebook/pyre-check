@@ -41,13 +41,12 @@ let check
   search_paths |> List.iter ~f:check_search_path_exists;
   (* Profiling helper *)
   Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
-  let ast_environment = Analysis.AstEnvironment.create configuration in
   let environment, qualifiers =
     let open Analysis in
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
-    let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
+    let annotated_global_environment = AnnotatedGlobalEnvironment.create configuration in
     let type_environment = TypeEnvironment.create annotated_global_environment in
     let global_environment = AnnotatedGlobalEnvironment.read_only annotated_global_environment in
 

@@ -2741,7 +2741,7 @@ module ScratchProject = struct
       else
         external_sources
     in
-    let ast_environment =
+    let global_environment =
       if in_memory then
         let to_source_path_code_pair (relative, content) ~is_external =
           let code = trim_extra_indentation content in
@@ -2752,7 +2752,7 @@ module ScratchProject = struct
           List.map sources ~f:(to_source_path_code_pair ~is_external:false)
           @ List.map external_sources ~f:(to_source_path_code_pair ~is_external:true)
         in
-        AstEnvironment.create_for_testing configuration source_path_code_pairs
+        AnnotatedGlobalEnvironment.create_for_testing configuration source_path_code_pairs
       else
         let add_source ~root (relative, content) =
           let content = trim_extra_indentation content in
@@ -2761,9 +2761,10 @@ module ScratchProject = struct
         in
         List.iter sources ~f:(add_source ~root:local_root);
         List.iter external_sources ~f:(add_source ~root:external_root);
-        AstEnvironment.create configuration
+        AnnotatedGlobalEnvironment.create configuration
     in
     let () =
+      let ast_environment = AnnotatedGlobalEnvironment.ast_environment global_environment in
       (* Clean shared memory up before the test *)
       AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
       let set_up_shared_memory _ = () in
@@ -2773,7 +2774,6 @@ module ScratchProject = struct
       (* Clean shared memory up after the test *)
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
-    let global_environment = AnnotatedGlobalEnvironment.create ast_environment in
     let type_environment = TypeEnvironment.create global_environment in
     { context; configuration; type_environment }
 

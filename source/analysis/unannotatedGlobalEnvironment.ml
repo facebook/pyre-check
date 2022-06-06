@@ -428,7 +428,7 @@ let set_module_data environment ({ Source.source_path = { ModulePath.qualifier; 
   set_module environment ~qualifier (Module.create source)
 
 
-let create ast_environment =
+let from_ast_environment ast_environment =
   let cold_start ({ ast_environment; _ } as environment) =
     (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
     let ast_read_only = AstEnvironment.read_only ast_environment in
@@ -450,6 +450,29 @@ let create ast_environment =
     }
   in
   cold_start environment;
+  environment
+
+
+let create configuration = AstEnvironment.create configuration |> from_ast_environment
+
+let create_for_testing configuration source_path_code_pairs =
+  AstEnvironment.create_for_testing configuration source_path_code_pairs |> from_ast_environment
+
+
+let load configuration =
+  (* All SharedMemory tables should have been populated (in a separate, imperative step) when we
+     loaded SharedMemory global state from the saved-state file. So all we have to do is call `load`
+     and create an otherwise empty environment. *)
+  let environment =
+    {
+      key_tracker = KeyTracker.create ();
+      modules = Modules.create ();
+      class_summaries = ClassSummaries.create ();
+      function_definitions = FunctionDefinitions.create ();
+      unannotated_globals = UnannotatedGlobals.create ();
+      ast_environment = AstEnvironment.load configuration;
+    }
+  in
   environment
 
 

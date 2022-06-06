@@ -28,12 +28,11 @@ let build_environment_data
   check_directory_exists project_root;
   search_paths |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
 
-  let ast_environment = AstEnvironment.create configuration in
   let global_environment =
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
-    let annotated_global_environment = AnnotatedGlobalEnvironment.create ast_environment in
+    let annotated_global_environment = AnnotatedGlobalEnvironment.create configuration in
     Statistics.performance ~name:"full environment built" ~timer ();
     AnnotatedGlobalEnvironment.read_only annotated_global_environment
   in

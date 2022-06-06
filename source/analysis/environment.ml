@@ -41,7 +41,11 @@ module type PreviousEnvironment = sig
 
   type t
 
-  val create : AstEnvironment.t -> t
+  val create : Configuration.Analysis.t -> t
+
+  val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+
+  val load : Configuration.Analysis.t -> t
 
   val ast_environment : t -> AstEnvironment.t
 
@@ -65,7 +69,11 @@ module type S = sig
 
   type t
 
-  val create : AstEnvironment.t -> t
+  val create : Configuration.Analysis.t -> t
+
+  val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+
+  val load : Configuration.Analysis.t -> t
 
   val ast_environment : t -> AstEnvironment.t
 
@@ -164,7 +172,11 @@ module EnvironmentTable = struct
 
     type t
 
-    val create : AstEnvironment.t -> t
+    val create : Configuration.Analysis.t -> t
+
+    val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+
+    val load : Configuration.Analysis.t -> t
 
     val ast_environment : t -> AstEnvironment.t
 
@@ -200,12 +212,23 @@ module EnvironmentTable = struct
       upstream_environment: In.PreviousEnvironment.t;
     }
 
-    let create ast_environment =
-      {
-        table = Table.create ();
-        upstream_environment = In.PreviousEnvironment.create ast_environment;
-      }
+    let from_upstream_environment upstream_environment =
+      { table = Table.create (); upstream_environment }
 
+
+    let create configuration =
+      In.PreviousEnvironment.create configuration |> from_upstream_environment
+
+
+    let create_for_testing configuration source_path_code_pairs =
+      In.PreviousEnvironment.create_for_testing configuration source_path_code_pairs
+      |> from_upstream_environment
+
+
+    (* All SharedMemory tables should have been populated (in a separate, imperative step) when we
+       loaded SharedMemory global state from the saved-state file. So all we have to do is call
+       `load` and create an otherwise empty environment. *)
+    let load configuration = In.PreviousEnvironment.load configuration |> from_upstream_environment
 
     let ast_environment { upstream_environment; _ } =
       In.PreviousEnvironment.ast_environment upstream_environment
