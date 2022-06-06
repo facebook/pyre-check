@@ -273,7 +273,7 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
 
     type t = unit
 
-    let get_transitive_exports ?dependency ~ast_environment:_ qualifier =
+    let get_transitive_exports qualifier =
       let module Visitor = Visit.MakeStatementVisitor (struct
         type t = Reference.t list
 
@@ -323,7 +323,7 @@ let expand_wildcard_imports ?dependency ~ast_environment source =
           match starred_import with
           | Some _ ->
               let expanded_import =
-                match get_transitive_exports from ~ast_environment ?dependency with
+                match get_transitive_exports from with
                 | [] -> []
                 | exports ->
                     List.map exports ~f:(fun name ->
