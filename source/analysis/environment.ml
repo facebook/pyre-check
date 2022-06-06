@@ -18,13 +18,9 @@ module UpdateResult = struct
   module type S = sig
     type t
 
-    type read_only
-
     val locally_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t
 
     val all_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t list
-
-    val read_only : t -> read_only
 
     val unannotated_global_environment_update_result
       :  t ->
@@ -37,7 +33,7 @@ end
 module type PreviousEnvironment = sig
   module ReadOnly : ReadOnly
 
-  module UpdateResult : UpdateResult.S with type read_only := ReadOnly.t
+  module UpdateResult : UpdateResult.S
 
   type t
 
@@ -65,7 +61,7 @@ module type S = sig
 
   module PreviousEnvironment : PreviousEnvironment
 
-  module UpdateResult : UpdateResult.S with type read_only = ReadOnly.t
+  module UpdateResult : UpdateResult.S
 
   type t
 
@@ -168,7 +164,7 @@ module EnvironmentTable = struct
       val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
     end
 
-    module UpdateResult : UpdateResult.S with type read_only = ReadOnly.t
+    module UpdateResult : UpdateResult.S
 
     type t
 
@@ -270,8 +266,6 @@ module EnvironmentTable = struct
 
 
     module UpdateResult = struct
-      type read_only = ReadOnly.t
-
       type t = {
         upstream: In.PreviousEnvironment.UpdateResult.t;
         triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
@@ -284,8 +278,6 @@ module EnvironmentTable = struct
         triggered_dependencies
         :: In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream
 
-
-      let read_only { read_only; _ } = read_only
 
       let unannotated_global_environment_update_result { upstream; _ } =
         In.PreviousEnvironment.UpdateResult.unannotated_global_environment_update_result upstream
@@ -300,15 +292,17 @@ module EnvironmentTable = struct
       type t = In.trigger [@@deriving sexp, compare]
     end)
 
-    let update_only_this_environment ~scheduler ({ table; _ } as this_environment) upstream_update =
+    let update_only_this_environment
+        ~scheduler
+        ({ table; upstream_environment } as this_environment)
+        upstream_update
+      =
       Log.log ~section:`Environment "Updating %s Environment" In.Value.description;
+      let upstream_read_only = In.PreviousEnvironment.read_only upstream_environment in
       let update ~names_to_update () =
         let register () =
           let set (name, dependency) =
-            In.produce_value
-              (In.PreviousEnvironment.UpdateResult.read_only upstream_update)
-              name
-              ~dependency:(Some dependency)
+            In.produce_value upstream_read_only name ~dependency:(Some dependency)
             |> Table.add table (In.convert_trigger name)
           in
           List.iter ~f:set

@@ -264,9 +264,8 @@ let update_this_and_all_preceding_environments
   let result =
     Edges.update_this_and_all_preceding_environments edges ~scheduler ast_environment_trigger
   in
-  let read_only = Edges.UpdateResult.read_only result in
   if debug then
-    ReadOnly.check_integrity read_only;
+    read_only this_environment |> ReadOnly.check_integrity;
   result
 
 

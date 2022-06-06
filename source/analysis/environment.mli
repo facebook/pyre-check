@@ -17,13 +17,9 @@ module UpdateResult : sig
   module type S = sig
     type t
 
-    type read_only
-
     val locally_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t
 
     val all_triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t list
-
-    val read_only : t -> read_only
 
     val unannotated_global_environment_update_result
       :  t ->
@@ -36,7 +32,7 @@ end
 module type PreviousEnvironment = sig
   module ReadOnly : ReadOnly
 
-  module UpdateResult : UpdateResult.S with type read_only := ReadOnly.t
+  module UpdateResult : UpdateResult.S
 
   type t
 
@@ -64,7 +60,7 @@ module type S = sig
 
   module PreviousEnvironment : PreviousEnvironment
 
-  module UpdateResult : UpdateResult.S with type read_only = ReadOnly.t
+  module UpdateResult : UpdateResult.S
 
   type t
 
@@ -162,7 +158,7 @@ module EnvironmentTable : sig
       val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
     end
 
-    module UpdateResult : UpdateResult.S with type read_only = ReadOnly.t
+    module UpdateResult : UpdateResult.S
 
     type t
 
