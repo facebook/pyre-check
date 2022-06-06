@@ -10,7 +10,6 @@ open Pyre
 module Target = Interprocedural.Target
 module TypeEnvironment = Analysis.TypeEnvironment
 module AstEnvironment = Analysis.AstEnvironment
-module AnnotatedGlobalEnvironment = Analysis.AnnotatedGlobalEnvironment
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 module OverrideGraph = Interprocedural.OverrideGraph
@@ -82,7 +81,7 @@ module ClassHierarchyGraphSharedMemory = Memory.Serializer (struct
   let deserialize = Fn.id
 end)
 
-type cached = { global_environment: AnnotatedGlobalEnvironment.t }
+type cached = { type_environment: TypeEnvironment.t }
 
 type error =
   | InvalidByCodeChange
@@ -131,14 +130,14 @@ let initialize_shared_memory ~configuration =
         Ok ())
 
 
-let load_global_environment ~scheduler ~configuration =
+let load_type_environment ~scheduler ~configuration =
   let open Result in
   Log.info "Determining if source files have changed since cache was created.";
-  exception_to_error ~error:LoadError ~message:"loading module tracker from cache" ~f:(fun () ->
-      Ok (AnnotatedGlobalEnvironment.load configuration))
-  >>= fun global_environment ->
+  exception_to_error ~error:LoadError ~message:"Loading type environment" ~f:(fun () ->
+      Ok (TypeEnvironment.load configuration))
+  >>= fun type_environment ->
   let old_module_tracker =
-    AnnotatedGlobalEnvironment.ast_environment global_environment |> AstEnvironment.module_tracker
+    TypeEnvironment.ast_environment type_environment |> AstEnvironment.module_tracker
   in
   let new_module_tracker = Analysis.ModuleTracker.create configuration in
   let changed_paths =
@@ -153,7 +152,7 @@ let load_global_environment ~scheduler ~configuration =
     |> List.filter ~f:(fun path -> not (is_pysa_model path || is_taint_config path))
   in
   match changed_paths with
-  | [] -> Ok global_environment
+  | [] -> Ok type_environment
   | _ ->
       Log.warning "Changes to source files detected, ignoring existing cache.";
       Error InvalidByCodeChange
@@ -164,13 +163,13 @@ let load ~scheduler ~configuration ~enabled =
     { cache = Error Disabled; save_cache = false; scheduler; configuration }
   else
     let open Result in
-    let global_environment =
+    let type_environment =
       initialize_shared_memory ~configuration
-      >>= fun () -> load_global_environment ~scheduler ~configuration
+      >>= fun () -> load_type_environment ~scheduler ~configuration
     in
     let cache =
-      match global_environment with
-      | Ok global_environment -> Ok { global_environment }
+      match type_environment with
+      | Ok type_environment -> Ok { type_environment }
       | Error error ->
           Memory.reset_shared_memory ();
           Error error
@@ -178,35 +177,20 @@ let load ~scheduler ~configuration ~enabled =
     { cache; save_cache = true; scheduler; configuration }
 
 
-let load_type_environment ~global_environment =
-  exception_to_error ~error:LoadError ~message:"loading type environment from cache" ~f:(fun () ->
-      let environment = TypeEnvironment.create global_environment in
-      Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
-      Log.info "Loaded cached type environment.";
-      Ok environment)
-
-
 let save_type_environment ~scheduler ~configuration ~environment =
   exception_to_error ~error:() ~message:"saving type environment to cache" ~f:(fun () ->
       Memory.SharedMemory.collect `aggressive;
-      let global_environment = TypeEnvironment.global_environment environment in
       let module_tracker = TypeEnvironment.module_tracker environment in
       Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;
-      AnnotatedGlobalEnvironment.store global_environment;
-      Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
+      TypeEnvironment.store environment;
       Log.info "Saved type environment to cache shared memory.";
       Ok ())
 
 
 let type_environment { cache; save_cache; scheduler; configuration } f =
-  let type_environment =
-    match cache with
-    | Ok { global_environment } -> load_type_environment ~global_environment |> Result.ok
-    | _ -> None
-  in
-  match type_environment with
-  | Some type_environment -> type_environment
-  | None ->
+  match cache with
+  | Ok { type_environment } -> type_environment
+  | _ ->
       let environment = f () in
       if save_cache then
         save_type_environment ~scheduler ~configuration ~environment |> ignore_result;

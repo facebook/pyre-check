@@ -88,7 +88,7 @@ let get_local_annotations { get_local_annotations; _ } = get_local_annotations
 
 let invalidate { invalidate; _ } = invalidate
 
-let create global_environment =
+let from_global_environment global_environment =
   let raw_errors = RawErrors.create () in
   let local_annotations = LocalAnnotations.create () in
   let get_errors reference = RawErrors.get raw_errors reference |> Option.value ~default:[] in
@@ -109,8 +109,33 @@ let create global_environment =
   }
 
 
+let create configuration =
+  AnnotatedGlobalEnvironment.create configuration |> from_global_environment
+
+
+let create_for_testing configuration source_path_code_pairs =
+  AnnotatedGlobalEnvironment.create_for_testing configuration source_path_code_pairs
+  |> from_global_environment
+
+
 let read_only { global_environment; get_errors; get_local_annotations; _ } =
   ReadOnly.create
     ~get_errors
     ~get_local_annotations
     (AnnotatedGlobalEnvironment.read_only global_environment)
+
+
+(* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
+   before loading / after storing. These functions only handle serializing and deserializing the
+   non-SharedMemory data *)
+
+let store { global_environment; _ } =
+  AnnotatedGlobalEnvironment.store global_environment;
+  SharedMemoryKeys.DependencyKey.Registry.store ()
+
+
+let load configuration =
+  (* Loading the dependency keys needs to happen exactly once in the environment stack; we do it
+     here, at the very top. *)
+  SharedMemoryKeys.DependencyKey.Registry.load ();
+  AnnotatedGlobalEnvironment.load configuration |> from_global_environment

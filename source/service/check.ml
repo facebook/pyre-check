@@ -46,9 +46,10 @@ let check
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
-    let annotated_global_environment = AnnotatedGlobalEnvironment.create configuration in
-    let type_environment = TypeEnvironment.create annotated_global_environment in
-    let global_environment = AnnotatedGlobalEnvironment.read_only annotated_global_environment in
+    let type_environment = TypeEnvironment.create configuration in
+    let global_environment =
+      TypeEnvironment.global_environment type_environment |> AnnotatedGlobalEnvironment.read_only
+    in
 
     Statistics.performance ~name:"full environment built" ~timer ();
 

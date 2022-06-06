@@ -32,7 +32,9 @@ end
 
 type t
 
-val create : AnnotatedGlobalEnvironment.t -> t
+val create : Configuration.Analysis.t -> t
+
+val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
 
 val global_environment : t -> AnnotatedGlobalEnvironment.t
 
@@ -51,3 +53,7 @@ val set_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t ->
 val invalidate : t -> Reference.t list -> unit
 
 val read_only : t -> ReadOnly.t
+
+val store : t -> unit
+
+val load : Configuration.Analysis.t -> t

@@ -74,20 +74,15 @@ end)
 let load_stored_configuration = StoredConfiguration.load
 
 let load ~configuration ~build_system () =
-  let type_environment =
-    Analysis.AnnotatedGlobalEnvironment.load configuration |> Analysis.TypeEnvironment.create
-  in
-  Analysis.SharedMemoryKeys.DependencyKey.Registry.load ();
+  let type_environment = Analysis.TypeEnvironment.load configuration in
   let error_table = ServerErrors.load () in
   create ~build_system ~type_environment ~error_table ()
 
 
 let store ~path ~configuration { type_environment; error_table; build_system; _ } =
   Memory.SharedMemory.collect `aggressive;
-  Analysis.TypeEnvironment.global_environment type_environment
-  |> Analysis.AnnotatedGlobalEnvironment.store;
+  Analysis.TypeEnvironment.store type_environment;
   StoredConfiguration.store configuration;
   ServerErrors.store error_table;
   BuildSystem.store build_system;
-  Analysis.SharedMemoryKeys.DependencyKey.Registry.store ();
   Memory.save_shared_memory ~path:(PyrePath.absolute path) ~configuration
