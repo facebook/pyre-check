@@ -114,8 +114,6 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
 
   let trigger_to_dependency name = SharedMemoryKeys.RegisterClassMetadata name
 
-  let legacy_invalidated_keys = UnannotatedGlobalEnvironment.UpdateResult.previous_classes
-
   let serialize_value = function
     | Some
         {

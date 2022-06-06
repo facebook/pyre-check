@@ -130,11 +130,6 @@ module EnvironmentTable : sig
 
     val trigger_to_dependency : trigger -> SharedMemoryKeys.dependency
 
-    (* For compatibility with the old dependency mode, we also need a different kind of key
-       discovery that just returns all of the keys that possibly could have been affected by the
-       update *)
-    val legacy_invalidated_keys : UnannotatedGlobalEnvironment.UpdateResult.t -> TriggerSet.t
-
     (* This is the actual main function of the update. *)
     val produce_value
       :  PreviousEnvironment.ReadOnly.t ->

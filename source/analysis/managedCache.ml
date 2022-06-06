@@ -62,10 +62,6 @@ module Make (In : In) = struct
 
     let lazy_incremental = In.lazy_incremental
 
-    (* In legacy mode we're actually using process-local caches, so we never need to do a
-       legacy-style invalidate in the way this interface is designed to do *)
-    let legacy_invalidated_keys _ = KeySet.empty
-
     let serialize_value _ = "Not used"
 
     let show_key _ = "Not used"

@@ -155,8 +155,6 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
   let trigger_to_dependency name = SharedMemoryKeys.ClassConnect name
 
-  let legacy_invalidated_keys = UnannotatedGlobalEnvironment.UpdateResult.previous_classes
-
   let decode_target { ClassHierarchy.Target.target; parameters } =
     Format.asprintf
       "%s[%a]"

@@ -350,10 +350,6 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
 
   let trigger_to_dependency name = SharedMemoryKeys.AliasRegister name
 
-  let legacy_invalidated_keys upstream_update =
-    UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals upstream_update
-
-
   let serialize_value = function
     | Some alias -> Type.show_alias alias
     | None -> "None"

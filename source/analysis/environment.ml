@@ -120,8 +120,6 @@ module EnvironmentTable = struct
 
     val trigger_to_dependency : trigger -> SharedMemoryKeys.dependency
 
-    val legacy_invalidated_keys : UnannotatedGlobalEnvironment.UpdateResult.t -> TriggerSet.t
-
     val produce_value
       :  PreviousEnvironment.ReadOnly.t ->
       trigger ->

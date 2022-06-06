@@ -21,18 +21,6 @@ module GlobalLocationValue = struct
 end
 
 module Common = struct
-  let legacy_invalidated_keys upstream =
-    let previous_classes =
-      UnannotatedGlobalEnvironment.UpdateResult.previous_classes upstream
-      |> Type.Primitive.Set.to_list
-      |> List.map ~f:Reference.create
-    in
-    let previous_unannotated_globals =
-      UnannotatedGlobalEnvironment.UpdateResult.previous_unannotated_globals upstream
-    in
-    List.fold ~init:previous_unannotated_globals ~f:Set.add previous_classes
-
-
   let show_key = Reference.show
 end
 
