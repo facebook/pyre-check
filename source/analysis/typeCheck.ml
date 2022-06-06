@@ -6764,8 +6764,6 @@ let filter_errors (module Context : Context) ~global_resolution errors =
     Error.filter ~resolution:global_resolution errors
 
 
-let name = "TypeCheck"
-
 let exit_state ~resolution (module Context : Context) =
   let module State = State (Context) in
   let module Fixpoint = Fixpoint.Make (State) in

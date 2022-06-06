@@ -88,8 +88,6 @@ val resolution_with_key
   (module Context) ->
   Resolution.t
 
-val name : string
-
 val run_on_defines
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
