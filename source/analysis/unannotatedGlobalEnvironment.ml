@@ -32,6 +32,285 @@ module ResolvedReference = struct
   [@@deriving sexp, compare, hash]
 end
 
+module ReadOnly = struct
+  type t = {
+    ast_environment: AstEnvironment.ReadOnly.t;
+    class_exists: ?dependency:DependencyKey.registered -> string -> bool;
+    all_classes: unit -> Type.Primitive.t list;
+    all_indices: unit -> IndexTracker.t list;
+    all_unannotated_globals: unit -> Reference.t list;
+    all_defines: unit -> Reference.t list;
+    all_defines_in_module: Reference.t -> Reference.t list;
+    get_class_summary:
+      ?dependency:DependencyKey.registered -> string -> ClassSummary.t Node.t option;
+    get_unannotated_global:
+      ?dependency:DependencyKey.registered -> Reference.t -> UnannotatedGlobal.t option;
+    get_function_definition:
+      ?dependency:DependencyKey.registered -> Reference.t -> FunctionDefinition.t option;
+    get_define_body: ?dependency:DependencyKey.registered -> Reference.t -> Define.t Node.t option;
+    get_module_metadata: ?dependency:DependencyKey.registered -> Reference.t -> Module.t option;
+    module_exists: ?dependency:SharedMemoryKeys.DependencyKey.registered -> Reference.t -> bool;
+  }
+
+  let ast_environment { ast_environment; _ } = ast_environment
+
+  let unannotated_global_environment = Fn.id
+
+  let all_classes { all_classes; _ } = all_classes ()
+
+  let all_indices { all_indices; _ } = all_indices ()
+
+  let all_defines { all_defines; _ } = all_defines ()
+
+  let all_unannotated_globals { all_unannotated_globals; _ } = all_unannotated_globals ()
+
+  let all_defines_in_module { all_defines_in_module; _ } = all_defines_in_module
+
+  let get_module_metadata { get_module_metadata; _ } = get_module_metadata
+
+  let module_exists { module_exists; _ } = module_exists
+
+  let get_class_summary { get_class_summary; _ } = get_class_summary
+
+  let class_exists { class_exists; _ } = class_exists
+
+  let get_function_definition { get_function_definition; _ } = get_function_definition
+
+  let get_define_body { get_define_body; _ } = get_define_body
+
+  let get_unannotated_global { get_unannotated_global; _ } = get_unannotated_global
+
+  let primitive_name annotation =
+    let primitive, _ = Type.split annotation in
+    Type.primitive_name primitive
+
+
+  let is_protocol { get_class_summary; _ } ?dependency annotation =
+    primitive_name annotation
+    >>= get_class_summary ?dependency
+    >>| Node.value
+    >>| ClassSummary.is_protocol
+    |> Option.value ~default:false
+
+
+  let contains_untracked read_only ?dependency annotation =
+    let is_tracked = class_exists read_only ?dependency in
+    List.exists ~f:(fun annotation -> not (is_tracked annotation)) (Type.elements annotation)
+
+
+  let legacy_resolve_exports read_only ?dependency reference =
+    (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
+    let widening_threshold = 25 in
+    let rec resolve_exports_fixpoint ~reference ~visited ~count =
+      if Set.mem visited reference || count > widening_threshold then
+        reference
+      else
+        let rec resolve_exports ~lead ~tail =
+          match tail with
+          | head :: tail ->
+              let incremented_lead = lead @ [head] in
+              if
+                Option.is_some
+                  (get_module_metadata
+                     ?dependency
+                     read_only
+                     (Reference.create_from_list incremented_lead))
+              then
+                resolve_exports ~lead:incremented_lead ~tail
+              else
+                get_module_metadata ?dependency read_only (Reference.create_from_list lead)
+                >>| (fun definition ->
+                      match Module.legacy_aliased_export definition (Reference.create head) with
+                      | Some export -> Reference.combine export (Reference.create_from_list tail)
+                      | _ -> resolve_exports ~lead:(lead @ [head]) ~tail)
+                |> Option.value ~default:reference
+          | _ -> reference
+        in
+        match Reference.as_list reference with
+        | head :: tail ->
+            let exported_reference = resolve_exports ~lead:[head] ~tail in
+            if Reference.is_strict_prefix ~prefix:reference exported_reference then
+              reference
+            else
+              resolve_exports_fixpoint
+                ~reference:exported_reference
+                ~visited:(Set.add visited reference)
+                ~count:(count + 1)
+        | _ -> reference
+    in
+    resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
+
+
+  module ResolveExportItem = struct
+    module T = struct
+      type t = {
+        current_module: Reference.t;
+        name: Identifier.t;
+      }
+      [@@deriving sexp, compare, hash]
+    end
+
+    include T
+    include Hashable.Make (T)
+  end
+
+  let resolve_exports read_only ?dependency ?(from = Reference.empty) reference =
+    let visited_set = ResolveExportItem.Hash_set.create () in
+    let rec resolve_module_alias ~current_module ~names_to_resolve () =
+      match get_module_metadata ?dependency read_only current_module with
+      | None ->
+          let rec resolve_placeholder_stub sofar = function
+            | [] -> None
+            | name :: prefixes -> (
+                let checked_module = List.rev prefixes |> Reference.create_from_list in
+                let sofar = name :: sofar in
+                match get_module_metadata ?dependency read_only checked_module with
+                | Some module_metadata when Module.empty_stub module_metadata ->
+                    Some
+                      (ResolvedReference.PlaceholderStub
+                         { stub_module = checked_module; remaining = sofar })
+                | _ -> resolve_placeholder_stub sofar prefixes)
+          in
+          (* Make sure none of the parent of `current_module` is placeholder stub *)
+          resolve_placeholder_stub names_to_resolve (Reference.as_list current_module |> List.rev)
+      | Some module_metadata -> (
+          match Module.empty_stub module_metadata with
+          | true ->
+              Some
+                (ResolvedReference.PlaceholderStub
+                   { stub_module = current_module; remaining = names_to_resolve })
+          | false -> (
+              match names_to_resolve with
+              | [] -> Some (ResolvedReference.Module current_module)
+              | next_name :: rest_names -> (
+                  let item = { ResolveExportItem.current_module; name = next_name } in
+                  match Hash_set.strict_add visited_set item with
+                  | Result.Error _ ->
+                      (* Module alias cycle detected. Abort resolution. *)
+                      None
+                  | Result.Ok _ -> (
+                      match Module.get_export module_metadata next_name with
+                      | None -> (
+                          match Module.get_export module_metadata "__getattr__" with
+                          | Some Module.Export.(Name (Define { is_getattr_any = true })) ->
+                              Some
+                                (ResolvedReference.ModuleAttribute
+                                   {
+                                     from = current_module;
+                                     name = next_name;
+                                     export = ResolvedReference.FromModuleGetattr;
+                                     remaining = rest_names;
+                                   })
+                          | _ ->
+                              (* We could be hitting an implicit module, or we could be hitting an
+                                 explicit module whose name is a prefix of another explicit module.
+                                 Keep moving through the current reference chain to make sure we
+                                 don't mis-handle those cases. *)
+                              resolve_module_alias
+                                ~current_module:
+                                  (Reference.create next_name |> Reference.combine current_module)
+                                ~names_to_resolve:rest_names
+                                ())
+                      | Some (Module.Export.NameAlias { from; name }) ->
+                          if Reference.equal current_module from then
+                            (* This could legitimately happen when an __init__ module trying to
+                               import its sibling modules *)
+                            resolve_module_alias
+                              ~current_module:(Reference.create name |> Reference.combine from)
+                              ~names_to_resolve:rest_names
+                              ()
+                          else
+                            (* We don't know if `name` refers to a module or not. Move forward on
+                               the alias chain. *)
+                            resolve_module_alias
+                              ~current_module:from
+                              ~names_to_resolve:(name :: rest_names)
+                              ()
+                      | Some (Module.Export.Module name) ->
+                          (* `name` is definitely a module. *)
+                          resolve_module_alias ~current_module:name ~names_to_resolve:rest_names ()
+                      | Some (Module.Export.Name export) ->
+                          (* We find a non-module. *)
+                          Some
+                            (ResolvedReference.ModuleAttribute
+                               {
+                                 from = current_module;
+                                 name = next_name;
+                                 export = ResolvedReference.Exported export;
+                                 remaining = rest_names;
+                               })))))
+    in
+    resolve_module_alias ~current_module:from ~names_to_resolve:(Reference.as_list reference) ()
+
+
+  let first_matching_class_decorator
+      read_only
+      ?dependency
+      ~names
+      { Node.value = { ClassSummary.decorators; _ }; _ }
+    =
+    let resolve_and_check_for_match decorator =
+      match Decorator.from_expression decorator with
+      | None -> None
+      | Some ({ Ast.Statement.Decorator.name = { Node.value = name; location }; _ } as decorator) ->
+          let resolved_name =
+            match resolve_exports read_only ?dependency name with
+            | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
+                Reference.create_from_list (name :: remaining) |> Reference.combine from
+            | _ -> name
+          in
+          let with_matched_name_if_matches name_to_match =
+            if String.equal (Reference.show resolved_name) name_to_match then
+              Some { decorator with name = { Node.value = resolved_name; location } }
+            else
+              None
+          in
+          List.find_map names ~f:with_matched_name_if_matches
+    in
+    List.find_map decorators ~f:resolve_and_check_for_match
+
+
+  let exists_matching_class_decorator read_only ?dependency ~names class_summary =
+    first_matching_class_decorator read_only ?dependency ~names class_summary |> Option.is_some
+end
+
+module UpdateResult = struct
+  type t = {
+    previous_classes: Type.Primitive.Set.t;
+    previous_defines: Reference.Set.t;
+    define_additions: Reference.Set.t;
+    previous_unannotated_globals: Reference.Set.t;
+    triggered_dependencies: DependencyKey.RegisteredSet.t;
+    invalidated_modules: Reference.t list;
+    module_updates: ModuleTracker.IncrementalUpdate.t list;
+    read_only: ReadOnly.t;
+  }
+
+  type read_only = ReadOnly.t
+
+  let previous_classes { previous_classes; _ } = previous_classes
+
+  let previous_defines { previous_defines; _ } = previous_defines
+
+  let define_additions { define_additions; _ } = define_additions
+
+  let previous_unannotated_globals { previous_unannotated_globals; _ } =
+    previous_unannotated_globals
+
+
+  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
+
+  let all_triggered_dependencies environment = [locally_triggered_dependencies environment]
+
+  let invalidated_modules { invalidated_modules; _ } = invalidated_modules
+
+  let module_updates { module_updates; _ } = module_updates
+
+  let unannotated_global_environment_update_result = Fn.id
+
+  let read_only { read_only; _ } = read_only
+end
+
 (* The key tracking is necessary because there is no empirical way to determine which classes exist
    for a given class. This "fan-out" necessitates internal tracking. However, this module need not
    be sealed to ensure write only-ness since we're not dependency tracking this, since it's only
@@ -476,248 +755,6 @@ let load configuration =
   environment
 
 
-module ReadOnly = struct
-  type t = {
-    ast_environment: AstEnvironment.ReadOnly.t;
-    class_exists: ?dependency:DependencyKey.registered -> string -> bool;
-    all_classes: unit -> Type.Primitive.t list;
-    all_indices: unit -> IndexTracker.t list;
-    all_unannotated_globals: unit -> Reference.t list;
-    all_defines: unit -> Reference.t list;
-    all_defines_in_module: Reference.t -> Reference.t list;
-    get_class_summary:
-      ?dependency:DependencyKey.registered -> string -> ClassSummary.t Node.t option;
-    get_unannotated_global:
-      ?dependency:DependencyKey.registered -> Reference.t -> UnannotatedGlobal.t option;
-    get_function_definition:
-      ?dependency:DependencyKey.registered -> Reference.t -> FunctionDefinition.t option;
-    get_define_body: ?dependency:DependencyKey.registered -> Reference.t -> Define.t Node.t option;
-    get_module_metadata: ?dependency:DependencyKey.registered -> Reference.t -> Module.t option;
-    module_exists: ?dependency:SharedMemoryKeys.DependencyKey.registered -> Reference.t -> bool;
-  }
-
-  let ast_environment { ast_environment; _ } = ast_environment
-
-  let unannotated_global_environment = Fn.id
-
-  let all_classes { all_classes; _ } = all_classes ()
-
-  let all_indices { all_indices; _ } = all_indices ()
-
-  let all_defines { all_defines; _ } = all_defines ()
-
-  let all_unannotated_globals { all_unannotated_globals; _ } = all_unannotated_globals ()
-
-  let all_defines_in_module { all_defines_in_module; _ } = all_defines_in_module
-
-  let get_module_metadata { get_module_metadata; _ } = get_module_metadata
-
-  let module_exists { module_exists; _ } = module_exists
-
-  let get_class_summary { get_class_summary; _ } = get_class_summary
-
-  let class_exists { class_exists; _ } = class_exists
-
-  let get_function_definition { get_function_definition; _ } = get_function_definition
-
-  let get_define_body { get_define_body; _ } = get_define_body
-
-  let get_unannotated_global { get_unannotated_global; _ } = get_unannotated_global
-
-  let primitive_name annotation =
-    let primitive, _ = Type.split annotation in
-    Type.primitive_name primitive
-
-
-  let is_protocol { get_class_summary; _ } ?dependency annotation =
-    primitive_name annotation
-    >>= get_class_summary ?dependency
-    >>| Node.value
-    >>| ClassSummary.is_protocol
-    |> Option.value ~default:false
-
-
-  let contains_untracked read_only ?dependency annotation =
-    let is_tracked = class_exists read_only ?dependency in
-    List.exists ~f:(fun annotation -> not (is_tracked annotation)) (Type.elements annotation)
-
-
-  let legacy_resolve_exports read_only ?dependency reference =
-    (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
-    let widening_threshold = 25 in
-    let rec resolve_exports_fixpoint ~reference ~visited ~count =
-      if Set.mem visited reference || count > widening_threshold then
-        reference
-      else
-        let rec resolve_exports ~lead ~tail =
-          match tail with
-          | head :: tail ->
-              let incremented_lead = lead @ [head] in
-              if
-                Option.is_some
-                  (get_module_metadata
-                     ?dependency
-                     read_only
-                     (Reference.create_from_list incremented_lead))
-              then
-                resolve_exports ~lead:incremented_lead ~tail
-              else
-                get_module_metadata ?dependency read_only (Reference.create_from_list lead)
-                >>| (fun definition ->
-                      match Module.legacy_aliased_export definition (Reference.create head) with
-                      | Some export -> Reference.combine export (Reference.create_from_list tail)
-                      | _ -> resolve_exports ~lead:(lead @ [head]) ~tail)
-                |> Option.value ~default:reference
-          | _ -> reference
-        in
-        match Reference.as_list reference with
-        | head :: tail ->
-            let exported_reference = resolve_exports ~lead:[head] ~tail in
-            if Reference.is_strict_prefix ~prefix:reference exported_reference then
-              reference
-            else
-              resolve_exports_fixpoint
-                ~reference:exported_reference
-                ~visited:(Set.add visited reference)
-                ~count:(count + 1)
-        | _ -> reference
-    in
-    resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
-
-
-  module ResolveExportItem = struct
-    module T = struct
-      type t = {
-        current_module: Reference.t;
-        name: Identifier.t;
-      }
-      [@@deriving sexp, compare, hash]
-    end
-
-    include T
-    include Hashable.Make (T)
-  end
-
-  let resolve_exports read_only ?dependency ?(from = Reference.empty) reference =
-    let visited_set = ResolveExportItem.Hash_set.create () in
-    let rec resolve_module_alias ~current_module ~names_to_resolve () =
-      match get_module_metadata ?dependency read_only current_module with
-      | None ->
-          let rec resolve_placeholder_stub sofar = function
-            | [] -> None
-            | name :: prefixes -> (
-                let checked_module = List.rev prefixes |> Reference.create_from_list in
-                let sofar = name :: sofar in
-                match get_module_metadata ?dependency read_only checked_module with
-                | Some module_metadata when Module.empty_stub module_metadata ->
-                    Some
-                      (ResolvedReference.PlaceholderStub
-                         { stub_module = checked_module; remaining = sofar })
-                | _ -> resolve_placeholder_stub sofar prefixes)
-          in
-          (* Make sure none of the parent of `current_module` is placeholder stub *)
-          resolve_placeholder_stub names_to_resolve (Reference.as_list current_module |> List.rev)
-      | Some module_metadata -> (
-          match Module.empty_stub module_metadata with
-          | true ->
-              Some
-                (ResolvedReference.PlaceholderStub
-                   { stub_module = current_module; remaining = names_to_resolve })
-          | false -> (
-              match names_to_resolve with
-              | [] -> Some (ResolvedReference.Module current_module)
-              | next_name :: rest_names -> (
-                  let item = { ResolveExportItem.current_module; name = next_name } in
-                  match Hash_set.strict_add visited_set item with
-                  | Result.Error _ ->
-                      (* Module alias cycle detected. Abort resolution. *)
-                      None
-                  | Result.Ok _ -> (
-                      match Module.get_export module_metadata next_name with
-                      | None -> (
-                          match Module.get_export module_metadata "__getattr__" with
-                          | Some Module.Export.(Name (Define { is_getattr_any = true })) ->
-                              Some
-                                (ResolvedReference.ModuleAttribute
-                                   {
-                                     from = current_module;
-                                     name = next_name;
-                                     export = ResolvedReference.FromModuleGetattr;
-                                     remaining = rest_names;
-                                   })
-                          | _ ->
-                              (* We could be hitting an implicit module, or we could be hitting an
-                                 explicit module whose name is a prefix of another explicit module.
-                                 Keep moving through the current reference chain to make sure we
-                                 don't mis-handle those cases. *)
-                              resolve_module_alias
-                                ~current_module:
-                                  (Reference.create next_name |> Reference.combine current_module)
-                                ~names_to_resolve:rest_names
-                                ())
-                      | Some (Module.Export.NameAlias { from; name }) ->
-                          if Reference.equal current_module from then
-                            (* This could legitimately happen when an __init__ module trying to
-                               import its sibling modules *)
-                            resolve_module_alias
-                              ~current_module:(Reference.create name |> Reference.combine from)
-                              ~names_to_resolve:rest_names
-                              ()
-                          else
-                            (* We don't know if `name` refers to a module or not. Move forward on
-                               the alias chain. *)
-                            resolve_module_alias
-                              ~current_module:from
-                              ~names_to_resolve:(name :: rest_names)
-                              ()
-                      | Some (Module.Export.Module name) ->
-                          (* `name` is definitely a module. *)
-                          resolve_module_alias ~current_module:name ~names_to_resolve:rest_names ()
-                      | Some (Module.Export.Name export) ->
-                          (* We find a non-module. *)
-                          Some
-                            (ResolvedReference.ModuleAttribute
-                               {
-                                 from = current_module;
-                                 name = next_name;
-                                 export = ResolvedReference.Exported export;
-                                 remaining = rest_names;
-                               })))))
-    in
-    resolve_module_alias ~current_module:from ~names_to_resolve:(Reference.as_list reference) ()
-
-
-  let first_matching_class_decorator
-      read_only
-      ?dependency
-      ~names
-      { Node.value = { ClassSummary.decorators; _ }; _ }
-    =
-    let resolve_and_check_for_match decorator =
-      match Decorator.from_expression decorator with
-      | None -> None
-      | Some ({ Ast.Statement.Decorator.name = { Node.value = name; location }; _ } as decorator) ->
-          let resolved_name =
-            match resolve_exports read_only ?dependency name with
-            | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
-                Reference.create_from_list (name :: remaining) |> Reference.combine from
-            | _ -> name
-          in
-          let with_matched_name_if_matches name_to_match =
-            if String.equal (Reference.show resolved_name) name_to_match then
-              Some { decorator with name = { Node.value = resolved_name; location } }
-            else
-              None
-          in
-          List.find_map names ~f:with_matched_name_if_matches
-    in
-    List.find_map decorators ~f:resolve_and_check_for_match
-
-
-  let exists_matching_class_decorator read_only ?dependency ~names class_summary =
-    first_matching_class_decorator read_only ?dependency ~names class_summary |> Option.is_some
-end
-
 module LazyLoader = struct
   type t = {
     environment: ReadWrite.t;
@@ -906,43 +943,6 @@ let read_only
     all_unannotated_globals;
   }
 
-
-module UpdateResult = struct
-  type t = {
-    previous_classes: Type.Primitive.Set.t;
-    previous_defines: Reference.Set.t;
-    define_additions: Reference.Set.t;
-    previous_unannotated_globals: Reference.Set.t;
-    triggered_dependencies: DependencyKey.RegisteredSet.t;
-    invalidated_modules: Reference.t list;
-    module_updates: ModuleTracker.IncrementalUpdate.t list;
-    read_only: ReadOnly.t;
-  }
-
-  type read_only = ReadOnly.t
-
-  let previous_classes { previous_classes; _ } = previous_classes
-
-  let previous_defines { previous_defines; _ } = previous_defines
-
-  let define_additions { define_additions; _ } = define_additions
-
-  let previous_unannotated_globals { previous_unannotated_globals; _ } =
-    previous_unannotated_globals
-
-
-  let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
-
-  let all_triggered_dependencies environment = [locally_triggered_dependencies environment]
-
-  let invalidated_modules { invalidated_modules; _ } = invalidated_modules
-
-  let module_updates { module_updates; _ } = module_updates
-
-  let unannotated_global_environment_update_result = Fn.id
-
-  let read_only { read_only; _ } = read_only
-end
 
 let update_this_and_all_preceding_environments
     ({ ast_environment; key_tracker; _ } as environment)
