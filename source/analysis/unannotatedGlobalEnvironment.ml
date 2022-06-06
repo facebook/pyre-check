@@ -276,10 +276,7 @@ end
 
 module UpdateResult = struct
   type t = {
-    previous_classes: Type.Primitive.Set.t;
-    previous_defines: Reference.Set.t;
     define_additions: Reference.Set.t;
-    previous_unannotated_globals: Reference.Set.t;
     triggered_dependencies: DependencyKey.RegisteredSet.t;
     invalidated_modules: Reference.t list;
     module_updates: ModuleTracker.IncrementalUpdate.t list;
@@ -288,15 +285,7 @@ module UpdateResult = struct
 
   type read_only = ReadOnly.t
 
-  let previous_classes { previous_classes; _ } = previous_classes
-
-  let previous_defines { previous_defines; _ } = previous_defines
-
   let define_additions { define_additions; _ } = define_additions
-
-  let previous_unannotated_globals { previous_unannotated_globals; _ } =
-    previous_unannotated_globals
-
 
   let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
@@ -1015,10 +1004,7 @@ module FromReadonlyUpstream = struct
           { Profiling.result = define_additions, triggered_dependencies; tags })
     in
     {
-      UpdateResult.previous_classes;
-      previous_defines;
-      define_additions;
-      previous_unannotated_globals;
+      UpdateResult.define_additions;
       triggered_dependencies;
       invalidated_modules;
       module_updates;

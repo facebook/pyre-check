@@ -130,12 +130,6 @@ module UpdateResult : sig
 
   type read_only = ReadOnly.t
 
-  val previous_unannotated_globals : t -> Reference.Set.t
-
-  val previous_classes : t -> Type.Primitive.Set.t
-
-  val previous_defines : t -> Reference.Set.t
-
   val define_additions : t -> Reference.Set.t
 
   val locally_triggered_dependencies : t -> DependencyKey.RegisteredSet.t
