@@ -106,6 +106,18 @@ def _parse_json_rpc_id(json: JSON) -> Union[int, str, None]:
     return id
 
 
+def _parse_json_rpc_activity_key(json: JSON) -> Optional[JSON]:
+    activity_key = json.get("activityKey")
+    if activity_key is None:
+        return None
+    elif isinstance(activity_key, dict):
+        return activity_key
+    else:
+        raise InvalidParameterError(
+            f"Cannot parse request activityKey JSON: {activity_key}"
+        )
+
+
 @dataclasses.dataclass(frozen=True)
 class ByPositionParameters:
     values: Sequence[object] = dataclasses.field(default_factory=list)
@@ -123,6 +135,7 @@ Parameters = Union[ByPositionParameters, ByNameParameters]
 class Request(JSONRPC):
     method: str
     id: Union[int, str, None] = None
+    activity_key: Optional[JSON] = None
     parameters: Optional[Parameters] = None
 
     def json(self) -> JSON:
@@ -131,6 +144,11 @@ class Request(JSONRPC):
             "jsonrpc": "2.0",
             "method": self.method,
             **({"id": self.id} if self.id is not None else {}),
+            **(
+                {"activityKey": self.activity_key}
+                if self.activity_key is not None
+                else {}
+            ),
             **({"params": parameters.values} if parameters is not None else {}),
         }
 
@@ -166,7 +184,10 @@ class Request(JSONRPC):
             )
 
         id = _parse_json_rpc_id(request_json)
-        return Request(method=method, id=id, parameters=parameters)
+        activity_key = _parse_json_rpc_activity_key(request_json)
+        return Request(
+            method=method, id=id, activity_key=activity_key, parameters=parameters
+        )
 
     @staticmethod
     def from_string(request_string: str) -> "Request":
@@ -221,11 +242,17 @@ class Response(JSONRPC):
 @dataclasses.dataclass(frozen=True)
 class SuccessResponse(Response):
     result: object
+    activity_key: Optional[JSON] = None
 
     def json(self) -> JSON:
         return {
             "jsonrpc": "2.0",
             **({"id": self.id} if self.id is not None else {}),
+            **(
+                {"activityKey": self.activity_key}
+                if self.activity_key is not None
+                else {}
+            ),
             "result": self.result,
         }
 
@@ -247,7 +274,8 @@ class SuccessResponse(Response):
         # enforce it right now since the Pyre server may emit id-less responses
         # and that has to be fixed first.
         id = _parse_json_rpc_id(response_json)
-        return SuccessResponse(id=id, result=result)
+        activity_key = _parse_json_rpc_activity_key(response_json)
+        return SuccessResponse(id=id, activity_key=activity_key, result=result)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -255,11 +283,17 @@ class ErrorResponse(Response):
     code: int
     message: str = ""
     data: Optional[object] = None
+    activity_key: Optional[JSON] = None
 
     def json(self) -> JSON:
         return {
             "jsonrpc": "2.0",
             **({"id": self.id} if self.id is not None else {}),
+            **(
+                {"activityKey": self.activity_key}
+                if self.activity_key is not None
+                else {}
+            ),
             "error": {
                 "code": self.code,
                 "message": self.message,
@@ -304,4 +338,7 @@ class ErrorResponse(Response):
         # enforce it right now since the Pyre server may emit id-less responses
         # and that has to be fixed first.
         id = _parse_json_rpc_id(response_json)
-        return ErrorResponse(id=id, code=code, message=message, data=data)
+        activity_key = _parse_json_rpc_activity_key(response_json)
+        return ErrorResponse(
+            id=id, activity_key=activity_key, code=code, message=message, data=data
+        )

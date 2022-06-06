@@ -285,8 +285,12 @@ async def try_initialize(
         )
         await lsp.write_json_rpc(
             output_channel,
-            # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
-            json_rpc.SuccessResponse(id=request_id, result=result.to_dict()),
+            json_rpc.SuccessResponse(
+                id=request_id,
+                activity_key=request.activity_key,
+                # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
+                result=result.to_dict(),
+            ),
         )
 
         initialized_notification = await lsp.read_json_rpc(input_channel)
@@ -319,6 +323,7 @@ async def try_initialize(
             output_channel,
             json_rpc.ErrorResponse(
                 id=request.id if request is not None else None,
+                activity_key=request.activity_key if request is not None else None,
                 code=json_rpc_error.error_code(),
                 message=str(json_rpc_error),
                 data={"retry": False},
@@ -341,6 +346,8 @@ async def _read_lsp_request(
             json_rpc.ErrorResponse(
                 # pyre-ignore[16] - refinement doesn't work here for some reason
                 id=message.id if message is not None else None,
+                # pyre-ignore[16]
+                activity_key=message.activity_key if message is not None else None,
                 code=json_rpc_error.error_code(),
                 message=str(json_rpc_error),
             ),
@@ -412,11 +419,13 @@ LocationTypeLookup = location_lookup.LocationLookup[TypeInfo]
 class TypeCoverageQuery:
     id: Union[int, str, None]
     path: Path
+    activity_key: Optional[Dict[str, object]] = None
 
 
 @dataclasses.dataclass(frozen=True)
 class TypesQuery:
     path: Path
+    activity_key: Optional[Dict[str, object]] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -424,6 +433,7 @@ class DefinitionLocationQuery:
     id: Union[int, str, None]
     path: Path
     position: lsp.Position
+    activity_key: Optional[Dict[str, object]] = None
 
 
 @dataclasses_json.dataclass_json(
@@ -642,7 +652,9 @@ class PyreServer:
             )
 
     async def process_open_request(
-        self, parameters: lsp.DidOpenTextDocumentParameters
+        self,
+        parameters: lsp.DidOpenTextDocumentParameters,
+        activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
@@ -650,7 +662,9 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         self.state.opened_documents.add(document_path)
-        self.state.query_state.queries.put_nowait(TypesQuery(document_path))
+        self.state.query_state.queries.put_nowait(
+            TypesQuery(document_path, activity_key)
+        )
         LOG.info(f"File opened: {document_path}")
 
         # Attempt to trigger a background Pyre server start on each file open
@@ -673,7 +687,9 @@ class PyreServer:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
     async def process_did_save_request(
-        self, parameters: lsp.DidSaveTextDocumentParameters
+        self,
+        parameters: lsp.DidSaveTextDocumentParameters,
+        activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
@@ -684,7 +700,9 @@ class PyreServer:
         if document_path not in self.state.opened_documents:
             return
 
-        self.state.query_state.queries.put_nowait(TypesQuery(document_path))
+        self.state.query_state.queries.put_nowait(
+            TypesQuery(document_path, activity_key)
+        )
 
         # Attempt to trigger a background Pyre server start on each file save
         if not self.pyre_manager.is_task_running():
@@ -694,6 +712,7 @@ class PyreServer:
         self,
         parameters: lsp.HoverTextDocumentParameters,
         request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
         """Always respond to a hover request even for non-tracked paths.
 
@@ -709,7 +728,9 @@ class PyreServer:
         if document_path not in self.state.opened_documents:
             response = lsp.HoverResponse.empty()
         else:
-            self.state.query_state.queries.put_nowait(TypesQuery(document_path))
+            self.state.query_state.queries.put_nowait(
+                TypesQuery(document_path, activity_key)
+            )
             response = self.state.query_state.hover_response_for_position(
                 Path(document_path), parameters.position
             )
@@ -718,6 +739,7 @@ class PyreServer:
             self.output_channel,
             json_rpc.SuccessResponse(
                 id=request_id,
+                activity_key=activity_key,
                 # pyre-ignore[16]: Pyre does not understand
                 # `dataclasses_json`.
                 result=response.to_dict(),
@@ -728,6 +750,7 @@ class PyreServer:
         self,
         parameters: lsp.TypeCoverageTextDocumentParameters,
         request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
@@ -735,13 +758,16 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         await self.state.query_state.queries.put(
-            TypeCoverageQuery(id=request_id, path=document_path)
+            TypeCoverageQuery(
+                id=request_id, activity_key=activity_key, path=document_path
+            )
         )
 
     async def process_definition_request(
         self,
         parameters: lsp.DefinitionTextDocumentParameters,
         request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
@@ -754,6 +780,7 @@ class PyreServer:
                 self.output_channel,
                 json_rpc.SuccessResponse(
                     id=request_id,
+                    activity_key=activity_key,
                     # pyre-ignore[16]: Pyre does not understand
                     # `dataclasses_json`.
                     result=lsp.LspDefinitionResponse.schema().dump([], many=True),
@@ -764,6 +791,7 @@ class PyreServer:
         self.state.query_state.queries.put_nowait(
             DefinitionLocationQuery(
                 id=request_id,
+                activity_key=activity_key,
                 path=document_path,
                 position=parameters.position.to_pyre_position(),
             )
@@ -773,6 +801,7 @@ class PyreServer:
         self,
         parameters: lsp.DocumentSymbolsTextDocumentParameters,
         request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
@@ -798,6 +827,7 @@ class PyreServer:
             self.output_channel,
             json_rpc.SuccessResponse(
                 id=request_id,
+                activity_key=activity_key,
                 # pyre-ignore[16]: Pyre does not understand
                 # `dataclasses_json`.
                 result=[s.to_dict() for s in symbols],
@@ -808,7 +838,7 @@ class PyreServer:
         try:
             await lsp.write_json_rpc(
                 self.output_channel,
-                json_rpc.SuccessResponse(id=request_id, result=None),
+                json_rpc.SuccessResponse(id=request_id, activity_key=None, result=None),
             )
             return await self.wait_for_exit()
         except (ConnectionError, json_rpc.ParseError) as error:
@@ -843,6 +873,7 @@ class PyreServer:
                             parameters
                         ),
                         request.id,
+                        request.activity_key,
                     )
                 elif request.method == "textDocument/didOpen":
                     parameters = request.parameters
@@ -853,7 +884,8 @@ class PyreServer:
                     await self.process_open_request(
                         lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
                             parameters
-                        )
+                        ),
+                        request.activity_key,
                     )
                 elif request.method == "textDocument/didClose":
                     parameters = request.parameters
@@ -875,7 +907,8 @@ class PyreServer:
                     await self.process_did_save_request(
                         lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
                             parameters
-                        )
+                        ),
+                        request.activity_key,
                     )
                 elif request.method == "textDocument/hover":
                     parameters = request.parameters
@@ -888,6 +921,7 @@ class PyreServer:
                             parameters
                         ),
                         request.id,
+                        request.activity_key,
                     )
                 elif request.method == "textDocument/typeCoverage":
                     parameters = request.parameters
@@ -900,18 +934,20 @@ class PyreServer:
                             parameters
                         ),
                         request.id,
+                        request.activity_key,
                     )
                 elif request.method == "textDocument/documentSymbol":
                     parameters = request.parameters
                     if parameters is None:
                         raise json_rpc.InvalidRequestError(
-                            "Mising Parameters for documetn symbols"
+                            "Mising Parameters for document symbols"
                         )
                     await self.process_document_symbols_request(
                         lsp.DocumentSymbolsTextDocumentParameters.from_json_rpc_parameters(
                             parameters
                         ),
                         request.id,
+                        request.activity_key,
                     )
                 elif request.id is not None:
                     raise lsp.RequestCancelledError("Request not supported yet")
@@ -1216,6 +1252,7 @@ class PyreQueryHandler(connection.BackgroundTask):
                 self.client_output_channel,
                 json_rpc.SuccessResponse(
                     id=query.id,
+                    activity_key=query.activity_key,
                     # pyre-ignore[16]: Pyre does not understand
                     # `dataclasses_json`.
                     result=type_coverage_result.to_dict(),
@@ -1245,6 +1282,7 @@ class PyreQueryHandler(connection.BackgroundTask):
             self.client_output_channel,
             json_rpc.SuccessResponse(
                 id=query.id,
+                activity_key=query.activity_key,
                 # pyre-ignore[16]: Pyre does not understand
                 # `dataclasses_json`.
                 result=lsp.LspDefinitionResponse.schema().dump(
