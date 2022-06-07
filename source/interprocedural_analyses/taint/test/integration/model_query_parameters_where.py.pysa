@@ -2,7 +2,7 @@ def _test_sink(arg: TaintSink[Test]): ...
 def _test_source() -> TaintSource[Test]: ...
 
 ModelQuery(
-  name = "get_test1_source",
+  name = "get_model_query_parameters_test1_source",
   find = "functions",
   where = [
     name.matches("test1_")
@@ -13,7 +13,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test2_source",
+  name = "get_model_query_parameters__test2_source",
   find = "functions",
   where = [
     name.matches("test2_")
@@ -30,7 +30,7 @@ ModelQuery(
 
 
 ModelQuery(
-  name = "get_test3_source",
+  name = "get_model_query_parameters__test3_source",
   find = "functions",
   where = [
     name.matches("test3_")
@@ -47,7 +47,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test4_source",
+  name = "get_model_query_parameters_test4_source",
   find = "functions",
   where = [
     name.matches("test4_")
@@ -67,7 +67,7 @@ ModelQuery(
 
 
 ModelQuery(
-  name = "get_test5_sink",
+  name = "get_model_query_parameters_test5_sink",
   find = "methods",
   where = [
     parent.matches("Test5"),
@@ -90,7 +90,7 @@ ModelQuery(
 
 
 ModelQuery(
-  name = "get_test6_source",
+  name = "get_model_query_parameters_test6_source",
   find = "functions",
   where = [
     name.matches("test6_")
@@ -113,7 +113,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test7_source",
+  name = "get_model_query_parameters_test7_source",
   find = "methods",
   where = [
     parent.matches("Test7"),
@@ -130,7 +130,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test8_source",
+  name = "get_model_query_parameters_test8_source",
   find = "functions",
   where = [
     name.matches("test8_")
@@ -141,7 +141,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test9_source",
+  name = "get_model_query_parameters_test9_source",
   find = "functions",
   where = [
     name.matches("test9_")
@@ -151,7 +151,7 @@ ModelQuery(
   ]
 )
 ModelQuery(
-  name = "get_test9_SourceA",
+  name = "get_model_query_parameters_test9_SourceA",
   find = "functions",
   where = [
     name.matches("test9_")
@@ -166,7 +166,7 @@ ModelQuery(
   ]
 )
 ModelQuery(
-  name = "get_test9_SourceB",
+  name = "get_model_query_parameters_test9_SourceB",
   find = "functions",
   where = [
     name.matches("test9_")
@@ -182,7 +182,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test10_source",
+  name = "get_model_query_parameters_test10_source",
   find = "functions",
   where = [
     name.matches("test10_")
@@ -192,7 +192,7 @@ ModelQuery(
   ]
 )
 ModelQuery(
-  name = "get_test10_SourceA",
+  name = "get_model_query_parameters_test10_SourceA",
   find = "functions",
   where = [
     name.matches("test10_")
@@ -207,7 +207,7 @@ ModelQuery(
   ]
 )
 ModelQuery(
-  name = "get_test10_SourceB",
+  name = "get_model_query_parameters_test10_SourceB",
   find = "functions",
   where = [
     name.matches("test10_")
@@ -222,7 +222,7 @@ ModelQuery(
   ]
 )
 ModelQuery(
-  name = "get_test10_SourceC",
+  name = "get_model_query_parameters_test10_SourceC",
   find = "functions",
   where = [
     name.matches("test10_")
@@ -237,7 +237,7 @@ ModelQuery(
   ]
 )
 ModelQuery(
-  name = "get_test10_SourceD",
+  name = "get_model_query_parameters_test10_SourceD",
   find = "functions",
   where = [
     name.matches("test10_")

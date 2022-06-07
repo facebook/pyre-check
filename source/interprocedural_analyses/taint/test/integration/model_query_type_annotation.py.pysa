@@ -1,5 +1,5 @@
 ModelQuery(
-  name = "get_test1_sources",
+  name = "get_model_query_type_annotation_test1_sources",
   find = "functions",
   where = [
     name.matches("test1_"),
@@ -11,7 +11,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test2_sources",
+  name = "get_model_query_type_annotation_test2_sources",
   find = "methods",
   where = [
     name.matches("test2_"),
@@ -24,7 +24,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test3_sources",
+  name = "get_model_query_type_annotation_test3_sources",
   find = "functions",
   where = [
     name.matches("test3_"),
@@ -36,7 +36,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test4_sources",
+  name = "get_model_query_type_annotation_test4_sources",
   find = "functions",
   where = [
     name.matches("test4_"),
@@ -48,7 +48,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test5_sources",
+  name = "get_model_query_type_annotation_test5_sources",
   find = "functions",
   where = [
     name.matches("test5_"),
@@ -60,7 +60,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test6_sources",
+  name = "get_model_query_type_annotation_test6_sources",
   find = "methods",
   where = [
     name.matches("test6_"),
@@ -74,7 +74,7 @@ ModelQuery(
 
 
 ModelQuery(
-  name = "get_test7_sources",
+  name = "get_model_query_type_annotation_test7_sources",
   find = "attributes",
   where = [
     parent.equals("model_query_type_annotation.Test7_C"),
@@ -87,7 +87,7 @@ ModelQuery(
 
 
 ModelQuery(
-  name = "get_test8_sources",
+  name = "get_model_query_type_annotation_test8_sources",
   find = "attributes",
   where = [
     parent.equals("model_query_type_annotation.Test8_C"),
@@ -100,7 +100,7 @@ ModelQuery(
 
 
 ModelQuery(
-  name = "get_test9_sources",
+  name = "get_model_query_type_annotation_test9_sources",
   find = "attributes",
   where = [
     parent.equals("model_query_type_annotation.Test9_C"),

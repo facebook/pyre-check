@@ -1,5 +1,5 @@
 ModelQuery(
-  name = "get_test1_sources",
+  name = "get_model_query_any_decorator_test1_sources",
   find = "functions",
   where = [
     name.matches("test1_"),
@@ -11,7 +11,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test2_sources",
+  name = "get_model_query_any_decorator_test2_sources",
   find = "functions",
   where = [
     name.matches("test2_"),
@@ -23,7 +23,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test3_sources",
+  name = "get_model_query_any_decorator_test3_sources",
   find = "functions",
   where = [
     name.matches("test3_"),
@@ -35,7 +35,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test4_sources",
+  name = "get_model_query_any_decorator_test4_sources",
   find = "functions",
   where = [
     name.matches("test4_"),
@@ -47,7 +47,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_test5_sources",
+  name = "get_model_query_any_decorator_test5_sources",
   find = "functions",
   where = [
     name.matches("test5_"),
