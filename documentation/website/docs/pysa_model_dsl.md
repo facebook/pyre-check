@@ -33,7 +33,7 @@ ModelQuery(
 
 Things to note in this example:
 
-1. The `name` clause is the name of your query. Normally it follows the format of `get_` + [what the query matches with in the `where` clause] + [`_sinks`, `_source` and/or `_tito`].
+1. The `name` clause is the name of your query.
 1. The `find` clause lets you pick whether you want to model functions, methods or attributes.
 1. The `where` clause is how you refine your criteria for when a model should be generated - in this example, we're filtering for functions where the name matches `"foo"`.
 1. The `model` clause is a list of models to generate. Here, the syntax means that the functions matching the where clause should be modelled as returning `TaintSource[Test]`.
@@ -47,6 +47,9 @@ $ pyre analyze --dump-model-query-results /path/to/output/file.txt
 ```
 
 You can then view this file to see the generated models.
+
+## Name clauses
+The `name` clause describes what the query is meant to find.  Normally it follows the format of `get_` + [what the query matches with in the `where` clause] + [`_sinks`, `_source` and/or `_tito`]. This clause should be unique for every ModelQuery within a file.
 
 ## Find clauses
 
@@ -63,7 +66,7 @@ class C:
 
 ## Where clauses
 
-Where clauses are a list of predicates, all of which must match for an entity to be modelled. Note that certain predicates are only compatible with specific find clause kinds.
+`where` clauses are a list of predicates, all of which must match for an entity to be modelled. Note that certain predicates are only compatible with specific find clause kinds.
 
 ### `name.matches`
 
