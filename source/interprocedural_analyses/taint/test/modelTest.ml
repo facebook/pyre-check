@@ -2221,6 +2221,62 @@ let test_invalid_models context =
       {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }` are invalid: expected a name, find, where and model clause.|}
     ();
   assert_invalid_model
+    ~source:{|
+      @d("1")
+      def foo(x):
+        ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "same_name",
+        find = "functions",
+        where = Decorator(arguments.contains("1"), name.matches("d")),
+        model = Returns(TaintSource[A])
+      )
+      ModelQuery(
+        name = "same_name",
+        find = "functions",
+        where = Decorator(arguments.contains("1"), name.matches("d")),
+        model = Returns(TaintSource[A])
+      )
+    |}
+    ~expect:
+      "Multiple model queries have the same name `same_name`. Model\n\
+      \   query names should be unique within each file."
+    ();
+  assert_invalid_model
+    ~source:{|
+      @d("1")
+      def foo(x):
+        ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "same_name",
+        find = "functions",
+        where = Decorator(arguments.contains("1"), name.matches("d")),
+        model = Returns(TaintSource[A])
+      )
+      ModelQuery(
+        name = "different_name",
+        find = "functions",
+        where = Decorator(arguments.contains("1"), name.matches("d")),
+        model = Returns(TaintSource[A])
+      )
+      ModelQuery(
+        name = "same_name",
+        find = "functions",
+        where = Decorator(arguments.contains("1"), name.matches("d")),
+        model = Returns(TaintSource[A])
+      )
+    |}
+    ~expect:
+      "Multiple model queries have the same name `same_name`. Model\n\
+      \   query names should be unique within each file."
+    ();
+  assert_invalid_model
     ~model_source:
       {|
       ModelQuery(
@@ -3714,6 +3770,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
@@ -3751,6 +3808,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
@@ -3788,6 +3846,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query =
             [
@@ -3829,6 +3888,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
@@ -3877,6 +3937,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query = [NameConstraint (Equals "test.foo")];
           rule_kind = FunctionModel;
@@ -3925,6 +3986,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
           query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
@@ -3973,6 +4035,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
           query = [ReturnConstraint IsAnnotatedTypeConstraint];
           rule_kind = FunctionModel;
@@ -4010,6 +4073,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
           query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
           rule_kind = FunctionModel;
@@ -4050,6 +4114,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "foo_finders";
           query =
             [
@@ -4097,6 +4162,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "foo_finders";
           query =
             [
@@ -4142,6 +4208,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
           query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
@@ -4183,6 +4250,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
           query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
@@ -4224,6 +4292,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "foo_finders";
           query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
@@ -4269,6 +4338,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 11; column = 1 } };
           name = "foo_finders";
           query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
           rule_kind = FunctionModel;
@@ -4305,6 +4375,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 11; column = 1 } };
           name = "foo_finders";
           query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
           rule_kind = FunctionModel;
@@ -4336,6 +4407,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query = [ParentConstraint (NameSatisfies (Equals "Foo"))];
           rule_kind = MethodModel;
@@ -4384,6 +4456,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query = [ParentConstraint (Extends { class_name = "Foo"; is_transitive = false })];
           rule_kind = MethodModel;
@@ -4432,6 +4505,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query = [ParentConstraint (Extends { class_name = "Foo"; is_transitive = false })];
           rule_kind = MethodModel;
@@ -4469,6 +4543,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query = [ParentConstraint (Extends { class_name = "Foo"; is_transitive = true })];
           rule_kind = MethodModel;
@@ -4506,6 +4581,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "Foo.*")))];
           rule_kind = MethodModel;
@@ -4554,6 +4630,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query =
             [
@@ -4611,6 +4688,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
           name = "get_foo";
           query =
             [
@@ -4666,6 +4744,7 @@ let test_query_parsing context =
     ~expect:
       [
         {
+          location = { start = { line = 2; column = 0 }; stop = { line = 19; column = 1 } };
           name = "get_POST_annotated_sources";
           query =
             [

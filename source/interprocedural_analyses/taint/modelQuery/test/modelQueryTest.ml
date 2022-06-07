@@ -107,6 +107,7 @@ let test_apply_rule context =
       |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -120,6 +121,7 @@ let test_apply_rule context =
       |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Equals "foo")];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -133,6 +135,7 @@ let test_apply_rule context =
       |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Equals "test.foo")];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -149,6 +152,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -167,6 +171,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -187,6 +192,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -202,6 +208,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -218,6 +225,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -244,6 +252,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -269,6 +278,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -290,6 +300,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -313,6 +324,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -340,6 +352,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -367,6 +380,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -398,6 +412,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -432,6 +447,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -458,6 +474,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -484,6 +501,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -510,6 +528,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -540,6 +559,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -573,6 +593,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -599,6 +620,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -625,6 +647,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
@@ -651,6 +674,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ParameterTaint { where = []; taint = [TaintAnnotation (source "Test")] }];
@@ -678,6 +702,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -691,6 +716,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -704,6 +730,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -717,6 +744,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -730,6 +758,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -744,6 +773,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -764,6 +794,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -784,6 +815,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
@@ -815,6 +847,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
@@ -841,6 +874,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -862,6 +896,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -882,6 +917,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -903,6 +939,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
@@ -934,6 +971,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
@@ -965,6 +1003,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions =
@@ -985,6 +1024,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
@@ -1022,6 +1062,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
@@ -1048,6 +1089,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1083,6 +1125,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [AnyParameterConstraint (AnnotationConstraint (AnnotationNameConstraint (Equals "int")))];
@@ -1111,6 +1154,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ReturnConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1125,6 +1169,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ReturnConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1139,6 +1184,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1153,6 +1199,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1166,6 +1213,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1179,6 +1227,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "foo")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1205,6 +1254,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1233,6 +1283,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1261,6 +1312,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1282,6 +1334,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1313,6 +1366,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1341,6 +1395,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1369,6 +1424,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1408,6 +1464,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1447,6 +1504,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1487,6 +1545,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1527,6 +1586,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1574,6 +1634,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1621,6 +1682,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1664,6 +1726,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1683,6 +1746,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1703,6 +1767,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -1725,6 +1790,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1752,6 +1818,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1780,6 +1847,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1819,6 +1887,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -1853,6 +1922,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -1870,6 +1940,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (sink "Test")]];
@@ -1887,6 +1958,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -1904,6 +1976,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -1922,6 +1995,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -1942,6 +2016,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -1958,6 +2033,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -1974,6 +2050,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -1998,6 +2075,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -2022,6 +2100,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -2046,6 +2125,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -2064,6 +2144,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnnotationConstraint IsAnnotatedTypeConstraint];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -2082,6 +2163,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [AnnotationConstraint IsAnnotatedTypeConstraint];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -2099,6 +2181,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -2117,6 +2200,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -2136,6 +2220,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -2155,6 +2240,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -2178,6 +2264,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query =
           [
@@ -2197,6 +2284,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -2216,6 +2304,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -2236,6 +2325,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -2256,6 +2346,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -2278,6 +2369,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -2298,6 +2390,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -2318,6 +2411,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
@@ -2340,6 +2434,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -2361,6 +2456,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -2382,6 +2478,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
@@ -2403,6 +2500,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
+        location = Ast.Location.any;
         name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];

@@ -117,6 +117,7 @@ type kind =
       name: Reference.t;
       annotation: string;
     }
+  | DuplicateNameClauses of string
 [@@deriving sexp, compare]
 
 type t = {

@@ -527,7 +527,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
 let apply_callable_query_rule
     ~verbose
     ~resolution
-    ~rule:{ ModelQuery.rule_kind; query; productions; name }
+    ~rule:{ ModelQuery.rule_kind; query; productions; name; _ }
     ~callable
   =
   let kind_matches =
@@ -596,7 +596,7 @@ let apply_attribute_productions ~productions =
 let apply_attribute_query_rule
     ~verbose
     ~resolution
-    ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name }
+    ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name; _ }
     ~name
     ~annotation
   =
