@@ -191,7 +191,7 @@ module Internal = struct
       query: model_constraint list;
       productions: production list;
       rule_kind: kind;
-      name: string option;
+      name: string;
     }
     [@@deriving show, compare]
   end
@@ -2744,23 +2744,6 @@ let parse_statement ~resolution ~path ~configuration statement =
       let clauses =
         match arguments with
         | [
-         { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
-         { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
-         { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
-        ] ->
-            let parsed_find_clause = parse_find_clause ~path find_clause in
-            let is_object_target = not (is_callable_clause_kind parsed_find_clause) in
-            Ok
-              ( None,
-                parsed_find_clause,
-                parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
-                parse_model_clause
-                  ~path
-                  ~configuration
-                  ~find_clause:parsed_find_clause
-                  ~is_object_target
-                  model_clause )
-        | [
          {
            Call.Argument.name = Some { Node.value = "name"; _ };
            value =
@@ -2776,7 +2759,7 @@ let parse_statement ~resolution ~path ~configuration statement =
             let parsed_find_clause = parse_find_clause ~path find_clause in
             let is_object_target = not (is_callable_clause_kind parsed_find_clause) in
             Ok
-              ( Some name,
+              ( name,
                 parsed_find_clause,
                 parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
                 parse_model_clause

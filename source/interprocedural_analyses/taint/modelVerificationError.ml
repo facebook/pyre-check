@@ -198,7 +198,8 @@ let description error =
         actual_name
   | InvalidModelQueryClauses clause_list ->
       Format.asprintf
-        "The model query arguments at `%s` are invalid: expected a find, where and model clause."
+        "The model query arguments at `%s` are invalid: expected a name, find, where and model \
+         clause."
         (List.map clause_list ~f:Expression.Call.Argument.show |> String.concat ~sep:", ")
   | InvalidModelQueryWhereClause { expression; find_clause_kind } ->
       Format.asprintf

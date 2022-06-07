@@ -177,7 +177,7 @@ module Internal : sig
       query: model_constraint list;
       productions: production list;
       rule_kind: kind;
-      name: string option;
+      name: string;
     }
     [@@deriving show, compare]
   end

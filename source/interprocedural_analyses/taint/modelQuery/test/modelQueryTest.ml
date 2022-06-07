@@ -107,7 +107,7 @@ let test_apply_rule context =
       |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -120,7 +120,7 @@ let test_apply_rule context =
       |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Equals "foo")];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -133,7 +133,7 @@ let test_apply_rule context =
       |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Equals "test.foo")];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -149,7 +149,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
@@ -167,7 +167,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
@@ -187,7 +187,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -202,7 +202,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
@@ -218,7 +218,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -244,7 +244,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [AllParametersTaint { excludes = []; taint = [TaintAnnotation (source "Test")] }];
@@ -269,7 +269,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [AllParametersTaint { excludes = ["x"]; taint = [TaintAnnotation (source "Test")] }];
@@ -290,7 +290,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [AllParametersTaint { excludes = ["y"]; taint = [TaintAnnotation (source "Test")] }];
@@ -313,7 +313,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -340,7 +340,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -367,7 +367,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -398,7 +398,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -432,7 +432,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -458,7 +458,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -484,7 +484,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -510,7 +510,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -540,7 +540,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -573,7 +573,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -599,7 +599,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -625,7 +625,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions =
           [
@@ -651,7 +651,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ParameterTaint { where = []; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = FunctionModel;
@@ -678,7 +678,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -691,7 +691,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -704,7 +704,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -717,7 +717,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -730,7 +730,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -744,7 +744,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyOf
@@ -764,7 +764,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyOf
@@ -784,7 +784,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
           [
@@ -815,7 +815,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
           [
@@ -841,7 +841,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AllOf
@@ -862,7 +862,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AllOf
@@ -882,7 +882,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AllOf
@@ -903,7 +903,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
           [
@@ -934,7 +934,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
           [
@@ -965,7 +965,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions =
           [
@@ -985,7 +985,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
           [
@@ -1022,7 +1022,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions =
           [
@@ -1048,7 +1048,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyParameterConstraint
@@ -1083,7 +1083,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [AnyParameterConstraint (AnnotationConstraint (AnnotationNameConstraint (Equals "int")))];
         productions =
@@ -1111,7 +1111,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ReturnConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -1125,7 +1125,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ReturnConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -1139,7 +1139,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -1153,7 +1153,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -1166,7 +1166,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -1179,7 +1179,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "foo")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -1205,7 +1205,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1233,7 +1233,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1261,7 +1261,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1282,7 +1282,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1313,7 +1313,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1341,7 +1341,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1369,7 +1369,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1408,7 +1408,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1447,7 +1447,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1487,7 +1487,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1527,7 +1527,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1574,7 +1574,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1621,7 +1621,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             AnyDecoratorConstraint
@@ -1664,7 +1664,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
@@ -1683,7 +1683,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
@@ -1703,7 +1703,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
@@ -1725,7 +1725,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             ParentConstraint
@@ -1752,7 +1752,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             ParentConstraint
@@ -1780,7 +1780,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             ParentConstraint
@@ -1819,7 +1819,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             ParentConstraint
@@ -1853,7 +1853,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -1870,7 +1870,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (sink "Test")]];
         rule_kind = AttributeModel;
@@ -1887,7 +1887,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -1904,7 +1904,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -1922,7 +1922,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -1942,7 +1942,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -1958,7 +1958,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -1974,7 +1974,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -1998,7 +1998,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -2022,7 +2022,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -2046,7 +2046,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -2064,7 +2064,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnnotationConstraint IsAnnotatedTypeConstraint];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -2082,7 +2082,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [AnnotationConstraint IsAnnotatedTypeConstraint];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -2099,7 +2099,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
@@ -2117,7 +2117,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             NameConstraint (Matches (Re2.create_exn "foo"));
@@ -2136,7 +2136,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -2155,7 +2155,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
@@ -2178,7 +2178,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query =
           [
             ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")));
@@ -2197,7 +2197,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
@@ -2216,7 +2216,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -2236,7 +2236,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -2256,7 +2256,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -2278,7 +2278,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -2298,7 +2298,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -2318,7 +2318,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
@@ -2340,7 +2340,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
@@ -2361,7 +2361,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
@@ -2382,7 +2382,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
@@ -2403,7 +2403,7 @@ let test_apply_rule context =
      |}
     ~rule:
       {
-        name = None;
+        name = "get_foo";
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;

@@ -541,10 +541,10 @@ let apply_callable_query_rule
   if kind_matches && List.for_all ~f:(callable_matches_constraint ~resolution ~callable) query then begin
     if verbose then
       Log.info
-        "Target `%a` matches all constraints for the model query rule%s."
+        "Target `%a` matches all constraints for the model query rule %s."
         Target.pp_pretty
         callable
-        (name |> Option.map ~f:(Format.sprintf " `%s`") |> Option.value ~default:"");
+        name;
     apply_callable_productions ~resolution ~productions ~callable
   end
   else
@@ -612,9 +612,9 @@ let apply_attribute_query_rule
   then begin
     if verbose then
       Log.info
-        "Attribute `%s` matches all constraints for the model query rule%s."
+        "Attribute `%s` matches all constraints for the model query rule %s."
         (Reference.show name)
-        (rule_name |> Option.map ~f:(Format.sprintf " `%s`") |> Option.value ~default:"");
+        rule_name;
     apply_attribute_productions ~productions
   end
   else
