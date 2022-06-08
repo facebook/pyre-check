@@ -795,6 +795,13 @@ let assert_updates
             Sexp.to_string_hum [%message (bodies : Statement.Define.t Node.t option)])
           expectation
           actual
+    | `GetDefineNames (qualifier, expected_number_of_names) ->
+        let printer number =
+          Format.sprintf "number of define names: %d (expected %d)" number expected_number_of_names
+        in
+        UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module read_only qualifier
+        |> List.length
+        |> assert_equal ~printer expected_number_of_names
   in
   List.iter middle_actions ~f:execute_action;
   if Option.is_some original_source then
@@ -2125,6 +2132,53 @@ let test_get_define_body context =
   ()
 
 
+let test_get_define_names context =
+  let assert_updates = assert_updates ~context ~expected_triggers:[] in
+  assert_updates
+    ~original_source:{|
+      def foo():
+        return 1
+    |}
+    ~middle_actions:[`GetDefineNames (!&"test", 2)]
+    ~new_source:{|
+      def foo():
+        return 5
+    |}
+    ~post_actions:[`GetDefineNames (!&"test", 2)]
+    ();
+  assert_updates
+    ~original_source:{|
+      def foo():
+        return 1
+    |}
+    ~middle_actions:[`GetDefineNames (!&"test", 2)]
+    ~new_source:{|
+      def foo():
+        return 1
+
+      def bar():
+        return 1
+    |}
+    ~post_actions:[`GetDefineNames (!&"test", 3)]
+    ();
+  assert_updates
+    ~original_source:{|
+      def foo():
+        return 1
+
+      def bar():
+        return 1
+    |}
+    ~middle_actions:[`GetDefineNames (!&"test", 3)]
+    ~new_source:{|
+      def foo():
+        return 1
+    |}
+    ~post_actions:[`GetDefineNames (!&"test", 2)]
+    ();
+  ()
+
+
 let () =
   "environment"
   >::: [
@@ -2134,11 +2188,12 @@ let () =
          "simple_globals" >:: test_simple_global_registration;
          "builtins" >:: test_builtin_modules;
          "resolve_exports" >:: test_resolve_exports;
-         (* Update tests *)
+         (* Tests of dependency tracking across an update *)
          "get_class_summary" >:: test_get_class_summary;
          "class_exists_and_all_classes" >:: test_class_exists_and_all_classes;
          "get_unannotated_global" >:: test_get_unannotated_global;
          "dependencies_and_new_values" >:: test_dependencies_and_new_values;
          "get_define_body" >:: test_get_define_body;
+         "get_define_names" >:: test_get_define_names;
        ]
   |> Test.run
