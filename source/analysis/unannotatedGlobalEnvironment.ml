@@ -46,7 +46,6 @@ module ReadOnly = struct
       ?dependency:DependencyKey.registered -> Reference.t -> UnannotatedGlobal.t option;
     get_function_definition:
       ?dependency:DependencyKey.registered -> Reference.t -> FunctionDefinition.t option;
-    get_define_body: ?dependency:DependencyKey.registered -> Reference.t -> Define.t Node.t option;
     get_module_metadata: ?dependency:DependencyKey.registered -> Reference.t -> Module.t option;
     module_exists: ?dependency:SharedMemoryKeys.DependencyKey.registered -> Reference.t -> bool;
   }
@@ -73,9 +72,12 @@ module ReadOnly = struct
 
   let get_function_definition { get_function_definition; _ } = get_function_definition
 
-  let get_define_body { get_define_body; _ } = get_define_body
-
   let get_unannotated_global { get_unannotated_global; _ } = get_unannotated_global
+
+  let get_define_body environment ?dependency name =
+    get_function_definition environment ?dependency name
+    >>= fun { FunctionDefinition.body; _ } -> body
+
 
   let primitive_name annotation =
     let primitive, _ = Type.split annotation in
@@ -867,9 +869,6 @@ module FromReadonlyUpstream = struct
     let get_class_summary = ClassSummaries.get class_summaries in
     let class_exists = ClassSummaries.mem class_summaries in
     let get_function_definition = FunctionDefinitions.get function_definitions in
-    let get_define_body ?dependency key =
-      get_function_definition ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
-    in
     let get_unannotated_global = UnannotatedGlobals.get unannotated_globals in
     let get_define_names ?dependency qualifier =
       DefineNames.get define_names ?dependency qualifier |> Option.value ~default:[]
@@ -896,7 +895,6 @@ module FromReadonlyUpstream = struct
       get_class_summary;
       class_exists;
       get_function_definition;
-      get_define_body;
       get_unannotated_global;
       get_define_names;
       all_classes;
