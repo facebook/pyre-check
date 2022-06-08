@@ -6985,21 +6985,23 @@ let check_function_definition
   result
 
 
-let run_on_define ~configuration ~environment ?call_graph_builder (name, dependency) =
-  let global_resolution =
-    let global_environment =
-      TypeEnvironment.global_environment environment |> AnnotatedGlobalEnvironment.read_only
-    in
-    GlobalResolution.create global_environment ?dependency
-  in
+let check_define_by_name ~configuration ~global_environment ?call_graph_builder (name, dependency) =
+  let global_resolution = GlobalResolution.create global_environment ?dependency in
   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
   let resolution = resolution global_resolution (module DummyContext) in
-  match GlobalResolution.function_definition global_resolution name with
+  GlobalResolution.function_definition global_resolution name
+  >>| check_function_definition ~configuration ~resolution ~name ?call_graph_builder
+
+
+let run_on_define ~configuration ~environment ?call_graph_builder (name, dependency) =
+  let global_environment =
+    TypeEnvironment.global_environment environment |> AnnotatedGlobalEnvironment.read_only
+  in
+  match
+    check_define_by_name ~configuration ~global_environment ?call_graph_builder (name, dependency)
+  with
   | None -> ()
-  | Some definition ->
-      let { CheckResult.errors; local_annotations } =
-        check_function_definition ~configuration ~resolution ~name ?call_graph_builder definition
-      in
+  | Some { CheckResult.errors; local_annotations } ->
       let () =
         if configuration.store_type_check_resolution then
           (* Write fixpoint type resolutions to shared memory *)
