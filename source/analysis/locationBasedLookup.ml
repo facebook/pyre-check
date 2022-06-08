@@ -705,3 +705,21 @@ let resolve_definition_for_symbol
 let location_of_definition ~type_environment ~module_reference position =
   let result = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
   result >>= resolve_definition_for_symbol ~type_environment ~module_reference
+
+
+type reason = TypeIsAny
+
+type coverage_data = {
+  expression: Expression.t;
+  type_: Type.t;
+}
+
+type coverage_gap = {
+  coverage_data: coverage_data;
+  reason: reason;
+}
+
+let classify_coverage_data { expression; type_ } =
+  match type_ with
+  | Any -> Some { coverage_data = { expression; type_ }; reason = TypeIsAny }
+  | _ -> None

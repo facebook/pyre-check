@@ -61,3 +61,17 @@ val location_of_definition
   module_reference:Reference.t ->
   Location.position ->
   Location.WithModule.t option
+
+type reason = TypeIsAny
+
+type coverage_data = {
+  expression: Expression.t;
+  type_: Type.t;
+}
+
+type coverage_gap = {
+  coverage_data: coverage_data;
+  reason: reason;
+}
+
+val classify_coverage_data : coverage_data -> coverage_gap option

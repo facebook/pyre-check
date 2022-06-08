@@ -1626,6 +1626,31 @@ let test_lookup_unknown_accesses context =
     ~annotation:(Some "3:4-3:28/typing.Any")
 
 
+let test_classify_coverage_data _ =
+  let make_coverage_data_record ~expression type_ =
+    let expression = parse_single_expression expression in
+    let type_ = Type.create ~aliases:Type.empty_aliases (parse_single_expression type_) in
+    { LocationBasedLookup.expression; type_ }
+  in
+  let make_coverage_gap_record ~coverage_data reason =
+    Some { LocationBasedLookup.coverage_data; reason }
+  in
+  let assert_coverage_gap ~expression ~type_ reason =
+    let coverage_data = make_coverage_data_record ~expression type_ in
+    let coverage_gap =
+      match reason with
+      | None -> None
+      | Some current_reason -> make_coverage_gap_record ~coverage_data current_reason
+    in
+    assert_equal coverage_gap (LocationBasedLookup.classify_coverage_data coverage_data)
+  in
+  assert_coverage_gap
+    ~expression:"print(x + 1)"
+    ~type_:"typing.Any"
+    (Some LocationBasedLookup.TypeIsAny);
+  assert_coverage_gap ~expression:"1" ~type_:"typing_extensions.Literal[1]" None
+
+
 let () =
   "lookup"
   >::: [
@@ -1645,5 +1670,6 @@ let () =
          "lookup_unbound" >:: test_lookup_unbound;
          "lookup_union_type_resolution" >:: test_lookup_union_type_resolution;
          "lookup_unknown_accesses" >:: test_lookup_unknown_accesses;
+         "classify_coverage_data" >:: test_classify_coverage_data;
        ]
   |> Test.run
