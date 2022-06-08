@@ -88,11 +88,6 @@ val compute_local_annotations
   Reference.t ->
   LocalAnnotationMap.ReadOnly.t option
 
-val get_or_recompute_local_annotations
-  :  environment:TypeEnvironment.ReadOnly.t ->
-  Reference.t ->
-  LocalAnnotationMap.ReadOnly.t option
-
 module CheckResult : sig
   type t = {
     errors: Error.t list;
@@ -106,19 +101,3 @@ val check_define_by_name
   ?call_graph_builder:(module Callgraph.Builder) ->
   Ast.Reference.t * SharedMemoryKeys.DependencyKey.registered option ->
   CheckResult.t option
-
-val run_on_defines
-  :  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  environment:TypeEnvironment.t ->
-  ?call_graph_builder:(module Callgraph.Builder) ->
-  (Ast.Reference.t * SharedMemoryKeys.DependencyKey.registered option) list ->
-  unit
-
-val legacy_run_on_modules
-  :  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
-  environment:TypeEnvironment.t ->
-  ?call_graph_builder:(module Callgraph.Builder) ->
-  Ast.Reference.t list ->
-  unit

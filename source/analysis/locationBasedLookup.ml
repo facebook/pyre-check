@@ -235,7 +235,7 @@ let create_of_module type_environment qualifier =
       ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
     =
     let resolved_type_lookup =
-      TypeCheck.get_or_recompute_local_annotations ~environment:type_environment name
+      TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment name
       |> function
       | Some resolved_type_lookup -> resolved_type_lookup
       | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
@@ -666,7 +666,7 @@ let resolve_definition_for_symbol
   let resolution =
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
     let resolved_type_lookup =
-      TypeCheck.get_or_recompute_local_annotations ~environment:type_environment define_name
+      TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment define_name
       |> function
       | Some resolved_type_lookup -> resolved_type_lookup
       | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only

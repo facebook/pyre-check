@@ -85,11 +85,11 @@ let check
     type_environment, project_qualifiers
   in
   let errors =
-    Analysis.TypeCheck.legacy_run_on_modules
+    Analysis.TypeEnvironment.populate_for_modules
       ~scheduler
       ~configuration
-      ~environment
       ~call_graph_builder
+      environment
       qualifiers;
     Analysis.Postprocessing.run
       ~scheduler

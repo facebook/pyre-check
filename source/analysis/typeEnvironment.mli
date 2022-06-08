@@ -28,6 +28,8 @@ module ReadOnly : sig
   val get_errors : t -> Reference.t -> Error.t list
 
   val get_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
+
+  val get_or_recompute_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
 end
 
 type t
@@ -53,6 +55,22 @@ val set_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t ->
 val invalidate : t -> Reference.t list -> unit
 
 val read_only : t -> ReadOnly.t
+
+val populate_for_definitions
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  ?call_graph_builder:(module Callgraph.Builder) ->
+  t ->
+  (Ast.Reference.t * SharedMemoryKeys.DependencyKey.registered option) list ->
+  unit
+
+val populate_for_modules
+  :  scheduler:Scheduler.t ->
+  configuration:Configuration.Analysis.t ->
+  ?call_graph_builder:(module Callgraph.Builder) ->
+  t ->
+  Ast.Reference.t list ->
+  unit
 
 val store : t -> unit
 

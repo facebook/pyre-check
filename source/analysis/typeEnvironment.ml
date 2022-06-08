@@ -36,6 +36,17 @@ module ReadOnly = struct
   let get_errors { get_errors; _ } = get_errors
 
   let get_local_annotations { get_local_annotations; _ } = get_local_annotations
+
+  let get_or_recompute_local_annotations environment name =
+    match get_local_annotations environment name with
+    | Some _ as local_annotations -> local_annotations
+    | None ->
+        (* Local annotations not preserved in shared memory in a standard pyre server (they can be,
+           via TypeEnvironment.LocalAnnotations, but to save memory we only populate this for pysa
+           runs, not the normal server used by LSP). This behavior is controlled by the
+           `store_type_check_resolution` flag. *)
+        let global_environment = global_environment environment in
+        TypeCheck.compute_local_annotations ~global_environment name
 end
 
 module AnalysisErrorValue = struct
@@ -116,6 +127,123 @@ let create configuration =
 let create_for_testing configuration source_path_code_pairs =
   AnnotatedGlobalEnvironment.create_for_testing configuration source_path_code_pairs
   |> from_global_environment
+
+
+let populate_for_definition ~configuration ~environment ?call_graph_builder (name, dependency) =
+  let global_environment = global_environment environment |> AnnotatedGlobalEnvironment.read_only in
+  match
+    TypeCheck.check_define_by_name
+      ~configuration
+      ~global_environment
+      ?call_graph_builder
+      (name, dependency)
+  with
+  | None -> ()
+  | Some { TypeCheck.CheckResult.errors; local_annotations } ->
+      let () =
+        if configuration.store_type_check_resolution then
+          (* Write fixpoint type resolutions to shared memory *)
+          let local_annotations =
+            match local_annotations with
+            | Some local_annotations -> local_annotations
+            | None -> LocalAnnotationMap.empty ()
+          in
+          set_local_annotations environment name (LocalAnnotationMap.read_only local_annotations)
+      in
+      let () =
+        if configuration.store_type_errors then
+          set_errors environment name errors
+      in
+      ()
+
+
+let populate_for_definitions ~scheduler ~configuration ?call_graph_builder environment defines =
+  let timer = Timer.start () in
+
+  let number_of_defines = List.length defines in
+  Log.info "Checking %d functions..." number_of_defines;
+  let map _ names =
+    let analyze_define number_defines define_name_and_dependency =
+      populate_for_definition
+        ~configuration
+        ~environment
+        ?call_graph_builder
+        define_name_and_dependency;
+      number_defines + 1
+    in
+    List.fold names ~init:0 ~f:analyze_define
+  in
+  let reduce left right =
+    let number_defines = left + right in
+    Log.log ~section:`Progress "Processed %d of %d functions" number_defines number_of_defines;
+    number_defines
+  in
+  let _ =
+    SharedMemoryKeys.DependencyKey.Registry.collected_map_reduce
+      scheduler
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_size
+           ~minimum_chunk_size:10
+           ~minimum_chunks_per_worker:2
+           ~preferred_chunk_size:1000
+           ())
+      ~initial:0
+      ~map
+      ~reduce
+      ~inputs:defines
+      ()
+  in
+
+  Statistics.performance ~name:"check_TypeCheck" ~phase_name:"Type check" ~timer ()
+
+
+let populate_for_modules ~scheduler ~configuration ?call_graph_builder environment qualifiers =
+  Profiling.track_shared_memory_usage ~name:"Before legacy type check" ();
+
+  let all_defines =
+    let unannotated_global_environment =
+      global_environment environment
+      |> AnnotatedGlobalEnvironment.read_only
+      |> AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment
+    in
+    let map _ qualifiers =
+      List.concat_map qualifiers ~f:(fun qualifier ->
+          UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+            unannotated_global_environment
+            qualifier)
+    in
+    Scheduler.map_reduce
+      scheduler
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:100
+           ~preferred_chunks_per_worker:5
+           ())
+      ~initial:[]
+      ~map
+      ~reduce:List.append
+      ~inputs:qualifiers
+      ()
+  in
+  let all_defines =
+    match configuration with
+    | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
+        List.map all_defines ~f:(fun define ->
+            ( define,
+              Some
+                (SharedMemoryKeys.DependencyKey.Registry.register
+                   (SharedMemoryKeys.TypeCheckDefine define)) ))
+    | _ -> List.map all_defines ~f:(fun define -> define, None)
+  in
+
+  populate_for_definitions ~scheduler ~configuration ?call_graph_builder environment all_defines;
+  Statistics.event
+    ~section:`Memory
+    ~name:"shared memory size post-typecheck"
+    ~integers:["size", Memory.heap_size ()]
+    ();
+  Profiling.track_shared_memory_usage ~name:"After legacy type check" ()
 
 
 let read_only { global_environment; get_errors; get_local_annotations; _ } =

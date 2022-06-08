@@ -72,7 +72,7 @@ let recheck ~configuration ~scheduler ~environment ~errors artifact_paths =
   TypeEnvironment.invalidate environment recheck_function_names;
   recheck_functions_list
   |> List.map ~f:(fun (define, registered) -> define, Some registered)
-  |> TypeCheck.run_on_defines ~scheduler ~configuration ~environment;
+  |> TypeEnvironment.populate_for_definitions ~scheduler ~configuration environment;
 
   (* Rerun postprocessing for triggered modules. *)
   let recheck_modules =

@@ -2845,11 +2845,11 @@ module ScratchProject = struct
     let sources = get_project_sources project in
     let configuration = configuration_of project in
     List.map sources ~f:(fun { Source.source_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
-    |> TypeCheck.legacy_run_on_modules
+    |> TypeEnvironment.populate_for_modules
          ~scheduler:(Scheduler.create_sequential ())
          ~configuration
-         ~environment:type_environment
-         ?call_graph_builder;
+         ?call_graph_builder
+         type_environment;
     { BuiltTypeEnvironment.sources; type_environment = TypeEnvironment.read_only type_environment }
 
 
