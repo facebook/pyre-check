@@ -8,15 +8,21 @@
 open Core
 open Pyre
 
-type t = {
-  relative: string;
-  qualifier: Reference.t;
-  priority: int;
-  is_stub: bool;
-  is_external: bool;
-  is_init: bool;
-}
-[@@deriving compare, hash, sexp]
+module T = struct
+  type t = {
+    relative: string;
+    qualifier: Reference.t;
+    priority: int;
+    is_stub: bool;
+    is_external: bool;
+    is_init: bool;
+  }
+  [@@deriving compare, hash, sexp]
+end
+
+include Hashable.Make (T)
+module Map = Map.Make (T)
+include T
 
 let equal = [%compare.equal: t]
 

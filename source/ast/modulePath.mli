@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Core
+
 type t = private {
   relative: string;
   qualifier: Reference.t;
@@ -14,6 +16,10 @@ type t = private {
   is_init: bool;
 }
 [@@deriving compare, eq, hash, sexp]
+
+include Hashable with type t := t
+
+module Map : Map.S with type Key.t = t
 
 val pp : Format.formatter -> t -> unit
 
