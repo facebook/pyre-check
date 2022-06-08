@@ -6834,41 +6834,46 @@ let exit_state ~resolution (module Context : Context) =
     errors, Some local_annotations, Some callees)
 
 
+let compute_local_annotations ~global_environment name =
+  let global_resolution = GlobalResolution.create global_environment in
+  match GlobalResolution.define_body global_resolution name with
+  | None -> None
+  | Some define_node ->
+      let _, local_annotations, _ =
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        let resolution = resolution global_resolution (module DummyContext) in
+        let module Context = struct
+          (* Doesn't matter what the qualifier is since we won't be using it *)
+          let qualifier = Reference.empty
+
+          let debug = false
+
+          let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
+
+          let define = define_node
+
+          let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+
+          let error_map = Some (LocalErrorMap.empty ())
+
+          module Builder = Callgraph.NullBuilder
+        end
+        in
+        exit_state ~resolution (module Context)
+      in
+      local_annotations >>| LocalAnnotationMap.read_only
+
+
 let get_or_recompute_local_annotations ~environment name =
   match TypeEnvironment.ReadOnly.get_local_annotations environment name with
   | Some _ as local_annotations -> local_annotations
-  | None -> (
+  | None ->
       (* Local annotations not preserved in shared memory in a standard pyre server (they can be,
          via TypeEnvironment.LocalAnnotations, but to save memory we only populate this for pysa
          runs, not the normal server used by LSP). This behavior is controlled by the
          `store_type_check_resolution` flag. *)
-      let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-      match GlobalResolution.define_body global_resolution name with
-      | None -> None
-      | Some define_node ->
-          let _, local_annotations, _ =
-            (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-            let resolution = resolution global_resolution (module DummyContext) in
-            let module Context = struct
-              (* Doesn't matter what the qualifier is since we won't be using it *)
-              let qualifier = Reference.empty
-
-              let debug = false
-
-              let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
-
-              let define = define_node
-
-              let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
-
-              let error_map = Some (LocalErrorMap.empty ())
-
-              module Builder = Callgraph.NullBuilder
-            end
-            in
-            exit_state ~resolution (module Context)
-          in
-          local_annotations >>| LocalAnnotationMap.read_only)
+      let global_environment = TypeEnvironment.ReadOnly.global_environment environment in
+      compute_local_annotations ~global_environment name
 
 
 let check_define
