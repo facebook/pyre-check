@@ -4,6 +4,17 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+r"""
+Run an integration test of the pyre server's incremental update logic.
+
+You can run this from the pyre-check repository root as follows:
+```
+python3 scripts/run_server_integration_test.py \
+    --typeshed-zip-path stubs/typeshed/typeshed.zip \
+    source/command/test/integration/fake_repository/
+```
+"""
+
 # pyre-unsafe
 
 import argparse
