@@ -109,3 +109,25 @@
     ]
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sources.string_source_not_top_level",
+    "sources": [
+      {
+        "port": "result[key]",
+        "taint": [
+          {
+            "kinds": [ { "kind": "GoogleAPIKey" } ],
+            "root": {
+              "filename": "implicit_sources.py",
+              "line": 46,
+              "start": 21,
+              "end": 62
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

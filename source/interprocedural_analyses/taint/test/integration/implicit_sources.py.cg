@@ -1,5 +1,7 @@
 @generated
 Call dependencies
+implicit_sources.string_source_not_top_level (fun) -> []
+implicit_sources.string_source_top_level (fun) -> []
 implicit_sources.$toplevel (fun) -> []
 implicit_sources.bar_dot_format (fun) -> [str::format (method)]
 implicit_sources.bar_format_strings (fun) -> [int::__str__ (method)]
