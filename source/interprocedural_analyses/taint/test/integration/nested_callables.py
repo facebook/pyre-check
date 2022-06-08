@@ -57,3 +57,15 @@ def duplicate_function():
 
 def duplicate_function():
     foo()
+
+
+g = None
+
+
+def nested_global_function(x: str) -> str:
+    global g
+
+    def g(x: str, y: str) -> str:
+        return x + y
+
+    return g("/bin/bash", x)

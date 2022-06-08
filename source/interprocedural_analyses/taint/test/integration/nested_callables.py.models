@@ -453,6 +453,70 @@
 {
   "kind": "model",
   "data": {
+    "callable": "nested_callables.g",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 69, "start": 19, "end": 20 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 69, "start": 15, "end": 16 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.nested_global_function",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 71, "start": 26, "end": 27 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "nested_callables.outer",
     "sinks": [
       {

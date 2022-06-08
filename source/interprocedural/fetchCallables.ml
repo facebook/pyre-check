@@ -58,15 +58,18 @@ let gather_raw_callables ~resolution ~source:{ Source.source_path = { ModulePath
         (Target.get_definitions ~resolution define_name)
     in
     if not (Reference.equal qualifier define_qualifier) then
-      Format.asprintf
-        "Unexpected callable `%a` present in multiple qualifiers: `%a` and `%a`"
-        Reference.pp
-        define_name
-        Reference.pp
-        qualifier
-        Reference.pp
-        define_qualifier
-      |> failwith
+      let () =
+        Log.warning
+          "Function `%a` present in multiple qualifiers: `%a` and `%a`. This function will NOT be \
+           analyzed"
+          Reference.pp
+          define_name
+          Reference.pp
+          qualifier
+          Reference.pp
+          define_qualifier
+      in
+      None
     else
       let () =
         if has_multiple_definitions then
@@ -76,7 +79,7 @@ let gather_raw_callables ~resolution ~source:{ Source.source_path = { ModulePath
             Reference.pp
             define_name
       in
-      callables
+      Some callables
   in
   let merge_callables callables_left callables_right =
     Target.Map.merge callables_left callables_right ~f:(fun ~key:target value ->
@@ -101,7 +104,7 @@ let gather_raw_callables ~resolution ~source:{ Source.source_path = { ModulePath
   |> Reference.Set.of_list
   |> Reference.Set.elements
   |> List.filter ~f:filter_parameters
-  |> List.map ~f:fetch_callables
+  |> List.filter_map ~f:fetch_callables
   |> List.fold ~init:Target.Map.empty ~f:merge_callables
 
 
