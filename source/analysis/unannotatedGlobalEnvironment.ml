@@ -39,7 +39,6 @@ module ReadOnly = struct
     all_classes: unit -> Type.Primitive.t list;
     all_indices: unit -> IndexTracker.t list;
     all_unannotated_globals: unit -> Reference.t list;
-    all_defines: unit -> Reference.t list;
     all_defines_in_module: Reference.t -> Reference.t list;
     get_class_summary:
       ?dependency:DependencyKey.registered -> string -> ClassSummary.t Node.t option;
@@ -59,8 +58,6 @@ module ReadOnly = struct
   let all_classes { all_classes; _ } = all_classes ()
 
   let all_indices { all_indices; _ } = all_indices ()
-
-  let all_defines { all_defines; _ } = all_defines ()
 
   let all_unannotated_globals { all_unannotated_globals; _ } = all_unannotated_globals ()
 
@@ -891,10 +888,6 @@ module FromReadonlyUpstream = struct
       AstEnvironment.ReadOnly.all_explicit_modules ast_environment
       |> KeyTracker.get_unannotated_global_keys key_tracker
     in
-    let all_defines () =
-      AstEnvironment.ReadOnly.all_explicit_modules ast_environment
-      |> KeyTracker.get_define_keys key_tracker
-    in
     {
       ReadOnly.ast_environment;
       get_module_metadata;
@@ -907,7 +900,6 @@ module FromReadonlyUpstream = struct
       all_defines_in_module;
       all_classes;
       all_indices;
-      all_defines;
       all_unannotated_globals;
     }
 
