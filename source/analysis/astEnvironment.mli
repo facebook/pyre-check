@@ -27,7 +27,11 @@ module ReadOnly : sig
 
   val configuration : t -> Configuration.Analysis.t
 
-  val get_raw_source : t -> Reference.t -> (Source.t, ParserError.t) Result.t option
+  val get_raw_source
+    :  t ->
+    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
+    Reference.t ->
+    (Source.t, ParserError.t) Result.t option
 
   val module_tracker : t -> ModuleTracker.ReadOnly.t
 

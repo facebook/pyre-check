@@ -225,10 +225,6 @@ module ReadOnly = struct
         None
     in
     get_and_preprocess_source ?dependency environment qualifier
-
-
-  (* Hide the ?dependency optional argument, which is only for internal use *)
-  let get_raw_source environment qualifier = get_raw_source environment qualifier
 end
 
 module UpdateResult = struct
