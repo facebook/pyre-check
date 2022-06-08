@@ -6042,10 +6042,6 @@ module CheckResult = struct
     errors: Error.t list;
     local_annotations: LocalAnnotationMap.t option;
   }
-
-  let aggregate_errors results =
-    List.fold results ~init:[] ~f:(fun errors_sofar { errors; _ } ->
-        List.append errors errors_sofar)
 end
 
 module DummyContext = struct
@@ -6957,11 +6953,14 @@ let check_function_definition
   let sibling_bodies = List.map siblings ~f:(fun { FunctionDefinition.Sibling.body; _ } -> body) in
   let sibling_results = List.map sibling_bodies ~f:(fun define_node -> check_define define_node) in
   let result =
-    let open CheckResult in
+    let aggregate_errors results =
+      List.fold results ~init:[] ~f:(fun errors_sofar { CheckResult.errors; _ } ->
+          List.append errors errors_sofar)
+    in
     match body with
-    | None -> { errors = aggregate_errors sibling_results; local_annotations = None }
+    | None -> { CheckResult.errors = aggregate_errors sibling_results; local_annotations = None }
     | Some define_node ->
-        let ({ local_annotations; _ } as body_result) = check_define define_node in
+        let ({ CheckResult.local_annotations; _ } as body_result) = check_define define_node in
         { errors = aggregate_errors (body_result :: sibling_results); local_annotations }
   in
 

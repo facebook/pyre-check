@@ -75,11 +75,6 @@ val resolution
   (module Context) ->
   Resolution.t
 
-val get_or_recompute_local_annotations
-  :  environment:TypeEnvironment.ReadOnly.t ->
-  Reference.t ->
-  LocalAnnotationMap.ReadOnly.t option
-
 val resolution_with_key
   :  global_resolution:GlobalResolution.t ->
   local_annotations:LocalAnnotationMap.ReadOnly.t option ->
@@ -87,6 +82,30 @@ val resolution_with_key
   statement_key:int ->
   (module Context) ->
   Resolution.t
+
+val compute_local_annotations
+  :  global_environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
+  Reference.t ->
+  LocalAnnotationMap.ReadOnly.t option
+
+val get_or_recompute_local_annotations
+  :  environment:TypeEnvironment.ReadOnly.t ->
+  Reference.t ->
+  LocalAnnotationMap.ReadOnly.t option
+
+module CheckResult : sig
+  type t = {
+    errors: Error.t list;
+    local_annotations: LocalAnnotationMap.t option;
+  }
+end
+
+val check_define_by_name
+  :  configuration:Configuration.Analysis.t ->
+  global_environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
+  ?call_graph_builder:(module Callgraph.Builder) ->
+  Ast.Reference.t * SharedMemoryKeys.DependencyKey.registered option ->
+  CheckResult.t option
 
 val run_on_defines
   :  scheduler:Scheduler.t ->
