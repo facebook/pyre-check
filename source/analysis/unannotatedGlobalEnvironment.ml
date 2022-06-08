@@ -39,7 +39,7 @@ module ReadOnly = struct
     all_classes: unit -> Type.Primitive.t list;
     all_indices: unit -> IndexTracker.t list;
     all_unannotated_globals: unit -> Reference.t list;
-    all_defines_in_module: Reference.t -> Reference.t list;
+    get_define_names: ?dependency:DependencyKey.registered -> Reference.t -> Reference.t list;
     get_class_summary:
       ?dependency:DependencyKey.registered -> string -> ClassSummary.t Node.t option;
     get_unannotated_global:
@@ -61,7 +61,7 @@ module ReadOnly = struct
 
   let all_unannotated_globals { all_unannotated_globals; _ } = all_unannotated_globals ()
 
-  let all_defines_in_module { all_defines_in_module; _ } = all_defines_in_module
+  let get_define_names { get_define_names; _ } = get_define_names
 
   let get_module_metadata { get_module_metadata; _ } = get_module_metadata
 
@@ -871,8 +871,9 @@ module FromReadonlyUpstream = struct
       get_function_definition ?dependency key >>= fun { FunctionDefinition.body; _ } -> body
     in
     let get_unannotated_global = UnannotatedGlobals.get unannotated_globals in
-    let get_define_names = DefineNames.get define_names in
-    let all_defines_in_module qualifier = get_define_names qualifier |> Option.value ~default:[] in
+    let get_define_names ?dependency qualifier =
+      DefineNames.get define_names ?dependency qualifier |> Option.value ~default:[]
+    in
     (* Define the bulk key reads - these tell us what's been loaded thus far *)
     let all_classes () =
       AstEnvironment.ReadOnly.all_explicit_modules ast_environment
@@ -897,7 +898,7 @@ module FromReadonlyUpstream = struct
       get_function_definition;
       get_define_body;
       get_unannotated_global;
-      all_defines_in_module;
+      get_define_names;
       all_classes;
       all_indices;
       all_unannotated_globals;

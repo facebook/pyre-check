@@ -205,7 +205,7 @@ let run ~scheduler ~configuration ~environment sources =
           []
       | Some (Result.Ok source) ->
           let errors_by_define =
-            UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+            UnannotatedGlobalEnvironment.ReadOnly.get_define_names
               unannotated_global_environment
               module_name
             |> List.map ~f:(TypeEnvironment.ReadOnly.get_errors environment)

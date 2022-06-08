@@ -48,7 +48,7 @@ let test_define_registration context =
       ScratchProject.global_environment project
       |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
     in
-    let actual = UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module read_only !&"test" in
+    let actual = UnannotatedGlobalEnvironment.ReadOnly.get_define_names read_only !&"test" in
     let expected = List.sort expected ~compare:Reference.compare in
     assert_equal
       ~cmp:(List.equal Reference.equal)
@@ -795,11 +795,11 @@ let assert_updates
             Sexp.to_string_hum [%message (bodies : Statement.Define.t Node.t option)])
           expectation
           actual
-    | `GetDefineNames (qualifier, expected_number_of_names) ->
+    | `GetDefineNames (qualifier, dependency, expected_number_of_names) ->
         let printer number =
           Format.sprintf "number of define names: %d (expected %d)" number expected_number_of_names
         in
-        UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module read_only qualifier
+        UnannotatedGlobalEnvironment.ReadOnly.get_define_names read_only ~dependency qualifier
         |> List.length
         |> assert_equal ~printer expected_number_of_names
   in
@@ -2133,25 +2133,27 @@ let test_get_define_body context =
 
 
 let test_get_define_names context =
-  let assert_updates = assert_updates ~context ~expected_triggers:[] in
+  let assert_updates = assert_updates ~context in
+  let dependency = alias_dependency in
   assert_updates
     ~original_source:{|
       def foo():
         return 1
     |}
-    ~middle_actions:[`GetDefineNames (!&"test", 2)]
+    ~middle_actions:[`GetDefineNames (!&"test", dependency, 2)]
     ~new_source:{|
       def foo():
         return 5
     |}
-    ~post_actions:[`GetDefineNames (!&"test", 2)]
+    ~expected_triggers:[]
+    ~post_actions:[`GetDefineNames (!&"test", dependency, 2)]
     ();
   assert_updates
     ~original_source:{|
       def foo():
         return 1
     |}
-    ~middle_actions:[`GetDefineNames (!&"test", 2)]
+    ~middle_actions:[`GetDefineNames (!&"test", dependency, 2)]
     ~new_source:{|
       def foo():
         return 1
@@ -2159,7 +2161,8 @@ let test_get_define_names context =
       def bar():
         return 1
     |}
-    ~post_actions:[`GetDefineNames (!&"test", 3)]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`GetDefineNames (!&"test", dependency, 3)]
     ();
   assert_updates
     ~original_source:{|
@@ -2169,12 +2172,13 @@ let test_get_define_names context =
       def bar():
         return 1
     |}
-    ~middle_actions:[`GetDefineNames (!&"test", 3)]
+    ~middle_actions:[`GetDefineNames (!&"test", dependency, 3)]
     ~new_source:{|
       def foo():
         return 1
     |}
-    ~post_actions:[`GetDefineNames (!&"test", 2)]
+    ~expected_triggers:[dependency]
+    ~post_actions:[`GetDefineNames (!&"test", dependency, 2)]
     ();
   ()
 

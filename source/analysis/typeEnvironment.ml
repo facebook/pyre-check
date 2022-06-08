@@ -208,7 +208,7 @@ let populate_for_modules ~scheduler ~configuration ?call_graph_builder environme
     in
     let map _ qualifiers =
       List.concat_map qualifiers ~f:(fun qualifier ->
-          UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+          UnannotatedGlobalEnvironment.ReadOnly.get_define_names
             unannotated_global_environment
             qualifier)
     in

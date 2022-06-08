@@ -100,7 +100,7 @@ let gather_raw_callables ~resolution ~source:{ Source.source_path = { ModulePath
   in
   GlobalResolution.unannotated_global_environment resolution
   |> (fun environment ->
-       Analysis.UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module environment qualifier)
+       Analysis.UnannotatedGlobalEnvironment.ReadOnly.get_define_names environment qualifier)
   |> Reference.Set.of_list
   |> Reference.Set.elements
   |> List.filter ~f:filter_parameters

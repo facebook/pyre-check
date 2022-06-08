@@ -284,17 +284,15 @@ let create_of_module type_environment qualifier =
     in
     walk_statement Cfg.entry_index 0 define_signature
   in
-  let all_defines =
+  let define_names =
     let unannotated_global_environment =
       GlobalResolution.unannotated_global_environment global_resolution
     in
-    UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
-      unannotated_global_environment
-      qualifier
+    UnannotatedGlobalEnvironment.ReadOnly.get_define_names unannotated_global_environment qualifier
     |> List.filter_map
          ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment)
   in
-  List.iter all_defines ~f:walk_define;
+  List.iter define_names ~f:walk_define;
   resolved_types_lookup
 
 
@@ -557,7 +555,7 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
     let unannotated_global_environment =
       GlobalResolution.unannotated_global_environment global_resolution
     in
-    UnannotatedGlobalEnvironment.ReadOnly.all_defines_in_module
+    UnannotatedGlobalEnvironment.ReadOnly.get_define_names
       unannotated_global_environment
       module_reference
     |> List.filter_map

@@ -51,8 +51,6 @@ module ReadOnly : sig
 
   val all_unannotated_globals : t -> Reference.t list
 
-  val all_defines_in_module : t -> Reference.t -> Reference.t list
-
   (* All other functions are dependency tracked *)
 
   val get_module_metadata
@@ -60,6 +58,12 @@ module ReadOnly : sig
     ?dependency:DependencyKey.registered ->
     Reference.t ->
     Module.t option
+
+  val get_define_names
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    Reference.t ->
+    Reference.t list
 
   val get_class_summary
     :  t ->
