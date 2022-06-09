@@ -48,6 +48,7 @@ class Configuration:
         self.ignore_all_errors: Optional[List[str]] = json_contents.get(
             "ignore_all_errors"
         )
+        self.use_buck2: Optional[bool] = json_contents.get("use_buck2")
 
     def get_contents(self) -> Dict[str, Any]:
         """Assumption: The field names in this class match the key names in
@@ -68,6 +69,7 @@ class Configuration:
         update_contents("strict")
         update_contents("use_buck_builder")
         update_contents("use_buck_source_database")
+        update_contents("use_buck2")
         return contents
 
     @staticmethod
@@ -159,6 +161,10 @@ class Configuration:
     def enable_source_database_buck_builder(self) -> None:
         self.use_buck_builder = True
         self.use_buck_source_database = True
+
+    def set_use_buck1_if_possible(self) -> None:
+        if self.use_buck2 is None:
+            self.use_buck2 = False
 
     def add_strict(self) -> None:
         if self.strict:
