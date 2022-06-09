@@ -140,20 +140,16 @@ let populate_for_definition ~configuration ~environment ?call_graph_builder (nam
   with
   | None -> ()
   | Some { TypeCheck.CheckResult.errors; local_annotations } ->
-      let () =
-        if configuration.store_type_check_resolution then
-          (* Write fixpoint type resolutions to shared memory *)
-          let local_annotations =
-            match local_annotations with
-            | Some local_annotations -> local_annotations
-            | None -> LocalAnnotationMap.empty ()
-          in
-          set_local_annotations environment name (LocalAnnotationMap.read_only local_annotations)
-      in
-      let () =
-        if configuration.store_type_errors then
-          set_errors environment name errors
-      in
+      (if configuration.store_type_check_resolution then
+         (* Write fixpoint type resolutions to shared memory *)
+         let local_annotations =
+           match local_annotations with
+           | Some local_annotations -> local_annotations
+           | None -> LocalAnnotationMap.empty ()
+         in
+         set_local_annotations environment name (LocalAnnotationMap.read_only local_annotations));
+      if configuration.store_type_errors then
+        set_errors environment name errors;
       ()
 
 
