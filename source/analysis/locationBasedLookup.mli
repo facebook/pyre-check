@@ -62,7 +62,9 @@ val location_of_definition
   Location.position ->
   Location.WithModule.t option
 
-type reason = TypeIsAny
+type reason =
+  | TypeIsAny
+  | ContainerParameterIsAny
 
 type coverage_data = {
   expression: Expression.t;

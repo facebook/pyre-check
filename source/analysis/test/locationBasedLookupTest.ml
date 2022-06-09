@@ -1648,7 +1648,24 @@ let test_classify_coverage_data _ =
     ~expression:"print(x + 1)"
     ~type_:"typing.Any"
     (Some LocationBasedLookup.TypeIsAny);
-  assert_coverage_gap ~expression:"1" ~type_:"typing_extensions.Literal[1]" None
+  assert_coverage_gap ~expression:"1" ~type_:"typing_extensions.Literal[1]" None;
+  assert_coverage_gap
+    ~expression:"x"
+    ~type_:"typing.List[typing.Any]"
+    (Some LocationBasedLookup.ContainerParameterIsAny);
+  assert_coverage_gap ~expression:"x" ~type_:"typing.List[float]" None;
+  assert_coverage_gap
+    ~expression:"x"
+    ~type_:"typing.Set[typing.Any]"
+    (Some LocationBasedLookup.ContainerParameterIsAny);
+  assert_coverage_gap ~expression:"x" ~type_:"typing.Set[int]" None;
+  assert_coverage_gap
+    ~expression:"x"
+    ~type_:"typing.Dict[typing.Any, typing.Any]"
+    (Some LocationBasedLookup.ContainerParameterIsAny);
+  assert_coverage_gap ~expression:"x" ~type_:"typing.Dict[str, typing.Any]" None;
+  assert_coverage_gap ~expression:"Foo[Any]" ~type_:"Foo[Any]" None;
+  ()
 
 
 let () =

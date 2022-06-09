@@ -705,7 +705,9 @@ let location_of_definition ~type_environment ~module_reference position =
   result >>= resolve_definition_for_symbol ~type_environment ~module_reference
 
 
-type reason = TypeIsAny
+type reason =
+  | TypeIsAny
+  | ContainerParameterIsAny
 
 type coverage_data = {
   expression: Expression.t;
@@ -718,6 +720,10 @@ type coverage_gap = {
 }
 
 let classify_coverage_data { expression; type_ } =
+  let make_coverage_gap reason = Some { coverage_data = { expression; type_ }; reason } in
   match type_ with
-  | Any -> Some { coverage_data = { expression; type_ }; reason = TypeIsAny }
+  | Any -> make_coverage_gap TypeIsAny
+  | Parametric { name = "list" | "set"; parameters = [Single Any] }
+  | Parametric { name = "dict"; parameters = [Single Any; Single Any] } ->
+      make_coverage_gap ContainerParameterIsAny
   | _ -> None
