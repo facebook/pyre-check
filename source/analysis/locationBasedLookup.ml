@@ -11,6 +11,12 @@ open Ast
 open Expression
 open Statement
 
+type coverage_data = {
+  expression: Expression.t;
+  type_: Type.t;
+}
+[@@deriving compare, sexp, show, hash]
+
 type resolved_type_lookup = Type.t Location.Table.t
 
 (** This visitor stores the resolved type formation for an expression on the key of its location.
@@ -708,16 +714,14 @@ let location_of_definition ~type_environment ~module_reference position =
 type reason =
   | TypeIsAny
   | ContainerParameterIsAny
-
-type coverage_data = {
-  expression: Expression.t;
-  type_: Type.t;
-}
+  | CallableParameterIsUnknownOrAny
+[@@deriving compare, sexp, show, hash]
 
 type coverage_gap = {
   coverage_data: coverage_data;
   reason: reason;
 }
+[@@deriving compare, sexp, show, hash]
 
 let classify_coverage_data { expression; type_ } =
   let make_coverage_gap reason = Some { coverage_data = { expression; type_ }; reason } in
@@ -726,4 +730,14 @@ let classify_coverage_data { expression; type_ } =
   | Parametric { name = "list" | "set"; parameters = [Single Any] }
   | Parametric { name = "dict"; parameters = [Single Any; Single Any] } ->
       make_coverage_gap ContainerParameterIsAny
+  | Callable { implementation = { parameters = Defined parameter_list; _ }; _ } ->
+      let parameter_is_top_or_any = function
+        | Type.Callable.Parameter.Named { annotation = Type.Any | Type.Top; _ } -> true
+        | _ -> false
+      in
+      let all_parameters_are_top_or_any = List.for_all ~f:parameter_is_top_or_any parameter_list in
+      if all_parameters_are_top_or_any then
+        make_coverage_gap CallableParameterIsUnknownOrAny
+      else
+        None
   | _ -> None
