@@ -13,7 +13,6 @@ from logging import Logger
 from . import UserError
 from .ast import UnstableAST
 from .commands.codemods import (
-    EnableSourceDatabaseBuckBuilder,
     MissingGlobalAnnotations,
     MissingOverrideReturnAnnotations,
     SetUseBuck1,
@@ -102,11 +101,6 @@ def run(repository: Repository) -> None:
     # Subcommand: Attempt remediation on broken configuration.
     fix_configuration = commands.add_parser("fix-configuration")
     FixConfiguration.add_arguments(fix_configuration)
-
-    enable_source_database_buck_builder = commands.add_parser(
-        "enable-source-database-buck-builder"
-    )
-    EnableSourceDatabaseBuckBuilder.add_arguments(enable_source_database_buck_builder)
 
     set_use_buck1 = commands.add_parser("set-use-buck1")
     SetUseBuck1.add_arguments(set_use_buck1)
