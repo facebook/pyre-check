@@ -37,7 +37,60 @@ let lookup_exn tracker reference =
       assert_failure message
 
 
+let touch root relative = touch (PyrePath.create_relative ~root ~relative)
+
+let create_test_configuration context =
+  (* SETUP:
+   * local_root/a.py
+   * local_root/b.py
+   * local_root/c.py
+   * local_root/c.pyi
+   * local_root/d.py
+   * local_root/d/__init__.py
+   * local_root/e.py
+   * external_root/a.py
+   * external_root/b.pyi
+   * external_root/b/__init__.py
+   * external_root/c.py
+   * external_root/c.pyi *)
+  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
+  let external_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let local_d_path = PyrePath.absolute local_root ^ "/d" in
+  let external_b_path = PyrePath.absolute external_root ^ "/b" in
+  Sys_utils.mkdir_no_fail local_d_path;
+  Sys_utils.mkdir_no_fail external_b_path;
+  List.iter ~f:(touch local_root) ["a.py"; "b.py"; "c.py"; "c.pyi"; "d.py"; "e.py"];
+  let () =
+    let path = local_d_path |> PyrePath.create_absolute ~follow_symbolic_links:true in
+    touch path "__init__.py"
+  in
+  List.iter ~f:(touch external_root) ["a.py"; "b.pyi"; "c.py"; "c.pyi"];
+  let () =
+    let path = external_b_path |> PyrePath.create_absolute ~follow_symbolic_links:true in
+    touch path "__init__.py"
+  in
+  let configuration =
+    Configuration.Analysis.create
+      ~local_root
+      ~source_paths:[SearchPath.Root local_root]
+      ~excludes:[".*/thereisnospoon.py"]
+      ~search_paths:[SearchPath.Root external_root]
+      ~filter_directories:[local_root]
+      ~extensions:
+        (List.map
+           ~f:Configuration.Extension.create_extension
+           [".first"; ".second"; ".third"; ".special$include_suffix_in_module_qualifier"])
+      ()
+  in
+  configuration, external_root
+
+
 let test_creation context =
+  let ({ Configuration.Analysis.local_root; _ } as configuration), external_root =
+    create_test_configuration context
+  in
   let assert_create_fail ~configuration root relative =
     match create_source_path ~configuration root relative with
     | None -> ()
@@ -96,54 +149,7 @@ let test_creation context =
     in
     assert_bool message (compare_result > 0)
   in
-  let touch root relative = touch (PyrePath.create_relative ~root ~relative) in
   let test_basic () =
-    (* SETUP:
-     * local_root/a.py
-     * local_root/b.py
-     * local_root/c.py
-     * local_root/c.pyi
-     * local_root/d.py
-     * local_root/d/__init__.py
-     * local_root/e.py
-     * external_root/a.py
-     * external_root/b.pyi
-     * external_root/b/__init__.py
-     * external_root/c.py
-     * external_root/c.pyi *)
-    let local_root =
-      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-    in
-    let external_root =
-      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-    in
-    let local_d_path = PyrePath.absolute local_root ^ "/d" in
-    let external_b_path = PyrePath.absolute external_root ^ "/b" in
-    Sys_utils.mkdir_no_fail local_d_path;
-    Sys_utils.mkdir_no_fail external_b_path;
-    List.iter ~f:(touch local_root) ["a.py"; "b.py"; "c.py"; "c.pyi"; "d.py"; "e.py"];
-    let () =
-      let path = local_d_path |> PyrePath.create_absolute ~follow_symbolic_links:true in
-      touch path "__init__.py"
-    in
-    List.iter ~f:(touch external_root) ["a.py"; "b.pyi"; "c.py"; "c.pyi"];
-    let () =
-      let path = external_b_path |> PyrePath.create_absolute ~follow_symbolic_links:true in
-      touch path "__init__.py"
-    in
-    let configuration =
-      Configuration.Analysis.create
-        ~local_root
-        ~source_paths:[SearchPath.Root local_root]
-        ~excludes:[".*/thereisnospoon.py"]
-        ~search_paths:[SearchPath.Root external_root]
-        ~filter_directories:[local_root]
-        ~extensions:
-          (List.map
-             ~f:Configuration.Extension.create_extension
-             [".first"; ".second"; ".third"; ".special$include_suffix_in_module_qualifier"])
-        ()
-    in
     let create_exn = create_source_path_exn ~configuration in
     let assert_source_path = assert_source_path ~configuration in
     let assert_same_module_greater = assert_same_module_greater ~configuration in
