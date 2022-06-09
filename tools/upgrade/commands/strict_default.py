@@ -66,8 +66,6 @@ class StrictDefault(ErrorSuppressingCommand):
         )
 
     @classmethod
-    # pyre-fixme[40]: Non-static method `add_arguments` cannot override a static
-    #  method defined in `ErrorSuppressingCommand`.
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
         super(StrictDefault, cls).add_arguments(parser)
         parser.set_defaults(command=cls.from_arguments)

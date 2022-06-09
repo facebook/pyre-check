@@ -57,8 +57,8 @@ class Command:
     def __init__(self, repository: Repository) -> None:
         self._repository: Repository = repository
 
-    @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
         pass
 
     def run(self) -> None:
@@ -82,8 +82,8 @@ class ErrorSuppressingCommand(Command):
         self._no_commit: bool = command_arguments.no_commit
         self._should_clean: bool = command_arguments.should_clean
 
-    @staticmethod
-    def add_arguments(parser: argparse.ArgumentParser) -> None:
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
         super(ErrorSuppressingCommand, ErrorSuppressingCommand).add_arguments(parser)
         parser.add_argument("--comment", help="Custom comment after fixme comments")
         parser.add_argument(

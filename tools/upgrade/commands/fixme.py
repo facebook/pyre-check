@@ -42,8 +42,6 @@ class Fixme(ErrorSuppressingCommand):
         )
 
     @classmethod
-    # pyre-fixme[40]: Non-static method `add_arguments` cannot override a static
-    #  method defined in `ErrorSuppressingCommand`.
     def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
         # Make this compatible with `fixme-single`.
         super(Fixme, cls).add_arguments(parser)
