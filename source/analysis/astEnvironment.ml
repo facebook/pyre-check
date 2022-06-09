@@ -465,15 +465,11 @@ module FromReadonlyUpstream = struct
     in
     let invalidated_modules =
       let fold_key registered sofar =
-        let qualifier =
-          match SharedMemoryKeys.DependencyKey.get_key registered with
-          | SharedMemoryKeys.WildcardImport qualifier -> qualifier
-          | _ ->
-              (* Due to shared-memory limitations we cannot express this restriction in the type
-                 system, but it is key to reasoning about the dependency graph *)
-              failwith "RawSources should never have non-WildCardImport dependencies"
-        in
-        RawSources.KeySet.add qualifier sofar
+        (* There can never be a true dependency that is not a WildcardImport.
+         * Other dependencies might be registered due to hash collisions - ignore them *)
+        match SharedMemoryKeys.DependencyKey.get_key registered with
+        | SharedMemoryKeys.WildcardImport qualifier -> RawSources.KeySet.add qualifier sofar
+        | _ -> sofar
       in
       SharedMemoryKeys.DependencyKey.RegisteredSet.fold
         fold_key
