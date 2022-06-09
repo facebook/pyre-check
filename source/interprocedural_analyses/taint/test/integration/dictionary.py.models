@@ -2,6 +2,73 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "dictionary.analyze_getitem_index_issue",
+    "callable_line": 441,
+    "code": 5002,
+    "line": 444,
+    "start": 21,
+    "end": 22,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 442,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 444,
+              "start": 21,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
+      "dictionary.analyze_getitem_index_issue:5002:0:Call|_test_sink|0|formal(arg):92811a50ff6e314dc1adfcce8b14d469"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dictionary.dict_with_tainted_key_flows_to_sink",
     "callable_line": 211,
     "code": 5002,
@@ -1501,6 +1568,34 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.analyze_getitem_index_backward",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dictionary.py",
+              "line": 449,
+              "start": 21,
+              "end": 22
+            }
           }
         ]
       }

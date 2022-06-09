@@ -1160,8 +1160,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let taint =
           BackwardState.Tree.prepend [index] taint |> BackwardState.Tree.add_local_first_index index
         in
-
-        analyze_expression ~resolution ~taint ~state ~expression:base
+        let state = analyze_expression ~resolution ~taint ~state ~expression:base in
+        analyze_expression
+          ~resolution
+          ~taint:BackwardState.Tree.bottom
+          ~state
+          ~expression:argument_value
     (* Special case x.__iter__().__next__() as being a random index access (this pattern is the
        desugaring of `for element in x`). Special case dictionary keys appropriately. *)
     | {

@@ -1089,6 +1089,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
        arguments = [{ Call.Argument.value = argument_value; _ }];
       } ->
+          let _, state = analyze_expression ~resolution ~state ~expression:argument_value in
           let index = AccessPath.get_index argument_value in
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [index]

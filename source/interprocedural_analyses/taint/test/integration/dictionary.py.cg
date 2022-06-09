@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+dictionary.analyze_getitem_index_backward (fun) -> [_test_sink (fun) dict::__getitem__ (method)]
 dictionary.backwards_model_for_dictionary_comprehension (fun) -> [dictionary.sink_dictionary_through_keys (fun)]
 dictionary.copy_untainted_values_with_tainted_keys (fun) -> [_test_source (fun) dict::__getitem__ (method) dict::__setitem__ (override) typing.Iterable::__iter__ (method) typing.Iterator::__next__ (method)]
 dictionary.dict_only_key_of_parameter_sink (fun) -> [_test_sink (fun) dict::__getitem__ (method) dict::update (method)]
@@ -23,6 +24,7 @@ dictionary.test_with_issue_in_dict_comprehension (fun) -> [_test_sink (fun) _tes
 dictionary.test_with_issue_in_dict_items_comprehension (fun) -> [_test_source (fun) dict::items (method) typing.Iterable::__iter__ (method) typing.Iterator::__next__ (method)]
 dictionary.update_tainted_dictionary_sink (fun) -> [_test_sink (fun) dict::update (method) dictionary.tainted_dictionary (object)]
 dictionary.$toplevel (fun) -> [dictionary.tainted_dictionary (object)]
+dictionary.analyze_getitem_index_issue (fun) -> [_test_sink (fun) _test_source (fun) dict::__getitem__ (method)]
 dictionary.backward_weak_update (fun) -> [_test_sink (fun) dict::__setitem__ (override) typing.Mapping::keys (method)]
 dictionary.backwards_field_assignment (fun) -> [dict::__setitem__ (override)]
 dictionary.big_dict_update_arg (fun) -> [_test_source (fun) dict::__setitem__ (override) dict::update (method) object::__new__ (method) range::__init__ (method) range::__iter__ (method) typing.Iterator::__next__ (method)]

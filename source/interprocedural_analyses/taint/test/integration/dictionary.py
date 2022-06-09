@@ -436,3 +436,14 @@ def forward_weak_update():
     d[_test_source()] = 0
     d["x"] = 0  # Should not strong update d.**keys
     return d
+
+
+def analyze_getitem_index_issue():
+    x = _test_source()
+    d = {}
+    y = d[_test_sink(x)]
+
+
+def analyze_getitem_index_backward(x):
+    d = {}
+    y = d[_test_sink(x)]
