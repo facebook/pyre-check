@@ -1,2 +1,10 @@
 @generated
 Overrides
+partial.NestedDefineConstructor::__init__ (override) -> [partial.NestedDefineConstructor::__init__ (method)]
+partial.NestedDefineDecorator::__call__ (override) -> [partial.NestedDefineDecorator::__call__ (method)]
+partial.NestedDefineDecorator::__init__ (override) -> [partial.NestedDefineDecorator::__init__ (method)]
+partial.PartialConstructor::__init__ (override) -> [partial.PartialConstructor::__init__ (method)]
+partial.PartialDecorator::__call__ (override) -> [partial.PartialDecorator::__call__ (method)]
+partial.PartialDecorator::__init__ (override) -> [partial.PartialDecorator::__init__ (method)]
+object::__init__ (override) -> [object::__init__ (method) partial.NestedDefineConstructor::__init__ (override) partial.NestedDefineDecorator::__init__ (override) partial.PartialConstructor::__init__ (override) partial.PartialDecorator::__init__ (override)]
+type::__call__ (override) -> [partial.NestedDefineDecorator::__call__ (override) partial.PartialDecorator::__call__ (override) type::__call__ (method)]

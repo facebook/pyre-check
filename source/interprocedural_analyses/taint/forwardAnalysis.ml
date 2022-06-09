@@ -586,7 +586,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~self:(Some callee)
                 ~self_taint:callee_taint
                 ~callee
-                ~callee_taint:None
+                ~callee_taint:(Some ForwardState.Tree.bottom)
                 ~arguments
                 ~arguments_taint
                 ~state:initial_state
@@ -613,7 +613,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~self:(Some call_expression)
                 ~self_taint:(Some new_return_taint)
                 ~callee
-                ~callee_taint:None
+                ~callee_taint:(Some ForwardState.Tree.bottom)
                 ~arguments
                 ~arguments_taint
                 ~state

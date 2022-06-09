@@ -550,7 +550,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                    state = bottom;
                  }
     in
-    let self_taint = Option.value_exn self_taint in
+    let self_taint = Option.value self_taint ~default:BackwardState.Tree.bottom in
 
     (* Call `__new__`. *)
     let call_target_result =

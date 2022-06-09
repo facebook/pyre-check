@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "partial.multiprocessing_tainted",
-    "callable_line": 36,
+    "callable_line": 37,
     "code": 5002,
-    "line": 37,
+    "line": 38,
     "start": 58,
     "end": 72,
     "filename": "partial.py",
@@ -24,7 +24,7 @@
             ],
             "root": {
               "filename": "partial.py",
-              "line": 37,
+              "line": 38,
               "start": 58,
               "end": 72
             }
@@ -46,7 +46,7 @@
             "call": {
               "position": {
                 "filename": "partial.py",
-                "line": 37,
+                "line": 38,
                 "start": 58,
                 "end": 72
               },
@@ -75,11 +75,11 @@
   "kind": "issue",
   "data": {
     "callable": "partial.partial_application_with_named_a",
-    "callable_line": 26,
+    "callable_line": 27,
     "code": 5002,
-    "line": 28,
-    "start": 31,
-    "end": 32,
+    "line": 29,
+    "start": 41,
+    "end": 42,
     "filename": "partial.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -96,7 +96,7 @@
             ],
             "root": {
               "filename": "partial.py",
-              "line": 27,
+              "line": 28,
               "start": 8,
               "end": 22
             }
@@ -118,9 +118,9 @@
             "call": {
               "position": {
                 "filename": "partial.py",
-                "line": 28,
-                "start": 31,
-                "end": 32
+                "line": 29,
+                "start": 41,
+                "end": 42
               },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a)"
@@ -147,11 +147,11 @@
   "kind": "issue",
   "data": {
     "callable": "partial.partial_application_with_tainted",
-    "callable_line": 16,
+    "callable_line": 17,
     "code": 5002,
-    "line": 18,
-    "start": 29,
-    "end": 30,
+    "line": 19,
+    "start": 39,
+    "end": 40,
     "filename": "partial.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
@@ -168,7 +168,7 @@
             ],
             "root": {
               "filename": "partial.py",
-              "line": 17,
+              "line": 18,
               "start": 8,
               "end": 22
             }
@@ -190,9 +190,9 @@
             "call": {
               "position": {
                 "filename": "partial.py",
-                "line": 18,
-                "start": 29,
-                "end": 30
+                "line": 19,
+                "start": 39,
+                "end": 40
               },
               "resolves_to": [ "partial.a_flows_to_sink" ],
               "port": "formal(a)"
@@ -454,6 +454,314 @@
 {
   "kind": "model",
   "data": {
+    "callable": "partial.NestedDefineConstructor.__init__",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[y]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[x]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.NestedDefineDecorator.__call__",
+    "tito": [
+      {
+        "port": "formal(**kw)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": [ { "line": 82, "start": 43, "end": 51 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(**kw)[instance]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": [ { "line": 82, "start": 26, "end": 34 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(*rest1)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": [ { "line": 82, "start": 36, "end": 41 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[_func]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.NestedDefineDecorator.__get__.wrapper",
+    "tito": [
+      {
+        "port": "formal(**kw)[*]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito": [ { "line": 76, "start": 40, "end": 48 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(*rest0)[*]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito": [ { "line": 76, "start": 33, "end": 38 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.NestedDefineDecorator.__init__",
+    "tito": [
+      {
+        "port": "formal(func)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[_func]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.PartialConstructor.__init__",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[y]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[x]" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.PartialDecorator.__call__",
+    "tito": [
+      {
+        "port": "formal(**kw)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": [ { "line": 54, "start": 43, "end": 51 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(**kw)[instance]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": [ { "line": 54, "start": 26, "end": 34 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(*rest1)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": [ { "line": 54, "start": 36, "end": 41 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[_func]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.PartialDecorator.__get__",
+    "tito": [
+      {
+        "port": "formal(instance)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito": [ { "line": 50, "start": 57, "end": 65 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[_func]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito": [ { "line": 50, "start": 33, "end": 37 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.PartialDecorator.__init__",
+    "tito": [
+      {
+        "port": "formal(func)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[_func]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "partial.a_flows_to_sink",
     "sinks": [
       {
@@ -469,10 +777,80 @@
             ],
             "root": {
               "filename": "partial.py",
-              "line": 13,
+              "line": 14,
               "start": 15,
               "end": 16
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.dunder_call_nested_define_constructor",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": [ { "line": 93, "start": 38, "end": 39 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": [ { "line": 93, "start": 35, "end": 36 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "partial.dunder_call_partial_constructor",
+    "tito": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 66, "start": 33, "end": 34 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito": [ { "line": 66, "start": 30, "end": 31 } ],
+            "decl": null
           }
         ]
       }
