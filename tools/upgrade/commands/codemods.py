@@ -160,3 +160,29 @@ class EnableSourceDatabaseBuckBuilder(Command):
             configuration = Configuration(local_root / ".pyre_configuration.local")
             configuration.enable_source_database_buck_builder()
             configuration.write()
+
+
+class SetUseBuck1(Command):
+    def __init__(self, *, local_roots: Sequence[Path], repository: Repository) -> None:
+        super().__init__(repository)
+        self._local_roots = local_roots
+
+    @staticmethod
+    def from_arguments(
+        arguments: argparse.Namespace, repository: Repository
+    ) -> "SetUseBuck1":
+        return SetUseBuck1(local_roots=arguments.local_roots, repository=repository)
+
+    @classmethod
+    def add_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        super(SetUseBuck1, cls).add_arguments(parser)
+        parser.set_defaults(command=cls.from_arguments)
+        parser.add_argument(
+            "local_roots",
+            help="Paths to directory with local configuration",
+            type=path_exists,
+            nargs="*",
+        )
+
+    def run(self) -> None:
+        LOG.warning("Not implemented yet")
