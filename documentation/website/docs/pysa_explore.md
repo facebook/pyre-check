@@ -19,7 +19,7 @@ $ pyre analyze --save-results-to /tmp/output_dir
 After the analysis succeeds, Pysa will write a file, `/tmp/output_dir/taint-output.json`, containing the taint of each callable in addition to the issues found. Let's load this JSON into our explore script:
 
 ```bash
-$ python3 -i scripts/explore_pysa_models.py
+$ python3 -i ~/fbsource/fbcode/tools/pyre/scripts/explore_pysa_models.py
 # Pysa Model Explorer
 Available commands:
   index('taint-output.json')      Index all available models in the given taint output file or directory.
