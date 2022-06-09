@@ -474,11 +474,17 @@ let initialize
      let errors =
        errors
        |> List.map ~f:(fun error ->
-              AnalysisError.instantiate
-                ~show_error_traces:false
-                ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ast_environment)
-                error
-              |> AnalysisError.Instantiated.description)
+              let error =
+                AnalysisError.instantiate
+                  ~show_error_traces:false
+                  ~lookup:(AstEnvironment.ReadOnly.get_real_path_relative ast_environment)
+                  error
+              in
+              Format.asprintf
+                "%a:%s"
+                Location.WithPath.pp
+                (AnalysisError.Instantiated.location error)
+                (AnalysisError.Instantiated.description error))
        |> String.concat ~sep:"\n"
      in
      failwithf "Pyre errors were found in `%s`:\n%s" handle errors ());
