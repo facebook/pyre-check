@@ -2021,7 +2021,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
               join property_call_state attribute_state
           | _ -> analyze_assignment ~resolution ~target ~value state)
-    | Assert _
+    | Assert { test; _ } ->
+        analyze_expression ~resolution ~taint:BackwardState.Tree.empty ~state ~expression:test
     | Break
     | Class _
     | Continue ->

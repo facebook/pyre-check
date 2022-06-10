@@ -263,3 +263,31 @@
     ]
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "if_sinks.with_if",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "if_sinks.py",
+              "line": 14,
+              "start": 18,
+              "end": 19
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
