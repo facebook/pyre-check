@@ -41,37 +41,34 @@ let lookup_exn tracker reference =
 
 let create_file root relative = create_file (PyrePath.create_relative ~root ~relative)
 
-let create_test_configuration context =
-  (* SETUP:
-   * local_root/a.py
-   * local_root/b.py
-   * local_root/c.py
-   * local_root/c.pyi
-   * local_root/d.py
-   * local_root/d/__init__.py
-   * local_root/e.py
-   * external_root/a.py
-   * external_root/b.pyi
-   * external_root/b/__init__.py
-   * external_root/c.py
-   * external_root/c.pyi *)
-  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  let external_root =
-    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-  in
-  let local_d_path = PyrePath.absolute local_root ^ "/d" in
-  let external_b_path = PyrePath.absolute external_root ^ "/b" in
-  Sys_utils.mkdir_no_fail local_d_path;
-  Sys_utils.mkdir_no_fail external_b_path;
-  List.iter ~f:(create_file local_root) ["a.py"; "b.py"; "c.py"; "c.pyi"; "d.py"; "e.py"];
-  let () =
-    let path = local_d_path |> PyrePath.create_absolute ~follow_symbolic_links:true in
-    create_file path "__init__.py"
-  in
-  List.iter ~f:(create_file external_root) ["a.py"; "b.pyi"; "c.py"; "c.pyi"];
-  let () =
-    let path = external_b_path |> PyrePath.create_absolute ~follow_symbolic_links:true in
-    create_file path "__init__.py"
+module TestFiles = struct
+  type t =
+    | File of string
+    | Directory of {
+        relative: string;
+        children: t list;
+      }
+
+  let rec create root tree =
+    match tree with
+    | File relative -> create_file root relative
+    | Directory { relative; children } ->
+        let path = PyrePath.create_relative ~root ~relative in
+        PyrePath.absolute path |> Sys_utils.mkdir_no_fail;
+        List.iter ~f:(create path) children
+end
+
+let create_test_configuration ~context ~local_tree ~external_tree =
+  let local_root, external_root =
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let external_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let () = List.iter ~f:(TestFiles.create local_root) local_tree in
+    let () = List.iter ~f:(TestFiles.create external_root) external_tree in
+    local_root, external_root
   in
   let configuration =
     Configuration.Analysis.create
@@ -91,7 +88,26 @@ let create_test_configuration context =
 
 let test_creation context =
   let ({ Configuration.Analysis.local_root; _ } as configuration), external_root =
-    create_test_configuration context
+    create_test_configuration
+      ~context
+      ~local_tree:
+        [
+          TestFiles.File "a.py";
+          TestFiles.File "b.py";
+          TestFiles.File "c.py";
+          TestFiles.File "c.pyi";
+          TestFiles.File "d.py";
+          TestFiles.Directory { relative = "d"; children = [TestFiles.File "__init__.py"] };
+          TestFiles.File "e.py";
+        ]
+      ~external_tree:
+        [
+          TestFiles.File "a.py";
+          TestFiles.File "b.pyi";
+          TestFiles.Directory { relative = "b"; children = [TestFiles.File "__init__.py"] };
+          TestFiles.File "c.py";
+          TestFiles.File "c.pyi";
+        ]
   in
   let assert_create_fail ~configuration root relative =
     match create_module_path ~configuration root relative with
