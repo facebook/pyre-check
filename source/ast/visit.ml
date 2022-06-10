@@ -395,7 +395,7 @@ struct
         | None -> state
 
 
-      let visit_statement_children _ _ = true
+      let visit_statement_children _ = StatementPredicate.visit_children
 
       let visit_format_string_children _ _ = false
     end
