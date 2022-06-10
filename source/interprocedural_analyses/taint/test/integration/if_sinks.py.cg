@@ -1,0 +1,5 @@
+@generated
+Call dependencies
+if_sinks.$toplevel (fun) -> []
+if_sinks.no_if (fun) -> [_test_sink (fun)]
+if_sinks.with_if (fun) -> [_test_sink (fun)]
