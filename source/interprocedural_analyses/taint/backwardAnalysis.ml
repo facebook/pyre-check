@@ -1084,6 +1084,62 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ -> analyze_expression ~resolution ~taint ~state ~expression
 
 
+  and analyze_getitem_call_target
+      ~resolution
+      ~index_number
+      ~location
+      ~base
+      ~taint
+      ~state
+      ~state_before_index_access
+      call_target
+    =
+    let analyze_getitem receiver_type =
+      let named_tuple_attributes =
+        Analysis.NamedTuple.field_names ~global_resolution receiver_type
+      in
+      match named_tuple_attributes, index_number with
+      | Some named_tuple_attributes, Some index_number ->
+          List.nth named_tuple_attributes index_number
+          (* Access an attribute of a named tuple via indices *)
+          >>| (fun attribute ->
+                analyze_attribute_access
+                  ~resolution
+                  ~location
+                  ~resolve_properties:false
+                  ~base
+                  ~attribute
+                  ~special:false
+                  ~base_taint:BackwardState.Tree.bottom
+                  ~attribute_taint:taint
+                  ~state)
+          (* Access an attribute of a named tuple via invalid indices *)
+          |> Option.value ~default:bottom
+      | Some _, None ->
+          (* Access a named tuple with unknown indices *)
+          Lazy.force state_before_index_access
+      | None, _ ->
+          (* Not access a named tuple *)
+          Lazy.force state_before_index_access
+    in
+    match call_target with
+    | {
+        CallGraph.CallTarget.target = Method { method_name = "__getitem__"; _ };
+        receiver_type = Some receiver_type;
+        _;
+      }
+    | {
+        CallGraph.CallTarget.target = Override { method_name = "__getitem__"; _ };
+        receiver_type = Some receiver_type;
+        _;
+      } ->
+        (* Potentially access a named tuple *)
+        analyze_getitem receiver_type
+    | _ ->
+        (* Not access a named tuple *)
+        Lazy.force state_before_index_access
+
+
   and analyze_call ~resolution ~location ~taint ~state ~callee ~arguments =
     match { Call.callee; arguments } with
     | {
@@ -1154,13 +1210,43 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             callees
     | {
      callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-     arguments = [{ Call.Argument.value = argument_value; _ }];
+     arguments =
+       [{ Call.Argument.value = { Node.value = argument_expression; _ } as argument_value; _ }];
     } ->
         let index = AccessPath.get_index argument_value in
-        let taint =
-          BackwardState.Tree.prepend [index] taint |> BackwardState.Tree.add_local_first_index index
+        let state_before_index_access =
+          lazy
+            (let taint =
+               BackwardState.Tree.prepend [index] taint
+               |> BackwardState.Tree.add_local_first_index index
+             in
+             analyze_expression ~resolution ~taint ~state ~expression:base)
         in
-        let state = analyze_expression ~resolution ~taint ~state ~expression:base in
+        let { CallGraph.CallCallees.call_targets; _ } =
+          get_call_callees ~location ~call:{ Call.callee; arguments }
+        in
+        let state =
+          if List.is_empty call_targets then
+            (* This call may be unresolved, because for example the receiver type is unknown *)
+            Lazy.force state_before_index_access
+          else
+            let index_number =
+              match argument_expression with
+              | Expression.Constant (Constant.Integer i) -> Some i
+              | _ -> None
+            in
+            List.fold call_targets ~init:bottom ~f:(fun state_so_far call_target ->
+                analyze_getitem_call_target
+                  ~index_number
+                  ~resolution
+                  ~location
+                  ~base
+                  ~taint
+                  ~state
+                  ~state_before_index_access
+                  call_target
+                |> join state_so_far)
+        in
         analyze_expression
           ~resolution
           ~taint:BackwardState.Tree.bottom

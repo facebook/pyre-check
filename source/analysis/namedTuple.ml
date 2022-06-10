@@ -13,21 +13,29 @@ let is_named_tuple ~global_resolution ~annotation =
   GlobalResolution.less_or_equal global_resolution ~left:annotation ~right:Type.named_tuple
 
 
+let class_name ~global_resolution annotation =
+  annotation
+  |> Option.some_if (is_named_tuple ~global_resolution ~annotation)
+  >>| Type.split
+  >>| fst
+  >>= Type.primitive_name
+
+
+let field_names_from_class_name ~global_resolution class_name =
+  GlobalResolution.class_summary global_resolution (Primitive class_name)
+  >>| Node.value
+  >>| fun summary -> ClassSummary.fields_tuple_value summary |> Option.value ~default:[]
+
+
+let field_names ~global_resolution annotation =
+  class_name ~global_resolution annotation >>= field_names_from_class_name ~global_resolution
+
+
 let field_annotations ~global_resolution annotation =
-  let class_name =
-    annotation
-    |> Option.some_if (is_named_tuple ~global_resolution ~annotation)
-    >>| Type.split
-    >>| fst
-    >>= Type.primitive_name
-  in
+  let class_name = class_name ~global_resolution annotation in
   match class_name with
   | Some class_name ->
-      let field_names =
-        GlobalResolution.class_summary global_resolution (Primitive class_name)
-        >>| Node.value
-        >>| fun summary -> ClassSummary.fields_tuple_value summary |> Option.value ~default:[]
-      in
+      let field_names = field_names_from_class_name ~global_resolution class_name in
       let matching_annotation name =
         let attribute =
           GlobalResolution.attribute_from_class_name

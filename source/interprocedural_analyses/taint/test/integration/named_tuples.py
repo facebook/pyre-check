@@ -62,10 +62,26 @@ def no_issue_with_benign_in_inherited_named_tuple():
     _test_sink(a.benign)
 
 
-def issue_with_aliased_indicies():
+def aliased_indicies_forward():
     a = tainted_tuple()
-    # TODO(T110440162): This should be found, but isn't
+    _test_sink(a[0])  # No issue
+    _test_sink(a[1])  # Issue here
+    _test_sink(a[2])  # Invalid attribute access
+
+
+def aliased_indicies_forward_unknown_attribute(i: int):
+    a = tainted_tuple()
+    return a[i]  # Unknown attribute access
+
+
+def aliased_indicies_backward(a: MyNamedTuple):
+    _test_sink(a.benign)
     _test_sink(a[1])
+    _test_sink(a[2])
+
+
+def aliased_indicies_backward_unknown_attribute(a: MyNamedTuple, i: int):
+    _test_sink(a[i])
 
 
 class NamedTupleWithTaintedAttribute(NamedTuple):

@@ -2,6 +2,92 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "named_tuples.aliased_indicies_forward",
+    "callable_line": 65,
+    "code": 5002,
+    "line": 68,
+    "start": 15,
+    "end": 19,
+    "filename": "named_tuples.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "tito" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<numeric>" },
+              { "has": "first-field" },
+              { "first-field": "bad" }
+            ],
+            "call": {
+              "position": {
+                "filename": "named_tuples.py",
+                "line": 66,
+                "start": 8,
+                "end": 23
+              },
+              "resolves_to": [ "named_tuples.tainted_tuple" ],
+              "port": "result[bad]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "named_tuples.py",
+              "line": 68,
+              "start": 15,
+              "end": 19
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "has": "first-field" },
+      { "first-field": "bad" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
+      "named_tuples.aliased_indicies_forward:5002:0:Call|_test_sink|1|formal(arg):8cfa9be2fc2685be603fcfa60f07a4b4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "named_tuples.issue_with_bad",
     "callable_line": 20,
     "code": 5002,
@@ -167,9 +253,9 @@
   "kind": "issue",
   "data": {
     "callable": "named_tuples.issue_with_named_tuple_with_tainted_attribute",
-    "callable_line": 76,
+    "callable_line": 92,
     "code": 5002,
-    "line": 77,
+    "line": 93,
     "start": 39,
     "end": 53,
     "filename": "named_tuples.py",
@@ -188,7 +274,7 @@
             ],
             "root": {
               "filename": "named_tuples.py",
-              "line": 77,
+              "line": 93,
               "start": 39,
               "end": 53
             }
@@ -214,7 +300,7 @@
             "call": {
               "position": {
                 "filename": "named_tuples.py",
-                "line": 77,
+                "line": 93,
                 "start": 39,
                 "end": 53
               },
@@ -445,7 +531,7 @@
             ],
             "root": {
               "filename": "named_tuples.py",
-              "line": 71,
+              "line": 87,
               "start": 0,
               "end": 0
             }
@@ -525,6 +611,126 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.aliased_indicies_backward",
+    "sinks": [
+      {
+        "port": "formal(a)[bad]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "named_tuples.py",
+              "line": 79,
+              "start": 15,
+              "end": 19
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(a)[benign]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "named_tuples.py",
+              "line": 78,
+              "start": 15,
+              "end": 23
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.aliased_indicies_backward_unknown_attribute",
+    "sinks": [
+      {
+        "port": "formal(a)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ],
+            "root": {
+              "filename": "named_tuples.py",
+              "line": 84,
+              "start": 15,
+              "end": 19
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "named_tuples.aliased_indicies_forward_unknown_attribute",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_source" },
+                  { "always-via": "tito" }
+                ],
+                "leaves": [ { "name": "_test_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "<unknown>" }
+            ],
+            "call": {
+              "position": {
+                "filename": "named_tuples.py",
+                "line": 73,
+                "start": 8,
+                "end": 23
+              },
+              "resolves_to": [ "named_tuples.tainted_tuple" ],
+              "port": "result[bad]"
+            }
           }
         ]
       }

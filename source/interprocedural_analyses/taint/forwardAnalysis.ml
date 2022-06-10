@@ -1049,6 +1049,68 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       callees
 
 
+  and analyze_getitem_call_target
+      ~resolution
+      ~index
+      ~index_number
+      ~state
+      ~location
+      ~base
+      ~taint_and_state_after_index_access
+      call_target
+    =
+    let analyze_getitem receiver_type =
+      let named_tuple_attributes =
+        Analysis.NamedTuple.field_names ~global_resolution receiver_type
+      in
+      match named_tuple_attributes, index_number with
+      | Some named_tuple_attributes, Some index_number ->
+          List.nth named_tuple_attributes index_number
+          (* Access an attribute of a named tuple via valid indices *)
+          >>| (fun attribute ->
+                let { attribute_taint = taint; state; _ } =
+                  analyze_attribute_access
+                    ~resolution
+                    ~state
+                    ~resolve_properties:false
+                    ~location
+                    ~base
+                    ~attribute
+                    ~special:false
+                in
+                let taint =
+                  taint
+                  |> ForwardState.Tree.add_local_first_field attribute
+                  |> ForwardState.Tree.add_local_first_index index
+                in
+                taint, state)
+          (* Access an attribute of a named tuple via invalid indices *)
+          |> Option.value ~default:(ForwardState.Tree.bottom, bottom)
+      | Some _, None ->
+          (* Access an attribute of a named tuple via unknown indices *)
+          Lazy.force taint_and_state_after_index_access
+      | None, _ ->
+          (* Not access a named tuple *)
+          Lazy.force taint_and_state_after_index_access
+    in
+    match call_target with
+    | {
+        CallGraph.CallTarget.target = Method { method_name = "__getitem__"; _ };
+        receiver_type = Some receiver_type;
+        _;
+      }
+    | {
+        CallGraph.CallTarget.target = Override { method_name = "__getitem__"; _ };
+        receiver_type = Some receiver_type;
+        _;
+      } ->
+        (* Potentially access a named tuple *)
+        analyze_getitem receiver_type
+    | _ ->
+        (* Not access a named tuple *)
+        Lazy.force taint_and_state_after_index_access
+
+
   and analyze_call ~resolution ~location ~state ~callee ~arguments =
     let assign_super_constructor_taint_to_self_if_necessary taint state =
       match Node.value callee, FunctionContext.definition with
@@ -1087,13 +1149,45 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       match { Call.callee; arguments } with
       | {
        callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-       arguments = [{ Call.Argument.value = argument_value; _ }];
+       arguments =
+         [{ Call.Argument.value = { Node.value = argument_expression; _ } as argument_value; _ }];
       } ->
           let _, state = analyze_expression ~resolution ~state ~expression:argument_value in
           let index = AccessPath.get_index argument_value in
-          analyze_expression ~resolution ~state ~expression:base
-          |>> ForwardState.Tree.read [index]
-          |>> ForwardState.Tree.add_local_first_index index
+          let taint_and_state_after_index_access =
+            lazy
+              (analyze_expression ~resolution ~state ~expression:base
+              |>> ForwardState.Tree.read [index]
+              |>> ForwardState.Tree.add_local_first_index index)
+          in
+          let { CallGraph.CallCallees.call_targets; _ } =
+            get_call_callees ~location ~call:{ Call.callee; arguments }
+          in
+          if List.is_empty call_targets then
+            (* This call may be unresolved, because for example the receiver type is unknown *)
+            Lazy.force taint_and_state_after_index_access
+          else
+            let index_number =
+              match argument_expression with
+              | Expression.Constant (Constant.Integer i) -> Some i
+              | _ -> None
+            in
+            List.fold
+              call_targets
+              ~init:(ForwardState.Tree.empty, bottom)
+              ~f:(fun (taint_so_far, state_so_far) call_target ->
+                let taint, state =
+                  analyze_getitem_call_target
+                    ~index
+                    ~index_number
+                    ~resolution
+                    ~state
+                    ~location
+                    ~base
+                    ~taint_and_state_after_index_access
+                    call_target
+                in
+                ForwardState.Tree.join taint taint_so_far, join state state_so_far)
       (* We read the taint at the `__iter__` call to be able to properly reference key taint as
          appropriate. *)
       | {
