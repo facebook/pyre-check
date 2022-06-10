@@ -10,7 +10,9 @@ open Ast
 open OUnit2
 module ModuleTracker = Analysis.ModuleTracker
 
-let touch path = File.create path ~content:"" |> File.write
+let content_on_disk = "# contents on disk"
+
+let create_file path = File.create path ~content:content_on_disk |> File.write
 
 let create_source_path ~configuration root relative =
   let path = Test.relative_artifact_path ~root ~relative in
@@ -37,7 +39,7 @@ let lookup_exn tracker reference =
       assert_failure message
 
 
-let touch root relative = touch (PyrePath.create_relative ~root ~relative)
+let create_file root relative = create_file (PyrePath.create_relative ~root ~relative)
 
 let create_test_configuration context =
   (* SETUP:
@@ -61,15 +63,15 @@ let create_test_configuration context =
   let external_b_path = PyrePath.absolute external_root ^ "/b" in
   Sys_utils.mkdir_no_fail local_d_path;
   Sys_utils.mkdir_no_fail external_b_path;
-  List.iter ~f:(touch local_root) ["a.py"; "b.py"; "c.py"; "c.pyi"; "d.py"; "e.py"];
+  List.iter ~f:(create_file local_root) ["a.py"; "b.py"; "c.py"; "c.pyi"; "d.py"; "e.py"];
   let () =
     let path = local_d_path |> PyrePath.create_absolute ~follow_symbolic_links:true in
-    touch path "__init__.py"
+    create_file path "__init__.py"
   in
-  List.iter ~f:(touch external_root) ["a.py"; "b.pyi"; "c.py"; "c.pyi"];
+  List.iter ~f:(create_file external_root) ["a.py"; "b.pyi"; "c.py"; "c.pyi"];
   let () =
     let path = external_b_path |> PyrePath.create_absolute ~follow_symbolic_links:true in
-    touch path "__init__.py"
+    create_file path "__init__.py"
   in
   let configuration =
     Configuration.Analysis.create
@@ -347,8 +349,8 @@ let test_creation context =
         PyrePath.absolute external_root ^ "/h/i";
         PyrePath.absolute external_root ^ "/h/i/j";
       ];
-    List.iter ~f:(touch local_root) ["a.py"; "b/c.py"; "d/__init__.py"; "d/e/f.py"];
-    List.iter ~f:(touch external_root) ["d/g.py"; "h/i/j/__init__.pyi"];
+    List.iter ~f:(create_file local_root) ["a.py"; "b/c.py"; "d/__init__.py"; "d/e/f.py"];
+    List.iter ~f:(create_file external_root) ["d/g.py"; "h/i/j/__init__.pyi"];
     ()
   in
   let test_search_path_subdirectory () =
@@ -363,9 +365,9 @@ let test_creation context =
     let search_subdirectory =
       PyrePath.create_absolute ~follow_symbolic_links:true search_subdirectory_path
     in
-    touch local_root "a.py";
-    touch search_root "b.py";
-    touch search_subdirectory "c.py";
+    create_file local_root "a.py";
+    create_file search_root "b.py";
+    create_file search_subdirectory "c.py";
     let configuration =
       Configuration.Analysis.create
         ~local_root
@@ -396,11 +398,11 @@ let test_creation context =
       bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     let external_paths0 = ["a.py"; "b.py"; "c.pyi"; "d.py"; "e.pyi"; "f.pyi"; "g.pyi"] in
-    List.iter ~f:(touch external_root0) external_paths0;
+    List.iter ~f:(create_file external_root0) external_paths0;
     let external_paths1 = ["a.py"; "b.py"; "c.py"; "d.pyi"; "e.py"; "f.pyi"; "g.pyi"] in
-    List.iter ~f:(touch external_root1) external_paths1;
+    List.iter ~f:(create_file external_root1) external_paths1;
     let local_paths = ["a.py"; "b.pyi"; "c.py"; "d.py"; "e.pyi"; "f.py"; "g.pyi"] in
-    List.iter ~f:(touch local_root) local_paths;
+    List.iter ~f:(create_file local_root) local_paths;
     let configuration =
       Configuration.Analysis.create
         ~local_root
@@ -493,9 +495,9 @@ let test_creation context =
     Sys_utils.mkdir_no_fail source_root1_path;
     let source_root1 = PyrePath.create_absolute source_root1_path in
     let source_paths0 = ["a.py"; "b.py"; "c.pyi"; "d.py"; "e.pyi"; "f.pyi"; "g.pyi"] in
-    List.iter ~f:(touch source_root0) source_paths0;
+    List.iter ~f:(create_file source_root0) source_paths0;
     let source_paths1 = ["a.py"; "b.py"; "c.py"; "d.pyi"; "e.py"; "f.pyi"; "g.pyi"] in
-    List.iter ~f:(touch source_root1) source_paths1;
+    List.iter ~f:(create_file source_root1) source_paths1;
     let configuration =
       Configuration.Analysis.create
         ~local_root
@@ -571,12 +573,12 @@ let test_creation context =
     let external_root =
       bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
-    touch local_root "foo.py";
-    touch local_root "bar.py";
-    touch local_root "baz.py";
-    touch external_root "foo.py";
-    touch external_root "bar.py";
-    touch external_root "baz.py";
+    create_file local_root "foo.py";
+    create_file local_root "bar.py";
+    create_file local_root "baz.py";
+    create_file external_root "foo.py";
+    create_file external_root "bar.py";
+    create_file external_root "baz.py";
 
     let configuration =
       Configuration.Analysis.create
@@ -625,11 +627,11 @@ let test_creation context =
     Sys_utils.mkdir_no_fail durp_path;
     let derp = PyrePath.create_absolute ~follow_symbolic_links:true derp_path in
     let durp = PyrePath.create_absolute ~follow_symbolic_links:true durp_path in
-    touch local_root "a.py";
-    touch search_root "b.py";
-    touch derp "c.py";
-    touch durp "d.py";
-    touch local_root "e.py";
+    create_file local_root "a.py";
+    create_file search_root "b.py";
+    create_file derp "c.py";
+    create_file durp "d.py";
+    create_file local_root "e.py";
 
     let configuration =
       Configuration.Analysis.create
@@ -682,8 +684,8 @@ let test_creation context =
     let nonexist_root = PyrePath.create_absolute "/whosyourdaddy" in
     assert (not (PyrePath.file_exists nonexist_root));
 
-    touch local_root "a.py";
-    touch search_root "b.py";
+    create_file local_root "a.py";
+    create_file search_root "b.py";
     let configuration =
       Configuration.Analysis.create
         ~local_root
@@ -721,8 +723,8 @@ let test_creation context =
     let link_search_root =
       bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
-    touch local_root "a.py";
-    touch search_root "b.py";
+    create_file local_root "a.py";
+    create_file search_root "b.py";
     Unix.symlink
       ~link_name:
         (PyrePath.create_relative ~root:link_local_root ~relative:"a.py" |> PyrePath.absolute)
@@ -769,10 +771,10 @@ let test_creation context =
     Sys_utils.mkdir_no_fail external_root1_path;
     let external_root0 = PyrePath.create_absolute ~follow_symbolic_links:true external_root0_path in
     let external_root1 = PyrePath.create_absolute ~follow_symbolic_links:true external_root1_path in
-    touch external_root0 "a.py";
-    touch external_root1 "a.py";
-    touch local_root "a.py";
-    touch local_root "b.py";
+    create_file external_root0 "a.py";
+    create_file external_root1 "a.py";
+    create_file local_root "a.py";
+    create_file local_root "b.py";
 
     let test_external_root_0_before_1 () =
       let configuration =
@@ -926,13 +928,13 @@ let test_creation context =
     let venv_root =
       bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
-    touch local_root "a.py";
-    touch local_root "b.pyi";
-    touch local_root "c.pyi";
-    touch stubs_root "a.pyi";
-    touch venv_root "a.pyi";
-    touch venv_root "b.pyi";
-    touch venv_root "c.py";
+    create_file local_root "a.py";
+    create_file local_root "b.pyi";
+    create_file local_root "c.pyi";
+    create_file stubs_root "a.pyi";
+    create_file venv_root "a.pyi";
+    create_file venv_root "b.pyi";
+    create_file venv_root "c.py";
     let configuration =
       Configuration.Analysis.create
         ~local_root
@@ -1014,12 +1016,12 @@ let test_creation context =
       bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     let setup local_root external_root0 external_root1 =
-      touch local_root "a.py";
-      touch local_root "b.pyi";
-      touch external_root0 "c.py";
-      touch external_root0 "d.pyi";
-      touch external_root1 "e.py";
-      touch external_root1 "f.pyi";
+      create_file local_root "a.py";
+      create_file local_root "b.pyi";
+      create_file external_root0 "c.py";
+      create_file external_root0 "d.pyi";
+      create_file external_root1 "e.py";
+      create_file external_root1 "f.pyi";
       Configuration.Analysis.create
         ~local_root
         ~source_paths:[SearchPath.Root local_root]
@@ -1043,7 +1045,7 @@ let test_creation context =
       bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
     in
     List.iter ~f:Sys_utils.mkdir_no_fail [PyrePath.absolute local_root ^ "/b"];
-    List.iter ~f:(touch local_root) [".a.py"; ".b/c.py"];
+    List.iter ~f:(create_file local_root) [".a.py"; ".b/c.py"];
     let module_tracker =
       Configuration.Analysis.create
         ~local_root
@@ -1064,7 +1066,7 @@ let test_creation context =
       let root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
       PyrePath.create_relative ~root ~relative:".a"
     in
-    List.iter ~f:(touch local_root) ["b.py"; ".c.py"; ".d/e.py"];
+    List.iter ~f:(create_file local_root) ["b.py"; ".c.py"; ".d/e.py"];
     let configuration =
       Configuration.Analysis.create
         ~local_root
