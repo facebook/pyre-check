@@ -243,7 +243,7 @@ module EnvironmentTable = struct
         |> UnannotatedGlobalEnvironment.UpdateResult.invalidated_modules
     end
 
-    module FromReadonlyUpstream = struct
+    module FromReadOnlyUpstream = struct
       type t = {
         table: Table.t;
         upstream_environment: In.PreviousEnvironment.ReadOnly.t;
@@ -352,14 +352,14 @@ module EnvironmentTable = struct
     module Base = struct
       type t = {
         upstream_environment: In.PreviousEnvironment.t;
-        from_readonly_upstream: FromReadonlyUpstream.t;
+        from_read_only_upstream: FromReadOnlyUpstream.t;
       }
 
       let from_upstream_environment upstream_environment =
         {
           upstream_environment;
-          from_readonly_upstream =
-            In.PreviousEnvironment.read_only upstream_environment |> FromReadonlyUpstream.create;
+          from_read_only_upstream =
+            In.PreviousEnvironment.read_only upstream_environment |> FromReadOnlyUpstream.create;
         }
 
 
@@ -380,12 +380,12 @@ module EnvironmentTable = struct
         In.PreviousEnvironment.ast_environment upstream_environment
 
 
-      let read_only { from_readonly_upstream; _ } =
-        FromReadonlyUpstream.read_only from_readonly_upstream
+      let read_only { from_read_only_upstream; _ } =
+        FromReadOnlyUpstream.read_only from_read_only_upstream
 
 
       let update_this_and_all_preceding_environments
-          { upstream_environment; from_readonly_upstream }
+          { upstream_environment; from_read_only_upstream }
           ~scheduler
           artifact_paths
         =
@@ -393,7 +393,7 @@ module EnvironmentTable = struct
           upstream_environment
           ~scheduler
           artifact_paths
-        |> FromReadonlyUpstream.update_only_this_environment from_readonly_upstream ~scheduler
+        |> FromReadOnlyUpstream.update_only_this_environment from_read_only_upstream ~scheduler
 
 
       (* All SharedMemory tables are populated and stored in separate, imperative steps that must be

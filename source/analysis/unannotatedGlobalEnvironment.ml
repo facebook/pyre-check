@@ -294,7 +294,7 @@ module UpdateResult = struct
   let unannotated_global_environment_update_result = Fn.id
 end
 
-module FromReadonlyUpstream = struct
+module FromReadOnlyUpstream = struct
   (* The key tracking is necessary because there is no empirical way to determine which classes
      exist for a given class. This "fan-out" necessitates internal tracking. However, this module
      need not be sealed to ensure write only-ness since we're not dependency tracking this, since
@@ -996,29 +996,29 @@ end
 module Base = struct
   type t = {
     ast_environment: AstEnvironment.t;
-    from_readonly_upstream: FromReadonlyUpstream.t;
+    from_read_only_upstream: FromReadOnlyUpstream.t;
   }
 
   let create configuration =
     let ast_environment = AstEnvironment.create configuration in
-    let from_readonly_upstream =
-      AstEnvironment.read_only ast_environment |> FromReadonlyUpstream.create
+    let from_read_only_upstream =
+      AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
     in
-    FromReadonlyUpstream.cold_start from_readonly_upstream;
-    { ast_environment; from_readonly_upstream }
+    FromReadOnlyUpstream.cold_start from_read_only_upstream;
+    { ast_environment; from_read_only_upstream }
 
 
   let create_for_testing configuration source_path_code_pairs =
     let ast_environment = AstEnvironment.create_for_testing configuration source_path_code_pairs in
-    let from_readonly_upstream =
-      AstEnvironment.read_only ast_environment |> FromReadonlyUpstream.create
+    let from_read_only_upstream =
+      AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
     in
-    FromReadonlyUpstream.cold_start from_readonly_upstream;
-    { ast_environment; from_readonly_upstream }
+    FromReadOnlyUpstream.cold_start from_read_only_upstream;
+    { ast_environment; from_read_only_upstream }
 
 
   let update_this_and_all_preceding_environments
-      { ast_environment; from_readonly_upstream }
+      { ast_environment; from_read_only_upstream }
       ~scheduler
       artifact_paths
     =
@@ -1027,15 +1027,19 @@ module Base = struct
       ( AstEnvironment.UpdateResult.invalidated_modules update_result,
         AstEnvironment.UpdateResult.module_updates update_result )
     in
-    FromReadonlyUpstream.update from_readonly_upstream ~scheduler invalidated_modules module_updates
+    FromReadOnlyUpstream.update
+      from_read_only_upstream
+      ~scheduler
+      invalidated_modules
+      module_updates
 
 
-  let read_only { from_readonly_upstream; _ } =
-    FromReadonlyUpstream.read_only from_readonly_upstream
+  let read_only { from_read_only_upstream; _ } =
+    FromReadOnlyUpstream.read_only from_read_only_upstream
 
 
-  let configuration { from_readonly_upstream; _ } =
-    FromReadonlyUpstream.configuration from_readonly_upstream
+  let configuration { from_read_only_upstream; _ } =
+    FromReadOnlyUpstream.configuration from_read_only_upstream
 
 
   let ast_environment { ast_environment; _ } = ast_environment
@@ -1045,10 +1049,10 @@ module Base = struct
      non-SharedMemory data *)
   let load configuration =
     let ast_environment = AstEnvironment.load configuration in
-    let from_readonly_upstream =
-      AstEnvironment.read_only ast_environment |> FromReadonlyUpstream.create
+    let from_read_only_upstream =
+      AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
     in
-    { ast_environment; from_readonly_upstream }
+    { ast_environment; from_read_only_upstream }
 
 
   let store { ast_environment; _ } = AstEnvironment.store ast_environment
