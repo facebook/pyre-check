@@ -130,8 +130,6 @@ module UpdateResult : sig
      preenvironment updates *)
   type t
 
-  type read_only = ReadOnly.t
-
   val define_additions : t -> Reference.Set.t
 
   val locally_triggered_dependencies : t -> DependencyKey.RegisteredSet.t
@@ -143,8 +141,6 @@ module UpdateResult : sig
   val all_triggered_dependencies : t -> DependencyKey.RegisteredSet.t list
 
   val unannotated_global_environment_update_result : t -> t
-
-  val read_only : t -> read_only
 end
 
 type t

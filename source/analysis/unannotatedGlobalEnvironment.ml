@@ -279,10 +279,7 @@ module UpdateResult = struct
     triggered_dependencies: DependencyKey.RegisteredSet.t;
     invalidated_modules: Reference.t list;
     module_updates: ModuleTracker.IncrementalUpdate.t list;
-    read_only: ReadOnly.t;
   }
-
-  type read_only = ReadOnly.t
 
   let define_additions { define_additions; _ } = define_additions
 
@@ -295,8 +292,6 @@ module UpdateResult = struct
   let module_updates { module_updates; _ } = module_updates
 
   let unannotated_global_environment_update_result = Fn.id
-
-  let read_only { read_only; _ } = read_only
 end
 
 module FromReadonlyUpstream = struct
@@ -995,13 +990,7 @@ module FromReadonlyUpstream = struct
           in
           { Profiling.result = define_additions, triggered_dependencies; tags })
     in
-    {
-      UpdateResult.define_additions;
-      triggered_dependencies;
-      invalidated_modules;
-      module_updates;
-      read_only = read_only environment;
-    }
+    { UpdateResult.define_additions; triggered_dependencies; invalidated_modules; module_updates }
 end
 
 module Base = struct

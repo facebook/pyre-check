@@ -82,8 +82,8 @@ let recheck ~configuration ~scheduler ~environment ~errors artifact_paths =
       (Reference.Map.keys function_triggers)
       ~f:(fun sofar define_name ->
         let unannotated_global_environment =
-          UnannotatedGlobalEnvironment.UpdateResult.read_only
-            unannotated_global_environment_update_result
+          TypeEnvironment.read_only environment
+          |> TypeEnvironment.ReadOnly.unannotated_global_environment
         in
         match
           UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
