@@ -69,7 +69,7 @@ type reason =
 [@@deriving compare, sexp, show, hash]
 
 type coverage_data = {
-  expression: Expression.t;
+  expression: Expression.t option;
   type_: Type.t;
 }
 [@@deriving compare, sexp, show, hash]
