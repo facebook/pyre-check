@@ -984,6 +984,7 @@ def run_infer(
         dequalify=infer_arguments.dequalify,
         quote_annotations=infer_arguments.quote_annotations,
         simple_annotations=infer_arguments.simple_annotations,
+        debug_infer=infer_arguments.debug_infer,
     )
 
     if infer_arguments.annotate_from_existing_stubs:
