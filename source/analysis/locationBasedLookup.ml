@@ -53,7 +53,7 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
       with
       | ClassHierarchy.Untracked _ -> None
     in
-    let store_resolved_type ({ Node.location; value } as expression) =
+    let store_coverage_data_for_expression ({ Node.location; value } as expression) =
       let store_lookup ~table ~location data =
         if not (Location.equal location Location.any) then
           Hashtbl.set table ~key:location ~data |> ignore
@@ -133,10 +133,10 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
     in
     match node with
     | Visit.Expression expression ->
-        store_resolved_type expression;
+        store_coverage_data_for_expression expression;
         state
     | Visit.Reference { Node.value = reference; location } ->
-        store_resolved_type (Ast.Expression.from_reference ~location reference);
+        store_coverage_data_for_expression (Ast.Expression.from_reference ~location reference);
         state
     | _ -> state
 
