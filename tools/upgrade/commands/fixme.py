@@ -23,7 +23,7 @@ class Fixme(ErrorSuppressingCommand):
         *,
         repository: Repository,
         error_source: str,
-        only_fix_error_code: Optional[int] = None
+        only_fix_error_code: Optional[int] = None,
     ) -> None:
         super().__init__(command_arguments, repository)
         self._error_source: str = error_source
