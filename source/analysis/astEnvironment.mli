@@ -8,8 +8,6 @@
 open Ast
 open Core
 
-type t
-
 module ParserError : sig
   type t = {
     source_path: ModulePath.t;
@@ -57,6 +55,8 @@ module UpdateResult : sig
 
   val module_updates : t -> ModuleTracker.IncrementalUpdate.t list
 end
+
+type t
 
 val module_tracker : t -> ModuleTracker.t
 
