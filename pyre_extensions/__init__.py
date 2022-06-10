@@ -21,6 +21,7 @@ __all__ = [
     "Generic",
     "JSON",
     "none_throws",
+    "override",
     "ParameterSpecification",
     "safe_cast",
     "safe_json",
@@ -87,6 +88,12 @@ _T1 = TypeVar("_T1")
 _T2 = TypeVar("_T2")
 _Ts = TypeVarTuple("_Ts")
 _P = ParameterSpecification("_P")
+
+T = TypeVar("T", bound=Callable[..., object])
+
+
+def override(func: T) -> T:
+    return func
 
 
 class DecoratorFactory(Protocol):
