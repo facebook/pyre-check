@@ -26,7 +26,7 @@ module AccessCollector = struct
       from_expression collected value
     in
     match value with
-    (* Lambdas are speical -- they bind their own names, which we want to exclude *)
+    (* Lambdas are special -- they bind their own names, which we want to exclude *)
     | Lambda { Lambda.parameters; body } ->
         let collected =
           let from_parameter collected { Node.value = { Parameter.value; _ }; _ } =
@@ -176,6 +176,19 @@ type defined_locals = Scope.Binding.t Identifier.Map.t
 
 module StatementKey = Int
 
+let locals { Scope.Scope.bindings; globals; nonlocals; _ } =
+  (* Santitization is needed to remove (some) scope information that is (sometimes, but not
+     consistently) added into the identifiers themselves (e.g. $local_test?f$y). *)
+  let locals =
+    Identifier.Map.keys bindings |> List.map ~f:Identifier.sanitized |> Identifier.Set.of_list
+  in
+  (* This operation needs to be repeated as Scope doesn't know about qualification, and hence
+     doesn't remove all globals and nonlocals from bindings *)
+  let globals = Identifier.Set.map ~f:Identifier.sanitized globals in
+  let nonlocals = Identifier.Set.map ~f:Identifier.sanitized nonlocals in
+  Identifier.Set.diff (Identifier.Set.diff locals globals) nonlocals
+
+
 let create_map =
   List.fold ~init:Identifier.Map.empty ~f:(fun sofar ({ Scope.Binding.name; _ } as binding) ->
       (* First binding (i.e. last item in the list) wins. *)
@@ -294,19 +307,7 @@ let errors ~qualifier ~define defined_locals_at_each_statement =
       ~kind:(Error.UninitializedLocal value)
       ~define
   in
-  let all_locals =
-    let { Scope.Scope.bindings; globals; nonlocals; _ } = Scope.Scope.of_define_exn define.value in
-    (* Santitization is needed to remove (some) scope information that is (sometimes, but not
-       consistently) added into the identifiers themselves (e.g. $local_test?f$y). *)
-    let locals =
-      Identifier.Map.keys bindings |> List.map ~f:Identifier.sanitized |> Identifier.Set.of_list
-    in
-    (* This operation needs to be repeated as Scope doesn't know about qualification, and hence
-       doesn't remove all globals and nonlocals from bindings *)
-    let globals = Identifier.Set.map ~f:Identifier.sanitized globals in
-    let nonlocals = Identifier.Set.map ~f:Identifier.sanitized nonlocals in
-    Identifier.Set.diff (Identifier.Set.diff locals globals) nonlocals
-  in
+  let all_locals = Scope.Scope.of_define_exn define.value |> locals in
   let in_local_scope { Node.value = identifier; _ } =
     identifier |> Identifier.sanitized |> Identifier.Set.mem all_locals
   in
