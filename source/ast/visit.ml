@@ -26,6 +26,8 @@ module type NodeVisitor = sig
 
   val visit_statement_children : t -> Statement.t -> bool
 
+  val visit_expression_children : t -> Expression.t -> bool
+
   val visit_format_string_children : t -> Expression.t -> bool
 end
 
@@ -125,7 +127,8 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Expression.YieldFrom expression -> visit_expression expression
       | Constant _ -> ()
     in
-    visit_children (Node.value expression);
+    if Visitor.visit_expression_children !state expression then
+      visit_children (Node.value expression);
     visit_node ~state ~visitor (Expression expression)
 
 
@@ -276,6 +279,8 @@ module Make (Visitor : Visitor) = struct
 
       let visit_statement_children _ _ = true
 
+      let visit_expression_children _ _ = true
+
       let visit_format_string_children _ _ = false
     end)
     in
@@ -339,6 +344,8 @@ end
 module type ExpressionPredicate = sig
   type t
 
+  val visit_children : Expression.t -> bool
+
   val predicate : Expression.t -> t option
 end
 
@@ -397,6 +404,8 @@ struct
 
       let visit_statement_children _ = StatementPredicate.visit_children
 
+      let visit_expression_children _ = ExpressionPredicate.visit_children
+
       let visit_format_string_children _ _ = false
     end
     in
@@ -413,6 +422,8 @@ module UnitPredicate = struct
 end
 
 module ExpressionCollector (Predicate : ExpressionPredicate) = struct
+  let visit_children = Predicate.visit_children
+
   let collect source =
     let module Collector = Collector (Predicate) (UnitPredicate) (UnitPredicate) in
     let { Collector.expressions; _ } = Collector.collect source in
@@ -468,6 +479,8 @@ let collect_calls statement =
   let module Collector = ExpressionCollector (struct
     type t = Call.t Node.t
 
+    let visit_children _ = true
+
     let predicate expression =
       match expression with
       | { Node.location; value = Call call } -> Some { Node.location; value = call }
@@ -481,6 +494,8 @@ let collect_names ?(only_simple = false) statement =
   let open Expression in
   let module Collector = ExpressionCollector (struct
     type t = Name.t Node.t
+
+    let visit_children _ = true
 
     let predicate expression =
       match expression with
@@ -500,6 +515,8 @@ let collect_calls_and_names statement =
   let module Collector = ExpressionCollector (struct
     type t = Expression.t
 
+    let visit_children _ = true
+
     let predicate expression =
       match expression with
       | { Node.value = Call _; _ } -> Some expression
@@ -514,6 +531,8 @@ let collect_base_identifiers statement =
   let open Expression in
   let module Collector = ExpressionCollector (struct
     type t = Identifier.t Node.t
+
+    let visit_children _ = true
 
     let predicate expression =
       match expression with
@@ -541,6 +560,8 @@ let rec collect_non_generic_type_names { Node.value; _ } =
 let collect_format_strings_with_ignores ~ignore_line_map source =
   let module CollectIgnoredFormatStrings = ExpressionCollector (struct
     type t = Expression.t * Ignore.t list
+
+    let visit_children _ = true
 
     let predicate = function
       | { Node.value = Expression.FormatString _; location } as expression ->

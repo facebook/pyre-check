@@ -1988,6 +1988,8 @@ struct
       | _ -> true
 
 
+    let visit_expression_children _ _ = true
+
     let visit_format_string_children _ _ = true
   end
 

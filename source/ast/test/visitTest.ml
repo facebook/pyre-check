@@ -18,6 +18,8 @@ let test_collect _ =
       let module ExpressionPredicate = struct
         type t = Expression.t
 
+        let visit_children _ = true
+
         let predicate expression = Some expression
       end
       in
@@ -356,6 +358,8 @@ let test_node_visitor _ =
 
 
     let visit_statement_children _ _ = true
+
+    let visit_expression_children _ _ = true
 
     let visit_format_string_children _ _ = true
   end

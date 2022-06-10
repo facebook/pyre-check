@@ -24,6 +24,8 @@ module type NodeVisitor = sig
 
   val visit_statement_children : t -> Statement.t -> bool
 
+  val visit_expression_children : t -> Expression.t -> bool
+
   val visit_format_string_children : t -> Expression.t -> bool
 end
 
@@ -65,6 +67,8 @@ end
 
 module type ExpressionPredicate = sig
   type t
+
+  val visit_children : Expression.t -> bool
 
   val predicate : Expression.t -> t option
 end

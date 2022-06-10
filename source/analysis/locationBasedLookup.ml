@@ -147,6 +147,8 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
 
   let visit_statement_children _ _ = true
 
+  let visit_expression_children _ _ = true
+
   let visit_format_string_children _ _ = false
 end
 
@@ -406,6 +408,8 @@ module FindNarrowestSpanningExpression (PositionData : PositionData) = struct
   let visit_statement_children _ { Node.location; _ } =
     Location.contains ~location PositionData.position
 
+
+  let visit_expression_children _ _ = true
 
   let visit_format_string_children _ _ = false
 end
