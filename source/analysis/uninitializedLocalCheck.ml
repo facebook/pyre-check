@@ -176,7 +176,7 @@ type defined_locals = Scope.Binding.t Identifier.Map.t
 
 module StatementKey = Int
 
-let locals { Scope.Scope.bindings; globals; nonlocals; _ } =
+let local_bindings { Scope.Scope.bindings; globals; nonlocals; _ } =
   (* Santitization is needed to remove (some) scope information that is (sometimes, but not
      consistently) added into the identifiers themselves (e.g. $local_test?f$y). *)
   let locals =
@@ -186,7 +186,14 @@ let locals { Scope.Scope.bindings; globals; nonlocals; _ } =
      doesn't remove all globals and nonlocals from bindings *)
   let globals = Identifier.Set.map ~f:Identifier.sanitized globals in
   let nonlocals = Identifier.Set.map ~f:Identifier.sanitized nonlocals in
-  Identifier.Set.diff (Identifier.Set.diff locals globals) nonlocals
+  let filtered_locals = Identifier.Set.diff (Identifier.Set.diff locals globals) nonlocals in
+  let sanitized_local_bindings =
+    Identifier.Map.fold bindings ~init:Identifier.Map.empty ~f:(fun ~key ~data sanitized ->
+        Map.set sanitized ~key:(Identifier.sanitized key) ~data)
+  in
+  Identifier.Map.filteri
+    ~f:(fun ~key ~data:_ -> Set.mem filtered_locals key)
+    sanitized_local_bindings
 
 
 let create_map =
@@ -307,7 +314,12 @@ let errors ~qualifier ~define defined_locals_at_each_statement =
       ~kind:(Error.UninitializedLocal value)
       ~define
   in
-  let all_locals = Scope.Scope.of_define_exn define.value |> locals in
+  let all_locals =
+    Scope.Scope.of_define_exn define.value
+    |> local_bindings
+    |> Identifier.Map.keys
+    |> Identifier.Set.of_list
+  in
   let in_local_scope { Node.value = identifier; _ } =
     identifier |> Identifier.sanitized |> Identifier.Set.mem all_locals
   in
