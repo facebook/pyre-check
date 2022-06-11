@@ -4,7 +4,7 @@ first_party_detection = false
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py36, py37, py38, py39, lint
+envlist = py37, py38, py39, lint
 skipsdist = True
 
 [testenv]
