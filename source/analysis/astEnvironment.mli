@@ -79,3 +79,15 @@ val clear_memory_for_tests : scheduler:Scheduler.t -> t -> unit
 val remove_sources : t -> Reference.t list -> unit
 
 val read_only : t -> ReadOnly.t
+
+module Overlay : sig
+  type t
+
+  val create : ReadOnly.t -> t
+
+  val module_tracker : t -> ModuleTracker.Overlay.t
+
+  val update_overlaid_code : t -> code_updates:(ArtifactPath.t * string) list -> UpdateResult.t
+
+  val read_only : t -> ReadOnly.t
+end

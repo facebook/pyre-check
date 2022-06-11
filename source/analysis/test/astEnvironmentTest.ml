@@ -975,6 +975,115 @@ let test_parser_update context =
   ()
 
 
+let make_overlay_testing_functions ~context ~test_sources =
+  let project = ScratchProject.setup ~context test_sources in
+  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let parent_read_only =
+    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
+  in
+  let overlay_environment = AstEnvironment.Overlay.create parent_read_only in
+  let read_only = AstEnvironment.Overlay.read_only overlay_environment in
+  let load_raw_sources qualifier =
+    let unpack_result = function
+      (* Getting good failure errors here is important because it is easy to mess up indentation *)
+      | Some (Ok source) -> source
+      | Some (Error { AstEnvironment.ParserError.message; _ }) ->
+          failwith ("Loading source failed with message: " ^ message)
+      | None -> failwith "Loading source produced None"
+    in
+    ( AstEnvironment.ReadOnly.get_raw_source parent_read_only qualifier |> unpack_result,
+      AstEnvironment.ReadOnly.get_raw_source read_only qualifier |> unpack_result )
+  in
+  let assert_not_overlaid qualifier =
+    let from_parent, from_overlay = load_raw_sources qualifier in
+    assert_equal ~ctxt:context ~printer:Source.show from_parent from_overlay
+  in
+  let assert_is_overlaid qualifier =
+    let from_parent, from_overlay = load_raw_sources qualifier in
+    [%compare.equal: Source.t] from_parent from_overlay
+    |> not
+    |> assert_bool "Sources should be different, but are not"
+  in
+  let update_and_assert_invalidated_modules ~relative ~code ~expected =
+    let invalidated_modules =
+      let code_updates =
+        [Test.relative_artifact_path ~root:local_root ~relative, trim_extra_indentation code]
+      in
+      AstEnvironment.Overlay.update_overlaid_code overlay_environment ~code_updates
+      |> AstEnvironment.UpdateResult.invalidated_modules
+      |> List.sort ~compare:Reference.compare
+    in
+    assert_equal ~ctxt:context ~printer:[%show: Reference.t list] expected invalidated_modules
+  in
+  read_only, assert_not_overlaid, assert_is_overlaid, update_and_assert_invalidated_modules
+
+
+let test_overlay context =
+  let read_only, assert_not_overlaid, assert_is_overlaid, update_and_assert_invalidated_modules =
+    let test_sources =
+      [
+        ( "module.py",
+          trim_extra_indentation
+            {|
+            def foo(x: int) -> int:
+              return x
+            |} );
+        ( "depends_on_module.py",
+          trim_extra_indentation
+            {|
+            from module import *
+
+            def bar(y: str) -> str:
+              return "hello" + y
+            |}
+        );
+        ( "does_not_depend.py",
+          trim_extra_indentation
+            {|
+            def baz() -> int:
+              return 42
+            |} );
+      ]
+    in
+    make_overlay_testing_functions ~context ~test_sources
+  in
+  (* Verify read-only behavior before update *)
+  assert_not_overlaid !&"module";
+  assert_not_overlaid !&"depends_on_module";
+  assert_not_overlaid !&"does_not_depend";
+  (* Perform the initial update *)
+  update_and_assert_invalidated_modules
+    ~relative:"module.py"
+    ~code:{|
+      def foo(x: str) -> str:
+        return x
+      |}
+    ~expected:[!&"module"];
+  (* Verify read-only behavior after update *)
+  assert_is_overlaid !&"module";
+  assert_not_overlaid !&"depends_on_module";
+  assert_not_overlaid !&"does_not_depend";
+  (* Verify wildcard import handling on a subsequent update. Note that the initial update can never
+     trigger dependencies, because lazy loading means dependencies are not registered until they are
+     used. *)
+  let () =
+    AstEnvironment.ReadOnly.get_processed_source
+      read_only
+      ~track_dependency:true
+      !&"depends_on_module"
+    |> Option.is_some
+    |> assert_bool "Expected to be able to load processed source for b.py"
+  in
+  update_and_assert_invalidated_modules
+    ~relative:"module.py"
+    ~code:{|
+      def foo(x: float) -> float:
+        return x
+      |}
+    ~expected:[!&"depends_on_module"; !&"module"];
+  ()
+
+
 let () =
   "ast_environment"
   >::: [
@@ -985,5 +1094,6 @@ let () =
          "ast_change" >:: test_ast_change;
          "parse_repository" >:: test_parse_repository;
          "parser_update" >:: test_parser_update;
+         "test_overlay" >:: test_overlay;
        ]
   |> Test.run

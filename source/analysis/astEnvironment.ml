@@ -544,4 +544,40 @@ module Base = struct
     FromReadOnlyUpstream.read_only from_read_only_upstream
 end
 
+module Overlay = struct
+  type t = {
+    parent: ReadOnly.t;
+    module_tracker: ModuleTracker.Overlay.t;
+    from_read_only_upstream: FromReadOnlyUpstream.t;
+  }
+
+  let create parent =
+    let module_tracker = ReadOnly.module_tracker parent |> ModuleTracker.Overlay.create in
+    let from_read_only_upstream =
+      ModuleTracker.Overlay.read_only module_tracker |> FromReadOnlyUpstream.create
+    in
+    { parent; module_tracker; from_read_only_upstream }
+
+
+  let module_tracker { module_tracker; _ } = module_tracker
+
+  let update_overlaid_code { module_tracker; from_read_only_upstream; _ } ~code_updates =
+    (* No ownership filtering is needed, since raw sources correspond 1:1 with raw code. *)
+    ModuleTracker.Overlay.update_overlaid_code module_tracker ~code_updates
+    |> FromReadOnlyUpstream.process_module_updates
+         ~scheduler:(Scheduler.create_sequential ())
+         from_read_only_upstream
+
+
+  let read_only { module_tracker = overlay_tracker; parent; from_read_only_upstream } =
+    let this_read_only = FromReadOnlyUpstream.read_only from_read_only_upstream in
+    let get_raw_source ?dependency qualifier =
+      if ModuleTracker.Overlay.owns_qualifier overlay_tracker qualifier then
+        ReadOnly.get_raw_source this_read_only ?dependency qualifier
+      else
+        ReadOnly.get_raw_source parent ?dependency qualifier
+    in
+    { this_read_only with get_raw_source }
+end
+
 include Base
