@@ -2183,6 +2183,220 @@ let test_get_define_names context =
   ()
 
 
+let equal compare value0 value1 = Int.equal (compare value0 value1) 0
+
+let create_overlay_test_data ~context sources =
+  let project =
+    ScratchProject.setup
+      ~include_typeshed_stubs:false
+      ~incremental_style:FineGrained
+      ~in_memory:false
+      sources
+      ~context
+  in
+  let parent =
+    ScratchProject.global_environment project
+    |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
+  in
+  let environment = UnannotatedGlobalEnvironment.Overlay.create parent in
+  project, parent, environment
+
+
+let create_overlay_test_functions ~project ~parent ~environment =
+  let read_only = UnannotatedGlobalEnvironment.Overlay.read_only environment in
+  let from_parent_and_overlay getter ?dependency key =
+    getter parent ?dependency key, getter read_only ?dependency key
+  in
+  let assert_values_are_overlaid ~qualifier ~class_name ~function_name =
+    let assert_is_overlaid ~cmp ?printer getter key =
+      let from_parent, from_overlay = from_parent_and_overlay getter key in
+      if not (cmp from_parent from_overlay) then
+        assert_failure
+          ("Expected overlaid value"
+          ^
+          match printer with
+          | Some printer -> ", got: " ^ printer from_overlay
+          | None -> "")
+    in
+    assert_is_overlaid
+      ~cmp:[%equal: Module.t option]
+      UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata
+      qualifier;
+    assert_is_overlaid
+      ~cmp:[%equal: Reference.t list]
+      UnannotatedGlobalEnvironment.ReadOnly.get_define_names
+      qualifier;
+    assert_is_overlaid
+      ~cmp:(equal [%compare: ClassSummary.t Node.t option])
+      UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
+      class_name;
+    assert_is_overlaid
+      ~cmp:(equal [%compare: FunctionDefinition.t option])
+      UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
+      function_name;
+    ()
+  in
+  let assert_values_not_overlaid ~qualifier ~class_name ~function_name =
+    let assert_not_overlaid ~cmp ?printer getter key =
+      let from_parent, from_overlay = from_parent_and_overlay getter key in
+      assert_equal ~cmp ?printer from_parent from_overlay
+    in
+    assert_not_overlaid
+      ~cmp:[%equal: Module.t option]
+      UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata
+      qualifier;
+    assert_not_overlaid
+      ~cmp:[%equal: Reference.t list]
+      UnannotatedGlobalEnvironment.ReadOnly.get_define_names
+      qualifier;
+    assert_not_overlaid
+      ~cmp:(equal [%compare: ClassSummary.t Node.t option])
+      UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
+      class_name;
+    assert_not_overlaid
+      ~cmp:(equal [%compare: FunctionDefinition.t option])
+      UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
+      function_name;
+    ()
+  in
+  let update_and_assert_invalidated_modules ~expected code_updates =
+    let code_updates =
+      let relative_to_artifact_path (relative, code) =
+        let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+        Test.relative_artifact_path ~root:local_root ~relative, code
+      in
+      List.map code_updates ~f:relative_to_artifact_path
+    in
+    let invalidated_modules =
+      UnannotatedGlobalEnvironment.Overlay.update_overlaid_code environment ~code_updates
+      |> UnannotatedGlobalEnvironment.UpdateResult.invalidated_modules
+    in
+    assert_equal ~cmp:[%equal: Reference.t list] expected invalidated_modules
+  in
+  assert_values_are_overlaid, assert_values_not_overlaid, update_and_assert_invalidated_modules
+
+
+let test_overlay_basic context =
+  let source_on_disk =
+    trim_extra_indentation
+      {|
+      global_variable: bytes = bytes("defined_on_disk")
+
+      def foo() -> bytes
+        return by"defined_on_disk"
+
+      class Bar:
+        x: bytes = "defined_on_disk"
+      |}
+  in
+  let source_in_overlay =
+    trim_extra_indentation
+      {|
+      global_variable: str = "defined_in_overlay"
+
+      def foo() -> str
+        return "defined_in_overlay"
+
+      class Bar:
+        x: str = "defined_in_overlay"
+      |}
+  in
+  let sources =
+    [
+      "in_overlay.py", source_on_disk;
+      "not_in_overlay.py", source_on_disk;
+      "shadowed_by_stub.pyi", source_on_disk;
+    ]
+  in
+  let project, parent, environment = create_overlay_test_data ~context sources in
+  let assert_values_are_overlaid, assert_values_not_overlaid, update_and_assert_invalidated_modules =
+    create_overlay_test_functions ~project ~parent ~environment
+  in
+
+  (* Validate behavior prior to update *)
+  assert_values_not_overlaid
+    ~qualifier:!&"in_overlay"
+    ~class_name:"in_overlay.Bar"
+    ~function_name:!&"in_overlay.foo";
+  assert_values_not_overlaid
+    ~qualifier:!&"not_in_overlay"
+    ~class_name:"not_in_overlay.Bar"
+    ~function_name:!&"not_in_overlay.foo";
+  assert_values_not_overlaid
+    ~qualifier:!&"shadowed_by_stub"
+    ~class_name:"shadowed_by_stub.Bar"
+    ~function_name:!&"shadowed_by_stub.foo";
+  (* Run the update *)
+  update_and_assert_invalidated_modules
+    ["in_overlay.py", source_in_overlay; "shadowed_by_stub.py", source_in_overlay]
+    ~expected:[!&"in_overlay"; !&"shadowed_by_stub"];
+  (* Validate behavior after to update *)
+  assert_values_are_overlaid
+    ~qualifier:!&"in_overlay"
+    ~class_name:"in_overlay.Bar"
+    ~function_name:!&"in_overlay.foo";
+  assert_values_not_overlaid
+    ~qualifier:!&"not_in_overlay"
+    ~class_name:"not_in_overlay.Bar"
+    ~function_name:!&"not_in_overlay.foo";
+  assert_values_not_overlaid
+    ~qualifier:!&"shadowed_by_stub"
+    ~class_name:"shadowed_by_stub.Bar"
+    ~function_name:!&"shadowed_by_stub.foo";
+  ()
+
+
+let test_overlay_update_filters context =
+  let sources =
+    [
+      "in_overlay_and_imported.py", "x: int = 10";
+      "in_overlay_dependent.py", "from in_overlay_and_imported import *";
+      "not_in_overlay.py", "from in_overlay_and_imported import *";
+    ]
+  in
+  let project, parent, environment = create_overlay_test_data ~context sources in
+  let read_only = UnannotatedGlobalEnvironment.Overlay.read_only environment in
+  let _, _, update_and_assert_invalidated_modules =
+    create_overlay_test_functions ~project ~parent ~environment
+  in
+  let assert_global ~exists name =
+    match UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global read_only name with
+    | Some _ ->
+        if not exists then
+          assert_failure ("Global " ^ Reference.show name ^ " exists, but was expected not to")
+    | None ->
+        if exists then
+          assert_failure ("Global " ^ Reference.show name ^ " does not exists, but was expected to")
+  in
+  (* Run the initial update *)
+  update_and_assert_invalidated_modules
+    [
+      "in_overlay_and_imported.py", "y: float = 10.0";
+      "in_overlay_dependent.py", "from in_overlay_and_imported import *";
+    ]
+    ~expected:[!&"in_overlay_and_imported"; !&"in_overlay_dependent"];
+  (* Validate behavior of wildcard import after the first update
+   * - in_overlay_dependent should see the overlaid state of in_overlay_and_imported, with y defined
+   * - not_in_overlay should see the parent state of in_overlay_and_imported, with x defined
+   *)
+  assert_global ~exists:false !&"in_overlay_dependent.x";
+  assert_global ~exists:true !&"in_overlay_dependent.y";
+  assert_global ~exists:false !&"in_overlay_dependent.z";
+  assert_global ~exists:true !&"not_in_overlay.x";
+  assert_global ~exists:false !&"not_in_overlay.y";
+  (* Run the second update *)
+  update_and_assert_invalidated_modules
+    ["in_overlay_and_imported.py", "z: float = 10.0"]
+    ~expected:[!&"in_overlay_and_imported"; !&"in_overlay_dependent"];
+  (* Validate behavior after update *)
+  assert_global ~exists:false !&"in_overlay_dependent.x";
+  assert_global ~exists:false !&"in_overlay_dependent.y";
+  assert_global ~exists:true !&"in_overlay_dependent.z";
+  assert_global ~exists:true !&"not_in_overlay.x";
+  assert_global ~exists:false !&"not_in_overlay.y";
+  ()
+
+
 let () =
   "environment"
   >::: [
@@ -2199,5 +2413,7 @@ let () =
          "dependencies_and_new_values" >:: test_dependencies_and_new_values;
          "get_define_body" >:: test_get_define_body;
          "get_define_names" >:: test_get_define_names;
+         "overlay_basic" >:: test_overlay_basic;
+         "overlay_update_filters" >:: test_overlay_update_filters;
        ]
   |> Test.run

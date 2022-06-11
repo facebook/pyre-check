@@ -1058,4 +1058,81 @@ module Base = struct
   let store { ast_environment; _ } = AstEnvironment.store ast_environment
 end
 
+module Overlay = struct
+  type t = {
+    parent: ReadOnly.t;
+    ast_environment: AstEnvironment.Overlay.t;
+    from_read_only_upstream: FromReadOnlyUpstream.t;
+  }
+
+  let create parent =
+    let ast_environment = ReadOnly.ast_environment parent |> AstEnvironment.Overlay.create in
+    let from_read_only_upstream =
+      AstEnvironment.Overlay.read_only ast_environment |> FromReadOnlyUpstream.create
+    in
+    { parent; ast_environment; from_read_only_upstream }
+
+
+  let module_tracker { ast_environment; _ } = AstEnvironment.Overlay.module_tracker ast_environment
+
+  let owns_qualifier environment qualifier =
+    ModuleTracker.Overlay.owns_qualifier (module_tracker environment) qualifier
+
+
+  let owns_reference environment reference =
+    Reference.possible_qualifiers reference |> List.exists ~f:(owns_qualifier environment)
+
+
+  let owns_qualified_class_name environment name =
+    Reference.create name |> owns_reference environment
+
+
+  let update_overlaid_code
+      ({ ast_environment; from_read_only_upstream; _ } as environment)
+      ~code_updates
+    =
+    let invalidated_modules, module_updates =
+      let update_result =
+        AstEnvironment.Overlay.update_overlaid_code ast_environment ~code_updates
+      in
+      ( (* The invalidated_modules coming from AstEnvironment can include fanout to modules that
+           aren't part of the overlay due to wildcard imports, so they have to be filtered. *)
+        AstEnvironment.UpdateResult.invalidated_modules update_result
+        |> List.filter ~f:(owns_qualifier environment),
+        (* The module_updates come directly from ModuleTracker and correspond exactly to changes in
+           `code_updates`, so they do not require filtering. *)
+        AstEnvironment.UpdateResult.module_updates update_result )
+    in
+    FromReadOnlyUpstream.update
+      from_read_only_upstream
+      ~scheduler:(Scheduler.create_sequential ())
+      invalidated_modules
+      module_updates
+
+
+  let read_only ({ parent; from_read_only_upstream; _ } as environment) =
+    let this_read_only = FromReadOnlyUpstream.read_only from_read_only_upstream in
+    let { ReadOnly.all_classes; all_indices; all_unannotated_globals; _ } = parent in
+    let { ReadOnly.ast_environment; _ } = this_read_only in
+    let if_owns ~owns ~f ?dependency key =
+      if owns environment key then
+        f this_read_only ?dependency key
+      else
+        f parent ?dependency key
+    in
+    {
+      ReadOnly.ast_environment;
+      module_exists = if_owns ~owns:owns_qualifier ~f:ReadOnly.module_exists;
+      get_module_metadata = if_owns ~owns:owns_qualifier ~f:ReadOnly.get_module_metadata;
+      get_define_names = if_owns ~owns:owns_qualifier ~f:ReadOnly.get_define_names;
+      class_exists = if_owns ~owns:owns_qualified_class_name ~f:ReadOnly.class_exists;
+      get_class_summary = if_owns ~owns:owns_qualified_class_name ~f:ReadOnly.get_class_summary;
+      get_function_definition = if_owns ~owns:owns_reference ~f:ReadOnly.get_function_definition;
+      get_unannotated_global = if_owns ~owns:owns_reference ~f:ReadOnly.get_unannotated_global;
+      all_classes;
+      all_indices;
+      all_unannotated_globals;
+    }
+end
+
 include Base

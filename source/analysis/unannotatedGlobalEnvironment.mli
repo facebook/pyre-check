@@ -164,3 +164,15 @@ val update_this_and_all_preceding_environments
 val store : t -> unit
 
 val load : Configuration.Analysis.t -> t
+
+module Overlay : sig
+  type t
+
+  val create : ReadOnly.t -> t
+
+  val module_tracker : t -> ModuleTracker.Overlay.t
+
+  val update_overlaid_code : t -> code_updates:(ArtifactPath.t * string) list -> UpdateResult.t
+
+  val read_only : t -> ReadOnly.t
+end
