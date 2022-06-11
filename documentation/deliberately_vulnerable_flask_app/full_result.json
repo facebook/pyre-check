@@ -2,11 +2,11 @@
   {
     "code": 5005,
     "column": 16,
-    "concise_description": "SQL injection. [5005]: Data from [UserControlled] source(s) may reach [SQL, StringMayBeSQL] sink(s)",
+    "concise_description": "SQL injection. [5005]: Data from [UserControlled] source(s) may reach [SQL] sink(s)",
     "define": "app.definite_sql",
-    "description": "SQL injection. [5005]: Data from [UserControlled] source(s) may reach [SQL, StringMayBeSQL] sink(s)",
+    "description": "SQL injection. [5005]: Data from [UserControlled] source(s) may reach [SQL] sink(s)",
     "line": 48,
-    "long_description": "SQL injection. [5005]: Data from [UserControlled] source(s) may reach [SQL, StringMayBeSQL] sink(s)",
+    "long_description": "SQL injection. [5005]: Data from [UserControlled] source(s) may reach [SQL] sink(s)",
     "name": "SQL injection.",
     "path": "app.py",
     "stop_column": 62,
@@ -102,5 +102,11 @@
     "path": "app.py",
     "stop_column": 36,
     "stop_line": 28
+  },
+  {
+    "code": 6108,
+    "define": "app.definite_pt",
+    "description": "User Controlled file returned to user [6108]: User Controlled file returned to user",
+    "path": "app.py"
   }
 ]
