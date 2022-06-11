@@ -38,3 +38,10 @@ def no_source():
 def unreachable_through_function_call_source():
     x = no_source()
     _test_sink(x)
+
+
+def unreachable_code_do_to_always_exception():
+    # TODO(T123118812): False positive for function that raises Exception
+    no_source()
+    y = _test_source()
+    _test_sink(y)

@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+raise.unreachable_code_do_to_always_exception (fun) -> [_test_sink (fun) _test_source (fun) raise.no_source (fun)]
 raise.unreachable_through_function_call_sink (fun) -> [_test_source (fun) raise.no_sink (fun)]
 raise.unreachable_through_function_call_source (fun) -> [_test_sink (fun) raise.no_source (fun)]
 raise.$toplevel (fun) -> []
