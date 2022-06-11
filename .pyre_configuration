@@ -15,6 +15,9 @@
       "site-package": "async_generator"
     },
     {
+      "site-package": "click"
+    },
+    {
       "site-package": "dataclasses_json"
     },
     {
