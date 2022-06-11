@@ -6832,32 +6832,31 @@ let exit_state ~resolution (module Context : Context) =
 
 let compute_local_annotations ~global_environment name =
   let global_resolution = GlobalResolution.create global_environment in
-  match GlobalResolution.define_body global_resolution name with
-  | None -> None
-  | Some define_node ->
-      let _, local_annotations, _ =
-        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-        let resolution = resolution global_resolution (module DummyContext) in
-        let module Context = struct
-          (* Doesn't matter what the qualifier is since we won't be using it *)
-          let qualifier = Reference.empty
+  let exit_state_of_define define_node =
+    let resolution = resolution global_resolution (module DummyContext) in
+    let module Context = struct
+      (* Doesn't matter what the qualifier is since we won't be using it *)
+      let qualifier = Reference.empty
 
-          let debug = false
+      let debug = false
 
-          let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
+      let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
 
-          let define = define_node
+      let define = define_node
 
-          let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
+      let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
 
-          let error_map = Some (LocalErrorMap.empty ())
+      let error_map = Some (LocalErrorMap.empty ())
 
-          module Builder = Callgraph.NullBuilder
-        end
-        in
-        exit_state ~resolution (module Context)
-      in
-      local_annotations >>| LocalAnnotationMap.read_only
+      module Builder = Callgraph.NullBuilder
+    end
+    in
+    exit_state ~resolution (module Context)
+  in
+  GlobalResolution.define_body global_resolution name
+  >>| exit_state_of_define
+  >>= (fun (_, local_annotations, _) -> local_annotations)
+  >>| LocalAnnotationMap.read_only
 
 
 let check_define
