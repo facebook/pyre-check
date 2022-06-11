@@ -1,5 +1,72 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "raise.forward",
+    "callable_line": 9,
+    "code": 5002,
+    "line": 10,
+    "start": 21,
+    "end": 35,
+    "filename": "raise.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "raise.py",
+              "line": 10,
+              "start": 21,
+              "end": 35
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "raise.py",
+              "line": 10,
+              "start": 21,
+              "end": 35
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle":
+      "raise.forward:5002:0:Call|_test_sink|0|formal(arg):41af6043e7db8171f4e766102a4a03f3"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
@@ -229,6 +296,34 @@
               }
             ],
             "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "raise.backward",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "raise.py",
+              "line": 14,
+              "start": 21,
+              "end": 22
+            }
           }
         ]
       }

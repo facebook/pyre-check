@@ -2209,7 +2209,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Match _
     | Nonlocal _
     | Pass
-    | Raise _ ->
+    | Raise { expression = None; _ } ->
+        state
+    | Raise { expression = Some expression; _ } ->
+        let _, state = analyze_expression ~resolution ~state ~expression in
         state
     | Return { expression = Some expression; _ } ->
         let taint, state = analyze_expression ~resolution ~state ~expression in

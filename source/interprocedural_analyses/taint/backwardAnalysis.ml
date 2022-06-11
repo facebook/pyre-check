@@ -2045,8 +2045,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Match _
     | Nonlocal _
     | Pass
-    | Raise _ ->
+    | Raise { expression = None; _ } ->
         state
+    | Raise { expression = Some expression; _ } ->
+        analyze_expression ~resolution ~taint:BackwardState.Tree.empty ~state ~expression
     | Return { expression = Some expression; _ } ->
         let access_path = { AccessPath.root = AccessPath.Root.LocalResult; path = [] } in
         let return_taint = get_taint (Some access_path) state in
