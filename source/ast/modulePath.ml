@@ -21,7 +21,6 @@ module T = struct
 end
 
 include Hashable.Make (T)
-module Map = Map.Make (T)
 include T
 
 let equal = [%compare.equal: t]

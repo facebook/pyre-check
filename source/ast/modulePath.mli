@@ -19,8 +19,6 @@ type t = private {
 
 include Hashable with type t := t
 
-module Map : Map.S with type Key.t = t
-
 val pp : Format.formatter -> t -> unit
 
 val create : configuration:Configuration.Analysis.t -> ArtifactPath.t -> t option
