@@ -607,4 +607,46 @@ module Base = struct
     }
 end
 
+module Overlay = struct
+  type t = {
+    parent: ReadOnly.t;
+    overlaid_code: string ModulePath.Table.t;
+    overlaid_qualifiers: Reference.Hash_set.t;
+  }
+
+  let owns_qualifier { overlaid_qualifiers; _ } qualifier =
+    Hash_set.mem overlaid_qualifiers qualifier
+
+
+  let create parent =
+    {
+      parent;
+      overlaid_code = ModulePath.Table.create ();
+      overlaid_qualifiers = Reference.Hash_set.create ();
+    }
+
+
+  let update_overlaid_code { parent; overlaid_code; overlaid_qualifiers } ~code_updates =
+    let add_or_update_code ~code module_path =
+      let qualifier = ModulePath.qualifier module_path in
+      let () = ModulePath.Table.set overlaid_code ~key:module_path ~data:code in
+      let () = Hash_set.add overlaid_qualifiers qualifier in
+      IncrementalUpdate.NewExplicit module_path
+    in
+    let process_code_update (artifact_path, code) =
+      let configuration = ReadOnly.configuration parent in
+      ModulePath.create ~configuration artifact_path >>| add_or_update_code ~code
+    in
+    List.filter_map code_updates ~f:process_code_update
+
+
+  let read_only { parent; overlaid_code; _ } =
+    let get_raw_code module_path =
+      match ModulePath.Table.find overlaid_code module_path with
+      | Some code -> Result.Ok code
+      | _ -> ReadOnly.get_raw_code parent module_path
+    in
+    { parent with get_raw_code }
+end
+
 include Base

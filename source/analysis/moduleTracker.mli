@@ -66,3 +66,18 @@ module Serializer : sig
 end
 
 val read_only : t -> ReadOnly.t
+
+module Overlay : sig
+  type t
+
+  val create : ReadOnly.t -> t
+
+  val owns_qualifier : t -> Ast.Reference.t -> bool
+
+  val update_overlaid_code
+    :  t ->
+    code_updates:(ArtifactPath.t * string) list ->
+    IncrementalUpdate.t list
+
+  val read_only : t -> ReadOnly.t
+end

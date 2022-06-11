@@ -41,6 +41,8 @@ let lookup_exn tracker reference =
 
 let create_file root relative = create_file (PyrePath.create_relative ~root ~relative)
 
+let remove_file root relative = PyrePath.create_relative ~root ~relative |> PyrePath.remove
+
 module TestFiles = struct
   type t =
     | File of string
@@ -81,6 +83,7 @@ let create_test_configuration ~context ~local_tree ~external_tree =
         (List.map
            ~f:Configuration.Extension.create_extension
            [".first"; ".second"; ".third"; ".special$include_suffix_in_module_qualifier"])
+      ~incremental_style:Configuration.Analysis.FineGrained
       ()
   in
   configuration, external_root
@@ -1555,4 +1558,146 @@ let test_update context =
   ()
 
 
-let () = "environment" >::: ["creation" >:: test_creation; "update" >:: test_update] |> Test.run
+let make_overlay_testing_functions ~context ~configuration ~local_root ~parent_tracker =
+  let tracker = ModuleTracker.read_only parent_tracker |> ModuleTracker.Overlay.create in
+  let read_only = ModuleTracker.Overlay.read_only tracker in
+  let overlay_owns qualifier = ModuleTracker.Overlay.owns_qualifier tracker qualifier in
+  let assert_raw_code qualifier expected =
+    let actual =
+      Option.value_exn (ModuleTracker.ReadOnly.lookup_source_path read_only qualifier)
+      |> ModuleTracker.ReadOnly.get_raw_code read_only
+      |> Result.ok
+      |> Option.value ~default:"Error loading code!"
+    in
+    assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected actual
+  in
+  let update_overlay_and_assert_result ~code_updates ~expected =
+    let code_updates =
+      let relative_to_artifact_path (relative, code) =
+        let artifact_path = Test.relative_artifact_path ~root:local_root ~relative in
+        artifact_path, code
+      in
+      List.map code_updates ~f:relative_to_artifact_path
+    in
+    let incremental_updates =
+      ModuleTracker.Overlay.update_overlaid_code tracker ~code_updates
+      |> List.sort ~compare:ModuleTracker.IncrementalUpdate.compare
+    in
+    let expected_incremental_updates =
+      let relative_to_incremental_update relative =
+        ModuleTracker.IncrementalUpdate.NewExplicit
+          (create_module_path_exn ~configuration local_root relative)
+      in
+      List.map expected ~f:relative_to_incremental_update
+      |> List.sort ~compare:ModuleTracker.IncrementalUpdate.compare
+    in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%equal: ModuleTracker.IncrementalUpdate.t list]
+      ~printer:[%show: ModuleTracker.IncrementalUpdate.t list]
+      expected_incremental_updates
+      incremental_updates
+  in
+  overlay_owns, assert_raw_code, update_overlay_and_assert_result
+
+
+let test_overlay_basic context =
+  let ({ Configuration.Analysis.local_root; _ } as configuration), _ =
+    create_test_configuration
+      ~context
+      ~local_tree:
+        [TestFiles.File "code.py"; TestFiles.File "has_stub.py"; TestFiles.File "has_stub.pyi"]
+      ~external_tree:[]
+  in
+  let overlay_owns, assert_raw_code, update_overlay_and_assert_result =
+    let parent_tracker = ModuleTracker.create configuration in
+    make_overlay_testing_functions ~context ~configuration ~local_root ~parent_tracker
+  in
+  let unsaved_content = "# unsaved_changes" in
+  let open Test in
+  (* Check read-only behavior prior to any update *)
+  overlay_owns !&"code" |> assert_false;
+  assert_raw_code !&"code" content_on_disk;
+  overlay_owns !&"has_stub" |> assert_false;
+  assert_raw_code !&"has_stub" content_on_disk;
+  (* Run an update. Both modules should be registered as in the overlay *)
+  update_overlay_and_assert_result
+    ~code_updates:["code.py", unsaved_content; "has_stub.py", unsaved_content]
+    ~expected:["code.py"; "has_stub.py"];
+  (* Check read-only behavior after update; the "has_stub.py" file should be masked by its stub *)
+  overlay_owns !&"code" |> assert_true;
+  assert_raw_code !&"code" unsaved_content;
+  overlay_owns !&"has_stub" |> assert_true;
+  assert_raw_code !&"has_stub" content_on_disk;
+  ()
+
+
+let test_overlay_code_hiding context =
+  let ({ Configuration.Analysis.local_root; _ } as configuration), _ =
+    create_test_configuration ~context ~local_tree:[TestFiles.File "code.py"] ~external_tree:[]
+  in
+  let parent_tracker = ModuleTracker.create configuration in
+  let overlay_owns, assert_raw_code, update_overlay_and_assert_result =
+    make_overlay_testing_functions ~context ~configuration ~local_root ~parent_tracker
+  in
+  let unsaved_content_0 = "# unsaved_changes - edit 0" in
+  let unsaved_content_1 = "# unsaved_changes - edit 1" in
+  let update_stub_file_in_parent () =
+    let _ =
+      ModuleTracker.update
+        parent_tracker
+        ~artifact_paths:[Test.relative_artifact_path ~root:local_root ~relative:"code.pyi"]
+    in
+    ()
+  in
+  let create_stub_file_and_update_parent () =
+    create_file local_root "code.pyi";
+    update_stub_file_in_parent ()
+  in
+  let remove_stub_file_and_update_parent () =
+    remove_file local_root "code.pyi";
+    update_stub_file_in_parent ()
+  in
+  let open Test in
+  (* Check behavior prior to any update *)
+  overlay_owns !&"code" |> assert_false;
+  assert_raw_code !&"code" content_on_disk;
+  (* Add "code.py" to the overlay, and make sure we pick it up *)
+  update_overlay_and_assert_result
+    ~code_updates:["code.py", unsaved_content_0]
+    ~expected:["code.py"];
+  overlay_owns !&"code" |> assert_true;
+  assert_raw_code !&"code" unsaved_content_0;
+  (* Create a stub "code.pyi" on disk and update the parent
+   *
+   * Make sure that after this we read content from disk, even though we do still
+   * consider the module part of the overlay *)
+  create_stub_file_and_update_parent ();
+  overlay_owns !&"code" |> assert_true;
+  assert_raw_code !&"code" content_on_disk;
+  (* Update the overlaid code. It should still be shadowed by the parent *)
+  update_overlay_and_assert_result
+    ~code_updates:["code.py", unsaved_content_1]
+    ~expected:["code.py"];
+  overlay_owns !&"code" |> assert_true;
+  assert_raw_code !&"code" content_on_disk;
+  (* Delete the stub file and update the parent
+   *
+   * The overlay should go back to picking up in-memory code, and the edit that
+   * happened while the module was shadowed should be there.
+   *)
+  remove_stub_file_and_update_parent ();
+  overlay_owns !&"code" |> assert_true;
+  assert_raw_code !&"code" unsaved_content_1;
+  ()
+
+
+let () =
+  "environment"
+  >::: [
+         "creation" >:: test_creation;
+         "update" >:: test_update;
+         "overlay_basic" >:: test_overlay_basic;
+         "overlay_code_hiding" >:: test_overlay_code_hiding;
+       ]
+  |> Test.run
