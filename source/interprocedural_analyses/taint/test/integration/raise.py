@@ -45,3 +45,12 @@ def unreachable_code_do_to_always_exception():
     no_source()
     y = _test_source()
     _test_sink(y)
+
+
+def conditional_unreachability(y):
+    if y:
+        x = _test_source()
+        raise Exception()
+    else:
+        x = "benign"
+    _test_sink(x)

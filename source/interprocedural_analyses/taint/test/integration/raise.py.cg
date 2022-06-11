@@ -5,6 +5,7 @@ raise.unreachable_through_function_call_sink (fun) -> [_test_source (fun) raise.
 raise.unreachable_through_function_call_source (fun) -> [_test_sink (fun) raise.no_source (fun)]
 raise.$toplevel (fun) -> []
 raise.backward (fun) -> [_test_sink (fun)]
+raise.conditional_unreachability (fun) -> [_test_sink (fun) _test_source (fun) object::__init__ (method) object::__new__ (method)]
 raise.forward (fun) -> [_test_sink (fun) _test_source (fun)]
 raise.no_sink (fun) -> [object::__init__ (method) object::__new__ (method)]
 raise.no_source (fun) -> [object::__init__ (method) object::__new__ (method)]
