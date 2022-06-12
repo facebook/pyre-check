@@ -953,7 +953,6 @@ class Configuration:
         if number_of_workers is not None and number_of_workers > 0:
             return number_of_workers
 
-        # pyre-fixme[28]: Unexpected keyword argument `logical`.
         number_of_physical_cores = psutil.cpu_count(logical=False)
         if number_of_physical_cores is None:
             default_number_of_workers = 1
