@@ -15,7 +15,7 @@ import threading
 from pathlib import Path
 from typing import IO, List
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 
 # pyre-fixme[21]: pyre cannot seem to find this module
@@ -86,7 +86,7 @@ class Pyre:
             cwd=self._directory,
         )
 
-    def check(self, input: str) -> str:
+    def check(self, input: str) -> Response:
         LOG.debug("Running pyre check")
         code_path = self._directory / INPUT_FILE
         code_path.write_text(input)
@@ -206,10 +206,13 @@ def get_server():
     LOG.info("Pyre server is initialized, configuring application routes")
 
     @application.route("/check", methods=["GET", "POST"])
-    def check() -> str:
+    def check() -> Response:
         input = (
+            # pyre-ignore[16] - Request attributes are missing from stub
             request.args.get("input")
+            # pyre-ignore[16] - Request attributes are missing from stub
             or request.form.get("input")
+            # pyre-ignore[16] - Request attributes are missing from stub
             or request.json.get("input")
         )
         if input is None:
