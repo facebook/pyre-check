@@ -5,6 +5,7 @@
 
 import asyncio
 import json
+import sys
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
@@ -1010,6 +1011,10 @@ class PersistentTest(testslide.TestCase):
             self.assertTrue(fake_task_manager.is_task_running())
 
             client_messages = memory_bytes_writer.items()
+            if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
+                end_line, end_character = 1, 6
+            else:
+                end_line, end_character = 0, 3
             expected_response = json_rpc.SuccessResponse(
                 id=42,
                 result=[
@@ -1018,12 +1023,12 @@ class PersistentTest(testslide.TestCase):
                         "name": "foo",
                         "range": {
                             "start": {"line": 0, "character": 0},
-                            "end": {"line": 1, "character": 6},
+                            "end": {"line": end_line, "character": end_character},
                         },
                         "kind": SymbolKind.FUNCTION.value,
                         "selectionRange": {
                             "start": {"line": 0, "character": 0},
-                            "end": {"line": 1, "character": 6},
+                            "end": {"line": end_line, "character": end_character},
                         },
                         "children": [],
                     }
