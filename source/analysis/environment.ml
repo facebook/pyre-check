@@ -249,11 +249,26 @@ module EnvironmentTable = struct
         type t = In.trigger [@@deriving sexp, compare]
       end)
 
-      let update_only_this_environment
-          ~scheduler
-          { table; upstream_environment }
+      let compute_trigger_map upstream_triggered_dependencies =
+        List.fold
           upstream_triggered_dependencies
-        =
+          ~init:TriggerMap.empty
+          ~f:(fun triggers upstream_dependencies ->
+            SharedMemoryKeys.DependencyKey.RegisteredSet.fold
+              (fun dependency triggers ->
+                match
+                  In.filter_upstream_dependency (SharedMemoryKeys.DependencyKey.get_key dependency)
+                with
+                | Some trigger -> (
+                    match TriggerMap.add triggers ~key:trigger ~data:dependency with
+                    | `Duplicate -> triggers
+                    | `Ok updated -> updated)
+                | None -> triggers)
+              upstream_dependencies
+              triggers)
+
+
+      let update_only_this_environment ~scheduler { table; upstream_environment } trigger_map =
         Log.log ~section:`Environment "Updating %s Environment" In.Value.description;
         let update ~names_to_update () =
           let register () =
@@ -283,26 +298,7 @@ module EnvironmentTable = struct
         let triggered_dependencies =
           let name = Format.sprintf "TableUpdate(%s)" In.Value.description in
           Profiling.track_duration_and_shared_memory_with_dynamic_tags name ~f:(fun _ ->
-              let names_to_update =
-                List.fold
-                  upstream_triggered_dependencies
-                  ~init:TriggerMap.empty
-                  ~f:(fun triggers upstream_dependencies ->
-                    SharedMemoryKeys.DependencyKey.RegisteredSet.fold
-                      (fun dependency triggers ->
-                        match
-                          In.filter_upstream_dependency
-                            (SharedMemoryKeys.DependencyKey.get_key dependency)
-                        with
-                        | Some trigger -> (
-                            match TriggerMap.add triggers ~key:trigger ~data:dependency with
-                            | `Duplicate -> triggers
-                            | `Ok updated -> updated)
-                        | None -> triggers)
-                      upstream_dependencies
-                      triggers)
-                |> Map.to_alist
-              in
+              let names_to_update = Map.to_alist trigger_map in
               let (), triggered_dependencies =
                 let keys =
                   List.map names_to_update ~f:fst
@@ -381,6 +377,7 @@ module EnvironmentTable = struct
         in
         let triggered_dependencies =
           In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update
+          |> FromReadOnlyUpstream.compute_trigger_map
           |> FromReadOnlyUpstream.update_only_this_environment from_read_only_upstream ~scheduler
         in
         { UpdateResult.triggered_dependencies; upstream = upstream_update }
