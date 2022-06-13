@@ -15,3 +15,17 @@ def foo(x):
 
 y = _test_source()
 foo(y)
+
+
+def create_global_source():
+    global z
+    z = _test_source()
+
+
+create_global_source()
+
+
+def return_global_source():
+    # TODO(T123109154): We should see a model here, because
+    # global variable z is a source
+    return z
