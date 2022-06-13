@@ -18,7 +18,11 @@ def _node_to_symbol(
     node: Union[ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef], kind: SymbolKind
 ) -> DocumentSymbolsResponse:
     start = Position(line=node.lineno, character=node.col_offset)
-    end_lineno, end_col_offset = (node.end_lineno, node.end_col_offset)
+    try:
+        end_lineno, end_col_offset = (node.end_lineno, node.end_col_offset)
+    except AttributeError:
+        # Python 3.7's ast does not have these attributes. Degrade grcefully.
+        end_lineno, end_col_offset = None, None
     if end_lineno is not None and end_col_offset is not None:
         end = Position(line=end_lineno, character=end_col_offset)
     else:
