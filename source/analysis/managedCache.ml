@@ -16,7 +16,7 @@ module type SexpableKeyType = sig
 end
 
 module type In = sig
-  module PreviousEnvironment : Environment.PreviousEnvironment
+  module PreviousEnvironment : Environment.PreviousEnvironment.S
 
   module Key : SexpableKeyType
 
