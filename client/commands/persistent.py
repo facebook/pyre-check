@@ -1466,7 +1466,7 @@ class PyreServerHandler(connection.BackgroundTask):
 
     def update_type_errors(self, type_errors: Sequence[error.Error]) -> None:
         LOG.info(
-            "Refereshing type errors received from Pyre server. "
+            "Refreshing type errors received from Pyre server. "
             f"Total number of type errors is {len(type_errors)}."
         )
         incremental.log_error_statistics(
@@ -1501,7 +1501,7 @@ class PyreServerHandler(connection.BackgroundTask):
         await self.show_type_errors_to_client()
         await self.log_and_show_status_message_to_client(
             "Pyre has completed an incremental check and is currently "
-            "watching on futher source changes.",
+            "watching on further source changes.",
             short_message="Pyre Ready",
             level=lsp.MessageType.INFO,
         )
