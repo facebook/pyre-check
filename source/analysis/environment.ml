@@ -249,7 +249,11 @@ module EnvironmentTable = struct
         type t = In.trigger [@@deriving sexp, compare]
       end)
 
-      let update_only_this_environment ~scheduler { table; upstream_environment } upstream_update =
+      let update_only_this_environment
+          ~scheduler
+          { table; upstream_environment }
+          upstream_triggered_dependencies
+        =
         Log.log ~section:`Environment "Updating %s Environment" In.Value.description;
         let update ~names_to_update () =
           let register () =
@@ -280,21 +284,23 @@ module EnvironmentTable = struct
           let name = Format.sprintf "TableUpdate(%s)" In.Value.description in
           Profiling.track_duration_and_shared_memory_with_dynamic_tags name ~f:(fun _ ->
               let names_to_update =
-                In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update
-                |> List.fold ~init:TriggerMap.empty ~f:(fun triggers upstream_dependencies ->
-                       SharedMemoryKeys.DependencyKey.RegisteredSet.fold
-                         (fun dependency triggers ->
-                           match
-                             In.filter_upstream_dependency
-                               (SharedMemoryKeys.DependencyKey.get_key dependency)
-                           with
-                           | Some trigger -> (
-                               match TriggerMap.add triggers ~key:trigger ~data:dependency with
-                               | `Duplicate -> triggers
-                               | `Ok updated -> updated)
-                           | None -> triggers)
-                         upstream_dependencies
-                         triggers)
+                List.fold
+                  upstream_triggered_dependencies
+                  ~init:TriggerMap.empty
+                  ~f:(fun triggers upstream_dependencies ->
+                    SharedMemoryKeys.DependencyKey.RegisteredSet.fold
+                      (fun dependency triggers ->
+                        match
+                          In.filter_upstream_dependency
+                            (SharedMemoryKeys.DependencyKey.get_key dependency)
+                        with
+                        | Some trigger -> (
+                            match TriggerMap.add triggers ~key:trigger ~data:dependency with
+                            | `Duplicate -> triggers
+                            | `Ok updated -> updated)
+                        | None -> triggers)
+                      upstream_dependencies
+                      triggers)
                 |> Map.to_alist
               in
               let (), triggered_dependencies =
@@ -324,7 +330,7 @@ module EnvironmentTable = struct
               in
               { Profiling.result = triggered_dependencies; tags })
         in
-        { UpdateResult.triggered_dependencies; upstream = upstream_update }
+        triggered_dependencies
     end
 
     module Base = struct
@@ -367,11 +373,17 @@ module EnvironmentTable = struct
           ~scheduler
           artifact_paths
         =
-        In.PreviousEnvironment.update_this_and_all_preceding_environments
-          upstream_environment
-          ~scheduler
-          artifact_paths
-        |> FromReadOnlyUpstream.update_only_this_environment from_read_only_upstream ~scheduler
+        let upstream_update =
+          In.PreviousEnvironment.update_this_and_all_preceding_environments
+            upstream_environment
+            ~scheduler
+            artifact_paths
+        in
+        let triggered_dependencies =
+          In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update
+          |> FromReadOnlyUpstream.update_only_this_environment from_read_only_upstream ~scheduler
+        in
+        { UpdateResult.triggered_dependencies; upstream = upstream_update }
 
 
       (* All SharedMemory tables are populated and stored in separate, imperative steps that must be
