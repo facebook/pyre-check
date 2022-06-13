@@ -69,3 +69,11 @@ def nested_global_function(x: str) -> str:
         return x + y
 
     return g("/bin/bash", x)
+
+
+def access_variables_in_outer_scope():
+    x = _test_source()
+
+    def inner():
+        # TODO(T123114236): We should find an issue here
+        _test_sink(x)
