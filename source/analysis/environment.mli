@@ -60,33 +60,9 @@ module PreviousEnvironment : sig
 end
 
 module type S = sig
-  module ReadOnly : ReadOnly
+  include PreviousEnvironment.S
 
   module PreviousEnvironment : PreviousEnvironment.S
-
-  module UpdateResult : UpdateResult.S
-
-  type t
-
-  val create : Configuration.Analysis.t -> t
-
-  val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
-
-  val ast_environment : t -> AstEnvironment.t
-
-  val configuration : t -> Configuration.Analysis.t
-
-  val read_only : t -> ReadOnly.t
-
-  val update_this_and_all_preceding_environments
-    :  t ->
-    scheduler:Scheduler.t ->
-    ArtifactPath.t list ->
-    UpdateResult.t
-
-  val store : t -> unit
-
-  val load : Configuration.Analysis.t -> t
 
   module Testing : sig
     module ReadOnly : sig
