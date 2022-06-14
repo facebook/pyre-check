@@ -54,7 +54,7 @@ type class_origin =
 type origin =
   | Class of {
       class_origin: class_origin;
-      parent_source_path: ModulePath.t option;
+      parent_module_path: ModulePath.t option;
     }
   | Module of module_reference
 

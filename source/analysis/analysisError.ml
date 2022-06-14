@@ -63,7 +63,7 @@ type class_origin =
 type origin =
   | Class of {
       class_origin: class_origin;
-      parent_source_path: ModulePath.t option;
+      parent_module_path: ModulePath.t option;
     }
   | Module of module_reference
 
@@ -2310,7 +2310,7 @@ let rec messages ~concise ~signature location kind =
       | Class
           {
             class_origin = ClassType class_type;
-            parent_source_path = Some { ModulePath.relative; is_stub = true; _ };
+            parent_module_path = Some { ModulePath.relative; is_stub = true; _ };
           }
         when not (Type.is_optional_primitive class_type) ->
           let stub_trace =
@@ -3328,12 +3328,12 @@ let join ~resolution left right =
         DuplicateTypeVariables { variable = left; base = ProtocolBase }
     | ( UndefinedAttribute
           {
-            origin = Class { class_origin = ClassType left; parent_source_path = left_module };
+            origin = Class { class_origin = ClassType left; parent_module_path = left_module };
             attribute = left_attribute;
           },
         UndefinedAttribute
           {
-            origin = Class { class_origin = ClassType right; parent_source_path = right_module };
+            origin = Class { class_origin = ClassType right; parent_module_path = right_module };
             attribute = right_attribute;
           } )
       when Identifier.equal_sanitized left_attribute right_attribute
@@ -3341,7 +3341,7 @@ let join ~resolution left right =
         let annotation = GlobalResolution.join resolution left right in
         UndefinedAttribute
           {
-            origin = Class { class_origin = ClassType annotation; parent_source_path = left_module };
+            origin = Class { class_origin = ClassType annotation; parent_module_path = left_module };
             attribute = left_attribute;
           }
     | ( UndefinedAttribute { origin = Module (ImplicitModule left); attribute = left_attribute },
@@ -3726,7 +3726,7 @@ let filter ~resolution errors =
       | UninitializedAttribute _
       | MissingOverloadImplementation _ -> (
           let ast_environment = GlobalResolution.ast_environment resolution in
-          match AstEnvironment.ReadOnly.get_source_path ast_environment module_reference with
+          match AstEnvironment.ReadOnly.get_module_path ast_environment module_reference with
           | Some { ModulePath.is_stub; _ } -> is_stub
           | _ -> false)
       | _ -> false
@@ -4137,7 +4137,7 @@ let dequalify
     | UndefinedAttribute { attribute; origin } ->
         let origin : origin =
           match origin with
-          | Class { class_origin = ClassType class_type; parent_source_path } ->
+          | Class { class_origin = ClassType class_type; parent_module_path } ->
               let annotation =
                 (* Don't dequalify optionals because we special case their display. *)
                 if Type.is_optional_primitive class_type then
@@ -4145,14 +4145,14 @@ let dequalify
                 else
                   dequalify class_type
               in
-              Class { class_origin = ClassType annotation; parent_source_path }
-          | Class { class_origin = ClassInUnion { unions; index }; parent_source_path } ->
+              Class { class_origin = ClassType annotation; parent_module_path }
+          | Class { class_origin = ClassInUnion { unions; index }; parent_module_path } ->
               Class
                 {
                   class_origin = ClassInUnion { unions = List.map ~f:dequalify unions; index };
-                  parent_source_path;
+                  parent_module_path;
                 }
-          | Module (ExplicitModule source_path) -> Module (ExplicitModule source_path)
+          | Module (ExplicitModule module_path) -> Module (ExplicitModule module_path)
           | Module (ImplicitModule module_name) ->
               Module (ImplicitModule (dequalify_reference module_name))
         in

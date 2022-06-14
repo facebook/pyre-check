@@ -10,7 +10,7 @@ open Core
 
 module ParserError : sig
   type t = {
-    source_path: ModulePath.t;
+    module_path: ModulePath.t;
     location: Location.t;
     is_suppressed: bool;
     message: string;
@@ -33,7 +33,7 @@ module ReadOnly : sig
 
   val module_tracker : t -> ModuleTracker.ReadOnly.t
 
-  val get_source_path : t -> Reference.t -> ModulePath.t option
+  val get_module_path : t -> Reference.t -> ModulePath.t option
 
   val get_relative : t -> Reference.t -> string option
 

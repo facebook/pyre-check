@@ -12,7 +12,7 @@ open PyreParser
 
 module ParserError = struct
   type t = {
-    source_path: ModulePath.t;
+    module_path: ModulePath.t;
     location: Location.t;
     is_suppressed: bool;
     message: string;
@@ -20,11 +20,11 @@ module ParserError = struct
   [@@deriving sexp, compare, hash]
 end
 
-let create_source ~typecheck_flags ~source_path statements =
+let create_source ~typecheck_flags ~module_path statements =
   Source.create_from_module_path
     ~collect_format_strings_with_ignores:Visit.collect_format_strings_with_ignores
     ~typecheck_flags
-    ~module_path:source_path
+    ~module_path
     statements
 
 
@@ -84,7 +84,7 @@ module ReadOnly = struct
 
   let configuration environment = module_tracker environment |> ModuleTracker.ReadOnly.configuration
 
-  let get_source_path environment =
+  let get_module_path environment =
     module_tracker environment |> ModuleTracker.ReadOnly.lookup_module_path
 
 
@@ -100,12 +100,12 @@ module ReadOnly = struct
 
   let get_relative read_only qualifier =
     let open Option in
-    get_source_path read_only qualifier >>| fun { ModulePath.relative; _ } -> relative
+    get_module_path read_only qualifier >>| fun { ModulePath.relative; _ } -> relative
 
 
   let get_real_path read_only qualifier =
     let configuration = configuration read_only in
-    get_source_path read_only qualifier >>| ModulePath.full_path ~configuration
+    get_module_path read_only qualifier >>| ModulePath.full_path ~configuration
 
 
   let get_real_path_relative read_only qualifier =
@@ -209,12 +209,12 @@ module ReadOnly = struct
         |> InlineDecorator.inline_decorators ~get_source:(fun qualifier ->
                get_raw_source ?dependency environment qualifier >>= Result.ok)
     | Result.Error
-        { ParserError.source_path = { ModulePath.qualifier; relative; _ } as source_path; _ } ->
+        { ParserError.module_path = { ModulePath.qualifier; relative; _ } as module_path; _ } ->
         (* Files that have parser errors fall back into getattr-any. *)
         let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
         let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
         let statements = Parser.parse_exn ~relative fallback_source in
-        create_source ~typecheck_flags ~source_path statements |> preprocessing
+        create_source ~typecheck_flags ~module_path statements |> preprocessing
 
 
   let get_processed_source environment ?(track_dependency = false) qualifier =
@@ -262,7 +262,7 @@ module FromReadOnlyUpstream = struct
 
     let add_unparsed_source
         table
-        ({ ParserError.source_path = { ModulePath.qualifier; _ }; _ } as error)
+        ({ ParserError.module_path = { ModulePath.qualifier; _ }; _ } as error)
       =
       add table qualifier (Result.Error error)
 
@@ -296,7 +296,7 @@ module FromReadOnlyUpstream = struct
       ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
       ~context
       ~module_tracker
-      ({ ModulePath.qualifier; _ } as source_path)
+      ({ ModulePath.qualifier; _ } as module_path)
     =
     let parse raw_code =
       let typecheck_flags =
@@ -305,7 +305,7 @@ module FromReadOnlyUpstream = struct
       match
         PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context raw_code
       with
-      | Ok statements -> Success (create_source ~typecheck_flags ~source_path statements)
+      | Ok statements -> Success (create_source ~typecheck_flags ~module_path statements)
       | Error { PyreNewParser.Error.line; column; end_line; end_column; message } ->
           let is_suppressed =
             let { Source.TypecheckFlags.local_mode; ignore_codes; _ } = typecheck_flags in
@@ -338,7 +338,7 @@ module FromReadOnlyUpstream = struct
           in
           Error { location; message; is_suppressed }
     in
-    match ModuleTracker.ReadOnly.get_raw_code module_tracker source_path with
+    match ModuleTracker.ReadOnly.get_raw_code module_tracker module_path with
     | Ok raw_code -> parse raw_code
     | Error message ->
         Error
@@ -353,10 +353,10 @@ module FromReadOnlyUpstream = struct
           }
 
 
-  let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } source_path =
+  let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
     let configuration = ModuleTracker.ReadOnly.configuration module_tracker in
     let do_parse context =
-      match parse_source ~configuration ~context ~module_tracker source_path with
+      match parse_source ~configuration ~context ~module_tracker module_path with
       | Success source ->
           let source =
             let {
@@ -379,12 +379,12 @@ module FromReadOnlyUpstream = struct
       | Error { location; message; is_suppressed } ->
           RawSources.add_unparsed_source
             raw_sources
-            { ParserError.source_path; location; message; is_suppressed }
+            { ParserError.module_path; location; message; is_suppressed }
     in
     PyreNewParser.with_context do_parse
 
 
-  let load_raw_sources ~scheduler ~ast_environment source_paths =
+  let load_raw_sources ~scheduler ~ast_environment module_paths =
     Scheduler.iter
       scheduler
       ~policy:
@@ -394,14 +394,14 @@ module FromReadOnlyUpstream = struct
            ~preferred_chunks_per_worker:5
            ())
       ~f:(List.iter ~f:(load_raw_source ~ast_environment))
-      ~inputs:source_paths
+      ~inputs:module_paths
 
 
   module LazyRawSources = struct
     let load ~ast_environment:({ module_tracker; _ } as ast_environment) qualifier =
       match ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier with
-      | Some source_path ->
-          load_raw_source ~ast_environment source_path;
+      | Some module_path ->
+          load_raw_source ~ast_environment module_path;
           true
       | None -> false
 
@@ -418,9 +418,9 @@ module FromReadOnlyUpstream = struct
 
   (* This code is factored out so that in tests we can use it as a hack to free up memory *)
   let process_module_updates ~scheduler ({ raw_sources; _ } as ast_environment) module_updates =
-    let changed_source_paths, removed_modules, new_implicits =
+    let changed_module_paths, removed_modules, new_implicits =
       let categorize = function
-        | ModuleTracker.IncrementalUpdate.NewExplicit source_path -> `Fst source_path
+        | ModuleTracker.IncrementalUpdate.NewExplicit module_path -> `Fst module_path
         | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
         | ModuleTracker.IncrementalUpdate.NewImplicit qualifier -> `Trd qualifier
       in
@@ -428,12 +428,12 @@ module FromReadOnlyUpstream = struct
     in
     (* We only want to eagerly reparse sources that have been cached. We have to also invalidate
        sources that are now deleted or changed from explicit to implicit. *)
-    let reparse_source_paths =
-      List.filter changed_source_paths ~f:(fun { ModulePath.qualifier; _ } ->
+    let reparse_module_paths =
+      List.filter changed_module_paths ~f:(fun { ModulePath.qualifier; _ } ->
           RawSources.mem raw_sources qualifier)
     in
     let reparse_modules =
-      reparse_source_paths |> List.map ~f:(fun { ModulePath.qualifier; _ } -> qualifier)
+      reparse_module_paths |> List.map ~f:(fun { ModulePath.qualifier; _ } -> qualifier)
     in
     let modules_with_invalidated_raw_source =
       List.concat [removed_modules; new_implicits; reparse_modules]
@@ -444,14 +444,14 @@ module FromReadOnlyUpstream = struct
        be checked. *)
     let reparse_modules_union_in_project_modules =
       let fold qualifiers { ModulePath.qualifier; _ } = Reference.Set.add qualifiers qualifier in
-      List.filter changed_source_paths ~f:ModulePath.is_in_project
+      List.filter changed_module_paths ~f:ModulePath.is_in_project
       |> List.fold ~init:(Reference.Set.of_list reparse_modules) ~f:fold
       |> Reference.Set.to_list
     in
     let invalidated_modules_before_preprocessing =
       List.concat [removed_modules; new_implicits; reparse_modules_union_in_project_modules]
     in
-    let update_raw_sources () = load_raw_sources ~scheduler ~ast_environment reparse_source_paths in
+    let update_raw_sources () = load_raw_sources ~scheduler ~ast_environment reparse_module_paths in
     let _, preprocessing_dependencies =
       Profiling.track_duration_and_shared_memory
         "Parse Raw Sources"
@@ -505,8 +505,8 @@ module Base = struct
 
   let create configuration = ModuleTracker.create configuration |> from_module_tracker
 
-  let create_for_testing configuration source_path_code_pairs =
-    ModuleTracker.create_for_testing configuration source_path_code_pairs |> from_module_tracker
+  let create_for_testing configuration module_path_code_pairs =
+    ModuleTracker.create_for_testing configuration module_path_code_pairs |> from_module_tracker
 
 
   let load configuration =

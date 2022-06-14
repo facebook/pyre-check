@@ -38,22 +38,22 @@ let test_basic context =
     ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
-  let assert_source_path ~ast_environment ~expected reference =
-    match AstEnvironment.ReadOnly.get_source_path ast_environment reference with
+  let assert_module_path ~ast_environment ~expected reference =
+    match AstEnvironment.ReadOnly.get_module_path ast_environment reference with
     | None ->
         let message =
           Format.asprintf "Cannot find reference %a in the AST environment" Reference.pp reference
         in
         assert_failure message
-    | Some source_path ->
-        let actual = ModulePath.full_path ~configuration source_path in
+    | Some module_path ->
+        let actual = ModulePath.full_path ~configuration module_path in
         assert_equal ~cmp:ArtifactPath.equal ~printer:ArtifactPath.show expected actual
   in
-  assert_source_path
+  assert_module_path
     !&"a"
     ~ast_environment
     ~expected:(Test.relative_artifact_path ~root:local_root ~relative:handle_a);
-  assert_source_path
+  assert_module_path
     !&"b"
     ~ast_environment
     ~expected:(Test.relative_artifact_path ~root:local_root ~relative:handle_b);

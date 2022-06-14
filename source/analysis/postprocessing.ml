@@ -166,7 +166,7 @@ let run ~scheduler ~configuration ~environment sources =
       | Some
           ( Result.Ok { Source.module_path = { ModulePath.is_external; _ }; _ }
           | Result.Error
-              { AstEnvironment.ParserError.source_path = { ModulePath.is_external; _ }; _ } )
+              { AstEnvironment.ParserError.module_path = { ModulePath.is_external; _ }; _ } )
         when is_external ->
           []
       | Some (Result.Error { AstEnvironment.ParserError.is_suppressed; _ }) when is_suppressed -> []

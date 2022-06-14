@@ -92,7 +92,7 @@ let undefined_attribute actual =
   Error.UndefinedAttribute
     {
       attribute = "foo";
-      origin = Error.Class { class_origin = ClassType actual; parent_source_path = None };
+      origin = Error.Class { class_origin = ClassType actual; parent_module_path = None };
     }
 
 
@@ -741,7 +741,7 @@ let test_filter context =
            Class
              {
                class_origin = ClassType (Type.Callable.create ~annotation:Type.integer ());
-               parent_source_path = None;
+               parent_module_path = None;
              };
        });
   assert_filtered
@@ -752,7 +752,7 @@ let test_filter context =
            Class
              {
                class_origin = ClassType (Type.Callable.create ~annotation:Type.integer ());
-               parent_source_path = None;
+               parent_module_path = None;
              };
        });
   assert_unfiltered
@@ -770,7 +770,7 @@ let test_filter context =
                         Single (Type.Callable.create ~annotation:Type.integer ());
                         Single Type.integer;
                       ]);
-               parent_source_path = None;
+               parent_module_path = None;
              };
        });
   assert_filtered
@@ -788,7 +788,7 @@ let test_filter context =
                         Single (Type.Callable.create ~annotation:Type.integer ());
                         Single Type.integer;
                       ]);
-               parent_source_path = None;
+               parent_module_path = None;
              };
        });
 
@@ -933,7 +933,7 @@ let test_description _ =
     (UndefinedAttribute
        {
          attribute = "at";
-         origin = Class { class_origin = ClassType Type.integer; parent_source_path = None };
+         origin = Class { class_origin = ClassType Type.integer; parent_module_path = None };
        })
     "Undefined attribute [16]: `int` has no attribute `at`.";
   assert_messages
@@ -944,7 +944,7 @@ let test_description _ =
            Class
              {
                class_origin = ClassType (Type.Callable.create ~annotation:Type.integer ());
-               parent_source_path = None;
+               parent_module_path = None;
              };
        })
     "Undefined attribute [16]: Anonymous callable has no attribute `at`.";
@@ -961,7 +961,7 @@ let test_description _ =
                       ~name:(Reference.create "named")
                       ~annotation:Type.integer
                       ());
-               parent_source_path = None;
+               parent_module_path = None;
              };
        })
     "Undefined attribute [16]: Callable `named` has no attribute `at`.";
@@ -981,7 +981,7 @@ let test_description _ =
                         Single (Type.Callable.create ~annotation:Type.integer ());
                         Single Type.integer;
                       ]);
-               parent_source_path = None;
+               parent_module_path = None;
              };
        })
     "Undefined attribute [16]: Anonymous callable has no attribute `at`.";
@@ -1004,7 +1004,7 @@ let test_description _ =
                              ());
                         Single Type.integer;
                       ]);
-               parent_source_path = None;
+               parent_module_path = None;
              };
        })
     "Undefined attribute [16]: Callable `named` has no attribute `at`.";

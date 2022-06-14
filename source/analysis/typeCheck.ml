@@ -966,8 +966,8 @@ module State (Context : Context) = struct
                     if GlobalResolution.module_exists global_resolution qualifier then
                       let origin =
                         let ast_environment = GlobalResolution.ast_environment global_resolution in
-                        match AstEnvironment.ReadOnly.get_source_path ast_environment qualifier with
-                        | Some source_path -> Error.ExplicitModule source_path
+                        match AstEnvironment.ReadOnly.get_module_path ast_environment qualifier with
+                        | Some module_path -> Error.ExplicitModule module_path
                         | None -> Error.ImplicitModule qualifier
                       in
                       emit_error
@@ -1031,12 +1031,12 @@ module State (Context : Context) = struct
               Some (class_data, attribute, undefined_target)
           | None -> None
         in
-        let source_path_of_parent_module class_type =
+        let module_path_of_parent_module class_type =
           let ast_environment = GlobalResolution.ast_environment global_resolution in
           GlobalResolution.class_summary global_resolution class_type
           >>| Node.value
           >>= fun { ClassSummary.qualifier; _ } ->
-          AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
+          AstEnvironment.ReadOnly.get_module_path ast_environment qualifier
         in
         match Type.resolve_class resolved_base >>| List.map ~f:find_attribute >>= Option.all with
         | None ->
@@ -1055,7 +1055,7 @@ module State (Context : Context) = struct
                            Error.Class
                              {
                                class_origin = ClassType resolved_base;
-                               parent_source_path = source_path_of_parent_module resolved_base;
+                               parent_module_path = module_path_of_parent_module resolved_base;
                              };
                        })
             in
@@ -1137,7 +1137,7 @@ module State (Context : Context) = struct
                                Error.Class
                                  {
                                    class_origin;
-                                   parent_source_path = source_path_of_parent_module target;
+                                   parent_module_path = module_path_of_parent_module target;
                                  };
                            })
               | _ -> errors
@@ -1440,7 +1440,7 @@ module State (Context : Context) = struct
                     GlobalResolution.class_summary global_resolution target
                     >>| Node.value
                     >>= fun { ClassSummary.qualifier; _ } ->
-                    AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
+                    AstEnvironment.ReadOnly.get_module_path ast_environment qualifier
                   in
                   Some
                     (Error.UndefinedAttribute
@@ -1448,7 +1448,7 @@ module State (Context : Context) = struct
                          attribute = name;
                          origin =
                            Error.Class
-                             { class_origin = ClassType target; parent_source_path = class_module };
+                             { class_origin = ClassType target; parent_module_path = class_module };
                        }))
           | _ -> None
         in
@@ -4032,14 +4032,14 @@ module State (Context : Context) = struct
                               (* TODO(T64156088): To catch errors against the implicit call to a
                                  custom definition of `__setattr__`, we should run signature select
                                  against the value type. *)
-                              let parent_source_path =
+                              let parent_module_path =
                                 let ast_environment =
                                   GlobalResolution.ast_environment global_resolution
                                 in
                                 GlobalResolution.class_summary global_resolution parent
                                 >>| Node.value
                                 >>= fun { ClassSummary.qualifier; _ } ->
-                                AstEnvironment.ReadOnly.get_source_path ast_environment qualifier
+                                AstEnvironment.ReadOnly.get_module_path ast_environment qualifier
                               in
                               emit_error
                                 ~errors
@@ -4050,7 +4050,7 @@ module State (Context : Context) = struct
                                        attribute = AnnotatedAttribute.public_name attribute;
                                        origin =
                                          Error.Class
-                                           { class_origin = ClassType parent; parent_source_path };
+                                           { class_origin = ClassType parent; parent_module_path };
                                      })
                         | _ -> errors
                       in
@@ -4785,7 +4785,7 @@ module State (Context : Context) = struct
                               else
                                 let origin_module =
                                   match
-                                    AstEnvironment.ReadOnly.get_source_path ast_environment from
+                                    AstEnvironment.ReadOnly.get_module_path ast_environment from
                                   with
                                   | Some source_path -> Error.ExplicitModule source_path
                                   | None -> Error.ImplicitModule from
