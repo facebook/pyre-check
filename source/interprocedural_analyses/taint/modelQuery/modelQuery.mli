@@ -31,3 +31,14 @@ val apply_all_rules
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   models:Taint.Registry.t ->
   Taint.Registry.t
+
+val generate_models_from_queries
+  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  scheduler:Scheduler.t ->
+  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  callables:Interprocedural.Target.t list ->
+  stubs:Interprocedural.Target.t Base.Hash_set.t ->
+  taint_configuration:Taint.TaintConfiguration.t ->
+  initial_models:Taint.Fixpoint.Registry.t ->
+  Taint.ModelParser.Internal.ModelQuery.rule list ->
+  Taint.Fixpoint.Registry.t

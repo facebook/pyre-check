@@ -197,41 +197,6 @@ let parse_models_and_queries_from_configuration
   { ModelParser.models = Registry.merge user_models class_models; queries; skip_overrides; errors }
 
 
-let generate_models_from_queries
-    ~static_analysis_configuration:{ Configuration.StaticAnalysis.rule_filter; _ }
-    ~scheduler
-    ~environment
-    ~callables
-    ~stubs
-    ~taint_configuration
-    ~initial_models
-    queries
-  =
-  let resolution =
-    Analysis.TypeCheck.resolution
-      (Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
-      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-      (module Analysis.TypeCheck.DummyContext)
-  in
-  let callables =
-    Hash_set.fold stubs ~f:(Core.Fn.flip List.cons) ~init:callables
-    |> List.filter_map ~f:(function
-           | Target.Function _ as callable -> Some callable
-           | Target.Method _ as callable -> Some callable
-           | _ -> None)
-  in
-  TaintModelQuery.ModelQuery.apply_all_rules
-    ~resolution
-    ~scheduler
-    ~configuration:taint_configuration
-    ~rule_filter
-    ~rules:queries
-    ~callables
-    ~stubs
-    ~environment
-    ~models:initial_models
-
-
 let initialize_models ~scheduler ~static_analysis_configuration ~environment ~callables ~stubs =
   let stubs = Target.HashSet.of_list stubs in
 
@@ -254,7 +219,7 @@ let initialize_models ~scheduler ~static_analysis_configuration ~environment ~ca
         Log.info "Generating models from model queries...";
         let timer = Timer.start () in
         let models =
-          generate_models_from_queries
+          TaintModelQuery.ModelQuery.generate_models_from_queries
             ~static_analysis_configuration
             ~scheduler
             ~environment
