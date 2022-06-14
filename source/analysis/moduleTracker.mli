@@ -5,6 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+type raw_code = string
+
+type message = string
+
 module IncrementalUpdate : sig
   type t =
     | NewExplicit of Ast.ModulePath.t
@@ -41,14 +45,14 @@ module ReadOnly : sig
   val is_module_tracked : t -> Ast.Reference.t -> bool
 
   (* Either `Ok (raw_code)` or `Error (message)` *)
-  val get_raw_code : t -> Ast.ModulePath.t -> (string, string) Result.t
+  val get_raw_code : t -> Ast.ModulePath.t -> (raw_code, message) Result.t
 end
 
 type t
 
 val create : Configuration.Analysis.t -> t
 
-val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * raw_code) list -> t
 
 (* This function returns all SourcePaths that are tracked, including the shadowed ones. *)
 val all_source_paths : t -> Ast.ModulePath.t list

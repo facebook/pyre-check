@@ -9,6 +9,10 @@ open Core
 open Ast
 open Pyre
 
+type raw_code = string
+
+type message = string
+
 module PathLookup = struct
   type t =
     | Found of Ast.ModulePath.t
@@ -31,7 +35,7 @@ module ReadOnly = struct
   type t = {
     lookup_source_path: Reference.t -> ModulePath.t option;
     is_module_tracked: Reference.t -> bool;
-    get_raw_code: ModulePath.t -> (string, string) Result.t;
+    get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
     source_paths: unit -> ModulePath.t list;
     configuration: unit -> Configuration.Analysis.t;
   }
@@ -424,7 +428,7 @@ module Base = struct
     layouts: Layouts.t;
     configuration: Configuration.Analysis.t;
     is_updatable: bool;
-    get_raw_code: ModulePath.t -> (string, string) Result.t;
+    get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
   }
 
   let find_source_paths
