@@ -21,14 +21,14 @@ module ParserError = struct
 end
 
 let create_source ~typecheck_flags ~source_path statements =
-  Source.create_from_source_path
+  Source.create_from_module_path
     ~collect_format_strings_with_ignores:Visit.collect_format_strings_with_ignores
     ~typecheck_flags
-    ~source_path
+    ~module_path:source_path
     statements
 
 
-let wildcard_exports_of ({ Source.source_path = { ModulePath.is_stub; _ }; _ } as source) =
+let wildcard_exports_of ({ Source.module_path = { ModulePath.is_stub; _ }; _ } as source) =
   let open Expression in
   let open UnannotatedGlobal in
   let extract_dunder_all = function
@@ -256,7 +256,7 @@ module FromReadOnlyUpstream = struct
         (SharedMemoryKeys.DependencyKey)
         (RawSourceValue)
 
-    let add_parsed_source table ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) =
+    let add_parsed_source table ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
       add table qualifier (Result.Ok source)
 
 

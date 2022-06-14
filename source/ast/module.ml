@@ -102,7 +102,7 @@ let create_for_testing ~stub =
 
 let create
     ({
-       Source.source_path = { ModulePath.is_stub; qualifier; _ } as source_path;
+       Source.module_path = { ModulePath.is_stub; qualifier; _ } as source_path;
        statements;
        typecheck_flags = { Source.TypecheckFlags.local_mode; _ };
        _;

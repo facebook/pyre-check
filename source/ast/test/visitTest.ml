@@ -465,7 +465,7 @@ let test_statement_visitor_source _ =
 
     let visit_children _ = true
 
-    let statement { Source.source_path = { ModulePath.relative; _ }; _ } _ _ = relative
+    let statement { Source.module_path = { ModulePath.relative; _ }; _ } _ _ = relative
   end
   in
   let module Visit = Visit.MakeStatementVisitor (StatementVisitor) in

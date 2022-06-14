@@ -24,7 +24,7 @@ let setup ?(update_environment_with = []) ~context ~handle source =
     ScratchProject.build_type_environment project
   in
   let source =
-    List.find_exn sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; _ } ->
+    List.find_exn sources ~f:(fun { Source.module_path = { ModulePath.relative; _ }; _ } ->
         String.equal relative handle)
   in
   source, type_environment, project.configuration

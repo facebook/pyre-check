@@ -340,7 +340,7 @@ let run_on_define ~qualifier define =
   defined_locals_at_each_statement define |> errors ~qualifier ~define
 
 
-let run_for_testing ~source:({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) =
+let run_for_testing ~source:({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
   source
   |> Preprocessing.defines ~include_toplevels:false
   |> List.map ~f:(run_on_define ~qualifier)

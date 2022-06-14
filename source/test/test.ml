@@ -2844,7 +2844,7 @@ module ScratchProject = struct
   let build_type_environment ?call_graph_builder ({ type_environment; _ } as project) =
     let sources = get_project_sources project in
     let configuration = configuration_of project in
-    List.map sources ~f:(fun { Source.source_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
+    List.map sources ~f:(fun { Source.module_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
     |> TypeEnvironment.populate_for_modules
          ~scheduler:(Scheduler.create_sequential ())
          ~configuration
@@ -2858,7 +2858,7 @@ module ScratchProject = struct
     let errors =
       List.map
         built_type_environment.sources
-        ~f:(fun { Source.source_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
+        ~f:(fun { Source.module_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
       |> Postprocessing.run
            ~scheduler:(Scheduler.create_sequential ())
            ~configuration:(configuration_of project)
@@ -2965,7 +2965,7 @@ let assert_errors
       in
       let configuration = { configuration with debug; strict } in
       let source =
-        List.find_exn sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; _ } ->
+        List.find_exn sources ~f:(fun { Source.module_path = { ModulePath.relative; _ }; _ } ->
             String.equal handle relative)
       in
       check ~configuration ~environment ~source

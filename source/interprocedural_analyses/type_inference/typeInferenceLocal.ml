@@ -932,7 +932,7 @@ end
 let infer_local
     ~configuration
     ~global_resolution
-    ~source:{ Source.source_path = { ModulePath.qualifier; _ }; _ }
+    ~source:{ Source.module_path = { ModulePath.qualifier; _ }; _ }
     ~define:
       ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
@@ -999,7 +999,7 @@ let infer_local
 (* Infer parameter types of an overriding method when the base method is annotated. *)
 let infer_parameters_from_parent
     ~global_resolution
-    ~source:{ Source.source_path = { ModulePath.qualifier; _ }; _ }
+    ~source:{ Source.module_path = { ModulePath.qualifier; _ }; _ }
     ~define:({ Node.value = { Define.signature = { parent; parameters; _ }; _ }; _ } as define)
   =
   let overridden_callable =
@@ -1083,7 +1083,7 @@ let merge_errors ~global_resolution errors =
 let legacy_infer_for_define
     ~configuration
     ~global_resolution
-    ~source:({ Source.source_path = { ModulePath.qualifier; relative; _ }; _ } as source)
+    ~source:({ Source.module_path = { ModulePath.qualifier; relative; _ }; _ } as source)
     ~define:({ Node.location; value = { Define.signature = { name; _ }; _ } } as define)
   =
   try
@@ -1197,7 +1197,7 @@ let infer_for_module
     ~configuration
     ~global_resolution
     ~filename_lookup
-    ({ Ast.Source.source_path = { qualifier; _ } as source_path; _ } as source)
+    ({ Ast.Source.module_path = { qualifier; _ } as source_path; _ } as source)
   =
   Log.debug "Running infer for %s..." source_path.relative;
   (* We cannot use should_analyze_define as a filter because we need to know about all defines in

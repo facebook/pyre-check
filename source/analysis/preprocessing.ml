@@ -13,7 +13,7 @@ open PyreParser
 open Statement
 
 let expand_relative_imports
-    ({ Source.source_path = { ModulePath.qualifier; _ } as source_path; _ } as source)
+    ({ Source.module_path = { ModulePath.qualifier; _ } as module_path; _ } as source)
   =
   let module Transform = Transform.MakeStatementTransformer (struct
     type t = Reference.t
@@ -25,7 +25,7 @@ let expand_relative_imports
           when (not (String.equal (Reference.show from) "builtins"))
                && not (String.equal (Reference.show from) "future.builtins") ->
             Statement.Import
-              { Import.from = Some (ModulePath.expand_relative_import source_path ~from); imports }
+              { Import.from = Some (ModulePath.expand_relative_import module_path ~from); imports }
         | _ -> value
       in
       qualifier, [{ Node.location; value }]
@@ -211,7 +211,7 @@ let transform_annotations ~transform_annotation_expression source =
   Transform.transform () source |> Transform.source
 
 
-let expand_string_annotations ({ Source.source_path = { ModulePath.relative; _ }; _ } as source) =
+let expand_string_annotations ({ Source.module_path = { ModulePath.relative; _ }; _ } as source) =
   transform_annotations
     ~transform_annotation_expression:(transform_string_annotation_expression ~relative)
     source
@@ -1207,7 +1207,7 @@ module Qualify (Context : QualifyContext) = struct
 end
 
 let qualify
-    ({ Source.source_path = { ModulePath.relative; qualifier; _ }; statements; _ } as source)
+    ({ Source.module_path = { ModulePath.relative; qualifier; _ }; statements; _ } as source)
   =
   let module Context = struct
     let source_relative = relative
@@ -1898,7 +1898,7 @@ let classes source =
   Collector.collect source
 
 
-let dequalify_map ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) =
+let dequalify_map ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
   let module ImportDequalifier = Transform.MakeStatementTransformer (struct
     include Transform.Identity
 
@@ -2064,7 +2064,7 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
 
 
 let replace_mypy_extensions_stub
-    ({ Source.source_path = { ModulePath.relative; _ }; statements; _ } as source)
+    ({ Source.module_path = { ModulePath.relative; _ }; statements; _ } as source)
   =
   if String.is_suffix relative ~suffix:"mypy_extensions.pyi" then
     let typed_dictionary_stub ~location =
@@ -2098,7 +2098,7 @@ let replace_mypy_extensions_stub
 
 
 let expand_typed_dictionary_declarations
-    ({ Source.statements; source_path = { ModulePath.qualifier; _ }; _ } as source)
+    ({ Source.statements; module_path = { ModulePath.qualifier; _ }; _ } as source)
   =
   let expand_typed_dictionaries ({ Node.location; value } as statement) =
     let expanded_declaration =
@@ -3913,7 +3913,7 @@ let inline_six_metaclass ({ Source.statements; _ } as source) =
 
 
 (* Special syntax added to support configerator. *)
-let expand_import_python_calls ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) =
+let expand_import_python_calls ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
   let module Transform = Transform.MakeStatementTransformer (struct
     type t = Reference.t
 

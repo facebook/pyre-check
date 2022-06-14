@@ -6,7 +6,7 @@
  *)
 
 let type_check ~configuration ~environment ~source =
-  let { Ast.Source.source_path = { Ast.ModulePath.qualifier; _ }; _ } = source in
+  let { Ast.Source.module_path = { Ast.ModulePath.qualifier; _ }; _ } = source in
   let scheduler = Scheduler.create_sequential () in
   Analysis.TypeEnvironment.populate_for_modules ~scheduler ~configuration environment [qualifier];
   Analysis.Postprocessing.run

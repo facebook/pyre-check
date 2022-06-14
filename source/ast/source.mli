@@ -45,7 +45,7 @@ end
 
 type t = {
   typecheck_flags: TypecheckFlags.t;
-  source_path: ModulePath.t;
+  module_path: ModulePath.t;
   top_level_unbound_names: Statement.Define.NameAccess.t list;
   statements: Statement.t list;
 }
@@ -57,11 +57,11 @@ val ignored_lines_including_format_strings
   t ->
   Ignore.t list
 
-val create_from_source_path
+val create_from_module_path
   :  ?collect_format_strings_with_ignores:
        (ignore_line_map:Ignore.t list Int.Map.t -> t -> (Expression.t * Ignore.t list) list) ->
   typecheck_flags:TypecheckFlags.t ->
-  source_path:ModulePath.t ->
+  module_path:ModulePath.t ->
   Statement.t list ->
   t
 

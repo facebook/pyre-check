@@ -122,12 +122,12 @@ let test_parse_source context =
       ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
   in
   let handles =
-    List.map sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; _ } -> relative)
+    List.map sources ~f:(fun { Source.module_path = { ModulePath.relative; _ }; _ } -> relative)
   in
   assert_equal handles ["x.py"];
   let source = Analysis.AstEnvironment.ReadOnly.get_processed_source ast_environment !&"x" in
   assert_equal (Option.is_some source) true;
-  let { Source.source_path = { ModulePath.relative; _ }; statements; _ } =
+  let { Source.module_path = { ModulePath.relative; _ }; statements; _ } =
     Option.value_exn source
   in
   assert_equal relative "x.py";
@@ -187,7 +187,7 @@ let test_parse_sources context =
         ~f:(AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment))
     in
     let sorted_handles =
-      List.map sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; _ } -> relative)
+      List.map sources ~f:(fun { Source.module_path = { ModulePath.relative; _ }; _ } -> relative)
       |> List.sort ~compare:String.compare
     in
     sorted_handles, ast_environment
@@ -218,7 +218,7 @@ let test_parse_sources context =
         invalidated_modules
         ~f:(AstEnvironment.ReadOnly.get_processed_source (AstEnvironment.read_only ast_environment))
     in
-    List.map sources ~f:(fun { Source.source_path = { ModulePath.relative; _ }; _ } -> relative)
+    List.map sources ~f:(fun { Source.module_path = { ModulePath.relative; _ }; _ } -> relative)
   in
   (* Note that the stub gets parsed twice due to appearing both in the local root and stubs, but
      consistently gets mapped to the correct handle. *)
@@ -584,7 +584,7 @@ let test_parse_repository context =
           (AstEnvironment.ReadOnly.project_qualifiers ast_environment)
           ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
       in
-      List.map sources ~f:(fun ({ Source.source_path = { ModulePath.relative; _ }; _ } as source) ->
+      List.map sources ~f:(fun ({ Source.module_path = { ModulePath.relative; _ }; _ } as source) ->
           relative, source)
       |> List.sort ~compare:(fun (left_handle, _) (right_handle, _) ->
              String.compare left_handle right_handle)

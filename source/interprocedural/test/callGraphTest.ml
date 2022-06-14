@@ -57,7 +57,7 @@ let test_call_graph_of_define context =
       let test_source =
         List.find_map_exn
           sources
-          ~f:(fun ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) ->
+          ~f:(fun ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) ->
             Option.some_if (String.equal (Reference.show qualifier) "test") source)
       in
       ( List.find_map_exn

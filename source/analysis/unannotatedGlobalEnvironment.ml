@@ -546,7 +546,7 @@ module FromReadOnlyUpstream = struct
 
   let set_class_summaries
       ({ key_tracker; _ } as environment)
-      ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source)
+      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
     =
     (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
     let module ClassCollector = Visit.MakeStatementVisitor (struct
@@ -593,7 +593,7 @@ module FromReadOnlyUpstream = struct
 
   let set_function_definitions
       ({ define_names; _ } as environment)
-      ({ Source.source_path = { ModulePath.qualifier; is_external; _ }; _ } as source)
+      ({ Source.module_path = { ModulePath.qualifier; is_external; _ }; _ } as source)
     =
     match is_external with
     | true ->
@@ -612,7 +612,7 @@ module FromReadOnlyUpstream = struct
 
   let set_unannotated_globals
       ({ key_tracker; _ } as environment)
-      ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source)
+      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
     =
     let write { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
       let name = Reference.create name |> Reference.combine qualifier in
@@ -695,7 +695,7 @@ module FromReadOnlyUpstream = struct
 
   let set_module_data
       environment
-      ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source)
+      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
     =
     set_class_summaries environment source;
     set_function_definitions environment source;

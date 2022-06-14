@@ -201,7 +201,7 @@ end
 
 type t = {
   typecheck_flags: TypecheckFlags.t;
-  source_path: ModulePath.t;
+  module_path: ModulePath.t;
   top_level_unbound_names: Statement.Define.NameAccess.t list;
   statements: Statement.t list;
 }
@@ -218,7 +218,7 @@ let location_insensitive_compare left right =
   match TypecheckFlags.compare left.typecheck_flags right.typecheck_flags with
   | x when x <> 0 -> x
   | _ -> (
-      match ModulePath.compare left.source_path right.source_path with
+      match ModulePath.compare left.module_path right.module_path with
       | x when x <> 0 -> x
       | _ -> (
           match
@@ -276,13 +276,13 @@ let ignored_lines_including_format_strings
   |> List.concat_map ~f:(List.dedup_and_sort ~compare:Ignore.compare)
 
 
-let create_from_source_path
+let create_from_module_path
     ?collect_format_strings_with_ignores
     ~typecheck_flags
-    ~source_path
+    ~module_path
     statements
   =
-  let source = { typecheck_flags; source_path; top_level_unbound_names = []; statements } in
+  let source = { typecheck_flags; module_path; top_level_unbound_names = []; statements } in
   {
     source with
     typecheck_flags =
@@ -301,8 +301,8 @@ let create
     ?(priority = 0)
     statements
   =
-  let source_path = ModulePath.create_for_testing ~relative ~is_external ~priority in
-  create_from_source_path ~typecheck_flags ~source_path statements
+  let module_path = ModulePath.create_for_testing ~relative ~is_external ~priority in
+  create_from_module_path ~typecheck_flags ~module_path statements
 
 
 let ignore_lines { typecheck_flags = { TypecheckFlags.ignore_lines; _ }; _ } = ignore_lines
@@ -310,7 +310,7 @@ let ignore_lines { typecheck_flags = { TypecheckFlags.ignore_lines; _ }; _ } = i
 let statements { statements; _ } = statements
 
 let top_level_define
-    { source_path = { ModulePath.qualifier; _ }; top_level_unbound_names; statements; _ }
+    { module_path = { ModulePath.qualifier; _ }; top_level_unbound_names; statements; _ }
   =
   Statement.Define.create_toplevel
     ~qualifier:(Some qualifier)

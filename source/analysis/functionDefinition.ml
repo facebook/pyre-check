@@ -150,7 +150,7 @@ let collect_typecheck_units { Source.statements; _ } =
   |> List.map ~f:drop_nested_body
 
 
-let collect_defines ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) =
+let collect_defines ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
   let all_defines = collect_typecheck_units source in
   let table = Reference.Table.create () in
   let process_define ({ Node.value = define; _ } as define_node) =

@@ -22,7 +22,7 @@ let test_from_source context =
       let test_source =
         List.find_map_exn
           sources
-          ~f:(fun ({ Source.source_path = { ModulePath.qualifier; _ }; _ } as source) ->
+          ~f:(fun ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) ->
             Option.some_if (String.equal (Reference.show qualifier) "test") source)
       in
       test_source, type_environment
