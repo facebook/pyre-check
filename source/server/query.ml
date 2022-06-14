@@ -826,7 +826,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         |> Option.to_list
         |> fun definitions -> Single (Base.FoundLocationsOfDefinitions definitions)
     | PathOfModule module_name ->
-        ModuleTracker.ReadOnly.lookup_source_path module_tracker module_name
+        ModuleTracker.ReadOnly.lookup_module_path module_tracker module_name
         >>= (fun source_path ->
               let path =
                 ModulePath.full_path ~configuration source_path

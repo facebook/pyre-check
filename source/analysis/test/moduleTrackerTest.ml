@@ -30,7 +30,7 @@ let create_module_path_exn ~configuration root relative =
 
 
 let lookup_exn tracker reference =
-  match ModuleTracker.ReadOnly.lookup_source_path tracker reference with
+  match ModuleTracker.ReadOnly.lookup_module_path tracker reference with
   | Some module_path -> module_path
   | None ->
       let message =
@@ -1048,7 +1048,7 @@ let test_creation context =
         ~filter_directories:[local_root; external_root0]
         ()
       |> ModuleTracker.create
-      |> ModuleTracker.all_source_paths
+      |> ModuleTracker.all_module_paths
       |> List.sort ~compare:ModulePath.compare
     in
     let module_paths_original = setup local_root external_root0 external_root1 in
@@ -1078,7 +1078,7 @@ let test_creation context =
       ~cmp:Int.equal
       ~printer:Int.to_string
       0
-      (ModuleTracker.ReadOnly.source_paths module_tracker |> List.length)
+      (ModuleTracker.ReadOnly.module_paths module_tracker |> List.length)
   in
   let test_hidden_files2 () =
     let local_root =
@@ -1100,7 +1100,7 @@ let test_creation context =
       ~cmp:Int.equal
       ~printer:Int.to_string
       1
-      (ModuleTracker.ReadOnly.source_paths module_tracker |> List.length);
+      (ModuleTracker.ReadOnly.module_paths module_tracker |> List.length);
     assert_module_path
       (create_exn local_root "b.py")
       ~search_root:local_root
@@ -1223,11 +1223,11 @@ module IncrementalTest = struct
     (* Also check that the module tracker is in a consistent state: we should track exactly the same
        modules and source files after the update as if we build a fresh module tracker from scratch. *)
     let actual_module_paths =
-      ModuleTracker.all_source_paths module_tracker |> List.sort ~compare:ModulePath.compare
+      ModuleTracker.all_module_paths module_tracker |> List.sort ~compare:ModulePath.compare
     in
     let expected_module_paths =
       ModuleTracker.create configuration
-      |> ModuleTracker.all_source_paths
+      |> ModuleTracker.all_module_paths
       |> List.sort ~compare:ModulePath.compare
     in
     assert_equal
@@ -1564,7 +1564,7 @@ let make_overlay_testing_functions ~context ~configuration ~local_root ~parent_t
   let overlay_owns qualifier = ModuleTracker.Overlay.owns_qualifier tracker qualifier in
   let assert_raw_code qualifier expected =
     let actual =
-      Option.value_exn (ModuleTracker.ReadOnly.lookup_source_path read_only qualifier)
+      Option.value_exn (ModuleTracker.ReadOnly.lookup_module_path read_only qualifier)
       |> ModuleTracker.ReadOnly.get_raw_code read_only
       |> Result.ok
       |> Option.value ~default:"Error loading code!"

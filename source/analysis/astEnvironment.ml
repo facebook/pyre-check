@@ -85,7 +85,7 @@ module ReadOnly = struct
   let configuration environment = module_tracker environment |> ModuleTracker.ReadOnly.configuration
 
   let get_source_path environment =
-    module_tracker environment |> ModuleTracker.ReadOnly.lookup_source_path
+    module_tracker environment |> ModuleTracker.ReadOnly.lookup_module_path
 
 
   let is_module_tracked environment =
@@ -399,7 +399,7 @@ module FromReadOnlyUpstream = struct
 
   module LazyRawSources = struct
     let load ~ast_environment:({ module_tracker; _ } as ast_environment) qualifier =
-      match ModuleTracker.ReadOnly.lookup_source_path module_tracker qualifier with
+      match ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier with
       | Some source_path ->
           load_raw_source ~ast_environment source_path;
           true
@@ -522,7 +522,7 @@ module Base = struct
 
   let clear_memory_for_tests ~scheduler { module_tracker; from_read_only_upstream } =
     let _ =
-      ModuleTracker.source_paths module_tracker
+      ModuleTracker.module_paths module_tracker
       |> List.map ~f:ModulePath.qualifier
       |> List.map ~f:(fun qualifier -> ModuleTracker.IncrementalUpdate.Delete qualifier)
       |> FromReadOnlyUpstream.process_module_updates ~scheduler from_read_only_upstream

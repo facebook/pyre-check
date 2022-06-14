@@ -52,7 +52,7 @@ let save_current_paths ~scheduler ~configuration ~module_tracker =
     ~initial:()
     ~map:save_paths
     ~reduce:(fun () () -> ())
-    ~inputs:(ModuleTracker.source_paths module_tracker)
+    ~inputs:(ModuleTracker.module_paths module_tracker)
     ()
 
 
@@ -87,16 +87,16 @@ let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker 
       ~initial:[]
       ~map:changed_paths
       ~reduce:( @ )
-      ~inputs:(ModuleTracker.source_paths new_module_tracker)
+      ~inputs:(ModuleTracker.module_paths new_module_tracker)
       ()
   in
   let removed_paths =
     let tracked_set =
-      ModuleTracker.all_source_paths new_module_tracker
+      ModuleTracker.all_module_paths new_module_tracker
       |> List.map ~f:(fun { ModulePath.priority; relative; _ } -> priority, relative)
       |> IndexedRelativePath.Hash_set.of_list
     in
-    ModuleTracker.all_source_paths old_module_tracker
+    ModuleTracker.all_module_paths old_module_tracker
     |> List.filter ~f:(fun { ModulePath.priority; relative; _ } ->
            let key = priority, relative in
            not (Hash_set.mem tracked_set key))

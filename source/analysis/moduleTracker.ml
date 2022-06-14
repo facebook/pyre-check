@@ -33,18 +33,18 @@ end
 
 module ReadOnly = struct
   type t = {
-    lookup_source_path: Reference.t -> ModulePath.t option;
+    lookup_module_path: Reference.t -> ModulePath.t option;
     is_module_tracked: Reference.t -> bool;
     get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
-    source_paths: unit -> ModulePath.t list;
+    module_paths: unit -> ModulePath.t list;
     configuration: unit -> Configuration.Analysis.t;
   }
 
   let configuration { configuration; _ } = configuration ()
 
-  let lookup_source_path { lookup_source_path; _ } = lookup_source_path
+  let lookup_module_path { lookup_module_path; _ } = lookup_module_path
 
-  let source_paths { source_paths; _ } = source_paths ()
+  let module_paths { module_paths; _ } = module_paths ()
 
   let is_module_tracked { is_module_tracked; _ } = is_module_tracked
 
@@ -53,23 +53,23 @@ module ReadOnly = struct
     match ModulePath.create ~configuration path with
     | None -> PathLookup.NotFound
     | Some { ModulePath.relative; priority; qualifier; _ } -> (
-        match lookup_source_path tracker qualifier with
+        match lookup_module_path tracker qualifier with
         | None -> PathLookup.NotFound
         | Some
             ({ ModulePath.relative = tracked_relative; priority = tracked_priority; _ } as
-            source_path) ->
+            module_path) ->
             if String.equal relative tracked_relative && Int.equal priority tracked_priority then
-              PathLookup.Found source_path
+              PathLookup.Found module_path
             else
-              PathLookup.ShadowedBy source_path)
+              PathLookup.ShadowedBy module_path)
 
 
-  let tracked_explicit_modules tracker = source_paths tracker |> List.map ~f:ModulePath.qualifier
+  let tracked_explicit_modules tracker = module_paths tracker |> List.map ~f:ModulePath.qualifier
 
   let get_raw_code { get_raw_code; _ } = get_raw_code
 
   let project_qualifiers tracker =
-    source_paths tracker
+    module_paths tracker
     |> List.filter ~f:ModulePath.is_in_project
     |> List.map ~f:ModulePath.qualifier
 end
@@ -81,7 +81,7 @@ module Base = struct
       submodule_refcounts: int Reference.Table.t;
     }
 
-    let insert_source_path ~configuration ~inserted existing_files =
+    let insert_module_path ~configuration ~inserted existing_files =
       let rec insert sofar = function
         | [] -> List.rev_append sofar [inserted]
         | current_file :: rest as existing -> (
@@ -99,7 +99,7 @@ module Base = struct
       insert [] existing_files
 
 
-    let remove_source_path ~configuration ~removed existing_files =
+    let remove_module_path ~configuration ~removed existing_files =
       let rec remove sofar = function
         | [] -> existing_files
         | current_file :: rest -> (
@@ -125,17 +125,17 @@ module Base = struct
       remove [] existing_files
 
 
-    let create_module_to_files ~configuration source_paths =
+    let create_module_to_files ~configuration module_paths =
       let module_to_files = Reference.Table.create () in
-      let process_source_path ({ ModulePath.qualifier; _ } as source_path) =
+      let process_module_path ({ ModulePath.qualifier; _ } as module_path) =
         let update_table = function
-          | None -> [source_path]
-          | Some source_paths ->
-              insert_source_path ~configuration ~inserted:source_path source_paths
+          | None -> [module_path]
+          | Some module_paths ->
+              insert_module_path ~configuration ~inserted:module_path module_paths
         in
         Hashtbl.update module_to_files qualifier ~f:update_table
       in
-      List.iter source_paths ~f:process_source_path;
+      List.iter module_paths ~f:process_module_path;
       module_to_files
 
 
@@ -157,8 +157,8 @@ module Base = struct
       submodule_refcounts
 
 
-    let create ~configuration source_paths =
-      let module_to_files = create_module_to_files ~configuration source_paths in
+    let create ~configuration module_paths =
+      let module_to_files = create_module_to_files ~configuration module_paths in
       let submodule_refcounts = create_submodule_refcounts module_to_files in
       { module_to_files; submodule_refcounts }
 
@@ -195,21 +195,21 @@ module Base = struct
             | None ->
                 Log.warning "`%a` not found in search path." ArtifactPath.pp path;
                 None
-            | Some ({ ModulePath.qualifier; _ } as source_path) -> (
+            | Some ({ ModulePath.qualifier; _ } as module_path) -> (
                 match Hashtbl.find module_to_files qualifier with
                 | None ->
                     (* New file for a new module *)
-                    Hashtbl.set module_to_files ~key:qualifier ~data:[source_path];
-                    Some (IncrementalExplicitUpdate.New source_path)
-                | Some source_paths ->
-                    let new_source_paths =
-                      insert_source_path ~configuration ~inserted:source_path source_paths
+                    Hashtbl.set module_to_files ~key:qualifier ~data:[module_path];
+                    Some (IncrementalExplicitUpdate.New module_path)
+                | Some module_paths ->
+                    let new_module_paths =
+                      insert_module_path ~configuration ~inserted:module_path module_paths
                     in
-                    let new_source_path = List.hd_exn new_source_paths in
-                    Hashtbl.set module_to_files ~key:qualifier ~data:new_source_paths;
-                    if ModulePath.equal new_source_path source_path then
+                    let new_module_path = List.hd_exn new_module_paths in
+                    Hashtbl.set module_to_files ~key:qualifier ~data:new_module_paths;
+                    if ModulePath.equal new_module_path module_path then
                       (* Updating a shadowing file means the module gets changed *)
-                      Some (IncrementalExplicitUpdate.Changed source_path)
+                      Some (IncrementalExplicitUpdate.Changed module_path)
                     else (* Updating a shadowed file should not trigger any reanalysis *)
                       None))
         | FileSystemEvent.Remove path -> (
@@ -217,38 +217,38 @@ module Base = struct
             | None ->
                 Log.warning "`%a` not found in search path." ArtifactPath.pp path;
                 None
-            | Some ({ ModulePath.qualifier; _ } as source_path) -> (
+            | Some ({ ModulePath.qualifier; _ } as module_path) -> (
                 Hashtbl.find module_to_files qualifier
-                >>= fun source_paths ->
-                match source_paths with
+                >>= fun module_paths ->
+                match module_paths with
                 | [] ->
                     (* This should never happen but handle it just in case *)
                     Hashtbl.remove module_to_files qualifier;
                     None
-                | old_source_path :: _ -> (
-                    match remove_source_path ~configuration ~removed:source_path source_paths with
+                | old_module_path :: _ -> (
+                    match remove_module_path ~configuration ~removed:module_path module_paths with
                     | [] ->
                         (* Last remaining file for the module gets removed. *)
                         Hashtbl.remove module_to_files qualifier;
                         Some (IncrementalExplicitUpdate.Delete qualifier)
-                    | new_source_path :: _ as new_source_paths ->
-                        Hashtbl.set module_to_files ~key:qualifier ~data:new_source_paths;
-                        if ModulePath.equal old_source_path new_source_path then
+                    | new_module_path :: _ as new_module_paths ->
+                        Hashtbl.set module_to_files ~key:qualifier ~data:new_module_paths;
+                        if ModulePath.equal old_module_path new_module_path then
                           (* Removing a shadowed file should not trigger any reanalysis *)
                           None
-                        else (* Removing source_path un-shadows another source file. *)
-                          Some (IncrementalExplicitUpdate.Changed new_source_path))))
+                        else (* Removing module_path un-shadows another source file. *)
+                          Some (IncrementalExplicitUpdate.Changed new_module_path))))
       in
       (* Make sure we have only one update per module *)
       let merge_updates updates =
         let table = Reference.Table.create () in
         let process_update update =
           match update with
-          | IncrementalExplicitUpdate.New ({ ModulePath.qualifier; _ } as source_path) ->
+          | IncrementalExplicitUpdate.New ({ ModulePath.qualifier; _ } as module_path) ->
               let update = function
                 | None -> update
                 | Some (IncrementalExplicitUpdate.Delete _) ->
-                    IncrementalExplicitUpdate.Changed source_path
+                    IncrementalExplicitUpdate.Changed module_path
                 | Some (IncrementalExplicitUpdate.New _) ->
                     let message =
                       Format.asprintf "Illegal state: double new module %a" Reference.pp qualifier
@@ -264,13 +264,13 @@ module Base = struct
                     failwith message
               in
               Hashtbl.update table qualifier ~f:update
-          | IncrementalExplicitUpdate.Changed ({ ModulePath.qualifier; _ } as source_path) ->
+          | IncrementalExplicitUpdate.Changed ({ ModulePath.qualifier; _ } as module_path) ->
               let update = function
                 | None
                 | Some (IncrementalExplicitUpdate.Changed _) ->
                     update
                 | Some (IncrementalExplicitUpdate.New _) ->
-                    IncrementalExplicitUpdate.New source_path
+                    IncrementalExplicitUpdate.New module_path
                 | Some (IncrementalExplicitUpdate.Delete _) ->
                     let message =
                       Format.asprintf
@@ -384,10 +384,10 @@ module Base = struct
         let deleted_qualifiers = Reference.Hash_set.create () in
         let explicits =
           let process_explicit_update = function
-            | IncrementalExplicitUpdate.New ({ ModulePath.qualifier; _ } as source_path)
-            | IncrementalExplicitUpdate.Changed ({ ModulePath.qualifier; _ } as source_path) ->
+            | IncrementalExplicitUpdate.New ({ ModulePath.qualifier; _ } as module_path)
+            | IncrementalExplicitUpdate.Changed ({ ModulePath.qualifier; _ } as module_path) ->
                 Hash_set.add new_qualifiers qualifier;
-                IncrementalUpdate.NewExplicit source_path
+                IncrementalUpdate.NewExplicit module_path
             | IncrementalExplicitUpdate.Delete qualifier ->
                 Hash_set.add deleted_qualifiers qualifier;
                 IncrementalUpdate.Delete qualifier
@@ -431,7 +431,7 @@ module Base = struct
     get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
   }
 
-  let find_source_paths
+  let find_module_paths
       ({ Configuration.Analysis.source_paths; search_paths; excludes; _ } as configuration)
     =
     let visited_directories = String.Hash_set.create () in
@@ -478,8 +478,8 @@ module Base = struct
     |> List.filter_map ~f:(ModulePath.create ~configuration)
 
 
-  let load_raw_code ~configuration source_path =
-    let path = ModulePath.full_path ~configuration source_path in
+  let load_raw_code ~configuration module_path =
+    let path = ModulePath.full_path ~configuration module_path in
     try Ok (ArtifactPath.raw path |> File.create |> File.content_exn) with
     | Sys_error error ->
         Error (Format.asprintf "Cannot open file `%a` due to: %s" ArtifactPath.pp path error)
@@ -494,40 +494,40 @@ module Base = struct
   let create configuration =
     Log.info "Building module tracker...";
     let timer = Timer.start () in
-    let source_paths = find_source_paths configuration in
-    let layouts = Layouts.create ~configuration source_paths in
+    let module_paths = find_module_paths configuration in
+    let layouts = Layouts.create ~configuration module_paths in
     let get_raw_code = load_raw_code ~configuration in
     let is_updatable = configuration_allows_update configuration in
     Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
     { layouts; configuration; is_updatable; get_raw_code }
 
 
-  let create_for_testing configuration source_path_code_pairs =
+  let create_for_testing configuration module_path_code_pairs =
     let layouts =
-      let source_paths = List.map ~f:fst source_path_code_pairs in
-      Layouts.create ~configuration source_paths
+      let module_paths = List.map ~f:fst module_path_code_pairs in
+      Layouts.create ~configuration module_paths
     in
     let in_memory_sources =
       let table = Reference.Table.create () in
-      let add_pair (source_path, code) =
-        Reference.Table.set table ~key:(ModulePath.qualifier source_path) ~data:code
+      let add_pair (module_path, code) =
+        Reference.Table.set table ~key:(ModulePath.qualifier module_path) ~data:code
       in
-      List.iter source_path_code_pairs ~f:add_pair;
+      List.iter module_path_code_pairs ~f:add_pair;
       table
     in
-    let get_raw_code ({ ModulePath.qualifier; _ } as source_path) =
+    let get_raw_code ({ ModulePath.qualifier; _ } as module_path) =
       match Reference.Table.find in_memory_sources qualifier with
       | Some code -> Ok code
-      | None -> load_raw_code ~configuration source_path
+      | None -> load_raw_code ~configuration module_path
     in
     { layouts; configuration; is_updatable = false; get_raw_code }
 
 
-  let all_source_paths { layouts = { module_to_files; _ }; _ } =
+  let all_module_paths { layouts = { module_to_files; _ }; _ } =
     Hashtbl.data module_to_files |> List.concat
 
 
-  let source_paths { layouts = { module_to_files; _ }; _ } =
+  let module_paths { layouts = { module_to_files; _ }; _ } =
     Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
 
 
@@ -594,19 +594,19 @@ module Base = struct
       ({ layouts = { module_to_files; submodule_refcounts }; configuration; get_raw_code; _ } as
       tracker)
     =
-    let lookup_source_path module_name =
+    let lookup_module_path module_name =
       match Hashtbl.find module_to_files module_name with
-      | Some (source_path :: _) -> Some source_path
+      | Some (module_path :: _) -> Some module_path
       | _ -> None
     in
     let is_module_tracked qualifier =
       Hashtbl.mem module_to_files qualifier || Hashtbl.mem submodule_refcounts qualifier
     in
     {
-      ReadOnly.lookup_source_path;
+      ReadOnly.lookup_module_path;
       is_module_tracked;
       get_raw_code;
-      source_paths = (fun () -> source_paths tracker);
+      module_paths = (fun () -> module_paths tracker);
       configuration = (fun () -> configuration);
     }
 end

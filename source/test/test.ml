@@ -2817,7 +2817,7 @@ module ScratchProject = struct
 
   let configuration_of { configuration; _ } = configuration
 
-  let source_paths_of project = module_tracker project |> ModuleTracker.ReadOnly.source_paths
+  let source_paths_of project = module_tracker project |> ModuleTracker.ReadOnly.module_paths
 
   let qualifiers_of project = source_paths_of project |> List.map ~f:ModulePath.qualifier
 
