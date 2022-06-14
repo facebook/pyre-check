@@ -347,8 +347,8 @@ module EnvironmentTable = struct
         In.PreviousEnvironment.create configuration |> from_upstream_environment
 
 
-      let create_for_testing configuration source_path_code_pairs =
-        In.PreviousEnvironment.create_for_testing configuration source_path_code_pairs
+      let create_for_testing configuration module_path_code_pairs =
+        In.PreviousEnvironment.create_for_testing configuration module_path_code_pairs
         |> from_upstream_environment
 
 

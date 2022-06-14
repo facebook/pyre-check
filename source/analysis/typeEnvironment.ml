@@ -124,8 +124,8 @@ let create configuration =
   AnnotatedGlobalEnvironment.create configuration |> from_global_environment
 
 
-let create_for_testing configuration source_path_code_pairs =
-  AnnotatedGlobalEnvironment.create_for_testing configuration source_path_code_pairs
+let create_for_testing configuration module_path_code_pairs =
+  AnnotatedGlobalEnvironment.create_for_testing configuration module_path_code_pairs
   |> from_global_environment
 
 

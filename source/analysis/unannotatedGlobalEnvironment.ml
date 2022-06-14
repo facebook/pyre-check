@@ -1008,8 +1008,8 @@ module Base = struct
     { ast_environment; from_read_only_upstream }
 
 
-  let create_for_testing configuration source_path_code_pairs =
-    let ast_environment = AstEnvironment.create_for_testing configuration source_path_code_pairs in
+  let create_for_testing configuration module_path_code_pairs =
+    let ast_environment = AstEnvironment.create_for_testing configuration module_path_code_pairs in
     let from_read_only_upstream =
       AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
     in

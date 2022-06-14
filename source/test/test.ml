@@ -2743,16 +2743,16 @@ module ScratchProject = struct
     in
     let type_environment =
       if in_memory then
-        let to_source_path_code_pair (relative, content) ~is_external =
+        let to_module_path_code_pair (relative, content) ~is_external =
           let code = trim_extra_indentation content in
-          let source_path = ModulePath.create_for_testing ~relative ~is_external ~priority:1 in
-          source_path, code
+          let module_path = ModulePath.create_for_testing ~relative ~is_external ~priority:1 in
+          module_path, code
         in
-        let source_path_code_pairs =
-          List.map sources ~f:(to_source_path_code_pair ~is_external:false)
-          @ List.map external_sources ~f:(to_source_path_code_pair ~is_external:true)
+        let module_path_code_pairs =
+          List.map sources ~f:(to_module_path_code_pair ~is_external:false)
+          @ List.map external_sources ~f:(to_module_path_code_pair ~is_external:true)
         in
-        TypeEnvironment.create_for_testing configuration source_path_code_pairs
+        TypeEnvironment.create_for_testing configuration module_path_code_pairs
       else
         let add_source ~root (relative, content) =
           let content = trim_extra_indentation content in
@@ -2817,9 +2817,9 @@ module ScratchProject = struct
 
   let configuration_of { configuration; _ } = configuration
 
-  let source_paths_of project = module_tracker project |> ModuleTracker.ReadOnly.module_paths
+  let module_paths_of project = module_tracker project |> ModuleTracker.ReadOnly.module_paths
 
-  let qualifiers_of project = source_paths_of project |> List.map ~f:ModulePath.qualifier
+  let qualifiers_of project = module_paths_of project |> List.map ~f:ModulePath.qualifier
 
   let project_qualifiers project =
     ast_environment project |> AstEnvironment.ReadOnly.project_qualifiers

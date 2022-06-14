@@ -1197,9 +1197,9 @@ let infer_for_module
     ~configuration
     ~global_resolution
     ~filename_lookup
-    ({ Ast.Source.module_path = { qualifier; _ } as source_path; _ } as source)
+    ({ Ast.Source.module_path = { qualifier; _ } as module_path; _ } as source)
   =
-  Log.debug "Running infer for %s..." source_path.relative;
+  Log.debug "Running infer for %s..." module_path.relative;
   (* We cannot use should_analyze_define as a filter because we need to know about all defines in
      order to reliably exclude duplicates from overloads *)
   let check define =

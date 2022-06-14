@@ -241,8 +241,8 @@ type t = { edges: Edges.t }
 
 let create configuration = { edges = Edges.create configuration }
 
-let create_for_testing configuration source_path_code_pairs =
-  { edges = Edges.create_for_testing configuration source_path_code_pairs }
+let create_for_testing configuration module_path_code_pairs =
+  { edges = Edges.create_for_testing configuration module_path_code_pairs }
 
 
 let store { edges } = Edges.store edges
