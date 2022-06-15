@@ -17,10 +17,15 @@ SCRIPTS_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && p
 cd "${SCRIPTS_DIRECTORY}/.."
 ROOT_DIRECTORY="$(pwd)"
 ROOT_DIRECTORY_BASE="$(basename "${ROOT_DIRECTORY}")"
-cd ..
 
-files=$(find "${ROOT_DIRECTORY_BASE}/client" -name '*_test.py' ! -name 'watchman_test.py')
-echo "Found these test files:
+
+# run pyre-extensions tests first: we want to test lower-level code
+# first since higher-level test failures are less informative
+
+cd "${ROOT_DIRECTORY}"
+
+files=$(find pyre_extensions -name '*_test.py')
+echo "Found these test files in the pyre_extensions code:
 ${files}
 ---"
 if [[ -z "${files}" ]]; then
@@ -29,4 +34,21 @@ if [[ -z "${files}" ]]; then
 fi
 
 echo ' Running all tests:'
+echo "${files}" | xargs testslide
+
+
+# Test pyre client code last since that's the highest-level code.
+
+cd "${ROOT_DIRECTORY}/.."
+
+files=$(find "${ROOT_DIRECTORY_BASE}/client" -name '*_test.py' ! -name 'watchman_test.py')
+echo "Found these test files in the client code:
+${files}
+---"
+if [[ -z "${files}" ]]; then
+  echo 'No test files found, exiting.'
+  exit 2
+fi
+
+echo ' Running client tests:'
 echo "${files}" | xargs testslide
