@@ -554,6 +554,34 @@ class HoverResponse:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
+class ReferencesTextDocumentParameters:
+    text_document: TextDocumentIdentifier
+    position: LspPosition
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "ReferencesTextDocumentParameters":
+        return _parse_parameters(parameters, target=ReferencesTextDocumentParameters)
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
+class ReferencesResponse:
+    """Contains code location of one reference."""
+
+    uri: str
+    range: LspRange
+
+
+@dataclasses_json.dataclass_json(
+    letter_case=dataclasses_json.LetterCase.CAMEL,
+    undefined=dataclasses_json.Undefined.EXCLUDE,
+)
+@dataclasses.dataclass(frozen=True)
 class TypeCoverageTextDocumentParameters:
     text_document: TextDocumentIdentifier
 
