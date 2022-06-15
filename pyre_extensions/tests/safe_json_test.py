@@ -7,7 +7,7 @@
 
 import unittest
 from io import StringIO
-from typing import Any, Dict, List, Optional, Type, TypedDict, TypeVar, Union
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 import typing_extensions
 
@@ -16,7 +16,7 @@ from .. import safe_json
 T = TypeVar("T")
 
 
-class Movie(TypedDict):
+class Movie(typing_extensions.TypedDict):
     name: str
     year: int
 
