@@ -25,6 +25,8 @@ class IdeFeatures:
     DEFAULT_GO_TO_DEFINITION_ENABLED: ClassVar[bool] = False
     find_symbols_enabled: Optional[bool] = None
     DEFAULT_FIND_SYMBOLS_ENABLED: ClassVar[bool] = False
+    find_all_references_enabled: Optional[bool] = None
+    DEFAULT_FIND_ALL_REFERENCES_ENABLED: ClassVar[bool] = False
 
     @staticmethod
     def merge_optional(
@@ -69,6 +71,11 @@ class IdeFeatures:
                 if self.find_symbols_enabled is not None
                 else {}
             ),
+            **(
+                {"find_all_references_enabled": self.find_all_references_enabled}
+                if self.find_all_references_enabled is not None
+                else {}
+            ),
         }
 
     def is_hover_enabled(self) -> bool:
@@ -90,4 +97,11 @@ class IdeFeatures:
             self.find_symbols_enabled
             if self.find_symbols_enabled is not None
             else self.DEFAULT_FIND_SYMBOLS_ENABLED
+        )
+
+    def is_find_all_references_enabled(self) -> bool:
+        return (
+            self.find_all_references_enabled
+            if self.find_all_references_enabled is not None
+            else self.DEFAULT_FIND_ALL_REFERENCES_ENABLED
         )

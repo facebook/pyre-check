@@ -985,6 +985,11 @@ class Configuration:
             return ide_features_module.IdeFeatures.DEFAULT_FIND_SYMBOLS_ENABLED
         return self.ide_features.is_find_symbols_enabled()
 
+    def is_find_all_references_enabled(self) -> bool:
+        if self.ide_features is None:
+            return ide_features_module.IdeFeatures.DEFAULT_FIND_ALL_REFERENCES_ENABLED
+        return self.ide_features.is_find_all_references_enabled()
+
     def get_valid_extension_suffixes(self) -> List[str]:
         vaild_extensions = []
         for extension in self.extensions:

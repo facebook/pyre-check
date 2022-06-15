@@ -31,6 +31,7 @@ class IdeFeaturesTest(testslide.TestCase):
             {"hover_enabled": False}, IdeFeatures(hover_enabled=False)
         )
         assert_ide_features_raises({"hover_enabled": 42})
+
         assert_ide_features_equal(
             {"go_to_definition_enabled": True},
             IdeFeatures(go_to_definition_enabled=True),
@@ -40,6 +41,16 @@ class IdeFeaturesTest(testslide.TestCase):
             IdeFeatures(go_to_definition_enabled=False),
         )
         assert_ide_features_raises({"go_to_definition_enabled": 42})
+
+        assert_ide_features_equal(
+            {"find_all_references_enabled": True},
+            IdeFeatures(find_all_references_enabled=True),
+        )
+        assert_ide_features_equal(
+            {"find_all_references_enabled": False},
+            IdeFeatures(find_all_references_enabled=False),
+        )
+        assert_ide_features_raises({"find_all_references_enabled": 42})
 
     def test_merge(self) -> None:
         def assert_merged(
