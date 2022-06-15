@@ -29,6 +29,7 @@ module Constant : sig
     | False
     | True
     | Integer of int
+    | BigInteger of string
     | Float of float
     | Complex of float
     | String of StringLiteral.t

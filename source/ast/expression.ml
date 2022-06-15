@@ -53,6 +53,7 @@ module Constant = struct
     | False
     | True
     | Integer of int
+    | BigInteger of string
     | Float of float
     | Complex of float
     | String of StringLiteral.t
@@ -70,11 +71,13 @@ module Constant = struct
     | Complex left, Complex right ->
         Float.compare left right
     | String left, String right -> StringLiteral.compare left right
+    | BigInteger left, BigInteger right -> String.compare left right
     | NoneLiteral, _ -> -1
     | Ellipsis, _ -> -1
     | False, _ -> -1
     | True, _ -> -1
     | Integer _, _ -> -1
+    | BigInteger _, _ -> 1
     | Float _, _ -> -1
     | Complex _, _ -> -1
     | String _, _ -> 1
@@ -93,6 +96,7 @@ module Constant = struct
     | Complex float_value -> Format.fprintf formatter "%fj" float_value
     | False -> Format.fprintf formatter "%s" "False"
     | Integer integer -> Format.fprintf formatter "%d" integer
+    | BigInteger value -> Format.fprintf formatter "%s" value
     | NoneLiteral -> Format.fprintf formatter "None"
     | True -> Format.fprintf formatter "%s" "True"
 end

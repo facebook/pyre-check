@@ -24,9 +24,10 @@ let expression_context = PyreAst.TaglessFinal.ExpressionContext.make ~load:() ~s
 let constant =
   let open Ast.Expression in
   let integer i = Constant.Integer i in
-  let big_integer _ =
-    (* TODO (T102723192): We should probably mark this case properly. *)
-    Constant.Integer Int.max_value
+  let big_integer i =
+    (* We should wrap the raw string into a real bignum type (e.g., zarith Z) to support
+       arithmetics, *)
+    Constant.BigInteger i
   in
   let float_ f = Constant.Float f in
   let complex f = Constant.Complex f in

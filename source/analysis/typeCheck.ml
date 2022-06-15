@@ -2657,6 +2657,14 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
+    | Constant (Constant.BigInteger _) ->
+        {
+          resolution;
+          errors = [];
+          resolved = Type.integer;
+          resolved_annotation = None;
+          base = None;
+        }
     | Constant (Constant.String { StringLiteral.kind = StringLiteral.Bytes; value }) ->
         {
           resolution;

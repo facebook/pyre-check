@@ -13,6 +13,11 @@ let test_reveal_type context =
   let assert_default_type_errors = assert_default_type_errors ~context in
   assert_type_errors
     {|
+      reveal_type(12345678901234567890123)
+    |}
+    ["Revealed type [-1]: Revealed type for `12345678901234567890123` is `int`."];
+  assert_type_errors
+    {|
       def foo(x: str) -> None:
         reveal_type(x)
     |}
