@@ -72,6 +72,7 @@ class CommandArguments:
     enable_hover: Optional[bool] = None
     enable_go_to_definition: Optional[bool] = None
     enable_find_symbols: Optional[bool] = None
+    enable_find_all_references: Optional[bool] = None
     use_buck2: Optional[bool] = None
 
 

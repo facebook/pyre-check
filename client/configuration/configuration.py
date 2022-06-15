@@ -241,9 +241,12 @@ class PartialConfiguration:
                 hover_enabled=arguments.enable_hover,
                 go_to_definition_enabled=arguments.enable_go_to_definition,
                 find_symbols_enabled=arguments.enable_find_symbols,
+                find_all_references_enabled=arguments.enable_find_all_references,
             )
             if arguments.enable_hover is not None
             or arguments.enable_go_to_definition is not None
+            or arguments.enable_find_symbols is not None
+            or arguments.enable_find_all_references is not None
             else None
         )
         return PartialConfiguration(
