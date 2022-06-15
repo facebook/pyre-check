@@ -142,8 +142,8 @@ let on_completion ~arguments ~log_buffer = function
 
 let create ?(additional_log_size = 0) () =
   let open Lwt.Infix in
-  let invoke_buck ?mode ?isolation_prefix arguments =
-    arguments
+  let invoke_buck ?mode ?isolation_prefix ~command arguments =
+    command :: arguments
     |> Core.List.map ~f:(Format.sprintf "'%s'")
     |> Core.String.concat ~sep:" "
     |> Log.debug "Running buck command: buck %s";
@@ -160,6 +160,7 @@ let create ?(additional_log_size = 0) () =
           List.concat
             [
               isolation_prefix_to_buck_arguments isolation_prefix;
+              [command];
               mode_to_buck_arguments mode;
               [Format.sprintf "@%s" filename];
             ]
@@ -170,24 +171,27 @@ let create ?(additional_log_size = 0) () =
     let arguments =
       List.concat
         [
-          isolation_prefix_to_buck_arguments isolation_prefix; mode_to_buck_arguments mode; arguments;
+          isolation_prefix_to_buck_arguments isolation_prefix;
+          [command];
+          mode_to_buck_arguments mode;
+          arguments;
         ]
     in
     on_completion ~arguments ~log_buffer result
   in
   let query ?mode ?isolation_prefix arguments =
-    invoke_buck ?mode ?isolation_prefix ("query" :: arguments)
+    invoke_buck ?mode ?isolation_prefix ~command:"query" arguments
   in
   let build ?mode ?isolation_prefix arguments =
-    invoke_buck ?mode ?isolation_prefix ("build" :: arguments)
+    invoke_buck ?mode ?isolation_prefix ~command:"build" arguments
   in
   { query; build }
 
 
 let create_v2 ?(additional_log_size = 0) () =
   let open Lwt.Infix in
-  let invoke_buck ?mode ?isolation_prefix arguments =
-    arguments
+  let invoke_buck ?mode ?isolation_prefix ~command arguments =
+    command :: arguments
     |> Core.List.map ~f:(Format.sprintf "'%s'")
     |> Core.String.concat ~sep:" "
     |> Log.debug "Running buck2 command: buck2 %s";
@@ -204,6 +208,7 @@ let create_v2 ?(additional_log_size = 0) () =
           List.concat
             [
               isolation_prefix_to_buck2_arguments isolation_prefix;
+              [command];
               mode_to_buck_arguments mode;
               [Format.sprintf "@%s" filename];
             ]
@@ -215,6 +220,7 @@ let create_v2 ?(additional_log_size = 0) () =
       List.concat
         [
           isolation_prefix_to_buck2_arguments isolation_prefix;
+          [command];
           mode_to_buck_arguments mode;
           arguments;
         ]
@@ -222,10 +228,10 @@ let create_v2 ?(additional_log_size = 0) () =
     on_completion ~arguments ~log_buffer result
   in
   let query ?mode ?isolation_prefix arguments =
-    invoke_buck ?mode ?isolation_prefix ("query" :: arguments)
+    invoke_buck ?mode ?isolation_prefix ~command:"query" arguments
   in
   let build ?mode ?isolation_prefix arguments =
-    invoke_buck ?mode ?isolation_prefix ("build" :: arguments)
+    invoke_buck ?mode ?isolation_prefix ~command:"build" arguments
   in
   { query; build }
 
