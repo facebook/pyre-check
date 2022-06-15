@@ -180,7 +180,7 @@ class TimedStreamHandler(logging.StreamHandler):
         sys.stderr.flush()
 
 
-def initialize(noninteractive: bool) -> None:
+def initialize(noninteractive: bool, *, logging_level: int = logging.DEBUG) -> None:
     global __handler
 
     if __handler:
@@ -189,7 +189,7 @@ def initialize(noninteractive: bool) -> None:
     if noninteractive:
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(SectionFormatter())
-        stream_handler.setLevel(logging.DEBUG)
+        stream_handler.setLevel(logging_level)
         __handler = None
     else:
         stream_handler = TimedStreamHandler()
@@ -199,7 +199,7 @@ def initialize(noninteractive: bool) -> None:
     logging.addLevelName(PROMPT, "PROMPT")
     logging.addLevelName(SUCCESS, "SUCCESS")
 
-    logging.basicConfig(level=logging.DEBUG, handlers=[stream_handler])
+    logging.basicConfig(level=logging_level, handlers=[stream_handler])
 
 
 def enable_file_logging(log_file: Path) -> None:
@@ -232,9 +232,11 @@ def cleanup() -> None:
 
 
 @contextlib.contextmanager
-def configured_logger(noninteractive: bool) -> Generator[None, None, None]:
+def configured_logger(
+    noninteractive: bool, *, logging_level: int = logging.DEBUG
+) -> Generator[None, None, None]:
     try:
-        initialize(noninteractive)
+        initialize(noninteractive, logging_level=logging_level)
         yield
     finally:
         cleanup()
