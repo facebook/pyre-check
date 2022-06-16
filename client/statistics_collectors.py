@@ -8,7 +8,7 @@ import dataclasses
 import logging
 from enum import Enum
 from re import compile
-from typing import Any, Dict, Iterable, List, Optional, Pattern, Sequence
+from typing import Dict, Iterable, List, Optional, Pattern, Sequence
 
 import libcst as cst
 from libcst.metadata import CodeRange, PositionProvider
@@ -448,66 +448,3 @@ class StrictCountCollector(StatisticsCollector):
             if self.is_unsafe_module()
             else self.explicit_strict_comment_line,
         )
-
-
-class CodeQualityIssue:
-    def __init__(
-        self, code_range: CodeRange, path: str, category: str, message: str
-    ) -> None:
-        self.category: str = category
-        self.detail_message: str = message
-        self.line: int = code_range.start.line
-        self.line_end: int = code_range.end.line
-        self.column: int = code_range.start.column
-        self.column_end: int = code_range.end.column
-        self.path: str = path
-
-    def build_json(self) -> Dict[str, Any]:
-        return {
-            "category": self.category,
-            "detail_message": self.detail_message,
-            "line": self.line,
-            "line_end": self.line_end,
-            "column": self.column,
-            "column_end": self.column_end,
-            "path": self.path,
-        }
-
-
-class FunctionsCollector(cst.CSTVisitor):
-    METADATA_DEPENDENCIES = (PositionProvider,)
-    path: str = ""
-
-    def __init__(self) -> None:
-        self.issues: List[CodeQualityIssue] = []
-
-    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
-        return_is_annotated = node.returns is not None
-        if not return_is_annotated:
-            code_range = self.get_metadata(PositionProvider, node)
-            issue = CodeQualityIssue(
-                code_range,
-                self.path,
-                "PYRE_MISSING_ANNOTATIONS",
-                "This function is missing a return annotation. \
-                Bodies of unannotated functions are not typechecked by Pyre.",
-            )
-            self.issues.append(issue)
-
-
-class StrictIssueCollector(StrictCountCollector):
-    METADATA_DEPENDENCIES = (PositionProvider,)
-    path: str = ""
-    issues: List[CodeQualityIssue] = []
-
-    def _create_issue(self, node: cst.Module) -> None:
-        file_range = self.get_metadata(PositionProvider, node)
-        code_range = CodeRange(start=file_range.start, end=file_range.start)
-        issue = CodeQualityIssue(
-            code_range, self.path, "PYRE_STRICT", "Unsafe Pyre file."
-        )
-        self.issues.append(issue)
-
-    def leave_Module(self, original_node: cst.Module) -> None:
-        if self.is_unsafe_module():
-            self._create_issue(original_node)
