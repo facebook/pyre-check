@@ -210,6 +210,7 @@ def _run_analyze_command(
                 stdout=subprocess.PIPE,
                 stderr=log_file.file,
                 universal_newlines=True,
+                errors="replace",
             )
             return_code = result.returncode
 
