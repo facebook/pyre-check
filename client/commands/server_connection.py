@@ -93,6 +93,14 @@ def connect_in_text_mode(
     """
     with connect(socket_path) as (input_channel, output_channel):
         yield (
-            io.TextIOWrapper(input_channel, encoding="utf-8", line_buffering=True),
-            io.TextIOWrapper(output_channel, encoding="utf-8", line_buffering=True),
+            io.TextIOWrapper(
+                input_channel,
+                line_buffering=True,
+                errors="replace",
+            ),
+            io.TextIOWrapper(
+                output_channel,
+                line_buffering=True,
+                errors="replace",
+            ),
         )

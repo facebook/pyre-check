@@ -162,6 +162,7 @@ def _run_check_command(command: Sequence[str], output: str) -> commands.ExitCode
                 stdout=subprocess.PIPE,
                 stderr=log_file.file,
                 universal_newlines=True,
+                errors="replace",
             )
             return_code = result.returncode
 
