@@ -96,3 +96,5 @@ val location_of_definition
 val classify_coverage_data : coverage_data -> coverage_gap option
 
 val coverage_gaps_in_module : coverage_data list -> coverage_gap list
+
+val get_expression_level_coverage : coverage_data_lookup -> coverage_for_path

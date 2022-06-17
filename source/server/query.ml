@@ -773,7 +773,24 @@ let rec process_request ~environment ~build_system ~configuration request =
         in
         let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
         Single (Base.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
-    | ExpressionLevelCoverage _ -> failwith "to be added in next diff"
+    | ExpressionLevelCoverage paths ->
+        let find_resolved_types path =
+          match
+            LocationBasedLookupProcessor.find_expression_level_coverage_for_path
+              ~environment
+              ~build_system
+              ~configuration
+              path
+          with
+          | Result.Ok { total_expressions; coverage_gaps } ->
+              Either.First { Base.path; total_expressions; coverage_gaps }
+          | Result.Error error_reason -> Either.Second (path, error_reason)
+        in
+        let results, errors = List.partition_map ~f:find_resolved_types paths in
+        if List.is_empty errors then
+          Single (Base.ExpressionLevelCoverageResponse results)
+        else
+          Error (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
     | Help help_list -> Single (Base.Help help_list)
     | InlineDecorators { function_reference; decorators_to_skip } ->
         InlineDecorators.inline_decorators

@@ -28,6 +28,13 @@ val find_all_resolved_types_for_path
   string ->
   types_by_location
 
+val find_expression_level_coverage_for_path
+  :  environment:TypeEnvironment.t ->
+  build_system:BuildSystem.t ->
+  configuration:Configuration.Analysis.t ->
+  string ->
+  coverage_by_location
+
 val get_lookup
   :  configuration:Configuration.Analysis.t ->
   build_system:BuildSystem.t ->

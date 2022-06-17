@@ -1741,6 +1741,140 @@ let test_find_references context =
              |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
+let test_expression_level_coverage context =
+  let sources =
+    [
+      "foo.py", {|
+              def foo(x) -> None:
+                print(x + 1)
+            |};
+      "bar.pyi", {|
+            def foo(x) -> None:
+              ...
+          |};
+      "bar.py", {|
+            def foo(x) -> None:
+              print(x+1)
+          |};
+    ]
+  in
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let queries_and_expected_responses =
+    [
+      (* Test Empty request *)
+      Format.sprintf "expression_level_coverage()", Format.asprintf {| { "response": [ ] } |};
+      (* Ok request *)
+      ( Format.sprintf
+          "expression_level_coverage('%s')"
+          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
+        Format.asprintf
+          {|
+            {
+              "response": [
+                  {
+                      "path": "%s/foo.py",
+                      "total_expressions": 8,
+                      "coverage_gaps": [
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 2,
+                                      "column": 4
+                                  },
+                                  "stop": {
+                                      "line": 2,
+                                      "column": 7
+                                  }
+                              },
+                              "type_": "typing.Callable(foo.foo)[[Named(x, unknown)], None]",
+                              "reason": [
+                                  "CallableParameterIsUnknownOrAny"
+                              ]
+                          },
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 2,
+                                      "column": 8
+                                  },
+                                  "stop": {
+                                      "line": 2,
+                                      "column": 9
+                                  }
+                              },
+                              "type_": "typing.Any",
+                              "reason": [
+                                  "TypeIsAny"
+                              ]
+                          },
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 3,
+                                      "column": 8
+                                  },
+                                  "stop": {
+                                      "line": 3,
+                                      "column": 9
+                                  }
+                              },
+                              "type_": "typing.Any",
+                              "reason": [
+                                  "TypeIsAny"
+                              ]
+                          },
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 3,
+                                      "column": 8
+                                  },
+                                  "stop": {
+                                      "line": 3,
+                                      "column": 13
+                                  }
+                              },
+                              "type_": "typing.Any",
+                              "reason": [
+                                  "TypeIsAny"
+                              ]
+                          }
+                      ]
+                  }
+              ]
+          }
+         |}
+          (PyrePath.absolute custom_source_root) );
+      (* Test Error FileNotFound *)
+      ( Format.sprintf
+          "expression_level_coverage('%s')"
+          (PyrePath.append custom_source_root ~element:"file_not_found.py" |> PyrePath.absolute),
+        Format.asprintf
+          {| {"error":"Not able to get lookups in: `%s` (file not found)"} |}
+          (PyrePath.append custom_source_root ~element:"file_not_found.py" |> PyrePath.absolute) );
+      (* Test Error StubShadowing *)
+      ( Format.sprintf
+          "expression_level_coverage('%s')"
+          (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute),
+        Format.asprintf
+          {| {"error":"Not able to get lookups in: `%s` (file shadowed by .pyi stub file)"} |}
+          (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute) );
+    ]
+  in
+  assert_queries_with_local_root
+    ~custom_source_root
+    ~context
+    ~sources
+    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
+         ( query,
+           fun _ ->
+             response
+             |> Yojson.Safe.from_string
+             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
+
+
 let () =
   "query"
   >::: [
@@ -1754,5 +1888,6 @@ let () =
          "location_of_definition_with_build_system"
          >:: OUnitLwt.lwt_wrapper test_location_of_definition_with_build_system;
          "find_references" >:: OUnitLwt.lwt_wrapper test_find_references;
+         "expression_level_coverage" >:: OUnitLwt.lwt_wrapper test_expression_level_coverage;
        ]
   |> Test.run

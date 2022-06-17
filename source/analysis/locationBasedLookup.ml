@@ -776,3 +776,22 @@ let classify_coverage_data { expression; type_ } =
 
 let coverage_gaps_in_module coverage_data_list =
   List.map ~f:classify_coverage_data coverage_data_list |> List.filter_opt
+
+
+let get_expression_level_coverage coverage_data_lookup =
+  let all_nodes = get_all_nodes_and_coverage_data coverage_data_lookup in
+  let total_expressions = List.length all_nodes in
+  let coverage_gap_and_locations =
+    List.map all_nodes ~f:(fun (location, coverage_data) ->
+        location, classify_coverage_data coverage_data)
+  in
+  let coverage_gap_by_locations =
+    List.filter_map coverage_gap_and_locations ~f:(fun (location, coverage_gap) ->
+        match coverage_gap with
+        | Some { coverage_data = { type_; _ }; reason } -> Some { location; type_; reason }
+        | None -> None)
+  in
+  let sorted_coverage_gap_by_locations =
+    List.sort coverage_gap_by_locations ~compare:[%compare: coverage_gap_by_location]
+  in
+  { total_expressions; coverage_gaps = sorted_coverage_gap_by_locations }
