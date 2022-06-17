@@ -81,3 +81,5 @@ type coverage_gap = {
 [@@deriving compare, sexp, show, hash]
 
 val classify_coverage_data : coverage_data -> coverage_gap option
+
+val coverage_gaps_in_module : coverage_data list -> coverage_gap list

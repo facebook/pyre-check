@@ -759,3 +759,7 @@ let classify_coverage_data { expression; type_ } =
       else
         None
   | _ -> None
+
+
+let coverage_gaps_in_module coverage_data_list =
+  List.map ~f:classify_coverage_data coverage_data_list |> List.filter_opt

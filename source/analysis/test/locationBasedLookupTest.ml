@@ -1984,6 +1984,248 @@ let test_lookup_expression context =
   ()
 
 
+let test_coverage_gaps_in_module context =
+  let assert_coverage_gaps_in_module ~context ~source expected =
+    let lookup = generate_lookup ~context source in
+    let all_nodes_and_coverage = LocationBasedLookup.get_all_nodes_and_coverage_data lookup in
+    let coverage_data = List.map ~f:(fun (_, coverage) -> coverage) all_nodes_and_coverage in
+    let actual_coverage_gaps = LocationBasedLookup.coverage_gaps_in_module coverage_data in
+    let equal_coverage_gap left right =
+      let {
+        LocationBasedLookup.coverage_data = { expression = left_expression; type_ = left_type };
+        reason = left_reason;
+      }
+        =
+        left
+      in
+      let {
+        LocationBasedLookup.coverage_data =
+          { LocationBasedLookup.expression = right_expression; type_ = right_type };
+        reason = right_reason;
+      }
+        =
+        right
+      in
+      let option_insensitive_compare left right =
+        match left, right with
+        | Some left, Some right -> location_insensitive_compare left right = 0
+        | None, None -> true
+        | _ -> false
+      in
+      option_insensitive_compare left_expression right_expression
+      && Type.equal left_type right_type
+      && [%compare.equal: LocationBasedLookup.reason] left_reason right_reason
+    in
+    assert_equal
+      ~printer:(fun x -> [%sexp_of: LocationBasedLookup.coverage_gap list] x |> Sexp.to_string_hum)
+      ~cmp:(List.equal equal_coverage_gap)
+      expected
+      actual_coverage_gaps
+  in
+  assert_coverage_gaps_in_module
+    ~context
+    ~source:{|
+      def foo(x) -> None:
+          print(x+1)
+    |}
+    [
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some
+                (Expression.Name (Name.Identifier "$parameter$x")
+                |> Node.create_with_default_location);
+            type_ = Type.Any;
+          };
+        reason = TypeIsAny;
+      };
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some
+                (Expression.Name (Name.Identifier "$parameter$x")
+                |> Node.create_with_default_location);
+            type_ = Type.Any;
+          };
+        reason = TypeIsAny;
+      };
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some
+                (Expression.Call
+                   {
+                     callee =
+                       Expression.Name
+                         (Name.Attribute
+                            {
+                              base =
+                                Node.create_with_default_location
+                                  (Expression.Name (Name.Identifier "$parameter$x"));
+                              attribute = "__add__";
+                              special = true;
+                            })
+                       |> Node.create_with_default_location;
+                     arguments =
+                       [
+                         {
+                           name = None;
+                           value =
+                             Expression.Constant (Integer 1) |> Node.create_with_default_location;
+                         };
+                       ];
+                   }
+                |> Node.create_with_default_location);
+            type_ = Type.Any;
+          };
+        reason = TypeIsAny;
+      };
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some
+                (Expression.Name
+                   (Name.Attribute
+                      {
+                        base =
+                          Node.create_with_default_location
+                            (Expression.Name (Name.Identifier "test"));
+                        attribute = "foo";
+                        special = false;
+                      })
+                |> Node.create_with_default_location);
+            type_ =
+              Type.Callable
+                {
+                  kind = Type.Callable.Named (Reference.create "test.foo");
+                  implementation =
+                    {
+                      annotation = NoneType;
+                      parameters =
+                        Type.Callable.Defined
+                          [
+                            Type.Callable.Parameter.Named
+                              { name = "$parameter$x"; annotation = Type.Top; default = false };
+                          ];
+                    };
+                  overloads = [];
+                };
+          };
+        reason = CallableParameterIsUnknownOrAny;
+      };
+    ];
+  assert_coverage_gaps_in_module
+    ~context
+    ~source:{|
+      def foo(x:int) -> int:
+          return x
+    |}
+    [];
+  assert_coverage_gaps_in_module ~context ~source:{|
+      y: int = 5
+    |} [];
+  assert_coverage_gaps_in_module
+    ~context
+    ~source:{|
+      y: Any
+    |}
+    [
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some (Expression.Constant Constant.Ellipsis |> Node.create_with_default_location);
+            type_ = Type.Any;
+          };
+        reason = TypeIsAny;
+      };
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some
+                (Expression.Name (Name.Identifier "$local_test$y")
+                |> Node.create_with_default_location);
+            type_ = Type.Any;
+          };
+        reason = TypeIsAny;
+      };
+    ];
+  assert_coverage_gaps_in_module ~context ~source:{|
+      a: list[int] = []
+    |} [];
+  assert_coverage_gaps_in_module ~context ~source:{|
+      a: set[int] = set()
+    |} [];
+  assert_coverage_gaps_in_module ~context ~source:{|
+      a: dict[int,int] = dict()
+    |} [];
+  assert_coverage_gaps_in_module
+    ~context
+    ~source:{|
+      a = []
+    |}
+    [
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some
+                (Expression.Name (Name.Identifier "$local_test$a")
+                |> Node.create_with_default_location);
+            type_ = Type.Parametric { name = "list"; parameters = [Type.Parameter.Single Type.Any] };
+          };
+        reason = ContainerParameterIsAny;
+      };
+    ];
+  assert_coverage_gaps_in_module
+    ~context
+    ~source:{|
+      a = set()
+    |}
+    [
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some
+                (Expression.Name (Name.Identifier "$local_test$a")
+                |> Node.create_with_default_location);
+            type_ = Type.Parametric { name = "set"; parameters = [Type.Parameter.Single Type.Any] };
+          };
+        reason = ContainerParameterIsAny;
+      };
+    ];
+  assert_coverage_gaps_in_module
+    ~context
+    ~source:{|
+      a = dict()
+    |}
+    [
+      {
+        LocationBasedLookup.coverage_data =
+          {
+            expression =
+              Some
+                (Expression.Name (Name.Identifier "$local_test$a")
+                |> Node.create_with_default_location);
+            type_ =
+              Type.Parametric
+                {
+                  name = "dict";
+                  parameters = [Type.Parameter.Single Type.Any; Type.Parameter.Single Type.Any];
+                };
+          };
+        reason = ContainerParameterIsAny;
+      };
+    ];
+  ()
+
+
 let () =
   "lookup"
   >::: [
@@ -2005,5 +2247,6 @@ let () =
          "lookup_unknown_accesses" >:: test_lookup_unknown_accesses;
          "classify_coverage_data" >:: test_classify_coverage_data;
          "lookup_expression" >:: test_lookup_expression;
+         "coverage_gaps_in_module" >:: test_coverage_gaps_in_module;
        ]
   |> Test.run
