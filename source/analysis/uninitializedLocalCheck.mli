@@ -9,9 +9,9 @@ open Ast
 open Core
 module Error = AnalysisError
 
-val run_on_define : qualifier:Reference.t -> Statement.Define.t Node.t -> Error.t list
+val check_define : qualifier:Reference.t -> Statement.Define.t Node.t -> Error.t list
 
-val run_for_testing : source:Source.t -> Error.t list
+val check_module_for_testing : source:Source.t -> Error.t list
 
 module StatementKey = Int
 

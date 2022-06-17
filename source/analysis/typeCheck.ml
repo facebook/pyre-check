@@ -6898,7 +6898,7 @@ let check_define
       if Define.is_toplevel define then
         []
       else
-        UninitializedLocalCheck.run_on_define ~qualifier define_node
+        UninitializedLocalCheck.check_define ~qualifier define_node
     in
     (if not (Define.is_overloaded_function define) then
        let caller =

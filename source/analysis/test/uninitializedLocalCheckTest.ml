@@ -13,7 +13,7 @@ open Ast
 
 let assert_uninitialized_errors ~context =
   let check ~configuration:_ ~environment:_ ~source =
-    UninitializedLocalCheck.run_for_testing ~source
+    UninitializedLocalCheck.check_module_for_testing ~source
   in
   assert_errors ~context ~check
 
