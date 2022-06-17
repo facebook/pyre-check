@@ -112,14 +112,18 @@ let process_incremental_update_request
   =
   let open Lwt.Infix in
   let paths = List.map paths ~f:PyrePath.create_absolute in
+  let subscriptions = ServerState.Subscriptions.all subscriptions in
   match CriticalFile.find critical_files ~within:paths with
   | Some path ->
-      Format.asprintf
-        "Pyre needs to restart as it is notified on potential changes in `%a`"
-        PyrePath.pp
-        path
-      |> StartupNotification.produce ~log_path:configuration.log_directory;
-      Stop.log_and_stop_waiting_server ~reason:"critical file update" ~properties ()
+      let message =
+        Format.asprintf
+          "Pyre server needs to restart as it is notified on potential changes in `%a`"
+          PyrePath.pp
+          path
+      in
+      StartupNotification.produce ~log_path:configuration.log_directory message;
+      Subscription.batch_send subscriptions ~response:(lazy (Response.Error message))
+      >>= fun () -> Stop.log_and_stop_waiting_server ~reason:"critical file update" ~properties ()
   | None ->
       let source_paths = List.map paths ~f:SourcePath.create in
       let create_status_update_response status = lazy (Response.StatusUpdate status) in
@@ -138,7 +142,6 @@ let process_incremental_update_request
                 ~ast_environment:
                   (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only)))
       in
-      let subscriptions = ServerState.Subscriptions.all subscriptions in
       Subscription.batch_send
         ~response:(create_status_update_response Response.ServerStatus.Rebuilding)
         subscriptions

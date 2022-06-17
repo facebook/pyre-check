@@ -101,7 +101,15 @@ let handle_request ~properties ~state request =
       | _ -> "server"
     in
     Statistics.log_exception exn ~fatal:true ~origin;
-    Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~properties ()
+    let subscriptions =
+      let { ServerState.subscriptions; _ } = state in
+      ServerState.Subscriptions.all subscriptions
+    in
+    let message =
+      Format.sprintf "Pyre server stopped due to uncaught exception (origin: %s)" origin
+    in
+    Subscription.batch_send subscriptions ~response:(lazy (Response.Error message))
+    >>= fun () -> Stop.log_and_stop_waiting_server ~reason:"uncaught exception" ~properties ()
   in
   Lwt.catch
     (fun () ->
@@ -167,6 +175,25 @@ let handle_connection
               let response = RequestHandler.create_info_response server_properties in
               Lwt.return (connection_state, response)
           | ClientRequest.StopServer ->
+              let subscriptions =
+                (* HACK(grievejia): Bypass the lock here because we do not want to block stop
+                   request on other kinds of requests. It's ok in this case because we are only
+                   interested in retrieving the subscription list for notification purpose and we
+                   don't care about potential concurrent modifications. We might also consider using
+                   separate locks for subscriptions and the rest of the state to avoid this unsafe
+                   read in the future. *)
+                match ExclusiveLock.Lazy.unsafe_read server_state with
+                | None -> []
+                | Some { ServerState.subscriptions; _ } ->
+                    ServerState.Subscriptions.all subscriptions
+              in
+              Subscription.batch_send
+                subscriptions
+                ~response:
+                  (lazy
+                    (Response.Error
+                       "Pyre server stopped because one client explicitly sent a `stop` request"))
+              >>= fun () ->
               Stop.log_and_stop_waiting_server
                 ~reason:"explicit request"
                 ~properties:server_properties
