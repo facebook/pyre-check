@@ -38,6 +38,8 @@ module ReadOnly : sig
   val get_relative : t -> Reference.t -> string option
 
   val get_real_path : t -> Reference.t -> ArtifactPath.t option
+  (** NOTE(grievejia): This API is oblivious to the existence of a build system. User-facing logic
+      should always prefer {!Server.PathLookup.instantiate_path} for module-to-path translation. *)
 
   val get_real_path_relative : t -> Reference.t -> string option
 

@@ -15,23 +15,6 @@ let module_of_path ~module_tracker path =
   | _ -> None
 
 
-let instantiate_path ~build_system ~ast_environment qualifier =
-  match AstEnvironment.ReadOnly.get_real_path ast_environment qualifier with
-  | None -> None
-  | Some analysis_path ->
-      let path =
-        match BuildSystem.lookup_source build_system analysis_path with
-        | Some source_path -> source_path |> SourcePath.raw
-        | None ->
-            (* NOTE (grievejia): This means the path is under the search roots but is not tracked by
-               Buck. Showing the original path here is a compromise: ideally we should instead look
-               into configuring Buck-built project in such a way that all source files are tracked
-               by Buck. *)
-            ArtifactPath.raw analysis_path
-      in
-      Some (PyrePath.absolute path)
-
-
 let instantiate_error
     ~build_system
     ~configuration:{ Configuration.Analysis.show_error_traces; _ }
@@ -40,7 +23,7 @@ let instantiate_error
   =
   AnalysisError.instantiate
     ~show_error_traces
-    ~lookup:(instantiate_path ~build_system ~ast_environment)
+    ~lookup:(PathLookup.instantiate_path ~build_system ~ast_environment)
     error
 
 

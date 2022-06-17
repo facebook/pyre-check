@@ -5,12 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val instantiate_path
-  :  build_system:BuildSystem.t ->
-  ast_environment:Analysis.AstEnvironment.ReadOnly.t ->
-  Ast.Reference.t ->
-  string option
-
 val instantiate_error
   :  build_system:BuildSystem.t ->
   configuration:Configuration.Analysis.t ->
