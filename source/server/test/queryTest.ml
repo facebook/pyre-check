@@ -134,7 +134,13 @@ let test_parse_query context =
   ()
 
 
-let assert_queries_with_local_root ?custom_source_root ~context ~sources queries_and_responses =
+let assert_queries_with_local_root
+    ?custom_source_root
+    ?build_system_initializer
+    ~context
+    ~sources
+    queries_and_responses
+  =
   let test_handle_query client =
     let handle_one_query (query, build_expected_response) =
       let open Lwt.Infix in
@@ -152,7 +158,12 @@ let assert_queries_with_local_root ?custom_source_root ~context ~sources queries
     in
     Lwt_list.iter_s handle_one_query queries_and_responses
   in
-  ScratchProject.setup ?custom_source_root ~context ~include_helper_builtins:false sources
+  ScratchProject.setup
+    ?custom_source_root
+    ?build_system_initializer
+    ~context
+    ~include_helper_builtins:false
+    sources
   |> ScratchProject.test_server_with ~f:test_handle_query
 
 
@@ -1539,6 +1550,128 @@ let test_location_of_definition context =
              |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
+let test_location_of_definition_with_build_system context =
+  let sources =
+    [
+      "original.py", "x: int = 42";
+      "not_tracked.pyi", "y: int = 43";
+      ( "test.py",
+        Test.trim_extra_indentation
+          {|
+          import original
+          import not_tracked
+          original.x
+          not_tracked.y
+        |}
+      );
+    ]
+  in
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let test_path = PyrePath.create_relative ~root:custom_source_root ~relative:"test.py" in
+  let original_path = PyrePath.create_relative ~root:custom_source_root ~relative:"original.py" in
+  let redirected_path =
+    PyrePath.create_relative ~root:custom_source_root ~relative:"redirected.py"
+  in
+  let not_tracked_path =
+    PyrePath.create_relative ~root:custom_source_root ~relative:"not_tracked.pyi"
+  in
+  let build_system_initializer =
+    let initialize () =
+      (* We want a build system that redirects `original.py` to `redirected.py`, and pretends
+         `not_tracked.py` does not exist. *)
+      let lookup_source artifact_path =
+        let raw_path = ArtifactPath.raw artifact_path in
+        if PyrePath.equal raw_path not_tracked_path then
+          None
+        else if PyrePath.equal raw_path redirected_path then
+          Some (SourcePath.create original_path)
+        else
+          Some (SourcePath.create raw_path)
+      in
+      let lookup_artifact source_path =
+        let raw_path = SourcePath.raw source_path in
+        if PyrePath.equal raw_path not_tracked_path then
+          []
+        else if PyrePath.equal raw_path original_path then
+          [ArtifactPath.create redirected_path]
+        else
+          [ArtifactPath.create raw_path]
+      in
+      Lwt.return (BuildSystem.create_for_testing ~lookup_source ~lookup_artifact ())
+    in
+    let load () = failwith "saved state loading is not supported" in
+    let cleanup () = Lwt.return_unit in
+    BuildSystem.Initializer.create_for_testing ~initialize ~load ~cleanup ()
+  in
+  let queries_and_expected_responses =
+    [
+      (* Look up `original.x`. *)
+      ( Format.sprintf
+          "location_of_definition(path='%s', line=4, column=9)"
+          (PyrePath.absolute test_path),
+        Format.asprintf
+          {|
+            {
+              "response": [
+                {
+                  "path": "%s/original.py",
+                  "range": {
+                    "start": {
+                      "line": 1,
+                      "character": 0
+                    },
+                    "end": {
+                      "line": 1,
+                      "character": 1
+                    }
+                  }
+                }
+              ]
+            }
+          |}
+          (PyrePath.absolute custom_source_root) );
+      (* Look up `not_tracked.y`. *)
+      ( Format.sprintf
+          "location_of_definition(path='%s', line=5, column=12)"
+          (PyrePath.absolute test_path),
+        Format.asprintf
+          {|
+            {
+              "response": [
+                {
+                  "path": "%s/not_tracked.pyi",
+                  "range": {
+                    "start": {
+                      "line": 1,
+                      "character": 0
+                    },
+                    "end": {
+                      "line": 1,
+                      "character": 1
+                    }
+                  }
+                }
+              ]
+            }
+          |}
+          (PyrePath.absolute custom_source_root) );
+    ]
+  in
+  assert_queries_with_local_root
+    ~custom_source_root
+    ~build_system_initializer
+    ~context
+    ~sources
+    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
+         ( query,
+           fun _ ->
+             response
+             |> Yojson.Safe.from_string
+             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
+
+
 let test_find_references context =
   let sources =
     [
@@ -1609,6 +1742,8 @@ let () =
          "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
          "inline_decorators" >:: OUnitLwt.lwt_wrapper test_inline_decorators;
          "location_of_definition" >:: OUnitLwt.lwt_wrapper test_location_of_definition;
+         "location_of_definition_with_build_system"
+         >:: OUnitLwt.lwt_wrapper test_location_of_definition_with_build_system;
          "find_references" >:: OUnitLwt.lwt_wrapper test_find_references;
        ]
   |> Test.run

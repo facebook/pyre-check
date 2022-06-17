@@ -790,23 +790,18 @@ let rec process_request ~environment ~build_system ~configuration request =
         in
         let open Base in
         let location_to_location_of_definition
-            Location.WithModule.(
+            Location.WithModule.
               {
                 start = { line = start_line; column = start_column };
                 stop = { line = stop_line; column = stop_column };
-                _;
-              } as location_with_module)
+                module_reference;
+              }
           =
-          let module_to_absolute_path reference =
-            AstEnvironment.ReadOnly.get_real_path
-              (TypeEnvironment.ReadOnly.ast_environment read_only_environment)
-              reference
-            >>| ArtifactPath.raw
-            >>| PyrePath.absolute
-          in
-          let Location.WithPath.{ path; _ } =
-            Location.WithModule.instantiate location_with_module ~lookup:module_to_absolute_path
-          in
+          PathLookup.instantiate_path
+            ~build_system
+            ~ast_environment:(TypeEnvironment.ReadOnly.ast_environment read_only_environment)
+            module_reference
+          >>| fun path ->
           {
             path;
             range =
@@ -822,7 +817,7 @@ let rec process_request ~environment ~build_system ~configuration request =
                 ~type_environment:(TypeEnvironment.read_only environment)
                 ~module_reference
                 position)
-        >>| location_to_location_of_definition
+        >>= location_to_location_of_definition
         |> Option.to_list
         |> fun definitions -> Single (Base.FoundLocationsOfDefinitions definitions)
     | PathOfModule module_name ->
