@@ -141,10 +141,12 @@ def get_models_from_json_file(path: str) -> Dict[str, TargetModel]:
     json_models: Dict[str, TargetModel] = defaultdict(make_default_target_model)
     with Path(path).open() as json_file:
         for entry in json.loads(json_file.read()):
-            callable_name = entry["callable"]
-            model = json_to_parsed_model(entry["model"])
-            json_models[callable_name]["parameters"].update(model["parameters"])
-            json_models[callable_name]["return_model"].update(model["return_model"])
+            for _, models in entry.items():
+                for json_model in models:
+                    callable_name = json_model["callable"]
+                    model = json_to_parsed_model(json_model["model"])
+                    json_models[callable_name]["parameters"].update(model["parameters"])
+                    json_models[callable_name]["return_model"].update(model["return_model"])
 
     return json_models
 

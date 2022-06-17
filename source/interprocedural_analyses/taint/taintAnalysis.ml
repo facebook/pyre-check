@@ -218,16 +218,27 @@ let initialize_models ~scheduler ~static_analysis_configuration ~environment ~ca
     | _ ->
         Log.info "Generating models from model queries...";
         let timer = Timer.start () in
-        let models =
+        let taint_configuration = TaintConfiguration.get () in
+        let models_and_names =
           TaintModelQuery.ModelQuery.generate_models_from_queries
             ~static_analysis_configuration
             ~scheduler
             ~environment
             ~callables
             ~stubs
-            ~initial_models:models
-            ~taint_configuration:(TaintConfiguration.get ())
+            ~taint_configuration
             queries
+        in
+        (match taint_configuration.dump_model_query_results_path with
+        | Some path ->
+            Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
+            let content = TaintModelQuery.ModelQuery.DumpModelQueryResults.dump ~models_and_names in
+            path |> File.create ~content |> File.write
+        | None -> ());
+        let models =
+          models_and_names
+          |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry
+          |> Registry.merge models
         in
         Statistics.performance
           ~name:"Generated models from model queries"

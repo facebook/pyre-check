@@ -68,26 +68,26 @@ class JsonToParsedModelTest(unittest.TestCase):
                     "data": {
                         "callable": "foo.bar.websocket.WebSocketHandler.get",
                         "sources": [
-                        {
-                            "port": "formal(**kw)",
-                            "taint": [
-                                { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
-                                {
-                                    "decl": null,
-                                    "kinds": [ { "kind": "UserControlled_Parameter" } ]
-                                }
-                            ]
-                        },
-                        {
-                            "port": "formal(*rest1)",
-                            "taint": [
-                                { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
-                                {
-                                    "decl": null,
-                                    "kinds": [ { "kind": "UserControlled_Parameter" } ]
-                                }
-                            ]
-                        }
+                            {
+                                "port": "formal(**kw)",
+                                "taint": [
+                                    { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
+                                    {
+                                        "decl": null,
+                                        "kinds": [ { "kind": "UserControlled_Parameter" } ]
+                                    }
+                                ]
+                            },
+                            {
+                                "port": "formal(*rest1)",
+                                "taint": [
+                                    { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
+                                    {
+                                        "decl": null,
+                                        "kinds": [ { "kind": "UserControlled_Parameter" } ]
+                                    }
+                                ]
+                            }
                         ]
                     }
                 }
@@ -118,19 +118,19 @@ class JsonToParsedModelTest(unittest.TestCase):
             """
             [
                 {
-                "kind": "model",
-                "data": {
-                    "callable":
-                    "foo.bar.baz.lorem.LoremIpsum.fake_render_function",
-                    "sinks": [
-                    {
-                        "port": "result",
-                        "taint": [
-                        { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+                    "kind": "model",
+                    "data": {
+                        "callable":
+                        "foo.bar.baz.lorem.LoremIpsum.fake_render_function",
+                        "sinks": [
+                            {
+                                "port": "result",
+                                "taint": [
+                                    { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+                                ]
+                            }
                         ]
                     }
-                    ]
-                }
                 }
             ]
             """
@@ -152,193 +152,201 @@ class JsonToParsedModelTest(unittest.TestCase):
 TEST_JSON_FILE = """
 [
     {
-      "callable":
-        "foo.bar.baz.loremipsum.FakeClass1.fake_render_function",
-      "model": [
-        {
-          "kind": "model",
-          "data": {
-            "callable":
-              "foo.bar.baz.loremipsum.FakeClass1.fake_render_function",
-            "sinks": [
-              {
-                "port": "result",
-                "taint": [
-                  { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+        "query_name_1":
+        [
+            {
+                "callable":
+                    "foo.bar.baz.loremipsum.FakeClass1.fake_render_function",
+                "model": [
+                    {
+                        "kind": "model",
+                        "data": {
+                            "callable":
+                            "foo.bar.baz.loremipsum.FakeClass1.fake_render_function",
+                            "sinks": [
+                                {
+                                    "port": "result",
+                                    "taint": [
+                                        { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
                 ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "callable":
-        "foo.bar.baz.loremipsum.FakeClass2.fake_render_function",
-      "model": [
-        {
-          "kind": "model",
-          "data": {
-            "callable":
-              "foo.bar.baz.loremipsum.FakeClass2.fake_render_function",
-            "sinks": [
-              {
-                "port": "result",
-                "taint": [
-                  { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+            },
+            {
+                "callable":
+                    "foo.bar.baz.loremipsum.FakeClass2.fake_render_function",
+                "model": [
+                    {
+                        "kind": "model",
+                        "data": {
+                            "callable":
+                            "foo.bar.baz.loremipsum.FakeClass2.fake_render_function",
+                            "sinks": [
+                                {
+                                    "port": "result",
+                                    "taint": [
+                                        { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
                 ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "callable":
-        "foo.bar.baz.loremipsum.FakeClass3.fake_render_function",
-      "model": [
-        {
-          "kind": "model",
-          "data": {
-            "callable":
-              "foo.bar.baz.loremipsum.FakeClass3.fake_render_function",
-            "sinks": [
-              {
-                "port": "result",
-                "taint": [
-                  { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+            },
+            {
+                "callable":
+                    "foo.bar.baz.loremipsum.FakeClass3.fake_render_function",
+                "model": [
+                    {
+                        "kind": "model",
+                        "data": {
+                            "callable":
+                            "foo.bar.baz.loremipsum.FakeClass3.fake_render_function",
+                            "sinks": [
+                                {
+                                    "port": "result",
+                                    "taint": [
+                                        { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
                 ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "callable":
-        "foo.bar.baz.loremipsum.FakeClass4.fake_render_function",
-      "model": [
-        {
-          "kind": "model",
-          "data": {
-            "callable":
-              "foo.bar.baz.loremipsum.FakeClass4.fake_render_function",
-            "sinks": [
-              {
-                "port": "result",
-                "taint": [
-                  { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+            },
+            {
+                "callable":
+                    "foo.bar.baz.loremipsum.FakeClass4.fake_render_function",
+                "model": [
+                    {
+                        "kind": "model",
+                        "data": {
+                            "callable":
+                            "foo.bar.baz.loremipsum.FakeClass4.fake_render_function",
+                            "sinks": [
+                                {
+                                    "port": "result",
+                                    "taint": [
+                                        { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
                 ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "callable":
-        "foo.bar.baz.loremipsum.FakeClass5.fake_render_function",
-      "model": [
-        {
-          "kind": "model",
-          "data": {
-            "callable":
-              "foo.bar.baz.loremipsum.FakeClass5.fake_render_function",
-            "sinks": [
-              {
-                "port": "result",
-                "taint": [
-                  { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+            },
+            {
+                "callable":
+                    "foo.bar.baz.loremipsum.FakeClass5.fake_render_function",
+                "model": [
+                    {
+                        "kind": "model",
+                        "data": {
+                                "callable":
+                                "foo.bar.baz.loremipsum.FakeClass5.fake_render_function",
+                                "sinks": [
+                                {
+                                    "port": "result",
+                                    "taint": [
+                                        { "decl": null, "kinds": [ { "kind": "ReturnedToUser" } ] }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
                 ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "callable":
-        "foo.bar.baz.loremipsum.FakeClass6.Download.get",
-      "model": [
-        {
-          "kind": "model",
-          "data": {
-            "callable":
-              "foo.bar.baz.loremipsum.FakeClass6.Download.get",
-            "sources": [
-              {
-                "port": "formal(fmt)",
-                "taint": [
-                  { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
-                  {
-                    "decl": null,
-                    "kinds": [ { "kind": "UserControlled_Parameter" } ]
-                  }
+            },
+            {
+                "callable":
+                    "foo.bar.baz.loremipsum.FakeClass6.Download.get",
+                "model": [
+                    {
+                        "kind": "model",
+                        "data": {
+                            "callable":
+                            "foo.bar.baz.loremipsum.FakeClass6.Download.get",
+                            "sources": [
+                                {
+                                    "port": "formal(fmt)",
+                                    "taint": [
+                                        { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
+                                        {
+                                            "decl": null,
+                                            "kinds": [ { "kind": "UserControlled_Parameter" } ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "port": "formal(fignum)",
+                                    "taint": [
+                                        { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
+                                        {
+                                            "decl": null,
+                                            "kinds": [ { "kind": "UserControlled_Parameter" } ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
                 ]
-              },
-              {
-                "port": "formal(fignum)",
-                "taint": [
-                  { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
-                  {
-                    "decl": null,
-                    "kinds": [ { "kind": "UserControlled_Parameter" } ]
-                  }
+            }
+        ],
+        "query_name_2":
+        [
+            {
+                "callable":
+                    "Obj{foo.bar.baz.FakeClass1.a}",
+                "model": [
+                    {
+                        "kind": "model",
+                        "data": {
+                            "callable":
+                            "Obj{foo.bar.baz.FakeClass1.a}",
+                            "sources": [
+                                {
+                                    "port": "result",
+                                    "taint": [
+                                        {
+                                            "kinds": [ { "kind": "UserControlled" } ],
+                                            "decl": null
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
                 ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "callable":
-        "Obj{foo.bar.baz.FakeClass1.a}",
-      "model": [
-        {
-          "kind": "model",
-          "data": {
-            "callable":
-              "Obj{foo.bar.baz.FakeClass1.a}",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  {
-                    "kinds": [ { "kind": "UserControlled" } ],
-                    "decl": null
-                  }
+            },
+            {
+                "callable":
+                    "Obj{foo.bar.baz.FakeClass1.b}",
+                "model": [
+                    {
+                        "kind": "model",
+                        "data": {
+                            "callable":
+                            "Obj{foo.bar.baz.FakeClass1.b}",
+                            "sources": [
+                                {
+                                    "port": "result",
+                                    "taint": [
+                                        { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
+                                        {
+                                            "decl": null,
+                                            "kinds": [ { "kind": "UserControlled_Parameter" } ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
                 ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "callable":
-        "Obj{foo.bar.baz.FakeClass1.b}",
-      "model": [
-        {
-          "kind": "model",
-          "data": {
-            "callable":
-              "Obj{foo.bar.baz.FakeClass1.b}",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "decl": null, "kinds": [ { "kind": "UserControlled" } ] },
-                  {
-                    "decl": null,
-                    "kinds": [ { "kind": "UserControlled_Parameter" } ]
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      ]
+            }
+        ]
     }
 ]
 """

@@ -18,30 +18,68 @@ module ModelParser = struct
   include ModelParser
 end
 
+module ModelQueryRegistryMap = struct
+  type t = Registry.t String.Map.t
+
+  let empty = String.Map.empty
+
+  let set model_query_map ~model_query_name ~models =
+    String.Map.set ~key:model_query_name ~data:models model_query_map
+
+
+  let get = String.Map.find
+
+  let merge left right =
+    String.Map.merge left right ~f:(fun ~key:_ -> function
+      | `Both (models1, models2) -> Some (Registry.merge models1 models2)
+      | `Left models
+      | `Right models ->
+          Some models)
+
+
+  let to_alist = String.Map.to_alist ~key_order:`Increasing
+
+  let mapi model_query_map ~f =
+    String.Map.mapi ~f:(fun ~key ~data -> f ~model_query_name:key ~models:data) model_query_map
+
+
+  let get_model_query_names = String.Map.keys
+
+  let get_models = String.Map.data
+
+  let merge_all_registries registries = List.fold registries ~init:Registry.empty ~f:Registry.merge
+
+  let get_registry model_query_map = merge_all_registries (get_models model_query_map)
+end
+
 module DumpModelQueryResults : sig
-  val dump : path:PyrePath.t -> models:Registry.t -> unit
+  val dump : models_and_names:ModelQueryRegistryMap.t -> string
 end = struct
-  let dump ~path ~models =
-    Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
-    let content =
-      let to_json (callable, model) =
-        `Assoc
-          [
-            "callable", `String (Target.external_name callable);
-            ( "model",
-              Model.to_json
-                ~expand_overrides:None
-                ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
-                ~filename_lookup:None
-                callable
-                model );
-          ]
-      in
+  let dump ~models_and_names =
+    let model_to_json (callable, model) =
+      `Assoc
+        [
+          "callable", `String (Target.external_name callable);
+          ( "model",
+            Model.to_json
+              ~expand_overrides:None
+              ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+              ~filename_lookup:None
+              callable
+              model );
+        ]
+    in
+    let to_json ~key:model_query_name ~data:models =
       models
       |> Registry.to_alist
-      |> fun models -> `List (List.map models ~f:to_json) |> Yojson.Safe.pretty_to_string
+      |> List.map ~f:model_to_json
+      |> fun models ->
+      `List models
+      |> fun models_json ->
+      `Assoc [(* TODO(T123305362) also include filenames *) model_query_name, models_json]
     in
-    path |> File.create ~content |> File.write
+    `List (String.Map.data (String.Map.mapi models_and_names ~f:to_json))
+    |> Yojson.Safe.pretty_to_string
 end
 
 let sanitized_location_insensitive_compare left right =
@@ -527,7 +565,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
 let apply_callable_query_rule
     ~verbose
     ~resolution
-    ~rule:{ ModelQuery.rule_kind; query; productions; name; _ }
+    ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name; _ }
     ~callable
   =
   let kind_matches =
@@ -544,11 +582,14 @@ let apply_callable_query_rule
         "Target `%a` matches all constraints for the model query rule %s."
         Target.pp_pretty
         callable
-        name;
-    apply_callable_productions ~resolution ~productions ~callable
+        rule_name;
+    String.Map.set
+      String.Map.empty
+      ~key:rule_name
+      ~data:(apply_callable_productions ~resolution ~productions ~callable)
   end
   else
-    []
+    String.Map.empty
 
 
 let rec attribute_matches_constraint query_constraint ~resolution ~name ~annotation =
@@ -615,10 +656,10 @@ let apply_attribute_query_rule
         "Attribute `%s` matches all constraints for the model query rule %s."
         (Reference.show name)
         rule_name;
-    apply_attribute_productions ~productions
+    String.Map.set String.Map.empty ~key:rule_name ~data:(apply_attribute_productions ~productions)
   end
   else
-    []
+    String.Map.empty
 
 
 let get_class_attributes ~global_resolution ~class_name =
@@ -662,10 +703,9 @@ let apply_all_rules
     ~callables
     ~stubs
     ~environment
-    ~models
   =
   let global_resolution = Resolution.global_resolution resolution in
-  if List.length rules > 0 then (
+  if List.length rules > 0 then
     let sources_to_keep, sinks_to_keep =
       ModelParser.compute_sources_and_sinks_to_keep ~configuration ~rule_filter
     in
@@ -679,31 +719,41 @@ let apply_all_rules
     in
 
     (* Generate models for functions and methods. *)
-    let apply_rules_for_callable models callable =
-      let taint_to_model =
-        List.concat_map callable_rules ~f:(fun rule ->
-            apply_callable_query_rule
-              ~verbose:(Option.is_some configuration.dump_model_query_results_path)
-              ~resolution:global_resolution
-              ~rule
-              ~callable)
+    let apply_rules_for_callable models_and_names callable =
+      let taint_to_model_and_names =
+        callable_rules
+        |> List.map ~f:(fun rule ->
+               apply_callable_query_rule
+                 ~verbose:(Option.is_some configuration.dump_model_query_results_path)
+                 ~resolution:global_resolution
+                 ~rule
+                 ~callable)
+        |> List.reduce ~f:(fun left right ->
+               String.Map.merge left right ~f:(fun ~key:_ -> function
+                 | `Both (taint_annotations_left, taint_annotations_right) ->
+                     Some (taint_annotations_left @ taint_annotations_right)
+                 | `Left taint_annotations
+                 | `Right taint_annotations ->
+                     Some taint_annotations))
+        |> Option.value ~default:String.Map.empty
       in
-      if not (List.is_empty taint_to_model) then (
-        match
-          ModelParser.create_callable_model_from_annotations
-            ~resolution
-            ~callable
-            ~sources_to_keep
-            ~sinks_to_keep
-            ~is_obscure:(Hash_set.mem stubs callable)
-            taint_to_model
-        with
-        | Ok model -> Registry.add models ~target:callable ~model
-        | Error error ->
-            Log.error "Error while executing model query: %s" (ModelVerificationError.display error);
-            models)
-      else
-        models
+      String.Map.map taint_to_model_and_names ~f:(fun taint_to_model ->
+          match
+            ModelParser.create_callable_model_from_annotations
+              ~resolution
+              ~callable
+              ~sources_to_keep
+              ~sinks_to_keep
+              ~is_obscure:(Hash_set.mem stubs callable)
+              taint_to_model
+          with
+          | Ok model -> Registry.add Registry.empty ~target:callable ~model
+          | Error error ->
+              Log.error
+                "Error while executing model query: %s"
+                (ModelVerificationError.display error);
+              Registry.empty)
+      |> ModelQueryRegistryMap.merge models_and_names
     in
     let callables =
       List.filter_map callables ~f:(function
@@ -719,40 +769,50 @@ let apply_all_rules
              ~minimum_chunk_size:500
              ~preferred_chunks_per_worker:1
              ())
-        ~initial:Registry.empty
-        ~map:(fun models callables -> List.fold callables ~init:models ~f:apply_rules_for_callable)
-        ~reduce:Registry.merge
+        ~initial:ModelQueryRegistryMap.empty
+        ~map:(fun models_and_names callables ->
+          List.fold callables ~init:models_and_names ~f:apply_rules_for_callable)
+        ~reduce:ModelQueryRegistryMap.merge
         ~inputs:callables
         ()
     in
-
     (* Generate models for attributes. *)
-    let apply_rules_for_attribute models (name, annotation) =
-      let taint_to_model =
-        List.concat_map attribute_rules ~f:(fun rule ->
-            apply_attribute_query_rule
-              ~verbose:(Option.is_some configuration.dump_model_query_results_path)
-              ~resolution:global_resolution
-              ~rule
-              ~name
-              ~annotation)
+    let apply_rules_for_attribute models_and_names (name, annotation) =
+      let taint_to_model_and_names =
+        attribute_rules
+        |> List.map ~f:(fun rule ->
+               apply_attribute_query_rule
+                 ~verbose:(Option.is_some configuration.dump_model_query_results_path)
+                 ~resolution:global_resolution
+                 ~rule
+                 ~name
+                 ~annotation)
+        |> List.reduce ~f:(fun left right ->
+               String.Map.merge left right ~f:(fun ~key:_ -> function
+                 | `Both (taint_annotations_left, taint_annotations_right) ->
+                     Some (taint_annotations_left @ taint_annotations_right)
+                 | `Left taint_annotations
+                 | `Right taint_annotations ->
+                     Some taint_annotations))
+        |> Option.value ~default:String.Map.empty
       in
-      if not (List.is_empty taint_to_model) then (
-        let callable = Target.create_object name in
-        match
-          ModelParser.create_attribute_model_from_annotations
-            ~resolution
-            ~name
-            ~sources_to_keep
-            ~sinks_to_keep
-            taint_to_model
-        with
-        | Ok model -> Registry.add models ~target:callable ~model
-        | Error error ->
-            Log.error "Error while executing model query: %s" (ModelVerificationError.display error);
-            models)
-      else
-        models
+      String.Map.map taint_to_model_and_names ~f:(fun taint_to_model ->
+          let callable = Target.create_object name in
+          match
+            ModelParser.create_attribute_model_from_annotations
+              ~resolution
+              ~name
+              ~sources_to_keep
+              ~sinks_to_keep
+              taint_to_model
+          with
+          | Ok model -> Registry.add Registry.empty ~target:callable ~model
+          | Error error ->
+              Log.error
+                "Error while executing model query: %s"
+                (ModelVerificationError.display error);
+              Registry.empty)
+      |> ModelQueryRegistryMap.merge models_and_names
     in
     let attribute_models =
       if not (List.is_empty attribute_rules) then
@@ -772,24 +832,18 @@ let apply_all_rules
                ~minimum_chunk_size:500
                ~preferred_chunks_per_worker:1
                ())
-          ~initial:Registry.empty
-          ~map:(fun models attributes ->
-            List.fold attributes ~init:models ~f:apply_rules_for_attribute)
-          ~reduce:Registry.merge
+          ~initial:ModelQueryRegistryMap.empty
+          ~map:(fun models_and_names attributes ->
+            List.fold attributes ~init:models_and_names ~f:apply_rules_for_attribute)
+          ~reduce:ModelQueryRegistryMap.merge
           ~inputs:attributes
           ()
       else
-        Registry.empty
+        ModelQueryRegistryMap.empty
     in
-    let new_models = Registry.merge callable_models attribute_models in
-    begin
-      match configuration.dump_model_query_results_path with
-      | Some path -> DumpModelQueryResults.dump ~path ~models:new_models
-      | None -> ()
-    end;
-    Registry.merge new_models models)
+    ModelQueryRegistryMap.merge callable_models attribute_models
   else
-    models
+    ModelQueryRegistryMap.empty
 
 
 let generate_models_from_queries
@@ -799,7 +853,6 @@ let generate_models_from_queries
     ~callables
     ~stubs
     ~taint_configuration
-    ~initial_models
     queries
   =
   let resolution =
@@ -824,4 +877,3 @@ let generate_models_from_queries
     ~callables
     ~stubs
     ~environment
-    ~models:initial_models

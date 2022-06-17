@@ -447,6 +447,7 @@ let initialize
     ?(add_initial_models = true)
     ?find_missing_flows
     ?(taint_configuration = TaintConfiguration.default)
+    ?expected_dump_string
     ~context
     source_content
   =
@@ -532,19 +533,36 @@ let initialize
              source)
           (List.is_empty errors);
 
-        let models =
+        let models_and_names =
           TaintModelQuery.ModelQuery.apply_all_rules
             ~resolution
             ~configuration:taint_configuration
             ~scheduler:(Test.mock_scheduler ())
             ~rule_filter:None
             ~rules
-            ~models
             ~callables:(List.rev_append stubs callables)
             ~stubs:(Target.HashSet.of_list stubs)
             ~environment
         in
-
+        (match taint_configuration.dump_model_query_results_path, expected_dump_string with
+        | Some path, Some expected_string ->
+            Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
+            let content = TaintModelQuery.ModelQuery.DumpModelQueryResults.dump ~models_and_names in
+            path |> File.create ~content |> File.write;
+            assert_equal ~cmp:String.equal content expected_string
+        | Some path, None ->
+            Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
+            let content = TaintModelQuery.ModelQuery.DumpModelQueryResults.dump ~models_and_names in
+            path |> File.create ~content |> File.write
+        | None, Some expected_string ->
+            let content = TaintModelQuery.ModelQuery.DumpModelQueryResults.dump ~models_and_names in
+            assert_equal ~cmp:String.equal content expected_string
+        | None, None -> ());
+        let models =
+          models_and_names
+          |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry
+          |> Registry.merge models
+        in
         let models =
           MissingFlow.add_obscure_models
             ~static_analysis_configuration

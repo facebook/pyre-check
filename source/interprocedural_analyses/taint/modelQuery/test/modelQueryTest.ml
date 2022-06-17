@@ -64,6 +64,8 @@ let test_apply_rule context =
         ~resolution
         ~rule
         ~callable
+      |> String.Map.data
+      |> List.concat
     in
     assert_equal
       ~cmp:(List.equal (fun left right -> compare_query_rule_element left right = 0))
@@ -94,6 +96,8 @@ let test_apply_rule context =
         ~rule
         ~name:(Ast.Reference.create name)
         ~annotation:annotation_expression
+      |> String.Map.data
+      |> List.concat
     in
     assert_equal
       ~cmp:(List.equal (fun left right -> ModelParser.compare_taint_annotation left right = 0))
