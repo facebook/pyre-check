@@ -131,6 +131,15 @@ let test_parse_query context =
   assert_fails_to_parse "find_references(path='/foo.py', line=42)";
   assert_fails_to_parse "find_references(path='/foo.py', column=10)";
   assert_fails_to_parse "find_references(path=99, line=42, column=10)";
+  assert_parses "expression_level_coverage(path='a.py')" (ExpressionLevelCoverage ["a.py"]);
+  assert_parses "expression_level_coverage(path='a.pyi')" (ExpressionLevelCoverage ["a.pyi"]);
+  assert_parses "expression_level_coverage('a.py')" (ExpressionLevelCoverage ["a.py"]);
+  assert_parses
+    "expression_level_coverage('a.py','b.py')"
+    (ExpressionLevelCoverage ["a.py"; "b.py"]);
+  assert_fails_to_parse "expression_level_coverage(a.py:1:2)";
+  assert_fails_to_parse "expression_level_coverage(a.py)";
+  assert_fails_to_parse "expression_level_coverage('a.py', 1, 2)";
   ()
 
 

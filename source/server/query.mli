@@ -6,6 +6,7 @@
  *)
 
 open Ast
+open Analysis
 
 module Request : sig
   type t =
@@ -15,6 +16,7 @@ module Request : sig
     | CalleesWithLocation of Reference.t
     | Defines of Reference.t list
     | DumpCallGraph
+    | ExpressionLevelCoverage of string list
     | Help of string
     | InlineDecorators of {
         function_reference: Reference.t;
@@ -66,6 +68,13 @@ module Response : sig
     type types_at_path = {
       path: string;
       types: type_at_location list;
+    }
+    [@@deriving sexp, compare, to_yojson]
+
+    type coverage_at_path = {
+      path: string;
+      total_expressions: int;
+      coverage_gaps: LocationBasedLookup.coverage_gap_by_location list;
     }
     [@@deriving sexp, compare, to_yojson]
 
@@ -132,6 +141,7 @@ module Response : sig
       | Callgraph of callees list
       | Compatibility of compatibility
       | Errors of Analysis.AnalysisError.Instantiated.t list
+      | ExpressionLevelCoverageResponse of coverage_at_path list
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundLocationsOfDefinitions of code_location list

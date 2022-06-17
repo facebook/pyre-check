@@ -37,7 +37,8 @@ let assert_annotation_list ~lookup expected =
     ~pp_diff:(diff ~print:list_diff)
     expected
     (LocationBasedLookup.get_all_nodes_and_coverage_data lookup
-    |> List.map ~f:(fun (location, { LocationBasedLookup.type_; _ }) -> location, type_)
+    |> List.map ~f:(fun (location, { LocationBasedLookup.type_; expression = _ }) ->
+           location, type_)
     |> List.sort ~compare:[%compare: Location.t * Type.t]
     |> List.map ~f:(fun (key, data) -> Format.asprintf "%s/%a" (show_location key) Type.pp data))
 

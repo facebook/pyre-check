@@ -22,6 +22,7 @@ module Request = struct
     | CalleesWithLocation of Reference.t
     | Defines of Reference.t list
     | DumpCallGraph
+    | ExpressionLevelCoverage of string list
     | Help of string
     | InlineDecorators of {
         function_reference: Reference.t;
@@ -74,6 +75,13 @@ module Response = struct
     type types_at_path = {
       path: string;
       types: type_at_location list;
+    }
+    [@@deriving sexp, compare, to_yojson]
+
+    type coverage_at_path = {
+      path: string;
+      total_expressions: int;
+      coverage_gaps: LocationBasedLookup.coverage_gap_by_location list;
     }
     [@@deriving sexp, compare, to_yojson]
 
@@ -144,6 +152,7 @@ module Response = struct
       | Callgraph of callees list
       | Compatibility of compatibility
       | Errors of Analysis.AnalysisError.Instantiated.t list
+      | ExpressionLevelCoverageResponse of coverage_at_path list
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundLocationsOfDefinitions of code_location list
@@ -191,6 +200,8 @@ module Response = struct
                 `List (List.map ~f:(fun error -> AnalysisError.Instantiated.to_yojson error) errors)
               );
             ]
+      | ExpressionLevelCoverageResponse paths ->
+          `List (List.map paths ~f:coverage_at_path_to_yojson)
       | Help string -> `Assoc ["help", `String string]
       | ModelVerificationErrors errors ->
           `Assoc ["errors", `List (List.map errors ~f:Taint.ModelVerificationError.to_json)]
@@ -300,6 +311,11 @@ let help () =
            given module or class."
     | DumpCallGraph ->
         Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
+    | ExpressionLevelCoverage _ ->
+        Some
+          "expression_level_coverage(path='path') or expression_level_coverage('path1', 'path2', \
+           ...): Return JSON output containing the number of covered and uncovered expressions \
+           from above, along with a list of known coverage gaps."
     | InlineDecorators _ ->
         Some
           "inline_decorators(qualified_function_name, optional decorators_to_skip=[decorator1, \
@@ -345,6 +361,7 @@ let help () =
       CalleesWithLocation (Reference.create "");
       Defines [Reference.create ""];
       DumpCallGraph;
+      ExpressionLevelCoverage [""];
       IsCompatibleWith (empty, empty);
       LessOrEqual (empty, empty);
       ModulesOfPath path;
@@ -456,6 +473,8 @@ let rec parse_request_exn query =
       | "defines", names -> Request.Defines (List.map names ~f:reference)
       | "dump_call_graph", [] -> Request.DumpCallGraph
       | "dump_class_hierarchy", [] -> Request.Superclasses []
+      | "expression_level_coverage", paths ->
+          Request.ExpressionLevelCoverage (List.map ~f:string paths)
       | "help", _ -> Request.Help (help ())
       | "inline_decorators", arguments -> parse_inline_decorators arguments
       | "is_compatible_with", [left; right] -> Request.IsCompatibleWith (access left, access right)
@@ -754,6 +773,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         in
         let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
         Single (Base.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
+    | ExpressionLevelCoverage _ -> failwith "to be added in next diff"
     | Help help_list -> Single (Base.Help help_list)
     | InlineDecorators { function_reference; decorators_to_skip } ->
         InlineDecorators.inline_decorators

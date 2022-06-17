@@ -15,7 +15,32 @@ type coverage_data = {
   expression: Expression.t option;
   type_: Type.t;
 }
-[@@deriving compare, sexp, show, hash]
+[@@deriving compare, sexp, show, hash, to_yojson]
+
+type reason =
+  | TypeIsAny
+  | ContainerParameterIsAny
+  | CallableParameterIsUnknownOrAny
+[@@deriving compare, sexp, show, hash, to_yojson]
+
+type coverage_gap = {
+  coverage_data: coverage_data;
+  reason: reason;
+}
+[@@deriving compare, sexp, show, hash, to_yojson]
+
+type coverage_gap_by_location = {
+  location: Location.t;
+  type_: Type.t;
+  reason: reason;
+}
+[@@deriving compare, sexp, show, hash, to_yojson]
+
+type coverage_for_path = {
+  total_expressions: int;
+  coverage_gaps: coverage_gap_by_location list;
+}
+[@@deriving compare, sexp, show, hash, to_yojson]
 
 type coverage_data_lookup = coverage_data Location.Table.t
 
@@ -728,18 +753,6 @@ let location_of_definition ~type_environment ~module_reference position =
   let result = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
   result >>= resolve_definition_for_symbol ~type_environment ~module_reference
 
-
-type reason =
-  | TypeIsAny
-  | ContainerParameterIsAny
-  | CallableParameterIsUnknownOrAny
-[@@deriving compare, sexp, show, hash]
-
-type coverage_gap = {
-  coverage_data: coverage_data;
-  reason: reason;
-}
-[@@deriving compare, sexp, show, hash]
 
 let classify_coverage_data { expression; type_ } =
   let make_coverage_gap reason = Some { coverage_data = { expression; type_ }; reason } in

@@ -11,7 +11,32 @@ type coverage_data = {
   expression: Expression.t option;
   type_: Type.t;
 }
-[@@deriving compare, sexp, show, hash]
+[@@deriving compare, sexp, show, hash, to_yojson]
+
+type reason =
+  | TypeIsAny
+  | ContainerParameterIsAny
+  | CallableParameterIsUnknownOrAny
+[@@deriving compare, sexp, show, hash, to_yojson]
+
+type coverage_gap = {
+  coverage_data: coverage_data;
+  reason: reason;
+}
+[@@deriving compare, sexp, show, hash, to_yojson]
+
+type coverage_gap_by_location = {
+  location: Location.t;
+  type_: Type.t;
+  reason: reason;
+}
+[@@deriving compare, sexp, show, hash, to_yojson]
+
+type coverage_for_path = {
+  total_expressions: int;
+  coverage_gaps: coverage_gap_by_location list;
+}
+[@@deriving compare, sexp, show, hash, to_yojson]
 
 type coverage_data_lookup
 
@@ -67,18 +92,6 @@ val location_of_definition
   module_reference:Reference.t ->
   Location.position ->
   Location.WithModule.t option
-
-type reason =
-  | TypeIsAny
-  | ContainerParameterIsAny
-  | CallableParameterIsUnknownOrAny
-[@@deriving compare, sexp, show, hash]
-
-type coverage_gap = {
-  coverage_data: coverage_data;
-  reason: reason;
-}
-[@@deriving compare, sexp, show, hash]
 
 val classify_coverage_data : coverage_data -> coverage_gap option
 
