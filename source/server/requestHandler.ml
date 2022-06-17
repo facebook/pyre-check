@@ -88,14 +88,6 @@ let process_display_type_error_request
          (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
 
 
-let notify_all_subscriptions ~with_response = function
-  | [] -> Lwt.return_unit
-  | _ as subscriptions ->
-      let response = with_response () in
-      List.map subscriptions ~f:(fun subscription -> Subscription.send ~response subscription)
-      |> Lwt.join
-
-
 let create_info_response
     {
       ServerProperties.socket_path;
@@ -130,30 +122,31 @@ let process_incremental_update_request
       Stop.log_and_stop_waiting_server ~reason:"critical file update" ~properties ()
   | None ->
       let source_paths = List.map paths ~f:SourcePath.create in
-      let create_status_update_response status () = Response.StatusUpdate status in
-      let create_type_errors_response () =
-        let errors =
-          Hashtbl.data error_table
-          |> List.concat_no_order
-          |> List.sort ~compare:AnalysisError.compare
-        in
-        Response.TypeErrors
-          (instantiate_errors
-             errors
-             ~build_system
-             ~configuration
-             ~ast_environment:
-               (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
+      let create_status_update_response status = lazy (Response.StatusUpdate status) in
+      let create_type_errors_response =
+        lazy
+          (let errors =
+             Hashtbl.data error_table
+             |> List.concat_no_order
+             |> List.sort ~compare:AnalysisError.compare
+           in
+           Response.TypeErrors
+             (instantiate_errors
+                errors
+                ~build_system
+                ~configuration
+                ~ast_environment:
+                  (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only)))
       in
       let subscriptions = ServerState.Subscriptions.all subscriptions in
-      notify_all_subscriptions
-        ~with_response:(create_status_update_response Response.ServerStatus.Rebuilding)
+      Subscription.batch_send
+        ~response:(create_status_update_response Response.ServerStatus.Rebuilding)
         subscriptions
       >>= fun () ->
       BuildSystem.update build_system source_paths
       >>= fun changed_paths_from_rebuild ->
-      notify_all_subscriptions
-        ~with_response:(create_status_update_response Response.ServerStatus.Rechecking)
+      Subscription.batch_send
+        ~response:(create_status_update_response Response.ServerStatus.Rechecking)
         subscriptions
       >>= fun () ->
       let changed_paths =
@@ -170,7 +163,7 @@ let process_incremental_update_request
               ~errors:error_table
               changed_paths)
       in
-      notify_all_subscriptions ~with_response:create_type_errors_response subscriptions
+      Subscription.batch_send ~response:create_type_errors_response subscriptions
       >>= fun () -> Lwt.return state
 
 

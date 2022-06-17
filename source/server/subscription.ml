@@ -46,3 +46,8 @@ let send ~response { name; output_channel } =
       "Trying to send updates to subscription `%s` whose output channel is already closed."
       name;
     Lwt.return_unit)
+
+
+let batch_send ~response subscriptions =
+  List.map subscriptions ~f:(fun subscription -> send ~response:(Lazy.force response) subscription)
+  |> Lwt.join

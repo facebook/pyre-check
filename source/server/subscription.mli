@@ -26,3 +26,11 @@ val create : name:string -> output_channel:Lwt_io.output_channel -> unit -> t
 val name_of : t -> string
 
 val send : response:ServerResponse.t -> t -> unit Lwt.t
+
+val batch_send : response:ServerResponse.t Lazy.t -> t list -> unit Lwt.t
+(** [batch_send ~response subscriptions] sends a response to every subscription channel in
+    [subscriptions].
+
+    The response being sent is constructed by forcing [reponse]. The reason why the response is
+    constructed lazily is because we want to avoid the cost of the construction when [subscriptions]
+    is an empty list. *)
