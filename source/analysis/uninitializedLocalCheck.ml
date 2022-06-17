@@ -11,9 +11,6 @@ open Pyre
 open Statement
 open Expression
 module Error = AnalysisError
-
-let name = "UninitializedLocal"
-
 module NameAccessSet = Set.Make (Define.NameAccess)
 
 (** Collect accesses to names within expressions. Within lambdas and comprehensions, collect
