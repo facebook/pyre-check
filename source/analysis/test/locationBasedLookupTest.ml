@@ -36,7 +36,8 @@ let assert_annotation_list ~lookup expected =
     ~printer:(String.concat ~sep:", ")
     ~pp_diff:(diff ~print:list_diff)
     expected
-    (LocationBasedLookup.get_all_resolved_types lookup
+    (LocationBasedLookup.get_all_nodes_and_coverage_data lookup
+    |> List.map ~f:(fun (location, { LocationBasedLookup.type_; _ }) -> location, type_)
     |> List.sort ~compare:[%compare: Location.t * Type.t]
     |> List.map ~f:(fun (key, data) -> Format.asprintf "%s/%a" (show_location key) Type.pp data))
 
@@ -45,9 +46,9 @@ let assert_annotation ~lookup ~position ~annotation =
   assert_equal
     ~printer:(Option.value ~default:"(none)")
     annotation
-    (LocationBasedLookup.get_resolved_type lookup ~position
-    >>| fun (location, annotation) ->
-    Format.asprintf "%s/%a" (show_location location) Type.pp annotation)
+    (LocationBasedLookup.get_coverage_data lookup ~position
+    >>| fun (location, { LocationBasedLookup.type_; _ }) ->
+    Format.asprintf "%s/%a" (show_location location) Type.pp type_)
 
 
 let test_lookup_out_of_bounds_location context =
@@ -69,7 +70,7 @@ let test_lookup_out_of_bounds_location context =
         List.map indices ~f:(fun index_two -> index_one, index_two))
   in
   let test_one (line, column) =
-    LocationBasedLookup.get_resolved_type lookup ~position:{ Location.line; column } |> ignore
+    LocationBasedLookup.get_coverage_data lookup ~position:{ Location.line; column } |> ignore
   in
   List.iter indices_product ~f:test_one
 
@@ -1821,6 +1822,168 @@ let test_classify_coverage_data _ =
   ()
 
 
+let test_lookup_expression context =
+  let assert_coverage_data ~context ~source expected_coverage_gap_list =
+    let coverage_data_lookup = generate_lookup ~context source in
+    let lookup_list = LocationBasedLookup.get_all_nodes_and_coverage_data coverage_data_lookup in
+    let coverage_data_list = List.map ~f:(fun (_, coverage_data) -> coverage_data) lookup_list in
+    let actual_tuple_list =
+      List.map
+        ~f:(fun { LocationBasedLookup.expression; type_ } -> expression, type_)
+        coverage_data_list
+    in
+    assert_equal
+      ~printer:(fun x -> [%sexp_of: (Expression.t option * Type.t) list] x |> Sexp.to_string_hum)
+      ~cmp:(fun left right ->
+        let compare_coverage_data (left_expression, left_type) (right_expression, right_type) =
+          let same =
+            Option.compare location_insensitive_compare left_expression right_expression = 0
+            && Type.equal left_type right_type
+          in
+          match same with
+          | true -> 0
+          | false -> -1
+        in
+        List.compare compare_coverage_data left right = 0)
+      expected_coverage_gap_list
+      (List.sort actual_tuple_list ~compare:[%compare: Expression.t option * Type.t])
+  in
+  assert_coverage_data
+    ~context
+    ~source:{|
+      def foo(x) -> None:
+        print(x + 1) |}
+    [
+      ( Some
+          (Expression.Name
+             (Name.Attribute
+                {
+                  base =
+                    Node.create_with_default_location (Expression.Name (Name.Identifier "test"));
+                  attribute = "foo";
+                  special = false;
+                })
+          |> Node.create_with_default_location),
+        Type.Callable
+          {
+            kind = Named (Reference.create "test.foo");
+            implementation =
+              {
+                parameters =
+                  Type.Callable.Defined
+                    [
+                      Type.Callable.Parameter.Named
+                        { name = "$parameter$x"; annotation = Type.Top; default = false };
+                    ];
+                annotation = NoneType;
+              };
+            overloads = [];
+          } );
+      ( Some (Expression.Name (Name.Identifier "$parameter$x") |> Node.create_with_default_location),
+        Type.Any );
+      Some (Expression.Constant Constant.NoneLiteral |> Node.create_with_default_location), NoneType;
+      ( Some (Expression.Name (Name.Identifier "print") |> Node.create_with_default_location),
+        Type.Callable
+          {
+            kind = Named (Reference.create "print");
+            implementation =
+              {
+                parameters =
+                  Type.Callable.Defined
+                    [
+                      Type.Callable.Parameter.Variable (Concrete Type.object_primitive);
+                      Type.Callable.Parameter.KeywordOnly
+                        { name = "$parameter$sep"; annotation = Type.Top; default = true };
+                      Type.Callable.Parameter.KeywordOnly
+                        { name = "$parameter$end"; annotation = Type.Top; default = true };
+                      Type.Callable.Parameter.KeywordOnly
+                        {
+                          name = "$parameter$file";
+                          annotation = Type.union [Type.NoneType; Type.Primitive "_Writer"];
+                          default = true;
+                        };
+                      Type.Callable.Parameter.KeywordOnly
+                        {
+                          name = "$parameter$flush";
+                          annotation = Type.Primitive "bool";
+                          default = true;
+                        };
+                    ];
+                annotation = NoneType;
+              };
+            overloads = [];
+          } );
+      ( Some
+          (Expression.Call
+             {
+               callee =
+                 Expression.Name (Name.Identifier "print") |> Node.create_with_default_location;
+               arguments =
+                 [
+                   {
+                     name = None;
+                     value =
+                       Expression.Call
+                         {
+                           callee =
+                             Expression.Name
+                               (Name.Attribute
+                                  {
+                                    base =
+                                      Node.create_with_default_location
+                                        (Expression.Name (Name.Identifier "$parameter$x"));
+                                    attribute = "__add__";
+                                    special = true;
+                                  })
+                             |> Node.create_with_default_location;
+                           arguments =
+                             [
+                               {
+                                 name = None;
+                                 value =
+                                   Expression.Constant (Integer 1)
+                                   |> Node.create_with_default_location;
+                               };
+                             ];
+                         }
+                       |> Node.create_with_default_location;
+                   };
+                 ];
+             }
+          |> Node.create_with_default_location),
+        NoneType );
+      ( Some (Expression.Name (Name.Identifier "$parameter$x") |> Node.create_with_default_location),
+        Type.Any );
+      ( Some
+          (Expression.Call
+             {
+               callee =
+                 Expression.Name
+                   (Name.Attribute
+                      {
+                        base =
+                          Node.create_with_default_location
+                            (Expression.Name (Name.Identifier "$parameter$x"));
+                        attribute = "__add__";
+                        special = true;
+                      })
+                 |> Node.create_with_default_location;
+               arguments =
+                 [
+                   {
+                     name = None;
+                     value = Expression.Constant (Integer 1) |> Node.create_with_default_location;
+                   };
+                 ];
+             }
+          |> Node.create_with_default_location),
+        Type.Any );
+      ( Some (Expression.Constant (Integer 1) |> Node.create_with_default_location),
+        Type.literal_integer 1 );
+    ];
+  ()
+
+
 let () =
   "lookup"
   >::: [
@@ -1841,5 +2004,6 @@ let () =
          "lookup_union_type_resolution" >:: test_lookup_union_type_resolution;
          "lookup_unknown_accesses" >:: test_lookup_unknown_accesses;
          "classify_coverage_data" >:: test_classify_coverage_data;
+         "lookup_expression" >:: test_lookup_expression;
        ]
   |> Test.run

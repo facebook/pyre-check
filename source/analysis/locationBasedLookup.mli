@@ -7,16 +7,22 @@
 
 open Ast
 
-type resolved_type_lookup
+type coverage_data = {
+  expression: Expression.t option;
+  type_: Type.t;
+}
+[@@deriving compare, sexp, show, hash]
 
-val create_of_module : TypeEnvironment.ReadOnly.t -> Reference.t -> resolved_type_lookup
+type coverage_data_lookup
 
-val get_resolved_type
-  :  resolved_type_lookup ->
+val create_of_module : TypeEnvironment.ReadOnly.t -> Reference.t -> coverage_data_lookup
+
+val get_coverage_data
+  :  coverage_data_lookup ->
   position:Location.position ->
-  (Location.t * Type.t) option
+  (Location.t * coverage_data) option
 
-val get_all_resolved_types : resolved_type_lookup -> (Location.t * Type.t) list
+val get_all_nodes_and_coverage_data : coverage_data_lookup -> (Location.t * coverage_data) list
 
 type symbol_with_definition =
   | Expression of Expression.t
@@ -66,12 +72,6 @@ type reason =
   | TypeIsAny
   | ContainerParameterIsAny
   | CallableParameterIsUnknownOrAny
-[@@deriving compare, sexp, show, hash]
-
-type coverage_data = {
-  expression: Expression.t option;
-  type_: Type.t;
-}
 [@@deriving compare, sexp, show, hash]
 
 type coverage_gap = {

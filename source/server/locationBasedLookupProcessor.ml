@@ -47,5 +47,6 @@ let get_lookup ~configuration ~build_system ~environment path =
 let find_all_resolved_types_for_path ~environment ~build_system ~configuration path =
   let open Result in
   get_lookup ~configuration ~environment ~build_system path
-  >>| LocationBasedLookup.get_all_resolved_types
+  >>| LocationBasedLookup.get_all_nodes_and_coverage_data
+  >>| List.map ~f:(fun (location, { LocationBasedLookup.type_; _ }) -> location, type_)
   >>| List.sort ~compare:[%compare: Location.t * Type.t]

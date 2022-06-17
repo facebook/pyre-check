@@ -17,9 +17,9 @@ type coverage_data = {
 }
 [@@deriving compare, sexp, show, hash]
 
-type resolved_type_lookup = Type.t Location.Table.t
+type coverage_data_lookup = coverage_data Location.Table.t
 
-(** This visitor stores the resolved type formation for an expression on the key of its location.
+(** This visitor stores the coverage data information for an expression on the key of its location.
 
     It special-case names such as named arguments or the names in comprehensions and generators.
 
@@ -30,12 +30,12 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
   type t = {
     pre_resolution: Resolution.t;
     post_resolution: Resolution.t;
-    resolved_types_lookup: resolved_type_lookup;
+    coverage_data_lookup: coverage_data_lookup;
   }
 
   let node_base
       ~postcondition
-      ({ pre_resolution; post_resolution; resolved_types_lookup; _ } as state)
+      ({ pre_resolution; post_resolution; coverage_data_lookup; _ } as state)
       node
     =
     let resolve ~resolution ~expression =
@@ -54,11 +54,12 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
       | ClassHierarchy.Untracked _ -> None
     in
     let store_coverage_data_for_expression ({ Node.location; value } as expression) =
-      let store_lookup ~table ~location data =
+      let make_coverage_data ~expression type_ = { expression; type_ } in
+      let store_lookup ~table ~location ~expression data =
         if not (Location.equal location Location.any) then
-          Hashtbl.set table ~key:location ~data |> ignore
+          Hashtbl.set table ~key:location ~data:(make_coverage_data ~expression data) |> ignore
       in
-      let store_resolved_type = store_lookup ~table:resolved_types_lookup in
+      let store_coverage_data ~expression = store_lookup ~table:coverage_data_lookup ~expression in
       let store_generator_and_compute_resolution
           resolution
           { Comprehension.Generator.target; iterator; conditions; _ }
@@ -66,7 +67,9 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
         (* The basic idea here is to simulate element for x in generator if cond as the following: x
            = generator.__iter__().__next__() assert cond element *)
         let annotate_expression resolution ({ Node.location; _ } as expression) =
-          resolve ~resolution ~expression >>| store_resolved_type ~location |> ignore
+          resolve ~resolution ~expression
+          >>| store_coverage_data ~location ~expression:(Some expression)
+          |> ignore
         in
         annotate_expression resolution iterator;
         let resolution =
@@ -100,12 +103,15 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
         resolution
       in
       let resolution = if postcondition then post_resolution else pre_resolution in
-      resolve ~resolution ~expression >>| store_resolved_type ~location |> ignore;
+      resolve ~resolution ~expression
+      >>| store_coverage_data ~location ~expression:(Some expression)
+      |> ignore;
       match value with
       | Call { arguments; _ } ->
           let annotate_argument_name { Call.Argument.name; value } =
             match name, resolve ~resolution ~expression:value with
-            | Some { Node.location; _ }, Some annotation -> store_resolved_type ~location annotation
+            | Some { Node.location; _ }, Some annotation ->
+                store_coverage_data ~location ~expression:(Some value) annotation
             | _ -> ()
           in
           List.iter ~f:annotate_argument_name arguments
@@ -114,8 +120,9 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
             List.fold generators ~f:store_generator_and_compute_resolution ~init:resolution
           in
           let annotate_expression ({ Node.location; _ } as expression) =
-            store_resolved_type
+            store_coverage_data
               ~location
+              ~expression:(Some expression)
               (Resolution.resolve_expression_to_type resolution expression)
           in
           annotate_expression key;
@@ -123,7 +130,9 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
       | ListComprehension { element; generators; _ }
       | SetComprehension { element; generators; _ } ->
           let annotate resolution ({ Node.location; _ } as expression) =
-            resolve ~resolution ~expression >>| store_resolved_type ~location |> ignore
+            resolve ~resolution ~expression
+            >>| store_coverage_data ~location ~expression:(Some expression)
+            |> ignore
           in
           let resolution =
             List.fold generators ~f:store_generator_and_compute_resolution ~init:resolution
@@ -171,7 +180,7 @@ module CreateLookupsIncludingTypeAnnotationsVisitor = struct
           ~visitor_override:CreateDefinitionAndAnnotationLookupVisitor.node_postcondition
       in
       let store_type_annotation annotation =
-        let { CreateDefinitionAndAnnotationLookupVisitor.pre_resolution; resolved_types_lookup; _ } =
+        let { CreateDefinitionAndAnnotationLookupVisitor.pre_resolution; coverage_data_lookup; _ } =
           !state
         in
         let resolved =
@@ -180,7 +189,12 @@ module CreateLookupsIncludingTypeAnnotationsVisitor = struct
         in
         let location = Node.location annotation in
         if not (Location.equal location Location.any) then
-          Hashtbl.add resolved_types_lookup ~key:location ~data:resolved |> ignore
+          Hashtbl.add
+            coverage_data_lookup
+            ~key:location
+            ~data:{ expression = None; type_ = resolved }
+          (* Type annotations do not have expressions, so we set expression to None. *)
+          |> ignore
       in
       match Node.value statement with
       | Statement.Assign { Assign.target; annotation; value; _ } ->
@@ -237,24 +251,24 @@ module CreateLookupsIncludingTypeAnnotationsVisitor = struct
 end
 
 let create_of_module type_environment qualifier =
-  let resolved_types_lookup = Location.Table.create () in
+  let coverage_data_lookup = Location.Table.create () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
       ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
     =
-    let resolved_type_lookup =
+    let coverage_data_lookup_map =
       TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment name
       |> function
-      | Some resolved_type_lookup -> resolved_type_lookup
+      | Some coverage_data_lookup_map -> coverage_data_lookup_map
       | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
     in
     let cfg = Cfg.create define in
     let walk_statement node_id statement_index statement =
       let pre_annotations, post_annotations =
         let statement_key = [%hash: int * int] (node_id, statement_index) in
-        ( LocalAnnotationMap.ReadOnly.get_precondition resolved_type_lookup ~statement_key
+        ( LocalAnnotationMap.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
           |> Option.value ~default:Refinement.Store.empty,
-          LocalAnnotationMap.ReadOnly.get_postcondition resolved_type_lookup ~statement_key
+          LocalAnnotationMap.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
           |> Option.value ~default:Refinement.Store.empty )
       in
       let pre_resolution =
@@ -275,7 +289,7 @@ let create_of_module type_environment qualifier =
         {
           CreateDefinitionAndAnnotationLookupVisitor.pre_resolution;
           post_resolution;
-          resolved_types_lookup;
+          coverage_data_lookup;
         }
         (Source.create [statement])
       |> ignore
@@ -301,7 +315,7 @@ let create_of_module type_environment qualifier =
          ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment)
   in
   List.iter define_names ~f:walk_define;
-  resolved_types_lookup
+  coverage_data_lookup
 
 
 let get_best_location lookup_table ~position =
@@ -332,9 +346,9 @@ let get_best_location lookup_table ~position =
          weight location_left - weight location_right)
 
 
-let get_resolved_type = get_best_location
+let get_coverage_data = get_best_location
 
-let get_all_resolved_types resolved_types_lookup = Hashtbl.to_alist resolved_types_lookup
+let get_all_nodes_and_coverage_data coverage_data_lookup = Hashtbl.to_alist coverage_data_lookup
 
 type symbol_with_definition =
   | Expression of Expression.t
@@ -673,19 +687,19 @@ let resolve_definition_for_symbol
   let timer = Timer.start () in
   let resolution =
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
-    let resolved_type_lookup =
+    let coverage_data_lookup_map =
       TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment define_name
       |> function
-      | Some resolved_type_lookup -> resolved_type_lookup
+      | Some coverage_data_lookup_map -> coverage_data_lookup_map
       | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
     in
     let annotation_store =
       let statement_key = [%hash: int * int] (node_id, statement_index) in
       if use_postcondition_info then
-        LocalAnnotationMap.ReadOnly.get_postcondition resolved_type_lookup ~statement_key
+        LocalAnnotationMap.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
         |> Option.value ~default:Refinement.Store.empty
       else
-        LocalAnnotationMap.ReadOnly.get_precondition resolved_type_lookup ~statement_key
+        LocalAnnotationMap.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
         |> Option.value ~default:Refinement.Store.empty
     in
     (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
