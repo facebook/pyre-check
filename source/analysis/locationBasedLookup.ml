@@ -734,7 +734,7 @@ let classify_coverage_data { expression; type_ } =
   | Parametric { name = "list" | "set"; parameters = [Single Any] }
   | Parametric { name = "dict"; parameters = [Single Any; Single Any] } ->
       make_coverage_gap ContainerParameterIsAny
-  | Callable { implementation = { parameters = Defined parameter_list; _ }; _ } ->
+  | Callable { implementation = { parameters = Defined (_ :: _ as parameter_list); _ }; _ } ->
       let parameter_is_top_or_any = function
         | Type.Callable.Parameter.Named { annotation = Type.Any | Type.Top; _ } -> true
         | _ -> false
