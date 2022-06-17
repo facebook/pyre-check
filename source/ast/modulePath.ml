@@ -100,7 +100,12 @@ let is_internal_path
     ~configuration:{ Configuration.Analysis.filter_directories; ignore_all_errors; _ }
     path
   =
-  let original_raw_path = ArtifactPath.original_source_path path |> SourcePath.raw in
+  let original_raw_path =
+    let raw_path = ArtifactPath.raw path in
+    (* NOTE(grievejia): Symlink are generally not followed by the type checker. This usage comes
+       from legacy code and should not be replicated elsewhere. *)
+    PyrePath.follow_symbolic_link raw_path |> Option.value ~default:raw_path
+  in
   let source_path_is_covered item =
     PyrePath.equal item original_raw_path
     || PyrePath.directory_contains ~directory:item original_raw_path
