@@ -118,7 +118,7 @@ let test_lookup_pick_narrowest context =
 let test_narrowest_match _ =
   let open LocationBasedLookup in
   let assert_narrowest expressions expected =
-    let narrowest_matching_expression =
+    let narrowest_matching_expression expressions =
       expressions
       |> List.map ~f:(fun (expression, location) ->
              {
@@ -136,15 +136,20 @@ let test_narrowest_match _ =
       | { symbol_with_definition = Expression expression; _ } -> expression
       | _ -> failwith "Expected expression"
     in
-    assert_equal
-      ~cmp:(fun left right ->
-        match left, right with
-        | Some left, Some right -> location_insensitive_compare left right = 0
-        | None, None -> true
-        | _ -> false)
-      ~printer:[%show: Expression.t option]
-      (expected >>| parse_single_expression)
-      narrowest_matching_expression
+    let assert_narrowest_matching_expression expressions =
+      assert_equal
+        ~cmp:(fun left right ->
+          match left, right with
+          | Some left, Some right -> location_insensitive_compare left right = 0
+          | None, None -> true
+          | _ -> false)
+        ~printer:[%show: Expression.t option]
+        (expected >>| parse_single_expression)
+        (narrowest_matching_expression expressions)
+    in
+    assert_narrowest_matching_expression expressions;
+    (* The narrowest match should be insensitive to the list order. *)
+    assert_narrowest_matching_expression (List.rev expressions)
   in
   assert_narrowest
     [
@@ -162,13 +167,6 @@ let test_narrowest_match _ =
       "my_dictionary['foo']", "5:2-5:24";
       "my_dictionary.__getitem__", "5:2-5:15";
       "my_dictionary", "5:2-5:15";
-    ]
-    (Some "my_dictionary");
-  assert_narrowest
-    [
-      "my_dictionary['foo']", "5:2-5:24";
-      "my_dictionary", "5:2-5:15";
-      "my_dictionary.__getitem__", "5:2-5:15";
     ]
     (Some "my_dictionary");
   (* For if-statements, the assertion `if foo.bar:` is desugared into two assert statements:
