@@ -378,14 +378,14 @@ let get_all_nodes_and_coverage_data coverage_data_lookup = Hashtbl.to_alist cove
 type symbol_with_definition =
   | Expression of Expression.t
   | TypeAnnotation of Expression.t
-[@@deriving compare, show]
+[@@deriving compare, show, sexp]
 
 type cfg_data = {
   define_name: Reference.t;
   node_id: int;
   statement_index: int;
 }
-[@@deriving compare, show]
+[@@deriving compare, show, sexp]
 
 type symbol_and_cfg_data = {
   symbol_with_definition: symbol_with_definition;
@@ -397,7 +397,7 @@ type symbol_and_cfg_data = {
      but we want the type of the argument `x` before typechecking the statement. *)
   use_postcondition_info: bool;
 }
-[@@deriving compare, show]
+[@@deriving compare, show, sexp]
 
 let location_insensitive_compare_symbol_and_cfg_data
     ({ symbol_with_definition = left_symbol_with_definition; _ } as left)
@@ -566,7 +566,13 @@ let narrowest_match symbol_data_list =
       match Node.value left, Node.value right with
       | Expression.Name (Name.Attribute { special = true; _ }), _ -> 1
       | _, Expression.Name (Name.Attribute { special = true; _ }) -> -1
-      | _ -> 0
+      | _ -> (
+          (* Prefer names over any other types of expressions. This is useful for if-conditions,
+             where we synthesize asserts for `foo` and `not foo`, having the same location range. *)
+          match Node.value left, Node.value right with
+          | Expression.Name _, _ -> -1
+          | _, Expression.Name _ -> 1
+          | _ -> 0)
   in
   List.min_elt ~compare:compare_by_length symbol_data_list
 

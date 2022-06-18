@@ -171,6 +171,16 @@ let test_narrowest_match _ =
       "my_dictionary.__getitem__", "5:2-5:15";
     ]
     (Some "my_dictionary");
+  (* For if-statements, the assertion `if foo.bar:` is desugared into two assert statements:
+
+     - one for the if-branch: `assert foo.bar`
+
+     - one for the else-branch: `assert (not foo.bar)`.
+
+     These assertions have the same location range. Pick the former as the narrowest spanning
+     symbol. Otherwise, we would end up looking for the definition of the non-reference `not
+     foo.bar`, and fail. *)
+  assert_narrowest ["not foo.bar", "5:2-5:24"; "foo.bar", "5:2-5:24"] (Some "foo.bar");
   ()
 
 
@@ -725,6 +735,69 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.main"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:
+      {|
+        from dataclasses import dataclass
+
+        @dataclass(frozen=True)
+        class Foo:
+          my_attribute: int
+
+        def main(foo: Foo) -> None:
+          if foo.my_attribute:
+            #        ^-- CURSOR
+            print("hello")
+    |}
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Expression.Name
+                (Name.Attribute
+                   {
+                     base =
+                       Node.create_with_default_location
+                         (Expression.Name (Name.Identifier "$parameter$foo"));
+                     attribute = "my_attribute";
+                     special = false;
+                   })
+             |> Node.create_with_default_location);
+         cfg_data = { define_name = !&"test.main"; node_id = 7; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+        from dataclasses import dataclass
+
+        @dataclass(frozen=True)
+        class Foo:
+          my_attribute: int
+          other_attribute: str
+
+        def main(foo: Foo) -> None:
+          if foo.my_attribute and not foo.other_attribute:
+            #                               ^-- CURSOR
+            print("hello")
+    |}
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Expression.Name
+                (Name.Attribute
+                   {
+                     base =
+                       Node.create_with_default_location
+                         (Expression.Name (Name.Identifier "$parameter$foo"));
+                     attribute = "other_attribute";
+                     special = false;
+                   })
+             |> Node.create_with_default_location);
+         cfg_data = { define_name = !&"test.main"; node_id = 7; statement_index = 0 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -1038,6 +1111,37 @@ let test_resolve_definition_for_symbol context =
                 })
           |> Node.create_with_default_location);
       cfg_data = { define_name = !&"test.main"; node_id = 4; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some "test:6:2-6:19");
+  assert_resolved_definition
+    ~source:
+      {|
+        from dataclasses import dataclass
+
+        @dataclass(frozen=True)
+        class Foo:
+          my_attribute: int
+
+        def main(foo: Foo) -> None:
+          if foo.my_attribute:
+            #        ^-- CURSOR
+            print("hello")
+    |}
+    {
+      symbol_with_definition =
+        Expression
+          (Expression.Name
+             (Name.Attribute
+                {
+                  base =
+                    Node.create_with_default_location
+                      (Expression.Name (Name.Identifier "$parameter$foo"));
+                  attribute = "my_attribute";
+                  special = false;
+                })
+          |> Node.create_with_default_location);
+      cfg_data = { define_name = !&"test.main"; node_id = 7; statement_index = 0 };
       use_postcondition_info = false;
     }
     (Some "test:6:2-6:19");
