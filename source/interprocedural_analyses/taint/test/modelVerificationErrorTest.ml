@@ -39,6 +39,28 @@ let test_to_json _ =
           stop = { Ast.Location.line = 3; column = 4 };
         };
       path = Some (PyrePath.create_absolute "/a/b.pysa");
+    };
+  assert_json
+    ~expected:
+      {|
+        {
+          "description": "ModelQuery `get_foo` output no models.",
+          "line": 1,
+          "column": 2,
+          "stop_line": 3,
+          "stop_column": 4,
+          "path": "/a/b.pysa",
+          "code": 41
+        }
+        |}
+    {
+      ModelVerificationError.kind = ModelVerificationError.NoOutputFromModelQuery "get_foo";
+      location =
+        {
+          Ast.Location.start = { Ast.Location.line = 1; column = 2 };
+          stop = { Ast.Location.line = 3; column = 4 };
+        };
+      path = Some (PyrePath.create_absolute "/a/b.pysa");
     }
 
 

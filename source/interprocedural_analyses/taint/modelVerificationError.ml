@@ -119,6 +119,7 @@ type kind =
       annotation: string;
     }
   | DuplicateNameClauses of string
+  | NoOutputFromModelQuery of string
 [@@deriving sexp, compare, show]
 
 type t = {
@@ -320,6 +321,8 @@ let description error =
         "Multiple model queries have the same name `%s`. Model\n\
         \   query names should be unique within each file."
         name
+  | NoOutputFromModelQuery model_query_name ->
+      Format.sprintf "ModelQuery `%s` output no models." model_query_name
 
 
 let code { kind; _ } =
@@ -364,6 +367,7 @@ let code { kind; _ } =
   | InvalidAnnotationForAttributeModel _ -> 38
   | InvalidDecoratorClause _ -> 39
   | DuplicateNameClauses _ -> 40
+  | NoOutputFromModelQuery _ -> 41
 
 
 let display { kind = error; path; location } =

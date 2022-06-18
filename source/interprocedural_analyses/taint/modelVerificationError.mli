@@ -118,6 +118,7 @@ type kind =
       annotation: string;
     }
   | DuplicateNameClauses of string
+  | NoOutputFromModelQuery of string
 [@@deriving sexp, compare]
 
 type t = {
