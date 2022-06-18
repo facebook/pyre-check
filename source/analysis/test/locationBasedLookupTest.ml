@@ -695,6 +695,36 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:
+      {|
+        from dataclasses import dataclass
+
+        @dataclass(frozen=True)
+        class Foo:
+          my_attribute: int
+
+        def main(foo: Foo) -> None:
+          print(foo.my_attribute)
+        #              ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Expression.Name
+                (Name.Attribute
+                   {
+                     base =
+                       Node.create_with_default_location
+                         (Expression.Name (Name.Identifier "$parameter$foo"));
+                     attribute = "my_attribute";
+                     special = false;
+                   })
+             |> Node.create_with_default_location);
+         cfg_data = { define_name = !&"test.main"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -982,6 +1012,35 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     (Some "test:4:2-4:37");
+  assert_resolved_definition
+    ~source:
+      {|
+        from dataclasses import dataclass
+
+        @dataclass(frozen=True)
+        class Foo:
+          my_attribute: int
+
+        def main(foo: Foo) -> None:
+          print(foo.my_attribute)
+    |}
+    {
+      symbol_with_definition =
+        Expression
+          (Expression.Name
+             (Name.Attribute
+                {
+                  base =
+                    Node.create_with_default_location
+                      (Expression.Name (Name.Identifier "$parameter$foo"));
+                  attribute = "my_attribute";
+                  special = false;
+                })
+          |> Node.create_with_default_location);
+      cfg_data = { define_name = !&"test.main"; node_id = 4; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some "test:6:2-6:19");
   ()
 
 
