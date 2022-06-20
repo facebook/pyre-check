@@ -455,6 +455,10 @@ module type TAINT_DOMAIN = sig
 
   (* For every frame, convert the may breadcrumbs into must breadcrumbs. *)
   val may_breadcrumbs_to_must : t -> t
+
+  (* Within every local taint, join every frame with the frame in the same local taint that has the
+     specified kind. *)
+  val join_every_frame_with : frame_kind:kind -> t -> t
 end
 
 module type KIND_ARG = sig
@@ -1068,6 +1072,20 @@ end = struct
     Map.transform Frame.Self Map ~f:apply_frame taint
 
 
+  let join_every_frame_with ~frame_kind taint =
+    let apply_local_taint local_taint =
+      let frame_to_join =
+        let kinds = LocalTaintDomain.get LocalTaintDomain.Slots.Kinds local_taint in
+        KindTaintDomain.get frame_kind kinds
+      in
+      if not (Frame.is_bottom frame_to_join) then
+        LocalTaintDomain.transform Frame.Self Map ~f:(Frame.join frame_to_join) local_taint
+      else
+        local_taint
+    in
+    Map.transform LocalTaintDomain.Self Map ~f:apply_local_taint taint
+
+
   let essential ~return_access_paths taint =
     let apply (_, local_taint) =
       let call_info = CallInfo.Declaration { leaf_name_provided = false } in
@@ -1305,6 +1323,10 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
   let roots environment = fold Key ~f:List.cons ~init:[] environment
 
   let may_breadcrumbs_to_must = transform Taint.Self Map ~f:Taint.may_breadcrumbs_to_must
+
+  let join_every_frame_with ~frame_kind =
+    transform Taint.Self Map ~f:(Taint.join_every_frame_with ~frame_kind)
+
 
   let add_local_breadcrumb breadcrumb =
     transform Taint.Self Map ~f:(Taint.add_local_breadcrumb breadcrumb)

@@ -64,9 +64,13 @@ def attach_to_returned_sink():
     return x
 
 
-def source_duplicate_models():
+def attach_to_returned_source():
     return 0
 
 
-def source_duplicate_kinds():
+def attach_to_returned_source_ports():
+    return 0
+
+
+def attach_to_returned_source_2():
     return 0

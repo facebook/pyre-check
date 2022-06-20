@@ -129,7 +129,10 @@
                 "features": [ { "always-via": "string_concat_lhs" } ],
                 "kind": "Attach"
               },
-              { "kind": "Test" }
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Test"
+              }
             ],
             "decl": null
           }
@@ -174,7 +177,12 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Test"
+              }
+            ],
             "local_features": [ { "always-via": "string_concat_lhs" } ],
             "root": {
               "filename": "attach_features.py",
@@ -193,6 +201,84 @@
     "sink_handle": { "kind": "Return" },
     "master_handle":
       "attach_features.attach_to_returned_sink:5002:0:Return:8218e4adbc4250811127e266f8a13911"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.attach_to_returned_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Attach"
+              },
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.attach_to_returned_source_2",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.attach_to_returned_source_ports",
+    "sources": [
+      {
+        "port": "result[f]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      },
+      {
+        "port": "result[g]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Attach"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "result[g][h]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
   }
 }
 {
@@ -427,58 +513,6 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attach_features.source_duplicate_kinds",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "string_concat_lhs" } ],
-                "kind": "Test"
-              }
-            ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "attach_features.source_duplicate_models",
-    "sources": [
-      {
-        "port": "result[f]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
-      },
-      {
-        "port": "result[g]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "string_concat_lhs" } ],
-                "kind": "Attach"
-              }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "result[g][h]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
