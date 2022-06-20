@@ -664,9 +664,9 @@ module FromReadOnlyUpstream = struct
       ~previous_classes_list
       ~previous_unannotated_globals_list
       ~previous_defines_list
-      ~previous_modules_list
+      ~invalidated_modules
     =
-    let module_keys = Modules.KeySet.of_list previous_modules_list in
+    let module_keys = Modules.KeySet.of_list invalidated_modules in
     let class_keys = ClassSummaries.KeySet.of_list previous_classes_list in
     let defines_keys = FunctionDefinitions.KeySet.of_list previous_defines_list in
     let unannotated_globals_keys =
@@ -949,7 +949,7 @@ module FromReadOnlyUpstream = struct
                  ~previous_classes_list
                  ~previous_unannotated_globals_list
                  ~previous_defines_list
-                 ~previous_modules_list:invalidated_modules
+                 ~invalidated_modules
             |> DependencyKey.Transaction.execute ~update
           in
           let current_classes =
