@@ -1,5 +1,6 @@
 @generated
 Call dependencies
+features.always_feature_for_duplicate_models (fun) -> []
 features.$toplevel (fun) -> []
 features.async_issue_bools (fun) -> [_test_sink (fun) features.async_tuple_of_bools (fun)]
 features.async_tuple_of_bools (fun) -> [_test_source (fun)]
@@ -10,7 +11,6 @@ features.issue_via_equality (fun) -> [_test_sink (fun) features.returns_tainted_
 features.issue_via_in (fun) -> [_test_sink (fun) _test_source (fun)]
 features.len (fun) -> []
 features.min (fun) -> []
-features.model_missing_feature (fun) -> []
 features.named (fun) -> []
 features.no_always_when_calling_setitem (fun) -> [_test_source (fun) features.SetItemClass::__setitem__ (method) object::__init__ (method) object::__new__ (method)]
 features.optional_scalar (fun) -> []

@@ -89,6 +89,9 @@ val add_obscure_sink : resolution:Resolution.t -> call_target:Target.t -> t -> t
 
 val join : t -> t -> t
 
+(* A special case of join, only used for user-provided models. *)
+val join_user_models : t -> t -> t
+
 val widen : iteration:int -> previous:t -> next:t -> t
 
 val reached_fixpoint : iteration:int -> previous:t -> next:t -> bool

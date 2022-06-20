@@ -14,7 +14,7 @@ module ModelQueryRegistryMap : sig
 
   val get : t -> string -> Taint.Registry.t option
 
-  val merge : t -> t -> t
+  val merge : model_join:(Taint.Model.t -> Taint.Model.t -> Taint.Model.t) -> t -> t -> t
 
   val to_alist : t -> (string * Taint.Registry.t) list
 
@@ -24,7 +24,10 @@ module ModelQueryRegistryMap : sig
 
   val get_models : t -> Taint.Registry.t list
 
-  val get_registry : t -> Taint.Registry.t
+  val get_registry
+    :  model_join:(Taint.Model.t -> Taint.Model.t -> Taint.Model.t) ->
+    t ->
+    Taint.Registry.t
 end
 
 module DumpModelQueryResults : sig

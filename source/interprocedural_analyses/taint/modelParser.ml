@@ -3172,7 +3172,8 @@ let parse ~resolution ?path ?rule_filter ~source ~configuration ~callables ~stub
   in
   {
     models =
-      List.map new_models ~f:(fun (model, _) -> model.target, model.model) |> Registry.of_alist;
+      List.map new_models ~f:(fun (model, _) -> model.target, model.model)
+      |> Registry.of_alist ~join:Model.join_user_models;
     skip_overrides =
       List.filter_map new_models ~f:(fun (_, skipped_override) -> skipped_override)
       |> Reference.Set.of_list;

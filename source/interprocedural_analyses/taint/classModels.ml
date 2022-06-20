@@ -133,7 +133,9 @@ let infer ~environment ~user_models =
     |> GlobalResolution.unannotated_global_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
   in
-  let models = List.concat_map all_classes ~f:inferred_models |> Registry.of_alist in
+  let models =
+    List.concat_map all_classes ~f:inferred_models |> Registry.of_alist ~join:Model.join_user_models
+  in
   Statistics.performance
     ~name:"Computed inferred models"
     ~phase_name:"Computing inferred models"

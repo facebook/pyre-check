@@ -33,6 +33,8 @@ module type S = sig
   val add_set : t -> to_add:t -> t
 
   val sequence_join : t -> t -> t
+
+  val over_to_under : t -> t
 end
 
 module MakeWithSet (Set : AbstractSetDomain.SET) = struct
@@ -163,6 +165,12 @@ module MakeWithSet (Set : AbstractSetDomain.SET) = struct
     let of_list elements = ListLabels.fold_left ~f:add elements ~init:bottom
 
     let of_approximation elements = ListLabels.fold_left ~f:add_element ~init:empty elements
+
+    let over_to_under set =
+      match set with
+      | Bottom -> Bottom
+      | BiSet { over; _ } -> make ~old:set ~over ~under:over
+
 
     let widen ~iteration:_ ~prev ~next = join prev next
 

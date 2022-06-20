@@ -124,13 +124,21 @@ module Make (Analysis : ANALYSIS) : sig
 
     val set : t -> target:Target.t -> model:Analysis.Model.t -> t
 
-    val add : t -> target:Target.t -> model:Analysis.Model.t -> t
+    val add
+      :  join:(Analysis.Model.t -> Analysis.Model.t -> Analysis.Model.t) ->
+      t ->
+      target:Target.t ->
+      model:Analysis.Model.t ->
+      t
 
     val get : t -> Target.t -> Analysis.Model.t option
 
-    val merge : t -> t -> t
+    val merge : join:(Analysis.Model.t -> Analysis.Model.t -> Analysis.Model.t) -> t -> t -> t
 
-    val of_alist : (Target.t * Analysis.Model.t) list -> t
+    val of_alist
+      :  join:(Analysis.Model.t -> Analysis.Model.t -> Analysis.Model.t) ->
+      (Target.t * Analysis.Model.t) list ->
+      t
 
     val to_alist : t -> (Target.t * Analysis.Model.t) list
 

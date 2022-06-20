@@ -561,7 +561,8 @@ let initialize
         let models =
           models_and_names
           |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry
-          |> Registry.merge models
+               ~model_join:Model.join_user_models
+          |> Registry.merge ~join:Model.join_user_models models
         in
         let models =
           MissingFlow.add_obscure_models
@@ -574,7 +575,7 @@ let initialize
         models, skip_overrides
   in
   let inferred_models = ClassModels.infer ~environment ~user_models in
-  let initial_models = Registry.merge inferred_models user_models in
+  let initial_models = Registry.merge ~join:Model.join_user_models inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
   let override_graph_heap =
     OverrideGraph.Heap.from_source ~environment ~include_unit_tests:true ~source

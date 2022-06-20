@@ -615,6 +615,18 @@ let should_externalize { forward; backward; sanitizers; _ } =
   || not (Sanitizers.is_empty sanitizers)
 
 
+(* For every frame, convert the may breadcrumbs into must breadcrumbs. *)
+let may_breadcrumbs_to_must
+    { forward = { source_taint }; backward = { taint_in_taint_out; sink_taint }; sanitizers; modes }
+  =
+  let source_taint = ForwardState.may_breadcrumbs_to_must source_taint in
+  let taint_in_taint_out = BackwardState.may_breadcrumbs_to_must taint_in_taint_out in
+  let sink_taint = BackwardState.may_breadcrumbs_to_must sink_taint in
+  { forward = { source_taint }; backward = { taint_in_taint_out; sink_taint }; sanitizers; modes }
+
+
+let join_user_models left right = join left right |> may_breadcrumbs_to_must
+
 let to_json
     ~expand_overrides
     ~is_valid_callee

@@ -452,6 +452,9 @@ module type TAINT_DOMAIN = sig
     filename_lookup:(Reference.t -> string option) option ->
     t ->
     Yojson.Safe.json
+
+  (* For every frame, convert the may breadcrumbs into must breadcrumbs. *)
+  val may_breadcrumbs_to_must : t -> t
 end
 
 module type KIND_ARG = sig
@@ -1058,6 +1061,13 @@ end = struct
     Map.transform Map.KeyValue Map ~f:apply taint
 
 
+  let may_breadcrumbs_to_must taint =
+    let apply_frame frame =
+      Frame.transform Features.BreadcrumbSet.Self Map ~f:Features.BreadcrumbSet.over_to_under frame
+    in
+    Map.transform Frame.Self Map ~f:apply_frame taint
+
+
   let essential ~return_access_paths taint =
     let apply (_, local_taint) =
       let call_info = CallInfo.Declaration { leaf_name_provided = false } in
@@ -1126,6 +1136,8 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     in
     transform Path Map ~f:transform_path taint_tree
 
+
+  let may_breadcrumbs_to_must tree = transform Taint.Self Map ~f:Taint.may_breadcrumbs_to_must tree
 
   let empty = bottom
 
@@ -1291,6 +1303,8 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
   let is_empty = is_bottom
 
   let roots environment = fold Key ~f:List.cons ~init:[] environment
+
+  let may_breadcrumbs_to_must = transform Taint.Self Map ~f:Taint.may_breadcrumbs_to_must
 
   let add_local_breadcrumb breadcrumb =
     transform Taint.Self Map ~f:(Taint.add_local_breadcrumb breadcrumb)

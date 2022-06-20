@@ -543,6 +543,32 @@
 {
   "kind": "model",
   "data": {
+    "callable": "features.always_feature_for_duplicate_models",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "string_concat_rhs" },
+                  { "always-via": "string_concat_lhs" }
+                ],
+                "return_paths": [ "" ],
+                "kind": "LocalReturn"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "features.async_tuple_of_bools",
     "sources": [
       {
@@ -668,32 +694,6 @@
                 "features": [
                   { "always-type": "integer" },
                   { "always-type": "scalar" }
-                ],
-                "return_paths": [ "" ],
-                "kind": "LocalReturn"
-              }
-            ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "features.model_missing_feature",
-    "tito": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "via": "string_concat_rhs" },
-                  { "always-via": "string_concat_lhs" }
                 ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"

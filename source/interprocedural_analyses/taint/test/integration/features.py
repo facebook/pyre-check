@@ -105,8 +105,8 @@ def issue_via_in():
     _test_sink(o in "a")
 
 
-def model_missing_feature(arg):
-    # TODO(T116691133): Miss "always-via" for feature string_concat_rhs
+def always_feature_for_duplicate_models(arg):
+    # Should see "always-via" for feature string_concat_rhs
     return 0
 
 

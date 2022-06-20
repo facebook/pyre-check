@@ -34,6 +34,9 @@ module type S = sig
      a composition where if an element is in the under approximation on either side, it will be also
      in the result *)
   val sequence_join : t -> t -> t
+
+  (* Copy the elements from the over set to the under set. *)
+  val over_to_under : t -> t
 end
 
 module MakeWithSet (Set : AbstractSetDomain.SET) : S with type element = Set.element

@@ -110,23 +110,23 @@ module Make (Analysis : ANALYSIS) = struct
 
     let set registry ~target ~model = Target.Map.set ~key:target ~data:model registry
 
-    let add registry ~target ~model =
+    let add ~join registry ~target ~model =
       Target.Map.update registry target ~f:(function
           | None -> model
-          | Some existing -> Model.join ~iteration:0 existing model)
+          | Some existing -> join existing model)
 
 
     let get registry target = Target.Map.find registry target
 
-    let merge left right =
+    let merge ~join left right =
       Target.Map.merge left right ~f:(fun ~key:_ -> function
-        | `Both (left, right) -> Some (Model.join ~iteration:0 left right)
+        | `Both (left, right) -> Some (join left right)
         | `Left model
         | `Right model ->
             Some model)
 
 
-    let of_alist = Target.Map.of_alist_reduce ~f:(Model.join ~iteration:0)
+    let of_alist ~join = Target.Map.of_alist_reduce ~f:join
 
     let to_alist registry = Target.Map.to_alist ~key_order:`Increasing registry
 

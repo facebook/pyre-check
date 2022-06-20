@@ -29,9 +29,9 @@ module ModelQueryRegistryMap = struct
 
   let get = String.Map.find
 
-  let merge left right =
+  let merge ~model_join left right =
     String.Map.merge left right ~f:(fun ~key:_ -> function
-      | `Both (models1, models2) -> Some (Registry.merge models1 models2)
+      | `Both (models1, models2) -> Some (Registry.merge ~join:model_join models1 models2)
       | `Left models
       | `Right models ->
           Some models)
@@ -47,9 +47,12 @@ module ModelQueryRegistryMap = struct
 
   let get_models = String.Map.data
 
-  let merge_all_registries registries = List.fold registries ~init:Registry.empty ~f:Registry.merge
+  let merge_all_registries ~model_join registries =
+    List.fold registries ~init:Registry.empty ~f:(Registry.merge ~join:model_join)
 
-  let get_registry model_query_map = merge_all_registries (get_models model_query_map)
+
+  let get_registry ~model_join model_query_map =
+    merge_all_registries ~model_join (get_models model_query_map)
 end
 
 module DumpModelQueryResults : sig
@@ -747,13 +750,14 @@ let apply_all_rules
               ~is_obscure:(Hash_set.mem stubs callable)
               taint_to_model
           with
-          | Ok model -> Registry.add Registry.empty ~target:callable ~model
+          | Ok model ->
+              Registry.add Registry.empty ~join:Model.join_user_models ~target:callable ~model
           | Error error ->
               Log.error
                 "Error while executing model query: %s"
                 (ModelVerificationError.display error);
               Registry.empty)
-      |> ModelQueryRegistryMap.merge models_and_names
+      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models models_and_names
     in
     let callables =
       List.filter_map callables ~f:(function
@@ -772,7 +776,7 @@ let apply_all_rules
         ~initial:ModelQueryRegistryMap.empty
         ~map:(fun models_and_names callables ->
           List.fold callables ~init:models_and_names ~f:apply_rules_for_callable)
-        ~reduce:ModelQueryRegistryMap.merge
+        ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
         ~inputs:callables
         ()
     in
@@ -806,13 +810,14 @@ let apply_all_rules
               ~sinks_to_keep
               taint_to_model
           with
-          | Ok model -> Registry.add Registry.empty ~target:callable ~model
+          | Ok model ->
+              Registry.add Registry.empty ~join:Model.join_user_models ~target:callable ~model
           | Error error ->
               Log.error
                 "Error while executing model query: %s"
                 (ModelVerificationError.display error);
               Registry.empty)
-      |> ModelQueryRegistryMap.merge models_and_names
+      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models models_and_names
     in
     let attribute_models =
       if not (List.is_empty attribute_rules) then
@@ -835,13 +840,13 @@ let apply_all_rules
           ~initial:ModelQueryRegistryMap.empty
           ~map:(fun models_and_names attributes ->
             List.fold attributes ~init:models_and_names ~f:apply_rules_for_attribute)
-          ~reduce:ModelQueryRegistryMap.merge
+          ~reduce:(ModelQueryRegistryMap.merge ~model_join:Model.join_user_models)
           ~inputs:attributes
           ()
       else
         ModelQueryRegistryMap.empty
     in
-    ModelQueryRegistryMap.merge callable_models attribute_models
+    ModelQueryRegistryMap.merge ~model_join:Model.join_user_models callable_models attribute_models
   else
     ModelQueryRegistryMap.empty
 
