@@ -1466,7 +1466,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     );
     ( "pyre_extensions/__init__.pyi",
       {|
-        from typing import List, Optional, Type, TypeVar
+        from typing import List, Optional, Type, TypeVar, Callable
         from .generic import Generic as Generic
         import type_variable_operators
 
@@ -1502,6 +1502,11 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class Broadcast(Generic[_T1, _T2]): ...
         class BroadcastError(Generic[_T1, _T2]): ...
         class Compose(Generic[_Ts]): ...
+
+        T = TypeVar("T", bound=Callable[..., object])
+
+        def override(func: T) -> T:
+            return func
         |}
     );
     ( "pyre_extensions/generic.pyi",

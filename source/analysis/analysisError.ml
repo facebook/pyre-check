@@ -174,6 +174,8 @@ and invalid_override_kind =
   | Final
   | StaticSuper
   | StaticOverride
+  | NothingOverridden
+  | IllegalOverrideDecorator
 
 and invalid_assignment_kind =
   | FinalAttribute of Reference.t
@@ -1572,23 +1574,38 @@ let rec messages ~concise ~signature location kind =
                   annotation2
                   parent2;
               ]))
-  | InvalidOverride { parent; decorator } ->
+  | InvalidOverride { parent; decorator } -> (
       let preamble, message =
         match decorator with
         | Final -> "", "cannot override final method defined in"
         | StaticSuper -> "Non-static method ", "cannot override a static method defined in"
         | StaticOverride -> "Static method ", "cannot override a non-static method defined in"
+        | NothingOverridden ->
+            ( "",
+              "is decorated with @override, but no method of the same name exists in superclasses \
+               of" )
+        | IllegalOverrideDecorator ->
+            ( "",
+              "is illegally decorated with @override: @override may only be applied to methods, \
+               but this element is not a method" )
       in
-      [
-        Format.asprintf
-          "%s`%a` %s `%a`."
-          preamble
-          pp_reference
-          define_name
-          message
-          pp_identifier
-          parent;
-      ]
+      match decorator with
+      | Final
+      | StaticSuper
+      | StaticOverride
+      | NothingOverridden ->
+          [
+            Format.asprintf
+              "%s`%a` %s `%a`."
+              preamble
+              pp_reference
+              define_name
+              message
+              pp_identifier
+              parent;
+          ]
+      | IllegalOverrideDecorator ->
+          [Format.asprintf "%s`%a` %s." preamble pp_reference define_name message])
   | InvalidAssignment kind -> (
       match kind with
       | FinalAttribute name ->
@@ -2801,7 +2818,9 @@ let less_or_equal ~resolution left right =
       match left_decorator, right_decorator with
       | Final, Final
       | StaticSuper, StaticSuper
-      | StaticOverride, StaticOverride ->
+      | StaticOverride, StaticOverride
+      | NothingOverridden, NothingOverridden
+      | IllegalOverrideDecorator, IllegalOverrideDecorator ->
           Identifier.equal_sanitized left_parent right_parent
       | _, _ -> false)
   | InvalidAssignment left, InvalidAssignment right -> (

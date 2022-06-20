@@ -4996,6 +4996,35 @@ module State (Context : Context) = struct
         else
           errors
       in
+      let check_override_decorator errors =
+        let override_decorator_name = "pyre_extensions.override" in
+        let has_override_decorator = StatementDefine.has_decorator define override_decorator_name in
+        if has_override_decorator then
+          match define with
+          | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } -> (
+              let possibly_overridden_attribute =
+                GlobalResolution.overrides
+                  (Reference.show parent)
+                  ~resolution:global_resolution
+                  ~name:(StatementDefine.unqualified_name define)
+              in
+              match possibly_overridden_attribute with
+              | Some _ -> errors
+              | None ->
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:
+                      (Error.InvalidOverride
+                         { parent = Reference.show parent; decorator = NothingOverridden }))
+          | { Ast.Statement.Define.signature = { parent = None; _ }; _ } ->
+              emit_error
+                ~errors
+                ~location
+                ~kind:(Error.InvalidOverride { parent = ""; decorator = IllegalOverrideDecorator })
+        else
+          errors
+      in
       let check_decorator errors decorator =
         let get_allowlisted decorator =
           match Decorator.from_expression decorator with
@@ -5046,7 +5075,9 @@ module State (Context : Context) = struct
             in
             List.append decorator_errors errors
       in
-      List.fold decorators ~init:errors ~f:check_decorator |> check_final_decorator
+      List.fold decorators ~init:errors ~f:check_decorator
+      |> check_final_decorator
+      |> check_override_decorator
     in
     let check_unbound_names errors =
       let add_unbound_name_error errors { Define.NameAccess.name; location } =

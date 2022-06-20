@@ -1122,6 +1122,7 @@ let test_handle_query_pysa context =
                     }
                 ],
                 "contextlib.ContextManager.__enter__": [],
+                "pyre_extensions.override":[],
                 "dict.items": [],
                 "dict.add_both": [],
                 "dict.add_value": [],

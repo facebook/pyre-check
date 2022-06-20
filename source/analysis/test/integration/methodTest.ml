@@ -2375,6 +2375,172 @@ let test_check_meta_self context =
     []
 
 
+let test_check_override_decorator context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+     from pyre_extensions import override
+
+     class Foo:
+       def different_method(self, input: int) -> int:
+         return input
+
+     class Bar(Foo):
+       @override
+       def foo(self, input:int) -> int:
+         return input
+    |}
+    [
+      "Invalid override [40]: `test.Bar.foo` is decorated with @override, but no method of the \
+       same name exists in superclasses of `Bar`.";
+    ];
+  assert_type_errors
+    {|
+     from pyre_extensions import override
+
+     class Foo:
+       def same_method(self, input: int) -> int:
+         return input
+
+     class Bar(Foo):
+       @override
+       def same_method(self, input: int) -> str:
+         return str(input)
+  |}
+    [
+      "Inconsistent override [15]: `test.Bar.same_method` overrides method defined in `Foo` \
+       inconsistently. Returned type `str` is not a subtype of the overridden return `int`.";
+    ];
+  assert_type_errors
+    {|
+     from pyre_extensions import override
+
+     class Foo:
+       @staticmethod
+       def same_method(input: int) -> int:
+         return input
+
+     class Bar(Foo):
+       @override
+       def same_method(input: int) -> int:
+         return input + 1
+  |}
+    [
+      "Invalid override [40]: Non-static method `test.Bar.same_method` cannot override a static \
+       method defined in `Foo`.";
+    ];
+  assert_type_errors
+    {|
+     from pyre_extensions import override
+
+     class Foo:
+       @classmethod
+       def same_method(cls, input: int) -> int:
+         return input
+
+     class Bar(Foo):
+       @override
+       def same_method(cls, input: int) -> int:
+         return input + 1
+  |}
+    [];
+
+  assert_type_errors
+    {|
+     from pyre_extensions import override
+
+     @override
+     def foo(input: int) -> int:
+       return input
+    |}
+    [
+      "Invalid override [40]: `test.foo` is illegally decorated with @override: @override may only \
+       be applied to methods, but this element is not a method.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import override
+
+      def foo_outer(input: int) -> int:
+        @override
+        def foo_inner(input: int) -> int:
+          return input
+
+        return foo_inner(input)
+
+     |}
+    [
+      "Invalid override [40]: `foo_inner` is illegally decorated with @override: @override may \
+       only be applied to methods, but this element is not a method.";
+    ];
+  assert_type_errors
+    {|
+     from pyre_extensions import override
+
+     class Foo1:
+       def foo(self, input: int) -> int:
+         return input
+
+     class Foo2(Foo1): ...
+
+     class Bar(Foo2):
+       @override
+       def foo(self, input: int) -> int:
+         return 0
+    |}
+    [];
+
+  assert_type_errors
+    {|
+     from pyre_extensions import override
+
+     class Foo1:
+       def foo_illegal_override(self, input: int) -> int:
+         return input
+       def foo_legal_override(self, input: int) -> int:
+         return input
+
+
+     class Foo2:
+       def foo_illegal_override(self, input: int) -> str:
+         return str(input)
+       def foo_legal_override(self, input: int) -> str:
+         return str(input)
+
+
+     class Bar(Foo1, Foo2):
+       @override
+       def foo_illegal_override(self, input: int) -> str:
+         return "Bar_A: " + str(input)
+
+       @override
+       def foo_legal_override(self, input: int) -> int:
+         return 0
+
+     |}
+    [
+      "Inconsistent override [15]: `test.Bar.foo_illegal_override` overrides method defined in \
+       `Foo1` inconsistently. Returned type `str` is not a subtype of the overridden return `int`.";
+    ];
+  assert_type_errors
+    {|
+     from pyre_extensions import override
+
+     class Foo:
+       def foo(self, input: int) -> str:
+          ...
+
+     @override
+     class Bar(Foo):
+       def foo(self, input: int) -> str:
+         return "Bar: " + str(input)
+    |}
+    (* TODO: See T123628048. This should return an error, but isn't at the moment. Decorator logic
+       needs to be checked. *)
+    [];
+  ()
+
+
 let test_check_static context =
   let assert_type_errors = assert_type_errors ~context in
   (* No self parameter in static method. *)
@@ -3090,6 +3256,7 @@ let () =
          "check_self" >:: test_check_self;
          "check_meta_self" >:: test_check_meta_self;
          "check_setitem" >:: test_check_setitem;
+         "check_override_decorator" >:: test_check_override_decorator;
          "check_static" >:: test_check_static;
          "check_in" >:: test_check_in;
          "check_enter" >:: test_check_enter;
