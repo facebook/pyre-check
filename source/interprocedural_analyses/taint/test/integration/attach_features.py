@@ -62,3 +62,11 @@ class HasMethods:
 def attach_to_returned_sink():
     x = _test_source()
     return x
+
+
+def source_duplicate_models():
+    return 0
+
+
+def source_duplicate_kinds():
+    return 0

@@ -435,6 +435,58 @@
 {
   "kind": "model",
   "data": {
+    "callable": "attach_features.source_duplicate_kinds",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "attach_features.source_duplicate_models",
+    "sources": [
+      {
+        "port": "result[f]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      },
+      {
+        "port": "result[g]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "kind": "Attach"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "result[g][h]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "attach_features.source_with_inferred",
     "sources": [
       {
