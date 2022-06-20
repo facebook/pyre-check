@@ -56,9 +56,16 @@ module ModelQueryRegistryMap = struct
 end
 
 module DumpModelQueryResults : sig
-  val dump : models_and_names:ModelQueryRegistryMap.t -> string
+  val dump_to_string : models_and_names:ModelQueryRegistryMap.t -> string
+
+  val dump_to_file : models_and_names:ModelQueryRegistryMap.t -> path:PyrePath.t -> unit
+
+  val dump_to_file_and_string
+    :  models_and_names:ModelQueryRegistryMap.t ->
+    path:PyrePath.t ->
+    string
 end = struct
-  let dump ~models_and_names =
+  let dump_to_string ~models_and_names =
     let model_to_json (callable, model) =
       `Assoc
         [
@@ -83,6 +90,18 @@ end = struct
     in
     `List (String.Map.data (String.Map.mapi models_and_names ~f:to_json))
     |> Yojson.Safe.pretty_to_string
+
+
+  let dump_to_file ~models_and_names ~path =
+    Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
+    path |> File.create ~content:(dump_to_string ~models_and_names) |> File.write
+
+
+  let dump_to_file_and_string ~models_and_names ~path =
+    Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
+    let content = dump_to_string ~models_and_names in
+    path |> File.create ~content |> File.write;
+    content
 end
 
 let sanitized_location_insensitive_compare left right =

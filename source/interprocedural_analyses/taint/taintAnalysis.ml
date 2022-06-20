@@ -234,12 +234,12 @@ let initialize_models ~scheduler ~static_analysis_configuration ~environment ~ca
             ~taint_configuration
             queries
         in
-        (match taint_configuration.dump_model_query_results_path with
-        | Some path ->
-            Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
-            let content = TaintModelQuery.ModelQuery.DumpModelQueryResults.dump ~models_and_names in
-            path |> File.create ~content |> File.write
-        | None -> ());
+        let () =
+          match taint_configuration.dump_model_query_results_path with
+          | Some path ->
+              TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_file ~models_and_names ~path
+          | None -> ()
+        in
         let models =
           models_and_names
           |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry

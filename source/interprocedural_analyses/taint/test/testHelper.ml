@@ -546,17 +546,15 @@ let initialize
         in
         (match taint_configuration.dump_model_query_results_path, expected_dump_string with
         | Some path, Some expected_string ->
-            Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
-            let content = TaintModelQuery.ModelQuery.DumpModelQueryResults.dump ~models_and_names in
-            path |> File.create ~content |> File.write;
-            assert_equal ~cmp:String.equal content expected_string
+            TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_file_and_string
+              ~models_and_names
+              ~path
+            |> assert_equal ~cmp:String.equal expected_string
         | Some path, None ->
-            Log.warning "Emitting the model query results to `%s`" (PyrePath.absolute path);
-            let content = TaintModelQuery.ModelQuery.DumpModelQueryResults.dump ~models_and_names in
-            path |> File.create ~content |> File.write
+            TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_file ~models_and_names ~path
         | None, Some expected_string ->
-            let content = TaintModelQuery.ModelQuery.DumpModelQueryResults.dump ~models_and_names in
-            assert_equal ~cmp:String.equal content expected_string
+            TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_string ~models_and_names
+            |> assert_equal ~cmp:String.equal expected_string
         | None, None -> ());
         let models =
           models_and_names

@@ -31,7 +31,14 @@ module ModelQueryRegistryMap : sig
 end
 
 module DumpModelQueryResults : sig
-  val dump : models_and_names:ModelQueryRegistryMap.t -> string
+  val dump_to_string : models_and_names:ModelQueryRegistryMap.t -> string
+
+  val dump_to_file : models_and_names:ModelQueryRegistryMap.t -> path:PyrePath.t -> unit
+
+  val dump_to_file_and_string
+    :  models_and_names:ModelQueryRegistryMap.t ->
+    path:PyrePath.t ->
+    string
 end
 
 val apply_callable_query_rule
