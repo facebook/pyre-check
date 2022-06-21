@@ -35,51 +35,36 @@ let recheck ~configuration ~scheduler ~environment ~errors artifact_paths =
     AnnotatedGlobalEnvironment.UpdateResult.unannotated_global_environment_update_result
       annotated_global_environment_update_result
   in
-  let function_triggers =
+  let triggered_dependency_function_names =
     let filter_union sofar keyset =
       let filter registered sofar =
         match SharedMemoryKeys.DependencyKey.get_key registered with
-        | SharedMemoryKeys.TypeCheckDefine name -> (
-            match Reference.Map.add sofar ~key:name ~data:registered with
-            | `Duplicate -> sofar
-            | `Ok updated -> updated)
+        | SharedMemoryKeys.TypeCheckDefine name -> Reference.Set.add sofar name
         | _ -> sofar
       in
       SharedMemoryKeys.DependencyKey.RegisteredSet.fold filter keyset sofar
     in
     AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies
       annotated_global_environment_update_result
-    |> List.fold ~init:Reference.Map.empty ~f:filter_union
+    |> List.fold ~init:Reference.Set.empty ~f:filter_union
   in
-  let recheck_functions =
-    let register_and_add sofar trigger =
-      let register = function
-        | Some existing -> existing
-        | None ->
-            SharedMemoryKeys.DependencyKey.Registry.register
-              (SharedMemoryKeys.TypeCheckDefine trigger)
-      in
-      Reference.Map.update sofar trigger ~f:register
-    in
-    UnannotatedGlobalEnvironment.UpdateResult.define_additions
-      unannotated_global_environment_update_result
-    |> Set.fold ~init:function_triggers ~f:register_and_add
+  let recheck_function_names =
+    Reference.Set.union
+      (UnannotatedGlobalEnvironment.UpdateResult.define_additions
+         unannotated_global_environment_update_result)
+      triggered_dependency_function_names
   in
-  let recheck_functions_list = Map.to_alist recheck_functions in
-  let recheck_function_names = List.map recheck_functions_list ~f:fst in
-
+  let recheck_function_names_list = Reference.Set.to_list recheck_function_names in
   (* Rerun type checking for triggered functions. *)
-  TypeEnvironment.invalidate environment recheck_function_names;
-  recheck_functions_list
-  |> List.map ~f:(fun (define, registered) -> define, Some registered)
-  |> TypeEnvironment.populate_for_definitions ~scheduler environment;
+  TypeEnvironment.invalidate environment recheck_function_names_list;
+  TypeEnvironment.populate_for_definitions ~scheduler environment recheck_function_names_list;
 
   (* Rerun postprocessing for triggered modules. *)
   let recheck_modules =
     (* For each rechecked function, its containing module needs to be included in postprocessing *)
     List.fold
       ~init:(Reference.Set.of_list invalidated_modules)
-      (Reference.Map.keys function_triggers)
+      (Reference.Set.to_list triggered_dependency_function_names)
       ~f:(fun sofar define_name ->
         let unannotated_global_environment =
           TypeEnvironment.read_only environment
@@ -102,7 +87,7 @@ let recheck ~configuration ~scheduler ~environment ~errors artifact_paths =
       ~environment:(Analysis.TypeEnvironment.read_only environment)
       recheck_modules
   in
-  let rechecked_functions_count = Map.length recheck_functions in
+  let rechecked_functions_count = Set.length recheck_function_names in
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"

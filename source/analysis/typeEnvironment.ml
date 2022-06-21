@@ -68,8 +68,6 @@ type t = {
 
 let global_environment { global_environment; _ } = global_environment
 
-let controls { global_environment; _ } = AnnotatedGlobalEnvironment.controls global_environment
-
 let ast_environment { global_environment; _ } =
   AnnotatedGlobalEnvironment.ast_environment global_environment
 
@@ -106,8 +104,8 @@ let create_for_testing controls module_path_code_pairs =
   |> from_global_environment
 
 
-let populate_for_definition ~environment:{ global_environment; check_results } (name, dependency) =
-  let type_check_controls, call_graph_builder =
+let populate_for_definition ~environment:{ global_environment; check_results } name =
+  let type_check_controls, call_graph_builder, dependency =
     let controls = AnnotatedGlobalEnvironment.controls global_environment in
     let type_check_controls = EnvironmentControls.type_check_controls controls in
     let call_graph_builder =
@@ -116,13 +114,21 @@ let populate_for_definition ~environment:{ global_environment; check_results } (
       else
         (module Callgraph.NullBuilder : Callgraph.Builder)
     in
-    type_check_controls, call_graph_builder
+    let dependency =
+      if EnvironmentControls.track_dependencies controls then
+        Some
+          (SharedMemoryKeys.DependencyKey.Registry.register (SharedMemoryKeys.TypeCheckDefine name))
+      else
+        None
+    in
+    type_check_controls, call_graph_builder, dependency
   in
   TypeCheck.check_define_by_name
     ~type_check_controls
     ~call_graph_builder
     ~global_environment:(AnnotatedGlobalEnvironment.read_only global_environment)
-    (name, dependency)
+    ~dependency
+    name
   >>| CheckResults.add check_results name
   |> ignore
 
@@ -192,17 +198,6 @@ let populate_for_modules ~scheduler environment qualifiers =
       ~inputs:qualifiers
       ()
   in
-  let all_defines =
-    if controls environment |> EnvironmentControls.track_dependencies then
-      List.map all_defines ~f:(fun define ->
-          ( define,
-            Some
-              (SharedMemoryKeys.DependencyKey.Registry.register
-                 (SharedMemoryKeys.TypeCheckDefine define)) ))
-    else
-      List.map all_defines ~f:(fun define -> define, None)
-  in
-
   populate_for_definitions ~scheduler environment all_defines;
   Statistics.event
     ~section:`Memory

@@ -7032,7 +7032,8 @@ let check_define_by_name
     ~type_check_controls
     ~call_graph_builder
     ~global_environment
-    (name, dependency)
+    ~dependency
+    name
   =
   let global_resolution = GlobalResolution.create global_environment ?dependency in
   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)

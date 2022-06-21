@@ -52,11 +52,7 @@ val invalidate : t -> Reference.t list -> unit
 
 val read_only : t -> ReadOnly.t
 
-val populate_for_definitions
-  :  scheduler:Scheduler.t ->
-  t ->
-  (Ast.Reference.t * SharedMemoryKeys.DependencyKey.registered option) list ->
-  unit
+val populate_for_definitions : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
 
 val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
 

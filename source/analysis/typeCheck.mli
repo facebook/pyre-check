@@ -103,5 +103,6 @@ val check_define_by_name
   :  type_check_controls:EnvironmentControls.TypeCheckControls.t ->
   call_graph_builder:(module Callgraph.Builder) ->
   global_environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
-  Ast.Reference.t * SharedMemoryKeys.DependencyKey.registered option ->
+  dependency:SharedMemoryKeys.DependencyKey.registered option ->
+  Ast.Reference.t ->
   CheckResult.t option
