@@ -6903,17 +6903,16 @@ let compute_local_annotations ~global_environment name =
 
 
 let check_define
-    ~configuration:
+    ~type_check_controls:
       {
-        Configuration.Analysis.debug;
-        constraint_solving_style;
-        store_type_errors;
-        store_type_check_resolution;
-        _;
+        EnvironmentControls.TypeCheckControls.constraint_solving_style;
+        include_type_errors;
+        include_local_annotations;
+        debug;
       }
+    ~call_graph_builder:(module Builder : Callgraph.Builder)
     ~resolution
     ~qualifier
-    ~call_graph_builder:(module Builder : Callgraph.Builder)
     ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
   let errors, local_annotations, callees =
@@ -6936,7 +6935,7 @@ let check_define
       in
       let type_errors, local_annotations, callees = exit_state ~resolution (module Context) in
       let errors =
-        if store_type_errors then
+        if include_type_errors then
           let uninitialized_local_errors =
             if Define.is_toplevel define then
               []
@@ -6975,7 +6974,7 @@ let check_define
      in
      Option.iter callees ~f:(fun callees -> Callgraph.set ~caller ~callees));
   let local_annotations =
-    if store_type_check_resolution then
+    if include_local_annotations then
       Some
         (Option.value local_annotations ~default:(LocalAnnotationMap.empty ())
         |> LocalAnnotationMap.read_only)
@@ -6986,22 +6985,15 @@ let check_define
 
 
 let check_function_definition
-    ~configuration
+    ~type_check_controls
+    ~call_graph_builder
     ~resolution
     ~name
-    ?call_graph_builder
     { FunctionDefinition.body; siblings; qualifier }
   =
   let timer = Timer.start () in
 
-  let check_define =
-    let call_graph_builder =
-      match call_graph_builder with
-      | Some call_graph_builder -> call_graph_builder
-      | None -> (module Callgraph.DefaultBuilder : Callgraph.Builder)
-    in
-    check_define ~configuration ~resolution ~call_graph_builder ~qualifier
-  in
+  let check_define = check_define ~type_check_controls ~resolution ~qualifier ~call_graph_builder in
   let sibling_bodies = List.map siblings ~f:(fun { FunctionDefinition.Sibling.body; _ } -> body) in
   let sibling_results = List.map sibling_bodies ~f:(fun define_node -> check_define define_node) in
   let result =
@@ -7036,9 +7028,14 @@ let check_function_definition
   result
 
 
-let check_define_by_name ~configuration ~global_environment ?call_graph_builder (name, dependency) =
+let check_define_by_name
+    ~type_check_controls
+    ~call_graph_builder
+    ~global_environment
+    (name, dependency)
+  =
   let global_resolution = GlobalResolution.create global_environment ?dependency in
   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
   let resolution = resolution global_resolution (module DummyContext) in
   GlobalResolution.function_definition global_resolution name
-  >>| check_function_definition ~configuration ~resolution ~name ?call_graph_builder
+  >>| check_function_definition ~type_check_controls ~call_graph_builder ~resolution ~name

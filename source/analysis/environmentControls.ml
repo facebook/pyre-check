@@ -39,3 +39,34 @@ let python_version_info
     }
   =
   python_major_version, python_minor_version, python_micro_version
+
+
+module TypeCheckControls = struct
+  type t = {
+    constraint_solving_style: Configuration.Analysis.constraint_solving_style;
+    include_type_errors: bool;
+    include_local_annotations: bool;
+    debug: bool;
+  }
+end
+
+let type_check_controls
+    {
+      configuration =
+        {
+          Configuration.Analysis.debug;
+          store_type_errors;
+          store_type_check_resolution;
+          constraint_solving_style;
+          _;
+        };
+      _;
+    }
+  =
+  TypeCheckControls.
+    {
+      debug;
+      constraint_solving_style;
+      include_type_errors = store_type_errors;
+      include_local_annotations = store_type_check_resolution;
+    }

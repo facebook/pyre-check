@@ -107,20 +107,19 @@ let create_for_testing controls module_path_code_pairs =
 
 
 let populate_for_definition ~environment:{ global_environment; check_results } (name, dependency) =
-  let call_graph_builder =
-    if
-      AnnotatedGlobalEnvironment.controls global_environment
-      |> EnvironmentControls.populate_call_graph
-    then
-      (module Callgraph.DefaultBuilder : Callgraph.Builder)
-    else
-      (module Callgraph.NullBuilder : Callgraph.Builder)
-  in
-  let configuration =
-    AnnotatedGlobalEnvironment.controls global_environment |> EnvironmentControls.configuration
+  let type_check_controls, call_graph_builder =
+    let controls = AnnotatedGlobalEnvironment.controls global_environment in
+    let type_check_controls = EnvironmentControls.type_check_controls controls in
+    let call_graph_builder =
+      if EnvironmentControls.populate_call_graph controls then
+        (module Callgraph.DefaultBuilder : Callgraph.Builder)
+      else
+        (module Callgraph.NullBuilder : Callgraph.Builder)
+    in
+    type_check_controls, call_graph_builder
   in
   TypeCheck.check_define_by_name
-    ~configuration
+    ~type_check_controls
     ~call_graph_builder
     ~global_environment:(AnnotatedGlobalEnvironment.read_only global_environment)
     (name, dependency)

@@ -100,8 +100,8 @@ module CheckResult : sig
 end
 
 val check_define_by_name
-  :  configuration:Configuration.Analysis.t ->
+  :  type_check_controls:EnvironmentControls.TypeCheckControls.t ->
+  call_graph_builder:(module Callgraph.Builder) ->
   global_environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
-  ?call_graph_builder:(module Callgraph.Builder) ->
   Ast.Reference.t * SharedMemoryKeys.DependencyKey.registered option ->
   CheckResult.t option

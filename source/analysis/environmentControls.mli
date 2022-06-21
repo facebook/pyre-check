@@ -20,3 +20,14 @@ val debug : t -> bool
 val python_version_info : t -> int * int * int
 
 val populate_call_graph : t -> bool
+
+module TypeCheckControls : sig
+  type t = {
+    constraint_solving_style: Configuration.Analysis.constraint_solving_style;
+    include_type_errors: bool;
+    include_local_annotations: bool;
+    debug: bool;
+  }
+end
+
+val type_check_controls : t -> TypeCheckControls.t
