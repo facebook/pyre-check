@@ -126,20 +126,8 @@ let populate_for_definition ~configuration ~environment ?call_graph_builder (nam
       let { raw_errors = raw_errors_table; local_annotations = local_annotations_table; _ } =
         environment
       in
-      (if configuration.store_type_check_resolution then
-         (* Write fixpoint type resolutions to shared memory *)
-         let local_annotations =
-           match local_annotations with
-           | Some local_annotations -> local_annotations
-           | None -> LocalAnnotationMap.empty ()
-         in
-         LocalAnnotations.add
-           local_annotations_table
-           name
-           (LocalAnnotationMap.read_only local_annotations));
-
-      if configuration.store_type_errors then
-        RawErrors.add raw_errors_table name errors;
+      Option.iter local_annotations ~f:(LocalAnnotations.add local_annotations_table name);
+      Option.iter errors ~f:(RawErrors.add raw_errors_table name);
       ()
 
 

@@ -90,8 +90,8 @@ val compute_local_annotations
 
 module CheckResult : sig
   type t = {
-    errors: Error.t list;
-    local_annotations: LocalAnnotationMap.t option;
+    errors: Error.t list option;
+    local_annotations: LocalAnnotationMap.ReadOnly.t option;
   }
 end
 

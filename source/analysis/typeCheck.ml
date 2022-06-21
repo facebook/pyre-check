@@ -6078,9 +6078,11 @@ end
 
 module CheckResult = struct
   type t = {
-    errors: Error.t list;
-    local_annotations: LocalAnnotationMap.t option;
+    errors: Error.t list option;
+    local_annotations: LocalAnnotationMap.ReadOnly.t option;
   }
+
+  let errors { errors; _ } = errors
 end
 
 module DummyContext = struct
@@ -6899,7 +6901,14 @@ let compute_local_annotations ~global_environment name =
 
 
 let check_define
-    ~configuration:{ Configuration.Analysis.debug; constraint_solving_style; _ }
+    ~configuration:
+      {
+        Configuration.Analysis.debug;
+        constraint_solving_style;
+        store_type_errors;
+        store_type_check_resolution;
+        _;
+      }
     ~resolution
     ~qualifier
     ~call_graph_builder:(module Builder : Callgraph.Builder)
@@ -6924,14 +6933,18 @@ let check_define
       end
       in
       let type_errors, local_annotations, callees = exit_state ~resolution (module Context) in
-
-      let uninitialized_local_errors =
-        if Define.is_toplevel define then
-          []
+      let errors =
+        if store_type_errors then
+          let uninitialized_local_errors =
+            if Define.is_toplevel define then
+              []
+            else
+              UninitializedLocalCheck.check_define ~qualifier define_node
+          in
+          Some (List.append uninitialized_local_errors type_errors)
         else
-          UninitializedLocalCheck.check_define ~qualifier define_node
+          None
       in
-      let errors = List.append uninitialized_local_errors type_errors in
       errors, local_annotations, callees
     with
     | ClassHierarchy.Untracked annotation ->
@@ -6949,7 +6962,7 @@ let check_define
             ~kind:(Error.AnalysisFailure (UnexpectedUndefinedType annotation))
             ~define:define_node
         in
-        [undefined_error], None, None
+        Some [undefined_error], None, None
   in
   (if not (Define.is_overloaded_function define) then
      let caller =
@@ -6959,6 +6972,14 @@ let check_define
          Callgraph.FunctionCaller name
      in
      Option.iter callees ~f:(fun callees -> Callgraph.set ~caller ~callees));
+  let local_annotations =
+    if store_type_check_resolution then
+      Some
+        (Option.value local_annotations ~default:(LocalAnnotationMap.empty ())
+        |> LocalAnnotationMap.read_only)
+    else
+      None
+  in
   { CheckResult.errors; local_annotations }
 
 
@@ -6983,8 +7004,8 @@ let check_function_definition
   let sibling_results = List.map sibling_bodies ~f:(fun define_node -> check_define define_node) in
   let result =
     let aggregate_errors results =
-      List.fold results ~init:[] ~f:(fun errors_sofar { CheckResult.errors; _ } ->
-          List.append errors errors_sofar)
+      List.map results ~f:CheckResult.errors
+      |> List.fold ~init:(Some []) ~f:(Option.map2 ~f:List.append)
     in
     match body with
     | None -> { CheckResult.errors = aggregate_errors sibling_results; local_annotations = None }
