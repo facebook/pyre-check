@@ -2710,6 +2710,8 @@ module ScratchProject = struct
       ?(include_helper_builtins = true)
       ?(in_memory = true)
       ?(populate_call_graph = false)
+      ?debug
+      ?strict
       sources
     =
     let local_root, external_root, log_directory =
@@ -2739,6 +2741,8 @@ module ScratchProject = struct
         ~constraint_solving_style
         ~show_error_traces
         ~parallel:false
+        ?strict
+        ?debug
         ()
       |> EnvironmentControls.create ~populate_call_graph
     in
@@ -2847,11 +2851,9 @@ module ScratchProject = struct
 
   let build_type_environment ({ type_environment; _ } as project) =
     let sources = get_project_sources project in
-    let configuration = configuration_of project in
     List.map sources ~f:(fun { Source.module_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
     |> TypeEnvironment.populate_for_modules
          ~scheduler:(Scheduler.create_sequential ())
-         ~configuration
          type_environment;
     { BuiltTypeEnvironment.sources; type_environment = TypeEnvironment.read_only type_environment }
 
@@ -2956,6 +2958,8 @@ let assert_errors
             ~constraint_solving_style
             ~external_sources
             ~in_memory
+            ~strict
+            ~debug
             [handle, source]
         in
         let { ScratchProject.BuiltGlobalEnvironment.sources; global_environment } =
@@ -2968,7 +2972,6 @@ let assert_errors
           AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment,
           type_environment )
       in
-      let configuration = { configuration with debug; strict } in
       let source =
         List.find_exn sources ~f:(fun { Source.module_path = { ModulePath.relative; _ }; _ } ->
             String.equal handle relative)

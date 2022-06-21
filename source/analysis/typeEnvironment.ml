@@ -68,6 +68,8 @@ type t = {
 
 let global_environment { global_environment; _ } = global_environment
 
+let controls { global_environment; _ } = AnnotatedGlobalEnvironment.controls global_environment
+
 let ast_environment { global_environment; _ } =
   AnnotatedGlobalEnvironment.ast_environment global_environment
 
@@ -104,11 +106,7 @@ let create_for_testing controls module_path_code_pairs =
   |> from_global_environment
 
 
-let populate_for_definition
-    ~configuration
-    ~environment:{ global_environment; check_results }
-    (name, dependency)
-  =
+let populate_for_definition ~environment:{ global_environment; check_results } (name, dependency) =
   let call_graph_builder =
     if
       AnnotatedGlobalEnvironment.controls global_environment
@@ -117,6 +115,9 @@ let populate_for_definition
       (module Callgraph.DefaultBuilder : Callgraph.Builder)
     else
       (module Callgraph.NullBuilder : Callgraph.Builder)
+  in
+  let configuration =
+    AnnotatedGlobalEnvironment.controls global_environment |> EnvironmentControls.configuration
   in
   TypeCheck.check_define_by_name
     ~configuration
@@ -127,14 +128,14 @@ let populate_for_definition
   |> ignore
 
 
-let populate_for_definitions ~scheduler ~configuration environment defines =
+let populate_for_definitions ~scheduler environment defines =
   let timer = Timer.start () in
 
   let number_of_defines = List.length defines in
   Log.info "Checking %d functions..." number_of_defines;
   let map _ names =
     let analyze_define number_defines define_name_and_dependency =
-      populate_for_definition ~configuration ~environment define_name_and_dependency;
+      populate_for_definition ~environment define_name_and_dependency;
       number_defines + 1
     in
     List.fold names ~init:0 ~f:analyze_define
@@ -163,7 +164,7 @@ let populate_for_definitions ~scheduler ~configuration environment defines =
   Statistics.performance ~name:"check_TypeCheck" ~phase_name:"Type check" ~timer ()
 
 
-let populate_for_modules ~scheduler ~configuration environment qualifiers =
+let populate_for_modules ~scheduler environment qualifiers =
   Profiling.track_shared_memory_usage ~name:"Before legacy type check" ();
 
   let all_defines =
@@ -193,17 +194,17 @@ let populate_for_modules ~scheduler ~configuration environment qualifiers =
       ()
   in
   let all_defines =
-    match configuration with
-    | { Configuration.Analysis.incremental_style = FineGrained; _ } ->
-        List.map all_defines ~f:(fun define ->
-            ( define,
-              Some
-                (SharedMemoryKeys.DependencyKey.Registry.register
-                   (SharedMemoryKeys.TypeCheckDefine define)) ))
-    | _ -> List.map all_defines ~f:(fun define -> define, None)
+    if controls environment |> EnvironmentControls.track_dependencies then
+      List.map all_defines ~f:(fun define ->
+          ( define,
+            Some
+              (SharedMemoryKeys.DependencyKey.Registry.register
+                 (SharedMemoryKeys.TypeCheckDefine define)) ))
+    else
+      List.map all_defines ~f:(fun define -> define, None)
   in
 
-  populate_for_definitions ~scheduler ~configuration environment all_defines;
+  populate_for_definitions ~scheduler environment all_defines;
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size post-typecheck"

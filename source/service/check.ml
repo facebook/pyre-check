@@ -87,7 +87,7 @@ let check
     type_environment, project_qualifiers
   in
   let errors =
-    Analysis.TypeEnvironment.populate_for_modules ~scheduler ~configuration environment qualifiers;
+    Analysis.TypeEnvironment.populate_for_modules ~scheduler environment qualifiers;
     Analysis.Postprocessing.run
       ~scheduler
       ~configuration
