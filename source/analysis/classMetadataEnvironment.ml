@@ -114,31 +114,6 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
 
   let trigger_to_dependency name = SharedMemoryKeys.RegisterClassMetadata name
 
-  let serialize_value = function
-    | Some
-        {
-          successors;
-          is_test;
-          is_final;
-          extends_placeholder_stub_class;
-          is_protocol;
-          is_abstract;
-          is_typed_dictionary;
-        } ->
-        `Assoc
-          [
-            "successors", `String (List.to_string ~f:Type.Primitive.show successors);
-            "is_test", `Bool is_test;
-            "is_final", `Bool is_final;
-            "extends_placeholder_stub_class", `Bool extends_placeholder_stub_class;
-            "is_abstract", `Bool is_abstract;
-            "is_protocol", `Bool is_protocol;
-            "is_typed_dictionary", `Bool is_typed_dictionary;
-          ]
-        |> Yojson.to_string
-    | None -> "None"
-
-
   let show_key = Fn.id
 
   let equal_value = Option.equal [%compare.equal: class_metadata]

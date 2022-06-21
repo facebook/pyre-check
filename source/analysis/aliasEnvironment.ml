@@ -350,11 +350,6 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
 
   let trigger_to_dependency name = SharedMemoryKeys.AliasRegister name
 
-  let serialize_value = function
-    | Some alias -> Type.show_alias alias
-    | None -> "None"
-
-
   let show_key = Fn.id
 
   let equal_value = Option.equal Type.equal_alias

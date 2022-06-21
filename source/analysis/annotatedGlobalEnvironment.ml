@@ -78,11 +78,6 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
 
   let trigger_to_dependency name = SharedMemoryKeys.AnnotateGlobalLocation name
 
-  let serialize_value = function
-    | Some location -> Location.WithModule.sexp_of_t location |> Sexp.to_string
-    | None -> "None"
-
-
   let equal_value = Option.equal [%compare.equal: Location.WithModule.t]
 end)
 

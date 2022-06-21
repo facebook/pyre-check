@@ -4845,11 +4845,6 @@ module GlobalAnnotationCache = struct
 
     let trigger_to_dependency name = SharedMemoryKeys.AnnotateGlobal name
 
-    let serialize_value = function
-      | Some annotation -> Global.sexp_of_t annotation |> Sexp.to_string
-      | None -> "None"
-
-
     let equal_value = Option.equal [%compare.equal: Global.t]
   end)
 

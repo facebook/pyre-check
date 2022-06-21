@@ -62,8 +62,6 @@ module Make (In : In) = struct
 
     let lazy_incremental = In.lazy_incremental
 
-    let serialize_value _ = "Not used"
-
     let show_key _ = "Not used"
 
     let equal_value _ _ = false

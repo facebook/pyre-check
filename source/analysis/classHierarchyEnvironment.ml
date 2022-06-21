@@ -155,25 +155,6 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
   let trigger_to_dependency name = SharedMemoryKeys.ClassConnect name
 
-  let decode_target { ClassHierarchy.Target.target; parameters } =
-    Format.asprintf
-      "%s[%a]"
-      (IndexTracker.annotation target)
-      (Type.pp_parameters ~pp_type:Type.pp_concise)
-      parameters
-
-
-  let serialize_value = function
-    | Some { parents; has_placeholder_stub_parent } ->
-        `Assoc
-          [
-            "parents", `String (List.to_string parents ~f:decode_target);
-            "has_placeholder_stub_parent", `Bool has_placeholder_stub_parent;
-          ]
-        |> Yojson.to_string
-    | None -> "None"
-
-
   let show_key = IndexTracker.annotation
 
   let equal_value = Option.equal [%compare.equal: edges]
