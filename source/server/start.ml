@@ -253,10 +253,7 @@ let initialize_server_state
     Log.info "Initializing server state from scratch...";
     let { Service.Check.environment; errors } =
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-          Service.Check.check
-            ~scheduler
-            ~configuration
-            ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder))
+          Service.Check.check ~scheduler ~configuration ~populate_call_graph:true)
     in
     let error_table =
       let table = Ast.Reference.Table.create () in

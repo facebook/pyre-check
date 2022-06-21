@@ -132,10 +132,7 @@ let do_check configuration =
   Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
       with_performance_tracking ~debug:configuration.debug (fun () ->
           let { Service.Check.errors; environment } =
-            Service.Check.check
-              ~scheduler
-              ~configuration
-              ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
+            Service.Check.check ~scheduler ~configuration ~populate_call_graph:true
           in
           ( errors,
             Analysis.TypeEnvironment.ast_environment environment

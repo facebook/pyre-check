@@ -2709,6 +2709,7 @@ module ScratchProject = struct
       ?(include_typeshed_stubs = true)
       ?(include_helper_builtins = true)
       ?(in_memory = true)
+      ?(populate_call_graph = false)
       sources
     =
     let local_root, external_root, log_directory =
@@ -2739,7 +2740,7 @@ module ScratchProject = struct
         ~show_error_traces
         ~parallel:false
         ()
-      |> EnvironmentControls.create
+      |> EnvironmentControls.create ~populate_call_graph
     in
     let external_sources =
       if include_typeshed_stubs then
@@ -2844,20 +2845,19 @@ module ScratchProject = struct
     { BuiltGlobalEnvironment.sources; global_environment }
 
 
-  let build_type_environment ?call_graph_builder ({ type_environment; _ } as project) =
+  let build_type_environment ({ type_environment; _ } as project) =
     let sources = get_project_sources project in
     let configuration = configuration_of project in
     List.map sources ~f:(fun { Source.module_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
     |> TypeEnvironment.populate_for_modules
          ~scheduler:(Scheduler.create_sequential ())
          ~configuration
-         ?call_graph_builder
          type_environment;
     { BuiltTypeEnvironment.sources; type_environment = TypeEnvironment.read_only type_environment }
 
 
-  let build_type_environment_and_postprocess ?call_graph_builder project =
-    let built_type_environment = build_type_environment ?call_graph_builder project in
+  let build_type_environment_and_postprocess project =
+    let built_type_environment = build_type_environment project in
     let errors =
       List.map
         built_type_environment.sources

@@ -55,7 +55,6 @@ val read_only : t -> ReadOnly.t
 val populate_for_definitions
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  ?call_graph_builder:(module Callgraph.Builder) ->
   t ->
   (Ast.Reference.t * SharedMemoryKeys.DependencyKey.registered option) list ->
   unit
@@ -63,7 +62,6 @@ val populate_for_definitions
 val populate_for_modules
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  ?call_graph_builder:(module Callgraph.Builder) ->
   t ->
   Ast.Reference.t list ->
   unit

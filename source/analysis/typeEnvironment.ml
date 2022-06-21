@@ -107,30 +107,34 @@ let create_for_testing controls module_path_code_pairs =
 let populate_for_definition
     ~configuration
     ~environment:{ global_environment; check_results }
-    ?call_graph_builder
     (name, dependency)
   =
+  let call_graph_builder =
+    if
+      AnnotatedGlobalEnvironment.controls global_environment
+      |> EnvironmentControls.populate_call_graph
+    then
+      (module Callgraph.DefaultBuilder : Callgraph.Builder)
+    else
+      (module Callgraph.NullBuilder : Callgraph.Builder)
+  in
   TypeCheck.check_define_by_name
     ~configuration
+    ~call_graph_builder
     ~global_environment:(AnnotatedGlobalEnvironment.read_only global_environment)
-    ?call_graph_builder
     (name, dependency)
   >>| CheckResults.add check_results name
   |> ignore
 
 
-let populate_for_definitions ~scheduler ~configuration ?call_graph_builder environment defines =
+let populate_for_definitions ~scheduler ~configuration environment defines =
   let timer = Timer.start () in
 
   let number_of_defines = List.length defines in
   Log.info "Checking %d functions..." number_of_defines;
   let map _ names =
     let analyze_define number_defines define_name_and_dependency =
-      populate_for_definition
-        ~configuration
-        ~environment
-        ?call_graph_builder
-        define_name_and_dependency;
+      populate_for_definition ~configuration ~environment define_name_and_dependency;
       number_defines + 1
     in
     List.fold names ~init:0 ~f:analyze_define
@@ -159,7 +163,7 @@ let populate_for_definitions ~scheduler ~configuration ?call_graph_builder envir
   Statistics.performance ~name:"check_TypeCheck" ~phase_name:"Type check" ~timer ()
 
 
-let populate_for_modules ~scheduler ~configuration ?call_graph_builder environment qualifiers =
+let populate_for_modules ~scheduler ~configuration environment qualifiers =
   Profiling.track_shared_memory_usage ~name:"Before legacy type check" ();
 
   let all_defines =
@@ -199,7 +203,7 @@ let populate_for_modules ~scheduler ~configuration ?call_graph_builder environme
     | _ -> List.map all_defines ~f:(fun define -> define, None)
   in
 
-  populate_for_definitions ~scheduler ~configuration ?call_graph_builder environment all_defines;
+  populate_for_definitions ~scheduler ~configuration environment all_defines;
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size post-typecheck"

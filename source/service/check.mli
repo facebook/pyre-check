@@ -15,5 +15,5 @@ type result = {
 val check
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  call_graph_builder:(module Callgraph.Builder) ->
+  populate_call_graph:bool ->
   result

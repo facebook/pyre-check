@@ -455,9 +455,7 @@ let initialize
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
     set_up_decorator_inlining ~handle models_source;
     let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
-      Test.ScratchProject.build_type_environment_and_postprocess
-        ~call_graph_builder:(module Callgraph.NullBuilder)
-        project
+      Test.ScratchProject.build_type_environment_and_postprocess project
     in
     Test.ScratchProject.configuration_of project, type_environment, errors
   in

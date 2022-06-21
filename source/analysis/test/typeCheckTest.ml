@@ -1497,7 +1497,9 @@ let property_setter_caller name = Callgraph.PropertySetterCaller !&name
 
 let test_calls context =
   let assert_calls source calls =
-    let project = ScratchProject.setup ~context ["qualifier.py", source] in
+    let project =
+      ScratchProject.setup ~context ~populate_call_graph:true ["qualifier.py", source]
+    in
     let _ = ScratchProject.build_type_environment project in
 
     (* Check calls. *)

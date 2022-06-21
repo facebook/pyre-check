@@ -42,10 +42,7 @@ let assert_errors
   let scheduler = Test.mock_scheduler () in
   List.iter ~f:File.write files;
   let { Service.Check.environment; errors; _ } =
-    Service.Check.check
-      ~scheduler
-      ~configuration
-      ~call_graph_builder:(module Analysis.Callgraph.DefaultBuilder)
+    Service.Check.check ~scheduler ~configuration ~populate_call_graph:true
   in
   let errors =
     errors

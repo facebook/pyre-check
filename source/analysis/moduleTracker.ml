@@ -614,6 +614,7 @@ end
 module Overlay = struct
   type t = {
     parent: ReadOnly.t;
+    controls: EnvironmentControls.t;
     overlaid_code: string ModulePath.Table.t;
     overlaid_qualifiers: Reference.Hash_set.t;
   }
@@ -625,12 +626,13 @@ module Overlay = struct
   let create parent =
     {
       parent;
+      controls = ReadOnly.controls parent |> EnvironmentControls.create_for_overlay;
       overlaid_code = ModulePath.Table.create ();
       overlaid_qualifiers = Reference.Hash_set.create ();
     }
 
 
-  let update_overlaid_code { parent; overlaid_code; overlaid_qualifiers } ~code_updates =
+  let update_overlaid_code { parent; overlaid_code; overlaid_qualifiers; _ } ~code_updates =
     let add_or_update_code ~code module_path =
       let qualifier = ModulePath.qualifier module_path in
       let () = ModulePath.Table.set overlaid_code ~key:module_path ~data:code in

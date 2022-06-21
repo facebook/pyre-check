@@ -66,10 +66,7 @@ let type_check ~scheduler ~configuration ~cache =
            schedule a type check for external files. *)
         { configuration with Configuration.Analysis.analyze_external_sources = true }
       in
-      Service.Check.check
-        ~scheduler
-        ~configuration
-        ~call_graph_builder:(module Analysis.Callgraph.NullBuilder)
+      Service.Check.check ~scheduler ~configuration ~populate_call_graph:false
       |> fun { environment; _ } -> environment)
 
 

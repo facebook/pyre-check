@@ -18,7 +18,7 @@ let check
     ~configuration:
       ({ Configuration.Analysis.project_root; source_paths; search_paths; debug; _ } as
       configuration)
-    ~call_graph_builder
+    ~populate_call_graph
   =
   (* Sanity check environment. *)
   let check_directory_exists directory =
@@ -46,7 +46,9 @@ let check
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
-    let type_environment = EnvironmentControls.create configuration |> TypeEnvironment.create in
+    let type_environment =
+      EnvironmentControls.create ~populate_call_graph configuration |> TypeEnvironment.create
+    in
     let global_environment =
       TypeEnvironment.global_environment type_environment |> AnnotatedGlobalEnvironment.read_only
     in
@@ -85,12 +87,7 @@ let check
     type_environment, project_qualifiers
   in
   let errors =
-    Analysis.TypeEnvironment.populate_for_modules
-      ~scheduler
-      ~configuration
-      ~call_graph_builder
-      environment
-      qualifiers;
+    Analysis.TypeEnvironment.populate_for_modules ~scheduler ~configuration environment qualifiers;
     Analysis.Postprocessing.run
       ~scheduler
       ~configuration
