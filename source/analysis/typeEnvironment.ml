@@ -72,11 +72,8 @@ module LocalAnnotations =
 
 type t = {
   global_environment: AnnotatedGlobalEnvironment.t;
-  set_errors: Reference.t -> Error.t list -> unit;
-  set_local_annotations: Reference.t -> LocalAnnotationMap.ReadOnly.t -> unit;
-  invalidate: Reference.t list -> unit;
-  get_errors: Reference.t -> Error.t list;
-  get_local_annotations: Reference.t -> LocalAnnotationMap.ReadOnly.t option;
+  local_annotations: LocalAnnotations.t;
+  raw_errors: RawErrors.t;
 }
 
 let global_environment { global_environment; _ } = global_environment
@@ -89,35 +86,25 @@ let module_tracker type_environment =
   ast_environment type_environment |> AstEnvironment.module_tracker
 
 
-let set_errors { set_errors; _ } = set_errors
+let get_errors { raw_errors; _ } reference =
+  RawErrors.get raw_errors reference |> Option.value ~default:[]
 
-let get_errors { get_errors; _ } = get_errors
 
-let set_local_annotations { set_local_annotations; _ } = set_local_annotations
+let set_errors { raw_errors; _ } = RawErrors.add raw_errors
 
-let get_local_annotations { get_local_annotations; _ } = get_local_annotations
+let get_local_annotations { local_annotations; _ } = LocalAnnotations.get local_annotations
 
-let invalidate { invalidate; _ } = invalidate
+let set_local_annotations { local_annotations; _ } = LocalAnnotations.add local_annotations
+
+let invalidate { raw_errors; local_annotations; _ } qualifiers =
+  RawErrors.KeySet.of_list qualifiers |> RawErrors.remove_batch raw_errors;
+  LocalAnnotations.KeySet.of_list qualifiers |> LocalAnnotations.remove_batch local_annotations
+
 
 let from_global_environment global_environment =
   let raw_errors = RawErrors.create () in
   let local_annotations = LocalAnnotations.create () in
-  let get_errors reference = RawErrors.get raw_errors reference |> Option.value ~default:[] in
-  let set_errors = RawErrors.add raw_errors in
-  let get_local_annotations = LocalAnnotations.get local_annotations in
-  let set_local_annotations = LocalAnnotations.add local_annotations in
-  let invalidate qualifiers =
-    RawErrors.KeySet.of_list qualifiers |> RawErrors.remove_batch raw_errors;
-    LocalAnnotations.KeySet.of_list qualifiers |> LocalAnnotations.remove_batch local_annotations
-  in
-  {
-    global_environment;
-    set_errors;
-    set_local_annotations;
-    invalidate;
-    get_errors;
-    get_local_annotations;
-  }
+  { global_environment; raw_errors; local_annotations }
 
 
 let create configuration =
@@ -242,10 +229,10 @@ let populate_for_modules ~scheduler ~configuration ?call_graph_builder environme
   Profiling.track_shared_memory_usage ~name:"After legacy type check" ()
 
 
-let read_only { global_environment; get_errors; get_local_annotations; _ } =
+let read_only ({ global_environment; _ } as environment) =
   ReadOnly.create
-    ~get_errors
-    ~get_local_annotations
+    ~get_errors:(get_errors environment)
+    ~get_local_annotations:(get_local_annotations environment)
     (AnnotatedGlobalEnvironment.read_only global_environment)
 
 
