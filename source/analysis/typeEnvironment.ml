@@ -90,11 +90,7 @@ let get_errors { raw_errors; _ } reference =
   RawErrors.get raw_errors reference |> Option.value ~default:[]
 
 
-let set_errors { raw_errors; _ } = RawErrors.add raw_errors
-
 let get_local_annotations { local_annotations; _ } = LocalAnnotations.get local_annotations
-
-let set_local_annotations { local_annotations; _ } = LocalAnnotations.add local_annotations
 
 let invalidate { raw_errors; local_annotations; _ } qualifiers =
   RawErrors.KeySet.of_list qualifiers |> RawErrors.remove_batch raw_errors;
@@ -127,6 +123,9 @@ let populate_for_definition ~configuration ~environment ?call_graph_builder (nam
   with
   | None -> ()
   | Some { TypeCheck.CheckResult.errors; local_annotations } ->
+      let { raw_errors = raw_errors_table; local_annotations = local_annotations_table; _ } =
+        environment
+      in
       (if configuration.store_type_check_resolution then
          (* Write fixpoint type resolutions to shared memory *)
          let local_annotations =
@@ -134,9 +133,13 @@ let populate_for_definition ~configuration ~environment ?call_graph_builder (nam
            | Some local_annotations -> local_annotations
            | None -> LocalAnnotationMap.empty ()
          in
-         set_local_annotations environment name (LocalAnnotationMap.read_only local_annotations));
+         LocalAnnotations.add
+           local_annotations_table
+           name
+           (LocalAnnotationMap.read_only local_annotations));
+
       if configuration.store_type_errors then
-        set_errors environment name errors;
+        RawErrors.add raw_errors_table name errors;
       ()
 
 

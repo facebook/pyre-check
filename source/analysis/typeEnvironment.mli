@@ -48,10 +48,6 @@ val get_errors : t -> Reference.t -> Error.t list
 
 val get_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
 
-val set_errors : t -> Reference.t -> Error.t list -> unit
-
-val set_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t -> unit
-
 val invalidate : t -> Reference.t list -> unit
 
 val read_only : t -> ReadOnly.t
