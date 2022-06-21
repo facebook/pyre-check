@@ -6905,8 +6905,8 @@ let check_define
     ~call_graph_builder:(module Builder : Callgraph.Builder)
     ({ Node.location; value = { Define.signature = { name; _ }; _ } as define } as define_node)
   =
-  try
-    let type_errors, local_annotations, callees =
+  let errors, local_annotations, callees =
+    try
       let module Context = struct
         let qualifier = qualifier
 
@@ -6923,40 +6923,43 @@ let check_define
         module Builder = Builder
       end
       in
-      exit_state ~resolution (module Context)
-    in
-    let uninitialized_local_errors =
-      if Define.is_toplevel define then
-        []
-      else
-        UninitializedLocalCheck.check_define ~qualifier define_node
-    in
-    (if not (Define.is_overloaded_function define) then
-       let caller =
-         if Define.is_property_setter define then
-           Callgraph.PropertySetterCaller name
-         else
-           Callgraph.FunctionCaller name
-       in
-       Option.iter callees ~f:(fun callees -> Callgraph.set ~caller ~callees));
-    { CheckResult.errors = List.append uninitialized_local_errors type_errors; local_annotations }
-  with
-  | ClassHierarchy.Untracked annotation ->
-      Statistics.event
-        ~name:"undefined type"
-        ~integers:[]
-        ~normals:
-          ["module", Reference.show qualifier; "define", Reference.show name; "type", annotation]
-        ();
-      if Define.dump define then
-        Log.dump "Analysis crashed because of untracked type `%s`." (Log.Color.red annotation);
-      let undefined_error =
-        Error.create
-          ~location:(Location.with_module ~module_reference:qualifier location)
-          ~kind:(Error.AnalysisFailure (UnexpectedUndefinedType annotation))
-          ~define:define_node
+      let type_errors, local_annotations, callees = exit_state ~resolution (module Context) in
+
+      let uninitialized_local_errors =
+        if Define.is_toplevel define then
+          []
+        else
+          UninitializedLocalCheck.check_define ~qualifier define_node
       in
-      { errors = [undefined_error]; local_annotations = None }
+      let errors = List.append uninitialized_local_errors type_errors in
+      errors, local_annotations, callees
+    with
+    | ClassHierarchy.Untracked annotation ->
+        Statistics.event
+          ~name:"undefined type"
+          ~integers:[]
+          ~normals:
+            ["module", Reference.show qualifier; "define", Reference.show name; "type", annotation]
+          ();
+        if Define.dump define then
+          Log.dump "Analysis crashed because of untracked type `%s`." (Log.Color.red annotation);
+        let undefined_error =
+          Error.create
+            ~location:(Location.with_module ~module_reference:qualifier location)
+            ~kind:(Error.AnalysisFailure (UnexpectedUndefinedType annotation))
+            ~define:define_node
+        in
+        [undefined_error], None, None
+  in
+  (if not (Define.is_overloaded_function define) then
+     let caller =
+       if Define.is_property_setter define then
+         Callgraph.PropertySetterCaller name
+       else
+         Callgraph.FunctionCaller name
+     in
+     Option.iter callees ~f:(fun callees -> Callgraph.set ~caller ~callees));
+  { CheckResult.errors; local_annotations }
 
 
 let check_function_definition
