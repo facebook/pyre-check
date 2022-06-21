@@ -93,6 +93,10 @@ module CheckResult : sig
     errors: Error.t list option;
     local_annotations: LocalAnnotationMap.ReadOnly.t option;
   }
+
+  val errors : t -> Error.t list option
+
+  val local_annotations : t -> LocalAnnotationMap.ReadOnly.t option
 end
 
 val check_define_by_name

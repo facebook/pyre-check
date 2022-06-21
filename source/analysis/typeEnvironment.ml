@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+open Pyre
 open Ast
 open Core
 module Error = AnalysisError
@@ -49,31 +50,20 @@ module ReadOnly = struct
         TypeCheck.compute_local_annotations ~global_environment name
 end
 
-module AnalysisErrorValue = struct
-  type t = Error.t list
+module CheckResultValue = struct
+  type t = TypeCheck.CheckResult.t
 
   let prefix = Prefix.make ()
 
-  let description = "Raw analysis errors"
+  let description = "CheckResult"
 end
 
-module LocalAnnotationsValue = struct
-  type t = LocalAnnotationMap.ReadOnly.t
-
-  let prefix = Prefix.make ()
-
-  let description = "Node type resolution"
-end
-
-module RawErrors =
-  Memory.FirstClass.NoCache.Make (SharedMemoryKeys.ReferenceKey) (AnalysisErrorValue)
-module LocalAnnotations =
-  Memory.FirstClass.WithCache.Make (SharedMemoryKeys.ReferenceKey) (LocalAnnotationsValue)
+module CheckResults =
+  Memory.FirstClass.NoCache.Make (SharedMemoryKeys.ReferenceKey) (CheckResultValue)
 
 type t = {
   global_environment: AnnotatedGlobalEnvironment.t;
-  local_annotations: LocalAnnotations.t;
-  raw_errors: RawErrors.t;
+  check_results: CheckResults.t;
 }
 
 let global_environment { global_environment; _ } = global_environment
@@ -86,21 +76,25 @@ let module_tracker type_environment =
   ast_environment type_environment |> AstEnvironment.module_tracker
 
 
-let get_errors { raw_errors; _ } reference =
-  RawErrors.get raw_errors reference |> Option.value ~default:[]
+let get_check_result { check_results; _ } reference = CheckResults.get check_results reference
+
+let get_errors environment reference =
+  get_check_result environment reference
+  >>= TypeCheck.CheckResult.errors
+  |> Option.value ~default:[]
 
 
-let get_local_annotations { local_annotations; _ } = LocalAnnotations.get local_annotations
+let get_local_annotations environment reference =
+  get_check_result environment reference >>= TypeCheck.CheckResult.local_annotations
 
-let invalidate { raw_errors; local_annotations; _ } qualifiers =
-  RawErrors.KeySet.of_list qualifiers |> RawErrors.remove_batch raw_errors;
-  LocalAnnotations.KeySet.of_list qualifiers |> LocalAnnotations.remove_batch local_annotations
+
+let invalidate { check_results; _ } qualifiers =
+  CheckResults.KeySet.of_list qualifiers |> CheckResults.remove_batch check_results
 
 
 let from_global_environment global_environment =
-  let raw_errors = RawErrors.create () in
-  let local_annotations = LocalAnnotations.create () in
-  { global_environment; raw_errors; local_annotations }
+  let check_results = CheckResults.create () in
+  { global_environment; check_results }
 
 
 let create configuration =
@@ -112,23 +106,19 @@ let create_for_testing configuration module_path_code_pairs =
   |> from_global_environment
 
 
-let populate_for_definition ~configuration ~environment ?call_graph_builder (name, dependency) =
-  let global_environment = global_environment environment |> AnnotatedGlobalEnvironment.read_only in
-  match
-    TypeCheck.check_define_by_name
-      ~configuration
-      ~global_environment
-      ?call_graph_builder
-      (name, dependency)
-  with
-  | None -> ()
-  | Some { TypeCheck.CheckResult.errors; local_annotations } ->
-      let { raw_errors = raw_errors_table; local_annotations = local_annotations_table; _ } =
-        environment
-      in
-      Option.iter local_annotations ~f:(LocalAnnotations.add local_annotations_table name);
-      Option.iter errors ~f:(RawErrors.add raw_errors_table name);
-      ()
+let populate_for_definition
+    ~configuration
+    ~environment:{ global_environment; check_results }
+    ?call_graph_builder
+    (name, dependency)
+  =
+  TypeCheck.check_define_by_name
+    ~configuration
+    ~global_environment:(AnnotatedGlobalEnvironment.read_only global_environment)
+    ?call_graph_builder
+    (name, dependency)
+  >>| CheckResults.add check_results name
+  |> ignore
 
 
 let populate_for_definitions ~scheduler ~configuration ?call_graph_builder environment defines =

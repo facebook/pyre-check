@@ -6083,6 +6083,8 @@ module CheckResult = struct
   }
 
   let errors { errors; _ } = errors
+
+  let local_annotations { local_annotations; _ } = local_annotations
 end
 
 module DummyContext = struct
