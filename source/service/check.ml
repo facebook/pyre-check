@@ -46,7 +46,7 @@ let check
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
-    let type_environment = TypeEnvironment.create configuration in
+    let type_environment = EnvironmentControls.create configuration |> TypeEnvironment.create in
     let global_environment =
       TypeEnvironment.global_environment type_environment |> AnnotatedGlobalEnvironment.read_only
     in

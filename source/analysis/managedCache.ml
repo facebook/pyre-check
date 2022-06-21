@@ -71,12 +71,9 @@ module Make (In : In) = struct
 
   let create ast_environment =
     let table = EnvironmentTable.create ast_environment in
-    let { Configuration.Analysis.incremental_style; _ } = EnvironmentTable.configuration table in
     let () =
       UnmanagedCache.enabled :=
-        match incremental_style with
-        | FineGrained -> false
-        | Shallow -> true
+        EnvironmentTable.controls table |> EnvironmentControls.track_dependencies |> not
     in
     table
 

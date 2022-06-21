@@ -65,7 +65,7 @@ let test_call_graph_of_define context =
           ~f:find_define,
         test_source,
         type_environment,
-        project.configuration )
+        ScratchProject.configuration_of project )
     in
     let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
     let override_graph_heap =

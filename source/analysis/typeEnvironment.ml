@@ -97,12 +97,10 @@ let from_global_environment global_environment =
   { global_environment; check_results }
 
 
-let create configuration =
-  AnnotatedGlobalEnvironment.create configuration |> from_global_environment
+let create controls = AnnotatedGlobalEnvironment.create controls |> from_global_environment
 
-
-let create_for_testing configuration module_path_code_pairs =
-  AnnotatedGlobalEnvironment.create_for_testing configuration module_path_code_pairs
+let create_for_testing controls module_path_code_pairs =
+  AnnotatedGlobalEnvironment.create_for_testing controls module_path_code_pairs
   |> from_global_environment
 
 

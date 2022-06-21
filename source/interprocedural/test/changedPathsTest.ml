@@ -42,7 +42,9 @@ let test_compute_locally_changed_files context =
       | None -> Sys.remove (PyrePath.absolute path)
     in
     List.iter files ~f:write_new_file;
-    let new_module_tracker = Analysis.ModuleTracker.create configuration in
+    let new_module_tracker =
+      Analysis.EnvironmentControls.create configuration |> Analysis.ModuleTracker.create
+    in
     let actual =
       Interprocedural.ChangedPaths.compute_locally_changed_paths
         ~scheduler

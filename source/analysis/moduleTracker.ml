@@ -37,10 +37,10 @@ module ReadOnly = struct
     is_module_tracked: Reference.t -> bool;
     get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
     module_paths: unit -> ModulePath.t list;
-    configuration: unit -> Configuration.Analysis.t;
+    controls: unit -> EnvironmentControls.t;
   }
 
-  let configuration { configuration; _ } = configuration ()
+  let controls { controls; _ } = controls ()
 
   let lookup_module_path { lookup_module_path; _ } = lookup_module_path
 
@@ -49,7 +49,7 @@ module ReadOnly = struct
   let is_module_tracked { is_module_tracked; _ } = is_module_tracked
 
   let lookup_path tracker path =
-    let configuration = configuration tracker in
+    let configuration = controls tracker |> EnvironmentControls.configuration in
     match ModulePath.create ~configuration path with
     | None -> PathLookup.NotFound
     | Some { ModulePath.relative; priority; qualifier; _ } -> (
@@ -426,7 +426,7 @@ module Base = struct
 
   type t = {
     layouts: Layouts.t;
-    configuration: Configuration.Analysis.t;
+    controls: EnvironmentControls.t;
     is_updatable: bool;
     get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
   }
@@ -491,18 +491,20 @@ module Base = struct
     | Configuration.Analysis.FineGrained -> true
 
 
-  let create configuration =
+  let create controls =
     Log.info "Building module tracker...";
     let timer = Timer.start () in
-    let module_paths = find_module_paths configuration in
-    let layouts = Layouts.create ~configuration module_paths in
+    let configuration = EnvironmentControls.configuration controls in
+    let source_paths = find_module_paths configuration in
+    let layouts = Layouts.create ~configuration source_paths in
     let get_raw_code = load_raw_code ~configuration in
     let is_updatable = configuration_allows_update configuration in
     Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
-    { layouts; configuration; is_updatable; get_raw_code }
+    { layouts; controls; is_updatable; get_raw_code }
 
 
-  let create_for_testing configuration module_path_code_pairs =
+  let create_for_testing controls module_path_code_pairs =
+    let configuration = EnvironmentControls.configuration controls in
     let layouts =
       let module_paths = List.map ~f:fst module_path_code_pairs in
       Layouts.create ~configuration module_paths
@@ -520,7 +522,7 @@ module Base = struct
       | Some code -> Ok code
       | None -> load_raw_code ~configuration module_path
     in
-    { layouts; configuration; is_updatable = false; get_raw_code }
+    { layouts; controls; is_updatable = false; get_raw_code }
 
 
   let all_module_paths { layouts = { module_to_files; _ }; _ } =
@@ -531,26 +533,24 @@ module Base = struct
     Hashtbl.data module_to_files |> List.filter_map ~f:List.hd
 
 
-  let configuration { configuration; _ } = configuration
+  let controls { controls; _ } = controls
 
-  let assert_can_update { configuration; is_updatable; _ } =
+  let assert_can_update { controls; is_updatable; _ } =
+    if not (EnvironmentControls.track_dependencies controls) then
+      failwith "Environments without dependency tracking cannot be updated";
     if not is_updatable then
-      let message =
-        match configuration.incremental_style with
-        | Configuration.Analysis.Shallow ->
-            "Environments without dependency tracking cannot be updated"
-        | Configuration.Analysis.FineGrained ->
-            (* This is a hack to provide better errors - the only way to hit this case is if we made
-               the tracker using `create_for_testing`. *)
-            "Environments created via create_for_testing with in-memory sources cannot be updated"
-      in
-      failwith message
+      failwith
+        "Environments created via create_for_testing with in-memory sources cannot be updated";
+    ()
 
 
-  let update ({ layouts; configuration; _ } as project) ~artifact_paths =
+  let update ({ layouts; controls; _ } as tracker) ~artifact_paths =
     let timer = Timer.start () in
-    assert_can_update project;
-    let result = Layouts.update ~configuration ~artifact_paths layouts in
+    assert_can_update tracker;
+    let result =
+      let configuration = EnvironmentControls.configuration controls in
+      Layouts.update ~configuration ~artifact_paths layouts
+    in
     Statistics.performance ~name:"module tracker updated" ~timer ~phase_name:"Module tracking" ();
     result
 
@@ -580,19 +580,19 @@ module Base = struct
 
     let store_layouts { layouts; _ } = Layouts.store layouts
 
-    let from_stored_layouts ~configuration () =
+    let from_stored_layouts ~controls () =
+      let configuration = EnvironmentControls.configuration controls in
       let layouts = Layouts.load () in
       {
         layouts;
-        configuration;
+        controls;
         is_updatable = configuration_allows_update configuration;
         get_raw_code = load_raw_code ~configuration;
       }
   end
 
   let read_only
-      ({ layouts = { module_to_files; submodule_refcounts }; configuration; get_raw_code; _ } as
-      tracker)
+      ({ layouts = { module_to_files; submodule_refcounts }; controls; get_raw_code; _ } as tracker)
     =
     let lookup_module_path module_name =
       match Hashtbl.find module_to_files module_name with
@@ -607,7 +607,7 @@ module Base = struct
       is_module_tracked;
       get_raw_code;
       module_paths = (fun () -> module_paths tracker);
-      configuration = (fun () -> configuration);
+      controls = (fun () -> controls);
     }
 end
 
@@ -638,7 +638,7 @@ module Overlay = struct
       IncrementalUpdate.NewExplicit module_path
     in
     let process_code_update (artifact_path, code) =
-      let configuration = ReadOnly.configuration parent in
+      let configuration = ReadOnly.controls parent |> EnvironmentControls.configuration in
       ModulePath.create ~configuration artifact_path >>| add_or_update_code ~code
     in
     List.filter_map code_updates ~f:process_code_update

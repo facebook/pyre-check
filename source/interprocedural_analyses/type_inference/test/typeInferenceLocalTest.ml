@@ -191,11 +191,9 @@ let test_backward_resolution_handling context =
 
 module Setup = struct
   let set_up_project ~context code =
-    let ({ ScratchProject.configuration; _ } as project) =
-      ScratchProject.setup ~context ["test.py", code]
-    in
+    let project = ScratchProject.setup ~context ["test.py", code] in
     let environment = ScratchProject.type_environment project in
-    environment, configuration
+    environment, ScratchProject.configuration_of project
 
 
   let get_environment_data ~context code =

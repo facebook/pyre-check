@@ -177,7 +177,9 @@ let test_parse_sources context =
         ~incremental_style:FineGrained
         ()
     in
-    let ast_environment = Analysis.AstEnvironment.create configuration in
+    let ast_environment =
+      EnvironmentControls.create configuration |> Analysis.AstEnvironment.create
+    in
     let project_qualifiers =
       AstEnvironment.read_only ast_environment |> AstEnvironment.ReadOnly.project_qualifiers
     in

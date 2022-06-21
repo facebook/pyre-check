@@ -220,19 +220,19 @@ end
 
 type t = { edges: Edges.t }
 
-let create configuration = { edges = Edges.create configuration }
+let create controls = { edges = Edges.create controls }
 
-let create_for_testing configuration module_path_code_pairs =
-  { edges = Edges.create_for_testing configuration module_path_code_pairs }
+let create_for_testing controls module_path_code_pairs =
+  { edges = Edges.create_for_testing controls module_path_code_pairs }
 
 
 let store { edges } = Edges.store edges
 
-let load configuration = { edges = Edges.load configuration }
+let load controls = { edges = Edges.load controls }
 
 let ast_environment { edges } = Edges.ast_environment edges
 
-let configuration { edges } = Edges.configuration edges
+let controls { edges } = Edges.controls edges
 
 let read_only { edges } = Edges.read_only edges
 
@@ -241,11 +241,10 @@ let update_this_and_all_preceding_environments
     ~scheduler
     ast_environment_trigger
   =
-  let { Configuration.Analysis.debug; _ } = configuration this_environment in
   let result =
     Edges.update_this_and_all_preceding_environments edges ~scheduler ast_environment_trigger
   in
-  if debug then
+  if controls this_environment |> EnvironmentControls.debug then
     read_only this_environment |> ReadOnly.check_integrity;
   result
 

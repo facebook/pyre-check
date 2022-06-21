@@ -16,9 +16,8 @@ open TestHelper
 let assert_taint ~context source expected =
   let handle = "qualifier.py" in
   let qualifier = Ast.Reference.create "qualifier" in
-  let ({ Test.ScratchProject.configuration; _ } as project) =
-    Test.ScratchProject.setup ~context [handle, source]
-  in
+  let project = Test.ScratchProject.setup ~context [handle, source] in
+  let configuration = Test.ScratchProject.configuration_of project in
   let { Test.ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
     Test.ScratchProject.build_type_environment project
   in

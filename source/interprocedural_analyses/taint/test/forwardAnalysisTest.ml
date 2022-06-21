@@ -21,9 +21,8 @@ let assert_taint ?models ?models_source ~context source expect =
     | Some models_source -> [handle, source; "models.py", models_source]
     | None -> [handle, source]
   in
-  let ({ Test.ScratchProject.configuration; _ } as project) =
-    Test.ScratchProject.setup ~context sources
-  in
+  let project = Test.ScratchProject.setup ~context sources in
+  let configuration = Test.ScratchProject.configuration_of project in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let { Test.ScratchProject.BuiltTypeEnvironment.type_environment = environment; _ } =
     Test.ScratchProject.build_type_environment project

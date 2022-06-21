@@ -14,7 +14,7 @@ let environment_data scratch_project =
   let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
     scratch_project |> ScratchProject.build_global_environment
   in
-  global_environment, scratch_project.configuration
+  global_environment, ScratchProject.configuration_of scratch_project
 
 
 let type_inference_result ~context ~test_source =

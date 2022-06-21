@@ -82,7 +82,7 @@ module ReadOnly = struct
 
   let module_tracker { module_tracker; _ } = module_tracker
 
-  let configuration environment = module_tracker environment |> ModuleTracker.ReadOnly.configuration
+  let controls environment = module_tracker environment |> ModuleTracker.ReadOnly.controls
 
   let get_module_path environment =
     module_tracker environment |> ModuleTracker.ReadOnly.lookup_module_path
@@ -102,6 +102,8 @@ module ReadOnly = struct
     let open Option in
     get_module_path read_only qualifier >>| fun { ModulePath.relative; _ } -> relative
 
+
+  let configuration environment = controls environment |> EnvironmentControls.configuration
 
   let get_real_path read_only qualifier =
     let configuration = configuration read_only in
@@ -354,24 +356,19 @@ module FromReadOnlyUpstream = struct
 
 
   let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
-    let configuration = ModuleTracker.ReadOnly.configuration module_tracker in
     let do_parse context =
+      let controls = ModuleTracker.ReadOnly.controls module_tracker in
+      let configuration = EnvironmentControls.configuration controls in
       match parse_source ~configuration ~context ~module_tracker module_path with
       | Success source ->
           let source =
-            let {
-              Configuration.Analysis.python_major_version;
-              python_minor_version;
-              python_micro_version;
-              _;
-            }
-              =
-              configuration
+            let major_version, minor_version, micro_version =
+              EnvironmentControls.python_version_info controls
             in
             Preprocessing.replace_version_specific_code
-              ~major_version:python_major_version
-              ~minor_version:python_minor_version
-              ~micro_version:python_micro_version
+              ~major_version
+              ~minor_version
+              ~micro_version
               source
             |> Preprocessing.preprocess_phase0
           in
@@ -486,7 +483,7 @@ module FromReadOnlyUpstream = struct
     { ReadOnly.module_tracker; get_raw_source = LazyRawSources.get ~ast_environment }
 
 
-  let configuration { module_tracker; _ } = ModuleTracker.ReadOnly.configuration module_tracker
+  let controls { module_tracker; _ } = ModuleTracker.ReadOnly.controls module_tracker
 end
 
 module Base = struct
@@ -503,14 +500,14 @@ module Base = struct
     }
 
 
-  let create configuration = ModuleTracker.create configuration |> from_module_tracker
+  let create controls = ModuleTracker.create controls |> from_module_tracker
 
-  let create_for_testing configuration module_path_code_pairs =
-    ModuleTracker.create_for_testing configuration module_path_code_pairs |> from_module_tracker
+  let create_for_testing controls module_path_code_pairs =
+    ModuleTracker.create_for_testing controls module_path_code_pairs |> from_module_tracker
 
 
-  let load configuration =
-    ModuleTracker.Serializer.from_stored_layouts ~configuration () |> from_module_tracker
+  let load controls =
+    ModuleTracker.Serializer.from_stored_layouts ~controls () |> from_module_tracker
 
 
   let store { module_tracker; _ } = ModuleTracker.Serializer.store_layouts module_tracker
@@ -532,8 +529,8 @@ module Base = struct
 
   let module_tracker { module_tracker; _ } = module_tracker
 
-  let configuration { from_read_only_upstream; _ } =
-    FromReadOnlyUpstream.configuration from_read_only_upstream
+  let controls { from_read_only_upstream; _ } =
+    FromReadOnlyUpstream.controls from_read_only_upstream
 
 
   let remove_sources { from_read_only_upstream; _ } qualifiers =

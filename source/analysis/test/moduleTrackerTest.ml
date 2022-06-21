@@ -8,6 +8,7 @@
 open Core
 open Ast
 open OUnit2
+module EnvironmentControls = Analysis.EnvironmentControls
 module ModuleTracker = Analysis.ModuleTracker
 
 let content_on_disk = "# contents on disk"
@@ -305,7 +306,9 @@ let test_creation context =
     assert_same_module_greater extension_py extension_first;
 
     (* ModuleTracker initialization test *)
-    let tracker = ModuleTracker.create configuration |> ModuleTracker.read_only in
+    let tracker =
+      EnvironmentControls.create configuration |> ModuleTracker.create |> ModuleTracker.read_only
+    in
     assert_module_path
       (lookup_exn tracker (Reference.create "a"))
       ~search_root:external_root
@@ -458,7 +461,9 @@ let test_creation context =
           ~is_init:false);
 
     (* ModuleTracker initialization test *)
-    let tracker = ModuleTracker.create configuration |> ModuleTracker.read_only in
+    let tracker =
+      EnvironmentControls.create configuration |> ModuleTracker.create |> ModuleTracker.read_only
+    in
     assert_module_path
       (lookup_exn tracker (Reference.create "a"))
       ~search_root:external_root0
@@ -545,7 +550,9 @@ let test_creation context =
           ~is_init:false);
 
     (* ModuleTracker initialization test *)
-    let tracker = ModuleTracker.create configuration |> ModuleTracker.read_only in
+    let tracker =
+      EnvironmentControls.create configuration |> ModuleTracker.create |> ModuleTracker.read_only
+    in
     assert_module_path
       (lookup_exn tracker (Reference.create "a"))
       ~search_root:source_root0
@@ -1047,6 +1054,7 @@ let test_creation context =
         ~search_paths:[SearchPath.Root external_root0; SearchPath.Root external_root1]
         ~filter_directories:[local_root; external_root0]
         ()
+      |> EnvironmentControls.create
       |> ModuleTracker.create
       |> ModuleTracker.all_module_paths
       |> List.sort ~compare:ModulePath.compare
@@ -1071,6 +1079,7 @@ let test_creation context =
         ~source_paths:[SearchPath.Root local_root]
         ~filter_directories:[local_root]
         ()
+      |> EnvironmentControls.create
       |> ModuleTracker.create
       |> ModuleTracker.read_only
     in
@@ -1095,7 +1104,9 @@ let test_creation context =
     in
     let create_exn = create_module_path_exn ~configuration in
     let assert_module_path = assert_module_path ~configuration in
-    let module_tracker = ModuleTracker.create configuration |> ModuleTracker.read_only in
+    let module_tracker =
+      EnvironmentControls.create configuration |> ModuleTracker.create |> ModuleTracker.read_only
+    in
     assert_equal
       ~cmp:Int.equal
       ~printer:Int.to_string
@@ -1226,7 +1237,8 @@ module IncrementalTest = struct
       ModuleTracker.all_module_paths module_tracker |> List.sort ~compare:ModulePath.compare
     in
     let expected_module_paths =
-      ModuleTracker.create configuration
+      EnvironmentControls.create configuration
+      |> ModuleTracker.create
       |> ModuleTracker.all_module_paths
       |> List.sort ~compare:ModulePath.compare
     in
@@ -1610,7 +1622,7 @@ let test_overlay_basic context =
       ~external_tree:[]
   in
   let overlay_owns, assert_raw_code, update_overlay_and_assert_result =
-    let parent_tracker = ModuleTracker.create configuration in
+    let parent_tracker = EnvironmentControls.create configuration |> ModuleTracker.create in
     make_overlay_testing_functions ~context ~configuration ~local_root ~parent_tracker
   in
   let unsaved_content = "# unsaved_changes" in
@@ -1636,7 +1648,7 @@ let test_overlay_code_hiding context =
   let ({ Configuration.Analysis.local_root; _ } as configuration), _ =
     create_test_configuration ~context ~local_tree:[TestFiles.File "code.py"] ~external_tree:[]
   in
-  let parent_tracker = ModuleTracker.create configuration in
+  let parent_tracker = EnvironmentControls.create configuration |> ModuleTracker.create in
   let overlay_owns, assert_raw_code, update_overlay_and_assert_result =
     make_overlay_testing_functions ~context ~configuration ~local_root ~parent_tracker
   in

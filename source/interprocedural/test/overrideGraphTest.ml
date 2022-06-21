@@ -25,7 +25,7 @@ let setup ?(update_environment_with = []) ~context ~handle source =
     List.find_exn sources ~f:(fun { Source.module_path = { ModulePath.relative; _ }; _ } ->
         String.equal relative handle)
   in
-  source, type_environment, project.configuration
+  source, type_environment, ScratchProject.configuration_of project
 
 
 let test_method_overrides context =

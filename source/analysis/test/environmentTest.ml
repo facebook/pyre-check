@@ -1254,8 +1254,7 @@ let test_update_and_compute_dependencies context =
       let repopulate_source_to = Option.value repopulate_source_to ~default:"" in
       ScratchProject.add_file project repopulate_source_to ~relative:"source.py";
       let update_result =
-        let { ScratchProject.configuration; _ } = project in
-        let { Configuration.Analysis.local_root; _ } = configuration in
+        let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
         let path = Test.relative_artifact_path ~root:local_root ~relative:"source.py" in
         ScratchProject.update_global_environment project [path]
       in

@@ -132,14 +132,15 @@ let initialize_shared_memory ~configuration =
 
 let load_type_environment ~scheduler ~configuration =
   let open Result in
+  let controls = Analysis.EnvironmentControls.create configuration in
   Log.info "Determining if source files have changed since cache was created.";
   exception_to_error ~error:LoadError ~message:"Loading type environment" ~f:(fun () ->
-      Ok (TypeEnvironment.load configuration))
+      Ok (TypeEnvironment.load controls))
   >>= fun type_environment ->
   let old_module_tracker =
     TypeEnvironment.ast_environment type_environment |> AstEnvironment.module_tracker
   in
-  let new_module_tracker = Analysis.ModuleTracker.create configuration in
+  let new_module_tracker = Analysis.ModuleTracker.create controls in
   let changed_paths =
     let is_pysa_model path = String.is_suffix ~suffix:".pysa" (PyrePath.get_suffix_path path) in
     let is_taint_config path = String.is_suffix ~suffix:"taint.config" (PyrePath.absolute path) in

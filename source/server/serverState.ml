@@ -74,7 +74,9 @@ end)
 let load_stored_configuration = StoredConfiguration.load
 
 let load ~configuration ~build_system () =
-  let type_environment = Analysis.TypeEnvironment.load configuration in
+  let type_environment =
+    EnvironmentControls.create configuration |> Analysis.TypeEnvironment.load
+  in
   let error_table = ServerErrors.load () in
   create ~build_system ~type_environment ~error_table ()
 

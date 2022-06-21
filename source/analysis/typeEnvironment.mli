@@ -34,9 +34,9 @@ end
 
 type t
 
-val create : Configuration.Analysis.t -> t
+val create : EnvironmentControls.t -> t
 
-val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * string) list -> t
 
 val global_environment : t -> AnnotatedGlobalEnvironment.t
 
@@ -70,4 +70,4 @@ val populate_for_modules
 
 val store : t -> unit
 
-val load : Configuration.Analysis.t -> t
+val load : EnvironmentControls.t -> t

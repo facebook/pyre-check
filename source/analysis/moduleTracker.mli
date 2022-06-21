@@ -28,7 +28,7 @@ end
 module ReadOnly : sig
   type t
 
-  val configuration : t -> Configuration.Analysis.t
+  val controls : t -> EnvironmentControls.t
 
   val lookup_module_path : t -> Ast.Reference.t -> Ast.ModulePath.t option
 
@@ -50,23 +50,23 @@ end
 
 type t
 
-val create : Configuration.Analysis.t -> t
+val create : EnvironmentControls.t -> t
 
-val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * raw_code) list -> t
+val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * raw_code) list -> t
 
 (* This function returns all SourcePaths that are tracked, including the shadowed ones. *)
 val all_module_paths : t -> Ast.ModulePath.t list
 
 val module_paths : t -> Ast.ModulePath.t list
 
-val configuration : t -> Configuration.Analysis.t
+val controls : t -> EnvironmentControls.t
 
 val update : t -> artifact_paths:ArtifactPath.t list -> IncrementalUpdate.t list
 
 module Serializer : sig
   val store_layouts : t -> unit
 
-  val from_stored_layouts : configuration:Configuration.Analysis.t -> unit -> t
+  val from_stored_layouts : controls:EnvironmentControls.t -> unit -> t
 end
 
 val read_only : t -> ReadOnly.t

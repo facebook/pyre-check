@@ -37,13 +37,13 @@ module PreviousEnvironment : sig
 
     type t
 
-    val create : Configuration.Analysis.t -> t
+    val create : EnvironmentControls.t -> t
 
-    val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+    val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * string) list -> t
 
     val ast_environment : t -> AstEnvironment.t
 
-    val configuration : t -> Configuration.Analysis.t
+    val controls : t -> EnvironmentControls.t
 
     val read_only : t -> ReadOnly.t
 
@@ -55,7 +55,7 @@ module PreviousEnvironment : sig
 
     val store : t -> unit
 
-    val load : Configuration.Analysis.t -> t
+    val load : EnvironmentControls.t -> t
   end
 end
 
@@ -137,13 +137,13 @@ module EnvironmentTable : sig
 
     type t
 
-    val create : Configuration.Analysis.t -> t
+    val create : EnvironmentControls.t -> t
 
-    val create_for_testing : Configuration.Analysis.t -> (Ast.ModulePath.t * string) list -> t
+    val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * string) list -> t
 
     val ast_environment : t -> AstEnvironment.t
 
-    val configuration : t -> Configuration.Analysis.t
+    val controls : t -> EnvironmentControls.t
 
     val read_only : t -> ReadOnly.t
 
@@ -155,7 +155,7 @@ module EnvironmentTable : sig
 
     val store : t -> unit
 
-    val load : Configuration.Analysis.t -> t
+    val load : EnvironmentControls.t -> t
 
     module Testing : sig
       module ReadOnly : sig

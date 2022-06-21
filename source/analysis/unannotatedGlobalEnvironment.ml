@@ -525,7 +525,7 @@ module FromReadOnlyUpstream = struct
       }
 
 
-    let configuration { ast_environment; _ } = AstEnvironment.ReadOnly.configuration ast_environment
+    let controls { ast_environment; _ } = AstEnvironment.ReadOnly.controls ast_environment
   end
 
   include ReadWrite
@@ -999,8 +999,8 @@ module Base = struct
     from_read_only_upstream: FromReadOnlyUpstream.t;
   }
 
-  let create configuration =
-    let ast_environment = AstEnvironment.create configuration in
+  let create controls =
+    let ast_environment = AstEnvironment.create controls in
     let from_read_only_upstream =
       AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
     in
@@ -1008,8 +1008,8 @@ module Base = struct
     { ast_environment; from_read_only_upstream }
 
 
-  let create_for_testing configuration module_path_code_pairs =
-    let ast_environment = AstEnvironment.create_for_testing configuration module_path_code_pairs in
+  let create_for_testing controls module_path_code_pairs =
+    let ast_environment = AstEnvironment.create_for_testing controls module_path_code_pairs in
     let from_read_only_upstream =
       AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
     in
@@ -1038,8 +1038,8 @@ module Base = struct
     FromReadOnlyUpstream.read_only from_read_only_upstream
 
 
-  let configuration { from_read_only_upstream; _ } =
-    FromReadOnlyUpstream.configuration from_read_only_upstream
+  let controls { from_read_only_upstream; _ } =
+    FromReadOnlyUpstream.controls from_read_only_upstream
 
 
   let ast_environment { ast_environment; _ } = ast_environment
@@ -1047,8 +1047,8 @@ module Base = struct
   (* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
      before loading / after storing. These functions only handle serializing and deserializing the
      non-SharedMemory data *)
-  let load configuration =
-    let ast_environment = AstEnvironment.load configuration in
+  let load controls =
+    let ast_environment = AstEnvironment.load controls in
     let from_read_only_upstream =
       AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
     in
