@@ -26,19 +26,27 @@ let track_dependencies { configuration = { Configuration.Analysis.incremental_st
 
 let debug { configuration = { Configuration.Analysis.debug; _ }; _ } = debug
 
+module PythonVersionInfo = struct
+  type t = {
+    major_version: int;
+    minor_version: int;
+    micro_version: int;
+  }
+end
+
 let python_version_info
     {
       configuration =
         {
-          Configuration.Analysis.python_major_version;
-          python_minor_version;
-          python_micro_version;
+          Configuration.Analysis.python_major_version = major_version;
+          python_minor_version = minor_version;
+          python_micro_version = micro_version;
           _;
         };
       _;
     }
   =
-  python_major_version, python_minor_version, python_micro_version
+  { PythonVersionInfo.major_version; minor_version; micro_version }
 
 
 module TypeCheckControls = struct

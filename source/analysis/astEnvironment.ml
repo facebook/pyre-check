@@ -362,7 +362,9 @@ module FromReadOnlyUpstream = struct
       match parse_source ~configuration ~context ~module_tracker module_path with
       | Success source ->
           let source =
-            let major_version, minor_version, micro_version =
+            let EnvironmentControls.PythonVersionInfo.
+                  { major_version; minor_version; micro_version }
+              =
               EnvironmentControls.python_version_info controls
             in
             Preprocessing.replace_version_specific_code

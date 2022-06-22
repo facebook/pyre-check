@@ -17,7 +17,15 @@ val track_dependencies : t -> bool
 
 val debug : t -> bool
 
-val python_version_info : t -> int * int * int
+module PythonVersionInfo : sig
+  type t = {
+    major_version: int;
+    minor_version: int;
+    micro_version: int;
+  }
+end
+
+val python_version_info : t -> PythonVersionInfo.t
 
 val populate_call_graph : t -> bool
 
