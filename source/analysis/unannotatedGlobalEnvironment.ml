@@ -277,13 +277,10 @@ end
 
 module UpdateResult = struct
   type t = {
-    define_additions: Reference.Set.t;
     triggered_dependencies: DependencyKey.RegisteredSet.t;
     invalidated_modules: Reference.t list;
     module_updates: ModuleTracker.IncrementalUpdate.t list;
   }
-
-  let define_additions { define_additions; _ } = define_additions
 
   let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
@@ -941,7 +938,7 @@ module FromReadOnlyUpstream = struct
       KeyTracker.get_previous_keys_and_clear key_tracker invalidated_modules
     in
     let previous_defines_list = DefineNames.get_define_names define_names invalidated_modules in
-    let define_additions, triggered_dependencies =
+    let triggered_dependencies =
       Profiling.track_duration_and_shared_memory_with_dynamic_tags
         "TableUpdate(Unannotated globals)"
         ~f:(fun _ ->
@@ -991,9 +988,9 @@ module FromReadOnlyUpstream = struct
               "number_of_triggered_dependencies", triggered_dependencies_size;
             ]
           in
-          { Profiling.result = define_additions, triggered_dependencies; tags })
+          { Profiling.result = triggered_dependencies; tags })
     in
-    { UpdateResult.define_additions; triggered_dependencies; invalidated_modules; module_updates }
+    { UpdateResult.triggered_dependencies; invalidated_modules; module_updates }
 end
 
 module Base = struct
