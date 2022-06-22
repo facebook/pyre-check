@@ -54,11 +54,11 @@ class ExpressionLevelTest(testslide.TestCase):
                 )
             ],
         )
-        with self.assertRaises(expression_level_coverage.ErrorParsingFailure) as ex:
+        with self.assertRaises(expression_level_coverage.ErrorParsingFailure):
             expression_level_coverage._get_expression_level_coverage_response(
                 "garbage input"
             )
-        with self.assertRaises(expression_level_coverage.ErrorParsingFailure) as ex:
+        with self.assertRaises(expression_level_coverage.ErrorParsingFailure):
             expression_level_coverage._get_expression_level_coverage_response(
                 {
                     "response": [
