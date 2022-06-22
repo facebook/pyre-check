@@ -159,8 +159,6 @@ module EnvironmentTable : sig
 
     module Unsafe : sig
       val upstream : t -> In.PreviousEnvironment.t
-
-      val remove_batch : t -> In.Key.t list -> unit
     end
 
     module Testing : sig

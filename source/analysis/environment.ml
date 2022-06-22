@@ -168,8 +168,6 @@ module EnvironmentTable = struct
 
     module Unsafe : sig
       val upstream : t -> In.PreviousEnvironment.t
-
-      val remove_batch : t -> In.Key.t list -> unit
     end
 
     module Testing : sig
@@ -398,9 +396,6 @@ module EnvironmentTable = struct
 
     module Unsafe = struct
       let upstream { Base.upstream_environment; _ } = upstream_environment
-
-      let remove_batch { Base.from_read_only_upstream = { table; _ }; _ } keys =
-        Table.KeySet.of_list keys |> Table.remove_batch table
     end
 
     module Testing = struct

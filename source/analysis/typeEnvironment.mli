@@ -33,8 +33,6 @@ include
     with module ReadOnly = TypeEnvironmentReadOnly
      and module PreviousEnvironment = AnnotatedGlobalEnvironment
 
-val invalidate : t -> Reference.t list -> unit
-
 val global_environment : t -> AnnotatedGlobalEnvironment.t
 
 val ast_environment : t -> AstEnvironment.t
