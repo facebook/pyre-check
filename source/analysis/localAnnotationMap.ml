@@ -99,7 +99,7 @@ let set
 
 
 module ReadOnly = struct
-  type t = Annotations.t Int.Map.Tree.t
+  type t = Annotations.t Int.Map.Tree.t [@@deriving equal]
 
   let convert_to_map { Annotations.annotations; temporary_annotations } =
     Refinement.Store.

@@ -93,6 +93,7 @@ module CheckResult : sig
     errors: Error.t list option;
     local_annotations: LocalAnnotationMap.ReadOnly.t option;
   }
+  [@@deriving equal]
 
   val errors : t -> Error.t list option
 

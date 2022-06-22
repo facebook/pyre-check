@@ -23,7 +23,7 @@ val set
   unit
 
 module ReadOnly : sig
-  type t
+  type t [@@deriving equal]
 
   val get_precondition : t -> statement_key:int -> Refinement.Store.t option
 

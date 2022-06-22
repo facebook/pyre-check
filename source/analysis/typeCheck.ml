@@ -6085,6 +6085,13 @@ module CheckResult = struct
   let errors { errors; _ } = errors
 
   let local_annotations { local_annotations; _ } = local_annotations
+
+  let equal
+      { errors = errors0; local_annotations = local_annotations0 }
+      { errors = errors1; local_annotations = local_annotations1 }
+    =
+    [%compare.equal: Error.t list option] errors0 errors1
+    && [%equal: LocalAnnotationMap.ReadOnly.t option] local_annotations0 local_annotations1
 end
 
 module DummyContext = struct
