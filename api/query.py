@@ -3,12 +3,16 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import logging
 from dataclasses import dataclass
 from functools import lru_cache
 from itertools import islice
 from typing import Any, Dict, Generator, Iterable, List, NamedTuple, Optional, TypeVar
 
 from .connection import PyreConnection, PyreQueryResult
+
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 T = TypeVar("T")
@@ -260,9 +264,9 @@ def get_attributes(
     for batch in _get_batch(class_names, batch_size):
         query = "batch({})".format(", ".join([f"attributes({name})" for name in batch]))
         responses = pyre_connection.query_server(query)["response"]
-        all_responses.update(
-            {
-                class_name: [
+        for class_name, response in zip(batch, responses):
+            if "response" in response:
+                all_responses[class_name] = [
                     Attributes(
                         name=attribute["name"],
                         annotation=attribute["annotation"],
@@ -271,9 +275,11 @@ def get_attributes(
                     )
                     for attribute in response["response"]["attributes"]
                 ]
-                for class_name, response in zip(batch, responses)
-            }
-        )
+            else:
+                LOG.warn(
+                    f"Error resolving query for `{class_name=}` in get_attributes `{response=}`"
+                )
+                all_responses[class_name] = []
     return all_responses
 
 

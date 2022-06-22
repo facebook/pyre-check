@@ -540,3 +540,45 @@ class QueryAPITest(unittest.TestCase):
                 ),
             ],
         )
+
+    def test_get_attributes_query_error(self) -> None:
+        test_data: connection.PyreQueryResult = {
+            "response": [
+                {
+                    "response": {
+                        "attributes": [
+                            {
+                                "name": "a",
+                                "annotation": "typing.Any",
+                                "kind": "property",
+                                "final": False,
+                            }
+                        ]
+                    }
+                },
+                {"error": "Type `B` has the wrong number of parameters."},
+                {"response": {"attributes": []}},
+            ]
+        }
+        pyre_connection = MagicMock()
+        pyre_connection.query_server.return_value = test_data
+
+        self.assertEqual(
+            query.get_attributes(
+                pyre_connection,
+                [
+                    "TestClassA",
+                    "TestClassB",
+                    "TestClassC",
+                ],
+            ),
+            {
+                "TestClassA": [
+                    query.Attributes(
+                        name="a", annotation="typing.Any", kind="property", final=False
+                    )
+                ],
+                "TestClassB": [],
+                "TestClassC": [],
+            },
+        )
