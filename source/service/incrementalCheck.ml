@@ -14,26 +14,21 @@ type errors = Analysis.AnalysisError.t list [@@deriving show]
 
 let recheck ~configuration ~scheduler ~environment ~errors artifact_paths =
   let timer = Timer.start () in
-  let annotated_global_environment = TypeEnvironment.global_environment environment in
   Scheduler.once_per_worker scheduler ~configuration ~f:SharedMemory.invalidate_caches;
   SharedMemory.invalidate_caches ();
   SharedMemory.collect `aggressive;
   (* Repopulate the environment. *)
   Log.info "Repopulating the environment...";
 
-  let annotated_global_environment_update_result =
-    AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-      annotated_global_environment
-      ~scheduler
-      artifact_paths
+  let type_environment_update_result =
+    TypeEnvironment.update_this_and_all_preceding_environments environment ~scheduler artifact_paths
   in
   let invalidated_modules =
-    AnnotatedGlobalEnvironment.UpdateResult.invalidated_modules
-      annotated_global_environment_update_result
+    TypeEnvironment.UpdateResult.invalidated_modules type_environment_update_result
   in
   let unannotated_global_environment_update_result =
-    AnnotatedGlobalEnvironment.UpdateResult.unannotated_global_environment_update_result
-      annotated_global_environment_update_result
+    TypeEnvironment.UpdateResult.unannotated_global_environment_update_result
+      type_environment_update_result
   in
   let triggered_dependency_function_names =
     let filter_union sofar keyset =
@@ -44,21 +39,9 @@ let recheck ~configuration ~scheduler ~environment ~errors artifact_paths =
       in
       SharedMemoryKeys.DependencyKey.RegisteredSet.fold filter keyset sofar
     in
-    AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies
-      annotated_global_environment_update_result
+    TypeEnvironment.UpdateResult.all_triggered_dependencies type_environment_update_result
     |> List.fold ~init:Reference.Set.empty ~f:filter_union
   in
-  let recheck_function_names =
-    Reference.Set.union
-      (UnannotatedGlobalEnvironment.UpdateResult.define_additions
-         unannotated_global_environment_update_result)
-      triggered_dependency_function_names
-  in
-  let recheck_function_names_list = Reference.Set.to_list recheck_function_names in
-  (* Rerun type checking for triggered functions. *)
-  TypeEnvironment.invalidate environment recheck_function_names_list;
-  TypeEnvironment.populate_for_definitions ~scheduler environment recheck_function_names_list;
-
   (* Rerun postprocessing for triggered modules. *)
   let recheck_modules =
     (* For each rechecked function, its containing module needs to be included in postprocessing *)
@@ -87,7 +70,7 @@ let recheck ~configuration ~scheduler ~environment ~errors artifact_paths =
       ~environment:(Analysis.TypeEnvironment.read_only environment)
       recheck_modules
   in
-  let rechecked_functions_count = Set.length recheck_function_names in
+  let rechecked_functions_count = Set.length triggered_dependency_function_names in
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
