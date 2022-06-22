@@ -12,6 +12,8 @@ module type ReadOnly = sig
   type t
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
+  val controls : t -> EnvironmentControls.t
 end
 
 module UpdateResult = struct
@@ -140,6 +142,8 @@ module EnvironmentTable = struct
       val upstream_environment : t -> In.PreviousEnvironment.ReadOnly.t
 
       val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
+      val controls : t -> EnvironmentControls.t
     end
 
     module UpdateResult : UpdateResult.S
@@ -195,6 +199,10 @@ module EnvironmentTable = struct
 
       let unannotated_global_environment { upstream_environment; _ } =
         In.PreviousEnvironment.ReadOnly.unannotated_global_environment upstream_environment
+
+
+      let controls { upstream_environment; _ } =
+        In.PreviousEnvironment.ReadOnly.controls upstream_environment
     end
 
     module UpdateResult = struct

@@ -11,6 +11,8 @@ module type ReadOnly = sig
   type t
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
+  val controls : t -> EnvironmentControls.t
 end
 
 module UpdateResult : sig
@@ -131,6 +133,8 @@ module EnvironmentTable : sig
       val upstream_environment : t -> In.PreviousEnvironment.ReadOnly.t
 
       val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
+      val controls : t -> EnvironmentControls.t
     end
 
     module UpdateResult : UpdateResult.S

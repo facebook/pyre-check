@@ -35,6 +35,8 @@ module ReadOnly : sig
 
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 
+  val controls : t -> EnvironmentControls.t
+
   val unannotated_global_environment : t -> t
 
   (* These functions are not dependency tracked and should only be used:

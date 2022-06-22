@@ -52,6 +52,8 @@ module ReadOnly = struct
 
   let ast_environment { ast_environment; _ } = ast_environment
 
+  let controls { ast_environment; _ } = AstEnvironment.ReadOnly.controls ast_environment
+
   let unannotated_global_environment = Fn.id
 
   let all_classes { all_classes; _ } = all_classes ()
