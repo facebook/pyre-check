@@ -90,7 +90,6 @@ let check
     Analysis.TypeEnvironment.populate_for_modules ~scheduler environment qualifiers;
     Analysis.Postprocessing.run
       ~scheduler
-      ~configuration
       ~environment:(Analysis.TypeEnvironment.read_only environment)
       qualifiers
   in

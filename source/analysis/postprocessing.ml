@@ -137,11 +137,14 @@ let filter_errors
 (* TODO: Take `Source.TypecheckFlags.t` instead of `Source.t` to prevent this function from relying
    on the actual AST. *)
 let run_on_source
-    ~configuration
-    ~global_resolution
+    ~environment
     ~source:({ Source.typecheck_flags; module_path = { ModulePath.qualifier; _ }; _ } as source)
     errors_by_define
   =
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let configuration =
+    TypeEnvironment.ReadOnly.controls environment |> EnvironmentControls.configuration
+  in
   filter_errors ~configuration ~global_resolution ~typecheck_flags errors_by_define
   |> add_local_mode_errors ~define:(Source.top_level_define_node source) source
   |> handle_ignores_and_fixmes ~qualifier source
@@ -150,69 +153,69 @@ let run_on_source
   |> List.sort ~compare:Error.compare
 
 
-let run ~scheduler ~configuration ~environment sources =
+let run_on_qualifier environment qualifier =
+  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+  match AstEnvironment.ReadOnly.get_raw_source ast_environment qualifier with
+  | None -> []
+  | Some
+      ( Result.Ok { Source.module_path = { ModulePath.is_external; _ }; _ }
+      | Result.Error { AstEnvironment.ParserError.module_path = { ModulePath.is_external; _ }; _ }
+        )
+    when is_external ->
+      []
+  | Some (Result.Error { AstEnvironment.ParserError.is_suppressed; _ }) when is_suppressed -> []
+  | Some (Result.Error { AstEnvironment.ParserError.message; location; _ }) ->
+      let location_with_module =
+        {
+          Location.WithModule.module_reference = qualifier;
+          start = Location.start location;
+          stop = Location.stop location;
+        }
+      in
+      let define =
+        Statement.Define.create_toplevel
+          ~unbound_names:[]
+          ~qualifier:(Some qualifier)
+          ~statements:[]
+        |> Node.create ~location
+      in
+      [
+        AnalysisError.create
+          ~location:location_with_module
+          ~kind:(AnalysisError.ParserFailure message)
+          ~define;
+      ]
+  | Some
+      (Result.Ok
+        {
+          Source.typecheck_flags =
+            {
+              Source.TypecheckFlags.local_mode = Some { Node.value = Source.Declare; _ };
+              unused_local_modes = [];
+              _;
+            };
+          _;
+        }) ->
+      []
+  | Some (Result.Ok source) ->
+      let unannotated_global_environment =
+        TypeEnvironment.ReadOnly.unannotated_global_environment environment
+      in
+      let errors_by_define =
+        UnannotatedGlobalEnvironment.ReadOnly.get_define_names
+          unannotated_global_environment
+          qualifier
+        |> List.map ~f:(TypeEnvironment.ReadOnly.get_errors environment)
+      in
+      run_on_source ~environment ~source errors_by_define
+
+
+let run ~scheduler ~environment sources =
   let timer = Timer.start () in
   let number_of_sources = List.length sources in
   Log.log ~section:`Progress "Postprocessing %d sources..." number_of_sources;
-  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let unannotated_global_environment =
-    GlobalResolution.unannotated_global_environment global_resolution
-  in
   let map _ modules =
-    let run_on_module module_name =
-      match AstEnvironment.ReadOnly.get_raw_source ast_environment module_name with
-      | None -> []
-      | Some
-          ( Result.Ok { Source.module_path = { ModulePath.is_external; _ }; _ }
-          | Result.Error
-              { AstEnvironment.ParserError.module_path = { ModulePath.is_external; _ }; _ } )
-        when is_external ->
-          []
-      | Some (Result.Error { AstEnvironment.ParserError.is_suppressed; _ }) when is_suppressed -> []
-      | Some (Result.Error { AstEnvironment.ParserError.message; location; _ }) ->
-          let location_with_module =
-            {
-              Location.WithModule.module_reference = module_name;
-              start = Location.start location;
-              stop = Location.stop location;
-            }
-          in
-          let define =
-            Statement.Define.create_toplevel
-              ~unbound_names:[]
-              ~qualifier:(Some module_name)
-              ~statements:[]
-            |> Node.create ~location
-          in
-          [
-            AnalysisError.create
-              ~location:location_with_module
-              ~kind:(AnalysisError.ParserFailure message)
-              ~define;
-          ]
-      | Some
-          (Result.Ok
-            {
-              Source.typecheck_flags =
-                {
-                  Source.TypecheckFlags.local_mode = Some { Node.value = Source.Declare; _ };
-                  unused_local_modes = [];
-                  _;
-                };
-              _;
-            }) ->
-          []
-      | Some (Result.Ok source) ->
-          let errors_by_define =
-            UnannotatedGlobalEnvironment.ReadOnly.get_define_names
-              unannotated_global_environment
-              module_name
-            |> List.map ~f:(TypeEnvironment.ReadOnly.get_errors environment)
-          in
-          run_on_source ~configuration ~global_resolution ~source errors_by_define
-    in
-    List.length modules, List.concat_map modules ~f:run_on_module
+    List.length modules, List.concat_map modules ~f:(run_on_qualifier environment)
   in
   let reduce (left_count, left_errors) (right_count, right_errors) =
     let number_sources = left_count + right_count in

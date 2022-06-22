@@ -66,7 +66,6 @@ let recheck ~configuration ~scheduler ~environment ~errors artifact_paths =
   let new_errors =
     Analysis.Postprocessing.run
       ~scheduler
-      ~configuration
       ~environment:(Analysis.TypeEnvironment.read_only environment)
       recheck_modules
   in

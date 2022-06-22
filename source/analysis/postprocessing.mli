@@ -10,7 +10,6 @@ module Error = AnalysisError
 
 val run
   :  scheduler:Scheduler.t ->
-  configuration:Configuration.Analysis.t ->
   environment:TypeEnvironment.ReadOnly.t ->
   Reference.t list ->
   Error.t list

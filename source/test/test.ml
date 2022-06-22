@@ -2866,7 +2866,6 @@ module ScratchProject = struct
         ~f:(fun { Source.module_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
       |> Postprocessing.run
            ~scheduler:(Scheduler.create_sequential ())
-           ~configuration:(configuration_of project)
            ~environment:built_type_environment.type_environment
     in
     built_type_environment, errors
@@ -2948,7 +2947,7 @@ let assert_errors
 
   let descriptions =
     let errors =
-      let configuration, sources, ast_environment, environment =
+      let sources, ast_environment, environment =
         let project =
           let external_sources =
             List.map update_environment_with ~f:(fun { handle; source } -> handle, source)
@@ -2965,10 +2964,8 @@ let assert_errors
         let { ScratchProject.BuiltGlobalEnvironment.sources; global_environment } =
           ScratchProject.build_global_environment project
         in
-        let configuration = ScratchProject.configuration_of project in
         let { ScratchProject.type_environment; _ } = project in
-        ( configuration,
-          sources,
+        ( sources,
           AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment,
           type_environment )
       in
@@ -2976,7 +2973,7 @@ let assert_errors
         List.find_exn sources ~f:(fun { Source.module_path = { ModulePath.relative; _ }; _ } ->
             String.equal handle relative)
       in
-      check ~configuration ~environment ~source
+      check ~environment ~source
       |> List.map
            ~f:
              (AnalysisError.instantiate

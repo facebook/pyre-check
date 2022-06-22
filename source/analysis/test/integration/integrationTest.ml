@@ -5,13 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-let type_check ~configuration ~environment ~source =
+let type_check ~environment ~source =
   let { Ast.Source.module_path = { Ast.ModulePath.qualifier; _ }; _ } = source in
   let scheduler = Scheduler.create_sequential () in
   Analysis.TypeEnvironment.populate_for_modules ~scheduler environment [qualifier];
   Analysis.Postprocessing.run
     ~scheduler
-    ~configuration
     ~environment:(Analysis.TypeEnvironment.read_only environment)
     [qualifier]
 
