@@ -157,6 +157,12 @@ module EnvironmentTable : sig
 
     val load : EnvironmentControls.t -> t
 
+    module Unsafe : sig
+      val upstream : t -> In.PreviousEnvironment.t
+
+      val remove_batch : t -> In.Key.t list -> unit
+    end
+
     module Testing : sig
       module ReadOnly : sig
         val upstream : ReadOnly.t -> In.PreviousEnvironment.ReadOnly.t

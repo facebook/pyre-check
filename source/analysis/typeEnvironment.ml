@@ -8,54 +8,18 @@
 open Pyre
 open Ast
 open Core
+module PreviousEnvironment = AnnotatedGlobalEnvironment
 module Error = AnalysisError
 
 module CheckResultValue = struct
-  type t = TypeCheck.CheckResult.t
+  type t = TypeCheck.CheckResult.t option [@@deriving equal]
 
   let prefix = Prefix.make ()
 
   let description = "CheckResult"
 end
 
-module CheckResults =
-  Memory.FirstClass.NoCache.Make (SharedMemoryKeys.ReferenceKey) (CheckResultValue)
-
-type t = {
-  global_environment: AnnotatedGlobalEnvironment.t;
-  check_results: CheckResults.t;
-}
-
-let global_environment { global_environment; _ } = global_environment
-
-let ast_environment { global_environment; _ } =
-  AnnotatedGlobalEnvironment.ast_environment global_environment
-
-
-let module_tracker type_environment =
-  ast_environment type_environment |> AstEnvironment.module_tracker
-
-
-let get { check_results; _ } reference = CheckResults.get check_results reference
-
-let invalidate { check_results; _ } qualifiers =
-  CheckResults.KeySet.of_list qualifiers |> CheckResults.remove_batch check_results
-
-
-let from_global_environment global_environment =
-  let check_results = CheckResults.create () in
-  { global_environment; check_results }
-
-
-let create controls = AnnotatedGlobalEnvironment.create controls |> from_global_environment
-
-let create_for_testing controls module_path_code_pairs =
-  AnnotatedGlobalEnvironment.create_for_testing controls module_path_code_pairs
-  |> from_global_environment
-
-
-let populate_for_definition ~environment:{ global_environment; check_results } name =
-  let global_environment = AnnotatedGlobalEnvironment.read_only global_environment in
+let produce_check_results global_environment define_name ~dependency =
   let type_check_controls, call_graph_builder, dependency =
     let controls = AnnotatedGlobalEnvironment.ReadOnly.controls global_environment in
     let type_check_controls = EnvironmentControls.type_check_controls controls in
@@ -67,8 +31,7 @@ let populate_for_definition ~environment:{ global_environment; check_results } n
     in
     let dependency =
       if EnvironmentControls.track_dependencies controls then
-        Some
-          (SharedMemoryKeys.DependencyKey.Registry.register (SharedMemoryKeys.TypeCheckDefine name))
+        dependency
       else
         None
     in
@@ -79,19 +42,57 @@ let populate_for_definition ~environment:{ global_environment; check_results } n
     ~call_graph_builder
     ~global_environment
     ~dependency
-    name
-  >>| CheckResults.add check_results name
-  |> ignore
+    define_name
 
+
+module CheckResultsTable = Environment.EnvironmentTable.WithCache (struct
+  module PreviousEnvironment = AnnotatedGlobalEnvironment
+  module Key = SharedMemoryKeys.ReferenceKey
+  module Value = CheckResultValue
+
+  type trigger = Reference.t [@@deriving sexp, compare]
+
+  module TriggerSet = Reference.Set
+
+  let convert_trigger = Fn.id
+
+  let key_to_trigger = Fn.id
+
+  let show_key = Reference.show
+
+  let lazy_incremental = false
+
+  let produce_value = produce_check_results
+
+  let filter_upstream_dependency = function
+    | SharedMemoryKeys.TypeCheckDefine name -> Some name
+    | _ -> None
+
+
+  let trigger_to_dependency name = SharedMemoryKeys.TypeCheckDefine name
+
+  let equal_value = CheckResultValue.equal
+end)
+
+include CheckResultsTable
+
+let global_environment = CheckResultsTable.Unsafe.upstream
+
+let module_tracker type_environment =
+  ast_environment type_environment |> AstEnvironment.module_tracker
+
+
+let invalidate = CheckResultsTable.Unsafe.remove_batch
 
 let populate_for_definitions ~scheduler environment defines =
   let timer = Timer.start () in
 
+  let read_only = read_only environment in
   let number_of_defines = List.length defines in
   Log.info "Checking %d functions..." number_of_defines;
   let map _ names =
-    let analyze_define number_defines define_name_and_dependency =
-      populate_for_definition ~environment define_name_and_dependency;
+    let analyze_define number_defines name =
+      let () = ReadOnly.get read_only name |> ignore in
       number_defines + 1
     in
     List.fold names ~init:0 ~f:analyze_define
@@ -159,24 +160,16 @@ let populate_for_modules ~scheduler environment qualifiers =
 
 
 module ReadOnly = struct
-  type t = {
-    global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
-    get: Reference.t -> CheckResultValue.t option;
-  }
+  include CheckResultsTable.ReadOnly
 
-  let global_environment { global_environment; _ } = global_environment
+  let global_environment = CheckResultsTable.Testing.ReadOnly.upstream
 
-  let global_resolution { global_environment; _ } = GlobalResolution.create global_environment
+  let global_resolution environment = global_environment environment |> GlobalResolution.create
 
-  let ast_environment { global_environment; _ } =
-    AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
+  let ast_environment environment =
+    unannotated_global_environment environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 
-
-  let unannotated_global_environment { global_environment; _ } =
-    AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment global_environment
-
-
-  let get { get; _ } = get
 
   let get_errors environment reference =
     get environment reference >>= TypeCheck.CheckResult.errors |> Option.value ~default:[]
@@ -198,19 +191,12 @@ module ReadOnly = struct
         TypeCheck.compute_local_annotations ~global_environment name
 end
 
-let read_only ({ global_environment; _ } as environment) =
-  {
-    ReadOnly.global_environment = AnnotatedGlobalEnvironment.read_only global_environment;
-    get = get environment;
-  }
-
-
 (* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
    before loading / after storing. These functions only handle serializing and deserializing the
    non-SharedMemory data *)
 
-let store { global_environment; _ } =
-  AnnotatedGlobalEnvironment.store global_environment;
+let store environment =
+  CheckResultsTable.store environment;
   SharedMemoryKeys.DependencyKey.Registry.store ()
 
 
@@ -218,4 +204,7 @@ let load configuration =
   (* Loading the dependency keys needs to happen exactly once in the environment stack; we do it
      here, at the very top. *)
   SharedMemoryKeys.DependencyKey.Registry.load ();
-  AnnotatedGlobalEnvironment.load configuration |> from_global_environment
+  CheckResultsTable.load configuration
+
+
+module TypeEnvironmentReadOnly = ReadOnly

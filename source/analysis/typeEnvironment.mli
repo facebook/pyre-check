@@ -8,8 +8,10 @@
 open Ast
 module Error = AnalysisError
 
-module ReadOnly : sig
+module TypeEnvironmentReadOnly : sig
   type t
+
+  val controls : t -> EnvironmentControls.t
 
   val global_environment : t -> AnnotatedGlobalEnvironment.ReadOnly.t
 
@@ -26,11 +28,12 @@ module ReadOnly : sig
   val get_or_recompute_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
 end
 
-type t
+include
+  Environment.S
+    with module ReadOnly = TypeEnvironmentReadOnly
+     and module PreviousEnvironment = AnnotatedGlobalEnvironment
 
-val create : EnvironmentControls.t -> t
-
-val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * string) list -> t
+val invalidate : t -> Reference.t list -> unit
 
 val global_environment : t -> AnnotatedGlobalEnvironment.t
 
@@ -38,14 +41,6 @@ val ast_environment : t -> AstEnvironment.t
 
 val module_tracker : t -> ModuleTracker.t
 
-val invalidate : t -> Reference.t list -> unit
-
-val read_only : t -> ReadOnly.t
-
 val populate_for_definitions : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
 
 val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
-
-val store : t -> unit
-
-val load : EnvironmentControls.t -> t
