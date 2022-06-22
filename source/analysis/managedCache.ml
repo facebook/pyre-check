@@ -20,7 +20,7 @@ module type In = sig
 
   module Key : SexpableKeyType
 
-  module Value : Memory.ComparableValueType
+  module Value : Memory.ValueTypeWithEquivalence
 
   module KeySet : Set.S with type Elt.t = Key.t
 

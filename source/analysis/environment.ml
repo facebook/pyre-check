@@ -82,7 +82,7 @@ module EnvironmentTable = struct
 
     module Key : Memory.KeyType
 
-    module Value : Memory.ComparableValueType
+    module Value : Memory.ValueTypeWithEquivalence
 
     type trigger [@@deriving sexp, compare]
 

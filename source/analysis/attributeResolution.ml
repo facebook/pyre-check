@@ -4610,7 +4610,7 @@ module ParseAnnotationCache = struct
     module Key = SharedMemoryKeys.ParseAnnotationKey
 
     module Value = struct
-      type t = Type.t [@@deriving compare]
+      type t = Type.t [@@deriving eq]
 
       let prefix = Prefix.make ()
 
@@ -4666,13 +4666,11 @@ module MetaclassCache = struct
 
       let to_string = show
 
-      let compare = compare
-
       let from_string = Fn.id
     end
 
     module Value = struct
-      type t = Type.t option [@@deriving compare]
+      type t = Type.t option [@@deriving equal]
 
       let prefix = Prefix.make ()
 
@@ -4729,6 +4727,8 @@ module AttributeCache = struct
       let prefix = Prefix.make ()
 
       let description = "attributes"
+
+      let equal = Memory.equal_from_compare compare
     end
 
     module KeySet = SharedMemoryKeys.AttributeTableKey.Set
@@ -4816,7 +4816,7 @@ module GlobalAnnotationCache = struct
 
       let description = "Global"
 
-      let compare = Option.compare Global.compare
+      let equal = Memory.equal_from_compare (Option.compare Global.compare)
     end
 
     type trigger = Reference.t [@@deriving sexp, compare]

@@ -32,7 +32,7 @@ module EdgesValue = struct
 
   let description = "Edges"
 
-  let compare = Option.compare compare_edges
+  let equal = Memory.equal_from_compare (Option.compare compare_edges)
 end
 
 let get_parents alias_environment name ~dependency =

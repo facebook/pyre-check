@@ -162,7 +162,7 @@ module DependencyTracking = struct
   module type TableType = sig
     include Memory.FirstClass.NoCache.S
 
-    module Value : Memory.ComparableValueType with type t = value
+    module Value : Memory.ValueTypeWithEquivalence with type t = value
   end
 
   module Make (DependencyKey : DependencyKey.S) (Table : TableType) = struct
@@ -213,8 +213,7 @@ module DependencyTracking = struct
           let value_has_changed, presence_has_changed =
             match Table.get_old table key, Table.get table key with
             | None, None -> false, false
-            | Some old_value, Some new_value ->
-                not (Int.equal 0 (Table.Value.compare old_value new_value)), false
+            | Some old_value, Some new_value -> not (Table.Value.equal old_value new_value), false
             | None, Some _
             | Some _, None ->
                 true, true
@@ -262,7 +261,7 @@ end
 module DependencyTrackedTableWithCache
     (Key : Memory.KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : Memory.ComparableValueType) =
+    (Value : Memory.ValueTypeWithEquivalence) =
 struct
   module Table = Memory.FirstClass.WithCache.Make (Key) (Value)
   include Table
@@ -279,7 +278,7 @@ end
 module DependencyTrackedTableNoCache
     (Key : Memory.KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : Memory.ComparableValueType) =
+    (Value : Memory.ValueTypeWithEquivalence) =
 struct
   module Table = Memory.FirstClass.NoCache.Make (Key) (Value)
   include Table

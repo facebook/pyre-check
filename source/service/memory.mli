@@ -41,10 +41,12 @@ module SingletonKey : sig
   val key : t
 end
 
-module type ComparableValueType = sig
+val equal_from_compare : ('a -> 'a -> int) -> 'a -> 'a -> bool
+
+module type ValueTypeWithEquivalence = sig
   include ValueType
 
-  val compare : t -> t -> int
+  val equal : t -> t -> bool
 end
 
 module type SerializableValueType = sig

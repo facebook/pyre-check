@@ -86,7 +86,7 @@ end
 module DependencyTrackedTableWithCache
     (Key : Memory.KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : Memory.ComparableValueType) : sig
+    (Value : Memory.ValueTypeWithEquivalence) : sig
   include
     Memory.FirstClass.WithCache.S
       with type value = Value.t
@@ -118,7 +118,7 @@ end
 module DependencyTrackedTableNoCache
     (Key : Memory.KeyType)
     (DependencyKey : DependencyKey.S)
-    (Value : Memory.ComparableValueType) : sig
+    (Value : Memory.ValueTypeWithEquivalence) : sig
   include
     Memory.FirstClass.NoCache.S
       with type value = Value.t

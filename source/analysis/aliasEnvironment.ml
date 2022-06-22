@@ -24,7 +24,7 @@ module AliasValue = struct
 
   let description = "Alias"
 
-  let compare = Option.compare Type.compare_alias
+  let equal = Memory.equal_from_compare (Option.compare Type.compare_alias)
 end
 
 module UnresolvedAlias = struct

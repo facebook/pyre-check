@@ -248,7 +248,7 @@ module FromReadOnlyUpstream = struct
 
     let description = "Unprocessed source"
 
-    let compare = Result.compare Source.compare ParserError.compare
+    let equal = Memory.equal_from_compare (Result.compare Source.compare ParserError.compare)
   end
 
   module RawSources = struct

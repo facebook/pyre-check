@@ -87,7 +87,7 @@ module EnvironmentTable : sig
 
     module Key : Memory.KeyType
 
-    module Value : Memory.ComparableValueType
+    module Value : Memory.ValueTypeWithEquivalence
 
     (* This is the data type of the key that we are being told to compute. This sometimes
        unfortunately has to differ from the actual key of the table, but the difference should be

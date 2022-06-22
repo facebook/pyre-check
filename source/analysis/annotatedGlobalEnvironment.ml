@@ -17,7 +17,7 @@ module GlobalLocationValue = struct
 
   let description = "Global Locations"
 
-  let compare = Option.compare Location.WithModule.compare
+  let equal = Memory.equal_from_compare (Option.compare Location.WithModule.compare)
 end
 
 module Common = struct

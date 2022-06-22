@@ -20,7 +20,7 @@ module EmptyStubCache = ManagedCache.Make (struct
 
     let description = "is from empty stub result"
 
-    let compare = Bool.compare
+    let equal = Bool.equal
   end
 
   module KeySet = Reference.Set

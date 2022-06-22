@@ -397,7 +397,7 @@ module FromReadOnlyUpstream = struct
 
     let description = "Module"
 
-    let compare = Module.compare
+    let equal = Module.equal
   end
 
   module Modules = struct
@@ -413,7 +413,7 @@ module FromReadOnlyUpstream = struct
   end
 
   module DefineNamesValue = struct
-    type t = Reference.t list [@@deriving compare]
+    type t = Reference.t list [@@deriving equal]
 
     let prefix = Prefix.make ()
 
@@ -445,7 +445,7 @@ module FromReadOnlyUpstream = struct
 
     let description = "ClassSummary"
 
-    let compare = Node.compare ClassSummary.compare
+    let equal = Memory.equal_from_compare (Node.compare ClassSummary.compare)
   end
 
   module ClassSummaries = struct
@@ -467,7 +467,8 @@ module FromReadOnlyUpstream = struct
 
     let prefix = Prefix.make ()
 
-    let compare = FunctionDefinition.compare
+    let equal definition0 definition1 =
+      Int.equal 0 (FunctionDefinition.compare definition0 definition1)
   end
 
   module FunctionDefinitions = struct
@@ -489,7 +490,7 @@ module FromReadOnlyUpstream = struct
 
     let description = "UnannotatedGlobal"
 
-    let compare = UnannotatedGlobal.compare
+    let equal = Memory.equal_from_compare UnannotatedGlobal.compare
   end
 
   module UnannotatedGlobals = struct

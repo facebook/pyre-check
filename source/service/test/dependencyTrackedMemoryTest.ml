@@ -55,7 +55,7 @@ module StringValue = struct
 
   let description = "Test1"
 
-  let compare = String.compare
+  let equal = String.equal
 end
 
 module OtherStringValue = struct
@@ -65,7 +65,7 @@ module OtherStringValue = struct
 
   let description = "Test2"
 
-  let compare = String.compare
+  let equal = String.equal
 end
 
 module TableA =

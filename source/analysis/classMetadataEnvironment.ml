@@ -28,7 +28,7 @@ module ClassMetadataValue = struct
 
   let description = "Class metadata"
 
-  let compare = Option.compare compare_class_metadata
+  let equal = Memory.equal_from_compare (Option.compare compare_class_metadata)
 end
 
 let produce_class_metadata class_hierarchy_environment class_name ~dependency =

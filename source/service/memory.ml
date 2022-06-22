@@ -207,10 +207,12 @@ module SingletonKey = struct
   let key = 0
 end
 
-module type ComparableValueType = sig
+let equal_from_compare compare value0 value1 = Int.equal 0 (compare value0 value1)
+
+module type ValueTypeWithEquivalence = sig
   include ValueType
 
-  val compare : t -> t -> int
+  val equal : t -> t -> bool
 end
 
 module type SerializableValueType = sig
