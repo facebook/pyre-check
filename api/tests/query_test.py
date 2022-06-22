@@ -196,7 +196,7 @@ class QueryAPITest(unittest.TestCase):
             },
         )
 
-    def test_annotations_per_file__file_not_found(self) -> None:
+    def test_annotations_per_file_file_not_found(self) -> None:
         test_data: connection.PyreQueryResult = {
             "response": [
                 {
