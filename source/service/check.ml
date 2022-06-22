@@ -52,15 +52,8 @@ let check
     let global_environment =
       TypeEnvironment.global_environment type_environment |> AnnotatedGlobalEnvironment.read_only
     in
-
     Statistics.performance ~name:"full environment built" ~timer ();
 
-    let global_resolution = GlobalResolution.create global_environment in
-    let indices () =
-      global_environment
-      |> AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
-    in
     if Log.is_enabled `Dotty then (
       let type_order_file =
         PyrePath.create_relative
@@ -68,10 +61,13 @@ let check
           ~relative:"type_order.dot"
       in
       Log.info "Emitting type order dotty file to %s" (PyrePath.absolute type_order_file);
+      let indices =
+        AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment global_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
+      in
+      let global_resolution = GlobalResolution.create global_environment in
       let class_hierarchy_dot =
-        ClassHierarchy.to_dot
-          (GlobalResolution.class_hierarchy global_resolution)
-          ~indices:(indices ())
+        ClassHierarchy.to_dot (GlobalResolution.class_hierarchy global_resolution) ~indices
       in
       File.create ~content:class_hierarchy_dot type_order_file |> File.write);
     if debug then
