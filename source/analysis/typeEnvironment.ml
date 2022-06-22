@@ -105,8 +105,9 @@ let create_for_testing controls module_path_code_pairs =
 
 
 let populate_for_definition ~environment:{ global_environment; check_results } name =
+  let global_environment = AnnotatedGlobalEnvironment.read_only global_environment in
   let type_check_controls, call_graph_builder, dependency =
-    let controls = AnnotatedGlobalEnvironment.controls global_environment in
+    let controls = AnnotatedGlobalEnvironment.ReadOnly.controls global_environment in
     let type_check_controls = EnvironmentControls.type_check_controls controls in
     let call_graph_builder =
       if EnvironmentControls.populate_call_graph controls then
@@ -126,7 +127,7 @@ let populate_for_definition ~environment:{ global_environment; check_results } n
   TypeCheck.check_define_by_name
     ~type_check_controls
     ~call_graph_builder
-    ~global_environment:(AnnotatedGlobalEnvironment.read_only global_environment)
+    ~global_environment
     ~dependency
     name
   >>| CheckResults.add check_results name

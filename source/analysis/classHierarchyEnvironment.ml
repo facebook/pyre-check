@@ -232,8 +232,6 @@ let load controls = { edges = Edges.load controls }
 
 let ast_environment { edges } = Edges.ast_environment edges
 
-let controls { edges } = Edges.controls edges
-
 let read_only { edges } = Edges.read_only edges
 
 let update_this_and_all_preceding_environments
@@ -244,8 +242,9 @@ let update_this_and_all_preceding_environments
   let result =
     Edges.update_this_and_all_preceding_environments edges ~scheduler ast_environment_trigger
   in
-  if controls this_environment |> EnvironmentControls.debug then
-    read_only this_environment |> ReadOnly.check_integrity;
+  let read_only = read_only this_environment in
+  if ReadOnly.controls read_only |> EnvironmentControls.debug then
+    ReadOnly.check_integrity read_only;
   result
 
 

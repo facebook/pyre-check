@@ -69,12 +69,9 @@ module Make (In : In) = struct
 
   include EnvironmentTable
 
-  let create ast_environment =
-    let table = EnvironmentTable.create ast_environment in
-    let () =
-      UnmanagedCache.enabled :=
-        EnvironmentTable.controls table |> EnvironmentControls.track_dependencies |> not
-    in
+  let create controls =
+    let table = EnvironmentTable.create controls in
+    let () = UnmanagedCache.enabled := not (EnvironmentControls.track_dependencies controls) in
     table
 
 
