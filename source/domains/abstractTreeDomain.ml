@@ -657,7 +657,12 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     match path with
     | [] -> ancestors, create_node_option element children
     | label_element :: rest -> (
-        let ancestors = transform_non_leaves path element |> Element.join ancestors in
+        let ancestors =
+          if not (Element.is_bottom element) then
+            transform_non_leaves path element |> Element.join ancestors
+          else
+            ancestors
+        in
         match label_element with
         | Label.AnyIndex when not use_precise_labels ->
             (* lookup all indexes and join result *)

@@ -2375,7 +2375,18 @@ module TreeOfStringSets = struct
     assert_equal
       ["[b]"; "[a]"]
       (labels (parse_tree ["a", ["x"]; "b", ["y"]]) |> List.map ~f:AbstractTreeDomain.Label.show)
-      ~printer:string_list_printer
+      ~printer:string_list_printer;
+    (* transform_non_leaves *)
+    let counter = ref 0 in
+    let _ =
+      parse_tree ["a", ["x"]; "b", ["y"]]
+      |> read
+           ~transform_non_leaves:(fun _ t ->
+             let () = counter := !counter + 1 in
+             t)
+           [AbstractTreeDomain.Label.Index "a"; AbstractTreeDomain.Label.Index "a"]
+    in
+    assert_equal 1 !counter
 
 
   let test_context _ =
