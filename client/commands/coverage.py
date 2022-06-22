@@ -68,12 +68,11 @@ def _print_summary(data: List[collector.FileCoverage]) -> None:
         LOG.warning(f"{path}: {coverage_rate}% lines are type checked")
 
 
-def run_coverage(
+def get_module_paths(
     configuration: frontend_configuration.Base,
     working_directory: str,
-    paths: List[str],
-    print_summary: bool,
-) -> commands.ExitCode:
+    paths: Iterable[str],
+) -> Iterable[Path]:
     working_directory_path = Path(working_directory)
     if paths:
         absolute_paths = [
@@ -83,8 +82,21 @@ def run_coverage(
         absolute_paths = [
             find_root_path(configuration.get_local_root(), working_directory_path)
         ]
-    module_paths = statistics.find_paths_to_parse(
+    return statistics.find_paths_to_parse(
         absolute_paths, excludes=configuration.get_excludes()
+    )
+
+
+def run_coverage(
+    configuration: frontend_configuration.Base,
+    working_directory: str,
+    paths: List[str],
+    print_summary: bool,
+) -> commands.ExitCode:
+    module_paths = get_module_paths(
+        configuration,
+        working_directory,
+        paths,
     )
     data = collect_coverage_for_paths(
         module_paths, working_directory, strict_default=configuration.is_strict()

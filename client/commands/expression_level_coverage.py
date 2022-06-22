@@ -3,12 +3,15 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import json
 import logging
 from dataclasses import dataclass
 from typing import List, Tuple
 
 from dataclasses_json import dataclass_json
 
+from .. import configuration as configuration_module, log
+from . import commands, frontend_configuration, query, server_connection
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -104,3 +107,42 @@ def summary_expression_level(response: object) -> str:
     )
     percent_output += f"Overall: {percent_covered}% expressions are covered"
     return percent_output
+
+
+def run_query(
+    configuration: frontend_configuration.Base,
+    query_text: str,
+    print_summary: bool = False,
+) -> commands.ExitCode:
+    socket_path = server_connection.get_default_socket_path(
+        project_root=configuration.get_global_root(),
+        relative_local_root=configuration.get_relative_local_root(),
+    )
+    try:
+        response = query.query_server(socket_path, query_text)
+        if not print_summary:
+            log.stdout.write(json.dumps(response.payload))
+        else:
+            LOG.warning(summary_expression_level(response.payload))
+        return commands.ExitCode.SUCCESS
+    except server_connection.ConnectionFailure:
+        LOG.warning(
+            "A running Pyre server is required for queries to be responded. "
+            "Please run `pyre` first to set up a server."
+        )
+        return commands.ExitCode.SERVER_NOT_FOUND
+
+
+def run(
+    configuration: configuration_module.Configuration,
+    query_text: str,
+    print_summary: bool = False,
+) -> commands.ExitCode:
+    try:
+        return run_query(
+            frontend_configuration.OpenSource(configuration), query_text, print_summary
+        )
+    except Exception as error:
+        raise commands.ClientException(
+            f"Exception occurred during pyre query: {error}"
+        ) from error
