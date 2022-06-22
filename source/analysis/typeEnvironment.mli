@@ -11,12 +11,6 @@ module Error = AnalysisError
 module ReadOnly : sig
   type t
 
-  val create
-    :  ?get_errors:(Reference.t -> Error.t list) ->
-    ?get_local_annotations:(Reference.t -> LocalAnnotationMap.ReadOnly.t option) ->
-    AnnotatedGlobalEnvironment.ReadOnly.t ->
-    t
-
   val global_environment : t -> AnnotatedGlobalEnvironment.ReadOnly.t
 
   val global_resolution : t -> GlobalResolution.t
@@ -43,10 +37,6 @@ val global_environment : t -> AnnotatedGlobalEnvironment.t
 val ast_environment : t -> AstEnvironment.t
 
 val module_tracker : t -> ModuleTracker.t
-
-val get_errors : t -> Reference.t -> Error.t list
-
-val get_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
 
 val invalidate : t -> Reference.t list -> unit
 

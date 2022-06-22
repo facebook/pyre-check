@@ -10,46 +10,6 @@ open Ast
 open Core
 module Error = AnalysisError
 
-module ReadOnly = struct
-  type t = {
-    global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
-    get_errors: Reference.t -> Error.t list;
-    get_local_annotations: Reference.t -> LocalAnnotationMap.ReadOnly.t option;
-  }
-
-  let create ?(get_errors = fun _ -> []) ?(get_local_annotations = fun _ -> None) global_environment
-    =
-    { global_environment; get_errors; get_local_annotations }
-
-
-  let global_environment { global_environment; _ } = global_environment
-
-  let global_resolution { global_environment; _ } = GlobalResolution.create global_environment
-
-  let ast_environment { global_environment; _ } =
-    AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
-
-
-  let unannotated_global_environment { global_environment; _ } =
-    AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment global_environment
-
-
-  let get_errors { get_errors; _ } = get_errors
-
-  let get_local_annotations { get_local_annotations; _ } = get_local_annotations
-
-  let get_or_recompute_local_annotations environment name =
-    match get_local_annotations environment name with
-    | Some _ as local_annotations -> local_annotations
-    | None ->
-        (* Local annotations not preserved in shared memory in a standard pyre server (they can be,
-           via TypeEnvironment.LocalAnnotations, but to save memory we only populate this for pysa
-           runs, not the normal server used by LSP). This behavior is controlled by the
-           `store_type_check_resolution` flag. *)
-        let global_environment = global_environment environment in
-        TypeCheck.compute_local_annotations ~global_environment name
-end
-
 module CheckResultValue = struct
   type t = TypeCheck.CheckResult.t
 
@@ -76,17 +36,7 @@ let module_tracker type_environment =
   ast_environment type_environment |> AstEnvironment.module_tracker
 
 
-let get_check_result { check_results; _ } reference = CheckResults.get check_results reference
-
-let get_errors environment reference =
-  get_check_result environment reference
-  >>= TypeCheck.CheckResult.errors
-  |> Option.value ~default:[]
-
-
-let get_local_annotations environment reference =
-  get_check_result environment reference >>= TypeCheck.CheckResult.local_annotations
-
+let get { check_results; _ } reference = CheckResults.get check_results reference
 
 let invalidate { check_results; _ } qualifiers =
   CheckResults.KeySet.of_list qualifiers |> CheckResults.remove_batch check_results
@@ -208,11 +158,51 @@ let populate_for_modules ~scheduler environment qualifiers =
   Profiling.track_shared_memory_usage ~name:"After legacy type check" ()
 
 
+module ReadOnly = struct
+  type t = {
+    global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
+    get: Reference.t -> CheckResultValue.t option;
+  }
+
+  let global_environment { global_environment; _ } = global_environment
+
+  let global_resolution { global_environment; _ } = GlobalResolution.create global_environment
+
+  let ast_environment { global_environment; _ } =
+    AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
+
+
+  let unannotated_global_environment { global_environment; _ } =
+    AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment global_environment
+
+
+  let get { get; _ } = get
+
+  let get_errors environment reference =
+    get environment reference >>= TypeCheck.CheckResult.errors |> Option.value ~default:[]
+
+
+  let get_local_annotations environment reference =
+    get environment reference >>= TypeCheck.CheckResult.local_annotations
+
+
+  let get_or_recompute_local_annotations environment name =
+    match get_local_annotations environment name with
+    | Some _ as local_annotations -> local_annotations
+    | None ->
+        (* Local annotations not preserved in shared memory in a standard pyre server (they can be,
+           via TypeEnvironment.LocalAnnotations, but to save memory we only populate this for pysa
+           runs, not the normal server used by LSP). This behavior is controlled by the
+           `store_type_check_resolution` flag. *)
+        let global_environment = global_environment environment in
+        TypeCheck.compute_local_annotations ~global_environment name
+end
+
 let read_only ({ global_environment; _ } as environment) =
-  ReadOnly.create
-    ~get_errors:(get_errors environment)
-    ~get_local_annotations:(get_local_annotations environment)
-    (AnnotatedGlobalEnvironment.read_only global_environment)
+  {
+    ReadOnly.global_environment = AnnotatedGlobalEnvironment.read_only global_environment;
+    get = get environment;
+  }
 
 
 (* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
