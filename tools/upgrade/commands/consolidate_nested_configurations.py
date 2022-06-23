@@ -8,6 +8,8 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from pyre_extensions import override
+
 from typing_extensions import Final
 
 from ..configuration import Configuration
@@ -93,6 +95,7 @@ class ConsolidateNestedConfigurations(ErrorSuppressingCommand):
                 nested_configurations[configuration] = []
         return nested_configurations
 
+    @override
     def run(self) -> None:
         subdirectory = self._subdirectory
         subdirectory = Path(subdirectory) if subdirectory else Path.cwd()

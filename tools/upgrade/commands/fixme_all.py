@@ -6,6 +6,8 @@
 import argparse
 import logging
 
+from pyre_extensions import override
+
 from ..configuration import Configuration
 from ..repository import Repository
 from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
@@ -55,6 +57,7 @@ class FixmeAll(ErrorSuppressingCommand):
             type=ErrorSource,
         )
 
+    @override
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         configurations = Configuration.gather_local_configurations()

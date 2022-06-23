@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import libcst
+from pyre_extensions import override
 from typing_extensions import Final
 
 from ..configuration import Configuration
@@ -28,11 +29,11 @@ from ..repository import Repository
 from .command import CommandArguments, ErrorSuppressingCommand
 from .strict_default import StrictDefault
 
-
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class TargetPyreRemover(libcst.CSTTransformer):
+    @override
     def leave_Call(
         self, original_node: libcst.Call, updated_node: libcst.Call
     ) -> libcst.Call:
@@ -316,6 +317,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
             configuration_directories.extend(missing_directories)
         return [Path(directory) for directory in configuration_directories]
 
+    @override
     def run(self) -> None:
         # TODO(T62926437): Basic integration testing.
         subdirectory = self._subdirectory

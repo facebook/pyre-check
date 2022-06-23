@@ -11,6 +11,8 @@ from logging import Logger
 from pathlib import Path
 from typing import Sequence
 
+from pyre_extensions import override
+
 from ..commands.command import Command
 from ..configuration import Configuration
 from ..errors import Errors
@@ -45,6 +47,7 @@ class MissingOverrideReturnAnnotations(Command):
             default=None,
         )
 
+    @override
     def run(self) -> None:
         errors = Errors.from_stdin(self._only_fix_error_code)
         # pyre-fixme[16]: `List` has no attribute `paths_to_errors`.
@@ -103,6 +106,7 @@ class MissingGlobalAnnotations(Command):
             default=None,
         )
 
+    @override
     def run(self) -> None:
         errors = Errors.from_stdin(self._only_fix_error_code)
         # pyre-fixme[16]: `List` has no attribute `paths_to_errors`.
@@ -153,6 +157,7 @@ class SetUseBuck1(Command):
             nargs="*",
         )
 
+    @override
     def run(self) -> None:
         for local_root in self._local_roots:
             configuration = Configuration(local_root / ".pyre_configuration.local")

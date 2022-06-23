@@ -13,6 +13,7 @@ from typing import Dict, List, Optional, Sequence
 import libcst
 from libcst.codemod import CodemodContext
 from libcst.codemod.visitors import AddImportsVisitor
+from pyre_extensions import override
 
 from ..commands.command import CommandArguments, ErrorSuppressingCommand
 from ..configuration import Configuration
@@ -138,6 +139,7 @@ class SupportSqlalchemy(ErrorSuppressingCommand):
             modified_tree = AddImportsVisitor(context).transform_module(source)
             path.write_text(modified_tree.code)
 
+    @override
     def run(self) -> None:
         local_configuration_path = self._local_root / ".pyre_configuration.local"
         local_configuration = Configuration(local_configuration_path)

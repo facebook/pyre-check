@@ -7,11 +7,12 @@ import argparse
 import logging
 from pathlib import Path
 
+from pyre_extensions import override
+
 from ..configuration import Configuration
 from ..filesystem import path_exists
 from ..repository import Repository
 from .command import CommandArguments, ErrorSource, ErrorSuppressingCommand
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ class FixmeSingle(ErrorSuppressingCommand):
             help="Ignore all errors if fixme count exceeds threshold.",
         )
 
+    @override
     def run(self) -> None:
         project_configuration = Configuration.find_project_configuration()
         configuration_path = self._path / ".pyre_configuration.local"

@@ -7,6 +7,8 @@ import argparse
 import logging
 from typing import Optional
 
+from pyre_extensions import override
+
 from ..configuration import Configuration
 from ..errors import Errors
 from ..repository import Repository
@@ -59,6 +61,7 @@ class Fixme(ErrorSuppressingCommand):
             default=None,
         )
 
+    @override
     def run(self) -> None:
         if self._error_source == ErrorSource.GENERATE:
             errors = self._generate_errors()

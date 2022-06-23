@@ -9,6 +9,8 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
+from pyre_extensions import override
+
 from .. import UserError
 from ..configuration import Configuration
 from ..filesystem import path_exists
@@ -109,6 +111,7 @@ class FixConfiguration(ErrorSuppressingCommand):
             reviewers=["pyre", "sentinel"],
         )
 
+    @override
     def run(self) -> None:
         self._remove_bad_targets()
         self._consolidate_nested()

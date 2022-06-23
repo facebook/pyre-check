@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Iterable, List, Optional, Type, TypeVar
 
 import dataclasses_json
+from pyre_extensions import override
 
 from .. import json_rpc
 from . import async_server_connection
@@ -24,11 +25,13 @@ Value = TypeVar("Value")
 
 
 class ServerNotInitializedError(json_rpc.JSONRPCException):
+    @override
     def error_code(self) -> int:
         return -32002
 
 
 class RequestCancelledError(json_rpc.JSONRPCException):
+    @override
     def error_code(self) -> int:
         return -32800
 

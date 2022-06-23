@@ -8,6 +8,8 @@ import logging
 from pathlib import Path
 from typing import List
 
+from pyre_extensions import override
+
 from ..configuration import Configuration
 from ..filesystem import path_exists
 from ..repository import Repository
@@ -112,6 +114,7 @@ class GlobalVersionUpdate(Command):
             ignore_failures=True,
         )
 
+    @override
     def run(self) -> None:
         global_configuration = Configuration.find_project_configuration()
 

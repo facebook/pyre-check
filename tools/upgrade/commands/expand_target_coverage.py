@@ -8,6 +8,8 @@ import logging
 from pathlib import Path
 from typing import Optional
 
+from pyre_extensions import override
+
 from typing_extensions import Final
 
 from ..configuration import Configuration
@@ -60,6 +62,7 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
             help="Ignore all errors in a file if fixme count exceeds threshold.",
         )
 
+    @override
     def run(self) -> None:
         local_root = self._local_configuration
         local_root = Path(local_root) if local_root else Path.cwd()

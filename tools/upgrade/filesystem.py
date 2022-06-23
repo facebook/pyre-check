@@ -12,6 +12,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional
 
+from pyre_extensions import override
+
 from . import ast
 
 
@@ -43,6 +45,7 @@ class TargetCollector(builtin_ast.NodeVisitor):
         self._targets: List[Target] = []
         self._contains_strict: bool = False
 
+    @override
     def visit_Call(self, node: builtin_ast.Call) -> None:
         target_fields = node.keywords
         name = None
@@ -220,6 +223,7 @@ class Filesystem:
 
 
 class MercurialBackedFilesystem(Filesystem):
+    @override
     def list(
         self, root: str, patterns: List[str], exclude: Optional[List[str]] = None
     ) -> List[str]:

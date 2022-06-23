@@ -6,6 +6,8 @@
 import argparse
 import logging
 
+from pyre_extensions import override
+
 from ..configuration import Configuration
 from ..repository import Repository
 from .command import Command
@@ -45,6 +47,7 @@ class PysaVersionUpdate(Command):
             "--no-commit", action="store_true", help="Keep changes in working state."
         )
 
+    @override
     def run(self) -> None:
         global_configuration = Configuration.find_project_configuration()
 
