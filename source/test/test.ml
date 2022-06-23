@@ -3062,6 +3062,59 @@ let assert_equivalent_attributes ~context source expected_class_sources =
   List.iter ~f:assert_attributes_match_original_class expected_class_sources
 
 
+(* Assert that the class [class_name] in [source], after all transformations, has attributes
+   equivalent to the class [class_name] in [expected_equivalent_class_source].
+
+   This is useful when Pyre adds, removes, or modifies the original class's attributes, e.g., by
+   adding dunder methods. *)
+let assert_equivalent_attributes_single_class
+    ~context
+    ~source
+    ~class_name
+    expected_equivalent_class_source
+  =
+  let module_name = "test" in
+  let attributes source =
+    Memory.reset_shared_memory ();
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+      ScratchProject.setup ~context [Format.asprintf "%s.py" module_name, source]
+      |> ScratchProject.build_global_environment
+    in
+    let global_resolution = GlobalResolution.create global_environment in
+    let compare_by_name left right =
+      String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
+    in
+    Format.asprintf "%s.%s" module_name class_name
+    |> GlobalResolution.attributes ~transitive:false ~resolution:global_resolution
+    |> (fun attributes -> Option.value_exn attributes)
+    |> List.sort ~compare:compare_by_name
+    |> List.map
+         ~f:
+           (GlobalResolution.instantiate_attribute
+              ~resolution:global_resolution
+              ~accessed_through_class:false)
+  in
+  let pp_as_sexps format l =
+    List.map l ~f:Annotated.Attribute.sexp_of_instantiated
+    |> List.map ~f:Sexp.to_string_hum
+    |> String.concat ~sep:"\n"
+    |> Format.fprintf format "%s\n"
+  in
+  let simple_print l =
+    let simple attribute =
+      let annotation = Annotated.Attribute.annotation attribute |> Annotation.annotation in
+      let name = Annotated.Attribute.name attribute in
+      Printf.sprintf "%s, %s" name (Type.show annotation)
+    in
+    List.map l ~f:simple |> String.concat ~sep:"\n"
+  in
+  assert_equal
+    ~printer:simple_print
+    ~pp_diff:(diff ~print:pp_as_sexps)
+    (attributes expected_equivalent_class_source)
+    (attributes source)
+
+
 module MockClassHierarchyHandler = struct
   type t = {
     edges: ClassHierarchy.Target.t list IndexTracker.Table.t;
