@@ -14,7 +14,6 @@ import re
 import shutil
 import subprocess
 import sys
-import traceback
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, TypeVar, Union
 
