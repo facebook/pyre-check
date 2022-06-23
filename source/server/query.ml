@@ -777,7 +777,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         let find_resolved_types path =
           match
             LocationBasedLookupProcessor.find_expression_level_coverage_for_path
-              ~environment
+              ~environment:(TypeEnvironment.read_only environment)
               ~build_system
               ~configuration
               path
@@ -975,7 +975,7 @@ let rec process_request ~environment ~build_system ~configuration request =
         let find_resolved_types path =
           match
             LocationBasedLookupProcessor.find_all_resolved_types_for_path
-              ~environment
+              ~environment:(TypeEnvironment.read_only environment)
               ~build_system
               ~configuration
               path

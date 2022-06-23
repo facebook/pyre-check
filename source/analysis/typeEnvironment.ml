@@ -169,6 +169,10 @@ module ReadOnly = struct
     |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 
 
+  let module_tracker environment =
+    ast_environment environment |> AstEnvironment.ReadOnly.module_tracker
+
+
   let get_errors environment ?dependency reference =
     get ?dependency environment reference
     >>= TypeCheck.CheckResult.errors

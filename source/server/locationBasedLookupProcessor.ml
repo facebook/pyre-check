@@ -21,9 +21,7 @@ type coverage_by_location = (LocationBasedLookup.coverage_for_path, error_reason
 let get_lookup ~configuration ~build_system ~environment path =
   let generate_lookup_for_existent_path { ModulePath.qualifier; _ } =
     let timer = Timer.start () in
-    let lookup =
-      LocationBasedLookup.create_of_module (TypeEnvironment.read_only environment) qualifier
-    in
+    let lookup = LocationBasedLookup.create_of_module environment qualifier in
     Log.log
       ~section:`Performance
       "locationBasedLookupProcessor: create_of_module: %d"
@@ -40,7 +38,7 @@ let get_lookup ~configuration ~build_system ~environment path =
   | analysis_path :: _ -> (
       (* If a source path corresponds to multiple artifacts, randomly pick an artifact and compute
          results for it. *)
-      let module_tracker = TypeEnvironment.module_tracker environment |> ModuleTracker.read_only in
+      let module_tracker = TypeEnvironment.ReadOnly.module_tracker environment in
       match ModuleTracker.ReadOnly.lookup_path module_tracker analysis_path with
       | ModuleTracker.PathLookup.Found module_path -> generate_lookup_for_existent_path module_path
       | ModuleTracker.PathLookup.ShadowedBy _ -> generate_lookup_for_nonexistent_path StubShadowing

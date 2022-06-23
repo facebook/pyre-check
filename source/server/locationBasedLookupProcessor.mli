@@ -13,23 +13,19 @@ type error_reason =
   | FileNotFound
 [@@deriving sexp]
 
-(* TODO (T82533515): All the `TypeEnvironment.t` arguments should really be typed as
-   `TypeEnvironment.ReadOnly.t`. But we are prevented from doing it at the moment due to the lack of
-   a read-only variant of `ModuleTracker.t`. *)
-
 type types_by_location = ((Location.t * Type.t) list, error_reason) Result.t
 
 type coverage_by_location = (LocationBasedLookup.coverage_for_path, error_reason) Result.t
 
 val find_all_resolved_types_for_path
-  :  environment:TypeEnvironment.t ->
+  :  environment:TypeEnvironment.ReadOnly.t ->
   build_system:BuildSystem.t ->
   configuration:Configuration.Analysis.t ->
   string ->
   types_by_location
 
 val find_expression_level_coverage_for_path
-  :  environment:TypeEnvironment.t ->
+  :  environment:TypeEnvironment.ReadOnly.t ->
   build_system:BuildSystem.t ->
   configuration:Configuration.Analysis.t ->
   string ->
@@ -38,6 +34,6 @@ val find_expression_level_coverage_for_path
 val get_lookup
   :  configuration:Configuration.Analysis.t ->
   build_system:BuildSystem.t ->
-  environment:TypeEnvironment.t ->
+  environment:TypeEnvironment.ReadOnly.t ->
   string ->
   (LocationBasedLookup.coverage_data_lookup, error_reason) result

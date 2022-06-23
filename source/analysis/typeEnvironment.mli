@@ -19,6 +19,8 @@ module TypeEnvironmentReadOnly : sig
 
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 
+  val module_tracker : t -> ModuleTracker.ReadOnly.t
+
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
   val get_errors
