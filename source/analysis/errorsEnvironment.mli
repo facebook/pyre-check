@@ -10,6 +10,8 @@ module ErrorsEnvironmentReadOnly : sig
 
   val type_environment : t -> TypeEnvironment.ReadOnly.t
 
+  val ast_environment : t -> AstEnvironment.ReadOnly.t
+
   val module_tracker : t -> ModuleTracker.ReadOnly.t
 
   val get_errors_for_qualifier : t -> Ast.Reference.t -> AnalysisError.t list

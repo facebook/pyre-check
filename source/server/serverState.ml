@@ -6,7 +6,6 @@
  *)
 
 open Core
-open Ast
 open Analysis
 
 module Subscriptions = struct
@@ -25,16 +24,14 @@ end
 
 type t = {
   build_system: BuildSystem.t;
-  type_environment: TypeEnvironment.t;
-  error_table: AnalysisError.t list Reference.Table.t;
+  errors_environment: ErrorsEnvironment.t;
   subscriptions: Subscriptions.t;
 }
 
-let create ?error_table ?subscriptions ~build_system ~type_environment () =
+let create ?subscriptions ~build_system ~errors_environment () =
   {
     build_system;
-    type_environment;
-    error_table = Option.value error_table ~default:(Reference.Table.create ());
+    errors_environment;
     subscriptions = Option.value subscriptions ~default:(Subscriptions.create ());
   }
 
@@ -55,36 +52,18 @@ module StoredConfiguration = Memory.Serializer (struct
   let deserialize = Fn.id
 end)
 
-module ServerErrors = Memory.Serializer (struct
-  type t = Analysis.AnalysisError.t list Reference.Table.t
-
-  module Serialized = struct
-    type t = (Reference.t * Analysis.AnalysisError.t list) list
-
-    let prefix = Prefix.make ()
-
-    let description = "All errors"
-  end
-
-  let serialize = Hashtbl.to_alist
-
-  let deserialize data = Reference.Table.of_alist_exn data
-end)
-
 let load_stored_configuration = StoredConfiguration.load
 
 let load ~configuration ~build_system () =
-  let type_environment =
-    EnvironmentControls.create configuration |> Analysis.TypeEnvironment.load
+  let errors_environment =
+    EnvironmentControls.create configuration |> Analysis.ErrorsEnvironment.load
   in
-  let error_table = ServerErrors.load () in
-  create ~build_system ~type_environment ~error_table ()
+  create ~build_system ~errors_environment ()
 
 
-let store ~path ~configuration { type_environment; error_table; build_system; _ } =
+let store ~path ~configuration { errors_environment; build_system; _ } =
   Memory.SharedMemory.collect `aggressive;
-  Analysis.TypeEnvironment.store type_environment;
+  Analysis.ErrorsEnvironment.store errors_environment;
   StoredConfiguration.store configuration;
-  ServerErrors.store error_table;
   BuildSystem.store build_system;
   Memory.save_shared_memory ~path:(PyrePath.absolute path) ~configuration

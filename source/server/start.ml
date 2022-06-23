@@ -251,20 +251,11 @@ let initialize_server_state
   let _ = Memory.get_heap_handle configuration in
   let start_from_scratch ~build_system () =
     Log.info "Initializing server state from scratch...";
-    let { Service.Check.environment; errors } =
+    let { Service.Check.environment; _ } =
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
           Service.Check.check ~scheduler ~configuration ~populate_call_graph:true)
     in
-    let error_table =
-      let table = Ast.Reference.Table.create () in
-      let add_error error =
-        let key = Analysis.AnalysisError.module_reference error in
-        Hashtbl.add_multi table ~key ~data:error
-      in
-      List.iter errors ~f:add_error;
-      table
-    in
-    ServerState.create ~build_system ~type_environment:environment ~error_table ()
+    ServerState.create ~build_system ~errors_environment:environment ()
   in
   let build_and_start_from_scratch ~build_system_initializer () =
     let open Lwt.Infix in

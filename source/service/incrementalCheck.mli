@@ -16,7 +16,6 @@ type errors = Analysis.AnalysisError.t list [@@deriving show]
 val recheck
   :  configuration:Configuration.Analysis.t ->
   scheduler:Scheduler.t ->
-  environment:Analysis.TypeEnvironment.t ->
-  errors:errors Ast.Reference.Table.t ->
+  environment:Analysis.ErrorsEnvironment.t ->
   ArtifactPath.t list ->
-  Ast.Reference.t list * errors
+  unit

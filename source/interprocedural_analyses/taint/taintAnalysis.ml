@@ -67,7 +67,7 @@ let type_check ~scheduler ~configuration ~cache =
         { configuration with Configuration.Analysis.analyze_external_sources = true }
       in
       Service.Check.check ~scheduler ~configuration ~populate_call_graph:false
-      |> fun { environment; _ } -> environment)
+      |> fun { environment; _ } -> Analysis.ErrorsEnvironment.type_environment environment)
 
 
 let join_parse_result

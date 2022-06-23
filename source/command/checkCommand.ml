@@ -135,7 +135,7 @@ let do_check configuration =
             Service.Check.check ~scheduler ~configuration ~populate_call_graph:true
           in
           ( errors,
-            Analysis.TypeEnvironment.ast_environment environment
+            Analysis.ErrorsEnvironment.ast_environment environment
             |> Analysis.AstEnvironment.read_only )))
 
 

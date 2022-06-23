@@ -8,7 +8,7 @@
 open Analysis
 
 type result = {
-  environment: TypeEnvironment.t;
+  environment: ErrorsEnvironment.t;
   errors: AnalysisError.t list;
 }
 

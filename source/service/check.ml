@@ -9,7 +9,7 @@ open Core
 open Pyre
 
 type result = {
-  environment: Analysis.TypeEnvironment.t;
+  environment: Analysis.ErrorsEnvironment.t;
   errors: Analysis.AnalysisError.t list;
 }
 
@@ -41,17 +41,19 @@ let check
   search_paths |> List.iter ~f:check_search_path_exists;
   (* Profiling helper *)
   Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
-  let environment, qualifiers =
+  let environment =
     let open Analysis in
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
+    let errors_environment =
+      EnvironmentControls.create ~populate_call_graph configuration |> ErrorsEnvironment.create
+    in
     let type_environment =
-      EnvironmentControls.create ~populate_call_graph configuration |> TypeEnvironment.create
+      ErrorsEnvironment.read_only errors_environment |> ErrorsEnvironment.ReadOnly.type_environment
     in
-    let global_environment =
-      TypeEnvironment.global_environment type_environment |> AnnotatedGlobalEnvironment.read_only
-    in
+
+    let global_environment = TypeEnvironment.ReadOnly.global_environment type_environment in
     Statistics.performance ~name:"full environment built" ~timer ();
 
     if Log.is_enabled `Dotty then (
@@ -77,17 +79,12 @@ let check
         ~integers:["size", Memory.heap_size ()]
         ();
 
-    let project_qualifiers =
-      AnnotatedGlobalEnvironment.ReadOnly.project_qualifiers global_environment
-    in
-    type_environment, project_qualifiers
+    errors_environment
   in
   let errors =
-    Analysis.TypeEnvironment.populate_for_modules ~scheduler environment qualifiers;
-    Analysis.Postprocessing.run
+    Analysis.ErrorsEnvironment.ReadOnly.get_all_errors_map_reduce
       ~scheduler
-      ~environment:(Analysis.TypeEnvironment.read_only environment)
-      qualifiers
+      (Analysis.ErrorsEnvironment.read_only environment)
   in
   Profiling.track_shared_memory_usage ();
 

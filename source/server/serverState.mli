@@ -21,16 +21,14 @@ end
 
 type t = private {
   build_system: BuildSystem.t;
-  type_environment: Analysis.TypeEnvironment.t;
-  error_table: Analysis.AnalysisError.t list Ast.Reference.Table.t;
+  errors_environment: Analysis.ErrorsEnvironment.t;
   subscriptions: Subscriptions.t;
 }
 
 val create
-  :  ?error_table:Analysis.AnalysisError.t list Ast.Reference.Table.t ->
-  ?subscriptions:Subscriptions.t ->
+  :  ?subscriptions:Subscriptions.t ->
   build_system:BuildSystem.t ->
-  type_environment:Analysis.TypeEnvironment.t ->
+  errors_environment:Analysis.ErrorsEnvironment.t ->
   unit ->
   t
 

@@ -33,12 +33,14 @@ let instantiate_errors ~build_system ~configuration ~ast_environment errors =
 
 let process_display_type_error_request
     ~configuration
-    ~state:{ ServerState.type_environment; error_table; build_system; _ }
+    ~state:{ ServerState.errors_environment; build_system; _ }
     paths
   =
+  let errors_environment = ErrorsEnvironment.read_only errors_environment in
+  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
   let modules =
     match paths with
-    | [] -> Hashtbl.keys error_table
+    | [] -> ModuleTracker.ReadOnly.project_qualifiers module_tracker
     | _ ->
         let get_module_for_source_path path =
           let path = PyrePath.create_absolute path |> SourcePath.create in
@@ -51,15 +53,12 @@ let process_display_type_error_request
 
                  NOTE (grievejia): It is possible for the type errors to differ. We may need to
                  reconsider how this is handled in the future. *)
-              module_of_path
-                ~module_tracker:
-                  (TypeEnvironment.module_tracker type_environment |> ModuleTracker.read_only)
-                artifact_path
+              module_of_path ~module_tracker artifact_path
         in
         List.filter_map paths ~f:get_module_for_source_path
   in
   let errors =
-    let get_type_error qualifier = Hashtbl.find error_table qualifier |> Option.value ~default:[] in
+    let get_type_error = ErrorsEnvironment.ReadOnly.get_errors_for_qualifier errors_environment in
     List.concat_map modules ~f:get_type_error |> List.sort ~compare:AnalysisError.compare
   in
   Response.TypeErrors
@@ -67,8 +66,7 @@ let process_display_type_error_request
        errors
        ~build_system
        ~configuration
-       ~ast_environment:
-         (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only))
+       ~ast_environment:(ErrorsEnvironment.ReadOnly.ast_environment errors_environment))
 
 
 let create_info_response
@@ -90,12 +88,13 @@ let create_info_response
 
 let process_incremental_update_request
     ~properties:({ ServerProperties.configuration; critical_files; _ } as properties)
-    ~state:({ ServerState.type_environment; error_table; subscriptions; build_system; _ } as state)
+    ~state:({ ServerState.errors_environment; subscriptions; build_system; _ } as state)
     paths
   =
   let open Lwt.Infix in
   let paths = List.map paths ~f:PyrePath.create_absolute in
   let subscriptions = ServerState.Subscriptions.all subscriptions in
+  let read_only_errors_environment = ErrorsEnvironment.read_only errors_environment in
   match CriticalFile.find critical_files ~within:paths with
   | Some path ->
       let message =
@@ -113,8 +112,7 @@ let process_incremental_update_request
       let create_type_errors_response =
         lazy
           (let errors =
-             Hashtbl.data error_table
-             |> List.concat_no_order
+             ErrorsEnvironment.ReadOnly.get_all_errors read_only_errors_environment
              |> List.sort ~compare:AnalysisError.compare
            in
            Response.TypeErrors
@@ -123,7 +121,7 @@ let process_incremental_update_request
                 ~build_system
                 ~configuration
                 ~ast_environment:
-                  (TypeEnvironment.ast_environment type_environment |> AstEnvironment.read_only)))
+                  (ErrorsEnvironment.ReadOnly.ast_environment read_only_errors_environment)))
       in
       Subscription.batch_send
         ~response:(create_status_update_response Response.ServerStatus.Rebuilding)
@@ -140,13 +138,12 @@ let process_incremental_update_request
         |> List.append changed_paths_from_rebuild
         |> List.dedup_and_sort ~compare:ArtifactPath.compare
       in
-      let _ =
+      let () =
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
             Service.IncrementalCheck.recheck
               ~configuration
               ~scheduler
-              ~environment:type_environment
-              ~errors:error_table
+              ~environment:errors_environment
               changed_paths)
       in
       Subscription.batch_send ~response:create_type_errors_response subscriptions
@@ -155,7 +152,7 @@ let process_incremental_update_request
 
 let process_request
     ~properties:({ ServerProperties.configuration; _ } as properties)
-    ~state:({ ServerState.type_environment; build_system; _ } as state)
+    ~state:({ ServerState.errors_environment; build_system; _ } as state)
     request
   =
   match request with
@@ -171,7 +168,7 @@ let process_request
         Response.Query
           (Query.parse_and_process_request
              ~build_system
-             ~environment:type_environment
+             ~environment:(ErrorsEnvironment.type_environment errors_environment)
              ~configuration
              query_text)
       in
