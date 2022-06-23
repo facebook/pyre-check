@@ -2017,7 +2017,51 @@ let test_check_optional_typed_dictionary context =
     [
       "TypedDict initialization error [55]: Expected type `str` for `MyDict` field `b` but got \
        `int`.";
-    ]
+    ];
+  ()
+
+
+let test_required_not_required_fields context =
+  assert_type_errors_inject_typing_and_typing_extensions
+    ~context
+    {|
+      from typing import Any, TypedDict, Optional
+      from __TYPING_PLACEHOLDER import NotRequired
+
+      class Movie(TypedDict):
+        name: str
+        year: NotRequired[int]
+
+      def main(movie: Movie) -> None:
+        x: str = movie["name"]
+        y: int = movie["year"]
+
+        movie2: Movie = { "name": "The Matrix", "year": 1999 }
+        movie3: Movie = { "name": "The Matrix" }
+    |}
+    [];
+  assert_type_errors_inject_typing_and_typing_extensions
+    ~context
+    {|
+      from typing import Any, TypedDict, Optional
+      from __TYPING_PLACEHOLDER import Required
+
+      class MovieNonTotal(TypedDict, total=False):
+        name: Required[str]
+        year: int
+
+      def main(movie: MovieNonTotal) -> None:
+        x: str = movie["name"]
+        y: int = movie["year"]
+
+        movie2: MovieNonTotal = { "name": "The Matrix", "year": 1999 }
+        movie3: MovieNonTotal = { "year": 1999 }
+    |}
+    [
+      "TypedDict initialization error [55]: Missing required field `name` for TypedDict \
+       `MovieNonTotal`.";
+    ];
+  ()
 
 
 let () =
@@ -2028,5 +2072,6 @@ let () =
          "check_typed_dictionary_inheritance" >:: test_check_typed_dictionary_inheritance;
          "check_typed_dictionary_in_alias" >:: test_check_typed_dictionary_in_alias;
          "check_optional_typed_dictionary" >:: test_check_optional_typed_dictionary;
+         "required_not_required_fields" >:: test_required_not_required_fields;
        ]
   |> Test.run

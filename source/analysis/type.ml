@@ -6130,7 +6130,23 @@ module TypedDictionary = struct
   let anonymous fields = { name = "$anonymous"; fields }
 
   let create_field ~annotation ~has_non_total_typed_dictionary_base_class name =
-    { name; annotation; required = not has_non_total_typed_dictionary_base_class }
+    let annotation, required =
+      match annotation with
+      | Parametric
+          {
+            name = "typing_extensions.NotRequired" | "typing.NotRequired";
+            parameters = [Single annotation];
+          } ->
+          annotation, false
+      | Parametric
+          {
+            name = "typing_extensions.Required" | "typing.Required";
+            parameters = [Single annotation];
+          } ->
+          annotation, true
+      | _ -> annotation, not has_non_total_typed_dictionary_base_class
+    in
+    { name; annotation; required }
 
 
   let are_fields_total = are_fields_total

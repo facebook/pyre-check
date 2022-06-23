@@ -2578,15 +2578,8 @@ class base class_metadata_environment dependency =
             (Reference.show name)
           |> List.filter_map ~f:class_summary
         in
-        let total =
-          ClassHierarchy.is_total_typed_dictionary
-            ~class_hierarchy:
-              (ClassHierarchyEnvironment.ReadOnly.class_hierarchy
-                 ?dependency
-                 (class_hierarchy_environment class_metadata_environment))
-            class_name
-        in
-        let base_typed_dictionary_definition =
+        let base_typed_dictionary_definition fields =
+          let total = Type.TypedDictionary.are_fields_total fields in
           match class_summary (Type.TypedDictionary.class_name ~total) with
           | Some definition -> definition
           | None -> failwith "Expected to find TypedDictionary"
@@ -2698,7 +2691,8 @@ class base class_metadata_environment dependency =
         let all_special_methods =
           constructor
           ::
-          (get_field_attributes ~include_generated_attributes:true base_typed_dictionary_definition
+          (base_typed_dictionary_definition fields
+          |> get_field_attributes ~include_generated_attributes:true
           |> List.filter_map ~f:overload_method)
         in
         List.iter ~f:(UninstantiatedAttributeTable.add table) all_special_methods

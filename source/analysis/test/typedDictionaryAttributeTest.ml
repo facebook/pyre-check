@@ -13,15 +13,42 @@ let test_typed_dictionary_attributes context =
   let assert_equivalent_typed_dictionary_attribute_types =
     assert_equivalent_typed_dictionary_attribute_types ~context
   in
-  assert_equivalent_typed_dictionary_attribute_types
-    ~source:
-      {|
+  let assert_typed_dictionary_attributes
+      ~equivalent_sources
+      ~class_name
+      expected_equivalent_class_source
+    =
+    List.iter equivalent_sources ~f:(fun source ->
+        assert_equivalent_typed_dictionary_attribute_types
+          ~source
+          ~class_name
+          expected_equivalent_class_source)
+  in
+  assert_typed_dictionary_attributes
+    ~equivalent_sources:
+      [
+        {|
       from typing_extensions import TypedDict
 
       class Movie(TypedDict):
         name: str
         year: int
-    |}
+    |};
+        {|
+      from typing_extensions import TypedDict, Required
+
+      class Movie(TypedDict):
+        name: Required[str]
+        year: Required[int]
+    |};
+        {|
+      from typing_extensions import TypedDict, Required
+
+      class Movie(TypedDict, total=False):
+        name: Required[str]
+        year: Required[int]
+    |};
+      ]
     ~class_name:"Movie"
     {|
         from typing import overload, Optional, TypeVar, Union
@@ -70,15 +97,31 @@ let test_typed_dictionary_attributes context =
           def update(self, movie: Movie, /) -> None: ...
           def update(self) -> DontCare: ...
       |};
-  assert_equivalent_typed_dictionary_attribute_types
-    ~source:
-      {|
+  assert_typed_dictionary_attributes
+    ~equivalent_sources:
+      [
+        {|
       from typing_extensions import TypedDict
 
       class MovieNonTotal(TypedDict, total=False):
         name: str
         year: int
-    |}
+    |};
+        {|
+      from typing_extensions import NotRequired, TypedDict
+
+      class MovieNonTotal(TypedDict, total=False):
+        name: NotRequired[str]
+        year: NotRequired[int]
+    |};
+        {|
+      from typing_extensions import NotRequired, TypedDict
+
+      class MovieNonTotal(TypedDict):
+        name: NotRequired[str]
+        year: NotRequired[int]
+    |};
+      ]
     ~class_name:"MovieNonTotal"
     {|
         from typing import overload, Optional, TypeVar, Union
@@ -143,9 +186,10 @@ let test_typed_dictionary_attributes context =
           def pop(self, k: L["year"], default: _T) -> Union[int, _T]: ...
           def pop(self) -> DontCare: ...
       |};
-  assert_equivalent_typed_dictionary_attribute_types
-    ~source:
-      {|
+  assert_typed_dictionary_attributes
+    ~equivalent_sources:
+      [
+        {|
       from typing_extensions import TypedDict
 
       class MovieBaseTotal(TypedDict):
@@ -153,7 +197,15 @@ let test_typed_dictionary_attributes context =
 
       class MovieChildNonTotal(MovieBaseTotal, total=False):
         year: int
-    |}
+    |};
+        {|
+      from typing_extensions import Required, TypedDict
+
+      class MovieChildNonTotal(TypedDict, total=False):
+        name: Required[str]
+        year: int
+    |};
+      ]
     ~class_name:"MovieChildNonTotal"
     {|
         from typing import overload, Optional, TypeVar, Union
@@ -212,9 +264,10 @@ let test_typed_dictionary_attributes context =
           def pop(self, k: L["year"], default: _T) -> Union[int, _T]: ...
           def pop(self) -> DontCare: ...
       |};
-  assert_equivalent_typed_dictionary_attribute_types
-    ~source:
-      {|
+  assert_typed_dictionary_attributes
+    ~equivalent_sources:
+      [
+        {|
       from typing_extensions import TypedDict
 
       class MovieBaseNonTotal(TypedDict, total=False):
@@ -222,7 +275,15 @@ let test_typed_dictionary_attributes context =
 
       class MovieChildTotal(MovieBaseNonTotal):
         year: int
-    |}
+    |};
+        {|
+      from typing_extensions import NotRequired, TypedDict
+
+      class MovieChildTotal(TypedDict):
+        name: NotRequired[str]
+        year: int
+    |};
+      ]
     ~class_name:"MovieChildTotal"
     {|
         from typing import overload, Optional, TypeVar, Union
