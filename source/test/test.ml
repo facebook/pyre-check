@@ -3009,12 +3009,41 @@ let assert_errors
   assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") errors descriptions
 
 
+let assert_instantiated_attribute_equal expected actual =
+  let pp_as_sexps format l =
+    List.map l ~f:Annotated.Attribute.sexp_of_instantiated
+    |> List.map ~f:Sexp.to_string_hum
+    |> String.concat ~sep:"\n"
+    |> Format.fprintf format "%s\n"
+  in
+  let simple_print l =
+    let simple attribute =
+      let annotation = Annotated.Attribute.annotation attribute |> Annotation.annotation in
+      let name = Annotated.Attribute.name attribute in
+      Printf.sprintf "%s, %s" name (Type.show annotation)
+    in
+    List.map l ~f:simple |> String.concat ~sep:"\n"
+  in
+  assert_equal
+    ~cmp:[%compare.equal: Annotated.Attribute.instantiated list]
+    ~printer:simple_print
+    ~pp_diff:(diff ~print:pp_as_sexps)
+    expected
+    actual
+
+
 (* Assert that the class [class_name] in [source], after all transformations, has attributes
    equivalent to the class [class_name] in [expected_equivalent_class_source].
 
    This is useful when Pyre adds, removes, or modifies the original class's attributes, e.g., by
    adding dunder methods. *)
-let assert_equivalent_attributes ~context ~source ~class_name expected_equivalent_class_source =
+let assert_equivalent_attributes
+    ~context
+    ?(assert_attribute_equal = assert_instantiated_attribute_equal)
+    ~source
+    ~class_name
+    expected_equivalent_class_source
+  =
   let module_name = "test" in
   let attributes source =
     Memory.reset_shared_memory ();
@@ -3036,25 +3065,105 @@ let assert_equivalent_attributes ~context ~source ~class_name expected_equivalen
               ~resolution:global_resolution
               ~accessed_through_class:false)
   in
-  let pp_as_sexps format l =
-    List.map l ~f:Annotated.Attribute.sexp_of_instantiated
-    |> List.map ~f:Sexp.to_string_hum
-    |> String.concat ~sep:"\n"
-    |> Format.fprintf format "%s\n"
+  assert_attribute_equal (attributes expected_equivalent_class_source) (attributes source)
+
+
+(* Assert that the class [expected_equivalent_class_source] has the same attribute types as the
+   `TypedDict` [class_name].
+
+   Pyre generates TypedDict methods based on the declared fields, often using overloads. The base
+   signature of those methods usually has undefined parameters and returns Any. This is hard to
+   express as a proper Python method in [expected_equivalent_class_source]. Likewise, the `self`
+   parameter annotation is Top in these cases.
+
+   So, to keep things simple, just get the attribute type and sanitize uninteresting bits. *)
+let assert_equivalent_typed_dictionary_attribute_types
+    ~context
+    ~source
+    ~class_name
+    expected_equivalent_class_source
+  =
+  let with_sanitized_callable_parameters = function
+    | Type.Parametric
+        {
+          name = "BoundMethod";
+          parameters =
+            [Single (Callable ({ kind = Named name; _ } as callable)); Single left_bound_type];
+        } ->
+        let open Type.Callable.Parameter in
+        (* TypedDictionary methods have `self` annotation as `Top`, whereas the equivalent class has
+           the annotation as, say, `Movie`. So, clear the annotation. *)
+        let sanitize_self_annotation = function
+          | Type.Callable.Defined
+              (Named ({ name = "self" | "$parameter$self"; default = false; _ } as self_parameter)
+              :: parameters) ->
+              let all_parameters =
+                Named { self_parameter with annotation = Type.Top } :: parameters
+              in
+              Type.Callable.Defined all_parameters
+          | other -> other
+        in
+        let sanitize_parameter_names = function
+          | Type.Callable.Defined all_parameters ->
+              let sanitize_parameter_name = function
+                | Named ({ name; _ } as parameter) ->
+                    Named { parameter with name = Identifier.sanitized name }
+                | other -> other
+              in
+              Type.Callable.Defined (List.map ~f:sanitize_parameter_name all_parameters)
+          | other -> other
+        in
+        let callable =
+          callable
+          |> Type.Callable.map_parameters ~f:sanitize_self_annotation
+          |> Type.Callable.map_parameters ~f:sanitize_parameter_names
+        in
+        Type.Parametric
+          {
+            name = "BoundMethod";
+            parameters =
+              [
+                Single
+                  (Callable
+                     {
+                       callable with
+                       implementation = { annotation = Type.Top; parameters = Undefined };
+                       kind =
+                         Named (Reference.create ~prefix:!&"TypedDictionary" (Reference.last name));
+                     });
+                Single left_bound_type;
+              ];
+          }
+    | type_ -> type_
   in
-  let simple_print l =
-    let simple attribute =
-      let annotation = Annotated.Attribute.annotation attribute |> Annotation.annotation in
-      let name = Annotated.Attribute.name attribute in
-      Printf.sprintf "%s, %s" name (Type.show annotation)
-    in
-    List.map l ~f:simple |> String.concat ~sep:"\n"
+  let with_sanitized_type_variables =
+    Type.Variable.GlobalTransforms.Unary.replace_all (fun ({ variable; _ } as unary_variable) ->
+        Type.Variable { unary_variable with variable = Reference.create variable |> Reference.last }
+        |> Option.some)
   in
-  assert_equal
-    ~printer:simple_print
-    ~pp_diff:(diff ~print:pp_as_sexps)
-    (attributes expected_equivalent_class_source)
-    (attributes source)
+  let transform_attribute_annotation attribute =
+    attribute
+    |> Annotated.Attribute.annotation
+    |> Annotation.annotation
+    |> with_sanitized_callable_parameters
+    |> with_sanitized_type_variables
+  in
+  let assert_attribute_equal expected actual =
+    assert_equal
+      ~cmp:[%compare.equal: Type.t list]
+      ~printer:(fun x -> Format.asprintf "%s" ([%sexp_of: Type.t list] x |> Sexp.to_string_hum))
+      ~pp_diff:
+        (diff ~print:(fun format x ->
+             Format.fprintf format "%s" ([%sexp_of: Type.t list] x |> Sexp.to_string_hum)))
+      (List.map expected ~f:transform_attribute_annotation)
+      (List.map actual ~f:transform_attribute_annotation)
+  in
+  assert_equivalent_attributes
+    ~context
+    ~assert_attribute_equal
+    ~source
+    ~class_name
+    expected_equivalent_class_source
 
 
 module MockClassHierarchyHandler = struct
