@@ -3467,6 +3467,53 @@ let test_expand_typed_dictionaries _ =
   ()
 
 
+let test_expand_typed_dictionaries__required_not_required _ =
+  let assert_expand ?(handle = "") source expected =
+    let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
+    let actual =
+      parse ~handle source
+      |> Preprocessing.qualify
+      |> Preprocessing.expand_typed_dictionary_declarations
+    in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_expand
+    {|
+      Movie = typing_extensions.TypedDict('Movie', {'name': str, 'year': typing_extensions.NotRequired[int]})
+    |}
+    {|
+      class Movie(TypedDictionary):
+        name: str
+        year: typing_extensions.NotRequired[int]
+    |};
+  assert_expand
+    {|
+      Movie = typing_extensions.TypedDict(
+        'Movie',
+        {'name': typing_extensions.Required[str], 'year': typing_extensions.Required[int]},
+      )
+    |}
+    {|
+      class Movie(TypedDictionary):
+        name: typing_extensions.Required[str]
+        year: typing_extensions.Required[int]
+    |};
+  assert_expand
+    {|
+      Movie = typing_extensions.TypedDict(
+        'Movie',
+        {'name': str, 'year': typing_extensions.Required[int]},
+        total=False,
+      )
+    |}
+    {|
+      class Movie(TypedDictionary, NonTotalTypedDictionary):
+        name: str
+        year: typing_extensions.Required[int]
+    |};
+  ()
+
+
 let test_sqlalchemy_declarative_base _ =
   let assert_expand ?(handle = "") source expected =
     let expected = parse ~handle ~coerce_special_methods:true expected |> Preprocessing.qualify in
@@ -6079,6 +6126,8 @@ let () =
          "replace_lazy_import" >:: test_replace_lazy_import;
          "typed_dictionary_stub_fix" >:: test_replace_mypy_extensions_stub;
          "typed_dictionaries" >:: test_expand_typed_dictionaries;
+         "typed_dictionaries_required_not_required"
+         >:: test_expand_typed_dictionaries__required_not_required;
          "sqlalchemy_declarative_base" >:: test_sqlalchemy_declarative_base;
          "nesting_define" >:: test_populate_nesting_define;
          "captures" >:: test_populate_captures;
