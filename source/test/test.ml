@@ -3009,9 +3009,9 @@ let assert_errors
   assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") errors descriptions
 
 
-let assert_equivalent_attributes ~context source expected =
+let assert_equivalent_attributes ~context source expected_class_sources =
   let handle = "test.py" in
-  let attributes class_type source =
+  let attributes ~class_name source =
     Memory.reset_shared_memory ();
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
       ScratchProject.setup ~context [handle, source] |> ScratchProject.build_global_environment
@@ -3020,10 +3020,7 @@ let assert_equivalent_attributes ~context source expected =
     let compare_by_name left right =
       String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
     in
-    Type.split class_type
-    |> fst
-    |> Type.primitive_name
-    >>= GlobalResolution.attributes ~transitive:false ~resolution:global_resolution
+    GlobalResolution.attributes ~transitive:false ~resolution:global_resolution class_name
     |> (fun attributes -> Option.value_exn attributes)
     |> List.sort ~compare:compare_by_name
     |> List.map
@@ -3032,21 +3029,7 @@ let assert_equivalent_attributes ~context source expected =
               ~resolution:global_resolution
               ~accessed_through_class:false)
   in
-  let class_names =
-    let expected =
-      List.map expected ~f:(fun definition -> parse ~handle definition |> Preprocessing.preprocess)
-    in
-    let get_name_if_class { Node.value; _ } =
-      match value with
-      | Statement.Class { Class.name; _ } -> Some (Reference.show name)
-      | _ -> None
-    in
-    List.map ~f:Source.statements expected
-    |> List.filter_map ~f:List.hd
-    |> List.filter_map ~f:get_name_if_class
-    |> List.map ~f:(fun name -> Type.Primitive name)
-  in
-  let assert_class_equal class_type expected =
+  let assert_attributes_match_original_class expected_class_source =
     let pp_as_sexps format l =
       List.map l ~f:Annotated.Attribute.sexp_of_instantiated
       |> List.map ~f:Sexp.to_string_hum
@@ -3061,13 +3044,22 @@ let assert_equivalent_attributes ~context source expected =
       in
       List.map l ~f:simple |> String.concat ~sep:"\n"
     in
+    let class_name =
+      parse ~handle expected_class_source
+      |> Preprocessing.preprocess
+      |> Source.statements
+      |> List.hd_exn
+      |> function
+      | { Node.value = Statement.Class { Class.name; _ }; _ } -> Reference.show name
+      | _ -> failwith "The expected class source must have a single class"
+    in
     assert_equal
       ~printer:simple_print
       ~pp_diff:(diff ~print:pp_as_sexps)
-      (attributes class_type expected)
-      (attributes class_type source)
+      (attributes ~class_name expected_class_source)
+      (attributes ~class_name source)
   in
-  List.iter2_exn ~f:assert_class_equal class_names expected
+  List.iter ~f:assert_attributes_match_original_class expected_class_sources
 
 
 module MockClassHierarchyHandler = struct
