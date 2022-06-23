@@ -10,9 +10,10 @@ open OUnit2
 open Test
 
 let test_transform_environment context =
-  let assert_equivalent_attributes = assert_equivalent_attributes ~context in
+  let assert_equivalent_attributes = assert_equivalent_attributes_single_class ~context in
   assert_equivalent_attributes
-    {|
+    ~source:
+      {|
       from sqlalchemy.ext.declarative import declarative_base
       from sqlalchemy import Column, Integer
       from typing import Optional
@@ -28,23 +29,9 @@ let test_transform_environment context =
 
         def some_helper(self) -> None:
           pass
-
-      class UserWithExistingConstructor(Base):
-        __tablename__ = 'users'
-        id: Column[int] = Column(Integer(), primary_key=True)
-
-        # User-defined constructor is allowed to have any signature.
-        def __init__(self) -> None:
-          pass
-
-      class Employee(User):
-        __tablename__ = 'employees'
-        badge_number: Column[Optional[int]] = Column(Integer())
-        # Income in words, let's say. This overrides the attribute in User.
-        income: Column[Optional[str]] = Column(String())
     |}
-    [
-      {|
+    ~class_name:"User"
+    {|
         class User:
           __tablename__: str = 'users'
           id: sqlalchemy.Column[int] = sqlalchemy.Column(sqlalchemy.Integer(), primary_key=True)
@@ -68,7 +55,24 @@ let test_transform_environment context =
           def some_helper(self) -> None:
             pass
       |};
+  assert_equivalent_attributes
+    ~source:
       {|
+      from sqlalchemy.ext.declarative import declarative_base
+      from sqlalchemy import Column, Integer
+      from typing import Optional
+      Base = declarative_base()
+
+      class UserWithExistingConstructor(Base):
+        __tablename__ = 'users'
+        id: Column[int] = Column(Integer(), primary_key=True)
+
+        # User-defined constructor is allowed to have any signature.
+        def __init__(self) -> None:
+          pass
+    |}
+    ~class_name:"UserWithExistingConstructor"
+    {|
         class UserWithExistingConstructor(Base):
           __tablename__: str = 'users'
           id: sqlalchemy.Column[int] = sqlalchemy.Column(sqlalchemy.Integer(), primary_key=True)
@@ -79,7 +83,33 @@ let test_transform_environment context =
           def __init__(self) -> None:
             pass
       |};
+  assert_equivalent_attributes
+    ~source:
       {|
+      from sqlalchemy.ext.declarative import declarative_base
+      from sqlalchemy import Column, Integer
+      from typing import Optional
+      Base = declarative_base()
+
+      class User(Base):
+        __tablename__ = 'users'
+        id: Column[int] = Column(Integer(), primary_key=True)
+        age: Column[Optional[int]] = Column(Integer(), primary_key=False)
+        income: Column[Optional[int]] = Column(Integer())
+        non_column: str = "foo"
+        __private_attribute: str = "bar"
+
+        def some_helper(self) -> None:
+          pass
+
+      class Employee(User):
+        __tablename__ = 'employees'
+        badge_number: Column[Optional[int]] = Column(Integer())
+        # Income in words, let's say. This overrides the attribute in User.
+        income: Column[Optional[str]] = Column(String())
+    |}
+    ~class_name:"Employee"
+    {|
         class Employee(User):
           __tablename__ = 'employees'
           badge_number: sqlalchemy.Column[typing.Optional[int]] = sqlalchemy.Column(sqlalchemy.Integer())
@@ -99,7 +129,7 @@ let test_transform_environment context =
           ) -> None:
             pass
       |};
-    ];
+
   ()
 
 
