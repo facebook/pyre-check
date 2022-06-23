@@ -16,9 +16,6 @@ module ErrorsEnvironmentReadOnly : sig
 
   val get_errors_for_qualifier : t -> Ast.Reference.t -> AnalysisError.t list
 
-  (* Use a map/reduce to get all errors for in-project modules; use this to cold-start *)
-  val get_all_errors_map_reduce : scheduler:Scheduler.t -> t -> AnalysisError.t list
-
   (* Get all errors for in-project modules; use this to grab errors that are already computed *)
   val get_all_errors : t -> AnalysisError.t list
 end
@@ -31,3 +28,5 @@ include
 val type_environment : t -> TypeEnvironment.t
 
 val module_tracker : t -> ModuleTracker.t
+
+val populate_all_errors : scheduler:Scheduler.t -> t -> unit

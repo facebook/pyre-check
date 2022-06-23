@@ -251,7 +251,7 @@ let initialize_server_state
   let _ = Memory.get_heap_handle configuration in
   let start_from_scratch ~build_system () =
     Log.info "Initializing server state from scratch...";
-    let { Service.Check.environment; _ } =
+    let environment =
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
           Service.Check.check ~scheduler ~configuration ~populate_call_graph:true)
     in

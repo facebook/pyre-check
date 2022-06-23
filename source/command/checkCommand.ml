@@ -131,12 +131,12 @@ let with_performance_tracking ~debug f =
 let do_check configuration =
   Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
       with_performance_tracking ~debug:configuration.debug (fun () ->
-          let { Service.Check.errors; environment } =
+          let environment =
             Service.Check.check ~scheduler ~configuration ~populate_call_graph:true
+            |> Analysis.ErrorsEnvironment.read_only
           in
-          ( errors,
-            Analysis.ErrorsEnvironment.ast_environment environment
-            |> Analysis.AstEnvironment.read_only )))
+          ( Analysis.ErrorsEnvironment.ReadOnly.get_all_errors environment,
+            Analysis.ErrorsEnvironment.ReadOnly.ast_environment environment )))
 
 
 let compute_errors ~configuration ~build_system () =

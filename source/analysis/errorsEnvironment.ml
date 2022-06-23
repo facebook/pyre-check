@@ -71,38 +71,6 @@ module ReadOnly = struct
 
   let get_errors_for_qualifier environment qualifier = get environment qualifier
 
-  let get_all_errors_map_reduce ~scheduler environment =
-    let timer = Timer.start () in
-    let qualifiers = module_tracker environment |> ModuleTracker.ReadOnly.project_qualifiers in
-    let number_of_qualifiers = List.length qualifiers in
-    Log.log ~section:`Progress "Postprocessing %d sources..." number_of_qualifiers;
-    let map _ modules =
-      List.length modules, List.concat_map modules ~f:(get_errors_for_qualifier environment)
-    in
-    let reduce (left_count, left_errors) (right_count, right_errors) =
-      let number_so_far = left_count + right_count in
-      Log.log ~section:`Progress "Postprocessed %d of %d sources" number_so_far number_of_qualifiers;
-      number_so_far, List.append left_errors right_errors
-    in
-    let _, errors =
-      SharedMemoryKeys.DependencyKey.Registry.collected_map_reduce
-        scheduler
-        ~policy:
-          (Scheduler.Policy.fixed_chunk_count
-             ~minimum_chunks_per_worker:1
-             ~minimum_chunk_size:100
-             ~preferred_chunks_per_worker:5
-             ())
-        ~initial:(0, [])
-        ~map
-        ~reduce
-        ~inputs:qualifiers
-        ()
-    in
-    Statistics.performance ~name:"check_Postprocessing" ~phase_name:"Postprocessing" ~timer ();
-    errors
-
-
   let get_all_errors environment =
     module_tracker environment
     |> ModuleTracker.ReadOnly.project_qualifiers
@@ -114,3 +82,39 @@ let type_environment = Unsafe.upstream
 let module_tracker environment = ast_environment environment |> AstEnvironment.module_tracker
 
 module ErrorsEnvironmentReadOnly = ReadOnly
+
+let populate_all_errors ~scheduler environment =
+  (* Because of lazy evaluation, we can actually perform this operation using only a read-only
+     environment. But we put it on the read-write API because the behavior is explicitly stateful. *)
+  let environment = read_only environment in
+  let timer = Timer.start () in
+  let qualifiers =
+    ReadOnly.module_tracker environment |> ModuleTracker.ReadOnly.project_qualifiers
+  in
+  let number_of_qualifiers = List.length qualifiers in
+  Log.log ~section:`Progress "Postprocessing %d sources..." number_of_qualifiers;
+  let map _ modules =
+    List.length modules, List.concat_map modules ~f:(ReadOnly.get_errors_for_qualifier environment)
+  in
+  let reduce (left_count, left_errors) (right_count, right_errors) =
+    let number_so_far = left_count + right_count in
+    Log.log ~section:`Progress "Postprocessed %d of %d sources" number_so_far number_of_qualifiers;
+    number_so_far, List.append left_errors right_errors
+  in
+  let _ =
+    SharedMemoryKeys.DependencyKey.Registry.collected_map_reduce
+      scheduler
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:100
+           ~preferred_chunks_per_worker:5
+           ())
+      ~initial:(0, [])
+      ~map
+      ~reduce
+      ~inputs:qualifiers
+      ()
+  in
+  Statistics.performance ~name:"check_Postprocessing" ~phase_name:"Postprocessing" ~timer ();
+  ()

@@ -8,11 +8,6 @@
 open Core
 open Pyre
 
-type result = {
-  environment: Analysis.ErrorsEnvironment.t;
-  errors: Analysis.AnalysisError.t list;
-}
-
 let check
     ~scheduler
     ~configuration:
@@ -81,12 +76,8 @@ let check
 
     errors_environment
   in
-  let errors =
-    Analysis.ErrorsEnvironment.ReadOnly.get_all_errors_map_reduce
-      ~scheduler
-      (Analysis.ErrorsEnvironment.read_only environment)
-  in
+  let () = Analysis.ErrorsEnvironment.populate_all_errors ~scheduler environment in
   Profiling.track_shared_memory_usage ();
 
   (* Only destroy the scheduler if the check command created it. *)
-  { environment; errors }
+  environment

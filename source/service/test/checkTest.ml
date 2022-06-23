@@ -41,18 +41,18 @@ let assert_errors
   in
   let scheduler = Test.mock_scheduler () in
   List.iter ~f:File.write files;
-  let { Service.Check.environment; errors; _ } =
+  let environment =
     Service.Check.check ~scheduler ~configuration ~populate_call_graph:true
+    |> Analysis.ErrorsEnvironment.read_only
   in
   let errors =
-    errors
+    Analysis.ErrorsEnvironment.ReadOnly.get_all_errors environment
     |> List.map ~f:(fun error ->
            Analysis.AnalysisError.instantiate
              ~show_error_traces:false
              ~lookup:
                (Analysis.AstEnvironment.ReadOnly.get_real_path_relative
-                  (Analysis.ErrorsEnvironment.ast_environment environment
-                  |> Analysis.AstEnvironment.read_only))
+                  (Analysis.ErrorsEnvironment.ReadOnly.ast_environment environment))
              error
            |> Analysis.AnalysisError.Instantiated.description)
   in
