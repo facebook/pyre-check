@@ -278,17 +278,18 @@ end
 module UpdateResult = struct
   type t = {
     triggered_dependencies: DependencyKey.RegisteredSet.t;
-    invalidated_modules: Reference.t list;
-    module_updates: ModuleTracker.IncrementalUpdate.t list;
+    upstream: AstEnvironment.UpdateResult.t;
   }
 
   let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
-  let all_triggered_dependencies environment = [locally_triggered_dependencies environment]
+  let all_triggered_dependencies { triggered_dependencies; upstream; _ } =
+    [triggered_dependencies; AstEnvironment.UpdateResult.triggered_dependencies upstream]
 
-  let invalidated_modules { invalidated_modules; _ } = invalidated_modules
 
-  let module_updates { module_updates; _ } = module_updates
+  let invalidated_modules { upstream; _ } = AstEnvironment.UpdateResult.invalidated_modules upstream
+
+  let module_updates { upstream; _ } = AstEnvironment.UpdateResult.module_updates upstream
 
   let unannotated_global_environment_update_result = Fn.id
 end
@@ -898,12 +899,8 @@ module FromReadOnlyUpstream = struct
     }
 
 
-  let update
-      ({ ast_environment; key_tracker; define_names; _ } as environment)
-      ~scheduler
-      invalidated_modules
-      module_updates
-    =
+  let update ({ ast_environment; key_tracker; define_names; _ } as environment) ~scheduler upstream =
+    let invalidated_modules = AstEnvironment.UpdateResult.invalidated_modules upstream in
     let map sources =
       let register qualifier =
         AstEnvironment.ReadOnly.get_processed_source
@@ -990,7 +987,7 @@ module FromReadOnlyUpstream = struct
           in
           { Profiling.result = triggered_dependencies; tags })
     in
-    { UpdateResult.triggered_dependencies; invalidated_modules; module_updates }
+    { UpdateResult.triggered_dependencies; upstream }
 end
 
 module Base = struct
@@ -1022,16 +1019,8 @@ module Base = struct
       ~scheduler
       artifact_paths
     =
-    let invalidated_modules, module_updates =
-      let update_result = AstEnvironment.update ~scheduler ast_environment artifact_paths in
-      ( AstEnvironment.UpdateResult.invalidated_modules update_result,
-        AstEnvironment.UpdateResult.module_updates update_result )
-    in
-    FromReadOnlyUpstream.update
-      from_read_only_upstream
-      ~scheduler
-      invalidated_modules
-      module_updates
+    let update_result = AstEnvironment.update ~scheduler ast_environment artifact_paths in
+    FromReadOnlyUpstream.update from_read_only_upstream ~scheduler update_result
 
 
   let read_only { from_read_only_upstream; _ } =
@@ -1091,23 +1080,23 @@ module Overlay = struct
       ({ ast_environment; from_read_only_upstream; _ } as environment)
       ~code_updates
     =
-    let invalidated_modules, module_updates =
+    let filtered_update_result =
       let update_result =
         AstEnvironment.Overlay.update_overlaid_code ast_environment ~code_updates
       in
-      ( (* The invalidated_modules coming from AstEnvironment can include fanout to modules that
-           aren't part of the overlay due to wildcard imports, so they have to be filtered. *)
+      let filtered_invalidated_modules =
         AstEnvironment.UpdateResult.invalidated_modules update_result
-        |> List.filter ~f:(owns_qualifier environment),
-        (* The module_updates come directly from ModuleTracker and correspond exactly to changes in
-           `code_updates`, so they do not require filtering. *)
-        AstEnvironment.UpdateResult.module_updates update_result )
+        |> List.filter ~f:(owns_qualifier environment)
+      in
+      {
+        update_result with
+        AstEnvironment.UpdateResult.invalidated_modules = filtered_invalidated_modules;
+      }
     in
     FromReadOnlyUpstream.update
       from_read_only_upstream
       ~scheduler:(Scheduler.create_sequential ())
-      invalidated_modules
-      module_updates
+      filtered_update_result
 
 
   let read_only ({ parent; from_read_only_upstream; _ } as environment) =

@@ -802,6 +802,12 @@ let assert_updates
         UnannotatedGlobalEnvironment.ReadOnly.get_define_names read_only ~dependency qualifier
         |> List.length
         |> assert_equal ~printer expected_number_of_names
+    | `GetRawSource (qualifier, dependency) ->
+        AstEnvironment.ReadOnly.get_raw_source
+          (UnannotatedGlobalEnvironment.ReadOnly.ast_environment read_only)
+          ~dependency
+          qualifier
+        |> ignore
   in
   List.iter middle_actions ~f:execute_action;
   if Option.is_some original_source then
@@ -824,7 +830,10 @@ let assert_updates
     ~cmp:SharedMemoryKeys.DependencyKey.RegisteredSet.equal
     ~printer
     expected_triggers
-    (UnannotatedGlobalEnvironment.UpdateResult.locally_triggered_dependencies update_result)
+    (UnannotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
+    |> List.fold
+         ~init:SharedMemoryKeys.DependencyKey.RegisteredSet.empty
+         ~f:SharedMemoryKeys.DependencyKey.RegisteredSet.union)
 
 
 let type_check_dependency =
@@ -1351,6 +1360,17 @@ let test_dependencies_and_new_values context =
                    target_location = Location.WithModule.any;
                  }) );
       ]
+    ();
+
+  (* We should propagate triggered dependencies from AstEnvironment *)
+  assert_updates
+    ~original_source:{|
+    |}
+    ~new_source:{|
+      x: int = 9
+    |}
+    ~middle_actions:[`GetRawSource (Reference.create "test", alias_dependency)]
+    ~expected_triggers:[alias_dependency]
     ();
   ()
 

@@ -51,7 +51,11 @@ module ReadOnly : sig
 end
 
 module UpdateResult : sig
-  type t
+  type t = {
+    triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
+    invalidated_modules: Reference.t list;
+    module_updates: ModuleTracker.IncrementalUpdate.t list;
+  }
 
   val triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t
 
