@@ -1061,7 +1061,11 @@ module TypedDictionary : sig
 
   val anonymous : t typed_dictionary_field list -> t record
 
-  val create_field : name:string -> annotation:t -> required:bool -> t typed_dictionary_field
+  val create_field
+    :  annotation:t ->
+    has_non_total_typed_dictionary_base_class:bool ->
+    string ->
+    t typed_dictionary_field
 
   val are_fields_total : t typed_dictionary_field list -> bool
 

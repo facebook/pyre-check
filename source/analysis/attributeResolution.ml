@@ -2604,12 +2604,11 @@ class base class_metadata_environment dependency =
             ~include_generated_attributes
             { Node.value = { bases = { ClassSummary.base_classes; _ }; _ } as class_summary; _ }
           =
-          let required =
-            not
-              (List.exists base_classes ~f:(fun base_expression ->
-                   String.equal
-                     (Expression.show base_expression)
-                     (Type.TypedDictionary.class_name ~total:false)))
+          let has_non_total_typed_dictionary_base_class =
+            List.exists base_classes ~f:(fun base_expression ->
+                String.equal
+                  (Expression.show base_expression)
+                  (Type.TypedDictionary.class_name ~total:false))
           in
           ClassSummary.attributes ~include_generated_attributes ~in_test class_summary
           |> Identifier.SerializableMap.bindings
@@ -2620,16 +2619,18 @@ class base class_metadata_environment dependency =
                      ?defined:(Some true)
                      ~accessed_via_metaclass
                      (Node.value field_attribute),
-                   required ))
+                   has_non_total_typed_dictionary_base_class ))
         in
-        let attribute_to_typed_dictionary_field (attribute, required) =
+        let attribute_to_typed_dictionary_field
+            (attribute, has_non_total_typed_dictionary_base_class)
+          =
           match AnnotatedAttribute.uninstantiated_annotation attribute with
           | { UninstantiatedAnnotation.kind = Attribute annotation; _ } ->
               Some
                 (Type.TypedDictionary.create_field
-                   ~name:(AnnotatedAttribute.name attribute)
                    ~annotation
-                   ~required)
+                   ~has_non_total_typed_dictionary_base_class
+                   (AnnotatedAttribute.name attribute))
           | _ -> None
         in
         let keep_last_declarations fields =

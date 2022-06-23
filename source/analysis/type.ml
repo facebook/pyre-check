@@ -6129,7 +6129,9 @@ module TypedDictionary = struct
 
   let anonymous fields = { name = "$anonymous"; fields }
 
-  let create_field ~name ~annotation ~required = { name; annotation; required }
+  let create_field ~annotation ~has_non_total_typed_dictionary_base_class name =
+    { name; annotation; required = not has_non_total_typed_dictionary_base_class }
+
 
   let are_fields_total = are_fields_total
 
