@@ -208,14 +208,17 @@
 (tests
  (names
    decoratorsTest
-   specialCallResolutionTest)
+   specialCallResolutionTest
+   internalTaintIntegrationTest)
  (modules
    decoratorsTest
-   specialCallResolutionTest)
+   specialCallResolutionTest
+   internalTaintIntegrationTest)
  (preprocess
   (pps ppx_deriving.eq ppx_deriving.show ppx_deriving_yojson ppx_hash
     ppx_compare ppx_sexp_conv))
- (libraries pyrelib pyrelib.integrationTest oUnit test))
+ (libraries pyrelib oUnit test
+ pyrelib.integrationTest pyrelib.internalTaintIntegrationTestFiles pyrelib.taintTestHelper))
 
 (executable
  (name main)
