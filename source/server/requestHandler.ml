@@ -168,7 +168,9 @@ let process_request
         Response.Query
           (Query.parse_and_process_request
              ~build_system
-             ~environment:(ErrorsEnvironment.type_environment errors_environment)
+             ~environment:
+               (ErrorsEnvironment.read_only errors_environment
+               |> ErrorsEnvironment.ReadOnly.type_environment)
              ~configuration
              query_text)
       in
