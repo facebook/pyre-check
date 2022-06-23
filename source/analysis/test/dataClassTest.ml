@@ -23,12 +23,9 @@ let test_transform_environment context =
     ~class_name:"Foo"
     {|
         class Foo:
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -43,12 +40,9 @@ let test_transform_environment context =
     ~class_name:"Foo"
     {|
         class Foo:
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -57,21 +51,16 @@ let test_transform_environment context =
 
       @dataclass(match_args=False)
       class Foo:
-        def foo() -> None:
-          pass
+        def foo() -> None: ...
     |}
     ~class_name:"Foo"
     {|
         # spacer
         class Foo:
-          def foo() -> None:
-            pass
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def foo() -> None: ...
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -80,21 +69,16 @@ let test_transform_environment context =
 
       @dataclasses.dataclass(match_args=False)
       class Foo:
-        def foo() -> None:
-          pass
+        def foo() -> None: ...
     |}
     ~class_name:"Foo"
     {|
         @spacer
         class Foo:
-          def foo() -> None:
-            pass
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-           pass
+          def foo() -> None: ...
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -103,20 +87,15 @@ let test_transform_environment context =
 
       @dataclass(match_args=False)
       class Foo:
-        def __init__(self) -> None:
-          pass
-        def __repr__(self) -> str:
-          pass
+        def __init__(self) -> None: ...
+        def __repr__(self) -> str: ...
     |}
     ~class_name:"Foo"
     {|
        class Foo:
-         def __init__(self) -> None:
-           pass
-         def __repr__(self) -> str:
-           pass
-         def __eq__(self, o: object) -> bool:
-           pass
+         def __init__(self) -> None: ...
+         def __repr__(self) -> str: ...
+         def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -131,12 +110,9 @@ let test_transform_environment context =
     {|
         class Foo:
           name: unknown = 'abc'
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -153,10 +129,8 @@ let test_transform_environment context =
           name: str
           def __init__(self, name: str) -> None:
             self.name = name
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -176,10 +150,8 @@ let test_transform_environment context =
           def __init__(self, name: str, age: int) -> None:
             self.name = name
             self.age = age
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -190,20 +162,16 @@ let test_transform_environment context =
       class Foo:
         name: str
         age: int
-        def __init__(self) -> None:
-          pass
+        def __init__(self) -> None: ...
     |}
     ~class_name:"Foo"
     {|
         class Foo:
           name: str
           age: int
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -222,10 +190,8 @@ let test_transform_environment context =
           age: unknown = 3
           def __init__(self, name: str) -> None:
             self.name = name
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -244,10 +210,8 @@ let test_transform_environment context =
           age: int = 3
           def __init__(self, name: str, age: int = 3) -> None:
             self.name = name
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -270,10 +234,8 @@ let test_transform_environment context =
             self.name = name
             self.age = age
             self.parent = parent
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
 
   (* Dataclass boolean arguments *)
@@ -284,18 +246,14 @@ let test_transform_environment context =
 
       @dataclass(init = False, match_args = False)
       class Foo:
-        def foo(self) -> None:
-          pass
+        def foo(self) -> None: ...
     |}
     ~class_name:"Foo"
     {|
         class Foo:
-          def foo(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def foo(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -304,18 +262,14 @@ let test_transform_environment context =
 
       @dataclass(repr = False, match_args = False)
       class Foo:
-        def foo(self) -> None:
-          pass
+        def foo(self) -> None: ...
     |}
     ~class_name:"Foo"
     {|
         class Foo:
-          def foo(self) -> None:
-            pass
-          def __init__(self) -> None:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def foo(self) -> None: ...
+          def __init__(self) -> None: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -324,18 +278,14 @@ let test_transform_environment context =
 
       @dataclass(eq = False, match_args = False)
       class Foo:
-        def foo(self) -> None:
-          pass
+        def foo(self) -> None: ...
     |}
     ~class_name:"Foo"
     {|
         class Foo:
-          def foo(self) -> None:
-            pass
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
+          def foo(self) -> None: ...
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -344,28 +294,19 @@ let test_transform_environment context =
 
       @dataclass(order = True, match_args = False)
       class Foo:
-        def foo(self) -> None:
-          pass
+        def foo(self) -> None: ...
     |}
     ~class_name:"Foo"
     {|
         class Foo:
-          def foo(self) -> None:
-            pass
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
-          def __lt__(self, o: object) -> bool:
-            pass
-          def __le__(self, o: object) -> bool:
-            pass
-          def __gt__(self, o: object) -> bool:
-            pass
-          def __ge__(self, o: object) -> bool:
-            pass
+          def foo(self) -> None: ...
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
+          def __lt__(self, o: object) -> bool: ...
+          def __le__(self, o: object) -> bool: ...
+          def __gt__(self, o: object) -> bool: ...
+          def __ge__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -374,26 +315,18 @@ let test_transform_environment context =
 
       @dataclass(eq = False, order = True, match_args = False)
       class Foo:
-        def foo(self) -> None:
-          pass
+        def foo(self) -> None: ...
     |}
     ~class_name:"Foo"
     {|
         class Foo:
-          def foo(self) -> None:
-            pass
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __lt__(self, o: object) -> bool:
-            pass
-          def __le__(self, o: object) -> bool:
-            pass
-          def __gt__(self, o: object) -> bool:
-            pass
-          def __ge__(self, o: object) -> bool:
-            pass
+          def foo(self) -> None: ...
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __lt__(self, o: object) -> bool: ...
+          def __le__(self, o: object) -> bool: ...
+          def __gt__(self, o: object) -> bool: ...
+          def __ge__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -402,20 +335,15 @@ let test_transform_environment context =
 
       @dataclass(frozen = True, match_args = False)
       class Foo:
-        def foo(self) -> None:
-          pass
+        def foo(self) -> None: ...
     |}
     ~class_name:"Foo"
     {|
         class Foo:
-          def foo(self) -> None:
-            pass
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def foo(self) -> None: ...
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
 
   (* Dataclass inheritance *)
@@ -440,12 +368,9 @@ let test_transform_environment context =
         class Child(Base):
           z: int = 10
           x: int = 15
-          def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -468,12 +393,9 @@ let test_transform_environment context =
         class Child(Base):
           z: int = 10
           x: int = 15
-          def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -495,12 +417,9 @@ let test_transform_environment context =
         class Child(Base):
           z: int = 10
           x: unknown = 15
-          def __init__(self, x: typing.Any = 15.0, y: int = 0, z: int = 10) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self, x: typing.Any = 15.0, y: int = 0, z: int = 10) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -524,10 +443,8 @@ let test_transform_environment context =
           x: int
           def __init__(self, x: int = "a", y: int = 0, z: int = 10) -> None:
            self.x = x
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -573,12 +490,9 @@ let test_transform_environment context =
         class GrandChild(Child):
           z: int = 10
           x: int = 15
-          def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -601,12 +515,9 @@ let test_transform_environment context =
     {|
         class Child(Base2, Base1):
           z: int = 10
-          def __init__(self, x: int = 15, y: int = 5, z: int = 10) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self, x: int = 15, y: int = 5, z: int = 10) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -624,12 +535,9 @@ let test_transform_environment context =
     {|
         class DataClass(NotDataClass):
           y: int = 5
-          def __init__(self, y: int = 5) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self, y: int = 5) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -649,10 +557,8 @@ let test_transform_environment context =
           def __init__(self, x: int, init_variable: str) -> None:
             self.x = x
             self.init_variable = init_variable
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   (* Dataclass field init disabler *)
   assert_equivalent_attributes
@@ -669,12 +575,9 @@ let test_transform_environment context =
         # spacer
         class Foo:
           x: int = dataclasses.field(init=False)
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -690,12 +593,9 @@ let test_transform_environment context =
         # spacer
         class Foo:
           x: int = dataclasses.field(init=True)
-          def __init__(self, x: int) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self, x: int) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -711,12 +611,9 @@ let test_transform_environment context =
         # spacer
         class Foo:
           x: int = dataclasses.field(init=True, default=1)
-          def __init__(self, x: int = 1) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self, x: int = 1) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -732,12 +629,9 @@ let test_transform_environment context =
         # spacer
         class Foo:
           x: int = dataclasses.field(init=True, default_factory=foo)
-          def __init__(self, x: int = foo()) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self, x: int = foo()) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   (* NOTE: Ideally we'd like to warn about this somehow *)
   assert_equivalent_attributes
@@ -754,12 +648,9 @@ let test_transform_environment context =
         # spacer
         class Foo:
           x: int = dataclasses.field(init=False, default=1)
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -775,12 +666,9 @@ let test_transform_environment context =
         # spacer
         class Foo:
           x: int = dataclasses.field(init=False)
-          def __init__(self) -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self) -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -795,12 +683,9 @@ let test_transform_environment context =
     {|
         class B:
           y: str = "abc"
-          def __init__(self, y: str = "abc") -> None:
-            pass
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __init__(self, y: str = "abc") -> None: ...
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
       |};
   ()
 
@@ -822,10 +707,8 @@ let test_match_args context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __repr__(self) -> str:
-            pass
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __repr__(self) -> str: ...
+          def __eq__(self, o: object) -> bool: ...
           __match_args__ = ("x",)
       |};
   (* For remaining tests we disable repr and eq, to make them more consice as they don't interact
@@ -968,8 +851,7 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -988,8 +870,7 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1026,16 +907,11 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __eq__(self, o: object) -> bool:
-            pass
-          def __lt__(self, o: object) -> bool:
-            pass
-          def __le__(self, o: object) -> bool:
-            pass
-          def __gt__(self, o: object) -> bool:
-            pass
-          def __ge__(self, o: object) -> bool:
-            pass
+          def __eq__(self, o: object) -> bool: ...
+          def __lt__(self, o: object) -> bool: ...
+          def __le__(self, o: object) -> bool: ...
+          def __gt__(self, o: object) -> bool: ...
+          def __ge__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1052,8 +928,7 @@ let test_dataclass_transform context =
     {|
         class Foo:
           x: int
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1090,8 +965,7 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1110,14 +984,10 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __lt__(self, o: object) -> bool:
-            pass
-          def __le__(self, o: object) -> bool:
-            pass
-          def __gt__(self, o: object) -> bool:
-            pass
-          def __ge__(self, o: object) -> bool:
-            pass
+          def __lt__(self, o: object) -> bool: ...
+          def __le__(self, o: object) -> bool: ...
+          def __gt__(self, o: object) -> bool: ...
+          def __ge__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1152,16 +1022,11 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __eq__(self, o: object) -> bool:
-            pass
-          def __lt__(self, o: object) -> bool:
-            pass
-          def __le__(self, o: object) -> bool:
-            pass
-          def __gt__(self, o: object) -> bool:
-            pass
-          def __ge__(self, o: object) -> bool:
-            pass
+          def __eq__(self, o: object) -> bool: ...
+          def __lt__(self, o: object) -> bool: ...
+          def __le__(self, o: object) -> bool: ...
+          def __gt__(self, o: object) -> bool: ...
+          def __ge__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1180,14 +1045,10 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __lt__(self, o: object) -> bool:
-            pass
-          def __le__(self, o: object) -> bool:
-            pass
-          def __gt__(self, o: object) -> bool:
-            pass
-          def __ge__(self, o: object) -> bool:
-            pass
+          def __lt__(self, o: object) -> bool: ...
+          def __le__(self, o: object) -> bool: ...
+          def __gt__(self, o: object) -> bool: ...
+          def __ge__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1206,8 +1067,7 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1224,16 +1084,11 @@ let test_dataclass_transform context =
     {|
         class Foo:
           x: int
-          def __eq__(self, o: object) -> bool:
-            pass
-          def __lt__(self, o: object) -> bool:
-            pass
-          def __le__(self, o: object) -> bool:
-            pass
-          def __gt__(self, o: object) -> bool:
-            pass
-          def __ge__(self, o: object) -> bool:
-            pass
+          def __eq__(self, o: object) -> bool: ...
+          def __lt__(self, o: object) -> bool: ...
+          def __le__(self, o: object) -> bool: ...
+          def __gt__(self, o: object) -> bool: ...
+          def __ge__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1272,8 +1127,7 @@ let test_dataclass_transform context =
             self.x3 = x3
             self.x4 = x4
             self.x5 = x5
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1291,8 +1145,7 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __eq__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1306,8 +1159,7 @@ let test_dataclass_transform context =
             frozen: bool = False,
             eq: bool = True,
             order: bool = False,
-        ) -> None:
-          pass
+        ) -> None: ...
 
       class Foo(Bar, eq=False, order=True):
         x: int
@@ -1318,14 +1170,10 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __lt__(self, o: object) -> bool:
-            pass
-          def __le__(self, o: object) -> bool:
-            pass
-          def __gt__(self, o: object) -> bool:
-            pass
-          def __ge__(self, o: object) -> bool:
-            pass
+          def __lt__(self, o: object) -> bool: ...
+          def __le__(self, o: object) -> bool: ...
+          def __gt__(self, o: object) -> bool: ...
+          def __ge__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1339,8 +1187,7 @@ let test_dataclass_transform context =
             frozen: bool = False,
             eq: bool = False,
             order: bool = True,
-        ) -> None:
-          pass
+        ) -> None: ...
 
       class Foo(Bar):
         x: int
@@ -1351,14 +1198,10 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __lt__(self, o: object) -> bool:
-            pass
-          def __le__(self, o: object) -> bool:
-            pass
-          def __gt__(self, o: object) -> bool:
-            pass
-          def __ge__(self, o: object) -> bool:
-            pass
+          def __lt__(self, o: object) -> bool: ...
+          def __le__(self, o: object) -> bool: ...
+          def __gt__(self, o: object) -> bool: ...
+          def __ge__(self, o: object) -> bool: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -1372,8 +1215,7 @@ let test_dataclass_transform context =
             frozen: bool = False,
             eq: bool = False,
             order: bool = True,
-        ) -> None:
-          pass
+        ) -> None: ...
 
       class Foo(Bar, eq=True, order=False):
         x: int
@@ -1384,8 +1226,7 @@ let test_dataclass_transform context =
           x: int
           def __init__(self, x: int) -> None:
             self.x = x
-          def __eq__(self, o: object) -> bool:
-            pass
+          def __eq__(self, o: object) -> bool: ...
       |};
   ()
 

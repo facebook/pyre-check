@@ -27,8 +27,7 @@ let test_transform_environment context =
         non_column: str = "foo"
         __private_attribute: str = "bar"
 
-        def some_helper(self) -> None:
-          pass
+        def some_helper(self) -> None: ...
     |}
     ~class_name:"User"
     {|
@@ -49,11 +48,9 @@ let test_transform_environment context =
             id: int = ...,
             income: typing.Optional[int] = ...,
             non_column: str = ...,
-          ) -> None:
-            pass
+          ) -> None: ...
 
-          def some_helper(self) -> None:
-            pass
+          def some_helper(self) -> None: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -68,8 +65,7 @@ let test_transform_environment context =
         id: Column[int] = Column(Integer(), primary_key=True)
 
         # User-defined constructor is allowed to have any signature.
-        def __init__(self) -> None:
-          pass
+        def __init__(self) -> None: ...
     |}
     ~class_name:"UserWithExistingConstructor"
     {|
@@ -80,8 +76,7 @@ let test_transform_environment context =
           metadata: sqlalchemy.sql.schema.MetaData = sqlalchemy.sql.schema.MetaData()
 
           # User-defined constructor is allowed to have any signature.
-          def __init__(self) -> None:
-            pass
+          def __init__(self) -> None: ...
       |};
   assert_equivalent_attributes
     ~source:
@@ -99,8 +94,7 @@ let test_transform_environment context =
         non_column: str = "foo"
         __private_attribute: str = "bar"
 
-        def some_helper(self) -> None:
-          pass
+        def some_helper(self) -> None: ...
 
       class Employee(User):
         __tablename__ = 'employees'
@@ -126,8 +120,7 @@ let test_transform_environment context =
             id: int = ...,
             income: typing.Optional[str] = ...,
             non_column: str = ...,
-          ) -> None:
-            pass
+          ) -> None: ...
       |};
 
   ()
