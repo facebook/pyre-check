@@ -16,12 +16,5 @@ def run(
     configuration: configuration_module.Configuration,
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> commands.ExitCode:
-    try:
-        stop.run_stop(configuration)
-        return incremental.run_incremental(
-            configuration, incremental_arguments
-        ).exit_code
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during pyre restart: {error}"
-        ) from error
+    stop.run_stop(configuration)
+    return incremental.run_incremental(configuration, incremental_arguments).exit_code

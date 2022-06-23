@@ -10,6 +10,7 @@ import re
 import shutil
 import sys
 import textwrap
+import traceback
 from pathlib import Path
 from typing import Iterable, List, Optional
 
@@ -1214,6 +1215,7 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
             return_code = error.exit_code
         except Exception as error:
             LOG.error(str(error))
+            traceback.print_exc()
             return_code = commands.ExitCode.FAILURE
     return return_code
 

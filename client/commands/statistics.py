@@ -346,12 +346,7 @@ def run(
     configuration: configuration_module.Configuration,
     statistics_arguments: command_arguments.StatisticsArguments,
 ) -> commands.ExitCode:
-    try:
-        LOG.info("Collecting statistics...")
-        return run_statistics(
-            frontend_configuration.OpenSource(configuration), statistics_arguments
-        )
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during statistics collection: {error}"
-        ) from error
+    LOG.info("Collecting statistics...")
+    return run_statistics(
+        frontend_configuration.OpenSource(configuration), statistics_arguments
+    )

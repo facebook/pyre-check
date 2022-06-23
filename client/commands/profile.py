@@ -411,9 +411,4 @@ def run(
     configuration: configuration_module.Configuration,
     output: command_arguments.ProfileOutput,
 ) -> commands.ExitCode:
-    try:
-        return run_profile(frontend_configuration.OpenSource(configuration), output)
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during profile: {error}"
-        ) from error
+    return run_profile(frontend_configuration.OpenSource(configuration), output)

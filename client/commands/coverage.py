@@ -113,14 +113,9 @@ def run(
     configuration: configuration_module.Configuration,
     coverage_arguments: command_arguments.CoverageArguments,
 ) -> commands.ExitCode:
-    try:
-        return run_coverage(
-            frontend_configuration.OpenSource(configuration),
-            coverage_arguments.working_directory,
-            coverage_arguments.paths,
-            coverage_arguments.print_summary,
-        )
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during pyre coverage: {error}"
-        ) from error
+    return run_coverage(
+        frontend_configuration.OpenSource(configuration),
+        coverage_arguments.working_directory,
+        coverage_arguments.paths,
+        coverage_arguments.print_summary,
+    )

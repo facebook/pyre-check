@@ -207,5 +207,3 @@ def run(
         raise commands.ClientException(
             f"{error}", exit_code=_exit_code_from_error_kind(error.kind)
         )
-    except Exception as error:
-        raise commands.ClientException(f"{error}") from error

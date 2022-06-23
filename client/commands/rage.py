@@ -209,17 +209,12 @@ def run(
     configuration: configuration_module.Configuration,
     arguments: command_arguments.RageArguments,
 ) -> commands.ExitCode:
-    try:
-        output_path = arguments.output
-        rage_configuration = frontend_configuration.OpenSource(configuration)
-        if output_path is None:
-            run_rage(rage_configuration, arguments, log.stdout)
-        else:
-            # lint-ignore: NoUnsafeFilesystemRule
-            with open(output_path) as output:
-                run_rage(frontend_configuration, arguments, output)
-        return commands.ExitCode.SUCCESS
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during rage generation: {error}"
-        ) from error
+    output_path = arguments.output
+    rage_configuration = frontend_configuration.OpenSource(configuration)
+    if output_path is None:
+        run_rage(rage_configuration, arguments, log.stdout)
+    else:
+        # lint-ignore: NoUnsafeFilesystemRule
+        with open(output_path) as output:
+            run_rage(frontend_configuration, arguments, output)
+    return commands.ExitCode.SUCCESS

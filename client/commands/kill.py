@@ -127,24 +127,19 @@ def _delete_caches(configuration: frontend_configuration.Base) -> None:
 def run(
     configuration: configuration_module.Configuration, with_fire: bool
 ) -> commands.ExitCode:
-    try:
-        kill_configuration = frontend_configuration.OpenSource(configuration)
-        _kill_binary_processes(kill_configuration)
-        _kill_client_processes(kill_configuration)
-        # TODO (T85602550): Store a rage log before this happens.
-        # TODO (T85614630): Delete client logs as well.
-        _delete_server_files(kill_configuration)
-        _delete_caches(kill_configuration)
-        if with_fire:
-            LOG.warning(
-                (
-                    "Note that `--with-fire` adds emphasis to `pyre kill` but does"
-                    + f" not affect its behavior.\n{PYRE_FIRE}"
-                )
+    kill_configuration = frontend_configuration.OpenSource(configuration)
+    _kill_binary_processes(kill_configuration)
+    _kill_client_processes(kill_configuration)
+    # TODO (T85602550): Store a rage log before this happens.
+    # TODO (T85614630): Delete client logs as well.
+    _delete_server_files(kill_configuration)
+    _delete_caches(kill_configuration)
+    if with_fire:
+        LOG.warning(
+            (
+                "Note that `--with-fire` adds emphasis to `pyre kill` but does"
+                + f" not affect its behavior.\n{PYRE_FIRE}"
             )
-        LOG.info("Done\n")
-        return commands.ExitCode.SUCCESS
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during `pyre kill`: {error}"
-        ) from error
+        )
+    LOG.info("Done\n")
+    return commands.ExitCode.SUCCESS

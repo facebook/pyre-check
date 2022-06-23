@@ -132,9 +132,4 @@ def run_query(
 def run(
     configuration: configuration_module.Configuration, query_text: str
 ) -> commands.ExitCode:
-    try:
-        return run_query(frontend_configuration.OpenSource(configuration), query_text)
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during pyre query: {error}"
-        ) from error
+    return run_query(frontend_configuration.OpenSource(configuration), query_text)

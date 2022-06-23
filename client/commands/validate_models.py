@@ -85,11 +85,7 @@ def run_validate_models(
 def run(
     configuration: configuration_module.Configuration, output: str
 ) -> commands.ExitCode:
-    try:
-        return run_validate_models(
-            frontend_configuration.OpenSource(configuration), output
-        )
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during pyre validate-models: {error}"
-        ) from error
+    return run_validate_models(
+        frontend_configuration.OpenSource(configuration),
+        output,
+    )

@@ -965,7 +965,7 @@ def _annotate_in_place(
             pass
 
 
-def run_infer(
+def run(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,
 ) -> commands.ExitCode:
@@ -1023,18 +1023,3 @@ def run_infer(
                     number_of_workers=configuration.get_number_of_workers(),
                 )
     return commands.ExitCode.SUCCESS
-
-
-def run(
-    configuration: configuration_module.Configuration,
-    infer_arguments: command_arguments.InferArguments,
-) -> commands.ExitCode:
-    try:
-        return run_infer(configuration, infer_arguments)
-    except commands.ClientException:
-        raise
-    except Exception as error:
-        traceback.print_exc(file=sys.stderr)
-        raise commands.ClientException(
-            f"Exception occurred during Pyre infer: {error}"
-        ) from error

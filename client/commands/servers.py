@@ -217,27 +217,15 @@ def find_all_servers_under(socket_root: Path) -> AllServerStatus:
 
 
 def run_list(output_format: str) -> commands.ExitCode:
-    try:
-        server_status = find_all_servers_under(
-            server_connection.get_default_socket_root()
-        )
-        _print_server_status(server_status, output_format)
-        return commands.ExitCode.SUCCESS
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during server listing: {error}"
-        ) from error
+    server_status = find_all_servers_under(server_connection.get_default_socket_root())
+    _print_server_status(server_status, output_format)
+    return commands.ExitCode.SUCCESS
 
 
 def run_stop() -> commands.ExitCode:
-    try:
-        for socket_path in get_pyre_socket_files(
-            server_connection.get_default_socket_root()
-        ):
-            _stop_server(socket_path)
-        LOG.info("Done\n")
-        return commands.ExitCode.SUCCESS
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during server stop: {error}"
-        ) from error
+    for socket_path in get_pyre_socket_files(
+        server_connection.get_default_socket_root()
+    ):
+        _stop_server(socket_path)
+    LOG.info("Done\n")
+    return commands.ExitCode.SUCCESS

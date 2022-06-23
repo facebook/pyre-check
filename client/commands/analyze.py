@@ -273,9 +273,4 @@ def run(
     configuration: configuration_module.Configuration,
     analyze_arguments: command_arguments.AnalyzeArguments,
 ) -> commands.ExitCode:
-    try:
-        return run_analyze(configuration, analyze_arguments)
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during pyre analyze: {error}"
-        ) from error
+    return run_analyze(configuration, analyze_arguments)

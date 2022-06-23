@@ -213,9 +213,4 @@ def run(
     configuration: configuration_module.Configuration,
     check_arguments: command_arguments.CheckArguments,
 ) -> commands.ExitCode:
-    try:
-        return run_check(configuration, check_arguments)
-    except Exception as error:
-        raise commands.ClientException(
-            f"Exception occurred during Pyre check: {error}"
-        ) from error
+    return run_check(configuration, check_arguments)
