@@ -53,6 +53,8 @@ end
 module UpdateResult : sig
   type t
 
+  val triggered_dependencies : t -> SharedMemoryKeys.DependencyKey.RegisteredSet.t
+
   val invalidated_modules : t -> Reference.t list
 
   val module_updates : t -> ModuleTracker.IncrementalUpdate.t list

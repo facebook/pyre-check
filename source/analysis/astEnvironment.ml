@@ -231,9 +231,12 @@ end
 
 module UpdateResult = struct
   type t = {
+    triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
     invalidated_modules: Reference.t list;
     module_updates: ModuleTracker.IncrementalUpdate.t list;
   }
+
+  let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let invalidated_modules { invalidated_modules; _ } = invalidated_modules
 
@@ -384,6 +387,9 @@ module FromReadOnlyUpstream = struct
 
 
   let load_raw_sources ~scheduler ~ast_environment module_paths =
+    (* Note: We don't need SharedMemoryKeys.DependencyKey.Registry.collected_iter here; the
+       collection handles *registering* dependencies but not detecting triggered dependencies, and
+       this is the upstream-most part of the dependency DAG *)
     Scheduler.iter
       scheduler
       ~policy:
@@ -451,7 +457,7 @@ module FromReadOnlyUpstream = struct
       List.concat [removed_modules; new_implicits; reparse_modules_union_in_project_modules]
     in
     let update_raw_sources () = load_raw_sources ~scheduler ~ast_environment reparse_module_paths in
-    let _, preprocessing_dependencies =
+    let _, raw_source_dependencies =
       Profiling.track_duration_and_shared_memory
         "Parse Raw Sources"
         ~tags:["phase_name", "Parsing"]
@@ -462,21 +468,29 @@ module FromReadOnlyUpstream = struct
             ~update:update_raw_sources
             ~scheduler)
     in
-    let invalidated_modules =
-      let fold_key registered sofar =
-        (* There can never be a true dependency that is not a WildcardImport.
-         * Other dependencies might be registered due to hash collisions - ignore them *)
+    let triggered_dependencies, invalidated_modules =
+      let fold_key registered (triggered_dependencies, invalidated_modules) =
+        (* WildcardImport dependencies should be handled internally by converting them
+         * to invalidated_modules, which UnannotatedGlobalEnvironment will load. Other dependencies
+         * should be forwarded to later environments. *)
         match SharedMemoryKeys.DependencyKey.get_key registered with
-        | SharedMemoryKeys.WildcardImport qualifier -> RawSources.KeySet.add qualifier sofar
-        | _ -> sofar
+        | SharedMemoryKeys.WildcardImport qualifier ->
+            triggered_dependencies, RawSources.KeySet.add qualifier invalidated_modules
+        | _ ->
+            ( SharedMemoryKeys.DependencyKey.RegisteredSet.add registered triggered_dependencies,
+              invalidated_modules )
       in
       SharedMemoryKeys.DependencyKey.RegisteredSet.fold
         fold_key
-        preprocessing_dependencies
-        (RawSources.KeySet.of_list invalidated_modules_before_preprocessing)
-      |> RawSources.KeySet.elements
+        raw_source_dependencies
+        ( SharedMemoryKeys.DependencyKey.RegisteredSet.empty,
+          RawSources.KeySet.of_list invalidated_modules_before_preprocessing )
     in
-    { UpdateResult.invalidated_modules; module_updates }
+    {
+      UpdateResult.triggered_dependencies;
+      invalidated_modules = RawSources.KeySet.elements invalidated_modules;
+      module_updates;
+    }
 
 
   let remove_sources { raw_sources; _ } = RawSources.remove_sources raw_sources

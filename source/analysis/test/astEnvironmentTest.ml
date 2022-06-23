@@ -147,8 +147,7 @@ let test_parse_sources context =
   let typeshed_root =
     PyrePath.create_relative ~root:local_root ~relative:".pyre/resource_cache/typeshed"
   in
-  let write_file root relative =
-    let content = "def foo() -> int: ..." in
+  let write_file ?(content = "def foo() -> int: ...") root relative =
     File.create ~content (PyrePath.create_relative ~root ~relative) |> File.write
   in
   let source_handles, ast_environment =
@@ -194,12 +193,38 @@ let test_parse_sources context =
     in
     sorted_handles, ast_environment
   in
+  (* Load a raw source with a dependency and verify that it appears in `triggered_dependencies`
+     after an update. *)
+  let dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "foo") in
+  AstEnvironment.ReadOnly.get_raw_source
+    (AstEnvironment.read_only ast_environment)
+    ~dependency:(SharedMemoryKeys.DependencyKey.Registry.register dependency)
+    (Reference.create "c")
+  |> ignore;
+  let triggered_dependencies =
+    (* Re-write the file, otherwise RawSources won't trigger dependencies *)
+    write_file ~content:"def foo() -> int: ...  # pyre-ignore" local_root "c.py";
+    AstEnvironment.update
+      ~scheduler:(mock_scheduler ())
+      ast_environment
+      [Test.relative_artifact_path ~root:local_root ~relative:"c.py"]
+    |> AstEnvironment.UpdateResult.triggered_dependencies
+    |> SharedMemoryKeys.DependencyKey.RegisteredSet.to_seq
+    |> Seq.fold_left
+         (fun sofar registered -> SharedMemoryKeys.DependencyKey.get_key registered :: sofar)
+         []
+  in
+  assert_equal
+    ~printer:[%show: SharedMemoryKeys.dependency list]
+    ~cmp:[%compare.equal: SharedMemoryKeys.dependency list]
+    [dependency]
+    triggered_dependencies;
+  (* Add some new modules and verify the update *)
   assert_equal
     ~cmp:(List.equal String.equal)
     ~printer:(String.concat ~sep:", ")
-    (* External files which have not been previously loaded are ignored in lazy invalidated_modules.
-       For this reason we skip `b.pyi` and `d.pyi`; `b` doesn't live in the local_root and neither
-       does the target of the symlink for `d` (we follow symlinks before setting `is_external`) *)
+    (* Because `d` is a symlink that points outside of the source directory, it does not get
+       included in `project_qualifiers` *)
     ["a.pyi"; "c.py"; "foo.pyi"]
     source_handles;
   let source_handles =
