@@ -6301,9 +6301,10 @@ module TypedDictionary = struct
           parameters =
             Defined
               [
-                self_parameter;
                 Record.Callable.RecordParameter.PositionalOnly
-                  { index = 0; annotation = Primitive class_name; default = false };
+                  { index = 0; annotation = Top; default = false };
+                Record.Callable.RecordParameter.PositionalOnly
+                  { index = 1; annotation = Primitive class_name; default = false };
               ];
         };
       ]
