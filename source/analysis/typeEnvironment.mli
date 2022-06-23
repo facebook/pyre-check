@@ -21,9 +21,17 @@ module TypeEnvironmentReadOnly : sig
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
-  val get_errors : t -> Reference.t -> Error.t list
+  val get_errors
+    :  t ->
+    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
+    Reference.t ->
+    Error.t list
 
-  val get_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
+  val get_local_annotations
+    :  t ->
+    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
+    Reference.t ->
+    LocalAnnotationMap.ReadOnly.t option
 
   val get_or_recompute_local_annotations : t -> Reference.t -> LocalAnnotationMap.ReadOnly.t option
 end

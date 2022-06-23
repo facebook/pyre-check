@@ -153,9 +153,9 @@ let run_on_source
   |> List.sort ~compare:Error.compare
 
 
-let run_on_qualifier environment qualifier =
+let run_on_qualifier environment ~dependency qualifier =
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
-  match AstEnvironment.ReadOnly.get_raw_source ast_environment qualifier with
+  match AstEnvironment.ReadOnly.get_raw_source ?dependency ast_environment qualifier with
   | None -> []
   | Some
       ( Result.Ok { Source.module_path = { ModulePath.is_external; _ }; _ }
@@ -203,9 +203,10 @@ let run_on_qualifier environment qualifier =
       in
       let errors_by_define =
         UnannotatedGlobalEnvironment.ReadOnly.get_define_names
+          ?dependency
           unannotated_global_environment
           qualifier
-        |> List.map ~f:(TypeEnvironment.ReadOnly.get_errors environment)
+        |> List.map ~f:(TypeEnvironment.ReadOnly.get_errors ?dependency environment)
       in
       run_on_source ~environment ~source errors_by_define
 
@@ -215,7 +216,7 @@ let run ~scheduler ~environment sources =
   let number_of_sources = List.length sources in
   Log.log ~section:`Progress "Postprocessing %d sources..." number_of_sources;
   let map _ modules =
-    List.length modules, List.concat_map modules ~f:(run_on_qualifier environment)
+    List.length modules, List.concat_map modules ~f:(run_on_qualifier environment ~dependency:None)
   in
   let reduce (left_count, left_errors) (right_count, right_errors) =
     let number_sources = left_count + right_count in

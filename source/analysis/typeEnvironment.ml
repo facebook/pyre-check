@@ -169,12 +169,14 @@ module ReadOnly = struct
     |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
 
 
-  let get_errors environment reference =
-    get environment reference >>= TypeCheck.CheckResult.errors |> Option.value ~default:[]
+  let get_errors environment ?dependency reference =
+    get ?dependency environment reference
+    >>= TypeCheck.CheckResult.errors
+    |> Option.value ~default:[]
 
 
-  let get_local_annotations environment reference =
-    get environment reference >>= TypeCheck.CheckResult.local_annotations
+  let get_local_annotations environment ?dependency reference =
+    get ?dependency environment reference >>= TypeCheck.CheckResult.local_annotations
 
 
   let get_or_recompute_local_annotations environment name =
