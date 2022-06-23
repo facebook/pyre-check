@@ -6175,7 +6175,12 @@ module TypedDictionary = struct
           default = all_default || not required;
         }
     in
-    List.map ~f:field_to_argument fields |> fun parameters -> Defined (self_parameter :: parameters)
+    let required_fields, non_required_fields =
+      List.partition_tf fields ~f:(fun { required; _ } -> required)
+    in
+    required_fields @ non_required_fields
+    |> List.map ~f:field_to_argument
+    |> fun parameters -> Defined (self_parameter :: parameters)
 
 
   let constructor ~name ~fields =
