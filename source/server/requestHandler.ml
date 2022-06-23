@@ -171,7 +171,6 @@ let process_request
              ~environment:
                (ErrorsEnvironment.read_only errors_environment
                |> ErrorsEnvironment.ReadOnly.type_environment)
-             ~configuration
              query_text)
       in
       Lwt.return (state, response)

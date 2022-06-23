@@ -18,7 +18,7 @@ type types_by_location = ((Location.t * Type.t) list, error_reason) Result.t
 
 type coverage_by_location = (LocationBasedLookup.coverage_for_path, error_reason) Result.t
 
-let get_lookup ~configuration ~build_system ~environment path =
+let get_lookup ~build_system ~environment path =
   let generate_lookup_for_existent_path { ModulePath.qualifier; _ } =
     let timer = Timer.start () in
     let lookup = LocationBasedLookup.create_of_module environment qualifier in
@@ -30,7 +30,9 @@ let get_lookup ~configuration ~build_system ~environment path =
   in
   let generate_lookup_for_nonexistent_path error_reason = Result.Error error_reason in
   let full_path =
-    let { Configuration.Analysis.local_root = root; _ } = configuration in
+    let { Configuration.Analysis.local_root = root; _ } =
+      TypeEnvironment.ReadOnly.controls environment |> EnvironmentControls.configuration
+    in
     PyrePath.create_relative ~root ~relative:path |> SourcePath.create
   in
   match BuildSystem.lookup_artifact build_system full_path with
@@ -45,15 +47,14 @@ let get_lookup ~configuration ~build_system ~environment path =
       | ModuleTracker.PathLookup.NotFound -> generate_lookup_for_nonexistent_path FileNotFound)
 
 
-let find_all_resolved_types_for_path ~environment ~build_system ~configuration path =
+let find_all_resolved_types_for_path ~environment ~build_system path =
   let open Result in
-  get_lookup ~configuration ~environment ~build_system path
+  get_lookup ~environment ~build_system path
   >>| LocationBasedLookup.get_all_nodes_and_coverage_data
   >>| List.map ~f:(fun (location, { LocationBasedLookup.type_; expression = _ }) -> location, type_)
   >>| List.sort ~compare:[%compare: Location.t * Type.t]
 
 
-let find_expression_level_coverage_for_path ~environment ~build_system ~configuration path =
+let find_expression_level_coverage_for_path ~environment ~build_system path =
   let open Result in
-  get_lookup ~configuration ~environment ~build_system path
-  >>| LocationBasedLookup.get_expression_level_coverage
+  get_lookup ~environment ~build_system path >>| LocationBasedLookup.get_expression_level_coverage

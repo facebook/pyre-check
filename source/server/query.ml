@@ -541,8 +541,11 @@ module InlineDecorators = struct
           (Format.asprintf "Could not find function `%s`" (Reference.show function_reference))
 end
 
-let rec process_request ~environment ~build_system ~configuration request =
+let rec process_request ~environment ~build_system request =
   let process_request () =
+    let configuration =
+      TypeEnvironment.ReadOnly.controls environment |> EnvironmentControls.configuration
+    in
     let module_tracker = TypeEnvironment.ReadOnly.module_tracker environment in
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
     let order = GlobalResolution.class_hierarchy global_resolution in
@@ -664,8 +667,7 @@ let rec process_request ~environment ~build_system ~configuration request =
              ~default:
                (Error
                   (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
-    | Batch requests ->
-        Batch (List.map ~f:(process_request ~environment ~build_system ~configuration) requests)
+    | Batch requests -> Batch (List.map ~f:(process_request ~environment ~build_system) requests)
     | Callees caller ->
         (* We don't yet support a syntax for fetching property setters. *)
         Single
@@ -778,7 +780,6 @@ let rec process_request ~environment ~build_system ~configuration request =
             LocationBasedLookupProcessor.find_expression_level_coverage_for_path
               ~environment
               ~build_system
-              ~configuration
               path
           with
           | Result.Ok { total_expressions; coverage_gaps } ->
@@ -976,7 +977,6 @@ let rec process_request ~environment ~build_system ~configuration request =
             LocationBasedLookupProcessor.find_all_resolved_types_for_path
               ~environment
               ~build_system
-              ~configuration
               path
           with
           | Result.Ok types ->
@@ -1058,7 +1058,7 @@ let rec process_request ~environment ~build_system ~configuration request =
            (Hash_set.to_list trace |> String.concat ~sep:", "))
 
 
-let parse_and_process_request ~environment ~build_system ~configuration request =
+let parse_and_process_request ~environment ~build_system request =
   match parse_request request with
   | Result.Error reason -> Response.Error reason
-  | Result.Ok request -> process_request ~environment ~build_system ~configuration request
+  | Result.Ok request -> process_request ~environment ~build_system request

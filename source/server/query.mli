@@ -174,7 +174,6 @@ val parse_request : string -> (Request.t, string) Core.Result.t
 val process_request
   :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   build_system:BuildSystem.t ->
-  configuration:Configuration.Analysis.t ->
   Request.t ->
   Response.t
 
@@ -182,6 +181,5 @@ val process_request
 val parse_and_process_request
   :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
   build_system:BuildSystem.t ->
-  configuration:Configuration.Analysis.t ->
   string ->
   Response.t
