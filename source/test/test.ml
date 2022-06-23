@@ -3009,70 +3009,12 @@ let assert_errors
   assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") errors descriptions
 
 
-let assert_equivalent_attributes ~context source expected_class_sources =
-  let handle = "test.py" in
-  let attributes ~class_name source =
-    Memory.reset_shared_memory ();
-    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-      ScratchProject.setup ~context [handle, source] |> ScratchProject.build_global_environment
-    in
-    let global_resolution = GlobalResolution.create global_environment in
-    let compare_by_name left right =
-      String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
-    in
-    GlobalResolution.attributes ~transitive:false ~resolution:global_resolution class_name
-    |> (fun attributes -> Option.value_exn attributes)
-    |> List.sort ~compare:compare_by_name
-    |> List.map
-         ~f:
-           (GlobalResolution.instantiate_attribute
-              ~resolution:global_resolution
-              ~accessed_through_class:false)
-  in
-  let assert_attributes_match_original_class expected_class_source =
-    let pp_as_sexps format l =
-      List.map l ~f:Annotated.Attribute.sexp_of_instantiated
-      |> List.map ~f:Sexp.to_string_hum
-      |> String.concat ~sep:"\n"
-      |> Format.fprintf format "%s\n"
-    in
-    let simple_print l =
-      let simple attribute =
-        let annotation = Annotated.Attribute.annotation attribute |> Annotation.annotation in
-        let name = Annotated.Attribute.name attribute in
-        Printf.sprintf "%s, %s" name (Type.show annotation)
-      in
-      List.map l ~f:simple |> String.concat ~sep:"\n"
-    in
-    let class_name =
-      parse ~handle expected_class_source
-      |> Preprocessing.preprocess
-      |> Source.statements
-      |> List.hd_exn
-      |> function
-      | { Node.value = Statement.Class { Class.name; _ }; _ } -> Reference.show name
-      | _ -> failwith "The expected class source must have a single class"
-    in
-    assert_equal
-      ~printer:simple_print
-      ~pp_diff:(diff ~print:pp_as_sexps)
-      (attributes ~class_name expected_class_source)
-      (attributes ~class_name source)
-  in
-  List.iter ~f:assert_attributes_match_original_class expected_class_sources
-
-
 (* Assert that the class [class_name] in [source], after all transformations, has attributes
    equivalent to the class [class_name] in [expected_equivalent_class_source].
 
    This is useful when Pyre adds, removes, or modifies the original class's attributes, e.g., by
    adding dunder methods. *)
-let assert_equivalent_attributes_single_class
-    ~context
-    ~source
-    ~class_name
-    expected_equivalent_class_source
-  =
+let assert_equivalent_attributes ~context ~source ~class_name expected_equivalent_class_source =
   let module_name = "test" in
   let attributes source =
     Memory.reset_shared_memory ();

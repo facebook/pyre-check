@@ -10,7 +10,7 @@ open OUnit2
 open Test
 
 let test_transform_environment context =
-  let assert_equivalent_attributes = assert_equivalent_attributes_single_class ~context in
+  let assert_equivalent_attributes = assert_equivalent_attributes ~context in
   assert_equivalent_attributes
     ~source:{|
       import attr
