@@ -28,6 +28,7 @@ module Dependencies = Dependencies
 module EmptyStubEnvironment = EmptyStubEnvironment
 module Environment = Environment
 module EnvironmentControls = EnvironmentControls
+module ErrorsEnvironment = ErrorsEnvironment
 module AnalysisError = AnalysisError
 module Fixpoint = Fixpoint
 module FunctionDefinition = FunctionDefinition
