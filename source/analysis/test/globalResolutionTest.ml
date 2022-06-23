@@ -1533,7 +1533,7 @@ let test_typed_dictionary_individual_attributes context =
              overloads =
                [
                  {
-                   Type.Record.Callable.annotation = Type.Primitive "test.Movie";
+                   Type.Record.Callable.annotation = Type.none;
                    parameters =
                      Type.Record.Callable.Defined
                        [
@@ -1558,7 +1558,7 @@ let test_typed_dictionary_individual_attributes context =
                        ];
                  };
                  {
-                   Type.Record.Callable.annotation = Type.Primitive "test.Movie";
+                   Type.Record.Callable.annotation = Type.none;
                    parameters =
                      Type.Record.Callable.Defined
                        [
@@ -1589,7 +1589,7 @@ let test_typed_dictionary_individual_attributes context =
              overloads =
                [
                  {
-                   Type.Record.Callable.annotation = Type.Primitive "test.ChildMovie";
+                   Type.Record.Callable.annotation = Type.none;
                    parameters =
                      Type.Record.Callable.Defined
                        [
@@ -1620,7 +1620,7 @@ let test_typed_dictionary_individual_attributes context =
                        ];
                  };
                  {
-                   Type.Record.Callable.annotation = Type.Primitive "test.ChildMovie";
+                   Type.Record.Callable.annotation = Type.none;
                    parameters =
                      Type.Record.Callable.Defined
                        [
@@ -1655,7 +1655,7 @@ let test_typed_dictionary_individual_attributes context =
              overloads =
                [
                  {
-                   Type.Record.Callable.annotation = Type.Primitive "test.NonTotalMovie";
+                   Type.Record.Callable.annotation = Type.none;
                    parameters =
                      Type.Record.Callable.Defined
                        [
@@ -1680,7 +1680,7 @@ let test_typed_dictionary_individual_attributes context =
                        ];
                  };
                  {
-                   Type.Record.Callable.annotation = Type.Primitive "test.NonTotalMovie";
+                   Type.Record.Callable.annotation = Type.none;
                    parameters =
                      Type.Record.Callable.Defined
                        [
@@ -1715,7 +1715,7 @@ let test_typed_dictionary_individual_attributes context =
              overloads =
                [
                  {
-                   Type.Record.Callable.annotation = Type.Primitive "test.EmptyNonTotalMovie";
+                   Type.Record.Callable.annotation = Type.none;
                    parameters =
                      Type.Record.Callable.Defined
                        [
@@ -1728,7 +1728,7 @@ let test_typed_dictionary_individual_attributes context =
                        ];
                  };
                  {
-                   Type.Record.Callable.annotation = Type.Primitive "test.EmptyNonTotalMovie";
+                   Type.Record.Callable.annotation = Type.none;
                    parameters =
                      Type.Record.Callable.Defined
                        [

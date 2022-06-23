@@ -6179,22 +6179,21 @@ module TypedDictionary = struct
 
 
   let constructor ~name ~fields =
-    let annotation = Primitive name in
     {
       Callable.kind = Named (Reference.create "__init__");
       implementation = { annotation = Top; parameters = Undefined };
       overloads =
         [
-          { annotation; parameters = field_named_parameters fields };
+          { annotation = none; parameters = field_named_parameters fields };
           {
-            annotation;
+            annotation = none;
             parameters =
               Defined
                 [
                   Record.Callable.RecordParameter.PositionalOnly
                     { index = 0; annotation = Top; default = false };
                   Record.Callable.RecordParameter.PositionalOnly
-                    { index = 1; annotation; default = false };
+                    { index = 1; annotation = Primitive name; default = false };
                 ];
           };
         ];
