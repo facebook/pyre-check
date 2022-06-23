@@ -3057,7 +3057,10 @@ let assert_equivalent_attributes
     in
     Format.asprintf "%s.%s" module_name class_name
     |> GlobalResolution.attributes ~transitive:false ~resolution:global_resolution
-    |> (fun attributes -> Option.value_exn attributes)
+    |> (fun attributes ->
+         Option.value_exn
+           ~message:(Format.asprintf "Expected to find class `%s` in `%s`" class_name source)
+           attributes)
     |> List.sort ~compare:compare_by_name
     |> List.map
          ~f:
@@ -3151,7 +3154,7 @@ let assert_equivalent_typed_dictionary_attribute_types
   let assert_attribute_equal expected actual =
     assert_equal
       ~cmp:[%compare.equal: Type.t list]
-      ~printer:(fun x -> Format.asprintf "%s" ([%sexp_of: Type.t list] x |> Sexp.to_string_hum))
+      ~printer:[%show: Type.t list]
       ~pp_diff:
         (diff ~print:(fun format x ->
              Format.fprintf format "%s" ([%sexp_of: Type.t list] x |> Sexp.to_string_hum)))
