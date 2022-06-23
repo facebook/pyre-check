@@ -353,7 +353,7 @@ let test_check_typed_dictionaries context =
     [
       "Revealed type [-1]: Revealed type for `Movie.__init__` is `typing.Callable(__init__)[..., \
        unknown][[[Named(self, unknown), KeywordOnly(name, str), KeywordOnly(year, int)], \
-       Movie][[Named(self, unknown), Movie], Movie]]`.";
+       Movie][[unknown, Movie], Movie]]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1606,7 +1606,7 @@ let test_check_typed_dictionary_inheritance context =
     [
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
        `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(foo, int)], \
-       Child][[Named(self, unknown), Child], Child]]`.";
+       Child][[unknown, Child], Child]]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1622,7 +1622,7 @@ let test_check_typed_dictionary_inheritance context =
     [
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
        `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(foo, int)], \
-       Child][[Named(self, unknown), Child], Child]]`.";
+       Child][[unknown, Child], Child]]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1644,7 +1644,7 @@ let test_check_typed_dictionary_inheritance context =
       (* Only the shadowing field shows up in the constructor. *)
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
        `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(bar, int), \
-       KeywordOnly(foo, str)], Child][[Named(self, unknown), Child], Child]]`.";
+       KeywordOnly(foo, str)], Child][[unknown, Child], Child]]`.";
     ];
   (* Error when one field is required and the other is not. *)
   assert_test_typed_dictionary
@@ -1737,11 +1737,11 @@ let test_check_typed_dictionary_inheritance context =
        dictionary. Expected a typed dictionary.";
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
        `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(baz, str), \
-       KeywordOnly(foo, int)], Child][[Named(self, unknown), Child], Child]]`.";
+       KeywordOnly(foo, int)], Child][[unknown, Child], Child]]`.";
       "Revealed type [-1]: Revealed type for `test.NonTotalChild.__init__` is \
        `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(foo, int), \
-       KeywordOnly(non_total_baz, str, default)], NonTotalChild][[Named(self, unknown), \
-       NonTotalChild], NonTotalChild]]`.";
+       KeywordOnly(non_total_baz, str, default)], NonTotalChild][[unknown, NonTotalChild], \
+       NonTotalChild]]`.";
     ];
   ()
 

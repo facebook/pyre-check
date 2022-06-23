@@ -1562,14 +1562,10 @@ let test_typed_dictionary_individual_attributes context =
                    parameters =
                      Type.Record.Callable.Defined
                        [
-                         Type.Record.Callable.RecordParameter.Named
-                           {
-                             Type.Record.Callable.RecordParameter.name = "self";
-                             annotation = Type.Top;
-                             default = false;
-                           };
                          Type.Record.Callable.RecordParameter.PositionalOnly
-                           { index = 0; annotation = Type.Primitive "test.Movie"; default = false };
+                           { index = 0; annotation = Type.Top; default = false };
+                         Type.Record.Callable.RecordParameter.PositionalOnly
+                           { index = 1; annotation = Type.Primitive "test.Movie"; default = false };
                        ];
                  };
                ];
@@ -1628,15 +1624,11 @@ let test_typed_dictionary_individual_attributes context =
                    parameters =
                      Type.Record.Callable.Defined
                        [
-                         Type.Record.Callable.RecordParameter.Named
-                           {
-                             Type.Record.Callable.RecordParameter.name = "self";
-                             annotation = Type.Top;
-                             default = false;
-                           };
+                         Type.Record.Callable.RecordParameter.PositionalOnly
+                           { index = 0; annotation = Type.Top; default = false };
                          Type.Record.Callable.RecordParameter.PositionalOnly
                            {
-                             index = 0;
+                             index = 1;
                              annotation = Type.Primitive "test.ChildMovie";
                              default = false;
                            };
@@ -1692,15 +1684,11 @@ let test_typed_dictionary_individual_attributes context =
                    parameters =
                      Type.Record.Callable.Defined
                        [
-                         Type.Record.Callable.RecordParameter.Named
-                           {
-                             Type.Record.Callable.RecordParameter.name = "self";
-                             annotation = Type.Top;
-                             default = false;
-                           };
+                         Type.Record.Callable.RecordParameter.PositionalOnly
+                           { index = 0; annotation = Type.Top; default = false };
                          Type.Record.Callable.RecordParameter.PositionalOnly
                            {
-                             index = 0;
+                             index = 1;
                              annotation = Type.Primitive "test.NonTotalMovie";
                              default = false;
                            };
@@ -1744,15 +1732,11 @@ let test_typed_dictionary_individual_attributes context =
                    parameters =
                      Type.Record.Callable.Defined
                        [
-                         Type.Record.Callable.RecordParameter.Named
-                           {
-                             Type.Record.Callable.RecordParameter.name = "self";
-                             annotation = Type.Top;
-                             default = false;
-                           };
+                         Type.Record.Callable.RecordParameter.PositionalOnly
+                           { index = 0; annotation = Type.Top; default = false };
                          Type.Record.Callable.RecordParameter.PositionalOnly
                            {
-                             index = 0;
+                             index = 1;
                              annotation = Type.Primitive "test.EmptyNonTotalMovie";
                              default = false;
                            };
