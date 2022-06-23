@@ -34,6 +34,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       if 1 > 2:
         @dataclass(match_args=False)
         class Foo:
@@ -53,6 +54,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
       class Foo:
         def foo() -> None:
@@ -75,6 +77,7 @@ let test_transform_environment context =
     ~source:
       {|
       import dataclasses
+
       @dataclasses.dataclass(match_args=False)
       class Foo:
         def foo() -> None:
@@ -97,6 +100,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
       class Foo:
         def __init__(self) -> None:
@@ -118,6 +122,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
       class Foo:
         name = 'abc'
@@ -137,6 +142,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
       class Foo:
         name: str
@@ -156,6 +162,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
       class Foo:
         name: str
@@ -178,6 +185,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
       class Foo:
         name: str
@@ -201,6 +209,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
       class Foo:
         name: str
@@ -222,6 +231,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
       class Foo:
         name: str
@@ -243,6 +253,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
       class Foo:
         name: str
@@ -270,6 +281,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(init = False, match_args = False)
       class Foo:
         def foo(self) -> None:
@@ -289,6 +301,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(repr = False, match_args = False)
       class Foo:
         def foo(self) -> None:
@@ -308,6 +321,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(eq = False, match_args = False)
       class Foo:
         def foo(self) -> None:
@@ -327,6 +341,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(order = True, match_args = False)
       class Foo:
         def foo(self) -> None:
@@ -356,6 +371,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(eq = False, order = True, match_args = False)
       class Foo:
         def foo(self) -> None:
@@ -383,6 +399,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(frozen = True, match_args = False)
       class Foo:
         def foo(self) -> None:
@@ -406,19 +423,21 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
-      @dataclass(match_args=False)
-      class C(Base):
-        z: int = 10
-        x: int = 15
+
       @dataclass(match_args=False)
       class Base:
         x: typing.Any = 15.0
         y: int = 0
         z: str = "a"
+
+      @dataclass(match_args=False)
+      class Child(Base):
+        z: int = 10
+        x: int = 15
     |}
-    ~class_name:"C"
+    ~class_name:"Child"
     {|
-        class C(Base):
+        class Child(Base):
           z: int = 10
           x: int = 15
           def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None:
@@ -432,19 +451,21 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
-      @dataclass(match_args=False)
-      class C(Base):
-        z: int = 10
-        x: int = 15
+
       @dataclass(match_args=False)
       class Base:
         x: typing.Any = 15.0
         y: int = 0
         z: str = "a"
+
+      @dataclass(match_args=False)
+      class Child(Base):
+        z: int = 10
+        x: int = 15
     |}
-    ~class_name:"C"
+    ~class_name:"Child"
     {|
-        class C(Base):
+        class Child(Base):
           z: int = 10
           x: int = 15
           def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None:
@@ -458,18 +479,20 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
-      class C(Base):
+      class Base:
+        x: typing.Any = 15.0
+        y: int = 0
+
+      @dataclass(match_args=False)
+      class Child(Base):
         z: int = 10
         x = 15
-      @dataclass(match_args=False)
-      class Base:
-        x: typing.Any = 15.0
-        y: int = 0
     |}
-    ~class_name:"C"
+    ~class_name:"Child"
     {|
-        class C(Base):
+        class Child(Base):
           z: int = 10
           x: unknown = 15
           def __init__(self, x: typing.Any = 15.0, y: int = 0, z: int = 10) -> None:
@@ -483,18 +506,20 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
-      @dataclass(match_args=False)
-      class C(Base):
-        z: int = 10
-        x: int
+
       @dataclass(match_args=False)
       class Base:
         x: str = "a"
         y: int = 0
+
+      @dataclass(match_args=False)
+      class Child(Base):
+        z: int = 10
+        x: int
     |}
-    ~class_name:"C"
+    ~class_name:"Child"
     {|
-        class C(Base):
+        class Child(Base):
           z: int = 10
           x: int
           def __init__(self, x: int = "a", y: int = 0, z: int = 10) -> None:
@@ -508,17 +533,19 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
-      class B(Base):
-        z: str = "a"
-        y: int = 20
+
       @dataclass(match_args=False)
       class Base:
         x: typing.Any = 15.0
         y: int = 0
+
+      class Child(Base):
+        z: str = "a"
+        y: int = 20
     |}
-    ~class_name:"B"
+    ~class_name:"Child"
     {|
-        class B(Base):
+        class Child(Base):
           z: str = "a"
           y: int = 20
       |};
@@ -526,21 +553,24 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
-      @dataclass(match_args=False)
-      class C(B):
-        z: int = 10
-        x: int = 15
-      class B(Base):
-        z: str = "a"
-        y: int = 20
+
       @dataclass(match_args=False)
       class Base:
         x: typing.Any = 15.0
         y: int = 0
+
+      class Child(Base):
+        z: str = "a"
+        y: int = 20
+
+      @dataclass(match_args=False)
+      class GrandChild(Child):
+        z: int = 10
+        x: int = 15
     |}
-    ~class_name:"C"
+    ~class_name:"GrandChild"
     {|
-        class C(B):
+        class GrandChild(Child):
           z: int = 10
           x: int = 15
           def __init__(self, x: int = 15, y: int = 0, z: int = 10) -> None:
@@ -554,19 +584,22 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
-      class C1(B1, A1):
-        z: int = 10
-      @dataclass(match_args=False)
-      class B1:
-        y: int = 5
-      @dataclass(match_args=False)
-      class A1:
+      class Base1:
         x: int = 15
+
+      @dataclass(match_args=False)
+      class Base2:
+        y: int = 5
+
+      @dataclass(match_args=False)
+      class Child(Base2, Base1):
+        z: int = 10
     |}
-    ~class_name:"C1"
+    ~class_name:"Child"
     {|
-        class C1(B1, A1):
+        class Child(Base2, Base1):
           z: int = 10
           def __init__(self, x: int = 15, y: int = 5, z: int = 10) -> None:
             pass
@@ -579,8 +612,10 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       class NotDataClass:
         x: int = 15
+
       @dataclass(match_args=False)
       class DataClass(NotDataClass):
         y: int = 5
@@ -600,14 +635,15 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
-      class A:
+      class Foo:
         x: int
         init_variable: dataclasses.InitVar[str]
     |}
-    ~class_name:"A"
+    ~class_name:"Foo"
     {|
-        class A:
+        class Foo:
           x: int
           init_variable: dataclasses.InitVar[str]
           def __init__(self, x: int, init_variable: str) -> None:
@@ -623,14 +659,15 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
-      class A:
+      class Foo:
         x: int = dataclasses.field(init=False)
     |}
-    ~class_name:"A"
+    ~class_name:"Foo"
     {|
         # spacer
-        class A:
+        class Foo:
           x: int = dataclasses.field(init=False)
           def __init__(self) -> None:
             pass
@@ -643,14 +680,15 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
-      class A:
+      class Foo:
         x: int = dataclasses.field(init=True)
     |}
-    ~class_name:"A"
+    ~class_name:"Foo"
     {|
         # spacer
-        class A:
+        class Foo:
           x: int = dataclasses.field(init=True)
           def __init__(self, x: int) -> None:
             pass
@@ -663,14 +701,15 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
-      class A:
+      class Foo:
         x: int = dataclasses.field(init=True, default=1)
     |}
-    ~class_name:"A"
+    ~class_name:"Foo"
     {|
         # spacer
-        class A:
+        class Foo:
           x: int = dataclasses.field(init=True, default=1)
           def __init__(self, x: int = 1) -> None:
             pass
@@ -683,14 +722,15 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
-      class A:
+      class Foo:
         x: int = dataclasses.field(init=True, default_factory=foo)
     |}
-    ~class_name:"A"
+    ~class_name:"Foo"
     {|
         # spacer
-        class A:
+        class Foo:
           x: int = dataclasses.field(init=True, default_factory=foo)
           def __init__(self, x: int = foo()) -> None:
             pass
@@ -704,14 +744,15 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
-      class A:
+      class Foo:
         x: int = dataclasses.field(init=False, default=1)
     |}
-    ~class_name:"A"
+    ~class_name:"Foo"
     {|
         # spacer
-        class A:
+        class Foo:
           x: int = dataclasses.field(init=False, default=1)
           def __init__(self) -> None:
             pass
@@ -724,17 +765,15 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(match_args=False)
-      class A:
+      class Foo:
         x: int = dataclasses.field(init=False)
-      @dataclass(match_args=False)
-      class B:
-        y: str = "abc"
     |}
-    ~class_name:"A"
+    ~class_name:"Foo"
     {|
         # spacer
-        class A:
+        class Foo:
           x: int = dataclasses.field(init=False)
           def __init__(self) -> None:
             pass
@@ -747,9 +786,7 @@ let test_transform_environment context =
     ~source:
       {|
       from dataclasses import dataclass
-      @dataclass(match_args=False)
-      class A:
-        x: int = dataclasses.field(init=False)
+
       @dataclass(match_args=False)
       class B:
         y: str = "abc"
@@ -774,6 +811,7 @@ let test_match_args context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass
       class Foo:
         x: int
@@ -796,6 +834,7 @@ let test_match_args context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(repr=False, eq=False, match_args=True)
       class Foo:
         x: int
@@ -812,6 +851,7 @@ let test_match_args context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(repr=False, eq=False, match_args=False)
       class Foo:
         x: int
@@ -827,6 +867,7 @@ let test_match_args context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(repr=False, eq=False, init=False, match_args=True)
       class Foo:
         x: int
@@ -841,6 +882,7 @@ let test_match_args context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(repr=False, eq=False)
       class Foo:
         x: int
@@ -861,6 +903,7 @@ let test_match_args context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(repr=False, eq=False)
       class Foo:
         x: int
@@ -882,18 +925,20 @@ let test_match_args context =
     ~source:
       {|
       from dataclasses import dataclass
+
       @dataclass(repr=False, eq=False)
       class Base:
         x: typing.Any
         y: int
+
       @dataclass(repr=False, eq=False)
-      class C(Base):
+      class Child(Base):
         z: int
         x: int
     |}
-    ~class_name:"C"
+    ~class_name:"Child"
     {|
-        class C(Base):
+        class Child(Base):
           z: int
           x: int
           def __init__(self, x: int, y: int, z: int) -> None:
