@@ -281,6 +281,128 @@ let test_typed_dictionary_attributes context =
           def pop(self, k: L["name"], default: _T) -> Union[str, _T]: ...
           def pop(self) -> DontCare: ...
       |};
+  assert_equivalent_typed_dictionary_attribute_types
+    ~source:
+      {|
+      from typing_extensions import TypedDict
+
+      class EmptyTypedDict(TypedDict):
+        pass
+    |}
+    ~class_name:"EmptyTypedDict"
+    {|
+        from typing import overload, Optional, TypeVar, Union
+        from typing_extensions import Literal as L
+
+        _T = TypeVar("_T")
+
+        class EmptyTypedDict:
+          @overload
+          def __init__(self) -> None: ...
+          @overload
+          def __init__(self, movie: EmptyTypedDict, /) -> None: ...
+          def __init__(self) -> DontCare: ...
+
+          def __getitem__(self) -> DontCare: ...
+
+          def __setitem__(self) -> DontCare: ...
+
+          def get(self) -> DontCare: ...
+
+          def setdefault(self) -> DontCare: ...
+
+          @overload
+          def update(self) -> None: ...
+          @overload
+          def update(self, movie: EmptyTypedDict, /) -> None: ...
+          def update(self) -> DontCare: ...
+      |};
+  (* Note: If a TypedDict has zero non-required fields, we don't generate `pop` or `__delitem__`. *)
+  assert_equivalent_typed_dictionary_attribute_types
+    ~source:
+      {|
+      from typing_extensions import TypedDict
+
+      class EmptyNonTotalTypedDict(TypedDict, total=False):
+        pass
+    |}
+    ~class_name:"EmptyNonTotalTypedDict"
+    {|
+        from typing import overload, Optional, TypeVar, Union
+        from typing_extensions import Literal as L
+
+        _T = TypeVar("_T")
+
+        class EmptyNonTotalTypedDict:
+          @overload
+          def __init__(self) -> None: ...
+          @overload
+          def __init__(self, movie: EmptyNonTotalTypedDict, /) -> None: ...
+          def __init__(self) -> DontCare: ...
+
+          def __getitem__(self) -> DontCare: ...
+
+          def __setitem__(self) -> DontCare: ...
+
+          def get(self) -> DontCare: ...
+
+          def setdefault(self) -> DontCare: ...
+
+          @overload
+          def update(self) -> None: ...
+          @overload
+          def update(self, movie: EmptyNonTotalTypedDict, /) -> None: ...
+          def update(self) -> DontCare: ...
+      |};
+  (* Non-attributes are ignored. *)
+  assert_equivalent_typed_dictionary_attribute_types
+    ~source:
+      {|
+      from typing_extensions import TypedDict
+
+      class Movie(TypedDict):
+        name: str
+
+        def some_method_that_will_not_exist_at_runtime(self) -> None: ...
+    |}
+    ~class_name:"Movie"
+    {|
+        from typing import overload, Optional, TypeVar, Union
+        from typing_extensions import Literal as L
+
+        _T = TypeVar("_T")
+
+        class Movie:
+          @overload
+          def __init__(self, *, name: str) -> None: ...
+          @overload
+          def __init__(self, movie: Movie, /) -> None: ...
+          def __init__(self) -> DontCare: ...
+
+          @overload
+          def __getitem__(self, k: L["name"]) -> str: ...
+          def __getitem__(self) -> DontCare: ...
+
+          @overload
+          def __setitem__(self, k: L["name"], v: str) -> None: ...
+          def __setitem__(self) -> DontCare: ...
+
+          @overload
+          def get(self, k: L["name"]) -> Optional[str]: ...
+          @overload
+          def get(self, k: L["name"], default: _T) -> Union[str, _T]: ...
+          def get(self) -> DontCare: ...
+
+          @overload
+          def setdefault(self, k: L["name"], default: str) -> str: ...
+          def setdefault(self) -> DontCare: ...
+
+          @overload
+          def update(self, *, name: str=...) -> None: ...
+          @overload
+          def update(self, movie: Movie, /) -> None: ...
+          def update(self) -> DontCare: ...
+      |};
   ()
 
 
