@@ -623,6 +623,14 @@ module Overlay = struct
     Hash_set.mem overlaid_qualifiers qualifier
 
 
+  let owns_reference environment reference =
+    Reference.possible_qualifiers reference |> List.exists ~f:(owns_qualifier environment)
+
+
+  let owns_qualified_class_name environment name =
+    Reference.create name |> owns_reference environment
+
+
   let create parent =
     {
       parent;

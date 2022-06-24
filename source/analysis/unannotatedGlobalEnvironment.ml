@@ -1064,18 +1064,6 @@ module Overlay = struct
 
   let module_tracker { ast_environment; _ } = AstEnvironment.Overlay.module_tracker ast_environment
 
-  let owns_qualifier environment qualifier =
-    ModuleTracker.Overlay.owns_qualifier (module_tracker environment) qualifier
-
-
-  let owns_reference environment reference =
-    Reference.possible_qualifiers reference |> List.exists ~f:(owns_qualifier environment)
-
-
-  let owns_qualified_class_name environment name =
-    Reference.create name |> owns_reference environment
-
-
   let update_overlaid_code
       ({ ast_environment; from_read_only_upstream; _ } as environment)
       ~code_updates
@@ -1086,7 +1074,7 @@ module Overlay = struct
       in
       let filtered_invalidated_modules =
         AstEnvironment.UpdateResult.invalidated_modules update_result
-        |> List.filter ~f:(owns_qualifier environment)
+        |> List.filter ~f:(module_tracker environment |> ModuleTracker.Overlay.owns_qualifier)
       in
       {
         update_result with
@@ -1104,10 +1092,16 @@ module Overlay = struct
     let { ReadOnly.all_classes; all_indices; all_unannotated_globals; _ } = parent in
     let { ReadOnly.ast_environment; _ } = this_read_only in
     let if_owns ~owns ~f ?dependency key =
-      if owns environment key then
+      if owns key then
         f this_read_only ?dependency key
       else
         f parent ?dependency key
+    in
+    let owns_qualifier, owns_reference, owns_qualified_class_name =
+      let module_tracker = module_tracker environment in
+      ( ModuleTracker.Overlay.owns_qualifier module_tracker,
+        ModuleTracker.Overlay.owns_reference module_tracker,
+        ModuleTracker.Overlay.owns_qualified_class_name module_tracker )
     in
     {
       ReadOnly.ast_environment;
