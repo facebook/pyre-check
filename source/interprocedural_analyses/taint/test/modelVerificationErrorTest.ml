@@ -8,6 +8,7 @@
 open Core
 open OUnit2
 open Taint
+open Pyre
 
 let test_to_json _ =
   let assert_json ~expected error =
@@ -64,4 +65,37 @@ let test_to_json _ =
     }
 
 
-let () = "model_verification_error" >::: ["to_json" >:: test_to_json] |> Test.run
+let test_invalid_model_query context =
+  let configuration = TaintConfiguration.default in
+  let error_message =
+    try
+      let _ =
+        TestHelper.initialize
+          ~models_source:
+            {|
+        ModelQuery(
+          name = "invalid_model_query",
+          find = "functions",
+          where = Decorator(arguments.contains("1"), name.matches("d")),
+          model = Returns(TaintSource[Test])
+        )
+      |}
+          ~context
+          ~taint_configuration:configuration
+          {|
+      def foo(x):
+          ...
+      |}
+      in
+      "no failure"
+    with
+    | ModelVerificationError.ModelVerificationErrors errors ->
+        List.hd errors >>| ModelVerificationError.display |> Option.value ~default:"no failure"
+  in
+  assert_equal ~printer:ident "ModelQuery `invalid_model_query` output no models." error_message
+
+
+let () =
+  "model_verification_error"
+  >::: ["to_json" >:: test_to_json; "invalid_model_query" >:: test_invalid_model_query]
+  |> Test.run

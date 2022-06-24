@@ -66,7 +66,7 @@ val apply_all_rules
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.HashSet.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  ModelQueryRegistryMap.t
+  ModelQueryRegistryMap.t * Taint.ModelVerificationError.t list
 
 val generate_models_from_queries
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
@@ -76,4 +76,4 @@ val generate_models_from_queries
   stubs:Interprocedural.Target.t Base.Hash_set.t ->
   taint_configuration:Taint.TaintConfiguration.t ->
   Taint.ModelParser.Internal.ModelQuery.rule list ->
-  ModelQueryRegistryMap.t
+  ModelQueryRegistryMap.t * Taint.ModelVerificationError.t list

@@ -179,17 +179,7 @@ let parse_models_and_queries_from_configuration
          ~stubs
          ~taint_configuration
   in
-  let () = ModelVerificationError.register errors in
-  let () =
-    if not (List.is_empty errors) then
-      (* Exit or log errors, depending on whether models need to be verified. *)
-      if not verify_models then begin
-        Log.error "Found %d model verification errors!" (List.length errors);
-        List.iter errors ~f:(fun error -> Log.error "%s" (ModelVerificationError.display error))
-      end
-      else
-        raise (ModelParser.ModelVerificationError errors)
-  in
+  ModelVerificationError.verify_models_and_dsl errors verify_models;
   let class_models = ClassModels.infer ~environment ~user_models in
   {
     ModelParser.models = Registry.merge ~join:Model.join_user_models user_models class_models;
@@ -221,7 +211,7 @@ let initialize_models ~scheduler ~static_analysis_configuration ~environment ~ca
         Log.info "Generating models from model queries...";
         let timer = Timer.start () in
         let taint_configuration = TaintConfiguration.get () in
-        let models_and_names =
+        let models_and_names, errors =
           TaintModelQuery.ModelQuery.generate_models_from_queries
             ~static_analysis_configuration
             ~scheduler
@@ -237,6 +227,9 @@ let initialize_models ~scheduler ~static_analysis_configuration ~environment ~ca
               TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_file ~models_and_names ~path
           | None -> ()
         in
+        ModelVerificationError.verify_models_and_dsl
+          errors
+          static_analysis_configuration.verify_models;
         let models =
           models_and_names
           |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry
@@ -486,7 +479,8 @@ let run_taint_analysis
     in
     Yojson.Safe.pretty_to_string (`List summary) |> Log.print "%s"
   with
-  | (TaintConfiguration.TaintConfigurationError _ | ModelParser.ModelVerificationError _) as exn ->
+  | (TaintConfiguration.TaintConfigurationError _ | ModelVerificationError.ModelVerificationErrors _)
+    as exn ->
       raise exn
   | exn ->
       (* The backtrace is lost if the exception is caught at the top level, because of `Lwt`.

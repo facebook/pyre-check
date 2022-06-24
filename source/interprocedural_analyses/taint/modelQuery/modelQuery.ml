@@ -53,6 +53,20 @@ module ModelQueryRegistryMap = struct
 
   let get_registry ~model_join model_query_map =
     merge_all_registries ~model_join (get_models model_query_map)
+
+
+  let find_errors ~models_and_names ~model_query_names =
+    List.filter_map model_query_names ~f:(fun query_name ->
+        match get models_and_names query_name with
+        | Some _ -> None
+        | None ->
+            Some
+              {
+                ModelVerificationError.kind =
+                  ModelVerificationError.NoOutputFromModelQuery query_name;
+                location = Ast.Location.any;
+                path = None;
+              })
 end
 
 module DumpModelQueryResults : sig
@@ -865,9 +879,16 @@ let apply_all_rules
       else
         ModelQueryRegistryMap.empty
     in
-    ModelQueryRegistryMap.merge ~model_join:Model.join_user_models callable_models attribute_models
+    let model_query_names = List.map rules ~f:(fun rule -> rule.name) in
+    let models_and_names =
+      ModelQueryRegistryMap.merge
+        ~model_join:Model.join_user_models
+        callable_models
+        attribute_models
+    in
+    models_and_names, ModelQueryRegistryMap.find_errors ~models_and_names ~model_query_names
   else
-    ModelQueryRegistryMap.empty
+    ModelQueryRegistryMap.empty, []
 
 
 let generate_models_from_queries

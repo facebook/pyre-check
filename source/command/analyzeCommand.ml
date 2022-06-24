@@ -218,7 +218,7 @@ let on_exception = function
         (`Assoc ["errors", `List (List.map errors ~f:Taint.TaintConfiguration.Error.to_json)])
       |> Log.print "%s";
       ExitStatus.TaintConfigurationError
-  | Taint.ModelParser.ModelVerificationError errors ->
+  | Taint.ModelVerificationError.ModelVerificationErrors errors ->
       Yojson.Safe.pretty_to_string
         (`Assoc ["errors", `List (List.map errors ~f:Taint.ModelVerificationError.to_json)])
       |> Log.print "%s";

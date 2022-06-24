@@ -3281,11 +3281,9 @@ let create_attribute_model_from_annotations
         annotation)
 
 
-exception ModelVerificationError of ModelVerificationError.t list
-
 let verify_model_syntax ~path ~source =
   match String.split ~on:'\n' source |> Parser.parse with
   | Ok _ -> ()
   | Error { Parser.Error.location; _ } ->
       let error = model_verification_error ~path:(Some path) ~location ParseError in
-      raise (ModelVerificationError [error])
+      raise (ModelVerificationError.ModelVerificationErrors [error])

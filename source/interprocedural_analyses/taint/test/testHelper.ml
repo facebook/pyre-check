@@ -448,6 +448,7 @@ let initialize
     ?find_missing_flows
     ?(taint_configuration = TaintConfiguration.default)
     ?expected_dump_string
+    ?(verify_model_queries = true)
     ~context
     source_content
   =
@@ -531,7 +532,7 @@ let initialize
              source)
           (List.is_empty errors);
 
-        let models_and_names =
+        let models_result =
           TaintModelQuery.ModelQuery.apply_all_rules
             ~resolution
             ~configuration:taint_configuration
@@ -542,6 +543,7 @@ let initialize
             ~stubs:(Target.HashSet.of_list stubs)
             ~environment
         in
+        let models_and_names, errors = fst models_result, snd models_result in
         (match taint_configuration.dump_model_query_results_path, expected_dump_string with
         | Some path, Some expected_string ->
             TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_file_and_string
@@ -554,6 +556,8 @@ let initialize
             TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_string ~models_and_names
             |> assert_equal ~cmp:String.equal expected_string
         | None, None -> ());
+        let verify = static_analysis_configuration.verify_models && verify_model_queries in
+        ModelVerificationError.verify_models_and_dsl errors verify;
         let models =
           models_and_names
           |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry
@@ -729,7 +733,14 @@ let end_to_end_integration_test path context =
       _;
     }
       =
-      initialize ~handle ?models_source ~add_initial_models ~taint_configuration ~context source
+      initialize
+        ~handle
+        ?models_source
+        ~add_initial_models
+        ~taint_configuration
+        ~verify_model_queries:false
+        ~context
+        source
     in
     let { DependencyGraph.dependency_graph; callables_to_analyze; override_targets; _ } =
       DependencyGraph.build_whole_program_dependency_graph

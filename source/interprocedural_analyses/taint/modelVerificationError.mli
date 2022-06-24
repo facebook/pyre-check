@@ -134,4 +134,8 @@ val display : t -> string
 
 val register : t list -> unit
 
+exception ModelVerificationErrors of t list
+
+val verify_models_and_dsl : t list -> bool -> unit
+
 val get : unit -> t list

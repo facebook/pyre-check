@@ -416,4 +416,18 @@ let register errors =
   SharedMemory.add Memory.SingletonKey.key errors
 
 
+exception ModelVerificationErrors of t list
+
+let verify_models_and_dsl errors verify =
+  register errors;
+  if not (List.is_empty errors) then
+    (* Exit or log errors, depending on whether models need to be verified. *)
+    if not verify then begin
+      Log.error "Found %d model verification errors!" (List.length errors);
+      List.iter errors ~f:(fun error -> Log.error "%s" (display error))
+    end
+    else
+      raise (ModelVerificationErrors errors)
+
+
 let get () = SharedMemory.get Memory.SingletonKey.key |> Option.value ~default:[]
