@@ -73,6 +73,8 @@ let recheck ~configuration ~scheduler ~environment artifact_paths =
         "number of module tracker updates", List.length module_updates;
         "number of parser updates", List.length invalidated_modules;
         "number of rechecked modules", rechecked_modules_count;
+        (* This includes only re-checks of previously existing functions, not checks of newly added
+           functions *)
         "number of re-checked functions", rechecked_functions_count;
       ]
     ();
