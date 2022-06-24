@@ -1666,7 +1666,7 @@ let replace_platform_specific_code source =
                   | Constant (Constant.String { StringLiteral.value = "win32"; _ }) -> true
                   | _ -> false
                 in
-                (is_platform left && is_win32 right) or (is_platform right && is_win32 left)
+                (is_platform left && is_win32 right) || (is_platform right && is_win32 left)
               in
               match test with
               | ComparisonOperator { ComparisonOperator.left; operator; right }
