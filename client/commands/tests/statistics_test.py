@@ -49,9 +49,46 @@ class StatisticsTest(testslide.TestCase):
                     find_roots(
                         ["foo.py", "bar.py"],
                         local_root=None,
-                        global_root=Path("/root"),
+                        global_root=root_path,
                     ),
                     [root_path / "foo.py", root_path / "bar.py"],
+                )
+
+    def test_find_roots__invalid_given_subdirectory(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
+            with setup.switch_working_directory(root_path):
+                self.assertCountEqual(
+                    find_roots(
+                        ["subdirectory"],
+                        local_root=None,
+                        global_root=root_path / "project_root",
+                    ),
+                    [root_path / "project_root"],
+                )
+
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
+            with setup.switch_working_directory(root_path):
+                self.assertCountEqual(
+                    find_roots(
+                        ["subdirectory"],
+                        local_root=root_path / "local_root",
+                        global_root=root_path,
+                    ),
+                    [root_path / "local_root"],
+                )
+
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
+            with setup.switch_working_directory(root_path):
+                self.assertCountEqual(
+                    find_roots(
+                        ["project_root/subdirectory"],
+                        local_root=None,
+                        global_root=root_path / "project_root",
+                    ),
+                    [root_path / "project_root/subdirectory"],
                 )
 
     def test_find_roots__local_root(self) -> None:

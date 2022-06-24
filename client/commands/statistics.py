@@ -30,15 +30,24 @@ def find_roots(
     local_root: Optional[Path],
     global_root: Path,
 ) -> Iterable[Path]:
+    root = local_root or global_root
+    absolute_root = Path(root)
     if len(explicitly_specified_directories) > 0:
+        absolute_paths = set()
+        for directory in explicitly_specified_directories:
+            path = Path(directory)
+            absolute_path = path if path.is_absolute() else Path.cwd() / path
+            if absolute_root in absolute_path.parents:
+                absolute_paths.add(absolute_path)
+            else:
+                LOG.warning(
+                    "`%s` is not a subdirectory of the project at `%s`", directory, root
+                )
+                LOG.warning("Gathering statistics in `%s`", root)
+                return [root]
+        return absolute_paths
 
-        def to_absolute_path(given: str) -> Path:
-            path = Path(given)
-            return path if path.is_absolute() else Path.cwd() / path
-
-        return {to_absolute_path(path) for path in explicitly_specified_directories}
-
-    return [local_root] if local_root is not None else [global_root]
+    return [root]
 
 
 def _is_excluded(path: Path, excludes: Sequence[str]) -> bool:
