@@ -3,7 +3,7 @@
 This tutorial will walk you through practical exercises highlighting essential
 features of the Python Static Analyzer (Pysa) that comes with Pyre. The tutorial
 is meant to be consumed along with an accompanying presentation. You can see a
-recording of the acoompanying presentation from DEF CON 28
+recording of the accompanying presentation from DEF CON 28
 [here](https://www.youtube.com/watch?v=8I3zlvtpOww).
 
 It is possible to go through this tutorial without the presentation, but you
