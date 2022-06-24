@@ -13,6 +13,9 @@ To get started, set up a server with `pyre` or `pyre start`. The rest of this pa
 
 **Note:** The responses in the examples are prettified using the `pyre query <query> | python -m json.tool` pattern.
 
+**IMPORTANT**:
+These interfaces are considered legacy code by our team. They are far from production-ready, and will receive minimal maintenance effort in the short to medium term (for Pysa only) and will eventually be removed in the long term. It is ok if you want to rely on them for debugging or manual triaging purpose. But we would **strongly discourage** relying on them to build any automation or product on top.
+
 ## Supported Queries
 ### Attributes
 
