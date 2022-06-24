@@ -193,7 +193,7 @@ Ideally, if you have a local installation of Pyre, it would be best to remove th
 ----
 **Problem**: Running `pyre analyze` results in a bunch of errors and Pysa stops running
 
-**Solution**: Run `pyre analyze --no-verify` to skip model validation.
+**Solution**: Run `pyre analyze --no-verify-models` to skip model validation, `pyre analyze --no-verify-dsl` to skip model query validation, or `pyre analyze --no-verify` to skip both.
 
 ----
 **Problem**: Running `pyre analyze --no-verify` will freeze when parsing stubs and sources or processing functions, but the seconds runtime timer is still increasing
