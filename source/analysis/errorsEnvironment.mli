@@ -30,3 +30,14 @@ val type_environment : t -> TypeEnvironment.t
 val module_tracker : t -> ModuleTracker.t
 
 val populate_all_errors : scheduler:Scheduler.t -> t -> unit
+
+module UpdateStatistics : sig
+  type t = {
+    module_updates_count: int;
+    invalidated_modules_count: int;
+    rechecked_modules_count: int;
+    rechecked_functions_count: int;
+  }
+
+  val count_updates : UpdateResult.t -> t
+end

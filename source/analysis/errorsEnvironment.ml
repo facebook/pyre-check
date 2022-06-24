@@ -118,3 +118,51 @@ let populate_all_errors ~scheduler environment =
   in
   Statistics.performance ~name:"check_Postprocessing" ~phase_name:"Postprocessing" ~timer ();
   ()
+
+
+module UpdateStatistics = struct
+  type t = {
+    module_updates_count: int;
+    invalidated_modules_count: int;
+    (* This includes only re-checks of previously existing functions, not checks of newly added
+       functions *)
+    rechecked_modules_count: int;
+    rechecked_functions_count: int;
+  }
+
+  let count_updates update_result =
+    let rechecked_functions_count, rechecked_modules_count =
+      let rechecked_functions, rechecked_modules =
+        let filter_union sofar keyset =
+          let collect_unique registered (sofar_functions, sofar_modules) =
+            match SharedMemoryKeys.DependencyKey.get_key registered with
+            | SharedMemoryKeys.TypeCheckDefine name -> Set.add sofar_functions name, sofar_modules
+            | SharedMemoryKeys.CreateModuleErrors name ->
+                sofar_functions, Set.add sofar_modules name
+            | _ -> sofar_functions, sofar_modules
+          in
+          SharedMemoryKeys.DependencyKey.RegisteredSet.fold collect_unique keyset sofar
+        in
+        UpdateResult.all_triggered_dependencies update_result
+        |> List.fold ~init:(Reference.Set.empty, Reference.Set.empty) ~f:filter_union
+      in
+      Reference.Set.length rechecked_functions, Reference.Set.length rechecked_modules
+    in
+    let module_updates_count, invalidated_modules_count =
+      let unannotated_global_environment_update_result =
+        UpdateResult.unannotated_global_environment_update_result update_result
+      in
+      ( UnannotatedGlobalEnvironment.UpdateResult.module_updates
+          unannotated_global_environment_update_result
+        |> List.length,
+        UnannotatedGlobalEnvironment.UpdateResult.invalidated_modules
+          unannotated_global_environment_update_result
+        |> List.length )
+    in
+    {
+      module_updates_count;
+      invalidated_modules_count;
+      rechecked_modules_count;
+      rechecked_functions_count;
+    }
+end
