@@ -1757,6 +1757,10 @@ let test_expression_level_coverage context =
             def foo(x) -> None:
               print(x+1)
           |};
+      "arguments.txt", {|
+      foo.py
+      |};
+      "empty.txt", {||};
     ]
   in
   let custom_source_root =
@@ -1862,6 +1866,106 @@ let test_expression_level_coverage context =
         Format.asprintf
           {| {"error":"Not able to get lookups in: `%s` (file shadowed by .pyi stub file)"} |}
           (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute) );
+      (* Test @not_existing.txt not found *)
+      ( Format.sprintf
+          "expression_level_coverage('@%s')"
+          (PyrePath.append custom_source_root ~element:"not_existing.txt" |> PyrePath.absolute),
+        Format.asprintf
+          {| {"error":"Not able to get lookups in: `%s` (file not found)"} |}
+          (PyrePath.append custom_source_root ~element:"not_existing.txt" |> PyrePath.absolute) );
+      (* Test @empty.txt not found *)
+      ( Format.sprintf
+          "expression_level_coverage('@%s')"
+          (PyrePath.append custom_source_root ~element:"empty.txt" |> PyrePath.absolute),
+        Format.asprintf
+          {|
+            {
+              "response": [
+              ]
+          }
+         |} );
+      (* Test @arguments.txt *)
+      ( Format.sprintf
+          "expression_level_coverage('@%s')"
+          (PyrePath.append custom_source_root ~element:"arguments.txt" |> PyrePath.absolute),
+        Format.asprintf
+          {|
+            {
+              "response": [
+                  {
+                      "path": "foo.py",
+                      "total_expressions": 8,
+                      "coverage_gaps": [
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 2,
+                                      "column": 4
+                                  },
+                                  "stop": {
+                                      "line": 2,
+                                      "column": 7
+                                  }
+                              },
+                              "type_": "typing.Callable(foo.foo)[[Named(x, unknown)], None]",
+                              "reason": [
+                                  "CallableParameterIsUnknownOrAny"
+                              ]
+                          },
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 2,
+                                      "column": 8
+                                  },
+                                  "stop": {
+                                      "line": 2,
+                                      "column": 9
+                                  }
+                              },
+                              "type_": "typing.Any",
+                              "reason": [
+                                  "TypeIsAny"
+                              ]
+                          },
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 3,
+                                      "column": 8
+                                  },
+                                  "stop": {
+                                      "line": 3,
+                                      "column": 9
+                                  }
+                              },
+                              "type_": "typing.Any",
+                              "reason": [
+                                  "TypeIsAny"
+                              ]
+                          },
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 3,
+                                      "column": 8
+                                  },
+                                  "stop": {
+                                      "line": 3,
+                                      "column": 13
+                                  }
+                              },
+                              "type_": "typing.Any",
+                              "reason": [
+                                  "TypeIsAny"
+                              ]
+                          }
+                      ]
+                  }
+              ]
+          }
+         |}
+      );
     ]
   in
   assert_queries_with_local_root

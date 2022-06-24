@@ -775,18 +775,39 @@ let rec process_request ~environment ~build_system request =
         let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
         Single (Base.Callgraph (List.concat_map qualifiers ~f:get_callgraph))
     | ExpressionLevelCoverage paths ->
-        let find_resolved_types path =
-          match
-            LocationBasedLookupProcessor.find_expression_level_coverage_for_path
-              ~environment
-              ~build_system
-              path
-          with
-          | Result.Ok { total_expressions; coverage_gaps } ->
-              Either.First { Base.path; total_expressions; coverage_gaps }
-          | Result.Error error_reason -> Either.Second (path, error_reason)
+        let read_text_file path =
+          try In_channel.read_lines path |> List.map ~f:(fun x -> Result.Ok x) with
+          | _ -> [Result.Error (path, LocationBasedLookupProcessor.FileNotFound)]
         in
-        let results, errors = List.partition_map ~f:find_resolved_types paths in
+        let get_text_file_path_list path =
+          read_text_file path
+          |> List.filter ~f:(fun path ->
+                 match path with
+                 | Result.Ok path -> not (String.equal (String.strip path) "")
+                 | Result.Error _ -> true)
+        in
+        let extract_paths path =
+          match String.get path 0 with
+          | '@' -> get_text_file_path_list (String.sub path ~pos:1 ~len:(String.length path - 1))
+          | _ -> [Result.Ok path]
+        in
+        let find_resolved_types result =
+          match result with
+          | Result.Error error -> Either.Second error
+          | Result.Ok path -> (
+              match
+                LocationBasedLookupProcessor.find_expression_level_coverage_for_path
+                  ~environment
+                  ~build_system
+                  path
+              with
+              | Result.Ok { total_expressions; coverage_gaps } ->
+                  Either.First { Base.path; total_expressions; coverage_gaps }
+              | Result.Error error_reason -> Either.Second (path, error_reason))
+        in
+        let results, errors =
+          List.concat_map paths ~f:extract_paths |> List.partition_map ~f:find_resolved_types
+        in
         if List.is_empty errors then
           Single (Base.ExpressionLevelCoverageResponse results)
         else
