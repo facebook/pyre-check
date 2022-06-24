@@ -75,7 +75,7 @@ def run() -> int:
             )
         LOG.log(
             log.SUCCESS,
-            "Successfully initialized an environemnt to run Pysa!\n"
+            "Successfully initialized an environment to run Pysa!\n"
             + "  You can now run Pysa with `pyre analyze`.",
         )
         return commands.ExitCode.SUCCESS
