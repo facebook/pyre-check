@@ -391,7 +391,20 @@ def pyre(
     "--no-verify",
     is_flag=True,
     default=False,
+    help="""Do not verify models or DSL model queries for the taint analysis.
+    Equivalent to having both --no-verify-models and --no-verify-dsl.""",
+)
+@click.option(
+    "--no-verify-models",
+    is_flag=True,
+    default=False,
     help="Do not verify models for the taint analysis.",
+)
+@click.option(
+    "--no-verify-dsl",
+    is_flag=True,
+    default=False,
+    help="Do not verify DSL model queries for the taint analysis.",
 )
 @click.option(
     "--version",
@@ -454,6 +467,8 @@ def analyze(
     analysis: str,
     taint_models_path: Iterable[str],
     no_verify: bool,
+    no_verify_models: bool,
+    no_verify_dsl: bool,
     version: bool,
     save_results_to: Optional[str],
     dump_call_graph: Optional[str],
@@ -495,6 +510,8 @@ def analyze(
             maximum_tito_depth=maximum_tito_depth,
             maximum_trace_length=maximum_trace_length,
             no_verify=no_verify,
+            no_verify_models=no_verify_models,
+            no_verify_dsl=no_verify_dsl,
             output=command_argument.output,
             repository_root=repository_root,
             rule=list(rule),

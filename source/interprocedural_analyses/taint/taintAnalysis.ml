@@ -227,9 +227,7 @@ let initialize_models ~scheduler ~static_analysis_configuration ~environment ~ca
               TaintModelQuery.ModelQuery.DumpModelQueryResults.dump_to_file ~models_and_names ~path
           | None -> ()
         in
-        ModelVerificationError.verify_models_and_dsl
-          errors
-          static_analysis_configuration.verify_models;
+        ModelVerificationError.verify_models_and_dsl errors static_analysis_configuration.verify_dsl;
         let models =
           models_and_names
           |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry

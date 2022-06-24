@@ -196,6 +196,7 @@ module StaticAnalysis : sig
     result_json_path: PyrePath.t option;
     dump_call_graph: PyrePath.t option;
     verify_models: bool;
+    verify_dsl: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
@@ -213,6 +214,7 @@ module StaticAnalysis : sig
     ?result_json_path:PyrePath.t ->
     ?dump_call_graph:PyrePath.t ->
     ?verify_models:bool ->
+    ?verify_dsl:bool ->
     ?rule_filter:int list ->
     ?find_missing_flows:string ->
     ?dump_model_query_results:PyrePath.t ->

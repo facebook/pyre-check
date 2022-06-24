@@ -31,6 +31,8 @@ module AnalyzeConfiguration = struct
     maximum_tito_depth: int option;
     maximum_trace_length: int option;
     no_verify: bool;
+    no_verify_models: bool;
+    no_verify_dsl: bool;
     repository_root: PyrePath.t option;
     rule_filter: int list option;
     save_results_to: PyrePath.t option;
@@ -55,6 +57,8 @@ module AnalyzeConfiguration = struct
           let maximum_tito_depth = optional_int_member "maximum_tito_depth" json in
           let maximum_trace_length = optional_int_member "maximum_trace_length" json in
           let no_verify = bool_member "no_verify" ~default:false json in
+          let no_verify_models = bool_member "no_verify_models" ~default:false json in
+          let no_verify_dsl = bool_member "no_verify_dsl" ~default:false json in
           let repository_root = optional_path_member "repository_root" json in
           let rule_filter =
             member "rule_filter" json
@@ -77,6 +81,8 @@ module AnalyzeConfiguration = struct
               maximum_tito_depth;
               maximum_trace_length;
               no_verify;
+              no_verify_models;
+              no_verify_dsl;
               repository_root;
               rule_filter;
               save_results_to;
@@ -121,6 +127,8 @@ module AnalyzeConfiguration = struct
         maximum_tito_depth;
         maximum_trace_length;
         no_verify;
+        no_verify_models;
+        no_verify_dsl;
         rule_filter;
         save_results_to;
         strict;
@@ -164,7 +172,8 @@ module AnalyzeConfiguration = struct
       repository_root;
       result_json_path = save_results_to;
       dump_call_graph;
-      verify_models = not no_verify;
+      verify_models = not (no_verify || no_verify_models);
+      verify_dsl = not (no_verify || no_verify_dsl);
       rule_filter;
       find_missing_flows;
       dump_model_query_results;
