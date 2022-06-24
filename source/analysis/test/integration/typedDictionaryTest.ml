@@ -352,8 +352,8 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Revealed type [-1]: Revealed type for `Movie.__init__` is `typing.Callable(__init__)[..., \
-       unknown][[[Named(self, unknown), KeywordOnly(name, str), KeywordOnly(year, int)], \
-       None][[unknown, Movie], None]]`.";
+       unknown][[[Named(self, Movie), KeywordOnly(name, str), KeywordOnly(year, int)], \
+       None][[Movie, Movie], None]]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1605,8 +1605,8 @@ let test_check_typed_dictionary_inheritance context =
     |}
     [
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(foo, int)], \
-       None][[unknown, Child], None]]`.";
+       `typing.Callable(__init__)[..., unknown][[[Named(self, Child), KeywordOnly(foo, int)], \
+       None][[Child, Child], None]]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1621,8 +1621,8 @@ let test_check_typed_dictionary_inheritance context =
     |}
     [
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(foo, int)], \
-       None][[unknown, Child], None]]`.";
+       `typing.Callable(__init__)[..., unknown][[[Named(self, Child), KeywordOnly(foo, int)], \
+       None][[Child, Child], None]]`.";
     ];
   assert_test_typed_dictionary
     {|
@@ -1643,8 +1643,8 @@ let test_check_typed_dictionary_inheritance context =
        Type `str` is not a subtype of the overridden attribute `int`.";
       (* Only the shadowing field shows up in the constructor. *)
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(bar, int), \
-       KeywordOnly(foo, str)], None][[unknown, Child], None]]`.";
+       `typing.Callable(__init__)[..., unknown][[[Named(self, Child), KeywordOnly(bar, int), \
+       KeywordOnly(foo, str)], None][[Child, Child], None]]`.";
     ];
   (* Error when one field is required and the other is not. *)
   assert_test_typed_dictionary
@@ -1736,11 +1736,12 @@ let test_check_typed_dictionary_inheritance context =
       "Invalid inheritance [39]: `NonTypedDict` is not a valid parent class for a typed \
        dictionary. Expected a typed dictionary.";
       "Revealed type [-1]: Revealed type for `test.Child.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(baz, str), \
-       KeywordOnly(foo, int)], None][[unknown, Child], None]]`.";
+       `typing.Callable(__init__)[..., unknown][[[Named(self, Child), KeywordOnly(baz, str), \
+       KeywordOnly(foo, int)], None][[Child, Child], None]]`.";
       "Revealed type [-1]: Revealed type for `test.NonTotalChild.__init__` is \
-       `typing.Callable(__init__)[..., unknown][[[Named(self, unknown), KeywordOnly(foo, int), \
-       KeywordOnly(non_total_baz, str, default)], None][[unknown, NonTotalChild], None]]`.";
+       `typing.Callable(__init__)[..., unknown][[[Named(self, NonTotalChild), KeywordOnly(foo, \
+       int), KeywordOnly(non_total_baz, str, default)], None][[NonTotalChild, NonTotalChild], \
+       None]]`.";
     ];
   ()
 

@@ -6,8 +6,106 @@
  *)
 
 open Core
+open Ast
+open Analysis
 open OUnit2
 open Test
+
+(* Assert that the class [expected_equivalent_class_source] has the same attribute types as the
+   `TypedDict` [class_name].
+
+   Pyre generates TypedDict methods based on the declared fields, often using overloads. The base
+   signature of those methods usually has undefined parameters and returns Any. This is hard to
+   express as a proper Python method in [expected_equivalent_class_source]. Likewise, the `self`
+   parameter annotation is Top in these cases.
+
+   So, to keep things simple, just get the attribute type and sanitize uninteresting bits. *)
+let assert_equivalent_typed_dictionary_attribute_types
+    ~context
+    ~source
+    ~class_name
+    expected_equivalent_class_source
+  =
+  let with_sanitized_callable_parameters = function
+    | Type.Parametric
+        {
+          name = "BoundMethod";
+          parameters =
+            [Single (Callable ({ kind = Named name; _ } as callable)); Single left_bound_type];
+        } ->
+        let open Type.Callable.Parameter in
+        (* TypedDictionary methods have `self` annotation as `Top`, whereas the equivalent class has
+           the annotation as, say, `Movie`. So, clear the annotation. *)
+        let sanitize_self_annotation = function
+          | Type.Callable.Defined
+              (Named ({ name = "self" | "$parameter$self"; default = false; _ } as self_parameter)
+              :: parameters) ->
+              let all_parameters =
+                Named { self_parameter with annotation = Type.Top } :: parameters
+              in
+              Type.Callable.Defined all_parameters
+          | other -> other
+        in
+        let sanitize_parameter_names = function
+          | Type.Callable.Defined all_parameters ->
+              let sanitize_parameter_name = function
+                | Named ({ name; _ } as parameter) ->
+                    Named { parameter with name = Identifier.sanitized name }
+                | other -> other
+              in
+              Type.Callable.Defined (List.map ~f:sanitize_parameter_name all_parameters)
+          | other -> other
+        in
+        let callable =
+          callable
+          |> Type.Callable.map_parameters ~f:sanitize_self_annotation
+          |> Type.Callable.map_parameters ~f:sanitize_parameter_names
+        in
+        Type.Parametric
+          {
+            name = "BoundMethod";
+            parameters =
+              [
+                Single
+                  (Callable
+                     {
+                       callable with
+                       implementation = { annotation = Type.Top; parameters = Undefined };
+                       kind =
+                         Named (Reference.create ~prefix:!&"TypedDictionary" (Reference.last name));
+                     });
+                Single left_bound_type;
+              ];
+          }
+    | type_ -> type_
+  in
+  let with_sanitized_type_variables =
+    Type.Variable.GlobalTransforms.Unary.replace_all (fun ({ variable; _ } as unary_variable) ->
+        Type.Variable { unary_variable with variable = Reference.create variable |> Reference.last }
+        |> Option.some)
+  in
+  let transform_attribute_annotation attribute =
+    attribute
+    |> Annotated.Attribute.annotation
+    |> Annotation.annotation
+    |> with_sanitized_callable_parameters
+    |> with_sanitized_type_variables
+  in
+  let assert_attribute_equal expected actual =
+    assert_equal
+      ~cmp:[%compare.equal: Type.t list]
+      ~printer:[%show: Type.t list]
+      ~pp_diff:(diff ~print:(fun format x -> Format.fprintf format "%s" ([%show: Type.t list] x)))
+      (List.map expected ~f:transform_attribute_annotation)
+      (List.map actual ~f:transform_attribute_annotation)
+  in
+  assert_equivalent_attributes
+    ~context
+    ~assert_attribute_equal
+    ~source
+    ~class_name
+    expected_equivalent_class_source
+
 
 let test_typed_dictionary_attributes context =
   let assert_equivalent_typed_dictionary_attribute_types =
@@ -60,7 +158,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def __init__(self, *, name: str, year: int) -> None: ...
           @overload
-          def __init__(self, movie: Movie, /) -> None: ...
+          def __init__(self: Movie, movie: Movie, /) -> None: ...
           def __init__(self) -> DontCare: ...
 
           @overload
@@ -94,7 +192,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def update(self, *, name: str=..., year: int=...) -> None: ...
           @overload
-          def update(self, movie: Movie, /) -> None: ...
+          def update(self: Movie, movie: Movie, /) -> None: ...
           def update(self) -> DontCare: ...
       |};
   assert_typed_dictionary_attributes
@@ -133,7 +231,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def __init__(self, *, name: str=..., year: int=...) -> None: ...
           @overload
-          def __init__(self, movie: MovieNonTotal, /) -> None: ...
+          def __init__(self: MovieNonTotal, movie: MovieNonTotal, /) -> None: ...
           def __init__(self) -> DontCare: ...
 
           @overload
@@ -167,7 +265,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def update(self, *, name: str=..., year: int=...) -> None: ...
           @overload
-          def update(self, movie: MovieNonTotal, /) -> None: ...
+          def update(self: MovieNonTotal, movie: MovieNonTotal, /) -> None: ...
           def update(self) -> DontCare: ...
 
           @overload
@@ -217,7 +315,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def __init__(self, *, name: str, year: int=...) -> None: ...
           @overload
-          def __init__(self, movie: MovieChildNonTotal, /) -> None: ...
+          def __init__(self: MovieChildNonTotal, movie: MovieChildNonTotal, /) -> None: ...
           def __init__(self) -> DontCare: ...
 
           @overload
@@ -251,7 +349,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def update(self, *, name: str=..., year: int=...) -> None: ...
           @overload
-          def update(self, movie: MovieChildNonTotal, /) -> None: ...
+          def update(self: MovieChildNonTotal, movie: MovieChildNonTotal, /) -> None: ...
           def update(self) -> DontCare: ...
 
           @overload
@@ -295,7 +393,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def __init__(self, *, year: int, name: str=...) -> None: ...
           @overload
-          def __init__(self, movie: MovieChildTotal, /) -> None: ...
+          def __init__(self: MovieChildTotal, movie: MovieChildTotal, /) -> None: ...
           def __init__(self) -> DontCare: ...
 
           @overload
@@ -329,7 +427,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def update(self, *, year: int=..., name: str=...) -> None: ...
           @overload
-          def update(self, movie: MovieChildTotal, /) -> None: ...
+          def update(self: MovieChildTotal, movie: MovieChildTotal, /) -> None: ...
           def update(self) -> DontCare: ...
 
           @overload
@@ -361,7 +459,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def __init__(self) -> None: ...
           @overload
-          def __init__(self, movie: EmptyTypedDict, /) -> None: ...
+          def __init__(self: EmptyTypedDict, movie: EmptyTypedDict, /) -> None: ...
           def __init__(self) -> DontCare: ...
 
           def __getitem__(self) -> DontCare: ...
@@ -375,7 +473,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def update(self) -> None: ...
           @overload
-          def update(self, movie: EmptyTypedDict, /) -> None: ...
+          def update(self: EmptyTypedDict, movie: EmptyTypedDict, /) -> None: ...
           def update(self) -> DontCare: ...
       |};
   (* Note: If a TypedDict has zero non-required fields, we don't generate `pop` or `__delitem__`. *)
@@ -398,7 +496,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def __init__(self) -> None: ...
           @overload
-          def __init__(self, movie: EmptyNonTotalTypedDict, /) -> None: ...
+          def __init__(self: EmptyNonTotalTypedDict, movie: EmptyNonTotalTypedDict, /) -> None: ...
           def __init__(self) -> DontCare: ...
 
           def __getitem__(self) -> DontCare: ...
@@ -412,7 +510,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def update(self) -> None: ...
           @overload
-          def update(self, movie: EmptyNonTotalTypedDict, /) -> None: ...
+          def update(self: EmptyNonTotalTypedDict, movie: EmptyNonTotalTypedDict, /) -> None: ...
           def update(self) -> DontCare: ...
       |};
   (* Non-attributes are ignored. *)
@@ -437,7 +535,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def __init__(self, *, name: str) -> None: ...
           @overload
-          def __init__(self, movie: Movie, /) -> None: ...
+          def __init__(self: Movie, movie: Movie, /) -> None: ...
           def __init__(self) -> DontCare: ...
 
           @overload
@@ -461,7 +559,7 @@ let test_typed_dictionary_attributes context =
           @overload
           def update(self, *, name: str=...) -> None: ...
           @overload
-          def update(self, movie: Movie, /) -> None: ...
+          def update(self: Movie, movie: Movie, /) -> None: ...
           def update(self) -> DontCare: ...
       |};
   ()
