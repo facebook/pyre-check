@@ -105,6 +105,7 @@ class CheckTest(testslide.TestCase):
                         global_root=str(root_path),
                         checked_directory_allowlist=[
                             str(root_path / "allows"),
+                            str(root_path / "nonexistent"),
                         ],
                         checked_directory_blocklist=[str(root_path / "blocks")],
                         debug=True,

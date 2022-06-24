@@ -554,9 +554,7 @@ class ArgumentsTest(testslide.TestCase):
                 dot_pyre_directory=Path(".pyre"),
                 do_not_ignore_errors_in=[
                     str(root_path / "a"),
-                    str(root_path / "x"),
-                    "//b/c",
-                    "//y/z",
+                    str(root_path / "b" / "c"),
                 ],
             )
             self.assertCountEqual(
@@ -575,9 +573,7 @@ class ArgumentsTest(testslide.TestCase):
                 dot_pyre_directory=Path(".pyre"),
                 do_not_ignore_errors_in=[
                     str(root_path / "a"),
-                    str(root_path / "x"),
-                    "//b/c",
-                    "//y/z",
+                    str(root_path / "b" / "c"),
                 ],
             )
             self.assertCountEqual(

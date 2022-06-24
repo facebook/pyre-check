@@ -667,6 +667,7 @@ class Configuration:
         partial_configuration: PartialConfiguration,
     ) -> "Configuration":
         search_path = partial_configuration.search_path
+        do_not_ignore_errors_in = partial_configuration.do_not_ignore_errors_in
 
         return Configuration(
             project_root=str(project_root),
@@ -675,7 +676,10 @@ class Configuration:
             ),
             binary=partial_configuration.binary,
             buck_mode=partial_configuration.buck_mode,
-            do_not_ignore_errors_in=partial_configuration.do_not_ignore_errors_in,
+            do_not_ignore_errors_in=[
+                expand_global_root(path, global_root=str(project_root))
+                for path in do_not_ignore_errors_in
+            ],
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
             ide_features=partial_configuration.ide_features,
@@ -870,27 +874,6 @@ class Configuration:
             )
         else:
             return []
-
-    def get_existent_do_not_ignore_errors_in_paths(self) -> List[str]:
-        """
-        This is a separate method because we want to check for existing files
-        at the time this is called, not when the configuration is
-        constructed.
-        """
-        ignore_paths = [
-            expand_global_root(path, global_root=self.project_root)
-            for path in self.do_not_ignore_errors_in
-        ]
-        paths = []
-        for path in ignore_paths:
-            if os.path.exists(path):
-                paths.append(path)
-            else:
-                LOG.debug(
-                    "Filtering out nonexistent paths in `do_not_ignore_errors_in`: "
-                    f"{path}"
-                )
-        return paths
 
     def get_existent_ignore_all_errors_paths(self) -> List[str]:
         """

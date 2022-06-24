@@ -331,7 +331,7 @@ def get_checked_directory_allowlist(
     configuration: configuration_module.Configuration, source_path: SourcePath
 ) -> List[str]:
     source_path_allowlist = list(source_path.get_checked_directory_allowlist())
-    explicit_allowlist = configuration.get_existent_do_not_ignore_errors_in_paths()
+    explicit_allowlist = list(configuration.do_not_ignore_errors_in)
     # If allowlist paths were specifically provided, do not include inferred paths.
     return explicit_allowlist or source_path_allowlist
 
