@@ -785,31 +785,6 @@ class ConfigurationTest(testslide.TestCase):
                 ).get_existent_unwatched_dependency()
             )
 
-    def test_get_ignore_all_errors(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()
-            ensure_directories_exists(root_path, ["a", "b/c", "b/d"])
-
-            self.assertCountEqual(
-                Configuration(
-                    project_root=str(root_path),
-                    dot_pyre_directory=Path(".pyre"),
-                    ignore_all_errors=[
-                        str(root_path / "a"),
-                        str(root_path / "x"),
-                        str(root_path / "y/z"),
-                        f"{root_path}/b/*",
-                    ],
-                ).get_ignore_all_errors_paths(),
-                [
-                    str(root_path / "a"),
-                    str(root_path / "x"),
-                    str(root_path / "y/z"),
-                    str(root_path / "b/c"),
-                    str(root_path / "b/d"),
-                ],
-            )
-
     def test_get_binary_version_ok(self) -> None:
         binary_path = "foo"
         version = "facefacefaceb00"
@@ -1313,16 +1288,13 @@ class ConfigurationTest(testslide.TestCase):
             )
             write_configuration_file(root_path, {}, relative="nest0/nest1/local")
 
-            try:
-                check_nested_local_configuration(
-                    Configuration(
-                        project_root=root,
-                        dot_pyre_directory=Path(".pyre"),
-                        relative_local_root="nest0/nest1/local",
-                    )
+            check_nested_local_configuration(
+                Configuration(
+                    project_root=root,
+                    dot_pyre_directory=Path(".pyre"),
+                    relative_local_root="nest0/nest1/local",
                 )
-            except InvalidConfiguration:
-                self.fail("Nested local configuration check fails unexpectedly!")
+            )
 
     def test_check_nested_local_configuration_expand_relative_root(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -1336,16 +1308,13 @@ class ConfigurationTest(testslide.TestCase):
             )
             write_configuration_file(root_path, {}, relative="nest0/nest1/local")
 
-            try:
-                check_nested_local_configuration(
-                    Configuration(
-                        project_root=root,
-                        dot_pyre_directory=Path(".pyre"),
-                        relative_local_root="nest0/nest1/local",
-                    )
+            check_nested_local_configuration(
+                Configuration(
+                    project_root=root,
+                    dot_pyre_directory=Path(".pyre"),
+                    relative_local_root="nest0/nest1/local",
                 )
-            except InvalidConfiguration:
-                self.fail("Nested local configuration check fails unexpectedly!")
+            )
 
     def test_source_directories_glob(self) -> None:
         with tempfile.TemporaryDirectory() as root:

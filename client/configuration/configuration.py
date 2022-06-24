@@ -60,17 +60,13 @@ def _get_optional_value(source: Optional[T], default: T) -> T:
     return source if source is not None else default
 
 
-def _expand_and_get_ignore_all_errors_path(
-    ignore_all_errors: Iterable[str],
-) -> List[str]:
-    expanded_ignore_paths = []
-    for path in ignore_all_errors:
-        expanded = glob.glob(path)
-        if not expanded:
-            expanded_ignore_paths.append(path)
-        else:
-            expanded_ignore_paths.extend(expanded)
-    return expanded_ignore_paths
+def _expand_glob(pattern: str) -> List[str]:
+    expanded = glob.glob(pattern)
+    return [pattern] if len(expanded) == 0 else expanded
+
+
+def _expand_all_globs(patterns: Iterable[str]) -> List[str]:
+    return [expanded for pattern in patterns for expanded in _expand_glob(pattern)]
 
 
 @dataclasses.dataclass
@@ -663,10 +659,10 @@ class Configuration:
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
             ide_features=partial_configuration.ide_features,
-            ignore_all_errors=[
+            ignore_all_errors=_expand_all_globs(
                 expand_global_root(path, global_root=str(project_root))
                 for path in ignore_all_errors
-            ],
+            ),
             isolation_prefix=partial_configuration.isolation_prefix,
             logger=partial_configuration.logger,
             number_of_workers=partial_configuration.number_of_workers,
@@ -857,14 +853,6 @@ class Configuration:
             )
         else:
             return []
-
-    def get_ignore_all_errors_paths(self) -> List[str]:
-        """
-        This is a separate method because we want to check for existing files
-        at the time this is called, not when the configuration is
-        constructed.
-        """
-        return _expand_and_get_ignore_all_errors_path(self.ignore_all_errors)
 
     def get_binary_respecting_override(self) -> Optional[str]:
         binary = self.binary
@@ -1068,11 +1056,9 @@ def check_nested_local_configuration(configuration: Configuration) -> None:
         nesting_configuration = PartialConfiguration.from_file(
             nesting_local_root / LOCAL_CONFIGURATION_FILE
         ).expand_relative_paths(str(nesting_local_root))
-        nesting_ignored_all_errors_path = _expand_and_get_ignore_all_errors_path(
-            [
-                expand_global_root(path, str(found_root.global_root))
-                for path in nesting_configuration.ignore_all_errors
-            ],
+        nesting_ignored_all_errors_path = _expand_all_globs(
+            expand_global_root(path, global_root=str(found_root.global_root))
+            for path in nesting_configuration.ignore_all_errors
         )
         if not any(
             is_subdirectory(child=local_root_path, parent=Path(path))
