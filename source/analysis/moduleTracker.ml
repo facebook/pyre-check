@@ -627,9 +627,7 @@ module Overlay = struct
     Reference.possible_qualifiers reference |> List.exists ~f:(owns_qualifier environment)
 
 
-  let owns_qualified_class_name environment name =
-    Reference.create name |> owns_reference environment
-
+  let owns_identifier environment name = Reference.create name |> owns_reference environment
 
   let create parent =
     {

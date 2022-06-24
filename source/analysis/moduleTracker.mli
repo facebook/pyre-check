@@ -80,7 +80,7 @@ module Overlay : sig
 
   val owns_reference : t -> Ast.Reference.t -> bool
 
-  val owns_qualified_class_name : t -> Ast.Identifier.t -> bool
+  val owns_identifier : t -> Ast.Identifier.t -> bool
 
   val update_overlaid_code
     :  t ->

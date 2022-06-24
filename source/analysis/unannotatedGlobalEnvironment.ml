@@ -1101,7 +1101,7 @@ module Overlay = struct
       let module_tracker = module_tracker environment in
       ( ModuleTracker.Overlay.owns_qualifier module_tracker,
         ModuleTracker.Overlay.owns_reference module_tracker,
-        ModuleTracker.Overlay.owns_qualified_class_name module_tracker )
+        ModuleTracker.Overlay.owns_identifier module_tracker )
     in
     {
       ReadOnly.ast_environment;
