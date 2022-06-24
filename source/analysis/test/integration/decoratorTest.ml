@@ -1276,6 +1276,128 @@ let test_six_decorators context =
   ()
 
 
+let test_loosely_typed_decorators context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Any
+
+      def my_decorator() -> Any: ...
+
+      @my_decorator()
+      def f(x: int) -> int: ...
+
+      reveal_type(f)
+    |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Any`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable
+
+      def my_decorator(x: int) -> Callable[[Callable[[int], int]], Callable[[int], int]]: ...
+
+      @my_decorator(1 + "foo")
+      def f(x: int) -> int: ...
+
+      reveal_type(f)
+    |}
+    [
+      "Invalid decoration [56]: Pyre was not able to infer the type of argument \
+       `1.__add__(\"foo\")` to decorator factory `test.my_decorator`.";
+      "Unsupported operand [58]: `+` is not supported for operand types `int` and `str`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Any`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable
+
+      def my_decorator() -> Callable: ...
+
+      @my_decorator()
+      def f(x: int) -> int: ...
+
+      reveal_type(f)
+    |}
+    [
+      "Invalid type parameters [24]: Generic type `Callable` expects 2 type parameters.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Any`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable, TypeVar
+
+      F = TypeVar("F")
+
+      def my_decorator() -> Callable[[F], F]: ...
+
+      @my_decorator()
+      def f(x: int) -> int: ...
+
+      def undecorated(x: int) -> int: ...
+
+      reveal_type(my_decorator())
+      reveal_type(my_decorator()(undecorated))
+      reveal_type(f)
+    |}
+    [
+      "Invalid type variable [34]: The type variable `Variable[F]` isn't present in the function's \
+       parameters.";
+      "Revealed type [-1]: Revealed type for `test.my_decorator()` is \
+       `typing.Callable[[Variable[F]], Variable[F]]`.";
+      "Revealed type [-1]: Revealed type for `test.my_decorator()(test.undecorated)` is \
+       `typing.Callable(undecorated)[[Named(x, int)], int]`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Callable(f)[[Named(x, int)], \
+       int]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Callable
+
+      LooselyTypedCallable = Callable[..., int]
+
+      def my_decorator() -> Callable[[LooselyTypedCallable], LooselyTypedCallable]: ...
+
+      @my_decorator()
+      def f(x: int) -> int: ...
+
+      reveal_type(f)
+    |}
+    ["Revealed type [-1]: Revealed type for `test.f` is `typing.Callable[..., int]`."];
+  assert_type_errors
+    {|
+      from typing import Any, Callable
+
+      LooselyTypedCallable = Callable[..., int]
+
+      def good_decorator() -> Callable[
+        [Callable[[int], int]],
+        Callable[[int], int]
+      ]: ...
+
+      def bad_decorator() -> Any: ...
+
+      @bad_decorator()
+      @good_decorator()
+      def f(x: int) -> int: ...
+
+      @good_decorator()
+      @bad_decorator()
+      def g(x: int) -> int: ...
+
+      reveal_type(f)
+      reveal_type(g)
+    |}
+    [
+      "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `test.f` is `typing.Any`.";
+      "Revealed type [-1]: Revealed type for `test.g` is `typing.Callable[[int], int]`.";
+    ];
+  ()
+
+
 let () =
   "decorator"
   >::: [
@@ -1290,5 +1412,6 @@ let () =
          "general_decorators" >:: test_general_decorators;
          "invalid_decorators" >:: test_invalid_decorators;
          "six_decorators" >:: test_six_decorators;
+         "loosely_typed_decorators" >:: test_loosely_typed_decorators;
        ]
   |> Test.run
