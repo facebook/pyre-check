@@ -112,39 +112,35 @@ def parse_path_to_module(path: Path) -> Optional[cst.Module]:
 
 
 def _collect_annotation_statistics(
-    module: cst.Module,
+    module: cst.MetadataWrapper,
 ) -> collectors.ModuleAnnotationData:
     collector = collectors.AnnotationCountCollector()
-    module_with_position_metadata = cst.MetadataWrapper(module)
-    module_with_position_metadata.visit(collector)
+    module.visit(collector)
     return collector.build_result()
 
 
 def _collect_fixme_statistics(
-    module: cst.Module,
+    module: cst.MetadataWrapper,
 ) -> collectors.ModuleSuppressionData:
     collector = collectors.FixmeCountCollector()
-    module_with_position_metadata = cst.MetadataWrapper(module)
-    module_with_position_metadata.visit(collector)
+    module.visit(collector)
     return collector.build_result()
 
 
 def _collect_ignore_statistics(
-    module: cst.Module,
+    module: cst.MetadataWrapper,
 ) -> collectors.ModuleSuppressionData:
     collector = collectors.IgnoreCountCollector()
-    module_with_position_metadata = cst.MetadataWrapper(module)
-    module_with_position_metadata.visit(collector)
+    module.visit(collector)
     return collector.build_result()
 
 
 def _collect_strict_file_statistics(
-    module: cst.Module,
+    module: cst.MetadataWrapper,
     strict_default: bool,
 ) -> collectors.ModuleStrictData:
     collector = collectors.StrictCountCollector(strict_default)
-    module_with_position_metadata = cst.MetadataWrapper(module)
-    module_with_position_metadata.visit(collector)
+    module.visit(collector)
     return collector.build_result()
 
 
@@ -165,11 +161,16 @@ def collect_statistics(
         if module is None:
             continue
         try:
-            annotation_statistics = _collect_annotation_statistics(module)
-            fixme_statistics = _collect_fixme_statistics(module)
-            ignore_statistics = _collect_ignore_statistics(module)
+            module_with_position_metadata = cst.MetadataWrapper(module)
+            annotation_statistics = _collect_annotation_statistics(
+                module_with_position_metadata
+            )
+            fixme_statistics = _collect_fixme_statistics(module_with_position_metadata)
+            ignore_statistics = _collect_ignore_statistics(
+                module_with_position_metadata
+            )
             strict_file_statistics = _collect_strict_file_statistics(
-                module, strict_default
+                module_with_position_metadata, strict_default
             )
             statistics_data = StatisticsData(
                 annotation_statistics,
