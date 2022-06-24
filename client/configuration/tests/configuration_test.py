@@ -785,7 +785,7 @@ class ConfigurationTest(testslide.TestCase):
                 ).get_existent_unwatched_dependency()
             )
 
-    def test_existent_ignore_all_errors(self) -> None:
+    def test_get_ignore_all_errors(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
             ensure_directories_exists(root_path, ["a", "b/c", "b/d"])
@@ -797,14 +797,14 @@ class ConfigurationTest(testslide.TestCase):
                     ignore_all_errors=[
                         str(root_path / "a"),
                         str(root_path / "x"),
-                        "//b/c",
-                        "//y/z",
+                        str(root_path / "y/z"),
                         f"{root_path}/b/*",
                     ],
-                ).get_existent_ignore_all_errors_paths(),
+                ).get_ignore_all_errors_paths(),
                 [
                     str(root_path / "a"),
-                    str(root_path / "b/c"),
+                    str(root_path / "x"),
+                    str(root_path / "y/z"),
                     str(root_path / "b/c"),
                     str(root_path / "b/d"),
                 ],

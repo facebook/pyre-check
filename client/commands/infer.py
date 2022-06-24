@@ -742,9 +742,7 @@ def create_infer_arguments(
             checked_directory_allowlist=backend_arguments.get_checked_directory_allowlist(
                 configuration, source_paths
             ),
-            checked_directory_blocklist=(
-                configuration.get_existent_ignore_all_errors_paths()
-            ),
+            checked_directory_blocklist=(configuration.get_ignore_all_errors_paths()),
             debug=infer_arguments.debug_infer,
             excludes=configuration.excludes,
             extensions=configuration.get_valid_extension_suffixes(),

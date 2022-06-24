@@ -120,7 +120,10 @@ class InferTest(testslide.TestCase):
                         checked_directory_allowlist=[
                             str(root_path / "local/src"),
                         ],
-                        checked_directory_blocklist=[str(root_path / "blocks")],
+                        checked_directory_blocklist=[
+                            str(root_path / "blocks"),
+                            str(root_path / "nonexistent"),
+                        ],
                         debug=True,
                         excludes=["exclude"],
                         extensions=[".ext"],

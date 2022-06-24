@@ -127,9 +127,14 @@ class ArgumentTest(testslide.TestCase):
                         checked_directory_allowlist=[
                             str(root_path / "local/src"),
                         ],
-                        checked_directory_blocklist=[str(root_path / "blocks")],
+                        checked_directory_blocklist=[
+                            str(root_path / "blocks"),
+                            str(root_path / "nonexistent"),
+                        ],
                         debug=True,
-                        excludes=["exclude"],
+                        excludes=[
+                            "exclude",
+                        ],
                         extensions=[".ext"],
                         relative_local_root="local",
                         number_of_workers=42,
