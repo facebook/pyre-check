@@ -41,3 +41,47 @@ module UpdateStatistics : sig
 
   val count_updates : UpdateResult.t -> t
 end
+
+module Testing : sig
+  module ReadOnly : sig
+    val errors_environment : ReadOnly.t -> ReadOnly.t
+
+    val type_environment : ReadOnly.t -> TypeEnvironment.ReadOnly.t
+
+    val annotated_global_environment : ReadOnly.t -> AnnotatedGlobalEnvironment.ReadOnly.t
+
+    val attribute_resolution : ReadOnly.t -> AttributeResolution.ReadOnly.t
+
+    val class_metadata_environment : ReadOnly.t -> ClassMetadataEnvironment.ReadOnly.t
+
+    val class_hierarchy_environment : ReadOnly.t -> ClassHierarchyEnvironment.ReadOnly.t
+
+    val alias_environment : ReadOnly.t -> AliasEnvironment.ReadOnly.t
+
+    val empty_stub_environment : ReadOnly.t -> EmptyStubEnvironment.ReadOnly.t
+
+    val unannotated_global_environment : ReadOnly.t -> UnannotatedGlobalEnvironment.ReadOnly.t
+  end
+
+  module UpdateResult : sig
+    val errors_environment : UpdateResult.t -> UpdateResult.t
+
+    val type_environment : UpdateResult.t -> TypeEnvironment.UpdateResult.t
+
+    val annotated_global_environment : UpdateResult.t -> AnnotatedGlobalEnvironment.UpdateResult.t
+
+    val attribute_resolution : UpdateResult.t -> AttributeResolution.UpdateResult.t
+
+    val class_metadata_environment : UpdateResult.t -> ClassMetadataEnvironment.UpdateResult.t
+
+    val class_hierarchy_environment : UpdateResult.t -> ClassHierarchyEnvironment.UpdateResult.t
+
+    val alias_environment : UpdateResult.t -> AliasEnvironment.UpdateResult.t
+
+    val empty_stub_environment : UpdateResult.t -> EmptyStubEnvironment.UpdateResult.t
+
+    val unannotated_global_environment
+      :  UpdateResult.t ->
+      UnannotatedGlobalEnvironment.UpdateResult.t
+  end
+end

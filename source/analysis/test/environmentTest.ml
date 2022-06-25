@@ -1256,9 +1256,10 @@ let test_update_and_compute_dependencies context =
       let update_result =
         let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
         let path = Test.relative_artifact_path ~root:local_root ~relative:"source.py" in
-        ScratchProject.update_global_environment project [path]
+        ScratchProject.update_environment project [path]
       in
-      AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
+      ErrorsEnvironment.Testing.UpdateResult.annotated_global_environment update_result
+      |> AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies
       |> List.fold
            ~f:SharedMemoryKeys.DependencyKey.RegisteredSet.union
            ~init:SharedMemoryKeys.DependencyKey.RegisteredSet.empty

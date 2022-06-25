@@ -737,8 +737,8 @@ module IncrementalTest = struct
     (* Compute the dependencies *)
     let invalidated_modules =
       update_filesystem_state configuration
-      |> ScratchProject.update_global_environment project
-      |> AnnotatedGlobalEnvironment.UpdateResult.invalidated_modules
+      |> ScratchProject.update_environment project
+      |> ErrorsEnvironment.UpdateResult.invalidated_modules
     in
     (* Check dependency expectations *)
     let assert_parser_dependency expected actual =

@@ -25,8 +25,8 @@ let test_global_registration context =
   let assert_registers ?(expected = true) source name =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let read_only =
-      ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
     in
     assert_equal (UnannotatedGlobalEnvironment.ReadOnly.class_exists read_only name) expected
   in
@@ -45,8 +45,8 @@ let test_define_registration context =
   let assert_registers ~expected source =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let read_only =
-      ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
     in
     let actual = UnannotatedGlobalEnvironment.ReadOnly.get_define_names read_only !&"test" in
     let expected = List.sort expected ~compare:Reference.compare in
@@ -241,8 +241,8 @@ let test_simple_global_registration context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let read_only =
-      ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
     in
     let printer global =
       global >>| UnannotatedGlobal.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
@@ -348,8 +348,8 @@ let test_builtin_modules context =
         ~include_helper_builtins:false
         sources
     in
-    ScratchProject.global_environment project
-    |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
+    ScratchProject.errors_environment project
+    |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
   in
   assert_bool
     "empty qualifier module exists"
@@ -399,8 +399,8 @@ let test_resolve_exports context =
           sources
     in
     let read_only =
-      ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
     in
     let actual = ReadOnly.resolve_exports read_only ?from reference in
     assert_equal
@@ -715,8 +715,8 @@ let assert_updates
   in
   let configuration = ScratchProject.configuration_of project in
   let read_only =
-    ScratchProject.global_environment project
-    |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
+    ScratchProject.errors_environment project
+    |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
   in
   let execute_action = function
     | `Get (class_name, dependency, expected_number_of_statements) ->
@@ -816,8 +816,8 @@ let assert_updates
   let { Configuration.Analysis.local_root; _ } = configuration in
   let path = Test.relative_artifact_path ~root:local_root ~relative:"test.py" in
   let update_result =
-    ScratchProject.update_global_environment project [path]
-    |> AnnotatedGlobalEnvironment.Testing.UpdateResult.unannotated_global_environment
+    ScratchProject.update_environment project [path]
+    |> ErrorsEnvironment.Testing.UpdateResult.unannotated_global_environment
   in
   let printer set =
     SharedMemoryKeys.DependencyKey.RegisteredSet.elements set
@@ -2215,8 +2215,8 @@ let create_overlay_test_data ~context sources =
       ~context
   in
   let parent =
-    ScratchProject.global_environment project
-    |> AnnotatedGlobalEnvironment.Testing.ReadOnly.unannotated_global_environment
+    ScratchProject.errors_environment project
+    |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
   in
   let environment = UnannotatedGlobalEnvironment.Overlay.create parent in
   project, parent, environment

@@ -2917,11 +2917,9 @@ module ScratchProject = struct
     PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
 
 
-  let update_global_environment project ?(scheduler = mock_scheduler ()) artifact_paths =
-    let type_environment = ReadWrite.type_environment project in
-    let global_environment = TypeEnvironment.global_environment type_environment in
-    AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
-      global_environment
+  let update_environment { errors_environment; _ } ?(scheduler = mock_scheduler ()) artifact_paths =
+    ErrorsEnvironment.update_this_and_all_preceding_environments
+      errors_environment
       ~scheduler
       artifact_paths
 end

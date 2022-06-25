@@ -18,8 +18,8 @@ let test_simple_registration context =
       ScratchProject.setup [source_name ^ ".py", source] ~include_typeshed_stubs:false ~context
     in
     let read_only =
-      ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.class_metadata_environment
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.class_metadata_environment
     in
     let printer v =
       v >>| ClassMetadataEnvironment.show_class_metadata |> Option.value ~default:"none"
@@ -135,8 +135,8 @@ let test_updates context =
     in
     let configuration = ScratchProject.configuration_of project in
     let read_only =
-      ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.class_metadata_environment
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.class_metadata_environment
     in
     let execute_action (class_name, dependency, expectation) =
       let printer v =
@@ -154,8 +154,8 @@ let test_updates context =
       let { Configuration.Analysis.local_root; _ } = configuration in
       List.map new_sources ~f:(fun (relative, _) ->
           Test.relative_artifact_path ~root:local_root ~relative)
-      |> ScratchProject.update_global_environment project ~scheduler:(Test.mock_scheduler ())
-      |> AnnotatedGlobalEnvironment.Testing.UpdateResult.class_metadata_environment
+      |> ScratchProject.update_environment project ~scheduler:(Test.mock_scheduler ())
+      |> ErrorsEnvironment.Testing.UpdateResult.class_metadata_environment
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set

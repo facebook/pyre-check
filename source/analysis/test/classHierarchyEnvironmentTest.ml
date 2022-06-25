@@ -16,8 +16,8 @@ let test_simple_registration context =
   let assert_registers sources name ~expected_edges ~expected_extends_placeholder_stub =
     let project = ScratchProject.setup sources ~include_typeshed_stubs:false ~context in
     let read_only =
-      ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.class_hierarchy_environment
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.class_hierarchy_environment
     in
     let expected_edges =
       expected_edges
@@ -122,8 +122,8 @@ let test_inferred_generic_base context =
       ScratchProject.setup ["test.py", source] ~context ~incremental_style:FineGrained
     in
     let read_only =
-      ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.class_hierarchy_environment
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.class_hierarchy_environment
     in
     let expected =
       expected
@@ -226,8 +226,8 @@ let test_updates context =
     in
     let configuration = ScratchProject.configuration_of project in
     let read_only =
-      ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.ReadOnly.class_hierarchy_environment
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.class_hierarchy_environment
     in
     let execute_action = function
       | `Edges (class_name, dependency, expectation) ->
@@ -260,8 +260,8 @@ let test_updates context =
       let { Configuration.Analysis.local_root; _ } = configuration in
       List.map ["test.py", ()] ~f:(fun (relative, _) ->
           Test.relative_artifact_path ~root:local_root ~relative)
-      |> ScratchProject.update_global_environment project
-      |> AnnotatedGlobalEnvironment.Testing.UpdateResult.class_hierarchy_environment
+      |> ScratchProject.update_environment project
+      |> ErrorsEnvironment.Testing.UpdateResult.class_hierarchy_environment
     in
     let printer set =
       SharedMemoryKeys.DependencyKey.RegisteredSet.elements set

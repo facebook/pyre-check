@@ -16,8 +16,8 @@ let test_simple_registration context =
   let assert_registers source name ?original expected =
     let project = ScratchProject.setup ["test.py", source] ~context in
     let read_only =
-      ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.attribute_resolution
     in
     let location_insensitive_compare left right =
       Option.compare Annotation.compare left right = 0
@@ -85,8 +85,8 @@ let test_updates context =
     in
     let configuration = ScratchProject.configuration_of project in
     let read_only =
-      ScratchProject.global_environment project
-      |> AnnotatedGlobalEnvironment.ReadOnly.attribute_resolution
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.attribute_resolution
     in
     let execute_action = function
       | global_name, dependency, expectation ->
@@ -110,7 +110,7 @@ let test_updates context =
     new_source >>| ScratchProject.add_file project ~relative:"test.py" |> Option.value ~default:();
     let { Configuration.Analysis.local_root; _ } = configuration in
     let update_result =
-      ScratchProject.update_global_environment
+      ScratchProject.update_environment
         project
         [Test.relative_artifact_path ~root:local_root ~relative:"test.py"]
     in
@@ -123,7 +123,8 @@ let test_updates context =
       SharedMemoryKeys.DependencyKey.RegisteredSet.of_list expected_triggers
     in
     let triggered_type_check_define_dependencies =
-      AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies update_result
+      ErrorsEnvironment.Testing.UpdateResult.annotated_global_environment update_result
+      |> AnnotatedGlobalEnvironment.UpdateResult.all_triggered_dependencies
       |> List.fold
            ~f:SharedMemoryKeys.DependencyKey.RegisteredSet.union
            ~init:SharedMemoryKeys.DependencyKey.RegisteredSet.empty
