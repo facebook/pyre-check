@@ -1921,7 +1921,7 @@ let test_call_graph_of_define context =
     ~define_name:"test.f"
     ~expected:
       [
-        ( "10:6-10:7",
+        ( "10:11-10:25",
           LocationCallees.Compound
             (String.Map.Tree.of_alist_exn
                [
@@ -1980,7 +1980,7 @@ let test_call_graph_of_define context =
     ~define_name:"test.f"
     ~expected:
       [
-        ( "9:6-9:7",
+        ( "9:11-9:21",
           LocationCallees.Compound
             (String.Map.Tree.of_alist_exn
                [
@@ -3888,7 +3888,7 @@ let test_call_graph_of_define context =
     ~define_name:"test.foo"
     ~expected:
       [
-        ( "3:12-3:13",
+        ( "3:17-3:18",
           LocationCallees.Compound
             (String.Map.Tree.of_alist_exn
                [

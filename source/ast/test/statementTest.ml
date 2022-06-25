@@ -404,20 +404,20 @@ let test_for_loop_preamble _ =
                     {
                       callee =
                         {
-                          Node.location = ~@"1:4-1:5";
+                          Node.location = ~@"1:9-1:10";
                           value =
                             Name
                               (Name.Attribute
                                  {
                                    base =
                                      {
-                                       Node.location = ~@"1:4-1:5";
+                                       Node.location = ~@"1:9-1:10";
                                        value =
                                          Call
                                            {
                                              callee =
                                                {
-                                                 Node.location = ~@"1:4-1:5";
+                                                 Node.location = ~@"1:9-1:10";
                                                  value =
                                                    Name
                                                      (Name.Attribute
@@ -441,10 +441,75 @@ let test_for_loop_preamble _ =
                         };
                       arguments = [];
                     };
-                location = ~@"1:4-1:5";
+                location = ~@"1:9-1:10";
               };
           };
-      location = ~@"1:4-1:5";
+      location = ~@"1:4-1:10";
+    };
+  assert_preamble_with_locations
+    ~block:{|
+      async for a in (
+        xs
+      ): pass |}
+    {
+      Node.value =
+        Statement.Assign
+          {
+            target = { Node.value = Name (Name.Identifier "a"); location = ~@"2:10-2:11" };
+            annotation = None;
+            value =
+              {
+                Node.value =
+                  Expression.Await
+                    {
+                      Node.value =
+                        Expression.Call
+                          {
+                            callee =
+                              {
+                                Node.location = ~@"3:2-3:4";
+                                value =
+                                  Name
+                                    (Name.Attribute
+                                       {
+                                         base =
+                                           {
+                                             Node.location = ~@"3:2-3:4";
+                                             value =
+                                               Call
+                                                 {
+                                                   callee =
+                                                     {
+                                                       Node.location = ~@"3:2-3:4";
+                                                       value =
+                                                         Name
+                                                           (Name.Attribute
+                                                              {
+                                                                base =
+                                                                  {
+                                                                    Node.value =
+                                                                      Name (Name.Identifier "xs");
+                                                                    location = ~@"3:2-3:4";
+                                                                  };
+                                                                attribute = "__aiter__";
+                                                                special = true;
+                                                              });
+                                                     };
+                                                   arguments = [];
+                                                 };
+                                           };
+                                         attribute = "__anext__";
+                                         special = true;
+                                       });
+                              };
+                            arguments = [];
+                          };
+                      location = ~@"3:2-3:4";
+                    };
+                location = ~@"3:2-3:4";
+              };
+          };
+      location = ~@"2:10-3:4";
     };
   ()
 

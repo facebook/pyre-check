@@ -796,6 +796,22 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.main"; node_id = 7; statement_index = 0 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:
+      {|
+        def getint(xs: list[int]) -> None:
+          for x in xs:
+            #      ^-- CURSOR
+            pass
+    |}
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$xs")));
+         cfg_data = { define_name = !&"test.getint"; node_id = 6; statement_index = 0 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -1143,6 +1159,22 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     (Some "test:6:2-6:19");
+  assert_resolved_definition
+    ~source:
+      {|
+        def getint(xs: list[int]) -> None:
+          for x in xs:
+            #      ^-- CURSOR
+            pass
+    |}
+    {
+      symbol_with_definition =
+        Expression
+          (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$xs")));
+      cfg_data = { define_name = !&"test.getint"; node_id = 6; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some "test:2:11-2:24");
   ()
 
 

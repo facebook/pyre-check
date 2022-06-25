@@ -933,7 +933,14 @@ end = struct
   }
   [@@deriving compare, sexp, show, hash, to_yojson]
 
-  let preamble { target = { Node.location; _ } as target; iterator; async; _ } =
+  let preamble
+      {
+        target = { Node.location = target_location; _ } as target;
+        iterator = { Node.location = iterator_location; _ } as iterator;
+        async;
+        _;
+      }
+    =
     let open Expression in
     let value =
       let value =
@@ -942,20 +949,20 @@ end = struct
             {
               callee =
                 {
-                  Node.location;
+                  Node.location = iterator_location;
                   value =
                     Name
                       (Name.Attribute
                          {
                            base =
                              {
-                               Node.location;
+                               Node.location = iterator_location;
                                value =
                                  Call
                                    {
                                      callee =
                                        {
-                                         Node.location;
+                                         Node.location = iterator_location;
                                          value =
                                            Name
                                              (Name.Attribute
@@ -977,11 +984,18 @@ end = struct
           create_call iterator "__iter__" "__next__"
       in
       if async then
-        { Node.location; value = Expression.Await (Node.create value ~location) }
+        {
+          Node.location = iterator_location;
+          value = Expression.Await (Node.create value ~location:iterator_location);
+        }
       else
-        { Node.location; value }
+        { Node.location = iterator_location; value }
     in
-    { Node.location; value = Statement.Assign { Assign.target; annotation = None; value } }
+    {
+      Node.location =
+        { Location.start = Location.start target_location; stop = Location.stop iterator_location };
+      value = Statement.Assign { Assign.target; annotation = None; value };
+    }
 
 
   let location_insensitive_compare left right =

@@ -682,7 +682,10 @@ let test_handle_query_basic context =
                          overloads = [];
                        } );
                    3, 6, 3, 7, Type.integer;
-                   3, 11, 3, 17, Type.list Type.integer;
+                   (* TODO(T124426942): We are mistakenly overwriting the type of the iterator
+                      variable (list[int]) with the type of `<variable>.__iter__().__next__()`
+                      (int), because they have the same location. *)
+                   3, 11, 3, 17, Type.integer;
                    3, 12, 3, 13, Type.literal_integer 1;
                    3, 15, 3, 16, Type.literal_integer 2;
                    4, 3, 4, 4, Type.literal_integer 1;
