@@ -2817,15 +2817,17 @@ module ScratchProject = struct
 
 
   module ReadWrite = struct
+    let errors_environment { errors_environment; _ } = errors_environment
+
+    let type_environment { errors_environment; _ } =
+      errors_environment |> ErrorsEnvironment.type_environment
+
+
     (* Because module tracker updates aren't exposed directly through UpdateResult, grey-box tests
        of ModuleTracker updates require access to the read-write tracker. We put this in a ReadWrite
        module to emphasize that it would be easy to make mistakes using it. *)
     let module_tracker { errors_environment; _ } =
       ErrorsEnvironment.ast_environment errors_environment |> AstEnvironment.module_tracker
-
-
-    let type_environment { errors_environment; _ } =
-      errors_environment |> ErrorsEnvironment.type_environment
   end
 
   let errors_environment { errors_environment; _ } =

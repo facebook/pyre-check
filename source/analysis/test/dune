@@ -4,7 +4,7 @@
    annotatedGlobalEnvironmentTest annotatedSignatureTest annotationTest
    astEnvironmentTest attributeResolutionTest attrsTest callgraphTest cfgTest
    classHierarchyTest classHierarchyEnvironmentTest classMetadataEnvironmentTest
-   constraintsSetTest dataClassTest environmentTest fixpointTest
+   constraintsSetTest dataClassTest errorsEnvironmentTest environmentTest fixpointTest
    globalResolutionTest inlineDecoratorTest matchTranslateTest
    locationBasedLookupTest moduleTrackerTest newTypeTest namedTupleTest
    preprocessingTest refinementTest resolutionTest resolvedCallableTest
