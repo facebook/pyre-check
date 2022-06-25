@@ -632,6 +632,28 @@ let rec process_request ~environment ~build_system request =
       let artifact_path = BuildSystem.lookup_artifact build_system path in
       List.filter_map ~f:module_of_path artifact_path
     in
+    let instantiate_range
+        Location.WithModule.
+          {
+            start = { line = start_line; column = start_column };
+            stop = { line = stop_line; column = stop_column };
+            module_reference;
+          }
+      =
+      PathLookup.instantiate_path
+        ~build_system
+        ~ast_environment:(TypeEnvironment.ReadOnly.ast_environment environment)
+        module_reference
+      >>| fun path ->
+      {
+        Response.Base.path;
+        range =
+          {
+            start = { line = start_line; character = start_column };
+            end_ = { line = stop_line; character = stop_column };
+          };
+      }
+    in
     let open Response in
     match request with
     | Request.Attributes annotation ->
@@ -846,36 +868,13 @@ let rec process_request ~environment ~build_system request =
           | [found_module] -> Some found_module
           | _ -> None
         in
-        let open Base in
-        let location_to_location_of_definition
-            Location.WithModule.
-              {
-                start = { line = start_line; column = start_column };
-                stop = { line = stop_line; column = stop_column };
-                module_reference;
-              }
-          =
-          PathLookup.instantiate_path
-            ~build_system
-            ~ast_environment:(TypeEnvironment.ReadOnly.ast_environment environment)
-            module_reference
-          >>| fun path ->
-          {
-            path;
-            range =
-              {
-                start = { line = start_line; character = start_column };
-                end_ = { line = stop_line; character = stop_column };
-              };
-          }
-        in
         module_of_path path
         >>= (fun module_reference ->
               LocationBasedLookup.location_of_definition
                 ~type_environment:environment
                 ~module_reference
                 position)
-        >>= location_to_location_of_definition
+        >>= instantiate_range
         |> Option.to_list
         |> fun definitions -> Single (Base.FoundLocationsOfDefinitions definitions)
     | PathOfModule module_name ->
@@ -891,10 +890,28 @@ let rec process_request ~environment ~build_system request =
              ~default:
                (Error (Format.sprintf "No path found for module `%s`" (Reference.show module_name)))
     | FindReferences { path; position } -> (
-        let find_references_local ~reference ~define_name =
-          (* TODO(T114362295): Support find all references. *)
-          let _, _ = reference, define_name in
-          Single (Base.FoundReferences [])
+        let find_references_local ~reference:_ ~define_name =
+          (* TODO(T114362295): Support find all references matching given reference. *)
+          match GlobalResolution.function_definition global_resolution define_name with
+          | Some { FunctionDefinition.body = Some define; qualifier; _ } ->
+              let location_to_result location =
+                Location.with_module ~module_reference:qualifier location |> instantiate_range
+              in
+              let all_local_bindings =
+                Scope.Scope.of_define_exn define.value
+                |> UninitializedLocalCheck.local_bindings
+                |> Identifier.Map.data
+                |> List.filter_map ~f:(fun { Scope.Binding.location; _ } ->
+                       location_to_result location)
+              in
+              let all_access_reads =
+                let { Statement.Define.body; _ } = Node.value define in
+                List.map ~f:UninitializedLocalCheck.extract_reads_in_statement body
+                |> List.concat
+                |> List.filter_map ~f:(fun node -> Node.location node |> location_to_result)
+              in
+              Single (Base.FoundReferences (List.concat [all_local_bindings; all_access_reads]))
+          | _ -> Single (Base.FoundReferences [])
         in
         let find_references_global ~reference =
           (* TODO(T114362295): Support find all references. *)
