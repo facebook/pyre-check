@@ -15,6 +15,8 @@ val check_module_for_testing : source:Source.t -> Error.t list
 
 module StatementKey = Int
 
+val extract_reads_in_statement : Statement.t -> string Node.t list
+
 (* Get bindings for local identifiers. This cannot live in scope.ml because it deals with
    qualification. *)
 val local_bindings : Scope.Scope.t -> Scope.Binding.t Identifier.Map.t

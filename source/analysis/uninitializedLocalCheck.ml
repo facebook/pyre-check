@@ -311,14 +311,22 @@ let errors ~qualifier ~define defined_locals_at_each_statement =
       ~kind:(Error.UninitializedLocal value)
       ~define
   in
-  let all_locals =
-    Scope.Scope.of_define_exn define.value
-    |> local_bindings
-    |> Identifier.Map.keys
-    |> Identifier.Set.of_list
-  in
+  let bindings = Scope.Scope.of_define_exn define.value in
   let in_local_scope { Node.value = identifier; _ } =
-    identifier |> Identifier.sanitized |> Identifier.Set.mem all_locals
+    let all_local_identifiers =
+      local_bindings bindings |> Identifier.Map.keys |> Identifier.Set.of_list
+    in
+    identifier |> Identifier.sanitized |> Identifier.Set.mem all_local_identifiers
+  in
+  let is_binding { Node.location; _ } =
+    let { Scope.Scope.bindings; _ } = bindings in
+    let all_binding_locations =
+      bindings
+      |> Identifier.Map.data
+      |> List.map ~f:(fun { Scope.Binding.location; _ } -> location)
+      |> Location.Set.of_list
+    in
+    Location.Set.mem all_binding_locations location
   in
   let uninitialized_usage (statement, initialized) =
     let is_uninitialized { Node.value = identifier; _ } =
@@ -330,6 +338,7 @@ let errors ~qualifier ~define defined_locals_at_each_statement =
   |> Map.data
   |> List.concat_map ~f:uninitialized_usage
   |> List.filter ~f:in_local_scope
+  |> List.filter ~f:(fun usage -> not (is_binding usage))
   |> List.map ~f:emit_error
 
 
