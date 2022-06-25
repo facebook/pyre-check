@@ -892,7 +892,9 @@ let rec process_request ~environment ~build_system request =
     | FindReferences { path; position } -> (
         let find_references_local ~reference ~define_name =
           let is_match identifier =
-            let requested_name = Reference.delocalize reference |> Reference.last in
+            let requested_name =
+              Reference.delocalize reference |> Reference.last |> Identifier.sanitized
+            in
             let name = Identifier.sanitized identifier in
             String.equal requested_name name
           in
@@ -962,7 +964,7 @@ let rec process_request ~environment ~build_system request =
             }
           when Expression.is_simple_name name ->
             let reference = Expression.name_to_reference_exn name in
-            if Reference.is_local reference then
+            if Reference.is_local reference || Reference.is_parameter reference then
               find_references_local ~reference ~define_name
             else
               find_references_global ~reference

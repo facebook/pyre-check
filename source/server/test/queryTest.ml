@@ -1762,6 +1762,93 @@ let test_find_references context =
           |}
           (PyrePath.absolute custom_source_root)
           (PyrePath.absolute custom_source_root) );
+      (* Find all references on function parameter `foo.a`. *)
+      ( Format.sprintf
+          "find_references(path='%s', line=2, column=8)"
+          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
+        Format.asprintf
+          {|
+            {
+              "response": [
+                {
+                  "path": "%s/foo.py",
+                  "range": {
+                    "start": {
+                      "line": 2,
+                      "character": 8
+                    },
+                    "end": {
+                      "line": 2,
+                      "character": 14
+                    }
+                  }
+                },
+                {
+                  "path": "%s/foo.py",
+                  "range": {
+                    "start": {
+                      "line": 3,
+                      "character": 6
+                    },
+                    "end": {
+                      "line": 3,
+                      "character": 7
+                    }
+                  }
+                }
+              ]
+            }
+          |}
+          (PyrePath.absolute custom_source_root)
+          (PyrePath.absolute custom_source_root) );
+      ( Format.sprintf
+          "find_references(path='%s', line=3, column=6)"
+          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
+        Format.asprintf
+          {|
+            {
+              "response": [
+                {
+                  "path": "%s/foo.py",
+                  "range": {
+                    "start": {
+                      "line": 2,
+                      "character": 8
+                    },
+                    "end": {
+                      "line": 2,
+                      "character": 14
+                    }
+                  }
+                },
+                {
+                  "path": "%s/foo.py",
+                  "range": {
+                    "start": {
+                      "line": 3,
+                      "character": 6
+                    },
+                    "end": {
+                      "line": 3,
+                      "character": 7
+                    }
+                  }
+                }
+              ]
+            }
+          |}
+          (PyrePath.absolute custom_source_root)
+          (PyrePath.absolute custom_source_root) );
+      (* Find all references on keyword / syntax *)
+      ( Format.sprintf
+          "find_references(path='%s', line=2, column=1)"
+          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
+        {|{"response": []}|} );
+      ( Format.sprintf
+          "find_references(path='%s', line=2, column=7)"
+          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
+        {|{"response": []}|} );
+      (* TODO(T114362295): Support global find all references. *)
     ]
   in
   assert_queries_with_local_root

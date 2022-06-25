@@ -33,6 +33,8 @@ val delocalize : t -> t
 
 val is_local : t -> bool
 
+val is_parameter : t -> bool
+
 val sanitized : t -> t
 
 val sanitize_qualified : t -> t
