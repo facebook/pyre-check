@@ -2686,7 +2686,7 @@ module ScratchProject = struct
   type t = {
     context: test_ctxt;
     controls: EnvironmentControls.t;
-    type_environment: TypeEnvironment.t;
+    errors_environment: ErrorsEnvironment.t;
   }
 
   module BuiltTypeEnvironment = struct
@@ -2755,7 +2755,7 @@ module ScratchProject = struct
       else
         external_sources
     in
-    let type_environment =
+    let errors_environment =
       if in_memory then
         let to_module_path_code_pair (relative, content) ~is_external =
           let code = trim_extra_indentation content in
@@ -2766,7 +2766,7 @@ module ScratchProject = struct
           List.map sources ~f:(to_module_path_code_pair ~is_external:false)
           @ List.map external_sources ~f:(to_module_path_code_pair ~is_external:true)
         in
-        TypeEnvironment.create_for_testing controls module_path_code_pairs
+        ErrorsEnvironment.create_for_testing controls module_path_code_pairs
       else
         let add_source ~root (relative, content) =
           let content = trim_extra_indentation content in
@@ -2775,10 +2775,10 @@ module ScratchProject = struct
         in
         List.iter sources ~f:(add_source ~root:local_root);
         List.iter external_sources ~f:(add_source ~root:external_root);
-        TypeEnvironment.create controls
+        ErrorsEnvironment.create controls
     in
     let () =
-      let ast_environment = TypeEnvironment.ast_environment type_environment in
+      let ast_environment = ErrorsEnvironment.ast_environment errors_environment in
       (* Clean shared memory up before the test *)
       AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
       let set_up_shared_memory _ = () in
@@ -2788,7 +2788,7 @@ module ScratchProject = struct
       (* Clean shared memory up after the test *)
       OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
     in
-    { context; controls; type_environment }
+    { context; controls; errors_environment }
 
 
   let configuration_of { controls; _ } = EnvironmentControls.configuration controls
@@ -2816,7 +2816,25 @@ module ScratchProject = struct
     File.write file
 
 
-  let type_environment { type_environment; _ } = type_environment |> TypeEnvironment.read_only
+  module ReadWrite = struct
+    (* Because module tracker updates aren't exposed directly through UpdateResult, grey-box tests
+       of ModuleTracker updates require access to the read-write tracker. We put this in a ReadWrite
+       module to emphasize that it would be easy to make mistakes using it. *)
+    let module_tracker { errors_environment; _ } =
+      ErrorsEnvironment.ast_environment errors_environment |> AstEnvironment.module_tracker
+
+
+    let type_environment { errors_environment; _ } =
+      errors_environment |> ErrorsEnvironment.type_environment
+  end
+
+  let errors_environment { errors_environment; _ } =
+    errors_environment |> ErrorsEnvironment.read_only
+
+
+  let type_environment project =
+    errors_environment project |> ErrorsEnvironment.ReadOnly.type_environment
+
 
   let global_environment project =
     type_environment project |> TypeEnvironment.ReadOnly.global_environment
@@ -2852,8 +2870,9 @@ module ScratchProject = struct
     { BuiltGlobalEnvironment.sources; global_environment }
 
 
-  let build_type_environment ({ type_environment; _ } as project) =
+  let build_type_environment project =
     let sources = get_project_sources project in
+    let type_environment = ReadWrite.type_environment project in
     List.map sources ~f:(fun { Source.module_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
     |> TypeEnvironment.populate_for_modules
          ~scheduler:(Scheduler.create_sequential ())
@@ -2898,25 +2917,13 @@ module ScratchProject = struct
     PyrePath.create_relative ~root:local_root ~relative |> PyrePath.absolute |> Core.Unix.remove
 
 
-  let update_global_environment
-      { type_environment; _ }
-      ?(scheduler = mock_scheduler ())
-      artifact_paths
-    =
+  let update_global_environment project ?(scheduler = mock_scheduler ()) artifact_paths =
+    let type_environment = ReadWrite.type_environment project in
     let global_environment = TypeEnvironment.global_environment type_environment in
     AnnotatedGlobalEnvironment.update_this_and_all_preceding_environments
       global_environment
       ~scheduler
       artifact_paths
-
-
-  module ReadWrite = struct
-    (* Because module tracker updates aren't exposed directly through UpdateResult, grey-box tests
-       of ModuleTracker updates require access to the read-write tracker. We put this in a ReadWrite
-       module to emphasize that it would be easy to make mistakes using it. *)
-    let module_tracker { type_environment; _ } =
-      TypeEnvironment.ast_environment type_environment |> AstEnvironment.module_tracker
-  end
 end
 
 type test_update_environment_with_t = {
@@ -2967,7 +2974,7 @@ let assert_errors
         let { ScratchProject.BuiltGlobalEnvironment.sources; global_environment } =
           ScratchProject.build_global_environment project
         in
-        let { ScratchProject.type_environment; _ } = project in
+        let type_environment = ScratchProject.ReadWrite.type_environment project in
         ( sources,
           AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment,
           type_environment )
