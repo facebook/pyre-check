@@ -1722,15 +1722,46 @@ let test_find_references context =
   let custom_source_root =
     OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
   in
-  (* TODO(T114362295): Support find all references. *)
   let queries_and_expected_responses =
     [
-      ( "find_references(path='foo.py', line=2, column=8)",
-        {|
-      {
-      "response": []
-      }
-    |} );
+      ( Format.sprintf
+          "find_references(path='%s', line=3, column=2)"
+          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
+        Format.asprintf
+          {|
+            {
+              "response": [
+                {
+                  "path": "%s/foo.py",
+                  "range": {
+                    "start": {
+                      "line": 3,
+                      "character": 2
+                    },
+                    "end": {
+                      "line": 3,
+                      "character": 3
+                    }
+                  }
+                },
+                {
+                  "path": "%s/foo.py",
+                  "range": {
+                    "start": {
+                      "line": 4,
+                      "character": 9
+                    },
+                    "end": {
+                      "line": 4,
+                      "character": 10
+                    }
+                  }
+                }
+              ]
+            }
+          |}
+          (PyrePath.absolute custom_source_root)
+          (PyrePath.absolute custom_source_root) );
     ]
   in
   assert_queries_with_local_root

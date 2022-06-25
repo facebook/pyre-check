@@ -890,8 +890,12 @@ let rec process_request ~environment ~build_system request =
              ~default:
                (Error (Format.sprintf "No path found for module `%s`" (Reference.show module_name)))
     | FindReferences { path; position } -> (
-        let find_references_local ~reference:_ ~define_name =
-          (* TODO(T114362295): Support find all references matching given reference. *)
+        let find_references_local ~reference ~define_name =
+          let is_match identifier =
+            let requested_name = Reference.delocalize reference |> Reference.last in
+            let name = Identifier.sanitized identifier in
+            String.equal requested_name name
+          in
           match GlobalResolution.function_definition global_resolution define_name with
           | Some { FunctionDefinition.body = Some define; qualifier; _ } ->
               let location_to_result location =
@@ -900,17 +904,25 @@ let rec process_request ~environment ~build_system request =
               let all_local_bindings =
                 Scope.Scope.of_define_exn define.value
                 |> UninitializedLocalCheck.local_bindings
+                |> Identifier.Map.filter_keys ~f:is_match
                 |> Identifier.Map.data
-                |> List.filter_map ~f:(fun { Scope.Binding.location; _ } ->
-                       location_to_result location)
+                |> List.map ~f:(fun { Scope.Binding.location; _ } -> location)
+                |> Location.Set.of_list
               in
               let all_access_reads =
                 let { Statement.Define.body; _ } = Node.value define in
                 List.map ~f:UninitializedLocalCheck.extract_reads_in_statement body
                 |> List.concat
-                |> List.filter_map ~f:(fun node -> Node.location node |> location_to_result)
+                |> List.filter ~f:(fun { Node.value; _ } -> is_match value)
+                |> List.map ~f:Node.location
+                |> Location.Set.of_list
               in
-              Single (Base.FoundReferences (List.concat [all_local_bindings; all_access_reads]))
+              let all_local_references =
+                Set.union all_local_bindings all_access_reads
+                |> Location.Set.to_list
+                |> List.filter_map ~f:location_to_result
+              in
+              Single (Base.FoundReferences all_local_references)
           | _ -> Single (Base.FoundReferences [])
         in
         let find_references_global ~reference =
