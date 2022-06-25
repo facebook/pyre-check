@@ -128,6 +128,25 @@ let test_simple context =
         ((x := 0) and (y := x))
     |} [];
 
+  (* Nested classes and defines *)
+  assert_uninitialized_errors
+    {|
+      def f() -> None:
+        x = 1
+        def nested_f() -> None:
+          a = b
+    |}
+    [];
+  assert_uninitialized_errors
+    {|
+      def f() -> None:
+        x = 1
+        class Nested:
+          def __init__(self) -> None:
+            self.a = b
+    |}
+    [];
+
   (* TODO (T94201165): walrus operator same-expression false negative *)
   assert_uninitialized_errors {|
       def f():
