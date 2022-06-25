@@ -266,7 +266,7 @@ let test_defines _ =
     ~exists:false
 
 
-let test_preamble _ =
+let test_with_block_preamble _ =
   let assert_preamble block preamble =
     let block =
       match parse_single_statement block with
@@ -284,23 +284,10 @@ let test_preamble _ =
   assert_preamble "with item, other: pass" "item.__enter__(); other.__enter__()";
   assert_preamble "with item as name: pass" "name = item.__enter__()";
   assert_preamble "async with item as name: pass" "name = await item.__aenter__()";
-  let assert_preamble block preamble =
-    let block =
-      match parse_single_statement block with
-      | { Node.value = For block; _ } -> block
-      | _ -> failwith "Could not parse `for` statement."
-    in
-    let { Source.statements = preamble; _ } = parse ~coerce_special_methods:true preamble in
-    assert_equal
-      ~cmp:(List.equal (fun left right -> Statement.location_insensitive_compare left right = 0))
-      ~printer:(fun statements -> List.map ~f:show statements |> String.concat ~sep:", ")
-      preamble
-      [For.preamble block]
-  in
-  assert_preamble "for a in b: pass" "a = b.__iter__().__next__()";
-  assert_preamble "for a, b in c: pass" "a, b = c.__iter__().__next__()";
-  assert_preamble "for a in [1, 2, 3]: pass" "a = [1, 2, 3].__iter__().__next__()";
-  assert_preamble "async for a in b: pass" "a = await b.__aiter__().__anext__()";
+  ()
+
+
+let test_try_block_preamble _ =
   let assert_preamble block preambles =
     let handlers =
       match parse_single_statement block with
@@ -362,7 +349,104 @@ let test_preamble _ =
       except (IOError, ValueError) as error:
         pass
     |}
-    ["error=...\nassert isinstance(error, (IOError, ValueError))"]
+    ["error=...\nassert isinstance(error, (IOError, ValueError))"];
+  ()
+
+
+let test_for_loop_preamble _ =
+  let assert_preamble ~block expected_preamble =
+    let block =
+      match parse_single_statement block with
+      | { Node.value = For block; _ } -> block
+      | _ -> failwith "Could not parse `for` statement."
+    in
+    let expected_preamble =
+      match parse ~coerce_special_methods:true expected_preamble with
+      | { Source.statements = [expected_preamble]; _ } -> expected_preamble
+      | _ -> failwith "Expected exactly one statement"
+    in
+    assert_equal
+      ~cmp:(fun left right -> Statement.location_insensitive_compare left right = 0)
+      ~printer:[%show: Statement.t]
+      expected_preamble
+      (For.preamble block)
+  in
+  assert_preamble ~block:{| for a in b: pass |} {| a = b.__iter__().__next__() |};
+  assert_preamble ~block:{| for a, b in c: pass |} {| a, b = c.__iter__().__next__() |};
+  assert_preamble ~block:{| for a in [1, 2, 3]: pass |} {| a = [1, 2, 3].__iter__().__next__() |};
+  assert_preamble ~block:{| async for a in b: pass |} {| a = await b.__aiter__().__anext__() |};
+
+  let assert_preamble_with_locations ~block expected_preamble =
+    let block =
+      match parse_single_statement block with
+      | { Node.value = For block; _ } -> block
+      | _ -> failwith "Could not parse `for` statement."
+    in
+    assert_equal
+      ~cmp:[%compare.equal: Statement.t]
+      ~printer:(fun statement -> [%sexp_of: Statement.t] statement |> Sexp.to_string_hum)
+      expected_preamble
+      (For.preamble block)
+  in
+  let ( ~@ ) = parse_location in
+  assert_preamble_with_locations
+    ~block:{| for a in b: pass |}
+    {
+      Node.value =
+        Statement.Assign
+          {
+            target = { Node.value = Name (Name.Identifier "a"); location = ~@"1:4-1:5" };
+            annotation = None;
+            value =
+              {
+                Node.value =
+                  Expression.Call
+                    {
+                      callee =
+                        {
+                          Node.location = ~@"1:4-1:5";
+                          value =
+                            Name
+                              (Name.Attribute
+                                 {
+                                   base =
+                                     {
+                                       Node.location = ~@"1:4-1:5";
+                                       value =
+                                         Call
+                                           {
+                                             callee =
+                                               {
+                                                 Node.location = ~@"1:4-1:5";
+                                                 value =
+                                                   Name
+                                                     (Name.Attribute
+                                                        {
+                                                          base =
+                                                            {
+                                                              Node.value =
+                                                                Name (Name.Identifier "b");
+                                                              location = ~@"1:9-1:10";
+                                                            };
+                                                          attribute = "__iter__";
+                                                          special = true;
+                                                        });
+                                               };
+                                             arguments = [];
+                                           };
+                                     };
+                                   attribute = "__next__";
+                                   special = true;
+                                 });
+                        };
+                      arguments = [];
+                    };
+                location = ~@"1:4-1:5";
+              };
+          };
+      location = ~@"1:4-1:5";
+    };
+  ()
 
 
 let test_assume _ =
@@ -725,7 +809,9 @@ let () =
   "statement"
   >::: [
          "assume" >:: test_assume;
-         "preamble" >:: test_preamble;
+         "with_block_preamble" >:: test_with_block_preamble;
+         "try_block_preamble" >:: test_try_block_preamble;
+         "for_loop_preamble" >:: test_for_loop_preamble;
          "pp" >:: test_pp;
          "is_generator" >:: test_is_generator;
          "decorator_from_expression" >:: test_decorator_from_expression;
