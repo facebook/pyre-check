@@ -70,6 +70,8 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                 ],
             )
 
+        # TODO: See T124045521. The logic for this needs to be implemented to handle different
+        # lhs assignments
         def test_parse_source_and_collect_symbols_function_with_variable_assignment(
             self,
         ) -> None:
@@ -77,6 +79,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                 """
                 def foo(x):
                     x = 3
+                    [a, b] = [1, 2]
                     pass
                 """,
                 [
@@ -86,8 +89,19 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                         kind=SymbolKind.FUNCTION,
                         range=LspRange(
                             start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=3, character=len("    pass")),
+                            end=LspPosition(line=4, character=len("    pass")),
                         ),
+                        children=[
+                            make_document_symbol(
+                                name="x",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=2, character=4),
+                                    end=LspPosition(line=2, character=5),
+                                ),
+                            )
+                        ],
                     )
                 ],
             )
@@ -142,7 +156,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="x",
                                 detail="",
-                                kind=SymbolKind.PROPERTY,
+                                kind=SymbolKind.VARIABLE,
                                 range=LspRange(
                                     start=LspPosition(line=2, character=4),
                                     end=LspPosition(line=2, character=5),
@@ -174,7 +188,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="x",
                                 detail="",
-                                kind=SymbolKind.PROPERTY,
+                                kind=SymbolKind.VARIABLE,
                                 range=LspRange(
                                     start=LspPosition(line=2, character=4),
                                     end=LspPosition(line=2, character=5),
@@ -194,7 +208,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="y",
                                 detail="",
-                                kind=SymbolKind.PROPERTY,
+                                kind=SymbolKind.VARIABLE,
                                 range=LspRange(
                                     start=LspPosition(line=4, character=4),
                                     end=LspPosition(line=4, character=5),
@@ -237,7 +251,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="w",
                                 detail="",
-                                kind=SymbolKind.PROPERTY,
+                                kind=SymbolKind.VARIABLE,
                                 range=LspRange(
                                     start=LspPosition(line=2, character=4),
                                     end=LspPosition(line=2, character=5),
@@ -259,7 +273,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="a",
                                 detail="",
-                                kind=SymbolKind.PROPERTY,
+                                kind=SymbolKind.VARIABLE,
                                 range=LspRange(
                                     start=LspPosition(line=5, character=4),
                                     end=LspPosition(line=5, character=5),
@@ -268,7 +282,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="b",
                                 detail="",
-                                kind=SymbolKind.PROPERTY,
+                                kind=SymbolKind.VARIABLE,
                                 range=LspRange(
                                     start=LspPosition(line=6, character=4),
                                     end=LspPosition(line=6, character=5),
@@ -302,7 +316,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="x",
                                 detail="",
-                                kind=SymbolKind.PROPERTY,
+                                kind=SymbolKind.VARIABLE,
                                 range=LspRange(
                                     start=LspPosition(line=2, character=4),
                                     end=LspPosition(line=2, character=5),
@@ -311,7 +325,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="z",
                                 detail="",
-                                kind=SymbolKind.PROPERTY,
+                                kind=SymbolKind.VARIABLE,
                                 range=LspRange(
                                     start=LspPosition(line=2, character=8),
                                     end=LspPosition(line=2, character=9),
@@ -331,7 +345,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="y",
                                 detail="",
-                                kind=SymbolKind.PROPERTY,
+                                kind=SymbolKind.VARIABLE,
                                 range=LspRange(
                                     start=LspPosition(line=4, character=4),
                                     end=LspPosition(line=4, character=5),
@@ -340,7 +354,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="w",
                                 detail="",
-                                kind=SymbolKind.PROPERTY,
+                                kind=SymbolKind.VARIABLE,
                                 range=LspRange(
                                     start=LspPosition(line=4, character=8),
                                     end=LspPosition(line=4, character=9),
@@ -382,6 +396,17 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                                         line=4, character=len("        return self")
                                     ),
                                 ),
+                                children=[
+                                    make_document_symbol(
+                                        name="w",
+                                        detail="",
+                                        kind=SymbolKind.VARIABLE,
+                                        range=LspRange(
+                                            start=LspPosition(line=3, character=8),
+                                            end=LspPosition(line=3, character=9),
+                                        ),
+                                    )
+                                ],
                             )
                         ],
                     ),
@@ -573,3 +598,287 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                         )
                     ],
                 )
+
+        def test_parse_source_and_collect_symbols_enums_from_import(self) -> None:
+            self.assert_collected_symbols(
+                """
+                from enum import Enum
+
+                class Animal(Enum):
+                    cat = 1
+                    dog = 2
+                    lion = 3
+
+                """,
+                [
+                    make_document_symbol(
+                        name="Animal",
+                        detail="",
+                        kind=SymbolKind.CLASS,
+                        range=LspRange(
+                            start=LspPosition(line=3, character=0),
+                            end=LspPosition(line=6, character=len("    lion = 3")),
+                        ),
+                        children=[
+                            make_document_symbol(
+                                name="cat",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=4, character=4),
+                                    end=LspPosition(line=4, character=7),
+                                ),
+                            ),
+                            make_document_symbol(
+                                name="dog",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=5, character=4),
+                                    end=LspPosition(line=5, character=7),
+                                ),
+                            ),
+                            make_document_symbol(
+                                name="lion",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=6, character=4),
+                                    end=LspPosition(line=6, character=8),
+                                ),
+                            ),
+                        ],
+                    ),
+                ],
+            )
+
+        def test_parse_source_and_collect_symbols_enums(self) -> None:
+            self.assert_collected_symbols(
+                """
+                import enum
+
+                class Animal(enum.Enum):
+                    cat = 1
+                    dog = 2
+                    lion = 3
+
+                """,
+                [
+                    make_document_symbol(
+                        name="Animal",
+                        detail="",
+                        kind=SymbolKind.CLASS,
+                        range=LspRange(
+                            start=LspPosition(line=3, character=0),
+                            end=LspPosition(line=6, character=len("    lion = 3")),
+                        ),
+                        children=[
+                            make_document_symbol(
+                                name="cat",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=4, character=4),
+                                    end=LspPosition(line=4, character=7),
+                                ),
+                            ),
+                            make_document_symbol(
+                                name="dog",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=5, character=4),
+                                    end=LspPosition(line=5, character=7),
+                                ),
+                            ),
+                            make_document_symbol(
+                                name="lion",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=6, character=4),
+                                    end=LspPosition(line=6, character=8),
+                                ),
+                            ),
+                        ],
+                    ),
+                ],
+            )
+
+        def test_parse_source_and_collect_symbols_int_enums_from_import(self) -> None:
+            self.assert_collected_symbols(
+                """
+                from enum import IntEnum
+
+                class Animal(IntEnum):
+                    cat = 1
+                    dog = 2
+                    lion = 3
+
+                """,
+                [
+                    make_document_symbol(
+                        name="Animal",
+                        detail="",
+                        kind=SymbolKind.CLASS,
+                        range=LspRange(
+                            start=LspPosition(line=3, character=0),
+                            end=LspPosition(line=6, character=len("    lion = 3")),
+                        ),
+                        children=[
+                            make_document_symbol(
+                                name="cat",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=4, character=4),
+                                    end=LspPosition(line=4, character=7),
+                                ),
+                            ),
+                            make_document_symbol(
+                                name="dog",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=5, character=4),
+                                    end=LspPosition(line=5, character=7),
+                                ),
+                            ),
+                            make_document_symbol(
+                                name="lion",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=6, character=4),
+                                    end=LspPosition(line=6, character=8),
+                                ),
+                            ),
+                        ],
+                    ),
+                ],
+            )
+
+        def test_parse_source_and_collect_symbols_int_enums(self) -> None:
+            self.assert_collected_symbols(
+                """
+                import enum
+
+                class Animal(enum.IntEnum):
+                    cat = 1
+                    dog = 2
+                    lion = 3
+
+                """,
+                [
+                    make_document_symbol(
+                        name="Animal",
+                        detail="",
+                        kind=SymbolKind.CLASS,
+                        range=LspRange(
+                            start=LspPosition(line=3, character=0),
+                            end=LspPosition(line=6, character=len("    lion = 3")),
+                        ),
+                        children=[
+                            make_document_symbol(
+                                name="cat",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=4, character=4),
+                                    end=LspPosition(line=4, character=7),
+                                ),
+                            ),
+                            make_document_symbol(
+                                name="dog",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=5, character=4),
+                                    end=LspPosition(line=5, character=7),
+                                ),
+                            ),
+                            make_document_symbol(
+                                name="lion",
+                                detail="",
+                                kind=SymbolKind.VARIABLE,
+                                range=LspRange(
+                                    start=LspPosition(line=6, character=4),
+                                    end=LspPosition(line=6, character=8),
+                                ),
+                            ),
+                        ],
+                    ),
+                ],
+            )
+
+        def test_parse_source_and_collect_symbols_typevar(self) -> None:
+            self.assert_collected_symbols(
+                """
+                from typing import TypeVar, Optional
+
+                T = TypeVar("T")
+
+                def get_first_item(items: List[T]) -> Optional[T]:
+                    return items[0] if len(items) > 0 else None
+
+                """,
+                [
+                    make_document_symbol(
+                        name="T",
+                        detail="",
+                        kind=SymbolKind.VARIABLE,
+                        range=LspRange(
+                            start=LspPosition(line=3, character=0),
+                            end=LspPosition(line=3, character=1),
+                        ),
+                    ),
+                    make_document_symbol(
+                        name="get_first_item",
+                        detail="",
+                        kind=SymbolKind.FUNCTION,
+                        range=LspRange(
+                            start=LspPosition(line=5, character=0),
+                            end=LspPosition(
+                                line=6,
+                                character=len(
+                                    "    return items[0] if len(items) > 0 else None"
+                                ),
+                            ),
+                        ),
+                    ),
+                ],
+            )
+
+        def test_parse_source_and_collect_symbols_global_var(self) -> None:
+            self.assert_collected_symbols(
+                """
+                cost = 5
+
+                def get_total_cost(num_items: int) -> int:
+                    return num_items * cost
+
+                """,
+                [
+                    make_document_symbol(
+                        name="cost",
+                        detail="",
+                        kind=SymbolKind.VARIABLE,
+                        range=LspRange(
+                            start=LspPosition(line=1, character=0),
+                            end=LspPosition(line=1, character=4),
+                        ),
+                    ),
+                    make_document_symbol(
+                        name="get_total_cost",
+                        detail="",
+                        kind=SymbolKind.FUNCTION,
+                        range=LspRange(
+                            start=LspPosition(line=3, character=0),
+                            end=LspPosition(
+                                line=4,
+                                character=len("    return num_items * cost"),
+                            ),
+                        ),
+                    ),
+                ],
+            )

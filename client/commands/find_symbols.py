@@ -5,7 +5,7 @@
 
 import ast
 import dataclasses
-from typing import List, Union
+from typing import List, Optional, Union
 
 from .language_server_protocol import (
     DocumentSymbolsResponse,
@@ -29,7 +29,7 @@ def _node_to_symbol(
     node_is_class_def = isinstance(node, ast.ClassDef)
     symbol_info = SymbolKind.CLASS if node_is_class_def else SymbolKind.FUNCTION
 
-    visitor = _SymbolsCollector(node_is_class_def)
+    visitor = _SymbolsCollector()
     visitor.generic_visit(node)
     symbol_info = _generate_lsp_symbol_info(node, node.name, symbol_info)
     document_symbols_response = _create_document_symbols_response(
@@ -39,8 +39,11 @@ def _node_to_symbol(
 
 
 def _create_document_symbols_response(
-    symbol_info: SymbolInfo, children_symbols: List[DocumentSymbolsResponse]
+    symbol_info: SymbolInfo,
+    children_symbols: Optional[List[DocumentSymbolsResponse]] = None,
 ) -> DocumentSymbolsResponse:
+    if children_symbols is None:
+        children_symbols = []
     return DocumentSymbolsResponse(
         name=symbol_info.name,
         # TODO(114362484): add docstrings to details
@@ -75,12 +78,10 @@ def _generate_lsp_symbol_info(node: ast.AST, name: str, kind: SymbolKind) -> Sym
 
 class _SymbolsCollector(ast.NodeVisitor):
     symbols: List[DocumentSymbolsResponse]
-    parent_is_class_def: bool
 
-    def __init__(self, parent_is_class_def: bool) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self.symbols = []
-        self.parent_is_class_def = parent_is_class_def
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         self.symbols.append(_node_to_symbol(node))
@@ -92,28 +93,26 @@ class _SymbolsCollector(ast.NodeVisitor):
         self.symbols.append(_node_to_symbol(node))
 
     def visit_Assign(self, node: ast.Assign) -> None:
-        if self.parent_is_class_def:
-            children_symbol_info = [
-                _generate_lsp_symbol_info(
-                    current_target, current_target.id, SymbolKind.PROPERTY
-                )
-                for current_target in node.targets
-                if isinstance(current_target, ast.Name)
-            ]
-            self.symbols.extend(
-                [
-                    _create_document_symbols_response(symbol, [])
-                    for symbol in children_symbol_info
-                ]
+        children_symbol_info = [
+            _generate_lsp_symbol_info(
+                current_target, current_target.id, SymbolKind.VARIABLE
             )
+            for current_target in node.targets
+            if isinstance(current_target, ast.Name)
+        ]
+        self.symbols.extend(
+            [
+                _create_document_symbols_response(symbol)
+                for symbol in children_symbol_info
+            ]
+        )
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
-        if self.parent_is_class_def:
-            if isinstance(node.target, ast.Name):
-                symbol_info = _generate_lsp_symbol_info(
-                    node.target, node.target.id, SymbolKind.PROPERTY
-                )
-                self.symbols.append(_create_document_symbols_response(symbol_info, []))
+        if isinstance(node.target, ast.Name):
+            symbol_info = _generate_lsp_symbol_info(
+                node.target, node.target.id, SymbolKind.VARIABLE
+            )
+            self.symbols.append(_create_document_symbols_response(symbol_info))
 
 
 class UnparseableError(Exception):
@@ -126,6 +125,6 @@ def parse_source_and_collect_symbols(source: str) -> List[DocumentSymbolsRespons
         ast_tree = ast.parse(source=source, mode="exec")
     except Exception as e:
         raise UnparseableError(e)
-    visitor = _SymbolsCollector(False)
+    visitor = _SymbolsCollector()
     visitor.visit(ast_tree)
     return visitor.symbols
