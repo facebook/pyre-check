@@ -1870,6 +1870,10 @@ let test_expression_level_coverage context =
               def foo(x) -> None:
                 print(x + 1)
             |};
+      "fizz.py", {|
+              def fizz(x) -> None:
+                print(x + 1)
+            |};
       "bar.pyi", {|
             def foo(x) -> None:
               ...
@@ -1882,6 +1886,10 @@ let test_expression_level_coverage context =
       foo.py
       |};
       "empty.txt", {||};
+      "two_arguments.txt", {|
+      foo.py
+      fizz.py
+      |};
     ]
   in
   let custom_source_root =
@@ -2085,6 +2093,158 @@ let test_expression_level_coverage context =
                   }
               ]
           }
+         |}
+      );
+      (* Test @two_arguments.txt *)
+      ( Format.sprintf
+          "expression_level_coverage('@%s')"
+          (PyrePath.append custom_source_root ~element:"two_arguments.txt" |> PyrePath.absolute),
+        Format.asprintf
+          {|
+            {
+    "response": [
+        {
+            "path": "foo.py",
+            "total_expressions": 8,
+            "coverage_gaps": [
+                {
+                    "location": {
+                        "start": {
+                            "line": 2,
+                            "column": 4
+                        },
+                        "stop": {
+                            "line": 2,
+                            "column": 7
+                        }
+                    },
+                    "type_": "typing.Callable(foo.foo)[[Named(x, unknown)], None]",
+                    "reason": [
+                        "CallableParameterIsUnknownOrAny"
+                    ]
+                },
+                {
+                    "location": {
+                        "start": {
+                            "line": 2,
+                            "column": 8
+                        },
+                        "stop": {
+                            "line": 2,
+                            "column": 9
+                        }
+                    },
+                    "type_": "typing.Any",
+                    "reason": [
+                        "TypeIsAny"
+                    ]
+                },
+                {
+                    "location": {
+                        "start": {
+                            "line": 3,
+                            "column": 8
+                        },
+                        "stop": {
+                            "line": 3,
+                            "column": 9
+                        }
+                    },
+                    "type_": "typing.Any",
+                    "reason": [
+                        "TypeIsAny"
+                    ]
+                },
+                {
+                    "location": {
+                        "start": {
+                            "line": 3,
+                            "column": 8
+                        },
+                        "stop": {
+                            "line": 3,
+                            "column": 13
+                        }
+                    },
+                    "type_": "typing.Any",
+                    "reason": [
+                        "TypeIsAny"
+                    ]
+                }
+            ]
+        },
+        {
+            "path": "fizz.py",
+            "total_expressions": 8,
+            "coverage_gaps": [
+                {
+                    "location": {
+                        "start": {
+                            "line": 2,
+                            "column": 4
+                        },
+                        "stop": {
+                            "line": 2,
+                            "column": 8
+                        }
+                    },
+                    "type_": "typing.Callable(fizz.fizz)[[Named(x, unknown)], None]",
+                    "reason": [
+                        "CallableParameterIsUnknownOrAny"
+                    ]
+                },
+                {
+                    "location": {
+                        "start": {
+                            "line": 2,
+                            "column": 9
+                        },
+                        "stop": {
+                            "line": 2,
+                            "column": 10
+                        }
+                    },
+                    "type_": "typing.Any",
+                    "reason": [
+                        "TypeIsAny"
+                    ]
+                },
+                {
+                    "location": {
+                        "start": {
+                            "line": 3,
+                            "column": 8
+                        },
+                        "stop": {
+                            "line": 3,
+                            "column": 9
+                        }
+                    },
+                    "type_": "typing.Any",
+                    "reason": [
+                        "TypeIsAny"
+                    ]
+                },
+                {
+                    "location": {
+                        "start": {
+                            "line": 3,
+                            "column": 8
+                        },
+                        "stop": {
+                            "line": 3,
+                            "column": 13
+                        }
+                    },
+                    "type_": "typing.Any",
+                    "reason": [
+                        "TypeIsAny"
+                    ]
+                }
+            ]
+        }
+    ]
+}
          |}
       );
     ]
