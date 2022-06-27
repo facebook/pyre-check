@@ -1094,6 +1094,21 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
         def foo(self) -> typing.Generator[int, None, None]: ...
     |}
     [];
+  assert_type_errors
+    {|
+     class Foo:
+        foo: int = 3
+
+     class Bar(Foo):
+        def foo(self, input: int) -> str:
+          ...
+    |}
+    [
+      "Inconsistent override [15]: `foo` overrides attribute defined in `Foo` inconsistently. Type \
+       `typing.Callable(Bar.foo)[[Named(self, Bar), Named(input, int)], str]` is not a subtype of \
+       the overridden attribute `int`.";
+    ];
+
   ()
 
 
@@ -2444,7 +2459,6 @@ let test_check_override_decorator context =
          return input + 1
   |}
     [];
-
   assert_type_errors
     {|
      from pyre_extensions import override
@@ -2535,9 +2549,39 @@ let test_check_override_decorator context =
        def foo(self, input: int) -> str:
          return "Bar: " + str(input)
     |}
-    (* TODO: See T123628048. This should return an error, but isn't at the moment. Decorator logic
-       needs to be checked. *)
-    [];
+    [ (* TODO: See T123628048. This should return an error, but isn't at the moment. Decorator logic
+         needs to be checked. *) ];
+
+  assert_type_errors
+    {|
+     from pyre_extensions import override
+
+     class Foo:
+       foo: int = 3
+
+     class Bar(Foo):
+       @override
+       foo: str = "hello world"
+    |}
+    ["Parsing failure [404]: invalid syntax"];
+  assert_type_errors
+    {|
+     from pyre_extensions import override
+
+     class Foo:
+       foo: int = 3
+
+     class Bar(Foo):
+       @override
+       def foo(self, input: int) -> str:
+          ...
+    |}
+    [
+      "Inconsistent override [15]: `foo` overrides attribute defined in `Foo` inconsistently. Type \
+       `typing.Callable(Bar.foo)[[Named(self, Bar), Named(input, int)], str]` is not a subtype of \
+       the overridden attribute `int`.";
+    ];
+
   ()
 
 

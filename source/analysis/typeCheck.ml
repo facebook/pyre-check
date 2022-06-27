@@ -5828,7 +5828,10 @@ module State (Context : Context) = struct
                     errors
                 in
                 (* Check strengthening of postcondition. *)
-                match Annotation.annotation (Attribute.annotation overridden_attribute) with
+                let overridden_base_attribute_annotation =
+                  Annotation.annotation (Attribute.annotation overridden_attribute)
+                in
+                match overridden_base_attribute_annotation with
                 | Type.Parametric
                     {
                       name = "BoundMethod";
@@ -5995,7 +5998,31 @@ module State (Context : Context) = struct
                     in
                     Type.Callable.Parameter.zip overridden_parameters overriding_parameters
                     |> List.fold ~init:errors ~f:check_parameter
-                | _ -> errors)
+                | _ -> (
+                    let overriding_subclass_attribute_annotation =
+                      resolve_reference_type ~resolution name
+                    in
+                    match overriding_subclass_attribute_annotation with
+                    | Type.Parametric _
+                    | Type.Callable _ ->
+                        emit_error
+                          ~errors
+                          ~location
+                          ~kind:
+                            (Error.InconsistentOverride
+                               {
+                                 overridden_method = StatementDefine.unqualified_name define;
+                                 parent = Attribute.parent overridden_attribute |> Reference.create;
+                                 override_kind = Attribute;
+                                 override =
+                                   Error.WeakenedPostcondition
+                                     {
+                                       actual = overriding_subclass_attribute_annotation;
+                                       expected = overridden_base_attribute_annotation;
+                                       due_to_invariance = false;
+                                     };
+                               })
+                    | _ -> errors))
             | _ -> None
           end
           |> Option.value ~default:errors
