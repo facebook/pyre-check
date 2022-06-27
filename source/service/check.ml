@@ -76,6 +76,12 @@ let check
 
     errors_environment
   in
+  (* Run type check and then postprocessing - this is not as efficient as it could be, but we need
+     to tune the map-reduce parameters before we can safely combine them into a single step *)
+  let () =
+    Analysis.ErrorsEnvironment.type_environment environment
+    |> Analysis.TypeEnvironment.populate_for_project_modules ~scheduler
+  in
   let () = Analysis.ErrorsEnvironment.populate_all_errors ~scheduler environment in
   Profiling.track_shared_memory_usage ();
 

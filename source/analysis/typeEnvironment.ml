@@ -121,7 +121,6 @@ let populate_for_definitions ~scheduler environment defines =
 
 let populate_for_modules ~scheduler environment qualifiers =
   Profiling.track_shared_memory_usage ~name:"Before legacy type check" ();
-
   let all_defines =
     let unannotated_global_environment =
       global_environment environment
@@ -155,6 +154,15 @@ let populate_for_modules ~scheduler environment qualifiers =
     ~integers:["size", Memory.heap_size ()]
     ();
   Profiling.track_shared_memory_usage ~name:"After legacy type check" ()
+
+
+let populate_for_project_modules ~scheduler environment =
+  let project_qualifiers =
+    module_tracker environment
+    |> ModuleTracker.read_only
+    |> ModuleTracker.ReadOnly.project_qualifiers
+  in
+  populate_for_modules ~scheduler environment project_qualifiers
 
 
 module ReadOnly = struct

@@ -49,6 +49,6 @@ val ast_environment : t -> AstEnvironment.t
 
 val module_tracker : t -> ModuleTracker.t
 
-val populate_for_definitions : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
-
 val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
+
+val populate_for_project_modules : scheduler:Scheduler.t -> t -> unit
