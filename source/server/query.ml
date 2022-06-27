@@ -809,9 +809,9 @@ let rec process_request ~environment ~build_system request =
                  | Result.Error _ -> true)
         in
         let extract_paths path =
-          match String.get path 0 with
-          | '@' -> get_text_file_path_list (String.sub path ~pos:1 ~len:(String.length path - 1))
-          | _ -> [Result.Ok path]
+          match String.chop_prefix path ~prefix:"@" with
+          | None -> [Result.Ok path]
+          | Some arguments_path -> get_text_file_path_list arguments_path
         in
         let find_resolved_types result =
           match result with
