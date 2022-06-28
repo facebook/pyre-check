@@ -62,6 +62,7 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
         builder.create(venv)
 
         pyre_path = venv / "bin" / "pyre"
+        pyre_bin_path = venv / "bin" / "pyre.bin"
         pyre_upgrade_path = venv / "bin" / "pyre-upgrade"
 
         # Confirm that pypi package can be successfully installed
@@ -81,7 +82,8 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
                 f"pyre-check=={version}",
             ]
         )
-        production_assert(pyre_path.exists(), "Pyre was not installed.")
+        production_assert(pyre_path.exists(), "Pyre (client) was not installed.")
+        production_assert(pyre_bin_path.exists(), "Pyre binary (pyre.bin executable) was not installed.")
         production_assert(pyre_upgrade_path.exists(), "Pyre upgrade was not installed.")
 
         # Create test project.
@@ -110,7 +112,7 @@ def run_sanity_test(version: str, use_wheel: bool) -> None:
             # Confirm `pyre` reports errors as expected.
             LOG.warning("Testing `pyre` error reporting...")
             result = subprocess.run(
-                [pyre_path, "--output=json", "check"],
+                [pyre_path, "--binary", pyre_bin_path, "--output=json", "check"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 cwd=temporary_project_path,
