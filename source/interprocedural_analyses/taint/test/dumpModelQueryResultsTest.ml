@@ -7,12 +7,13 @@
 
 open OUnit2
 open Taint
+open TestHelper
 
 let test_dump_model_query_results context =
   let configuration = TaintConfiguration.default in
   (* Test functions *)
   let _ =
-    TestHelper.initialize
+    initialize
       ~models_source:
         {|
       ModelQuery(
@@ -168,7 +169,7 @@ let test_dump_model_query_results context =
   in
   (* Test methods *)
   let _ =
-    TestHelper.initialize
+    initialize
       ~models_source:
         {|
         ModelQuery(
@@ -240,7 +241,7 @@ let test_dump_model_query_results context =
   in
   (* Test correct ModelQuery<->sources for same callable *)
   let _ =
-    TestHelper.initialize
+    initialize
       ~models_source:
         {|
       ModelQuery(

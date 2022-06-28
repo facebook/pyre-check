@@ -8,6 +8,7 @@
 open Core
 open OUnit2
 open Taint
+open TestHelper
 open Pyre
 
 let test_to_json _ =
@@ -70,7 +71,7 @@ let test_invalid_model_query context =
   let error_message =
     try
       let _ =
-        TestHelper.initialize
+        initialize
           ~models_source:
             {|
         ModelQuery(
