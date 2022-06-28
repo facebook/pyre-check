@@ -28,6 +28,10 @@ module Request : sig
         path: PyrePath.t;
         position: Location.position;
       }
+    | ModelQuery of {
+        path: PyrePath.t;
+        query_name: string;
+      }
     | ModulesOfPath of PyrePath.t
     | PathOfModule of Reference.t
     | FindReferences of {
@@ -145,6 +149,7 @@ module Response : sig
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundLocationsOfDefinitions of code_location list
+      | FoundModels of string
       | FoundModules of Ast.Reference.t list
       | FoundPath of string
       | FoundReferences of code_location list

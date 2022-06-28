@@ -36,6 +36,9 @@ Possible queries:
     Allows skipping certain decorators when inlining.
   - less_or_equal(T1, T2)
     Returns whether T1 is a subtype of T2.
+  - model_query(path, 'model_query_name')
+    Returns in JSON a list of all models generated from the query with the name
+    `model_query_name` in the directory `path`.
   - path_of_module(module)
     Gives an absolute path for `module`.
   - save_server_state('path')

@@ -34,6 +34,10 @@ module Request = struct
         path: PyrePath.t;
         position: Location.position;
       }
+    | ModelQuery of {
+        path: PyrePath.t;
+        query_name: string;
+      }
     | ModulesOfPath of PyrePath.t
     | PathOfModule of Reference.t
     | FindReferences of {
@@ -156,6 +160,7 @@ module Response = struct
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundLocationsOfDefinitions of code_location list
+      | FoundModels of string
       | FoundModules of Reference.t list
       | FoundPath of string
       | FoundReferences of code_location list
@@ -248,6 +253,7 @@ module Response = struct
           `List (List.map defines ~f:define_to_yojson)
       | FoundLocationsOfDefinitions locations ->
           `List (List.map locations ~f:code_location_to_yojson)
+      | FoundModels models -> `String models
       | FoundModules references ->
           let reference_to_yojson reference = `String (Reference.show reference) in
           `List (List.map references ~f:reference_to_yojson)
@@ -326,6 +332,11 @@ let help () =
         Some
           "location_of_definition(path='<absolute path>', line=<line>, character=<character>): \
            Returns the location of the definition for the symbol at the given line and character."
+    | ModelQuery _ ->
+        Some
+          "model_query(path='<absolute path>', query_name=<model_query_name>): Returns in JSON a \
+           list of all models generated from the query with the name `query_name` in the directory \
+           `path`."
     | ModulesOfPath _ ->
         Some "modules_of_path(path): Returns the modules of a file pointed to by path."
     | PathOfModule _ -> Some "path_of_module(module): Gives an absolute path for `module`."
@@ -364,6 +375,7 @@ let help () =
       ExpressionLevelCoverage [""];
       IsCompatibleWith (empty, empty);
       LessOrEqual (empty, empty);
+      ModelQuery { path; query_name = "" };
       ModulesOfPath path;
       PathOfModule (Reference.create "");
       SaveServerState path;
@@ -485,6 +497,9 @@ let rec parse_request_exn query =
               path = PyrePath.create_absolute (string path);
               position = { line = integer line; column = integer column };
             }
+      | "model_query", [path; model_query_name] ->
+          Request.ModelQuery
+            { path = PyrePath.create_absolute (string path); query_name = string model_query_name }
       | "modules_of_path", [path] -> Request.ModulesOfPath (PyrePath.create_absolute (string path))
       | "path_of_module", [module_access] -> Request.PathOfModule (reference module_access)
       | "find_references", [path; line; column] ->
@@ -852,6 +867,128 @@ let rec process_request ~environment ~build_system request =
         in
         GlobalResolution.is_compatible_with global_resolution ~left ~right
         |> fun result -> Single (Base.Compatibility { actual = left; expected = right; result })
+    | ModelQuery { path; query_name } -> (
+        if not (PyrePath.file_exists path) then
+          Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
+        else
+          let taint_configuration_result =
+            Taint.TaintConfiguration.create
+              ~rule_filter:None
+              ~find_missing_flows:None
+              ~dump_model_query_results_path:None
+              ~maximum_trace_length:None
+              ~maximum_tito_depth:None
+              ~taint_model_paths:[path]
+          in
+          match taint_configuration_result with
+          | Error (error :: _) -> Error (Taint.TaintConfiguration.Error.show error)
+          | Error _ -> failwith "Taint.TaintConfiguration.create returned empty errors list"
+          | Ok taint_configuration ->
+              let static_analysis_configuration =
+                Configuration.StaticAnalysis.create
+                  (Configuration.Analysis.create ~source_paths:[SearchPath.Root path] ())
+                  ()
+              in
+              let get_model_queries (path, source) =
+                Taint.ModelParser.parse
+                  ~resolution:
+                    (TypeCheck.resolution
+                       global_resolution
+                       (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+                       (module TypeCheck.DummyContext))
+                  ~path
+                  ~source
+                  ~configuration:taint_configuration
+                  ~callables:None
+                  ~stubs:(Interprocedural.Target.HashSet.create ())
+                  ()
+                |> fun { Taint.ModelParser.queries; _ } ->
+                queries
+                |> List.filter ~f:(fun rule ->
+                       String.equal rule.Taint.ModelParser.Internal.ModelQuery.name query_name)
+              in
+              let rules =
+                let sources = Taint.ModelParser.get_model_sources ~paths:[path] in
+                if List.is_empty sources then
+                  failwith
+                    (Format.sprintf
+                       "ModelParser.get_model_sources ~paths:[%s] was empty"
+                       (PyrePath.show path))
+                else
+                  List.concat (List.map sources ~f:get_model_queries)
+              in
+              if List.is_empty rules then
+                Error
+                  (Format.sprintf
+                     "No model query with name `%s` was found in path `%s`"
+                     query_name
+                     (PyrePath.show path))
+              else
+                let get_models_for_query scheduler =
+                  let cache = Taint.Cache.load ~scheduler ~configuration ~enabled:false in
+                  let initial_callables =
+                    Taint.Cache.initial_callables cache (fun () ->
+                        let timer = Timer.start () in
+                        let qualifiers =
+                          ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
+                        in
+                        let initial_callables =
+                          Interprocedural.FetchCallables.from_qualifiers
+                            ~scheduler
+                            ~configuration
+                            ~environment
+                            ~include_unit_tests:false
+                            ~qualifiers
+                        in
+                        Statistics.performance
+                          ~name:"Fetched initial callables to analyze"
+                          ~phase_name:"Fetching initial callables to analyze"
+                          ~timer
+                          ();
+                        initial_callables)
+                  in
+                  TaintModelQuery.ModelQuery.generate_models_from_queries
+                    ~static_analysis_configuration
+                    ~scheduler
+                    ~environment
+                    ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
+                    ~stubs:
+                      (Interprocedural.Target.HashSet.of_list
+                         (Interprocedural.FetchCallables.get_stubs initial_callables))
+                    ~taint_configuration
+                    rules
+                in
+                let models_and_names, _ =
+                  Scheduler.with_scheduler ~configuration ~f:get_models_for_query
+                in
+                let to_json (callable, model) =
+                  `Assoc
+                    [
+                      "callable", `String (Interprocedural.Target.external_name callable);
+                      ( "model",
+                        Taint.Model.to_json
+                          ~expand_overrides:None
+                          ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+                          ~filename_lookup:None
+                          callable
+                          model );
+                    ]
+                in
+                let models =
+                  models_and_names
+                  |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry
+                       ~model_join:Taint.Model.join_user_models
+                  |> Taint.Registry.to_alist
+                in
+                if List.length models == 0 then
+                  Error
+                    (Format.sprintf
+                       "No models found for model query `%s` in path `%s`"
+                       query_name
+                       (PyrePath.show path))
+                else
+                  let models_string = `List (List.map models ~f:to_json) |> Yojson.Safe.to_string in
+                  Single (Base.FoundModels models_string))
     | ModulesOfPath path -> Single (Base.FoundModules (SourcePath.create path |> modules_of_path))
     | LessOrEqual (left, right) ->
         let left = parse_and_validate left in

@@ -116,6 +116,14 @@ let test_parse_query context =
   assert_fails_to_parse "inline_decorators(a.b.c, a.b.d)";
   assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=a.b.decorator1)";
   assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=[a.b.decorator1, 1 + 1])";
+  assert_parses
+    "model_query('/a.py', 'model_query_name')"
+    (ModelQuery { path = PyrePath.create_absolute "/a.py"; query_name = "model_query_name" });
+  assert_parses
+    "model_query(path='/a.py', query_name='model_query_name')"
+    (ModelQuery { path = PyrePath.create_absolute "/a.py"; query_name = "model_query_name" });
+  assert_fails_to_parse "model_query(/a.py, 'model_query_name')";
+  assert_fails_to_parse "model_query('/a.py', model_query_name)";
   assert_parses "modules_of_path('/a.py')" (ModulesOfPath (PyrePath.create_absolute "/a.py"));
   assert_parses
     "location_of_definition(path='/foo.py', line=42, column=10)"
