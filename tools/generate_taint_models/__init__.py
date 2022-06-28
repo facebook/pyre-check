@@ -249,6 +249,7 @@ def run_generators(
         format="%(asctime)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         level=logging.DEBUG if verbose or arguments.verbose else logging.INFO,
+        force=True,
     )
     return run_from_parsed_arguments(
         generator_options,
