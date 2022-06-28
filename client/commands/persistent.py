@@ -1359,6 +1359,39 @@ class PyreQueryHandler(connection.BackgroundTask):
             ),
         )
 
+    async def _handle_find_all_references_query(
+        self, query: ReferencesQuery, socket_path: Path
+    ) -> None:
+        path_string = f"'{query.path}'"
+        query_text = (
+            f"find_references(path={path_string},"
+            f" line={query.position.line}, column={query.position.character})"
+        )
+        find_all_references_response = await self._query_and_interpret_response(
+            query_text, socket_path, DefinitionLocationResponse
+        )
+        reference_locations = (
+            [
+                response.to_lsp_definition_response()
+                for response in find_all_references_response.response
+            ]
+            if find_all_references_response is not None
+            else []
+        )
+        await lsp.write_json_rpc(
+            self.client_output_channel,
+            json_rpc.SuccessResponse(
+                id=query.id,
+                activity_key=query.activity_key,
+                # pyre-ignore[16]: Pyre does not understand
+                # `dataclasses_json`.
+                result=lsp.LspDefinitionResponse.schema().dump(
+                    reference_locations,
+                    many=True,
+                ),
+            ),
+        )
+
     async def _run(self, server_start_options: "PyreServerStartOptions") -> None:
         start_arguments = server_start_options.start_arguments
         socket_path = server_connection.get_default_socket_path(
@@ -1381,6 +1414,8 @@ class PyreQueryHandler(connection.BackgroundTask):
                 )
             elif isinstance(query, DefinitionLocationQuery):
                 await self._query_and_send_definition_location(query, socket_path)
+            elif isinstance(query, ReferencesQuery):
+                await self._handle_find_all_references_query(query, socket_path)
 
     def read_server_start_options(self) -> "PyreServerStartOptions":
         try:
