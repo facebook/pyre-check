@@ -6,18 +6,20 @@
 # pyre-strict
 
 import argparse
+import enum
 import json
 import logging
 import os
 import sys
 import time
+import traceback
 from dataclasses import dataclass
 from itertools import chain
 from typing import AbstractSet, Dict, List, Mapping, Optional, Set
 
 from typing_extensions import Final
 
-from ...api.connection import PyreConnection
+from ...api.connection import PyreConnection, PyreStartError, Error as PyreQueryError
 from ...client import statistics_logger
 from .annotated_function_generator import (  # noqa
     AnnotatedFunctionGenerator,
@@ -49,6 +51,26 @@ from .model_generator import ModelGenerator
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+class ExitCode(enum.IntEnum):
+    SUCCESS = 0
+
+    # Unexpected internal error
+    INTERNAL_ERROR = 1
+
+    # Error that originated from the user's code, not the model generator.
+    # For instance, when importing modules or initializing things.
+    USER_ERROR = 2
+
+    # Pyre start errors
+    PYRE_INTERNAL_ERROR = 3
+    BUCK_INTERNAL_ERROR = 4
+    BUCK_USER_ERROR = 5
+    CONFIGURATION_ERROR = 6
+    WATCHMAN_ERROR = 7
+
+    PYRE_QUERY_ERROR = 8
 
 
 @dataclass
@@ -140,48 +162,78 @@ def run_from_parsed_arguments(
     logger_executable: Optional[str] = None,
     include_default_modes: bool = False,
     pyre_connection: Optional[PyreConnection] = None,
-) -> None:
-    argument_modes = arguments.mode or []
-    if len(argument_modes) == 0 or include_default_modes:
-        modes = list(set(argument_modes + default_modes))
-    else:
-        modes = argument_modes
+) -> int:
+    try:
+        argument_modes = arguments.mode or []
+        if len(argument_modes) == 0 or include_default_modes:
+            modes = list(set(argument_modes + default_modes))
+        else:
+            modes = argument_modes
 
-    if pyre_connection is not None and arguments.no_saved_state:
-        pyre_connection.add_arguments("--no-saved-state")
-    isolation_prefix = arguments.isolation_prefix
-    if pyre_connection is not None and isolation_prefix is not None:
-        pyre_connection.add_arguments("--isolation-prefix", isolation_prefix)
+        if pyre_connection is not None and arguments.no_saved_state:
+            pyre_connection.add_arguments("--no-saved-state")
+        isolation_prefix = arguments.isolation_prefix
+        if pyre_connection is not None and isolation_prefix is not None:
+            pyre_connection.add_arguments("--isolation-prefix", isolation_prefix)
 
-    generated_models: Dict[str, Set[Model]] = {}
-    for mode in modes:
-        LOG.info("Computing models for `%s`", mode)
-        if mode not in generator_options.keys():
-            LOG.warning(f"Unknown mode `{mode}`, skipping.")
-            continue
-        start = time.time()
-        generated_models[mode] = set(generator_options[mode].generate_models())
-        elapsed_time_seconds = time.time() - start
-        LOG.info(f"Computed models for `{mode}` in {elapsed_time_seconds:.3f} seconds.")
-
-        if logger_executable is not None:
-            elapsed_time_milliseconds = int(elapsed_time_seconds * 1000)
-            statistics_logger.log(
-                statistics_logger.LoggerCategory.PERFORMANCE,
-                integers={"time": elapsed_time_milliseconds},
-                normals={
-                    "name": "model generation",
-                    "model kind": mode,
-                    "command_line": " ".join(sys.argv),
-                },
-                logger=logger_executable,
+        generated_models: Dict[str, Set[Model]] = {}
+        for mode in modes:
+            LOG.info("Computing models for `%s`", mode)
+            if mode not in generator_options.keys():
+                LOG.warning(f"Unknown mode `{mode}`, skipping.")
+                continue
+            start = time.time()
+            generated_models[mode] = set(generator_options[mode].generate_models())
+            elapsed_time_seconds = time.time() - start
+            LOG.info(
+                f"Computed models for `{mode}` in {elapsed_time_seconds:.3f} seconds."
             )
 
-    _report_results(generated_models, arguments.output_directory)
+            if logger_executable is not None:
+                elapsed_time_milliseconds = int(elapsed_time_seconds * 1000)
+                statistics_logger.log(
+                    statistics_logger.LoggerCategory.PERFORMANCE,
+                    integers={"time": elapsed_time_milliseconds},
+                    normals={
+                        "name": "model generation",
+                        "model kind": mode,
+                        "command_line": " ".join(sys.argv),
+                    },
+                    logger=logger_executable,
+                )
 
-    if pyre_connection is not None and arguments.stop_pyre_server:
-        LOG.info("Stopping the pyre server.")
-        pyre_connection.stop_server(ignore_errors=True)
+        _report_results(generated_models, arguments.output_directory)
+
+        if pyre_connection is not None and arguments.stop_pyre_server:
+            LOG.info("Stopping the pyre server.")
+            pyre_connection.stop_server(ignore_errors=True)
+
+        return ExitCode.SUCCESS
+    except PyreStartError as error:
+        # See client/commands/commands.py
+        if error.exit_code == 3:
+            LOG.error("Error while starting a pyre server: buck internal error")
+            return ExitCode.BUCK_INTERNAL_ERROR
+        elif error.exit_code == 7:
+            LOG.error("Error while starting a pyre server: buck user error")
+            return ExitCode.BUCK_USER_ERROR
+        elif error.exit_code == 6:
+            LOG.error("Error while starting a pyre server: configuration error")
+            return ExitCode.CONFIGURATION_ERROR
+        elif error.exit_code == 8:
+            LOG.error("Error while starting a pyre server: watchman error")
+            return ExitCode.WATCHMAN_ERROR
+        else:
+            LOG.error(str(error))
+            return ExitCode.PYRE_INTERNAL_ERROR
+    except PyreQueryError as error:
+        LOG.error(str(error))
+        traceback.print_exc()
+        return ExitCode.PYRE_QUERY_ERROR
+    except Exception as error:
+        LOG.error(str(error))
+        traceback.print_exc()
+        return ExitCode.INTERNAL_ERROR
 
 
 def run_generators(
@@ -191,14 +243,14 @@ def run_generators(
     logger_executable: Optional[str] = None,
     include_default_modes: bool = False,
     pyre_connection: Optional[PyreConnection] = None,
-) -> None:
+) -> int:
     arguments = _parse_arguments(generator_options)
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         level=logging.DEBUG if verbose or arguments.verbose else logging.INFO,
     )
-    run_from_parsed_arguments(
+    return run_from_parsed_arguments(
         generator_options,
         arguments,
         default_modes,

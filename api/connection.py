@@ -35,7 +35,21 @@ class PyreQueryResult(TypedDict):
     response: Any
 
 
-class PyreQueryError(Exception):
+class Error(Exception):
+    pass
+
+
+class PyreStartError(Error):
+    def __init__(self, message: str, exit_code: int) -> None:
+        super().__init__(message)
+        self.exit_code: int = exit_code
+
+
+class PyreQueryUnexpectedError(Error):
+    pass
+
+
+class PyreQueryError(Error):
     pass
 
 
@@ -100,11 +114,13 @@ class PyreConnection:
         try:
             response = json.loads(response)
         except json.decoder.JSONDecodeError as decode_error:
-            raise PyreQueryError(f"`{response} is not valid JSON.") from decode_error
+            raise PyreQueryUnexpectedError(
+                f"`{response} is not valid JSON."
+            ) from decode_error
         if "error" in response:
             raise PyreQueryError(response["error"])
         if "response" not in response:
-            raise PyreQueryError(
+            raise PyreQueryUnexpectedError(
                 'The server response is invalid: It does not contain an "error" or'
                 f'"response" field. Response: `{response}`."'
             )
@@ -114,8 +130,9 @@ class PyreConnection:
         if not self.server_initialized:
             result = self.start_server()
             if result.exit_code not in (ExitCode.SUCCESS, ExitCode.FOUND_ERRORS):
-                raise PyreQueryError(
-                    f"Error while starting a pyre server, Pyre exited with a code of {result.exit_code}."
+                raise PyreStartError(
+                    f"Error while starting a pyre server, Pyre exited with a code of {result.exit_code}.",
+                    exit_code=result.exit_code,
                 )
 
         LOG.debug(f"Running query: `pyre query '{query}'`")
@@ -125,7 +142,7 @@ class PyreConnection:
             cwd=str(self.pyre_directory),
         )
         if result.returncode != 0:
-            raise PyreQueryError(
+            raise PyreQueryUnexpectedError(
                 f"Error while running query, Pyre exited with a code of {result.returncode}."
             )
         return self._validate_query_response(result.stdout.decode())

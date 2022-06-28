@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import call, MagicMock, patch
 
-from ..connection import PyreConnection, PyreQueryError
+from ..connection import PyreConnection, PyreQueryError, PyreQueryUnexpectedError
 
 
 class ConnectionApiTest(unittest.TestCase):
@@ -113,9 +113,11 @@ class ConnectionApiTest(unittest.TestCase):
     def test_validate_query_response(self) -> None:
         with self.assertRaisesRegex(PyreQueryError, "Foo"):
             PyreConnection._validate_query_response('{"error": "Foo"}')
-        with self.assertRaisesRegex(PyreQueryError, "is not valid JSON."):
+        with self.assertRaisesRegex(PyreQueryUnexpectedError, "is not valid JSON."):
             PyreConnection._validate_query_response("asdf")
-        with self.assertRaisesRegex(PyreQueryError, "The server response is invalid."):
+        with self.assertRaisesRegex(
+            PyreQueryUnexpectedError, "The server response is invalid."
+        ):
             PyreConnection._validate_query_response("{}")
         self.assertEqual(
             PyreConnection._validate_query_response('{"response": "Foo"}'),
