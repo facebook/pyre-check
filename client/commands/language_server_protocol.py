@@ -383,6 +383,7 @@ class ServerCapabilities:
     hover_provider: Optional[bool] = None
     definition_provider: Optional[bool] = None
     document_symbol_provider: Optional[bool] = None
+    references_provider: Optional[bool] = None
 
 
 @dataclasses_json.dataclass_json(
