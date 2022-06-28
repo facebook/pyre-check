@@ -874,7 +874,7 @@ class PyreServer:
                     activity_key=activity_key,
                     # pyre-ignore[16]: Pyre does not understand
                     # `dataclasses_json`.
-                    result=lsp.ReferencesResponse.schema().dump([], many=True),
+                    result=lsp.LspDefinitionResponse.schema().dump([], many=True),
                 ),
             )
             return
@@ -1368,7 +1368,7 @@ class PyreQueryHandler(connection.BackgroundTask):
             f" line={query.position.line}, column={query.position.character})"
         )
         find_all_references_response = await self._query_and_interpret_response(
-            query_text, socket_path, DefinitionLocationResponse
+            query_text, socket_path, ReferencesResponse
         )
         reference_locations = (
             [

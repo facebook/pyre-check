@@ -577,8 +577,13 @@ class ReferencesTextDocumentParameters:
 class ReferencesResponse:
     """Contains code location of one reference."""
 
-    uri: str
-    range: LspRange
+    path: str
+    range: Range
+
+    def to_lsp_definition_response(
+        self,
+    ) -> "LspDefinitionResponse":
+        return LspDefinitionResponse(uri=self.path, range=self.range.to_lsp_range())
 
 
 @dataclasses_json.dataclass_json(
