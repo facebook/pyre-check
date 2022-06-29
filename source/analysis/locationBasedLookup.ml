@@ -750,43 +750,48 @@ let resolve_definition_for_name ~resolution ~module_reference ~define_name ~stat
   | _ -> None
 
 
+let resolution_from_cfg_data
+    ~type_environment
+    ~use_postcondition_info
+    { define_name; node_id; statement_index }
+  =
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
+  let coverage_data_lookup_map =
+    TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment define_name
+    |> function
+    | Some coverage_data_lookup_map -> coverage_data_lookup_map
+    | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
+  in
+  let annotation_store =
+    let statement_key = [%hash: int * int] (node_id, statement_index) in
+    if use_postcondition_info then
+      LocalAnnotationMap.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
+      |> Option.value ~default:Refinement.Store.empty
+    else
+      LocalAnnotationMap.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
+      |> Option.value ~default:Refinement.Store.empty
+  in
+  (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+  TypeCheck.resolution global_resolution ~annotation_store (module TypeCheck.DummyContext)
+
+
 let resolve_definition_for_symbol
     ~type_environment
     ~module_reference
     {
       symbol_with_definition;
-      cfg_data = { define_name; node_id; statement_index };
+      cfg_data = { define_name; node_id; statement_index } as cfg_data;
       use_postcondition_info;
     }
   =
   let timer = Timer.start () in
-  let resolution =
-    let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
-    let coverage_data_lookup_map =
-      TypeEnvironment.ReadOnly.get_or_recompute_local_annotations type_environment define_name
-      |> function
-      | Some coverage_data_lookup_map -> coverage_data_lookup_map
-      | None -> LocalAnnotationMap.empty () |> LocalAnnotationMap.read_only
-    in
-    let annotation_store =
-      let statement_key = [%hash: int * int] (node_id, statement_index) in
-      if use_postcondition_info then
-        LocalAnnotationMap.ReadOnly.get_postcondition coverage_data_lookup_map ~statement_key
-        |> Option.value ~default:Refinement.Store.empty
-      else
-        LocalAnnotationMap.ReadOnly.get_precondition coverage_data_lookup_map ~statement_key
-        |> Option.value ~default:Refinement.Store.empty
-    in
-    (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-    TypeCheck.resolution global_resolution ~annotation_store (module TypeCheck.DummyContext)
-  in
   let definition_location =
     match symbol_with_definition with
     | Expression expression
     | TypeAnnotation expression ->
         let statement_key = [%hash: int * int] (node_id, statement_index) in
         resolve_definition_for_name
-          ~resolution
+          ~resolution:(resolution_from_cfg_data ~type_environment ~use_postcondition_info cfg_data)
           ~module_reference
           ~define_name
           ~statement_key
