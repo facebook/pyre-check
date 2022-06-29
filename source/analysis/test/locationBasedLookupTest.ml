@@ -13,6 +13,63 @@ open Pyre
 open Expression
 open Test
 
+(* Find position of the indicator in [source].
+
+   `# ^- <indicator>` refers to the position on the previous line. *)
+let find_indicator_position ~source indicator_name =
+  let extract_indicator_position line_number line =
+    match String.substr_index line ~pattern:("^- " ^ indicator_name) with
+    | Some column -> Some { Location.line = line_number; column }
+    | _ -> None
+  in
+  let indicator_position =
+    trim_extra_indentation source
+    |> String.split_lines
+    |> List.find_mapi ~f:extract_indicator_position
+  in
+  Option.value_exn
+    ~message:(Format.asprintf "Expected a comment with an arrow (`^- %s`)" indicator_name)
+    indicator_position
+
+
+let find_indicated_multi_line_range source =
+  let find_start line_number line =
+    match String.substr_index line ~pattern:"start line" with
+    | Some _ ->
+        (* The indicator points to the start of the current line. *)
+        let start_column = String.lfindi line ~f:(fun _ character -> character != ' ') in
+        Some { Location.line = line_number + 1; column = Option.value_exn start_column }
+    | None -> None
+  in
+  let find_stop line_number line =
+    match String.substr_index line ~pattern:"stop line" with
+    | Some _ ->
+        (* The indicator points to the end of the current line. *)
+        let stop_column =
+          String.chop_suffix_exn ~suffix:"# stop line" line |> String.rstrip |> String.length
+        in
+        Some { Location.line = line_number + 1; column = stop_column }
+    | _ -> None
+  in
+  let lines = trim_extra_indentation source |> String.split_lines in
+  Option.both (List.find_mapi lines ~f:find_start) (List.find_mapi lines ~f:find_stop)
+  >>| fun (start, stop) -> { Location.start; stop }
+
+
+let find_indicated_single_line_range source =
+  let extract_indicator_range line_number line =
+    match String.substr_index_all line ~pattern:"^" ~may_overlap:false with
+    | [start; stop] ->
+        Some
+          {
+            Location.start = { Location.line = line_number; column = start };
+            stop = { Location.line = line_number; column = stop };
+          }
+    | _ -> None
+  in
+  trim_extra_indentation source |> String.split_lines |> List.find_mapi ~f:extract_indicator_range
+
+
 let show_location { Location.start; stop } =
   Format.asprintf "%a-%a" Location.pp_position start Location.pp_position stop
 
@@ -196,19 +253,6 @@ let test_find_narrowest_spanning_symbol context =
   in
   let open LocationBasedLookup in
   let assert_narrowest_expression ?(external_sources = []) ~source expected =
-    let cursor_position =
-      let cursor_pattern = "^-- CURSOR" in
-      let extract_cursor_position line_number line =
-        String.substr_index line ~pattern:cursor_pattern
-        >>| fun column -> { Location.line = line_number; column }
-      in
-      let cursor_position =
-        trim_extra_indentation source
-        |> String.split_lines
-        |> List.find_mapi ~f:extract_cursor_position
-      in
-      Option.value_exn ~message:"Expected a comment pointing to the cursor" cursor_position
-    in
     let type_environment =
       let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] ~external_sources
@@ -224,12 +268,12 @@ let test_find_narrowest_spanning_symbol context =
       (LocationBasedLookup.find_narrowest_spanning_symbol
          ~type_environment
          ~module_reference:!&"test"
-         cursor_position)
+         (find_indicator_position ~source "cursor"))
   in
   assert_narrowest_expression
     ~source:{|
         def getint() -> int:
-        #   ^-- CURSOR
+        #   ^- cursor
           return 12
     |}
     (Some
@@ -241,7 +285,7 @@ let test_find_narrowest_spanning_symbol context =
   assert_narrowest_expression
     ~source:{|
         def getint() -> int:
-        #  ^-- CURSOR
+        #  ^- cursor
           return 12
     |}
     None;
@@ -249,7 +293,7 @@ let test_find_narrowest_spanning_symbol context =
     ~source:
       {|
         def getint() -> int:
-        #               ^-- CURSOR
+        #               ^- cursor
           return 12
     |}
     (Some
@@ -262,7 +306,7 @@ let test_find_narrowest_spanning_symbol context =
     ~external_sources
     ~source:{|
         from library import Base
-        #                   ^-- CURSOR
+        #                   ^- cursor
     |}
     (Some
        {
@@ -274,7 +318,7 @@ let test_find_narrowest_spanning_symbol context =
     ~source:
       {|
         from .library import Base as MyBase
-                                    # ^-- CURSOR
+                                    # ^- cursor
     |}
     (Some
        {
@@ -285,7 +329,7 @@ let test_find_narrowest_spanning_symbol context =
   assert_narrowest_expression
     ~source:{|
         import library
-        #        ^-- CURSOR
+        #        ^- cursor
     |}
     (Some
        {
@@ -297,7 +341,7 @@ let test_find_narrowest_spanning_symbol context =
     ~source:
       {|
         from . import library as my_library
-                                    # ^-- CURSOR
+                                    # ^- cursor
     |}
     (Some
        {
@@ -311,7 +355,7 @@ let test_find_narrowest_spanning_symbol context =
         from . import library as my_library
 
         x = my_library.Base()
-        #    ^-- CURSOR
+        #    ^- cursor
     |}
     (Some
        {
@@ -324,7 +368,7 @@ let test_find_narrowest_spanning_symbol context =
     ~source:{|
         from b import x
         print(x)
-           #  ^-- CURSOR
+           #  ^- cursor
     |}
     (Some
        {
@@ -337,7 +381,7 @@ let test_find_narrowest_spanning_symbol context =
     ~source:{|
         from b import x as y
         print(y)
-           #  ^-- CURSOR
+           #  ^- cursor
     |}
     (Some
        {
@@ -350,7 +394,7 @@ let test_find_narrowest_spanning_symbol context =
     ~source:{|
         from b import x as y
         print(y.Foo)
-              #  ^-- CURSOR
+              #  ^- cursor
     |}
     (Some
        {
@@ -363,7 +407,7 @@ let test_find_narrowest_spanning_symbol context =
     ~source:{|
         from b import x as y
         print(y)
-           #  ^-- CURSOR
+           #  ^- cursor
     |}
     (Some
        {
@@ -377,7 +421,7 @@ let test_find_narrowest_spanning_symbol context =
       {|
         import my_placeholder_stub
         print(my_placeholder_stub)
-           #  ^-- CURSOR
+           #  ^- cursor
     |}
     (Some
        {
@@ -391,7 +435,7 @@ let test_find_narrowest_spanning_symbol context =
       {|
         from my_placeholder_stub import x as y
         print(y.Foo)
-              #  ^-- CURSOR
+              #  ^- cursor
     |}
     (Some
        {
@@ -400,10 +444,9 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = false;
        });
   assert_narrowest_expression
-    ~source:
-      {|
+    ~source:{|
         def foo(a: int, b: str) -> None: ...
-        #               ^-- CURSOR
+        #               ^- cursor
     |}
     (Some
        {
@@ -418,7 +461,7 @@ let test_find_narrowest_spanning_symbol context =
       {|
         def foo(a: int, b: str) -> None:
           x = a
-        #     ^-- CURSOR
+        #     ^- cursor
     |}
     (Some
        {
@@ -433,7 +476,7 @@ let test_find_narrowest_spanning_symbol context =
       {|
         def foo() -> None:
           xs: list[str] = ["a", "b"]
-        # ^-- CURSOR
+        # ^- cursor
     |}
     (Some
        {
@@ -449,7 +492,7 @@ let test_find_narrowest_spanning_symbol context =
       {|
         def foo() -> None:
           xs: list[str] = ["a", "b"]
-        #                 ^-- CURSOR
+        #                 ^- cursor
     |}
     (Some
        {
@@ -462,7 +505,7 @@ let test_find_narrowest_spanning_symbol context =
       {|
         def foo() -> None:
           xs: list[str] = ["a", "b"]
-        #     ^-- CURSOR
+        #     ^- cursor
     |}
     (Some
        {
@@ -477,7 +520,7 @@ let test_find_narrowest_spanning_symbol context =
         from library import Base
         def foo() -> None:
           print(Base())
-        #       ^-- CURSOR
+        #       ^- cursor
     |}
     (Some
        {
@@ -495,7 +538,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           getint() + 2
-        #          ^-- CURSOR
+        #          ^- cursor
     |}
     (Some
        {
@@ -511,7 +554,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           return_str().capitalize().lower()
-        #              ^-- CURSOR
+        #              ^- cursor
     |}
     (Some
        {
@@ -526,7 +569,7 @@ let test_find_narrowest_spanning_symbol context =
       class Foo:
         def bar(self) -> None:
             print(self.foo())
-        #         ^-- CURSOR
+        #         ^- cursor
     |}
     (Some
        {
@@ -543,7 +586,7 @@ let test_find_narrowest_spanning_symbol context =
       class Foo:
         def bar(self) -> None:
             print(self.foo())
-        #              ^-- CURSOR
+        #              ^- cursor
         def foo(self) -> int:
           return 42
     |}
@@ -571,7 +614,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           takes_int(x=42)
-        #             ^-- CURSOR
+        #             ^- cursor
     |}
     (Some
        {
@@ -588,7 +631,7 @@ let test_find_narrowest_spanning_symbol context =
           some_attribute: Foo = Foo()
 
         Bar().some_attribute
-        #             ^-- CURSOR
+        #             ^- cursor
     |}
     (Some
        {
@@ -603,7 +646,7 @@ let test_find_narrowest_spanning_symbol context =
 
         class Bar:
           some_attribute: Foo = Foo()
-        #                 ^-- CURSOR
+        #                 ^- cursor
     |}
     (Some
        {
@@ -626,7 +669,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def test() -> None:
           Bar().foo().bar()
-        #             ^-- CURSOR
+        #             ^- cursor
     |}
     (Some
        {
@@ -638,7 +681,7 @@ let test_find_narrowest_spanning_symbol context =
     ~source:{|
         def foo(x: str) -> None:
           print(x)
-        #       ^-- CURSOR
+        #       ^- cursor
     |}
     (Some
        {
@@ -654,7 +697,7 @@ let test_find_narrowest_spanning_symbol context =
         def foo() -> None:
           x = 42
           print(x)
-        #       ^-- CURSOR
+        #       ^- cursor
     |}
     (Some
        {
@@ -671,7 +714,7 @@ let test_find_narrowest_spanning_symbol context =
         def foo() -> None:
           with open() as f:
             f.readline()
-        #   ^-- CURSOR
+        #   ^- cursor
     |}
     (Some
        {
@@ -687,7 +730,7 @@ let test_find_narrowest_spanning_symbol context =
         def foo() -> None:
           for x in [1]:
             print(x)
-        #         ^-- CURSOR
+        #         ^- cursor
     |}
     (Some
        {
@@ -706,7 +749,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           Foo.my_static_method()
-        #         ^-- CURSOR
+        #         ^- cursor
     |}
     (Some
        {
@@ -723,7 +766,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           Foo.my_class_method()
-        #         ^-- CURSOR
+        #         ^- cursor
     |}
     (Some
        {
@@ -739,7 +782,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo() -> None:
           Foo.my_method()
-        #         ^-- CURSOR
+        #         ^- cursor
     |}
     (Some
        {
@@ -754,7 +797,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo(my_dictionary: Dict[str, int]) -> None:
           my_dictionary["hello"]
-        #         ^-- CURSOR
+        #         ^- cursor
     |}
     (Some
        {
@@ -772,7 +815,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo(my_dictionary: Dict[str, int]) -> None:
           my_dictionary.__getitem__("hello")
-        #                 ^-- CURSOR
+        #                 ^- cursor
     |}
     (Some
        {
@@ -799,7 +842,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def foo(my_dictionary: Dict[str, int]) -> None:
           my_dictionary["hello"]
-        #              ^-- CURSOR
+        #              ^- cursor
     |}
     (Some
        {
@@ -843,7 +886,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def main(foo: Foo) -> None:
           print(foo.my_attribute)
-        #              ^-- CURSOR
+        #              ^- cursor
     |}
     (Some
        {
@@ -873,7 +916,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def main(foo: Foo) -> None:
           if foo.my_attribute:
-            #        ^-- CURSOR
+            #        ^- cursor
             print("hello")
     |}
     (Some
@@ -905,7 +948,7 @@ let test_find_narrowest_spanning_symbol context =
 
         def main(foo: Foo) -> None:
           if foo.my_attribute and not foo.other_attribute:
-            #                               ^-- CURSOR
+            #                               ^- cursor
             print("hello")
     |}
     (Some
@@ -930,7 +973,7 @@ let test_find_narrowest_spanning_symbol context =
       {|
         def getint(xs: list[int]) -> None:
           for x in xs:
-            #      ^-- CURSOR
+            #      ^- cursor
             pass
     |}
     (Some
@@ -946,7 +989,7 @@ let test_find_narrowest_spanning_symbol context =
       {|
         def foo(xs: list[int]) -> None:
           print(f"xs: {xs}")
-          #            ^-- CURSOR
+          #            ^- cursor
     |}
     (Some
        {
@@ -961,7 +1004,7 @@ let test_find_narrowest_spanning_symbol context =
       {|
         def foo(xs: list[int]) -> None:
           print(f"xs: {xs.append(xs)}")
-          #                  ^-- CURSOR
+          #                  ^- cursor
     |}
     (Some
        {
@@ -981,12 +1024,11 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = false;
        });
   assert_narrowest_expression
-    ~source:
-      {|
+    ~source:{|
         from typing import Callable
 
         f: Callable
-        #   ^-- CURSOR
+        #   ^- cursor
     |}
     (Some
        {
@@ -995,63 +1037,6 @@ let test_find_narrowest_spanning_symbol context =
          use_postcondition_info = false;
        });
   ()
-
-
-(* Find position of the indicator in [source].
-
-   `# ^- <indicator>` refers to the position on the previous line. *)
-let find_indicator_position ~source indicator_name =
-  let extract_indicator_position line_number line =
-    match String.substr_index line ~pattern:("^- " ^ indicator_name) with
-    | Some column -> Some { Location.line = line_number; column }
-    | _ -> None
-  in
-  let indicator_position =
-    trim_extra_indentation source
-    |> String.split_lines
-    |> List.find_mapi ~f:extract_indicator_position
-  in
-  Option.value_exn
-    ~message:(Format.asprintf "Expected a comment with an arrow (`^- %s`)" indicator_name)
-    indicator_position
-
-
-let find_indicated_multi_line_range source =
-  let find_start line_number line =
-    match String.substr_index line ~pattern:"start line" with
-    | Some _ ->
-        (* The indicator points to the start of the current line. *)
-        let start_column = String.lfindi line ~f:(fun _ character -> character != ' ') in
-        Some { Location.line = line_number + 1; column = Option.value_exn start_column }
-    | None -> None
-  in
-  let find_stop line_number line =
-    match String.substr_index line ~pattern:"stop line" with
-    | Some _ ->
-        (* The indicator points to the end of the current line. *)
-        let stop_column =
-          String.chop_suffix_exn ~suffix:"# stop line" line |> String.rstrip |> String.length
-        in
-        Some { Location.line = line_number + 1; column = stop_column }
-    | _ -> None
-  in
-  let lines = trim_extra_indentation source |> String.split_lines in
-  Option.both (List.find_mapi lines ~f:find_start) (List.find_mapi lines ~f:find_stop)
-  >>| fun (start, stop) -> { Location.start; stop }
-
-
-let find_indicated_single_line_range source =
-  let extract_indicator_range line_number line =
-    match String.substr_index_all line ~pattern:"^" ~may_overlap:false with
-    | [start; stop] ->
-        Some
-          {
-            Location.start = { Location.line = line_number; column = start };
-            stop = { Location.line = line_number; column = stop };
-          }
-    | _ -> None
-  in
-  trim_extra_indentation source |> String.split_lines |> List.find_mapi ~f:extract_indicator_range
 
 
 let test_resolve_definition_for_symbol context =
