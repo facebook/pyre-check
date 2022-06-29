@@ -854,8 +854,82 @@ let test_find_narrowest_spanning_symbol context =
   ()
 
 
+(* Find position of the indicator in [source].
+
+   `# ^- <indicator>` refers to the position on the previous line. *)
+let find_indicator_position ~source indicator_name =
+  let extract_indicator_position line_number line =
+    match String.substr_index line ~pattern:("^- " ^ indicator_name) with
+    | Some column -> Some { Location.line = line_number; column }
+    | _ -> None
+  in
+  let indicator_position =
+    trim_extra_indentation source
+    |> String.split_lines
+    |> List.find_mapi ~f:extract_indicator_position
+  in
+  Option.value_exn
+    ~message:(Format.asprintf "Expected a comment with an arrow (`^- %s`)" indicator_name)
+    indicator_position
+
+
+let find_indicated_multi_line_range source =
+  let find_start line_number line =
+    match String.substr_index line ~pattern:"start line" with
+    | Some _ ->
+        (* The indicator points to the start of the current line. *)
+        let start_column = String.lfindi line ~f:(fun _ character -> character != ' ') in
+        Some { Location.line = line_number + 1; column = Option.value_exn start_column }
+    | None -> None
+  in
+  let find_stop line_number line =
+    match String.substr_index line ~pattern:"stop line" with
+    | Some _ ->
+        (* The indicator points to the end of the current line. *)
+        let stop_column =
+          String.chop_suffix_exn ~suffix:"# stop line" line |> String.rstrip |> String.length
+        in
+        Some { Location.line = line_number + 1; column = stop_column }
+    | _ -> None
+  in
+  let lines = trim_extra_indentation source |> String.split_lines in
+  Option.both (List.find_mapi lines ~f:find_start) (List.find_mapi lines ~f:find_stop)
+  >>| fun (start, stop) -> { Location.start; stop }
+
+
+let find_indicated_single_line_range source =
+  let extract_indicator_range line_number line =
+    match String.substr_index_all line ~pattern:"^" ~may_overlap:false with
+    | [start; stop] ->
+        Some
+          {
+            Location.start = { Location.line = line_number; column = start };
+            stop = { Location.line = line_number; column = stop };
+          }
+    | _ -> None
+  in
+  trim_extra_indentation source |> String.split_lines |> List.find_mapi ~f:extract_indicator_range
+
+
 let test_resolve_definition_for_symbol context =
-  let assert_resolved_definition ?(external_sources = []) ~source symbol_data expected =
+  let default_external_sources =
+    [
+      ( "library.py",
+        {|
+      class Base: ...
+
+      def return_str() -> str:
+          return "hello"
+    |} );
+    ]
+  in
+  let module_reference = !&"test" in
+  let assert_resolved_definition_with_explicit_location
+      ?(external_sources = default_external_sources)
+      ~source
+      symbol_data
+      expected
+    =
     let type_environment =
       let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
         ScratchProject.setup ~context ["test.py", source] ~external_sources
@@ -872,55 +946,68 @@ let test_resolve_definition_for_symbol context =
          ~module_reference:!&"test"
          symbol_data)
   in
-  let external_sources =
-    [
-      ( "library.py",
-        {|
-      class Base: ...
-
-      def return_str() -> str:
-          return "hello"
-    |} );
-    ]
+  let assert_resolved_definition ?external_sources source =
+    let expected_definition_location =
+      if String.is_substring ~substring:"# No definition found" source then
+        None
+      else
+        let location =
+          Option.first_some
+            (find_indicated_single_line_range source)
+            (find_indicated_multi_line_range source)
+        in
+        Option.value_exn
+          ~message:
+            "Expected either a comment with two carets (e.g., ^____^) or comments with `start \
+             line` and `stop line`"
+          location
+        |> Location.with_module ~module_reference
+        |> Option.some
+    in
+    let type_environment =
+      let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] ?external_sources
+        |> ScratchProject.build_type_environment
+      in
+      type_environment
+    in
+    let symbol_data =
+      LocationBasedLookup.find_narrowest_spanning_symbol
+        ~type_environment
+        ~module_reference
+        (find_indicator_position ~source "cursor")
+    in
+    assert_equal
+      ~cmp:[%compare.equal: Location.WithModule.t option]
+      ~printer:[%show: Location.WithModule.t option]
+      expected_definition_location
+      (symbol_data
+      >>= LocationBasedLookup.resolve_definition_for_symbol ~type_environment ~module_reference)
   in
   let open LocationBasedLookup in
   assert_resolved_definition
-    ~source:{|
-        def getint() -> int:
-          return 42
-    |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "test.getint");
-      cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:2:0-3:11");
+    {|
+        def getint() -> int: # start line
+          #    ^- cursor
+
+          return 42          # stop line
+    |};
   assert_resolved_definition
-    ~source:{|
+    {|
         def foo(a: int, b: str) -> None: ...
-    |}
-    {
-      symbol_with_definition =
-        Expression
-          (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$b")));
-      cfg_data = { define_name = !&"test.foo"; node_id = 0; statement_index = 0 };
-      use_postcondition_info = true;
-    }
-    None;
+          #             ^- cursor
+
+        # No definition found.
+    |};
   assert_resolved_definition
-    ~source:{|
+    {|
         def foo(x: str) -> None:
+          #     ^     ^
+
           print(x)
-    |}
-    {
-      symbol_with_definition =
-        Expression
-          (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$x")));
-      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:2:8-2:14");
-  assert_resolved_definition
+          #     ^- cursor
+    |};
+  assert_resolved_definition_with_explicit_location
     ~source:{|
         def getint() -> int:
           return 42
@@ -932,59 +1019,35 @@ let test_resolve_definition_for_symbol context =
     }
     (Some ":120:0-181:32");
   assert_resolved_definition
-    ~source:{|
+    {|
         def foo() -> None:
           xs: list[str] = ["a", "b"]
-    |}
-    {
-      symbol_with_definition = TypeAnnotation (parse_single_expression "list[str]");
-      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 4 };
-      use_postcondition_info = false;
-    }
-    None;
-  assert_resolved_definition
-    ~source:{|
-      class Foo:
-        def bar(self) -> None:
-            print(self.foo())
-    |}
-    {
-      symbol_with_definition =
-        Expression
-          (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$self")));
-      cfg_data = { define_name = !&"test.Foo.bar"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:3:10-3:14");
-  assert_resolved_definition
-    ~source:
-      {|
-      class Foo:
-        def bar(self) -> None:
-            print(self.foo())
+          #    ^- cursor
 
-        def foo(self) -> int:
-          return 42
-    |}
-    {
-      symbol_with_definition =
-        Expression
-          (Node.create_with_default_location
-             (Expression.Name
-                (Name.Attribute
-                   {
-                     base =
-                       Node.create_with_default_location
-                         (Expression.Name (Name.Identifier "$parameter$self"));
-                     attribute = "foo";
-                     special = false;
-                   })));
-      cfg_data = { define_name = !&"test.Foo.bar"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:6:2-7:13");
+          # No definition found.
+    |};
   assert_resolved_definition
-    ~external_sources
+    {|
+      class Foo:
+        def bar(self) -> None:
+          #     ^   ^
+
+            print(self.foo())
+            #      ^- cursor
+    |};
+  assert_resolved_definition
+    {|
+      class Foo:
+        def bar(self) -> None:
+            print(self.foo())
+            #           ^- cursor
+
+
+        def foo(self) -> int:  # start line
+          return 42            # stop line
+
+    |};
+  assert_resolved_definition_with_explicit_location
     ~source:{|
         from library import Base
     |}
@@ -994,7 +1057,7 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     (Some "library:2:0-2:15");
-  assert_resolved_definition
+  assert_resolved_definition_with_explicit_location
     ~source:
       {|
         def return_str() -> str:
@@ -1010,11 +1073,10 @@ let test_resolve_definition_for_symbol context =
     }
     (Some ":201:2-201:34");
   assert_resolved_definition
-    ~source:
-      {|
+    {|
         class Foo:
-          def bar(self) -> None:
-              pass
+          def bar(self) -> None:  # start line
+              pass                # stop line
 
         class Bar:
           some_attribute: Foo = Foo()
@@ -1024,217 +1086,128 @@ let test_resolve_definition_for_symbol context =
 
         def test() -> None:
           Bar().foo().bar()
-    |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "(test.Bar()).foo().bar");
-      cfg_data = { define_name = !&"test.test"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:3:2-4:10");
+          #           ^- cursor
+    |};
   assert_resolved_definition
-    ~source:
-      {|
+    {|
         class Foo: ...
 
         class Bar:
           some_attribute: Foo = Foo()
+        # ^                          ^
 
         Bar().some_attribute
-    |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "test.Bar().some_attribute");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 2 };
-      use_postcondition_info = false;
-    }
-    (Some "test:5:2-5:29");
+        #       ^- cursor
+    |};
   assert_resolved_definition
-    ~source:{|
+    {|
         def foo() -> None:
           x = 42
+        # ^^
+
+
           print(x)
-    |}
-    {
-      symbol_with_definition =
-        Expression
-          (Node.create_with_default_location
-             (Expression.Name (Name.Identifier "$local_test?foo$x")));
-      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 1 };
-      use_postcondition_info = false;
-    }
-    (Some "test:3:2-3:3");
+          #     ^- cursor
+    |};
   assert_resolved_definition
-    ~source:
-      {|
+    {|
         def foo() -> None:
           with open() as f:
+                      #  ^^
             f.readline()
-    |}
-    {
-      symbol_with_definition =
-        Expression
-          (Node.create_with_default_location (Expression.Name (Name.Identifier "$target$f")));
-      cfg_data = { define_name = !&"test.foo"; node_id = 5; statement_index = 1 };
-      use_postcondition_info = false;
-    }
-    (Some "test:3:17-3:18");
+          # ^- cursor
+    |};
   assert_resolved_definition
-    ~source:{|
+    {|
         def foo(x: str) -> None:
           for x in [1]:
+            # ^^
+
             print(x)
-    |}
-    {
-      symbol_with_definition =
-        Expression
-          (Node.create_with_default_location (Expression.Name (Name.Identifier "$target$x")));
-      cfg_data = { define_name = !&"test.foo"; node_id = 6; statement_index = 1 };
-      use_postcondition_info = false;
-    }
-    (Some "test:3:6-3:7");
+            #     ^- cursor
+    |};
   assert_resolved_definition
-    ~source:
-      {|
+    {|
         class Foo:
           @classmethod
           def my_class_method(cls) -> None: ...
+        # ^                                    ^
 
         def foo() -> None:
           Foo.my_class_method()
-    |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_class_method");
-      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:4:2-4:39");
+          #    ^- cursor
+    |};
   assert_resolved_definition
-    ~source:
-      {|
+    {|
         class Foo:
           def my_method() -> None: ...
+        # ^                           ^
 
         def foo() -> None:
           Foo.my_method()
-    |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_method");
-      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:3:2-3:30");
+          #    ^- cursor
+    |};
   assert_resolved_definition
-    ~source:
-      {|
+    {|
         class Foo:
           @staticmethod
           def my_static_method() -> None: ...
+        # ^                                  ^
 
         def foo() -> None:
           Foo.my_static_method()
-    |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "(test.Foo).my_static_method");
-      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:4:2-4:37");
+          #     ^- cursor
+    |};
   assert_resolved_definition
-    ~source:
-      {|
+    {|
         from dataclasses import dataclass
 
         @dataclass(frozen=True)
         class Foo:
           my_attribute: int
+        # ^                ^
 
         def main(foo: Foo) -> None:
           print(foo.my_attribute)
-    |}
-    {
-      symbol_with_definition =
-        Expression
-          (Expression.Name
-             (Name.Attribute
-                {
-                  base =
-                    Node.create_with_default_location
-                      (Expression.Name (Name.Identifier "$parameter$foo"));
-                  attribute = "my_attribute";
-                  special = false;
-                })
-          |> Node.create_with_default_location);
-      cfg_data = { define_name = !&"test.main"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:6:2-6:19");
+          #           ^- cursor
+    |};
   assert_resolved_definition
-    ~source:
-      {|
+    {|
         from dataclasses import dataclass
 
         @dataclass(frozen=True)
         class Foo:
           my_attribute: int
+        # ^                ^
 
         def main(foo: Foo) -> None:
           if foo.my_attribute:
-            #        ^-- CURSOR
+            #        ^- cursor
             print("hello")
-    |}
-    {
-      symbol_with_definition =
-        Expression
-          (Expression.Name
-             (Name.Attribute
-                {
-                  base =
-                    Node.create_with_default_location
-                      (Expression.Name (Name.Identifier "$parameter$foo"));
-                  attribute = "my_attribute";
-                  special = false;
-                })
-          |> Node.create_with_default_location);
-      cfg_data = { define_name = !&"test.main"; node_id = 7; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:6:2-6:19");
+    |};
   assert_resolved_definition
-    ~source:
-      {|
+    {|
         def getint(xs: list[int]) -> None:
+          #        ^            ^
+
           for x in xs:
-            #      ^-- CURSOR
+            #      ^- cursor
             pass
-    |}
-    {
-      symbol_with_definition =
-        Expression
-          (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$xs")));
-      cfg_data = { define_name = !&"test.getint"; node_id = 6; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:2:11-2:24");
+    |};
   assert_resolved_definition
-    ~source:
-      {|
+    {|
         def foo(xs: list[int]) -> None:
+          #     ^            ^
+
           print(f"xs: {xs}")
-          #            ^-- CURSOR
-    |}
-    {
-      symbol_with_definition =
-        Expression
-          (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$xs")));
-      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
-    (Some "test:2:8-2:21");
-  assert_resolved_definition
+          #            ^- cursor
+    |};
+  assert_resolved_definition_with_explicit_location
     ~source:
       {|
         def foo(xs: list[int]) -> None:
           print(f"xs: {xs.append(xs)}")
-          #                  ^-- CURSOR
+                        # ^- cursor
     |}
     {
       symbol_with_definition =
