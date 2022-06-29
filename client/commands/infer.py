@@ -962,7 +962,7 @@ def _annotate_in_place(
             pass
 
 
-def run(
+def run_infer(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,
 ) -> commands.ExitCode:
@@ -1020,3 +1020,10 @@ def run(
                     number_of_workers=configuration.get_number_of_workers(),
                 )
     return commands.ExitCode.SUCCESS
+
+
+def run(
+    configuration: configuration_module.Configuration,
+    infer_arguments: command_arguments.InferArguments,
+) -> commands.ExitCode:
+    return run_infer(configuration, infer_arguments)
