@@ -312,6 +312,20 @@ let test_handle_query_basic context =
     ~query:"batch(less_or_equal(int, str), less_or_equal(int, Unknown))"
     (Batch [Single (Base.Boolean false); Error "Type `Unknown` was not found in the type order."])
   >>= fun () ->
+  assert_type_query_response
+    ~source:""
+    ~handle:"Foo.java"
+    ~query:"expression_level_coverage(path='Foo.java')"
+    (Error "Not able to get lookups in: `Foo.java` (file not found)")
+  >>= fun () ->
+  assert_type_query_response
+    ~source:""
+    ~handle:"foo.pyi"
+    ~query:"expression_level_coverage(path='foo.pyi')"
+    (Single
+       (Base.ExpressionLevelCoverageResponse
+          [{ Base.path = "foo.pyi"; total_expressions = 0; coverage_gaps = [] }]))
+  >>= fun () ->
   assert_compatibility_response
     ~source:""
     ~query:"is_compatible_with(int, str)"

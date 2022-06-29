@@ -855,18 +855,33 @@ let rec process_request ~environment ~build_system request =
           | Some arguments_path -> get_text_file_path_list arguments_path
         in
         let find_resolved_types result =
+          let has_valid_suffix path =
+            let valid_suffixes =
+              ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration
+            in
+            let extension =
+              Filename.split_extension path
+              |> snd
+              >>| (fun extension -> "." ^ extension)
+              |> Option.value ~default:""
+            in
+            List.exists ~f:(String.equal extension) valid_suffixes
+          in
           match result with
           | Result.Error error -> Either.Second error
-          | Result.Ok path -> (
-              match
-                LocationBasedLookupProcessor.find_expression_level_coverage_for_path
-                  ~environment
-                  ~build_system
-                  path
-              with
-              | Result.Ok { total_expressions; coverage_gaps } ->
-                  Either.First { Base.path; total_expressions; coverage_gaps }
-              | Result.Error error_reason -> Either.Second (path, error_reason))
+          | Result.Ok path ->
+              if has_valid_suffix path then
+                match
+                  LocationBasedLookupProcessor.find_expression_level_coverage_for_path
+                    ~environment
+                    ~build_system
+                    path
+                with
+                | Result.Ok { total_expressions; coverage_gaps } ->
+                    Either.First { Base.path; total_expressions; coverage_gaps }
+                | Result.Error error_reason -> Either.Second (path, error_reason)
+              else
+                Either.Second (path, LocationBasedLookupProcessor.FileNotFound)
         in
         let results, errors =
           List.concat_map paths ~f:extract_paths |> List.partition_map ~f:find_resolved_types
