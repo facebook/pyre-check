@@ -6,12 +6,13 @@
 import json
 import logging
 from dataclasses import dataclass
-from typing import List, Tuple
+from pathlib import Path
+from typing import Iterable, List, Tuple
 
 from dataclasses_json import dataclass_json
 
 from .. import configuration as configuration_module, log
-from . import commands, frontend_configuration, query, server_connection
+from . import commands, coverage, frontend_configuration, query, server_connection
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -54,6 +55,34 @@ class ExpressionLevelCoverageResponse:
 
 class ErrorParsingFailure(Exception):
     pass
+
+
+def get_path_list(
+    configuration: frontend_configuration.Base,
+    working_directory: str,
+    paths: Iterable[str],
+) -> List[str]:
+    working_directory_path = Path(working_directory)
+    path_files = [file for file in paths if file[0] != "@"]
+    absolute_path_files_string = []
+    if not paths or path_files:
+        absolute_path_files = coverage.get_module_paths(
+            configuration,
+            working_directory,
+            path_files,
+        )
+        absolute_path_files_string = [
+            str(file.resolve()) for file in absolute_path_files
+        ]
+    text_files = [file[1:] for file in paths if file[0] == "@"]
+    absolute_text_files_string = []
+    if text_files:
+        absolute_text_files = [
+            coverage.to_absolute_path(path, working_directory_path)
+            for path in text_files
+        ]
+        absolute_text_files_string = ["@" + str(file) for file in absolute_text_files]
+    return absolute_path_files_string + absolute_text_files_string
 
 
 def _get_expression_level_coverage_response(

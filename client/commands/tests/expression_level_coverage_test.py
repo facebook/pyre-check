@@ -3,9 +3,16 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import tempfile
+from pathlib import Path
+from typing import Iterable, List
+
 import testslide
 
-from .. import expression_level_coverage
+from ... import command_arguments, configuration
+from ...tests import setup
+
+from .. import expression_level_coverage, frontend_configuration
 
 from ..query import Response
 
@@ -192,4 +199,64 @@ class ExpressionLevelTest(testslide.TestCase):
                 }
             ).payload,
             "library.py: 100.0% expressions are covered\ntest.py: 71.43% expressions are covered\nOverall: 81.82% expressions are covered",
+        )
+
+    def test_get_path_list(self) -> None:
+        def assert_get_path_list(response: Iterable[str], expected: List[str]) -> None:
+            with tempfile.TemporaryDirectory() as root:
+                root_path = Path(root).resolve()
+                setup.ensure_directories_exists(
+                    root_path, [".pyre", "allows", "blocks", "search", "local/src"]
+                )
+                setup.write_configuration_file(
+                    root_path,
+                    {
+                        "do_not_ignore_errors_in": ["allows", "nonexistent"],
+                        "ignore_all_errors": ["blocks", "nonexistent"],
+                        "exclude": ["exclude"],
+                        "extensions": [".ext", "invalid_extension"],
+                        "workers": 42,
+                        "search_path": ["search", "nonexistent"],
+                        "strict": True,
+                    },
+                )
+                setup.write_configuration_file(
+                    root_path, {"source_directories": ["src"]}, relative="local"
+                )
+
+                temp_configuration = configuration.create_configuration(
+                    command_arguments.CommandArguments(
+                        local_configuration="local",
+                        dot_pyre_directory=root_path / ".pyre",
+                    ),
+                    root_path,
+                )
+
+                self.assertEqual(
+                    expression_level_coverage.get_path_list(
+                        frontend_configuration.OpenSource(temp_configuration),
+                        "/fake/path",
+                        response,
+                    ),
+                    expected,
+                )
+
+        assert_get_path_list([], [])
+        assert_get_path_list(["test.py"], ["/fake/path/test.py"])
+        assert_get_path_list(["@arguments.txt"], ["@/fake/path/arguments.txt"])
+        assert_get_path_list(
+            ["test.py", "@arguments.txt"],
+            ["/fake/path/test.py", "@/fake/path/arguments.txt"],
+        )
+        assert_get_path_list(["../other_path/test.py"], ["/fake/other_path/test.py"])
+        assert_get_path_list(
+            ["@../other_path/arguments.txt"],
+            ["@/fake/path/../other_path/arguments.txt"],
+        )
+        assert_get_path_list(
+            ["../other_path/test.py", "@../other_path/arguments.txt"],
+            [
+                "/fake/other_path/test.py",
+                "@/fake/path/../other_path/arguments.txt",
+            ],
         )
