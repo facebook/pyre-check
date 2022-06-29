@@ -851,6 +851,20 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:
+      {|
+        from typing import Callable
+
+        f: Callable
+        #   ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition = TypeAnnotation (parse_single_expression "typing.Callable");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -1237,6 +1251,24 @@ let test_resolve_definition_for_symbol context =
           print(exception)
           #      ^- cursor
     |};
+  (* We create special stubs in `MissingFromStubs` for special forms like `Callable`. They end up
+     making the location be `any` (with all positions as `-1`), which the IDE doesn't recognize. We
+     should translate that to something sensible, so that the IDE at least goes to the relevant
+     file. *)
+  assert_resolved_definition_with_explicit_location
+    ~source:
+      {|
+        from typing import Callable
+
+        f: Callable
+        #   ^-- CURSOR
+    |}
+    {
+      symbol_with_definition = TypeAnnotation (parse_single_expression "typing.Callable");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+      use_postcondition_info = false;
+    }
+    (Some "typing:1:0-1:0");
   ()
 
 

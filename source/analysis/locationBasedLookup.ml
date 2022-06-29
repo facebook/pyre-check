@@ -668,16 +668,25 @@ let find_definition ~resolution ~module_reference ~define_name ~statement_key re
     >>= look_up_local_definition ~resolution ~define_name ~statement_key
     >>| fun { Scope.Binding.location; _ } -> location |> Location.with_module ~module_reference
   in
-  let definition =
+  let definition_location =
     match local_definition with
     | Some definition -> Some definition
     | None -> GlobalResolution.global_location (Resolution.global_resolution resolution) reference
   in
-  definition
-  >>= fun location ->
-  Option.some_if
-    (not ([%compare.equal: Location.WithModule.t] location Location.WithModule.any))
-    location
+  let sanitize_location ({ Location.WithModule.module_reference; start; stop } as location) =
+    if [%compare.equal: Location.WithModule.t] location Location.WithModule.any then
+      None
+    else if [%compare.equal: Location.t] { Location.start; stop } Location.any then
+      (* Special forms have location as `any`. So, just point to the start of the file where they
+         are defined. *)
+      let dummy_position = { Location.line = 1; column = 0 } in
+      { Location.start = dummy_position; stop = dummy_position }
+      |> Location.with_module ~module_reference
+      |> Option.some
+    else
+      Some location
+  in
+  definition_location >>= sanitize_location
 
 
 let resolve_definition_for_name ~resolution ~module_reference ~define_name ~statement_key expression
