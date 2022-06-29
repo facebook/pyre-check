@@ -2657,6 +2657,441 @@ let test_coverage_gaps_in_module context =
   ()
 
 
+let test_resolve_type_for_symbol context =
+  let default_external_sources =
+    [
+      ( "library.py",
+        {|
+      class Base: ...
+
+      def return_str() -> str:
+          return "hello"
+    |} );
+    ]
+  in
+  let module_reference = !&"test" in
+  let assert_resolved_explicit_type ?(external_sources = default_external_sources) source expected =
+    let type_environment =
+      let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] ~external_sources
+        |> ScratchProject.build_type_environment
+      in
+      type_environment
+    in
+    let symbol_data =
+      LocationBasedLookup.find_narrowest_spanning_symbol
+        ~type_environment
+        ~module_reference
+        (find_indicator_position ~source "cursor")
+    in
+    assert_equal
+      ~cmp:[%compare.equal: Type.t option]
+      ~printer:[%show: Type.t option]
+      expected
+      (symbol_data >>= LocationBasedLookup.resolve_type_for_symbol ~type_environment)
+  in
+  let assert_resolved_type ?external_sources ?(aliases = Type.empty_aliases) source expected_type =
+    let parse_type type_ = Type.create ~aliases (parse_single_expression type_) in
+    assert_resolved_explicit_type ?external_sources source (expected_type >>| parse_type)
+  in
+  assert_resolved_type
+    {|
+        def getint() -> int:
+          return 42
+
+        def main() -> None:
+          x = getint()
+        # ^- cursor
+    |}
+    (Some "int");
+  assert_resolved_type {|
+        x = SomeUntrackedClass()
+          #    ^- cursor
+    |} None;
+  assert_resolved_type
+    {|
+        def foo(a: int, b: str) -> None: ...
+          #             ^- cursor
+
+        # No definition found.
+    |}
+    None;
+  assert_resolved_type
+    {|
+        def foo(x: str) -> None:
+          print(x)
+          #     ^- cursor
+    |}
+    (Some "str");
+  assert_resolved_type
+    {|
+        def getint() -> int:
+                      # ^- cursor
+          return 42
+    |}
+    (Some "typing.Type[int]");
+  assert_resolved_type
+    {|
+        def foo() -> None:
+          xs: list[str] = ["a", "b"]
+          #    ^- cursor
+    |}
+    (Some "typing.Type[typing.List[str]]");
+  assert_resolved_type
+    {|
+      class Foo:
+        def bar(self) -> None:
+            print(self.foo())
+            #      ^- cursor
+    |}
+    (Some "test.Foo");
+  assert_resolved_explicit_type
+    {|
+      class Foo:
+        def bar(self) -> None:
+            print(self.foo())
+            #           ^- cursor
+
+        def foo(self) -> int:
+          return 42
+
+    |}
+    (Type.parametric
+       "BoundMethod"
+       [
+         Single
+           (Type.Callable
+              {
+                kind = Type.Callable.Named (Reference.create "test.Foo.foo");
+                implementation =
+                  {
+                    annotation = Type.integer;
+                    parameters =
+                      Type.Callable.Defined
+                        [
+                          Type.Callable.Parameter.Named
+                            {
+                              name = "$parameter$self";
+                              annotation = Type.Primitive "test.Foo";
+                              default = false;
+                            };
+                        ];
+                  };
+                overloads = [];
+              });
+         Single (Type.Primitive "test.Foo");
+       ]
+    |> Option.some);
+  assert_resolved_type
+    {|
+        from library import Base
+                           # ^- cursor
+    |}
+    (Some "typing.Type[library.Base]");
+  assert_resolved_type {|
+        import library
+        #        ^- cursor
+    |} None;
+  assert_resolved_type
+    {|
+        from . import library as my_library
+                                    # ^- cursor
+    |}
+    None;
+  assert_resolved_type
+    {|
+        from . import library as my_library
+
+        x = my_library.Base() #    ^- cursor
+    |}
+    None;
+  assert_resolved_explicit_type
+    {|
+        def return_str() -> str:
+          return "hello"
+
+        def foo() -> None:
+          return_str().capitalize().lower()
+                     # ^- cursor
+    |}
+    (Type.parametric
+       "BoundMethod"
+       [
+         Single
+           (Type.Callable
+              {
+                kind = Type.Callable.Named (Reference.create "str.capitalize");
+                implementation =
+                  {
+                    annotation = Type.string;
+                    parameters =
+                      Type.Callable.Defined
+                        [
+                          Type.Callable.Parameter.Named
+                            { name = "$parameter$self"; annotation = Type.string; default = false };
+                        ];
+                  };
+                overloads = [];
+              });
+         Single Type.string;
+       ]
+    |> Option.some);
+  assert_resolved_explicit_type
+    {|
+        class Foo:
+          def bar(self) -> None:
+              pass
+
+        class Bar:
+          some_attribute: Foo = Foo()
+
+          def foo(self) -> Foo:
+              return Foo()
+
+        def test() -> None:
+          Bar().foo().bar()
+          #           ^- cursor
+    |}
+    (Type.parametric
+       "BoundMethod"
+       [
+         Single
+           (Type.Callable
+              {
+                kind = Type.Callable.Named (Reference.create "test.Foo.bar");
+                implementation =
+                  {
+                    annotation = Type.none;
+                    parameters =
+                      Type.Callable.Defined
+                        [
+                          Type.Callable.Parameter.Named
+                            {
+                              name = "$parameter$self";
+                              annotation = Type.Primitive "test.Foo";
+                              default = false;
+                            };
+                        ];
+                  };
+                overloads = [];
+              });
+         Single (Type.Primitive "test.Foo");
+       ]
+    |> Option.some);
+  assert_resolved_type
+    {|
+        class Foo: ...
+
+        class Bar:
+          some_attribute: Foo = Foo()
+
+        Bar().some_attribute
+        #       ^- cursor
+    |}
+    (Some "test.Foo");
+  assert_resolved_type
+    {|
+        def foo() -> None:
+          x = 42
+          print(x)
+          #     ^- cursor
+    |}
+    (Some "typing.Literal[42]");
+  assert_resolved_type
+    {|
+        from typing import Iterator
+        from contextlib import contextmanager
+
+        @contextmanager
+        def open() -> Iterator[str]: ...
+
+        def foo() -> None:
+          with open() as f:
+            f.readline()
+          # ^- cursor
+    |}
+    (Some "str");
+  assert_resolved_type
+    {|
+        def foo(x: str) -> None:
+          for x in [1]:
+            print(x)
+            #     ^- cursor
+    |}
+    (Some "int");
+  assert_resolved_explicit_type
+    {|
+        class Foo:
+          @classmethod
+          def my_class_method(cls) -> None: ...
+
+        def foo() -> None:
+          Foo.my_class_method()
+          #    ^- cursor
+    |}
+    (Type.parametric
+       "typing.ClassMethod"
+       [
+         Single
+           (Type.Callable
+              {
+                kind = Type.Callable.Named (Reference.create "test.Foo.my_class_method");
+                implementation =
+                  {
+                    annotation = Type.none;
+                    parameters =
+                      Type.Callable.Defined
+                        [
+                          Type.Callable.Parameter.Named
+                            {
+                              name = "$parameter$cls";
+                              annotation = Type.meta (Type.Primitive "test.Foo");
+                              default = false;
+                            };
+                        ];
+                  };
+                overloads = [];
+              });
+       ]
+    |> Option.some);
+  assert_resolved_explicit_type
+    {|
+        class Foo:
+          def my_method() -> None: ...
+
+        def foo() -> None:
+          Foo.my_method()
+          #    ^- cursor
+    |}
+    (Type.Callable
+       {
+         kind = Type.Callable.Named (Reference.create "test.Foo.my_method");
+         implementation = { annotation = Type.none; parameters = Type.Callable.Defined [] };
+         overloads = [];
+       }
+    |> Option.some);
+  assert_resolved_explicit_type
+    {|
+        class Foo:
+          @staticmethod
+          def my_static_method() -> None: ...
+
+        def foo() -> None:
+          Foo.my_static_method()
+          #     ^- cursor
+    |}
+    (Type.parametric
+       "typing.StaticMethod"
+       [
+         Single
+           (Type.Callable
+              {
+                kind = Type.Callable.Named (Reference.create "test.Foo.my_static_method");
+                implementation = { annotation = Type.none; parameters = Type.Callable.Defined [] };
+                overloads = [];
+              });
+       ]
+    |> Option.some);
+  assert_resolved_type
+    {|
+        from dataclasses import dataclass
+
+        @dataclass(frozen=True)
+        class Foo:
+          my_attribute: int
+
+        def main(foo: Foo) -> None:
+          print(foo.my_attribute)
+          #           ^- cursor
+    |}
+    (Some "int");
+  assert_resolved_type
+    {|
+        from dataclasses import dataclass
+
+        @dataclass(frozen=True)
+        class Foo:
+          my_attribute: int
+
+        def main(foo: Foo) -> None:
+          if foo.my_attribute:
+            #        ^- cursor
+            print("hello")
+    |}
+    (Some "int");
+  assert_resolved_type
+    {|
+        def getint(xs: list[int]) -> None:
+          for x in xs:
+            #      ^- cursor
+            pass
+    |}
+    (Some "typing.List[int]");
+  assert_resolved_type
+    {|
+        def foo(xs: list[int]) -> None:
+          print(f"xs: {xs}")
+          #            ^- cursor
+    |}
+    (Some "typing.List[int]");
+  assert_resolved_explicit_type
+    {|
+        def foo(xs: list[int]) -> None:
+          print(f"xs: {xs.append(xs)}")
+                        # ^- cursor
+    |}
+    (Type.parametric
+       "BoundMethod"
+       [
+         Single
+           (Type.Callable
+              {
+                kind = Type.Callable.Named (Reference.create "list.append");
+                implementation =
+                  {
+                    annotation = Type.none;
+                    parameters =
+                      Type.Callable.Defined
+                        [
+                          Type.Callable.Parameter.Named
+                            {
+                              name = "$parameter$self";
+                              annotation = Type.list Type.integer;
+                              default = false;
+                            };
+                          Type.Callable.Parameter.Named
+                            {
+                              name = "$parameter$element";
+                              annotation = Type.integer;
+                              default = false;
+                            };
+                        ];
+                  };
+                overloads = [];
+              });
+         Single (Type.list Type.integer);
+       ]
+    |> Option.some);
+  assert_resolved_type
+    {|
+        try:
+          print("hello")
+        except Exception as exception:
+          print(exception)
+          #      ^- cursor
+    |}
+    (Some "Exception");
+  assert_resolved_type
+    {|
+        from typing import Callable
+
+        f: Callable
+        #   ^- cursor
+    |}
+    (Some "typing.Type[typing.Callable]");
+  ()
+
+
 let () =
   "lookup"
   >::: [
@@ -2679,5 +3114,6 @@ let () =
          "classify_coverage_data" >:: test_classify_coverage_data;
          "lookup_expression" >:: test_lookup_expression;
          "coverage_gaps_in_module" >:: test_coverage_gaps_in_module;
+         "resolve_type_for_symbol" >:: test_resolve_type_for_symbol;
        ]
   |> Test.run

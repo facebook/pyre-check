@@ -859,3 +859,23 @@ let get_expression_level_coverage coverage_data_lookup =
     List.sort coverage_gap_by_locations ~compare:[%compare: coverage_gap_by_location]
   in
   { total_expressions; coverage_gaps = sorted_coverage_gap_by_locations }
+
+
+let resolve_type_for_symbol
+    ~type_environment
+    { symbol_with_definition; cfg_data; use_postcondition_info }
+  =
+  let timer = Timer.start () in
+  let type_ =
+    match symbol_with_definition with
+    | Expression expression
+    | TypeAnnotation expression ->
+        resolve
+          ~resolution:(resolution_from_cfg_data ~type_environment ~use_postcondition_info cfg_data)
+          expression
+  in
+  Log.log
+    ~section:`Performance
+    "locationBasedLookup: Resolve type for symbol: %d ms"
+    (Timer.stop_in_ms timer);
+  type_
