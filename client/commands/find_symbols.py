@@ -94,11 +94,9 @@ class _SymbolsCollector(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign) -> None:
         children_symbol_info = [
-            _generate_lsp_symbol_info(
-                current_target, current_target.id, SymbolKind.VARIABLE
-            )
-            for current_target in node.targets
-            if isinstance(current_target, ast.Name)
+            symbol
+            for target in node.targets
+            for symbol in self.generate_symbols_from_assignment_target(target)
         ]
         self.symbols.extend(
             [
@@ -106,6 +104,24 @@ class _SymbolsCollector(ast.NodeVisitor):
                 for symbol in children_symbol_info
             ]
         )
+
+    def generate_symbols_from_assignment_target(
+        self, target: ast.expr
+    ) -> List[SymbolInfo]:
+        if isinstance(target, ast.Name):
+            return [_generate_lsp_symbol_info(target, target.id, SymbolKind.VARIABLE)]
+        elif isinstance(target, (ast.Starred, ast.Subscript, ast.Attribute)):
+            return self.generate_symbols_from_assignment_target(target.value)
+        elif isinstance(target, (ast.Tuple, ast.List)):
+            return [
+                symbol
+                for nested_target in target.elts
+                for symbol in self.generate_symbols_from_assignment_target(
+                    nested_target
+                )
+            ]
+        else:
+            return []
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         if isinstance(node.target, ast.Name):
