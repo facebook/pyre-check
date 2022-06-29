@@ -103,3 +103,9 @@ val classify_coverage_data : coverage_data -> coverage_gap option
 val coverage_gaps_in_module : coverage_data list -> coverage_gap list
 
 val get_expression_level_coverage : coverage_data_lookup -> coverage_for_path
+
+val hover_info_for_position
+  :  type_environment:TypeEnvironment.ReadOnly.t ->
+  module_reference:Reference.t ->
+  Location.position ->
+  string

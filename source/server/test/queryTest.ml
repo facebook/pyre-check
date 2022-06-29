@@ -2286,13 +2286,18 @@ let test_hover context =
   let custom_source_root =
     OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
   in
-  (* TODO(T103574623): Support hover. *)
   let queries_and_expected_responses =
     [
+      ( "hover_info_for_position(path='foo.py', line=2, column=0)",
+        {|
+      {
+      "response": { "message": "" }
+      }
+    |} );
       ( "hover_info_for_position(path='foo.py', line=3, column=9)",
         {|
       {
-      "response": { "message": "TODO(T103574623)" }
+      "response": { "message": "`int`" }
       }
     |} );
     ]

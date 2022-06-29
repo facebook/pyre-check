@@ -686,6 +686,15 @@ let rec process_request ~environment ~build_system request =
           };
       }
     in
+    let module_of_path path =
+      let relative_path =
+        let { Configuration.Analysis.local_root = root; _ } = configuration in
+        PyrePath.create_relative ~root ~relative:(PyrePath.absolute path) |> SourcePath.create
+      in
+      match modules_of_path relative_path with
+      | [found_module] -> Some found_module
+      | _ -> None
+    in
     let open Response in
     match request with
     | Request.Attributes annotation ->
@@ -867,7 +876,16 @@ let rec process_request ~environment ~build_system request =
         else
           Error (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
     | Help help_list -> Single (Base.Help help_list)
-    | HoverInfoForPosition _ -> Single (Base.HoverInfoForPosition "TODO(T103574623)")
+    | HoverInfoForPosition { path; position } ->
+        module_of_path path
+        >>| (fun module_reference ->
+              LocationBasedLookup.hover_info_for_position
+                ~type_environment:environment
+                ~module_reference
+                position)
+        >>| (fun hover_info -> Single (Base.HoverInfoForPosition hover_info))
+        |> Option.value
+             ~default:(Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path)))
     | InlineDecorators { function_reference; decorators_to_skip } ->
         InlineDecorators.inline_decorators
           ~environment
@@ -1014,15 +1032,6 @@ let rec process_request ~environment ~build_system request =
         GlobalResolution.less_or_equal global_resolution ~left ~right
         |> fun response -> Single (Base.Boolean response)
     | LocationOfDefinition { path; position } ->
-        let module_of_path path =
-          let relative_path =
-            let { Configuration.Analysis.local_root = root; _ } = configuration in
-            PyrePath.create_relative ~root ~relative:(PyrePath.absolute path) |> SourcePath.create
-          in
-          match modules_of_path relative_path with
-          | [found_module] -> Some found_module
-          | _ -> None
-        in
         module_of_path path
         >>= (fun module_reference ->
               LocationBasedLookup.location_of_definition

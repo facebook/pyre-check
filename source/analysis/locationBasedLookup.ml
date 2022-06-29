@@ -879,3 +879,22 @@ let resolve_type_for_symbol
     "locationBasedLookup: Resolve type for symbol: %d ms"
     (Timer.stop_in_ms timer);
   type_
+
+
+let empty_hover_message = ""
+
+let hover_info_for_position ~type_environment ~module_reference position =
+  let symbol_data = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
+  let hover_message =
+    symbol_data
+    >>= resolve_type_for_symbol ~type_environment
+    >>| (fun type_ -> Format.asprintf "`%s`" (Type.show_concise type_))
+    |> Option.value ~default:empty_hover_message
+  in
+  Log.log
+    ~section:`Server
+    "Hover info for symbol at position `%s:%s`: %s"
+    (Reference.show module_reference)
+    ([%show: Location.position] position)
+    hover_message;
+  hover_message
