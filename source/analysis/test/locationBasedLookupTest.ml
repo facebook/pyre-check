@@ -1067,10 +1067,9 @@ let test_resolve_definition_for_symbol context =
     ]
   in
   let module_reference = !&"test" in
-  let assert_resolved_definition_with_explicit_location
+  let assert_resolved_definition_with_location
       ?(external_sources = default_external_sources)
       ~source
-      symbol_data
       expected
     =
     let type_environment =
@@ -1080,14 +1079,18 @@ let test_resolve_definition_for_symbol context =
       in
       type_environment
     in
+    let symbol_data =
+      LocationBasedLookup.find_narrowest_spanning_symbol
+        ~type_environment
+        ~module_reference
+        (find_indicator_position ~source "cursor")
+    in
     assert_equal
       ~cmp:[%compare.equal: Location.WithModule.t option]
       ~printer:[%show: Location.WithModule.t option]
-      (expected >>| parse_location_with_module)
-      (LocationBasedLookup.resolve_definition_for_symbol
-         ~type_environment
-         ~module_reference:!&"test"
-         symbol_data)
+      expected
+      (symbol_data
+      >>= LocationBasedLookup.resolve_definition_for_symbol ~type_environment ~module_reference)
   in
   let assert_resolved_definition ?external_sources source =
     let expected_definition_location =
@@ -1107,27 +1110,14 @@ let test_resolve_definition_for_symbol context =
         |> Location.with_module ~module_reference
         |> Option.some
     in
-    let type_environment =
-      let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-        ScratchProject.setup ~context ["test.py", source] ?external_sources
-        |> ScratchProject.build_type_environment
-      in
-      type_environment
-    in
-    let symbol_data =
-      LocationBasedLookup.find_narrowest_spanning_symbol
-        ~type_environment
-        ~module_reference
-        (find_indicator_position ~source "cursor")
-    in
-    assert_equal
-      ~cmp:[%compare.equal: Location.WithModule.t option]
-      ~printer:[%show: Location.WithModule.t option]
-      expected_definition_location
-      (symbol_data
-      >>= LocationBasedLookup.resolve_definition_for_symbol ~type_environment ~module_reference)
+    assert_resolved_definition_with_location ?external_sources ~source expected_definition_location
   in
-  let open LocationBasedLookup in
+  let assert_resolved_definition_with_location_string ?external_sources ~source expected =
+    assert_resolved_definition_with_location
+      ?external_sources
+      ~source
+      (expected >>| parse_location_with_module)
+  in
   assert_resolved_definition
     {|
         def getint() -> int: # start line
@@ -1150,16 +1140,13 @@ let test_resolve_definition_for_symbol context =
           print(x)
           #     ^- cursor
     |};
-  assert_resolved_definition_with_explicit_location
-    ~source:{|
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
         def getint() -> int:
+                      # ^- cursor
           return 42
     |}
-    {
-      symbol_with_definition = TypeAnnotation (parse_single_expression "int");
-      cfg_data = { define_name = !&"test.getint"; node_id = 0; statement_index = 0 };
-      use_postcondition_info = false;
-    }
     (Some ":120:0-181:32");
   assert_resolved_definition
     {|
@@ -1190,40 +1177,26 @@ let test_resolve_definition_for_symbol context =
           return 42            # stop line
 
     |};
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~source:{|
         from library import Base
+                           # ^- cursor
     |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "library.Base");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
     (Some "library:2:0-2:15");
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~source:{|
         import library
         #        ^- cursor
     |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "library");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
     (Some "library:1:0-1:0");
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~source:
       {|
         from . import library as my_library
                                     # ^- cursor
     |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "library");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
     (Some "library:1:0-1:0");
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~source:
       {|
         from . import library as my_library
@@ -1231,13 +1204,8 @@ let test_resolve_definition_for_symbol context =
         x = my_library.Base()
         #    ^- cursor
     |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "library");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
-      use_postcondition_info = false;
-    }
     (Some "library:1:0-1:0");
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~source:
       {|
         def return_str() -> str:
@@ -1245,12 +1213,8 @@ let test_resolve_definition_for_symbol context =
 
         def foo() -> None:
           return_str().capitalize().lower()
+                     # ^- cursor
     |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "(test.return_str()).capitalize");
-      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
     (Some ":201:2-201:34");
   assert_resolved_definition
     {|
@@ -1382,29 +1346,13 @@ let test_resolve_definition_for_symbol context =
           print(f"xs: {xs}")
           #            ^- cursor
     |};
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~source:
       {|
         def foo(xs: list[int]) -> None:
           print(f"xs: {xs.append(xs)}")
                         # ^- cursor
     |}
-    {
-      symbol_with_definition =
-        Expression
-          (Expression.Name
-             (Name.Attribute
-                {
-                  base =
-                    Node.create_with_default_location
-                      (Expression.Name (Name.Identifier "$parameter$xs"));
-                  attribute = "append";
-                  special = false;
-                })
-          |> Node.create_with_default_location);
-      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
-      use_postcondition_info = false;
-    }
     (Some ":272:2-272:44");
   (* TODO(T112570623): The target variable points to the `Exception`. This is unavoidable right now,
      because we don't store its location in `Try.t`. *)
@@ -1421,99 +1369,63 @@ let test_resolve_definition_for_symbol context =
      making the location be `any` (with all positions as `-1`), which the IDE doesn't recognize. We
      should translate that to something sensible, so that the IDE at least goes to the relevant
      file. *)
-  assert_resolved_definition_with_explicit_location
-    ~source:
-      {|
+  assert_resolved_definition_with_location_string
+    ~source:{|
         from typing import Callable
 
         f: Callable
-        #   ^-- CURSOR
+        #   ^- cursor
     |}
-    {
-      symbol_with_definition = TypeAnnotation (parse_single_expression "typing.Callable");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
-      use_postcondition_info = false;
-    }
     (Some "typing:1:0-1:0");
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~external_sources:["a.py", {| |}; "b.py", {| import a as x |}]
     ~source:{|
         from b import x as y
         print(y)
-           #  ^-- CURSOR
+           #  ^- cursor
     |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "b.x");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
-      use_postcondition_info = false;
-    }
     (Some "a:1:0-1:0");
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~external_sources:["a.py", {| |}; "b.py", {| import a as x |}]
     ~source:{|
         from b import x
         print(x)
-           #  ^-- CURSOR
+           #  ^- cursor
     |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "b.x");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
-      use_postcondition_info = false;
-    }
     (Some "a:1:0-1:0");
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~external_sources:["foo/a.py", {| class Foo: ... |}; "b.py", {| import foo.a as x |}]
     ~source:{|
         from b import x as y
         print(y)
-           #  ^-- CURSOR
+           #  ^- cursor
     |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "b.x");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
-      use_postcondition_info = false;
-    }
     (Some "foo.a:1:0-1:0");
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~external_sources:["a.py", {| class Foo: ... |}; "b.py", {| import a as x |}]
     ~source:{|
         from b import x as y
         print(y.Foo)
-              #  ^-- CURSOR
+              #  ^- cursor
     |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "b.x.Foo");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
-      use_postcondition_info = false;
-    }
     (Some "a:1:0-1:14");
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~external_sources:["my_placeholder_stub.pyi", {| # pyre-placeholder-stub |}]
     ~source:
       {|
         import my_placeholder_stub
         print(my_placeholder_stub)
-           #  ^-- CURSOR
+           #  ^- cursor
     |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "my_placeholder_stub");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
-      use_postcondition_info = false;
-    }
     (Some "my_placeholder_stub:1:0-1:0");
-  assert_resolved_definition_with_explicit_location
+  assert_resolved_definition_with_location_string
     ~external_sources:["my_placeholder_stub.pyi", {| # pyre-placeholder-stub |}]
     ~source:
       {|
         from my_placeholder_stub import x as y
         print(y.Foo)
-              #  ^-- CURSOR
+              #  ^- cursor
     |}
-    {
-      symbol_with_definition = Expression (parse_single_expression "my_placeholder_stub.x.Foo");
-      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
-      use_postcondition_info = false;
-    }
     (Some "my_placeholder_stub:1:0-1:0");
   ()
 
