@@ -18,6 +18,7 @@ from .. import command_arguments, configuration as configuration_module, json_rp
 from . import (
     async_server_connection as connection,
     commands,
+    frontend_configuration,
     language_server_protocol as lsp,
     start,
 )
@@ -314,8 +315,11 @@ def run(
             "Cannot locate a Pyre binary to run."
         )
 
-    server_identifier = start.get_server_identifier(configuration)
-    pyre_arguments = start.create_server_arguments(configuration, start_arguments)
+    server_configuration = frontend_configuration.OpenSource(configuration)
+    server_identifier = start.get_server_identifier(server_configuration)
+    pyre_arguments = start.create_server_arguments(
+        server_configuration, start_arguments
+    )
     if pyre_arguments.watchman_root is None:
         raise commands.ClientException(
             (

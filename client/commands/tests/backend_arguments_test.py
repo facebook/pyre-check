@@ -12,6 +12,7 @@ import testslide
 from ... import command_arguments, configuration
 from ...configuration import search_path
 from ...tests import setup
+from .. import frontend_configuration
 from ..backend_arguments import (
     BaseArguments,
     BuckSourcePath,
@@ -287,10 +288,12 @@ class ArgumentsTest(testslide.TestCase):
             raw_element = search_path.SimpleRawElement(str(root_path / "src"))
             self.assertEqual(
                 get_source_path(
-                    configuration.Configuration(
-                        project_root=str(root_path / "project"),
-                        dot_pyre_directory=(root_path / ".pyre"),
-                        source_directories=[raw_element],
+                    frontend_configuration.OpenSource(
+                        configuration.Configuration(
+                            project_root=str(root_path / "project"),
+                            dot_pyre_directory=(root_path / ".pyre"),
+                            source_directories=[raw_element],
+                        )
                     ),
                     artifact_root_name="irrelevant",
                 ),
@@ -304,10 +307,12 @@ class ArgumentsTest(testslide.TestCase):
             raw_element = search_path.SimpleRawElement(str(root_path / "src"))
             self.assertEqual(
                 get_source_path(
-                    configuration.Configuration(
-                        project_root=str(root_path / "project"),
-                        dot_pyre_directory=(root_path / ".pyre"),
-                        source_directories=[raw_element],
+                    frontend_configuration.OpenSource(
+                        configuration.Configuration(
+                            project_root=str(root_path / "project"),
+                            dot_pyre_directory=(root_path / ".pyre"),
+                            source_directories=[raw_element],
+                        )
                     ),
                     artifact_root_name="irrelevant",
                 ),
@@ -330,12 +335,14 @@ class ArgumentsTest(testslide.TestCase):
             )
             self.assertEqual(
                 get_source_path(
-                    configuration.Configuration(
-                        project_root=str(root_path / "project"),
-                        relative_local_root="local",
-                        dot_pyre_directory=(root_path / ".pyre"),
-                        source_directories=[raw_element],
-                        unwatched_dependency=unwatched_dependency,
+                    frontend_configuration.OpenSource(
+                        configuration.Configuration(
+                            project_root=str(root_path / "project"),
+                            relative_local_root="local",
+                            dot_pyre_directory=(root_path / ".pyre"),
+                            source_directories=[raw_element],
+                            unwatched_dependency=unwatched_dependency,
+                        )
                     ),
                     artifact_root_name="irrelevant",
                 ),
@@ -360,11 +367,13 @@ class ArgumentsTest(testslide.TestCase):
             )
             self.assertEqual(
                 get_source_path(
-                    configuration.Configuration(
-                        project_root=str(root_path / "project"),
-                        dot_pyre_directory=(root_path / ".pyre"),
-                        source_directories=[raw_element],
-                        unwatched_dependency=unwatched_dependency,
+                    frontend_configuration.OpenSource(
+                        configuration.Configuration(
+                            project_root=str(root_path / "project"),
+                            dot_pyre_directory=(root_path / ".pyre"),
+                            source_directories=[raw_element],
+                            unwatched_dependency=unwatched_dependency,
+                        )
                     ),
                     artifact_root_name="irrelevant",
                 ),
@@ -388,11 +397,13 @@ class ArgumentsTest(testslide.TestCase):
             )
             self.assertEqual(
                 get_source_path(
-                    configuration.create_configuration(
-                        command_arguments.CommandArguments(
-                            dot_pyre_directory=root_path / ".pyre",
-                        ),
-                        root_path / "buck_root",
+                    frontend_configuration.OpenSource(
+                        configuration.create_configuration(
+                            command_arguments.CommandArguments(
+                                dot_pyre_directory=root_path / ".pyre",
+                            ),
+                            root_path / "buck_root",
+                        )
                     ),
                     artifact_root_name="artifact_root",
                 ),
@@ -421,12 +432,14 @@ class ArgumentsTest(testslide.TestCase):
             )
             self.assertEqual(
                 get_source_path(
-                    configuration.create_configuration(
-                        command_arguments.CommandArguments(
-                            dot_pyre_directory=root_path / ".pyre",
-                            use_buck2=True,
-                        ),
-                        root_path / "repo_root" / "buck_root",
+                    frontend_configuration.OpenSource(
+                        configuration.create_configuration(
+                            command_arguments.CommandArguments(
+                                dot_pyre_directory=root_path / ".pyre",
+                                use_buck2=True,
+                            ),
+                            root_path / "repo_root" / "buck_root",
+                        )
                     ),
                     artifact_root_name="artifact_root",
                 ),
@@ -458,12 +471,14 @@ class ArgumentsTest(testslide.TestCase):
             )
             self.assertEqual(
                 get_source_path(
-                    configuration.create_configuration(
-                        command_arguments.CommandArguments(
-                            local_configuration="local",
-                            dot_pyre_directory=root_path / ".pyre",
-                        ),
-                        root_path / "project",
+                    frontend_configuration.OpenSource(
+                        configuration.create_configuration(
+                            command_arguments.CommandArguments(
+                                local_configuration="local",
+                                dot_pyre_directory=root_path / ".pyre",
+                            ),
+                            root_path / "project",
+                        )
                     ),
                     artifact_root_name="artifact_root/local",
                 ),
@@ -485,10 +500,12 @@ class ArgumentsTest(testslide.TestCase):
             setup.ensure_directories_exists(root_path, [".pyre", "project"])
             with self.assertRaises(configuration.InvalidConfiguration):
                 get_source_path(
-                    configuration.Configuration(
-                        project_root=str(root_path / "project"),
-                        dot_pyre_directory=(root_path / ".pyre"),
-                        targets=["//ct:frog"],
+                    frontend_configuration.OpenSource(
+                        configuration.Configuration(
+                            project_root=str(root_path / "project"),
+                            dot_pyre_directory=(root_path / ".pyre"),
+                            targets=["//ct:frog"],
+                        )
                     ),
                     artifact_root_name="irrelevant",
                 )
@@ -496,11 +513,13 @@ class ArgumentsTest(testslide.TestCase):
     def test_get_source_path__no_source_specified(self) -> None:
         with self.assertRaises(configuration.InvalidConfiguration):
             get_source_path(
-                configuration.Configuration(
-                    project_root="project",
-                    dot_pyre_directory=Path(".pyre"),
-                    source_directories=None,
-                    targets=None,
+                frontend_configuration.OpenSource(
+                    configuration.Configuration(
+                        project_root="project",
+                        dot_pyre_directory=Path(".pyre"),
+                        source_directories=None,
+                        targets=None,
+                    )
                 ),
                 artifact_root_name="irrelevant",
             )
@@ -508,11 +527,13 @@ class ArgumentsTest(testslide.TestCase):
     def test_get_source_path__confliciting_source_specified(self) -> None:
         with self.assertRaises(configuration.InvalidConfiguration):
             get_source_path(
-                configuration.Configuration(
-                    project_root="project",
-                    dot_pyre_directory=Path(".pyre"),
-                    source_directories=[search_path.SimpleRawElement("src")],
-                    targets=["//ct:ayla"],
+                frontend_configuration.OpenSource(
+                    configuration.Configuration(
+                        project_root="project",
+                        dot_pyre_directory=Path(".pyre"),
+                        source_directories=[search_path.SimpleRawElement("src")],
+                        targets=["//ct:ayla"],
+                    )
                 ),
                 artifact_root_name="irrelevant",
             )
@@ -549,13 +570,15 @@ class ArgumentsTest(testslide.TestCase):
             root_path = Path(root).resolve()
             setup.ensure_directories_exists(root_path, ["a", "b/c"])
 
-            test_configuration = configuration.Configuration(
-                project_root=str(root_path),
-                dot_pyre_directory=Path(".pyre"),
-                do_not_ignore_errors_in=[
-                    str(root_path / "a"),
-                    str(root_path / "b" / "c"),
-                ],
+            test_configuration = frontend_configuration.OpenSource(
+                configuration.Configuration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    do_not_ignore_errors_in=[
+                        str(root_path / "a"),
+                        str(root_path / "b" / "c"),
+                    ],
+                )
             )
             self.assertCountEqual(
                 get_checked_directory_allowlist(
@@ -568,13 +591,15 @@ class ArgumentsTest(testslide.TestCase):
                 ],
             )
 
-            test_configuration = configuration.Configuration(
-                project_root=str(root_path),
-                dot_pyre_directory=Path(".pyre"),
-                do_not_ignore_errors_in=[
-                    str(root_path / "a"),
-                    str(root_path / "b" / "c"),
-                ],
+            test_configuration = frontend_configuration.OpenSource(
+                configuration.Configuration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    do_not_ignore_errors_in=[
+                        str(root_path / "a"),
+                        str(root_path / "b" / "c"),
+                    ],
+                )
             )
             self.assertCountEqual(
                 get_checked_directory_allowlist(
@@ -587,10 +612,12 @@ class ArgumentsTest(testslide.TestCase):
                 ],
             )
 
-            test_configuration = configuration.Configuration(
-                project_root=str(root_path),
-                dot_pyre_directory=Path(".pyre"),
-                do_not_ignore_errors_in=[],
+            test_configuration = frontend_configuration.OpenSource(
+                configuration.Configuration(
+                    project_root=str(root_path),
+                    dot_pyre_directory=Path(".pyre"),
+                    do_not_ignore_errors_in=[],
+                )
             )
             self.assertCountEqual(
                 get_checked_directory_allowlist(

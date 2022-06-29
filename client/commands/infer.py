@@ -23,7 +23,7 @@ from libcst.codemod import CodemodContext
 
 from .. import command_arguments, configuration as configuration_module, log
 from ..libcst_vendored_visitors import ApplyTypeAnnotationsVisitor
-from . import backend_arguments, commands, start
+from . import backend_arguments, commands, frontend_configuration, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -703,7 +703,7 @@ class AnnotateModuleInPlace:
 
 
 def create_infer_arguments(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     infer_arguments: command_arguments.InferArguments,
 ) -> Arguments:
     """
@@ -715,18 +715,19 @@ def create_infer_arguments(
     """
     source_paths = backend_arguments.get_source_path_for_check(configuration)
 
+    log_directory = configuration.get_log_directory()
     profiling_output = (
-        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        backend_arguments.get_profiling_log_path(log_directory)
         if infer_arguments.enable_profiling
         else None
     )
     memory_profiling_output = (
-        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        backend_arguments.get_profiling_log_path(log_directory)
         if infer_arguments.enable_memory_profiling
         else None
     )
 
-    logger = configuration.logger
+    logger = configuration.get_remote_logger()
     remote_logging = (
         backend_arguments.RemoteLogging(
             logger=logger, identifier=infer_arguments.log_identifier or ""
@@ -737,24 +738,24 @@ def create_infer_arguments(
 
     return Arguments(
         base_arguments=backend_arguments.BaseArguments(
-            log_path=configuration.log_directory,
-            global_root=configuration.project_root,
+            log_path=str(log_directory),
+            global_root=str(configuration.get_global_root()),
             checked_directory_allowlist=backend_arguments.get_checked_directory_allowlist(
                 configuration, source_paths
             ),
-            checked_directory_blocklist=(configuration.ignore_all_errors),
+            checked_directory_blocklist=(configuration.get_ignore_all_errors()),
             debug=infer_arguments.debug_infer,
-            excludes=configuration.excludes,
+            excludes=configuration.get_excludes(),
             extensions=configuration.get_valid_extension_suffixes(),
-            relative_local_root=configuration.relative_local_root,
+            relative_local_root=configuration.get_relative_local_root(),
             memory_profiling_output=memory_profiling_output,
             number_of_workers=configuration.get_number_of_workers(),
             parallel=not infer_arguments.sequential,
             profiling_output=profiling_output,
             python_version=configuration.get_python_version(),
-            shared_memory=configuration.shared_memory,
+            shared_memory=configuration.get_shared_memory(),
             remote_logging=remote_logging,
-            search_paths=configuration.expand_and_get_existent_search_paths(),
+            search_paths=configuration.get_existent_search_paths(),
             source_paths=source_paths,
         ),
         paths_to_modify=infer_arguments.paths_to_modify,
@@ -763,7 +764,7 @@ def create_infer_arguments(
 
 @contextlib.contextmanager
 def create_infer_arguments_and_cleanup(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     infer_arguments: command_arguments.InferArguments,
 ) -> Iterator[Arguments]:
     arguments = create_infer_arguments(configuration, infer_arguments)
@@ -799,6 +800,7 @@ def _check_working_directory(
 def _run_infer_command_get_output(command: Sequence[str]) -> str:
     with backend_arguments.backend_log_file(prefix="pyre_infer") as log_file:
         with start.background_logging(Path(log_file.name)):
+            # lint-ignore: NoUnsafeExecRule
             result = subprocess.run(
                 command,
                 stdout=subprocess.PIPE,
@@ -838,10 +840,10 @@ def _run_infer_command_get_output(command: Sequence[str]) -> str:
 
 
 def _get_infer_command_output(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     infer_arguments: command_arguments.InferArguments,
 ) -> str:
-    binary_location = configuration.get_binary_respecting_override()
+    binary_location = configuration.get_binary_location(download_if_needed=True)
     if binary_location is None:
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
@@ -851,12 +853,12 @@ def _get_infer_command_output(
         configuration, infer_arguments
     ) as arguments:
         with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
-            infer_command = [binary_location, "newinfer", str(argument_file_path)]
+            infer_command = [str(binary_location), "newinfer", str(argument_file_path)]
             return _run_infer_command_get_output(command=infer_command)
 
 
 def _load_output(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     infer_arguments: command_arguments.InferArguments,
 ) -> str:
     if infer_arguments.read_stdin:
@@ -963,17 +965,17 @@ def _annotate_in_place(
 
 
 def run_infer(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     infer_arguments: command_arguments.InferArguments,
 ) -> commands.ExitCode:
     working_directory = infer_arguments.working_directory
     _check_working_directory(
         working_directory=working_directory,
-        global_root=Path(configuration.project_root),
-        relative_local_root=configuration.relative_local_root,
+        global_root=configuration.get_global_root(),
+        relative_local_root=configuration.get_relative_local_root(),
     )
 
-    type_directory = _get_type_directory(Path(configuration.log_directory))
+    type_directory = _get_type_directory(configuration.get_log_directory())
     in_place = infer_arguments.in_place
 
     options = StubGenerationOptions(
@@ -1026,4 +1028,4 @@ def run(
     configuration: configuration_module.Configuration,
     infer_arguments: command_arguments.InferArguments,
 ) -> commands.ExitCode:
-    return run_infer(configuration, infer_arguments)
+    return run_infer(frontend_configuration.OpenSource(configuration), infer_arguments)

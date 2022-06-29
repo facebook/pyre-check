@@ -16,7 +16,14 @@ from .. import (
     error,
     statistics_logger,
 )
-from . import backend_arguments, commands, server_connection, server_event, start
+from . import (
+    backend_arguments,
+    commands,
+    frontend_configuration,
+    server_connection,
+    server_event,
+    start,
+)
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -148,18 +155,18 @@ def _show_progress_log_and_display_type_errors(
 
 
 def run_incremental(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> ExitStatus:
     socket_path = server_connection.get_default_socket_path(
-        project_root=Path(configuration.project_root),
-        relative_local_root=configuration.relative_local_root,
+        project_root=configuration.get_global_root(),
+        relative_local_root=configuration.get_relative_local_root(),
     )
     # Need to be consistent with the log symlink location in start command
-    log_path = Path(configuration.log_directory) / "new_server" / "server.stderr"
+    log_path = configuration.get_log_directory() / "new_server" / "server.stderr"
     output = incremental_arguments.output
     remote_logging = backend_arguments.RemoteLogging.create(
-        configuration.logger,
+        configuration.get_remote_logger(),
         incremental_arguments.start_arguments.log_identifier,
     )
     try:
@@ -202,7 +209,9 @@ def run(
     incremental_arguments: command_arguments.IncrementalArguments,
 ) -> ExitStatus:
     try:
-        return run_incremental(configuration, incremental_arguments)
+        return run_incremental(
+            frontend_configuration.OpenSource(configuration), incremental_arguments
+        )
     except server_event.ServerStartException as error:
         raise commands.ClientException(
             f"{error}", exit_code=_exit_code_from_error_kind(error.kind)

@@ -44,6 +44,7 @@ from . import (
     async_server_connection as connection,
     backend_arguments,
     commands,
+    frontend_configuration,
     incremental,
     language_server_protocol as lsp,
     location_lookup,
@@ -115,10 +116,10 @@ class PyreServerStartOptions:
     def read_from(
         command_argument: command_arguments.CommandArguments, base_directory: Path
     ) -> "PyreServerStartOptions":
-        configuration = configuration_module.create_configuration(
-            command_argument, base_directory
+        configuration = frontend_configuration.OpenSource(
+            configuration_module.create_configuration(command_argument, base_directory)
         )
-        binary_location = configuration.get_binary_respecting_override()
+        binary_location = configuration.get_binary_location(download_if_needed=True)
         if binary_location is None:
             raise configuration_module.InvalidConfiguration(
                 "Cannot locate a Pyre binary to run."
@@ -153,12 +154,12 @@ class PyreServerStartOptions:
             )
 
         return PyreServerStartOptions(
-            binary=binary_location,
+            binary=str(binary_location),
             server_identifier=start.get_server_identifier(configuration),
             start_arguments=start_arguments,
-            ide_features=configuration.ide_features,
-            strict_default=configuration.strict,
-            excludes=configuration.excludes,
+            ide_features=configuration.get_ide_features(),
+            strict_default=configuration.is_strict(),
+            excludes=configuration.get_excludes(),
         )
 
 

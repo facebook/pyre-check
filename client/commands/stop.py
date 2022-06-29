@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 
 from .. import configuration as configuration_module
-from . import commands, server_connection, start
+from . import commands, frontend_configuration, server_connection, start
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -38,10 +38,10 @@ def remove_socket_if_exists(socket_path: Path) -> None:
         LOG.warning(f"Failed to remove lock file at `{socket_path}.lock`: {error}")
 
 
-def run_stop(configuration: configuration_module.Configuration) -> commands.ExitCode:
+def run_stop(configuration: frontend_configuration.Base) -> commands.ExitCode:
     socket_path = server_connection.get_default_socket_path(
-        project_root=Path(configuration.project_root),
-        relative_local_root=configuration.relative_local_root,
+        project_root=configuration.get_global_root(),
+        relative_local_root=configuration.get_relative_local_root(),
     )
     try:
         LOG.info("Stopping server...")
@@ -55,4 +55,4 @@ def run_stop(configuration: configuration_module.Configuration) -> commands.Exit
 
 
 def run(configuration: configuration_module.Configuration) -> commands.ExitCode:
-    return run_stop(configuration)
+    return run_stop(frontend_configuration.OpenSource(configuration))

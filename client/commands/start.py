@@ -31,7 +31,14 @@ from .. import (
     find_directories,
     log,
 )
-from . import backend_arguments, commands, server_connection, server_event, stop
+from . import (
+    backend_arguments,
+    commands,
+    frontend_configuration,
+    server_connection,
+    server_event,
+    stop,
+)
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -162,7 +169,7 @@ class Arguments:
 
 
 def get_critical_files(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
 ) -> List[CriticalFile]:
     def get_full_path(root: str, relative: str) -> str:
         full_path = (Path(root) / relative).resolve(strict=False)
@@ -170,12 +177,12 @@ def get_critical_files(
             LOG.warning(f"Critical file does not exist: {full_path}")
         return str(full_path)
 
-    local_root = configuration.local_root
+    local_root = configuration.get_local_root()
     return [
         CriticalFile(
             policy=MatchPolicy.FULL_PATH,
             path=get_full_path(
-                root=configuration.project_root,
+                root=str(configuration.get_global_root()),
                 relative=find_directories.CONFIGURATION_FILE,
             ),
         ),
@@ -186,7 +193,7 @@ def get_critical_files(
                 CriticalFile(
                     policy=MatchPolicy.FULL_PATH,
                     path=get_full_path(
-                        root=local_root,
+                        root=str(local_root),
                         relative=find_directories.LOCAL_CONFIGURATION_FILE,
                     ),
                 )
@@ -196,7 +203,7 @@ def get_critical_files(
             # TODO(T92070475): This is a temporary hack until generated code can be
             # fully supported.
             []
-            if configuration.targets is None
+            if configuration.get_buck_targets() is None
             else [CriticalFile(policy=MatchPolicy.EXTENSION, path="thrift")]
         ),
         *(
@@ -205,7 +212,7 @@ def get_critical_files(
                     policy=MatchPolicy.FULL_PATH,
                     path=get_full_path(root=path, relative=""),
                 )
-                for path in configuration.other_critical_files
+                for path in configuration.get_other_critical_files()
             ]
         ),
     ]
@@ -239,7 +246,7 @@ def get_saved_state_action(
 
 
 def create_server_arguments(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     start_arguments: command_arguments.StartArguments,
 ) -> Arguments:
     """
@@ -261,61 +268,64 @@ def create_server_arguments(
     # Server section is usually useful when Pyre server is involved
     additional_logging_sections.append("server")
 
+    log_directory = configuration.get_log_directory()
     profiling_output = (
-        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        backend_arguments.get_profiling_log_path(log_directory)
         if start_arguments.enable_profiling
         else None
     )
     memory_profiling_output = (
-        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        backend_arguments.get_profiling_log_path(log_directory)
         if start_arguments.enable_memory_profiling
         else None
     )
 
+    global_root = configuration.get_global_root()
+    relative_local_root = configuration.get_relative_local_root()
     return Arguments(
         base_arguments=backend_arguments.BaseArguments(
-            log_path=configuration.log_directory,
-            global_root=configuration.project_root,
+            log_path=str(log_directory),
+            global_root=str(global_root),
             checked_directory_allowlist=backend_arguments.get_checked_directory_allowlist(
                 configuration, source_paths
             ),
-            checked_directory_blocklist=(configuration.ignore_all_errors),
+            checked_directory_blocklist=(configuration.get_ignore_all_errors()),
             debug=start_arguments.debug,
-            excludes=configuration.excludes,
+            excludes=configuration.get_excludes(),
             extensions=configuration.get_valid_extension_suffixes(),
-            relative_local_root=configuration.relative_local_root,
+            relative_local_root=relative_local_root,
             memory_profiling_output=memory_profiling_output,
             number_of_workers=configuration.get_number_of_workers(),
             parallel=not start_arguments.sequential,
             profiling_output=profiling_output,
             python_version=configuration.get_python_version(),
-            shared_memory=configuration.shared_memory,
+            shared_memory=configuration.get_shared_memory(),
             remote_logging=backend_arguments.RemoteLogging.create(
-                configuration.logger, start_arguments.log_identifier
+                configuration.get_remote_logger(), start_arguments.log_identifier
             ),
-            search_paths=configuration.expand_and_get_existent_search_paths(),
+            search_paths=configuration.get_existent_search_paths(),
             source_paths=source_paths,
         ),
-        strict=configuration.strict,
+        strict=configuration.is_strict(),
         show_error_traces=start_arguments.show_error_traces,
         additional_logging_sections=additional_logging_sections,
         watchman_root=None
         if start_arguments.no_watchman
-        else backend_arguments.find_watchman_root(Path(configuration.project_root)),
-        taint_models_path=configuration.taint_models_path,
+        else backend_arguments.find_watchman_root(global_root),
+        taint_models_path=configuration.get_taint_models_path(),
         store_type_check_resolution=start_arguments.store_type_check_resolution,
         critical_files=get_critical_files(configuration),
         saved_state_action=None
         if start_arguments.no_saved_state
         else get_saved_state_action(
-            start_arguments, relative_local_root=configuration.relative_local_root
+            start_arguments, relative_local_root=relative_local_root
         ),
     )
 
 
-def get_server_identifier(configuration: configuration_module.Configuration) -> str:
-    global_identifier = Path(configuration.project_root).name
-    relative_local_root = configuration.relative_local_root
+def get_server_identifier(configuration: frontend_configuration.Base) -> str:
+    global_identifier = configuration.get_global_root().name
+    relative_local_root = configuration.get_relative_local_root()
     if relative_local_root is None:
         return global_identifier
     return f"{global_identifier}/{relative_local_root}"
@@ -329,6 +339,7 @@ def _run_in_foreground(
     return_code = 0
     try:
         LOG.warning("Starting server in the foreground...")
+        # lint-ignore: NoUnsafeExecRule
         result = subprocess.run(
             command,
             env=environment,
@@ -371,6 +382,7 @@ def background_server_log_file(log_directory: Path) -> Iterator[TextIO]:
     log_file_path = new_server_log_directory / datetime.datetime.now().strftime(
         SERVER_LOG_FILE_FORMAT
     )
+    # lint-ignore: NoUnsafeFilesystemRule
     with open(str(log_file_path), "a") as log_file:
         yield log_file
     # Symlink the log file to a known location for subsequent `pyre incremental`
@@ -393,6 +405,7 @@ def _run_in_background(
     # updates.
     with background_server_log_file(log_directory) as server_stderr:
         log_file = Path(server_stderr.name)
+        # lint-ignore: NoUnsafeExecRule
         server_process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -431,17 +444,16 @@ def _run_in_background(
 
 
 def run_start(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     start_arguments: command_arguments.StartArguments,
 ) -> commands.ExitCode:
-    binary_location = configuration.get_binary_respecting_override()
+    binary_location = configuration.get_binary_location(download_if_needed=True)
     if binary_location is None:
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
         )
 
-    log_directory = Path(configuration.log_directory)
-
+    log_directory = configuration.get_log_directory()
     server_arguments = create_server_arguments(configuration, start_arguments)
     if not start_arguments.no_watchman and server_arguments.watchman_root is None:
         LOG.warning(
@@ -453,7 +465,7 @@ def run_start(
     with backend_arguments.temporary_argument_file(
         server_arguments
     ) as argument_file_path:
-        server_command = [binary_location, "newserver", str(argument_file_path)]
+        server_command = [str(binary_location), "newserver", str(argument_file_path)]
         server_environment = {
             **os.environ,
             # This is to make sure that backend server shares the socket root
@@ -466,7 +478,7 @@ def run_start(
             return _run_in_foreground(server_command, server_environment)
         else:
             socket_path = server_connection.get_default_socket_path(
-                Path(configuration.project_root), configuration.relative_local_root
+                configuration.get_global_root(), configuration.get_relative_local_root()
             )
             return _run_in_background(
                 server_command,
@@ -483,4 +495,4 @@ def run(
     configuration: configuration_module.Configuration,
     start_arguments: command_arguments.StartArguments,
 ) -> commands.ExitCode:
-    return run_start(configuration, start_arguments)
+    return run_start(frontend_configuration.OpenSource(configuration), start_arguments)

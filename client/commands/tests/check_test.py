@@ -14,7 +14,7 @@ from ... import command_arguments, configuration
 from ...configuration import search_path
 from ...error import Error
 from ...tests import setup
-from .. import backend_arguments
+from .. import backend_arguments, frontend_configuration
 from ..check import (
     Arguments,
     create_check_arguments,
@@ -82,12 +82,14 @@ class CheckTest(testslide.TestCase):
                 root_path, {"source_directories": ["src"]}, relative="local"
             )
 
-            check_configuration = configuration.create_configuration(
-                command_arguments.CommandArguments(
-                    local_configuration="local",
-                    dot_pyre_directory=root_path / ".pyre",
-                ),
-                root_path,
+            check_configuration = frontend_configuration.OpenSource(
+                configuration.create_configuration(
+                    command_arguments.CommandArguments(
+                        local_configuration="local",
+                        dot_pyre_directory=root_path / ".pyre",
+                    ),
+                    root_path,
+                )
             )
 
             self.assertEqual(
@@ -143,11 +145,13 @@ class CheckTest(testslide.TestCase):
             )
 
             arguments = create_check_arguments(
-                configuration.create_configuration(
-                    command_arguments.CommandArguments(
-                        dot_pyre_directory=root_path / ".pyre"
-                    ),
-                    root_path / "project",
+                frontend_configuration.OpenSource(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(
+                            dot_pyre_directory=root_path / ".pyre"
+                        ),
+                        root_path / "project",
+                    )
                 ),
                 command_arguments.CheckArguments(),
             )
@@ -171,9 +175,11 @@ class CheckTest(testslide.TestCase):
             )
 
             arguments = create_check_arguments(
-                configuration.create_configuration(
-                    command_arguments.CommandArguments(dot_pyre_directory=log_path),
-                    root_path,
+                frontend_configuration.OpenSource(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(dot_pyre_directory=log_path),
+                        root_path,
+                    )
                 ),
                 command_arguments.CheckArguments(
                     logging_sections="foo,bar,-baz",

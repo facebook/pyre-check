@@ -14,7 +14,7 @@ import testslide
 from ... import command_arguments, configuration
 from ...configuration import search_path
 from ...tests import setup
-from .. import backend_arguments
+from .. import backend_arguments, frontend_configuration
 from ..infer import (
     AnnotateModuleInPlace,
     Arguments,
@@ -95,12 +95,14 @@ class InferTest(testslide.TestCase):
                 root_path, {"source_directories": ["src"]}, relative="local"
             )
 
-            infer_configuration = configuration.create_configuration(
-                command_arguments.CommandArguments(
-                    local_configuration="local",
-                    dot_pyre_directory=root_path / ".pyre",
-                ),
-                root_path,
+            infer_configuration = frontend_configuration.OpenSource(
+                configuration.create_configuration(
+                    command_arguments.CommandArguments(
+                        local_configuration="local",
+                        dot_pyre_directory=root_path / ".pyre",
+                    ),
+                    root_path,
+                )
             )
 
             self.assertEqual(

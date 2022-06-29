@@ -17,7 +17,13 @@ from .. import (
     error as error_module,
     log,
 )
-from . import backend_arguments, commands, start, validate_models
+from . import (
+    backend_arguments,
+    commands,
+    frontend_configuration,
+    start,
+    validate_models,
+)
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -93,7 +99,7 @@ class Arguments:
 
 
 def create_analyze_arguments(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     analyze_arguments: command_arguments.AnalyzeArguments,
 ) -> Arguments:
     """
@@ -105,18 +111,19 @@ def create_analyze_arguments(
     """
     source_paths = backend_arguments.get_source_path_for_check(configuration)
 
+    log_directory = configuration.get_log_directory()
     profiling_output = (
-        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        backend_arguments.get_profiling_log_path(log_directory)
         if analyze_arguments.enable_profiling
         else None
     )
     memory_profiling_output = (
-        backend_arguments.get_profiling_log_path(Path(configuration.log_directory))
+        backend_arguments.get_profiling_log_path(log_directory)
         if analyze_arguments.enable_memory_profiling
         else None
     )
 
-    logger = configuration.logger
+    logger = configuration.get_remote_logger()
     remote_logging = (
         backend_arguments.RemoteLogging(
             logger=logger, identifier=analyze_arguments.log_identifier or ""
@@ -129,30 +136,30 @@ def create_analyze_arguments(
     rule = analyze_arguments.rule
     taint_models_path = analyze_arguments.taint_models_path
     if len(taint_models_path) == 0:
-        taint_models_path = configuration.taint_models_path
+        taint_models_path = configuration.get_taint_models_path()
     repository_root = analyze_arguments.repository_root
     if repository_root is not None:
         repository_root = str(Path(repository_root).resolve(strict=False))
     return Arguments(
         base_arguments=backend_arguments.BaseArguments(
-            log_path=configuration.log_directory,
-            global_root=configuration.project_root,
+            log_path=str(log_directory),
+            global_root=str(configuration.get_global_root()),
             checked_directory_allowlist=backend_arguments.get_checked_directory_allowlist(
                 configuration, source_paths
             ),
-            checked_directory_blocklist=(configuration.ignore_all_errors),
+            checked_directory_blocklist=(configuration.get_ignore_all_errors()),
             debug=analyze_arguments.debug,
-            excludes=configuration.excludes,
+            excludes=configuration.get_excludes(),
             extensions=configuration.get_valid_extension_suffixes(),
-            relative_local_root=configuration.relative_local_root,
+            relative_local_root=configuration.get_relative_local_root(),
             memory_profiling_output=memory_profiling_output,
             number_of_workers=configuration.get_number_of_workers(),
             parallel=not analyze_arguments.sequential,
             profiling_output=profiling_output,
             python_version=configuration.get_python_version(),
-            shared_memory=configuration.shared_memory,
+            shared_memory=configuration.get_shared_memory(),
             remote_logging=remote_logging,
-            search_paths=configuration.expand_and_get_existent_search_paths(),
+            search_paths=configuration.get_existent_search_paths(),
             source_paths=source_paths,
         ),
         dump_call_graph=analyze_arguments.dump_call_graph,
@@ -169,7 +176,7 @@ def create_analyze_arguments(
         repository_root=repository_root,
         rule_filter=None if len(rule) == 0 else rule,
         save_results_to=analyze_arguments.save_results_to,
-        strict=configuration.strict,
+        strict=configuration.is_strict(),
         taint_model_paths=taint_models_path,
         use_cache=analyze_arguments.use_cache,
     )
@@ -177,7 +184,7 @@ def create_analyze_arguments(
 
 @contextlib.contextmanager
 def create_analyze_arguments_and_cleanup(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     analyze_arguments: command_arguments.AnalyzeArguments,
 ) -> Iterator[Arguments]:
     arguments = create_analyze_arguments(configuration, analyze_arguments)
@@ -209,6 +216,7 @@ def _run_analyze_command(
 ) -> commands.ExitCode:
     with backend_arguments.backend_log_file(prefix="pyre_analyze") as log_file:
         with start.background_logging(Path(log_file.name)):
+            # lint-ignore: NoUnsafeExecRule
             result = subprocess.run(
                 command,
                 stdout=subprocess.PIPE,
@@ -252,10 +260,10 @@ def _run_analyze_command(
 
 
 def run_analyze(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
     analyze_arguments: command_arguments.AnalyzeArguments,
 ) -> commands.ExitCode:
-    binary_location = configuration.get_binary_respecting_override()
+    binary_location = configuration.get_binary_location(download_if_needed=True)
     if binary_location is None:
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
@@ -265,7 +273,11 @@ def run_analyze(
         configuration, analyze_arguments
     ) as arguments:
         with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
-            analyze_command = [binary_location, "newanalyze", str(argument_file_path)]
+            analyze_command = [
+                str(binary_location),
+                "newanalyze",
+                str(argument_file_path),
+            ]
             return _run_analyze_command(
                 command=analyze_command,
                 output=analyze_arguments.output,
@@ -277,4 +289,6 @@ def run(
     configuration: configuration_module.Configuration,
     analyze_arguments: command_arguments.AnalyzeArguments,
 ) -> commands.ExitCode:
-    return run_analyze(configuration, analyze_arguments)
+    return run_analyze(
+        frontend_configuration.OpenSource(configuration), analyze_arguments
+    )

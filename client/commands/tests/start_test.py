@@ -12,7 +12,7 @@ import testslide
 from ... import command_arguments, configuration
 from ...configuration import search_path
 from ...tests import setup
-from .. import backend_arguments
+from .. import backend_arguments, frontend_configuration
 from ..start import (
     Arguments,
     background_server_log_file,
@@ -145,7 +145,12 @@ class ServerIdentifierTest(testslide.TestCase):
         def assert_server_identifier(
             client_configuration: configuration.Configuration, expected: str
         ) -> None:
-            self.assertEqual(get_server_identifier(client_configuration), expected)
+            self.assertEqual(
+                get_server_identifier(
+                    frontend_configuration.OpenSource(client_configuration)
+                ),
+                expected,
+            )
 
         assert_server_identifier(
             configuration.Configuration(
@@ -192,9 +197,13 @@ class StartTest(testslide.TestCase):
 
             self.assertCountEqual(
                 get_critical_files(
-                    configuration.create_configuration(
-                        command_arguments.CommandArguments(local_configuration="local"),
-                        root_path,
+                    frontend_configuration.OpenSource(
+                        configuration.create_configuration(
+                            command_arguments.CommandArguments(
+                                local_configuration="local"
+                            ),
+                            root_path,
+                        )
                     )
                 ),
                 [
@@ -218,9 +227,11 @@ class StartTest(testslide.TestCase):
 
             self.assertCountEqual(
                 get_critical_files(
-                    configuration.create_configuration(
-                        command_arguments.CommandArguments(),
-                        root_path,
+                    frontend_configuration.OpenSource(
+                        configuration.create_configuration(
+                            command_arguments.CommandArguments(),
+                            root_path,
+                        )
                     )
                 ),
                 [
@@ -306,12 +317,14 @@ class StartTest(testslide.TestCase):
                 root_path, {"source_directories": ["src"]}, relative="local"
             )
 
-            server_configuration = configuration.create_configuration(
-                command_arguments.CommandArguments(
-                    local_configuration="local",
-                    dot_pyre_directory=root_path / ".pyre",
-                ),
-                root_path,
+            server_configuration = frontend_configuration.OpenSource(
+                configuration.create_configuration(
+                    command_arguments.CommandArguments(
+                        local_configuration="local",
+                        dot_pyre_directory=root_path / ".pyre",
+                    ),
+                    root_path,
+                )
             )
             self.assertEqual(
                 create_server_arguments(
@@ -385,11 +398,13 @@ class StartTest(testslide.TestCase):
                 {"source_directories": ["src"]},
             )
             arguments = create_server_arguments(
-                configuration.create_configuration(
-                    command_arguments.CommandArguments(
-                        dot_pyre_directory=root_path / ".pyre",
-                    ),
-                    root_path,
+                frontend_configuration.OpenSource(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(
+                            dot_pyre_directory=root_path / ".pyre",
+                        ),
+                        root_path,
+                    )
                 ),
                 command_arguments.StartArguments(
                     no_watchman=False,
@@ -406,11 +421,13 @@ class StartTest(testslide.TestCase):
                 {"source_directories": ["src"]},
             )
             arguments = create_server_arguments(
-                configuration.create_configuration(
-                    command_arguments.CommandArguments(
-                        dot_pyre_directory=root_path / ".pyre",
-                    ),
-                    root_path,
+                frontend_configuration.OpenSource(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(
+                            dot_pyre_directory=root_path / ".pyre",
+                        ),
+                        root_path,
+                    )
                 ),
                 command_arguments.StartArguments(
                     no_saved_state=True, saved_state_project="some/project"
@@ -432,9 +449,11 @@ class StartTest(testslide.TestCase):
             )
 
             arguments = create_server_arguments(
-                configuration.create_configuration(
-                    command_arguments.CommandArguments(dot_pyre_directory=log_path),
-                    root_path,
+                frontend_configuration.OpenSource(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(dot_pyre_directory=log_path),
+                        root_path,
+                    )
                 ),
                 command_arguments.StartArguments(
                     logging_sections="foo,bar,-baz",

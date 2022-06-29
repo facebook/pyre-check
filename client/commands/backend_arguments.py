@@ -17,6 +17,7 @@ from typing_extensions import Protocol
 
 from .. import configuration as configuration_module, find_directories
 from ..configuration import search_path
+from . import frontend_configuration
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -233,10 +234,10 @@ def find_buck2_root(
 
 
 def _get_global_or_local_root(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
 ) -> Path:
-    global_root = Path(configuration.project_root)
-    relative_local_root = configuration.relative_local_root
+    global_root = configuration.get_global_root()
+    relative_local_root = configuration.get_relative_local_root()
     return (
         (global_root / relative_local_root)
         if relative_local_root is not None
@@ -245,16 +246,16 @@ def _get_global_or_local_root(
 
 
 def get_source_path(
-    configuration: configuration_module.Configuration, artifact_root_name: str
+    configuration: frontend_configuration.Base, artifact_root_name: str
 ) -> SourcePath:
-    source_directories = configuration.source_directories
-    targets = configuration.targets
-    buck_mode = configuration.buck_mode.get() if configuration.buck_mode else None
+    source_directories = configuration.is_source_directories_defined()
+    targets = configuration.get_buck_targets()
+    buck_mode = configuration.get_buck_mode()
 
-    if source_directories is not None and targets is None:
+    if source_directories and targets is None:
         elements: Sequence[
             search_path.Element
-        ] = configuration.expand_and_get_existent_source_directories()
+        ] = configuration.get_existent_source_directories()
         if len(elements) == 0:
             LOG.warning("Pyre did not find an existent source directory.")
 
@@ -268,11 +269,11 @@ def get_source_path(
         else:
             return SimpleSourcePath(elements)
 
-    if targets is not None and source_directories is None:
+    if targets is not None and not source_directories:
         if len(targets) == 0:
             LOG.warning("Pyre did not find any targets to check.")
 
-        use_buck2 = configuration.use_buck2
+        use_buck2 = configuration.uses_buck2()
         search_base = _get_global_or_local_root(configuration)
         source_root = (
             find_buck2_root(search_base) if use_buck2 else find_buck_root(search_base)
@@ -285,15 +286,15 @@ def get_source_path(
 
         return BuckSourcePath(
             source_root=source_root,
-            artifact_root=configuration.dot_pyre_directory / artifact_root_name,
+            artifact_root=configuration.get_dot_pyre_directory() / artifact_root_name,
             checked_directory=search_base,
             targets=targets,
             mode=buck_mode,
-            isolation_prefix=configuration.isolation_prefix,
+            isolation_prefix=configuration.get_buck_isolation_prefix(),
             use_buck2=use_buck2,
         )
 
-    if source_directories is not None and targets is not None:
+    if source_directories and targets is not None:
         raise configuration_module.InvalidConfiguration(
             "`source_directories` and `targets` are mutually exclusive"
         )
@@ -305,12 +306,12 @@ def get_source_path(
 
 
 def get_source_path_for_server(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
 ) -> SourcePath:
     # We know that for each source root there could be at most one server alive.
     # Therefore artifact root name can be a fixed constant.
     artifact_root_name = SERVER_ARTIFACT_ROOT_NAME
-    relative_local_root = configuration.relative_local_root
+    relative_local_root = configuration.get_relative_local_root()
     if relative_local_root is not None:
         # Prevent artifact roots of different local projects from clashing with
         # each other.
@@ -319,7 +320,7 @@ def get_source_path_for_server(
 
 
 def get_source_path_for_check(
-    configuration: configuration_module.Configuration,
+    configuration: frontend_configuration.Base,
 ) -> SourcePath:
     # Artifact for one-off check command should not be a fixed constant, to prevent
     # concurrent check commands overwriting each other's artifacts. Here we use process
@@ -328,10 +329,10 @@ def get_source_path_for_check(
 
 
 def get_checked_directory_allowlist(
-    configuration: configuration_module.Configuration, source_path: SourcePath
+    configuration: frontend_configuration.Base, source_path: SourcePath
 ) -> List[str]:
     source_path_allowlist = list(source_path.get_checked_directory_allowlist())
-    explicit_allowlist = list(configuration.do_not_ignore_errors_in)
+    explicit_allowlist = list(configuration.get_do_not_ignore_errors_in())
     # If allowlist paths were specifically provided, do not include inferred paths.
     return explicit_allowlist or source_path_allowlist
 

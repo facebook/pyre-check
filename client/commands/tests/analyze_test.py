@@ -12,7 +12,7 @@ import testslide
 from ... import command_arguments, configuration
 from ...configuration import search_path
 from ...tests import setup
-from .. import backend_arguments
+from .. import backend_arguments, frontend_configuration
 from ..analyze import Arguments, create_analyze_arguments
 
 
@@ -96,13 +96,15 @@ class ArgumentTest(testslide.TestCase):
                 root_path, {"source_directories": ["src"]}, relative="local"
             )
 
-            analyze_configuration = configuration.create_configuration(
-                command_arguments.CommandArguments(
-                    local_configuration="local",
-                    dot_pyre_directory=root_path / ".pyre",
-                    strict=True,
-                ),
-                root_path,
+            analyze_configuration = frontend_configuration.OpenSource(
+                configuration.create_configuration(
+                    command_arguments.CommandArguments(
+                        local_configuration="local",
+                        dot_pyre_directory=root_path / ".pyre",
+                        strict=True,
+                    ),
+                    root_path,
+                )
             )
 
             self.assertEqual(
