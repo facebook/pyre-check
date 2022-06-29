@@ -666,12 +666,38 @@ let find_definition ~resolution ~module_reference ~define_name ~statement_key re
     Reference.single reference
     >>| Identifier.sanitized
     >>= look_up_local_definition ~resolution ~define_name ~statement_key
-    >>| fun { Scope.Binding.location; _ } -> location |> Location.with_module ~module_reference
+    >>= function
+    | { Scope.Binding.kind = ImportName _; _ } ->
+        (* If we import `import foo`, go-to-def on uses of `foo` should go to the module `foo`, not
+           the import location in the current module. So, don't treat `foo` as a locally defined
+           variable. *)
+        None
+    | { Scope.Binding.location; _ } ->
+        location |> Location.with_module ~module_reference |> Option.some
+  in
+  let definition_from_resolved_reference ~global_resolution = function
+    | UnannotatedGlobalEnvironment.ResolvedReference.Module resolved_reference ->
+        Location.with_module ~module_reference:resolved_reference Location.any |> Option.some
+    | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute { from; name; remaining; _ } ->
+        let resolved_reference =
+          Reference.combine
+            (Reference.create ~prefix:from name)
+            (Reference.create_from_list remaining)
+        in
+        GlobalResolution.global_location global_resolution resolved_reference
+    | UnannotatedGlobalEnvironment.ResolvedReference.PlaceholderStub { stub_module; _ } ->
+        Location.with_module ~module_reference:stub_module Location.any |> Option.some
   in
   let definition_location =
     match local_definition with
     | Some definition -> Some definition
-    | None -> GlobalResolution.global_location (Resolution.global_resolution resolution) reference
+    | None -> (
+        let global_resolution = Resolution.global_resolution resolution in
+        match GlobalResolution.global_location global_resolution reference with
+        | Some definition -> Some definition
+        | None ->
+            GlobalResolution.resolve_exports global_resolution reference
+            >>= definition_from_resolved_reference ~global_resolution)
   in
   let sanitize_location ({ Location.WithModule.module_reference; start; stop } as location) =
     if [%compare.equal: Location.WithModule.t] location Location.WithModule.any then

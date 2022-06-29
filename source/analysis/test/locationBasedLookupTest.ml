@@ -273,6 +273,135 @@ let test_find_narrowest_spanning_symbol context =
   assert_narrowest_expression
     ~source:
       {|
+        from .library import Base as MyBase
+                                    # ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "library.Base");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:{|
+        import library
+        #        ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "library");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+        from . import library as my_library
+                                    # ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "library");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+        from . import library as my_library
+
+        x = my_library.Base()
+        #    ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "library");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~external_sources:["a.py", {| |}; "b.py", {| import a as x |}]
+    ~source:{|
+        from b import x
+        print(x)
+           #  ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "b.x");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~external_sources:["a.py", {| |}; "b.py", {| import a as x |}]
+    ~source:{|
+        from b import x as y
+        print(y)
+           #  ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "b.x");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~external_sources:["a.py", {| class Foo: ... |}; "b.py", {| import a as x |}]
+    ~source:{|
+        from b import x as y
+        print(y.Foo)
+              #  ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "b.x.Foo");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~external_sources:["foo/a.py", {| class Foo: ... |}; "b.py", {| import foo.a as x |}]
+    ~source:{|
+        from b import x as y
+        print(y)
+           #  ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "b.x");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~external_sources:["my_placeholder_stub.pyi", {| # pyre-placeholder-stub |}]
+    ~source:
+      {|
+        import my_placeholder_stub
+        print(my_placeholder_stub)
+           #  ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "my_placeholder_stub");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~external_sources:["my_placeholder_stub.pyi", {| # pyre-placeholder-stub |}]
+    ~source:
+      {|
+        from my_placeholder_stub import x as y
+        print(y.Foo)
+              #  ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition = Expression (parse_single_expression "my_placeholder_stub.x.Foo");
+         cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
         def foo(a: int, b: str) -> None: ...
         #               ^-- CURSOR
     |}
@@ -1072,6 +1201,43 @@ let test_resolve_definition_for_symbol context =
     }
     (Some "library:2:0-2:15");
   assert_resolved_definition_with_explicit_location
+    ~source:{|
+        import library
+        #        ^- cursor
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "library");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some "library:1:0-1:0");
+  assert_resolved_definition_with_explicit_location
+    ~source:
+      {|
+        from . import library as my_library
+                                    # ^- cursor
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "library");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some "library:1:0-1:0");
+  assert_resolved_definition_with_explicit_location
+    ~source:
+      {|
+        from . import library as my_library
+
+        x = my_library.Base()
+        #    ^- cursor
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "library");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+      use_postcondition_info = false;
+    }
+    (Some "library:1:0-1:0");
+  assert_resolved_definition_with_explicit_location
     ~source:
       {|
         def return_str() -> str:
@@ -1269,6 +1435,86 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     (Some "typing:1:0-1:0");
+  assert_resolved_definition_with_explicit_location
+    ~external_sources:["a.py", {| |}; "b.py", {| import a as x |}]
+    ~source:{|
+        from b import x as y
+        print(y)
+           #  ^-- CURSOR
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "b.x");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+      use_postcondition_info = false;
+    }
+    (Some "a:1:0-1:0");
+  assert_resolved_definition_with_explicit_location
+    ~external_sources:["a.py", {| |}; "b.py", {| import a as x |}]
+    ~source:{|
+        from b import x
+        print(x)
+           #  ^-- CURSOR
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "b.x");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+      use_postcondition_info = false;
+    }
+    (Some "a:1:0-1:0");
+  assert_resolved_definition_with_explicit_location
+    ~external_sources:["foo/a.py", {| class Foo: ... |}; "b.py", {| import foo.a as x |}]
+    ~source:{|
+        from b import x as y
+        print(y)
+           #  ^-- CURSOR
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "b.x");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+      use_postcondition_info = false;
+    }
+    (Some "foo.a:1:0-1:0");
+  assert_resolved_definition_with_explicit_location
+    ~external_sources:["a.py", {| class Foo: ... |}; "b.py", {| import a as x |}]
+    ~source:{|
+        from b import x as y
+        print(y.Foo)
+              #  ^-- CURSOR
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "b.x.Foo");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+      use_postcondition_info = false;
+    }
+    (Some "a:1:0-1:14");
+  assert_resolved_definition_with_explicit_location
+    ~external_sources:["my_placeholder_stub.pyi", {| # pyre-placeholder-stub |}]
+    ~source:
+      {|
+        import my_placeholder_stub
+        print(my_placeholder_stub)
+           #  ^-- CURSOR
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "my_placeholder_stub");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+      use_postcondition_info = false;
+    }
+    (Some "my_placeholder_stub:1:0-1:0");
+  assert_resolved_definition_with_explicit_location
+    ~external_sources:["my_placeholder_stub.pyi", {| # pyre-placeholder-stub |}]
+    ~source:
+      {|
+        from my_placeholder_stub import x as y
+        print(y.Foo)
+              #  ^-- CURSOR
+    |}
+    {
+      symbol_with_definition = Expression (parse_single_expression "my_placeholder_stub.x.Foo");
+      cfg_data = { define_name = !&"test.$toplevel"; node_id = 4; statement_index = 1 };
+      use_postcondition_info = false;
+    }
+    (Some "my_placeholder_stub:1:0-1:0");
   ()
 
 
