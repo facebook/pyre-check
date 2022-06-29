@@ -12,16 +12,20 @@ import testslide
 from ... import command_arguments, configuration
 from ...tests import setup
 
-from .. import expression_level_coverage, frontend_configuration
-
-from ..query import Response
+from .. import (
+    commands,
+    expression_level_coverage,
+    frontend_configuration,
+    query,
+    server_connection,
+)
 
 
 class ExpressionLevelTest(testslide.TestCase):
     def test_get_expression_level_coverage_response(self) -> None:
         self.assertEqual(
             expression_level_coverage._get_expression_level_coverage_response(
-                Response(
+                query.Response(
                     {
                         "response": [
                             [
@@ -108,11 +112,11 @@ class ExpressionLevelTest(testslide.TestCase):
             )
 
         assert_summary_expression_level_coverage(
-            Response({"response": []}).payload,
+            query.Response({"response": []}).payload,
             "Overall: 100.0% expressions are covered",
         )
         assert_summary_expression_level_coverage(
-            Response(
+            query.Response(
                 {
                     "response": [
                         [
@@ -129,7 +133,7 @@ class ExpressionLevelTest(testslide.TestCase):
             "test.py: 100.0% expressions are covered\nOverall: 100.0% expressions are covered",
         )
         assert_summary_expression_level_coverage(
-            Response(
+            query.Response(
                 {
                     "response": [
                         [
@@ -163,7 +167,7 @@ class ExpressionLevelTest(testslide.TestCase):
             "test.py: 71.43% expressions are covered\nOverall: 71.43% expressions are covered",
         )
         assert_summary_expression_level_coverage(
-            Response(
+            query.Response(
                 {
                     "response": [
                         [
@@ -205,7 +209,7 @@ class ExpressionLevelTest(testslide.TestCase):
             "library.py: 100.0% expressions are covered\ntest.py: 71.43% expressions are covered\nOverall: 81.82% expressions are covered",
         )
         assert_summary_expression_level_coverage(
-            Response(
+            query.Response(
                 {
                     "response": [
                         [
@@ -305,3 +309,45 @@ class ExpressionLevelTest(testslide.TestCase):
                 "@/fake/path/../other_path/arguments.txt",
             ],
         )
+
+    def test_backend_exception(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(
+                root_path, [".pyre", "allows", "blocks", "search", "local/src"]
+            )
+            setup.write_configuration_file(
+                root_path,
+                {
+                    "do_not_ignore_errors_in": ["allows", "nonexistent"],
+                    "ignore_all_errors": ["blocks", "nonexistent"],
+                    "exclude": ["exclude"],
+                    "extensions": [".ext", "invalid_extension"],
+                    "workers": 42,
+                    "search_path": ["search", "nonexistent"],
+                    "strict": True,
+                },
+            )
+            setup.write_configuration_file(
+                root_path, {"source_directories": ["src"]}, relative="local"
+            )
+
+            check_configuration = configuration.create_configuration(
+                command_arguments.CommandArguments(
+                    local_configuration="local",
+                    dot_pyre_directory=root_path / ".pyre",
+                ),
+                root_path,
+            )
+
+            self.mock_callable(query, "query_server").to_raise(
+                server_connection.ConnectionFailure
+            )
+            self.assertEqual(
+                expression_level_coverage.run(
+                    check_configuration,
+                    "expression_level_coverage()",
+                    False,
+                ),
+                commands.ExitCode.SERVER_NOT_FOUND,
+            )
