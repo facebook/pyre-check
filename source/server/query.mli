@@ -18,6 +18,10 @@ module Request : sig
     | DumpCallGraph
     | ExpressionLevelCoverage of string list
     | Help of string
+    | HoverInfoForPosition of {
+        path: PyrePath.t;
+        position: Location.position;
+      }
     | InlineDecorators of {
         function_reference: Reference.t;
         decorators_to_skip: Reference.t list;

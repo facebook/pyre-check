@@ -148,6 +148,13 @@ let test_parse_query context =
   assert_fails_to_parse "expression_level_coverage(a.py:1:2)";
   assert_fails_to_parse "expression_level_coverage(a.py)";
   assert_fails_to_parse "expression_level_coverage('a.py', 1, 2)";
+  assert_parses
+    "hover_info_for_position(path='/foo.py', line=42, column=10)"
+    (HoverInfoForPosition
+       { path = PyrePath.create_absolute "/foo.py"; position = Location.{ line = 42; column = 10 } });
+  assert_fails_to_parse "hover_info_for_position(path='/foo.py', line=42)";
+  assert_fails_to_parse "hover_info_for_position(path='/foo.py', column=10)";
+  assert_fails_to_parse "hover_info_for_position(path=99, line=42, column=10)";
   ()
 
 

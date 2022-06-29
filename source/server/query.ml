@@ -24,6 +24,10 @@ module Request = struct
     | DumpCallGraph
     | ExpressionLevelCoverage of string list
     | Help of string
+    | HoverInfoForPosition of {
+        path: PyrePath.t;
+        position: Location.position;
+      }
     | InlineDecorators of {
         function_reference: Reference.t;
         decorators_to_skip: Reference.t list;
@@ -322,6 +326,10 @@ let help () =
           "expression_level_coverage(path='path') or expression_level_coverage('path1', 'path2', \
            ...): Return JSON output containing the number of covered and uncovered expressions \
            from above, along with a list of known coverage gaps."
+    | HoverInfoForPosition _ ->
+        Some
+          "hover_info_for_position(path='<absolute path>', line=<line>, character=<character>): \
+           Return JSON output containing the type of the symbol at the given position."
     | InlineDecorators _ ->
         Some
           "inline_decorators(qualified_function_name, optional decorators_to_skip=[decorator1, \
@@ -373,6 +381,7 @@ let help () =
       Defines [Reference.create ""];
       DumpCallGraph;
       ExpressionLevelCoverage [""];
+      HoverInfoForPosition { path; position = Location.any_position };
       IsCompatibleWith (empty, empty);
       LessOrEqual (empty, empty);
       ModelQuery { path; query_name = "" };
@@ -488,6 +497,12 @@ let rec parse_request_exn query =
       | "expression_level_coverage", paths ->
           Request.ExpressionLevelCoverage (List.map ~f:string paths)
       | "help", _ -> Request.Help (help ())
+      | "hover_info_for_position", [path; line; column] ->
+          Request.HoverInfoForPosition
+            {
+              path = PyrePath.create_absolute (string path);
+              position = { Location.line = integer line; column = integer column };
+            }
       | "inline_decorators", arguments -> parse_inline_decorators arguments
       | "is_compatible_with", [left; right] -> Request.IsCompatibleWith (access left, access right)
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
@@ -850,6 +865,7 @@ let rec process_request ~environment ~build_system request =
         else
           Error (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
     | Help help_list -> Single (Base.Help help_list)
+    | HoverInfoForPosition _ -> failwith "TODO(T103574623)"
     | InlineDecorators { function_reference; decorators_to_skip } ->
         InlineDecorators.inline_decorators
           ~environment
