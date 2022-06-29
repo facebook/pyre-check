@@ -170,6 +170,7 @@ module Response = struct
       | FoundReferences of code_location list
       | FunctionDefinition of Statement.Define.t
       | Help of string
+      | HoverInfoForPosition of string
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | Success of string
       | Superclasses of superclasses_mapping list
@@ -271,6 +272,7 @@ module Response = struct
                   (Statement.show
                      (Statement.Statement.Define define |> Node.create_with_default_location)) );
             ]
+      | HoverInfoForPosition message -> `Assoc ["message", `String message]
       | Success message -> `Assoc ["message", `String message]
       | Superclasses class_to_superclasses_mapping ->
           let reference_to_yojson reference = `String (Reference.show reference) in
@@ -865,7 +867,7 @@ let rec process_request ~environment ~build_system request =
         else
           Error (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
     | Help help_list -> Single (Base.Help help_list)
-    | HoverInfoForPosition _ -> failwith "TODO(T103574623)"
+    | HoverInfoForPosition _ -> Single (Base.HoverInfoForPosition "TODO(T103574623)")
     | InlineDecorators { function_reference; decorators_to_skip } ->
         InlineDecorators.inline_decorators
           ~environment

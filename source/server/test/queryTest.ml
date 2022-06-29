@@ -2276,6 +2276,39 @@ let test_expression_level_coverage context =
              |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
+let test_hover context =
+  let sources =
+    ["foo.py", {|
+              def foo(x: int) -> int:
+                return x
+            |}]
+  in
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  (* TODO(T103574623): Support hover. *)
+  let queries_and_expected_responses =
+    [
+      ( "hover_info_for_position(path='foo.py', line=3, column=9)",
+        {|
+      {
+      "response": { "message": "TODO(T103574623)" }
+      }
+    |} );
+    ]
+  in
+  assert_queries_with_local_root
+    ~custom_source_root
+    ~context
+    ~sources
+    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
+         ( query,
+           fun _ ->
+             response
+             |> Yojson.Safe.from_string
+             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
+
+
 let () =
   "query"
   >::: [
@@ -2290,5 +2323,6 @@ let () =
          >:: OUnitLwt.lwt_wrapper test_location_of_definition_with_build_system;
          "find_references" >:: OUnitLwt.lwt_wrapper test_find_references;
          "expression_level_coverage" >:: OUnitLwt.lwt_wrapper test_expression_level_coverage;
+         "hover" >:: OUnitLwt.lwt_wrapper test_hover;
        ]
   |> Test.run

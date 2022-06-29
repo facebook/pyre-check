@@ -159,6 +159,7 @@ module Response : sig
       | FoundReferences of code_location list
       | FunctionDefinition of Statement.Define.t
       | Help of string
+      | HoverInfoForPosition of string
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | Success of string
       | Superclasses of superclasses_mapping list
