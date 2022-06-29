@@ -12,7 +12,7 @@ open Analysis
 type error_reason =
   | StubShadowing
   | FileNotFound
-[@@deriving sexp, show]
+[@@deriving sexp, show, compare, to_yojson]
 
 type types_by_location = ((Location.t * Type.t) list, error_reason) Result.t
 

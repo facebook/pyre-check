@@ -316,7 +316,15 @@ let test_handle_query_basic context =
     ~source:""
     ~handle:"Foo.java"
     ~query:"expression_level_coverage(path='Foo.java')"
-    (Error "Not able to get lookups in: `Foo.java` (file not found)")
+    (Single
+       (Base.ExpressionLevelCoverageResponse
+          [
+            ErrorAtPath
+              {
+                path = "Foo.java";
+                error = "Not able to get lookups in: `Foo.java` (file not found)";
+              };
+          ]))
   >>= fun () ->
   assert_type_query_response
     ~source:""
@@ -324,7 +332,7 @@ let test_handle_query_basic context =
     ~query:"expression_level_coverage(path='foo.pyi')"
     (Single
        (Base.ExpressionLevelCoverageResponse
-          [{ Base.path = "foo.pyi"; total_expressions = 0; coverage_gaps = [] }]))
+          [CoverageAtPath { Base.path = "foo.pyi"; total_expressions = 0; coverage_gaps = [] }]))
   >>= fun () ->
   assert_compatibility_response
     ~source:""
@@ -1936,6 +1944,8 @@ let test_expression_level_coverage context =
           {|
             {
               "response": [
+                [
+                "CoverageAtPath",
                   {
                       "path": "%s/foo.py",
                       "total_expressions": 8,
@@ -2006,6 +2016,7 @@ let test_expression_level_coverage context =
                           }
                       ]
                   }
+                ]
               ]
           }
          |}
@@ -2015,21 +2026,48 @@ let test_expression_level_coverage context =
           "expression_level_coverage('%s')"
           (PyrePath.append custom_source_root ~element:"file_not_found.py" |> PyrePath.absolute),
         Format.asprintf
-          {| {"error":"Not able to get lookups in: `%s` (file not found)"} |}
+          {|
+          {"response":
+            [
+              ["ErrorAtPath",
+                {"path":"%s","error":"Not able to get lookups in: `%s` (file not found)"}
+              ]
+            ]
+          }
+          |}
+          (PyrePath.append custom_source_root ~element:"file_not_found.py" |> PyrePath.absolute)
           (PyrePath.append custom_source_root ~element:"file_not_found.py" |> PyrePath.absolute) );
       (* Test Error StubShadowing *)
       ( Format.sprintf
           "expression_level_coverage('%s')"
           (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute),
         Format.asprintf
-          {| {"error":"Not able to get lookups in: `%s` (file shadowed by .pyi stub file)"} |}
+          {|
+          {"response":
+            [
+              ["ErrorAtPath",
+                {"path":"%s","error":"Not able to get lookups in: `%s` (file shadowed by .pyi stub file)"}
+              ]
+            ]
+          }
+          |}
+          (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute)
           (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute) );
       (* Test @not_existing.txt not found *)
       ( Format.sprintf
           "expression_level_coverage('@%s')"
           (PyrePath.append custom_source_root ~element:"not_existing.txt" |> PyrePath.absolute),
         Format.asprintf
-          {| {"error":"Not able to get lookups in: `%s` (file not found)"} |}
+          {|
+          {"response":
+            [
+              ["ErrorAtPath",
+                {"path":"%s","error":"Not able to get lookups in: `%s` (file not found)"}
+              ]
+            ]
+          }
+          |}
+          (PyrePath.append custom_source_root ~element:"not_existing.txt" |> PyrePath.absolute)
           (PyrePath.append custom_source_root ~element:"not_existing.txt" |> PyrePath.absolute) );
       (* Test @empty.txt not found *)
       ( Format.sprintf
@@ -2042,6 +2080,97 @@ let test_expression_level_coverage context =
               ]
           }
          |} );
+      (* Test Response and Error *)
+      ( Format.sprintf
+          "expression_level_coverage('%s','%s')"
+          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute)
+          (PyrePath.append custom_source_root ~element:"not_existing.py" |> PyrePath.absolute),
+        Format.asprintf
+          {|
+            {
+              "response": [
+                [
+                "CoverageAtPath",
+                  {
+                      "path": "%s",
+                      "total_expressions": 8,
+                      "coverage_gaps": [
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 2,
+                                      "column": 4
+                                  },
+                                  "stop": {
+                                      "line": 2,
+                                      "column": 7
+                                  }
+                              },
+                              "type_": "typing.Callable(foo.foo)[[Named(x, unknown)], None]",
+                              "reason": [
+                                  "CallableParameterIsUnknownOrAny"
+                              ]
+                          },
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 2,
+                                      "column": 8
+                                  },
+                                  "stop": {
+                                      "line": 2,
+                                      "column": 9
+                                  }
+                              },
+                              "type_": "typing.Any",
+                              "reason": [
+                                  "TypeIsAny"
+                              ]
+                          },
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 3,
+                                      "column": 8
+                                  },
+                                  "stop": {
+                                      "line": 3,
+                                      "column": 9
+                                  }
+                              },
+                              "type_": "typing.Any",
+                              "reason": [
+                                  "TypeIsAny"
+                              ]
+                          },
+                          {
+                              "location": {
+                                  "start": {
+                                      "line": 3,
+                                      "column": 8
+                                  },
+                                  "stop": {
+                                      "line": 3,
+                                      "column": 13
+                                  }
+                              },
+                              "type_": "typing.Any",
+                              "reason": [
+                                  "TypeIsAny"
+                              ]
+                          }
+                      ]
+                  }
+                ],
+              ["ErrorAtPath",
+                {"path":"%s","error":"Not able to get lookups in: `%s` (file not found)"}
+              ]
+            ]
+          }
+         |}
+          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute)
+          (PyrePath.append custom_source_root ~element:"not_existing.py" |> PyrePath.absolute)
+          (PyrePath.append custom_source_root ~element:"not_existing.py" |> PyrePath.absolute) );
       (* Test @arguments.txt *)
       ( Format.sprintf
           "expression_level_coverage('@%s')"
@@ -2050,6 +2179,8 @@ let test_expression_level_coverage context =
           {|
             {
               "response": [
+                [
+                "CoverageAtPath",
                   {
                       "path": "foo.py",
                       "total_expressions": 8,
@@ -2120,6 +2251,7 @@ let test_expression_level_coverage context =
                           }
                       ]
                   }
+                ]
               ]
           }
          |}
@@ -2132,6 +2264,8 @@ let test_expression_level_coverage context =
           {|
             {
     "response": [
+      [
+      "CoverageAtPath",
         {
             "path": "foo.py",
             "total_expressions": 8,
@@ -2201,7 +2335,10 @@ let test_expression_level_coverage context =
                     ]
                 }
             ]
-        },
+      }
+      ],
+      [
+      "CoverageAtPath",
         {
             "path": "fizz.py",
             "total_expressions": 8,
@@ -2272,6 +2409,7 @@ let test_expression_level_coverage context =
                 }
             ]
         }
+      ]
     ]
 }
          |}

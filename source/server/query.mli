@@ -86,6 +86,17 @@ module Response : sig
     }
     [@@deriving sexp, compare, to_yojson]
 
+    type error_at_path = {
+      path: string;
+      error: string;
+    }
+    [@@deriving sexp, compare, to_yojson, show]
+
+    type coverage_response_at_path =
+      | CoverageAtPath of coverage_at_path
+      | ErrorAtPath of error_at_path
+    [@@deriving sexp, compare, to_yojson]
+
     type compatibility = {
       actual: Type.t;
       expected: Type.t;
@@ -149,7 +160,7 @@ module Response : sig
       | Callgraph of callees list
       | Compatibility of compatibility
       | Errors of Analysis.AnalysisError.Instantiated.t list
-      | ExpressionLevelCoverageResponse of coverage_at_path list
+      | ExpressionLevelCoverageResponse of coverage_response_at_path list
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundLocationsOfDefinitions of code_location list

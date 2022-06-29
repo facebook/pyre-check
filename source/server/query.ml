@@ -93,6 +93,17 @@ module Response = struct
     }
     [@@deriving sexp, compare, to_yojson]
 
+    type error_at_path = {
+      path: string;
+      error: string;
+    }
+    [@@deriving sexp, compare, to_yojson, show]
+
+    type coverage_response_at_path =
+      | CoverageAtPath of coverage_at_path
+      | ErrorAtPath of error_at_path
+    [@@deriving sexp, compare, to_yojson]
+
     type compatibility = {
       actual: Type.t;
       expected: Type.t;
@@ -160,7 +171,7 @@ module Response = struct
       | Callgraph of callees list
       | Compatibility of compatibility
       | Errors of Analysis.AnalysisError.Instantiated.t list
-      | ExpressionLevelCoverageResponse of coverage_at_path list
+      | ExpressionLevelCoverageResponse of coverage_response_at_path list
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundLocationsOfDefinitions of code_location list
@@ -211,7 +222,7 @@ module Response = struct
               );
             ]
       | ExpressionLevelCoverageResponse paths ->
-          `List (List.map paths ~f:coverage_at_path_to_yojson)
+          `List (List.map paths ~f:coverage_response_at_path_to_yojson)
       | Help string -> `Assoc ["help", `String string]
       | ModelVerificationErrors errors ->
           `Assoc ["errors", `List (List.map errors ~f:Taint.ModelVerificationError.to_json)]
@@ -867,8 +878,12 @@ let rec process_request ~environment ~build_system request =
             in
             List.exists ~f:(String.equal extension) valid_suffixes
           in
+          let format_error error =
+            Format.asprintf "Not able to get lookups in: %s" (get_error_paths error)
+          in
           match result with
-          | Result.Error error -> Either.Second error
+          | Result.Error (path, error_reason) ->
+              Base.ErrorAtPath { Base.path; error = format_error [path, error_reason] }
           | Result.Ok path ->
               if has_valid_suffix path then
                 match
@@ -878,18 +893,19 @@ let rec process_request ~environment ~build_system request =
                     path
                 with
                 | Result.Ok { total_expressions; coverage_gaps } ->
-                    Either.First { Base.path; total_expressions; coverage_gaps }
-                | Result.Error error_reason -> Either.Second (path, error_reason)
+                    Base.CoverageAtPath { Base.path; total_expressions; coverage_gaps }
+                | Result.Error error_reason ->
+                    Base.ErrorAtPath { Base.path; error = format_error [path, error_reason] }
               else
-                Either.Second (path, LocationBasedLookupProcessor.FileNotFound)
+                Base.ErrorAtPath
+                  {
+                    Base.path;
+                    error = format_error [path, LocationBasedLookupProcessor.FileNotFound];
+                  }
         in
-        let results, errors =
-          List.concat_map paths ~f:extract_paths |> List.partition_map ~f:find_resolved_types
-        in
-        if List.is_empty errors then
-          Single (Base.ExpressionLevelCoverageResponse results)
-        else
-          Error (Format.asprintf "Not able to get lookups in: %s" (get_error_paths errors))
+
+        let results = List.concat_map paths ~f:extract_paths |> List.map ~f:find_resolved_types in
+        Single (Base.ExpressionLevelCoverageResponse results)
     | Help help_list -> Single (Base.Help help_list)
     | HoverInfoForPosition { path; position } ->
         module_of_path path

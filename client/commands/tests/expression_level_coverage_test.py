@@ -24,58 +24,50 @@ class ExpressionLevelTest(testslide.TestCase):
                 Response(
                     {
                         "response": [
-                            {
-                                "path": "test.py",
-                                "total_expressions": 7,
-                                "coverage_gaps": [
-                                    {
-                                        "location": {
-                                            "start": {"line": 11, "column": 16},
-                                            "stop": {"line": 11, "column": 17},
+                            [
+                                "CoverageAtPath",
+                                {
+                                    "path": "test.py",
+                                    "total_expressions": 7,
+                                    "coverage_gaps": [
+                                        {
+                                            "location": {
+                                                "start": {"line": 11, "column": 16},
+                                                "stop": {"line": 11, "column": 17},
+                                            },
+                                            "type_": "typing.Any",
+                                            "reason": ["TypeIsAny"],
                                         },
-                                        "type_": "typing.Any",
-                                        "reason": ["TypeIsAny"],
-                                    },
-                                ],
-                            }
+                                    ],
+                                },
+                            ],
                         ]
                     }
                 ).payload,
             ),
             [
-                expression_level_coverage.ExpressionLevelCoverage(
-                    path="test.py",
-                    total_expressions=7,
-                    coverage_gaps=[
-                        expression_level_coverage.CoverageGap(
-                            location=expression_level_coverage.Location(
-                                start=expression_level_coverage.Pair(
-                                    line=11, column=16
-                                ),
-                                stop=expression_level_coverage.Pair(line=11, column=17),
-                            ),
-                            type_="typing.Any",
-                            reason=["TypeIsAny"],
-                        )
-                    ],
-                )
+                [
+                    "CoverageAtPath",
+                    {
+                        "path": "test.py",
+                        "total_expressions": 7,
+                        "coverage_gaps": [
+                            {
+                                "location": {
+                                    "start": {"line": 11, "column": 16},
+                                    "stop": {"line": 11, "column": 17},
+                                },
+                                "type_": "typing.Any",
+                                "reason": ["TypeIsAny"],
+                            },
+                        ],
+                    },
+                ]
             ],
         )
         with self.assertRaises(expression_level_coverage.ErrorParsingFailure):
             expression_level_coverage._get_expression_level_coverage_response(
                 "garbage input"
-            )
-        with self.assertRaises(expression_level_coverage.ErrorParsingFailure):
-            expression_level_coverage._get_expression_level_coverage_response(
-                {
-                    "response": [
-                        {
-                            "paths": "path_not_paths.py",
-                            "total_expressions": 0,
-                            "coverage_gaps": [],
-                        }
-                    ]
-                }
             )
 
     def test_calculate_percent_covered(self) -> None:
@@ -87,7 +79,7 @@ class ExpressionLevelTest(testslide.TestCase):
         )
 
     def test_get_total_and_uncovered_expressions(self) -> None:
-        coverage = expression_level_coverage.ExpressionLevelCoverage(
+        coverage = expression_level_coverage.CoverageAtPath(
             path="test.py",
             total_expressions=7,
             coverage_gaps=[
@@ -123,11 +115,14 @@ class ExpressionLevelTest(testslide.TestCase):
             Response(
                 {
                     "response": [
-                        {
-                            "path": "test.py",
-                            "total_expressions": 0,
-                            "coverage_gaps": [],
-                        }
+                        [
+                            "CoverageAtPath",
+                            {
+                                "path": "test.py",
+                                "total_expressions": 0,
+                                "coverage_gaps": [],
+                            },
+                        ],
                     ]
                 }
             ).payload,
@@ -137,28 +132,31 @@ class ExpressionLevelTest(testslide.TestCase):
             Response(
                 {
                     "response": [
-                        {
-                            "path": "test.py",
-                            "total_expressions": 7,
-                            "coverage_gaps": [
-                                {
-                                    "location": {
-                                        "start": {"line": 11, "column": 16},
-                                        "stop": {"line": 11, "column": 17},
+                        [
+                            "CoverageAtPath",
+                            {
+                                "path": "test.py",
+                                "total_expressions": 7,
+                                "coverage_gaps": [
+                                    {
+                                        "location": {
+                                            "start": {"line": 11, "column": 16},
+                                            "stop": {"line": 11, "column": 17},
+                                        },
+                                        "type_": "typing.Any",
+                                        "reason": ["TypeIsAny"],
                                     },
-                                    "type_": "typing.Any",
-                                    "reason": ["TypeIsAny"],
-                                },
-                                {
-                                    "location": {
-                                        "start": {"line": 12, "column": 11},
-                                        "stop": {"line": 12, "column": 12},
+                                    {
+                                        "location": {
+                                            "start": {"line": 12, "column": 11},
+                                            "stop": {"line": 12, "column": 12},
+                                        },
+                                        "type_": "typing.Any",
+                                        "reason": ["TypeIsAny"],
                                     },
-                                    "type_": "typing.Any",
-                                    "reason": ["TypeIsAny"],
-                                },
-                            ],
-                        }
+                                ],
+                            },
+                        ],
                     ]
                 }
             ).payload,
@@ -168,37 +166,84 @@ class ExpressionLevelTest(testslide.TestCase):
             Response(
                 {
                     "response": [
-                        {
-                            "path": "library.py",
-                            "total_expressions": 4,
-                            "coverage_gaps": [],
-                        },
-                        {
-                            "path": "test.py",
-                            "total_expressions": 7,
-                            "coverage_gaps": [
-                                {
-                                    "location": {
-                                        "start": {"line": 11, "column": 16},
-                                        "stop": {"line": 11, "column": 17},
+                        [
+                            "CoverageAtPath",
+                            {
+                                "path": "library.py",
+                                "total_expressions": 4,
+                                "coverage_gaps": [],
+                            },
+                        ],
+                        [
+                            "CoverageAtPath",
+                            {
+                                "path": "test.py",
+                                "total_expressions": 7,
+                                "coverage_gaps": [
+                                    {
+                                        "location": {
+                                            "start": {"line": 11, "column": 16},
+                                            "stop": {"line": 11, "column": 17},
+                                        },
+                                        "type_": "typing.Any",
+                                        "reason": ["TypeIsAny"],
                                     },
-                                    "type_": "typing.Any",
-                                    "reason": ["TypeIsAny"],
-                                },
-                                {
-                                    "location": {
-                                        "start": {"line": 12, "column": 11},
-                                        "stop": {"line": 12, "column": 12},
+                                    {
+                                        "location": {
+                                            "start": {"line": 12, "column": 11},
+                                            "stop": {"line": 12, "column": 12},
+                                        },
+                                        "type_": "typing.Any",
+                                        "reason": ["TypeIsAny"],
                                     },
-                                    "type_": "typing.Any",
-                                    "reason": ["TypeIsAny"],
-                                },
-                            ],
-                        },
+                                ],
+                            },
+                        ],
                     ]
                 }
             ).payload,
             "library.py: 100.0% expressions are covered\ntest.py: 71.43% expressions are covered\nOverall: 81.82% expressions are covered",
+        )
+        assert_summary_expression_level_coverage(
+            Response(
+                {
+                    "response": [
+                        [
+                            "ErrorAtPath",
+                            {
+                                "path": "fake.py",
+                                "error": "Not able to get lookups in: `fake.py` (file not found)",
+                            },
+                        ],
+                        [
+                            "CoverageAtPath",
+                            {
+                                "path": "test.py",
+                                "total_expressions": 7,
+                                "coverage_gaps": [
+                                    {
+                                        "location": {
+                                            "start": {"line": 11, "column": 16},
+                                            "stop": {"line": 11, "column": 17},
+                                        },
+                                        "type_": "typing.Any",
+                                        "reason": ["TypeIsAny"],
+                                    },
+                                    {
+                                        "location": {
+                                            "start": {"line": 12, "column": 11},
+                                            "stop": {"line": 12, "column": 12},
+                                        },
+                                        "type_": "typing.Any",
+                                        "reason": ["TypeIsAny"],
+                                    },
+                                ],
+                            },
+                        ],
+                    ]
+                }
+            ).payload,
+            "test.py: 71.43% expressions are covered\nOverall: 71.43% expressions are covered",
         )
 
     def test_get_path_list(self) -> None:
