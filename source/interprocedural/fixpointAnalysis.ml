@@ -108,6 +108,8 @@ module Make (Analysis : ANALYSIS) = struct
 
     let empty = Target.Map.empty
 
+    let size registry = Target.Map.length registry
+
     let set registry ~target ~model = Target.Map.set ~key:target ~data:model registry
 
     let add ~join registry ~target ~model =

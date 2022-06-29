@@ -122,6 +122,8 @@ module Make (Analysis : ANALYSIS) : sig
 
     val empty : t
 
+    val size : t -> int
+
     val set : t -> target:Target.t -> model:Analysis.Model.t -> t
 
     val add
