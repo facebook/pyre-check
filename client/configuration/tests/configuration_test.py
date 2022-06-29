@@ -99,6 +99,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 enable_go_to_definition=True,
                 enable_find_symbols=True,
                 enable_find_all_references=True,
+                enable_expression_level_coverage=True,
             )
         )
         assert configuration.ide_features is not None
@@ -106,17 +107,24 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertTrue(configuration.ide_features.is_go_to_definition_enabled())
         self.assertTrue(configuration.ide_features.is_find_symbols_enabled())
         self.assertTrue(configuration.ide_features.is_find_all_references_enabled())
+        self.assertTrue(
+            configuration.ide_features.is_expression_level_coverage_enabled()
+        )
 
         configuration = PartialConfiguration.from_command_arguments(
             command_arguments.CommandArguments(
                 enable_hover=False,
                 enable_go_to_definition=False,
+                enable_expression_level_coverage=False,
             )
         )
         assert configuration.ide_features is not None
         self.assertFalse(configuration.ide_features.is_hover_enabled())
         self.assertFalse(configuration.ide_features.is_go_to_definition_enabled())
         self.assertFalse(configuration.ide_features.is_find_all_references_enabled())
+        self.assertFalse(
+            configuration.ide_features.is_expression_level_coverage_enabled()
+        )
 
         configuration = PartialConfiguration.from_command_arguments(
             command_arguments.CommandArguments()
