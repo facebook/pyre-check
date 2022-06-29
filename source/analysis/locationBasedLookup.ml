@@ -399,6 +399,8 @@ type symbol_and_cfg_data = {
 }
 [@@deriving compare, show, sexp]
 
+let symbol_with_definition { symbol_with_definition; _ } = symbol_with_definition
+
 let location_insensitive_compare_symbol_and_cfg_data
     ({ symbol_with_definition = left_symbol_with_definition; _ } as left)
     ({ symbol_with_definition = right_symbol_with_definition; _ } as right)
@@ -618,11 +620,18 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
   in
   let timer = Timer.start () in
   let symbols_covering_position = List.fold all_defines ~init:[] ~f:walk_define in
+  let symbol_data = narrowest_match symbols_covering_position in
   Log.log
     ~section:`Performance
-    "locationBasedLookup: Find narrowest symbol spanning position: %d"
-    (Timer.stop_in_ms timer);
-  narrowest_match symbols_covering_position
+    "locationBasedLookup: Narrowest symbol spanning position `%s:%s`: Found `%s` in %d ms\n\
+     All symbols spanning the position: %s\n"
+    (Reference.show module_reference)
+    ([%show: Location.position] position)
+    ([%show: symbol_with_definition option] (symbol_data >>| symbol_with_definition))
+    (Timer.stop_in_ms timer)
+    (List.map symbols_covering_position ~f:symbol_with_definition
+    |> [%show: symbol_with_definition list]);
+  symbol_data
 
 
 let resolve ~resolution expression =
@@ -750,14 +759,23 @@ let resolve_definition_for_symbol
   in
   Log.log
     ~section:`Performance
-    "locationBasedLookup: Resolve definition for symbol: %d"
+    "locationBasedLookup: Resolve definition for symbol: %d ms"
     (Timer.stop_in_ms timer);
   definition_location
 
 
 let location_of_definition ~type_environment ~module_reference position =
-  let result = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
-  result >>= resolve_definition_for_symbol ~type_environment ~module_reference
+  let symbol_data = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
+  let location =
+    symbol_data >>= resolve_definition_for_symbol ~type_environment ~module_reference
+  in
+  Log.log
+    ~section:`Server
+    "Definition for symbol at position `%s:%s`: %s"
+    (Reference.show module_reference)
+    ([%show: Location.position] position)
+    ([%show: Location.WithModule.t option] location);
+  location
 
 
 let classify_coverage_data { expression; type_ } =
