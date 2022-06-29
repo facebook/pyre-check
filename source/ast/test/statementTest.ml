@@ -350,6 +350,81 @@ let test_try_block_preamble _ =
         pass
     |}
     ["error=...\nassert isinstance(error, (IOError, ValueError))"];
+
+  let assert_preamble_with_locations ~block expected_preambles =
+    let handlers =
+      match parse_single_statement block with
+      | { Node.value = Try { Try.handlers; _ }; _ } -> handlers
+      | _ -> failwith "Could not parse `try-except` statement."
+    in
+    assert_equal
+      ~cmp:[%compare.equal: Statement.t list]
+      ~printer:(fun statements -> [%sexp_of: Statement.t list] statements |> Sexp.to_string_hum)
+      expected_preambles
+      (List.concat_map handlers ~f:Try.preamble)
+  in
+  let ( ~@ ) = parse_location in
+  assert_preamble_with_locations
+    ~block:{|
+    try:
+      pass
+    except IOError as error:
+      pass
+  |}
+    [
+      {
+        Node.location = ~@"4:7-4:14";
+        value =
+          Statement.Assign
+            {
+              Assign.target =
+                { Node.location = ~@"4:7-4:14"; value = Name (Name.Identifier "error") };
+              annotation = None;
+              value = Node.create ~location:~@"4:7-4:14" (Expression.Constant Constant.Ellipsis);
+            };
+      };
+      {
+        Node.location = ~@"4:7-4:14";
+        value =
+          Assert
+            {
+              Assert.test =
+                {
+                  Node.location = ~@"4:7-4:14";
+                  value =
+                    Call
+                      {
+                        callee =
+                          {
+                            Node.location = ~@"4:7-4:14";
+                            value = Name (Name.Identifier "isinstance");
+                          };
+                        arguments =
+                          [
+                            {
+                              Call.Argument.name = None;
+                              value =
+                                {
+                                  Node.location = ~@"4:7-4:14";
+                                  value = Name (Name.Identifier "error");
+                                };
+                            };
+                            {
+                              Call.Argument.name = None;
+                              value =
+                                {
+                                  Node.location = ~@"4:7-4:14";
+                                  value = Name (Name.Identifier "IOError");
+                                };
+                            };
+                          ];
+                      };
+                };
+              message = None;
+              origin = Assert.Origin.Assertion;
+            };
+      };
+    ];
   ()
 
 

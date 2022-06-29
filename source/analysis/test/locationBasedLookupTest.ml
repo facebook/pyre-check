@@ -1226,6 +1226,17 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     (Some ":272:2-272:44");
+  (* TODO(T112570623): The target variable points to the `Exception`. This is unavoidable right now,
+     because we don't store its location in `Try.t`. *)
+  assert_resolved_definition
+    {|
+        try:
+          print("hello")
+        except Exception as exception:
+             # ^        ^
+          print(exception)
+          #      ^- cursor
+    |};
   ()
 
 
