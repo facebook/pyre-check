@@ -945,6 +945,13 @@ class Configuration:
             return ide_features_module.IdeFeatures.DEFAULT_FIND_ALL_REFERENCES_ENABLED
         return self.ide_features.is_find_all_references_enabled()
 
+    def is_expression_level_coverage_enabled(self) -> bool:
+        if self.ide_features is None:
+            return (
+                ide_features_module.IdeFeatures.DEFAULT_EXPRESSION_LEVEL_COVERAGE_ENABLED
+            )
+        return self.ide_features.is_expression_level_coverage_enabled()
+
     def get_valid_extension_suffixes(self) -> List[str]:
         vaild_extensions = []
         for extension in self.extensions:

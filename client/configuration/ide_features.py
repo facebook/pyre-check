@@ -27,6 +27,8 @@ class IdeFeatures:
     DEFAULT_FIND_SYMBOLS_ENABLED: ClassVar[bool] = False
     find_all_references_enabled: Optional[bool] = None
     DEFAULT_FIND_ALL_REFERENCES_ENABLED: ClassVar[bool] = False
+    expression_level_coverage_enabled: Optional[bool] = None
+    DEFAULT_EXPRESSION_LEVEL_COVERAGE_ENABLED: ClassVar[bool] = False
 
     @staticmethod
     def merge_optional(
@@ -76,6 +78,13 @@ class IdeFeatures:
                 if self.find_all_references_enabled is not None
                 else {}
             ),
+            **(
+                {
+                    "expression_level_coverage_enabled": self.expression_level_coverage_enabled
+                }
+                if self.expression_level_coverage_enabled is not None
+                else {}
+            ),
         }
 
     def is_hover_enabled(self) -> bool:
@@ -104,4 +113,11 @@ class IdeFeatures:
             self.find_all_references_enabled
             if self.find_all_references_enabled is not None
             else self.DEFAULT_FIND_ALL_REFERENCES_ENABLED
+        )
+
+    def is_expression_level_coverage_enabled(self) -> bool:
+        return (
+            self.expression_level_coverage_enabled
+            if self.expression_level_coverage_enabled is not None
+            else self.DEFAULT_EXPRESSION_LEVEL_COVERAGE_ENABLED
         )

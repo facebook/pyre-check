@@ -52,6 +52,16 @@ class IdeFeaturesTest(testslide.TestCase):
         )
         assert_ide_features_raises({"find_all_references_enabled": 42})
 
+        assert_ide_features_equal(
+            {"expression_level_coverage_enabled": True},
+            IdeFeatures(expression_level_coverage_enabled=True),
+        )
+        assert_ide_features_equal(
+            {"expression_level_coverage_enabled": False},
+            IdeFeatures(expression_level_coverage_enabled=False),
+        )
+        assert_ide_features_raises({"expression_level_coverage_enabled": 42})
+
     def test_merge(self) -> None:
         def assert_merged(
             base_ide_features: Optional[IdeFeatures],
@@ -102,4 +112,24 @@ class IdeFeaturesTest(testslide.TestCase):
             IdeFeatures(go_to_definition_enabled=True),
             IdeFeatures(go_to_definition_enabled=False),
             IdeFeatures(go_to_definition_enabled=False),
+        )
+        assert_merged(
+            IdeFeatures(expression_level_coverage_enabled=True),
+            None,
+            IdeFeatures(expression_level_coverage_enabled=True),
+        )
+        assert_merged(
+            None,
+            IdeFeatures(expression_level_coverage_enabled=True),
+            IdeFeatures(expression_level_coverage_enabled=True),
+        )
+        assert_merged(
+            IdeFeatures(expression_level_coverage_enabled=False),
+            IdeFeatures(expression_level_coverage_enabled=True),
+            IdeFeatures(expression_level_coverage_enabled=True),
+        )
+        assert_merged(
+            IdeFeatures(expression_level_coverage_enabled=True),
+            IdeFeatures(expression_level_coverage_enabled=False),
+            IdeFeatures(expression_level_coverage_enabled=False),
         )

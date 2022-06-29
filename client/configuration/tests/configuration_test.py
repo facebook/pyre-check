@@ -597,6 +597,7 @@ class ConfigurationTest(testslide.TestCase):
                     go_to_definition_enabled=True,
                     find_symbols_enabled=True,
                     find_all_references_enabled=True,
+                    expression_level_coverage_enabled=True,
                 ),
                 ignore_all_errors=["bar"],
                 logger="logger",
@@ -634,6 +635,7 @@ class ConfigurationTest(testslide.TestCase):
                 go_to_definition_enabled=True,
                 find_symbols_enabled=True,
                 find_all_references_enabled=True,
+                expression_level_coverage_enabled=True,
             ),
         )
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
@@ -1063,6 +1065,21 @@ class ConfigurationTest(testslide.TestCase):
                 dot_pyre_directory=Path(".pyre"),
                 ide_features=IdeFeatures(find_all_references_enabled=True),
             ).is_find_all_references_enabled(),
+        )
+
+    def test_is_expression_level_coverage_enabled(self) -> None:
+        self.assertFalse(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+            ).is_expression_level_coverage_enabled(),
+        )
+        self.assertTrue(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                ide_features=IdeFeatures(expression_level_coverage_enabled=True),
+            ).is_expression_level_coverage_enabled(),
         )
 
     def test_create_from_command_arguments_only(self) -> None:
