@@ -830,8 +830,9 @@ let classify_coverage_data { expression; type_ } =
         | Type.Callable.Parameter.Named { annotation = Type.Any | Type.Top; _ } -> true
         | _ -> false
       in
-      let all_parameters_are_top_or_any = List.for_all ~f:parameter_is_top_or_any parameter_list in
-      if all_parameters_are_top_or_any then
+      (* This will treat parameters that use default values, which will never have a runtime error,
+         as a coverage gap. *)
+      if List.exists ~f:parameter_is_top_or_any parameter_list then
         make_coverage_gap CallableParameterIsUnknownOrAny
       else
         None

@@ -2231,7 +2231,7 @@ let test_classify_coverage_data _ =
               ])
          ~annotation:Type.bytes
          ())
-    None;
+    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
   assert_coverage_gap_callable
     ~expression:"foo"
     ~type_:
@@ -2245,7 +2245,7 @@ let test_classify_coverage_data _ =
               ])
          ~annotation:Type.bytes
          ())
-    None;
+    (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
   assert_coverage_gap_callable
     ~expression:"foo"
     ~type_:(Type.Callable.create ~parameters:(Type.Callable.Defined []) ~annotation:Type.bytes ())
