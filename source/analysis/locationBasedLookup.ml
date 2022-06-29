@@ -452,7 +452,7 @@ module FindNarrowestSpanningExpression (PositionData : PositionData) = struct
 
   let visit_expression_children _ _ = true
 
-  let visit_format_string_children _ _ = false
+  let visit_format_string_children _ _ = true
 end
 
 (** This is a simple wrapper around [FindNarrowestSpanningExpression]. It visits imported symbols

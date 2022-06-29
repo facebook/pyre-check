@@ -812,6 +812,45 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.getint"; node_id = 6; statement_index = 0 };
          use_postcondition_info = false;
        });
+  assert_narrowest_expression
+    ~source:
+      {|
+        def foo(xs: list[int]) -> None:
+          print(f"xs: {xs}")
+          #            ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$xs")));
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
+  assert_narrowest_expression
+    ~source:
+      {|
+        def foo(xs: list[int]) -> None:
+          print(f"xs: {xs.append(xs)}")
+          #                  ^-- CURSOR
+    |}
+    (Some
+       {
+         symbol_with_definition =
+           Expression
+             (Expression.Name
+                (Name.Attribute
+                   {
+                     base =
+                       Node.create_with_default_location
+                         (Expression.Name (Name.Identifier "$parameter$xs"));
+                     attribute = "append";
+                     special = false;
+                   })
+             |> Node.create_with_default_location);
+         cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+         use_postcondition_info = false;
+       });
   ()
 
 
@@ -1175,6 +1214,45 @@ let test_resolve_definition_for_symbol context =
       use_postcondition_info = false;
     }
     (Some "test:2:11-2:24");
+  assert_resolved_definition
+    ~source:
+      {|
+        def foo(xs: list[int]) -> None:
+          print(f"xs: {xs}")
+          #            ^-- CURSOR
+    |}
+    {
+      symbol_with_definition =
+        Expression
+          (Node.create_with_default_location (Expression.Name (Name.Identifier "$parameter$xs")));
+      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some "test:2:8-2:21");
+  assert_resolved_definition
+    ~source:
+      {|
+        def foo(xs: list[int]) -> None:
+          print(f"xs: {xs.append(xs)}")
+          #                  ^-- CURSOR
+    |}
+    {
+      symbol_with_definition =
+        Expression
+          (Expression.Name
+             (Name.Attribute
+                {
+                  base =
+                    Node.create_with_default_location
+                      (Expression.Name (Name.Identifier "$parameter$xs"));
+                  attribute = "append";
+                  special = false;
+                })
+          |> Node.create_with_default_location);
+      cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
+      use_postcondition_info = false;
+    }
+    (Some ":272:2-272:44");
   ()
 
 
