@@ -8,16 +8,6 @@ from pathlib import Path
 from typing import Iterable, List
 
 import testslide
-from tools.pyre.client.commands.expression_level_coverage import (
-    CoverageAtPath,
-    CoverageAtPathResponse,
-    CoverageGap,
-    ErrorAtPath,
-    ErrorAtPathResponse,
-    ExpressionLevelCoverageResponse,
-    Location,
-    Pair,
-)
 
 from ... import command_arguments, configuration
 from ...tests import setup
@@ -59,17 +49,21 @@ class ExpressionLevelTest(testslide.TestCase):
                     }
                 ).payload,
             ),
-            ExpressionLevelCoverageResponse(
+            expression_level_coverage.ExpressionLevelCoverageResponse(
                 response=[
-                    CoverageAtPathResponse(
-                        CoverageAtPath=CoverageAtPath(
+                    expression_level_coverage.CoverageAtPathResponse(
+                        CoverageAtPath=expression_level_coverage.CoverageAtPath(
                             path="test.py",
                             total_expressions=7,
                             coverage_gaps=[
-                                CoverageGap(
-                                    location=Location(
-                                        start=Pair(line=11, column=16),
-                                        stop=Pair(line=11, column=17),
+                                expression_level_coverage.CoverageGap(
+                                    location=expression_level_coverage.Location(
+                                        start=expression_level_coverage.Pair(
+                                            line=11, column=16
+                                        ),
+                                        stop=expression_level_coverage.Pair(
+                                            line=11, column=17
+                                        ),
                                     ),
                                     type_="typing.Any",
                                     reason=["TypeIsAny"],
@@ -96,10 +90,10 @@ class ExpressionLevelTest(testslide.TestCase):
                     }
                 ).payload,
             ),
-            ExpressionLevelCoverageResponse(
+            expression_level_coverage.ExpressionLevelCoverageResponse(
                 response=[
-                    ErrorAtPathResponse(
-                        ErrorAtPath=ErrorAtPath(
+                    expression_level_coverage.ErrorAtPathResponse(
+                        expression_level_coverage.ErrorAtPath(
                             path="test.py",
                             error="Not able to get lookups in: `test.py` (file not found)",
                         )
