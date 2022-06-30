@@ -62,18 +62,43 @@ class ErrorAtPath:
 
 @dataclass_json
 @dataclass(frozen=True)
-class ErrorAtPathReponse:
+class ErrorAtPathResponse:
     ErrorAtPath: ErrorAtPath
 
 
 @dataclass_json
 @dataclass(frozen=True)
 class ExpressionLevelCoverageResponse:
-    response: List[Union[CoverageAtPathResponse, ErrorAtPathReponse]]
+    response: List[Union[CoverageAtPathResponse, ErrorAtPathResponse]]
 
 
 class ErrorParsingFailure(Exception):
     pass
+
+
+def _make_expression_level_coverage_response(
+    json: object,
+) -> ExpressionLevelCoverageResponse:
+    def parse_path_response(
+        path: List[object],
+    ) -> Union[CoverageAtPathResponse, ErrorAtPathResponse]:
+        if path[0] == "CoverageAtPath":
+            return CoverageAtPathResponse(
+                # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
+                CoverageAtPath=CoverageAtPath.from_dict(path[1])
+            )
+        else:
+            return ErrorAtPathResponse(
+                # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
+                ErrorAtPath=ErrorAtPath.from_dict(path[1])
+            )
+
+    try:
+        # pyre-ignore[16]: Pyre doesn't understand Union of dataclasses_json within dataclasses_json
+        response = [parse_path_response(path) for path in json["response"]]
+        return ExpressionLevelCoverageResponse(response=response)
+    except (AssertionError, AttributeError, KeyError, TypeError) as error:
+        raise ErrorParsingFailure(f"Error: {error}") from error
 
 
 def get_path_list(
@@ -104,22 +129,6 @@ def get_path_list(
     return absolute_path_files_string + absolute_text_files_string
 
 
-def _get_expression_level_coverage_response(
-    response: object,
-) -> List[object]:
-    try:
-        # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
-        return ExpressionLevelCoverageResponse.from_dict(response).response
-    except AssertionError as error:
-        raise ErrorParsingFailure(f"Error: {error}") from error
-    except AttributeError as error:
-        raise ErrorParsingFailure(f"Error: {error}") from error
-    except KeyError as error:
-        raise ErrorParsingFailure(f"Error: {error}") from error
-    except TypeError as error:
-        raise ErrorParsingFailure(f"Error: {error}") from error
-
-
 def _calculate_percent_covered(
     uncovered_expressions: int, total_expressions: int
 ) -> float:
@@ -140,16 +149,10 @@ def summary_expression_level(response: object) -> str:
     percent_output = ""
     overall_total_expressions = 0
     overall_uncovered_expressions = 0
-    for expression_level_coverage_response in _get_expression_level_coverage_response(
-        response
-    ):
-        # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
-        if "error" in expression_level_coverage_response[1]:
+    for path_response in _make_expression_level_coverage_response(response).response:
+        if isinstance(path_response, ErrorAtPathResponse):
             continue
-        # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
-        expression_level_coverage = CoverageAtPath.from_dict(
-            expression_level_coverage_response[1]
-        )
+        expression_level_coverage = path_response.CoverageAtPath
         total_expressions, uncovered_expressions = _get_total_and_uncovered_expressions(
             expression_level_coverage
         )

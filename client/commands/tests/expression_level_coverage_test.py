@@ -8,6 +8,16 @@ from pathlib import Path
 from typing import Iterable, List
 
 import testslide
+from tools.pyre.client.commands.expression_level_coverage import (
+    CoverageAtPath,
+    CoverageAtPathResponse,
+    CoverageGap,
+    ErrorAtPath,
+    ErrorAtPathResponse,
+    ExpressionLevelCoverageResponse,
+    Location,
+    Pair,
+)
 
 from ... import command_arguments, configuration
 from ...tests import setup
@@ -22,9 +32,9 @@ from .. import (
 
 
 class ExpressionLevelTest(testslide.TestCase):
-    def test_get_expression_level_coverage_response(self) -> None:
+    def test_make_expression_level_coverage_response(self) -> None:
         self.assertEqual(
-            expression_level_coverage._get_expression_level_coverage_response(
+            expression_level_coverage._make_expression_level_coverage_response(
                 query.Response(
                     {
                         "response": [
@@ -49,28 +59,56 @@ class ExpressionLevelTest(testslide.TestCase):
                     }
                 ).payload,
             ),
-            [
-                [
-                    "CoverageAtPath",
+            ExpressionLevelCoverageResponse(
+                response=[
+                    CoverageAtPathResponse(
+                        CoverageAtPath=CoverageAtPath(
+                            path="test.py",
+                            total_expressions=7,
+                            coverage_gaps=[
+                                CoverageGap(
+                                    location=Location(
+                                        start=Pair(line=11, column=16),
+                                        stop=Pair(line=11, column=17),
+                                    ),
+                                    type_="typing.Any",
+                                    reason=["TypeIsAny"],
+                                )
+                            ],
+                        )
+                    )
+                ],
+            ),
+        )
+        self.assertEqual(
+            expression_level_coverage._make_expression_level_coverage_response(
+                query.Response(
                     {
-                        "path": "test.py",
-                        "total_expressions": 7,
-                        "coverage_gaps": [
-                            {
-                                "location": {
-                                    "start": {"line": 11, "column": 16},
-                                    "stop": {"line": 11, "column": 17},
+                        "response": [
+                            [
+                                "ErrorAtPath",
+                                {
+                                    "path": "test.py",
+                                    "error": "Not able to get lookups in: `test.py` (file not found)",
                                 },
-                                "type_": "typing.Any",
-                                "reason": ["TypeIsAny"],
-                            },
-                        ],
-                    },
-                ]
-            ],
+                            ],
+                        ]
+                    }
+                ).payload,
+            ),
+            ExpressionLevelCoverageResponse(
+                response=[
+                    ErrorAtPathResponse(
+                        ErrorAtPath=ErrorAtPath(
+                            path="test.py",
+                            error="Not able to get lookups in: `test.py` (file not found)",
+                        )
+                    )
+                ],
+            ),
         )
         with self.assertRaises(expression_level_coverage.ErrorParsingFailure):
-            expression_level_coverage._get_expression_level_coverage_response(
+            expression_level_coverage._make_expression_level_coverage_response(
                 "garbage input"
             )
 
