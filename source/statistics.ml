@@ -212,6 +212,21 @@ let event
       sample ~integers ~normals:(("name", name) :: normals) () |> log ~flush "perfpipe_pyre_events"
 
 
+let log_model_query_outputs
+    ?(flush = false)
+    ?(section = `Info)
+    ~model_query_name
+    ~generated_models_count
+    ()
+  =
+  Log.log ~section "Model Query `%s` generated %d models." model_query_name generated_models_count;
+  sample
+    ~integers:["Models Generated", generated_models_count]
+    ~normals:["ModelQuery Name", model_query_name]
+    ()
+  |> log ~flush "perfpipe_pysa_dsl_model_query_output"
+
+
 let log_exception caught_exception ~fatal ~origin =
   event
     ~section:`Error

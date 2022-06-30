@@ -55,18 +55,27 @@ module ModelQueryRegistryMap = struct
     merge_all_registries ~model_join (get_models model_query_map)
 
 
-  let find_errors ~models_and_names ~model_query_names =
-    List.filter_map model_query_names ~f:(fun query_name ->
-        match get models_and_names query_name with
-        | Some _ -> None
-        | None ->
-            Some
-              {
-                ModelVerificationError.kind =
-                  ModelVerificationError.NoOutputFromModelQuery query_name;
-                location = Ast.Location.any;
-                path = None;
-              })
+  let check_errors ~models_and_names ~model_query_names =
+    let errors =
+      List.filter_map model_query_names ~f:(fun model_query_name ->
+          let models = get models_and_names model_query_name in
+          Statistics.log_model_query_outputs
+            ~model_query_name
+            ~generated_models_count:(Registry.size (Option.value models ~default:Registry.empty))
+            ();
+          match models with
+          | Some _ -> None
+          | None ->
+              Some
+                {
+                  ModelVerificationError.kind =
+                    ModelVerificationError.NoOutputFromModelQuery model_query_name;
+                  location = Ast.Location.any;
+                  path = None;
+                })
+    in
+    Statistics.flush ();
+    errors
 end
 
 module DumpModelQueryResults : sig
@@ -886,7 +895,7 @@ let apply_all_rules
         callable_models
         attribute_models
     in
-    models_and_names, ModelQueryRegistryMap.find_errors ~models_and_names ~model_query_names
+    models_and_names, ModelQueryRegistryMap.check_errors ~models_and_names ~model_query_names
   else
     ModelQueryRegistryMap.empty, []
 

@@ -55,6 +55,14 @@ val event
   unit ->
   unit
 
+val log_model_query_outputs
+  :  ?flush:bool ->
+  ?section:Log.section ->
+  model_query_name:string ->
+  generated_models_count:int ->
+  unit ->
+  unit
+
 val log_exception : exn -> fatal:bool -> origin:string -> unit
 
 val buck_event
