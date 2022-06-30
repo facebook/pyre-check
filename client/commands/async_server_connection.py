@@ -383,7 +383,7 @@ class BackgroundTaskManager:
         except asyncio.CancelledError:
             LOG.info("Terminate background task on explicit cancelling request.")
         except Exception as error:
-            LOG.error(f"Background task unexpectedly quited: {error}")
+            LOG.error(f"Background task unexpectedly quit: {error}")
         finally:
             self._ongoing = None
 
