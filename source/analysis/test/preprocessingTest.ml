@@ -6459,7 +6459,7 @@ let () =
          "expand_string_annotations" >:: test_expand_string_annotations;
          "expand_type_alias_body" >:: test_expand_type_alias_body;
          "qualify_source" >:: test_qualify_source;
-         "quality_ast" >:: test_qualify_ast;
+         "qualify_ast" >:: test_qualify_ast;
          "qualify_ast_class_with_same_name_as_local"
          >:: test_qualify_ast_class_with_same_name_as_local;
          "replace_version_specific_code" >:: test_replace_version_specific_code;

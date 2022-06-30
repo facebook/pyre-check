@@ -467,11 +467,14 @@ module Qualify (Context : QualifyContext) = struct
         in
         let target_scope, target =
           if not (Set.mem skip location) then
-            let rec qualify_target ~scope:({ aliases; immutables; locals; _ } as scope) target =
+            let rec qualify_assignment_target
+                ~scope:({ aliases; immutables; locals; _ } as scope)
+                target
+              =
               let scope, value =
                 let qualify_targets scope elements =
                   let qualify_element (scope, reversed_elements) element =
-                    let scope, element = qualify_target ~scope element in
+                    let scope, element = qualify_assignment_target ~scope element in
                     scope, element :: reversed_elements
                   in
                   let scope, reversed_elements =
@@ -509,7 +512,7 @@ module Qualify (Context : QualifyContext) = struct
                     in
                     scope, Name qualified
                 | Starred (Starred.Once name) ->
-                    let scope, name = qualify_target ~scope name in
+                    let scope, name = qualify_assignment_target ~scope name in
                     scope, Starred (Starred.Once name)
                 | Name (Name.Identifier name) ->
                     (* Incrementally number local variables to avoid shadowing. *)
@@ -557,7 +560,7 @@ module Qualify (Context : QualifyContext) = struct
               in
               scope, { target with Node.value }
             in
-            qualify_target ~scope target
+            qualify_assignment_target ~scope target
           else
             scope, target
         in
