@@ -1591,11 +1591,7 @@ let test_check_behavioral_subtyping__attribute_kinds context =
        def foo(self, input: int) -> str:
           ...
     |}
-    [
-      "Inconsistent override [15]: `foo` overrides attribute defined in `Foo` inconsistently. Type \
-       `typing.Callable(Bar.foo)[[Named(self, Bar), Named(input, int)], str]` is not a subtype of \
-       the overridden attribute `int`.";
-    ];
+    [];
   ()
 
 
