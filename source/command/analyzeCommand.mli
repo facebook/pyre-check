@@ -26,8 +26,7 @@ module AnalyzeConfiguration : sig
     maximum_tito_depth: int option;
     maximum_trace_length: int option;
     no_verify: bool;
-    no_verify_models: bool;
-    no_verify_dsl: bool;
+    verify_dsl: bool;
     repository_root: PyrePath.t option;
     rule_filter: int list option;
     save_results_to: PyrePath.t option;

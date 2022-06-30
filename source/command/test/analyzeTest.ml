@@ -40,8 +40,7 @@ let test_json_parsing context =
       taint_model_paths = [];
       use_cache = false;
       no_verify = false;
-      no_verify_models = false;
-      no_verify_dsl = false;
+      verify_dsl = false;
     }
   in
 
@@ -76,11 +75,8 @@ let test_json_parsing context =
     (`Assoc (("no_verify", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with no_verify = true };
   assert_parsed
-    (`Assoc (("no_verify_models", `Bool true) :: BaseConfigurationTest.dummy_base_json))
-    ~expected:{ dummy_analyze_configuration with no_verify_models = true };
-  assert_parsed
-    (`Assoc (("no_verify_dsl", `Bool true) :: BaseConfigurationTest.dummy_base_json))
-    ~expected:{ dummy_analyze_configuration with no_verify_dsl = true };
+    (`Assoc (("verify_dsl", `Bool true) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with verify_dsl = true };
   assert_parsed
     (`Assoc (("repository_root", `String "/root") :: BaseConfigurationTest.dummy_base_json))
     ~expected:

@@ -44,8 +44,7 @@ class Arguments:
     maximum_tito_depth: Optional[int] = None
     maximum_trace_length: Optional[int] = None
     no_verify: bool = False
-    no_verify_models: bool = False
-    no_verify_dsl: bool = False
+    verify_dsl: bool = False
     repository_root: Optional[str] = None
     rule_filter: Optional[Sequence[int]] = None
     save_results_to: Optional[str] = None
@@ -87,8 +86,7 @@ class Arguments:
                 else {"maximum_trace_length": maximum_trace_length}
             ),
             "no_verify": self.no_verify,
-            "no_verify_models": self.no_verify_models,
-            "no_verify_dsl": self.no_verify_dsl,
+            "verify_dsl": self.verify_dsl,
             **({} if repository_root is None else {"repository_root": repository_root}),
             **({} if rule_filter is None else {"rule_filter": rule_filter}),
             **({} if save_results_to is None else {"save_results_to": save_results_to}),
@@ -171,8 +169,7 @@ def create_analyze_arguments(
         maximum_tito_depth=analyze_arguments.maximum_tito_depth,
         maximum_trace_length=analyze_arguments.maximum_trace_length,
         no_verify=analyze_arguments.no_verify,
-        no_verify_models=analyze_arguments.no_verify_models,
-        no_verify_dsl=analyze_arguments.no_verify_dsl,
+        verify_dsl=analyze_arguments.verify_dsl,
         repository_root=repository_root,
         rule_filter=None if len(rule) == 0 else rule,
         save_results_to=analyze_arguments.save_results_to,
