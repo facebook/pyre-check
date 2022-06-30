@@ -209,7 +209,7 @@ module State (Context : Context) = struct
     | Value of defined_locals
 
   let show = function
-    | Bottom -> "[]"
+    | Bottom -> "Bottom"
     | Value state ->
         let show_binding { Scope.Binding.name; location; _ } =
           [%show: Identifier.t * Location.t] (name, location)
