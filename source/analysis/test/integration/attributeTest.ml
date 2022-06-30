@@ -1961,6 +1961,44 @@ let test_check_annotated context =
   ()
 
 
+let test_class_with_same_name_as_local_variable context =
+  let assert_type_errors = assert_type_errors ~context in
+  (* TODO(T121169620): Reproduce a bug where Pyre failed analyzing the function because of the `Foo
+     = None` before the `Foo` class definition. Note that the file is also named `Foo.py`. *)
+  assert_type_errors
+    ~handle:"Foo.py"
+    {|
+      Foo = None
+
+      class Foo:
+        def some_method(self) -> None:
+          x: Foo
+    |}
+    [
+      "Incompatible variable type [9]: Foo is declared to have type `Type[Foo]` but is used as \
+       type `None`.";
+      "Analysis failure [30]: Terminating analysis because type `$local_Foo$Foo` is not defined.";
+    ];
+  (* TODO(T121169620): Pyre should recognize the `x` attribute. *)
+  assert_type_errors
+    ~handle:"Foo.py"
+    {|
+      Foo = None
+
+      class Foo:
+        x: int = 42
+
+        def some_method(self) -> None:
+          print(self.x)
+    |}
+    [
+      "Incompatible variable type [9]: Foo is declared to have type `Type[Foo]` but is used as \
+       type `None`.";
+      "Undefined attribute [16]: `$local_Foo$Foo` has no attribute `x`.";
+    ];
+  ()
+
+
 let () =
   "attribute"
   >::: [
@@ -1974,5 +2012,6 @@ let () =
          "check_getattr_literal_access" >:: test_getattr_literal_access;
          "check_metaclass_attributes" >:: test_check_metaclass_attributes;
          "check_annotated" >:: test_check_annotated;
+         "class_with_same_name_as_local_variable" >:: test_class_with_same_name_as_local_variable;
        ]
   |> Test.run

@@ -1899,6 +1899,351 @@ let test_qualify_ast _ =
   ()
 
 
+let test_qualify_ast_class_with_same_name_as_local _ =
+  let assert_qualify ~module_name statements expected_statements =
+    let qualified statements =
+      Source.create ~relative:module_name statements |> Preprocessing.qualify |> Source.statements
+    in
+    let assert_equal_statements =
+      assert_equal
+        ~cmp:(fun left right ->
+          List.zip_exn left right
+          |> List.for_all ~f:(fun (left, right) ->
+                 Statement.location_insensitive_compare left right = 0))
+        ~printer:[%show: Statement.t list]
+    in
+    let actual = qualified statements in
+    assert_equal_statements expected_statements actual;
+    (* Qualifying twice should not change the source. *)
+    assert_equal_statements expected_statements (qualified actual)
+  in
+  (* Module name is `Foo`, global variable is `NotFoo`, and class is `Foo`. *)
+  assert_qualify
+    ~module_name:"Foo"
+    [
+      +Statement.Assign
+         {
+           target = +Expression.Name (Name.Identifier "NotFoo");
+           annotation = None;
+           value = +Expression.Name (Name.Identifier "None");
+         };
+      +Statement.Class
+         {
+           Class.name = Reference.create "Foo";
+           base_arguments = [];
+           top_level_unbound_names = [];
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"some_method";
+                        parameters = [+{ Parameter.name = "self"; value = None; annotation = None }];
+                        decorators = [];
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = None;
+                      };
+                    captures = [];
+                    unbound_names = [];
+                    body =
+                      [
+                        +Statement.Assign
+                           {
+                             target = +Expression.Name (Name.Identifier "x");
+                             annotation = Some (+Expression.Name (Name.Identifier "Foo"));
+                             value =
+                               +Expression.Name
+                                  (Name.Attribute
+                                     {
+                                       base = +Expression.Name (Name.Identifier "self");
+                                       attribute = "some_attribute";
+                                       special = false;
+                                     });
+                           };
+                      ];
+                  };
+             ];
+           decorators = [];
+         };
+    ]
+    [
+      +Statement.Assign
+         {
+           target = +Expression.Name (Name.Identifier "$local_Foo$NotFoo");
+           annotation = None;
+           value = +Expression.Name (Name.Identifier "None");
+         };
+      +Statement.Class
+         {
+           Class.name = Reference.create "Foo.Foo";
+           base_arguments = [];
+           top_level_unbound_names = [];
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"Foo.Foo.some_method";
+                        parameters =
+                          [+{ Parameter.name = "$parameter$self"; value = None; annotation = None }];
+                        decorators = [];
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = None;
+                      };
+                    captures = [];
+                    unbound_names = [];
+                    body =
+                      [
+                        +Statement.Assign
+                           {
+                             target =
+                               +Expression.Name (Name.Identifier "$local_Foo?Foo?some_method$x");
+                             annotation =
+                               Some
+                                 (+Expression.Name
+                                     (Name.Attribute
+                                        {
+                                          base = +Expression.Name (Name.Identifier "Foo");
+                                          attribute = "Foo";
+                                          special = false;
+                                        }));
+                             value =
+                               +Expression.Name
+                                  (Name.Attribute
+                                     {
+                                       base = +Expression.Name (Name.Identifier "$parameter$self");
+                                       attribute = "some_attribute";
+                                       special = false;
+                                     });
+                           };
+                      ];
+                  };
+             ];
+           decorators = [];
+         };
+    ];
+  (* Module name is `Foo`, global variable is `Foo`, and class is `Foo`. *)
+  assert_qualify
+    ~module_name:"Foo"
+    [
+      +Statement.Assign
+         {
+           target = +Expression.Name (Name.Identifier "Foo");
+           annotation = None;
+           value = +Expression.Name (Name.Identifier "None");
+         };
+      +Statement.Class
+         {
+           Class.name = Reference.create "Foo";
+           base_arguments = [];
+           top_level_unbound_names = [];
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"some_method";
+                        parameters = [+{ Parameter.name = "self"; value = None; annotation = None }];
+                        decorators = [];
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = None;
+                      };
+                    captures = [];
+                    unbound_names = [];
+                    body =
+                      [
+                        +Statement.Assign
+                           {
+                             target = +Expression.Name (Name.Identifier "x");
+                             annotation = Some (+Expression.Name (Name.Identifier "Foo"));
+                             value =
+                               +Expression.Name
+                                  (Name.Attribute
+                                     {
+                                       base = +Expression.Name (Name.Identifier "self");
+                                       attribute = "some_attribute";
+                                       special = false;
+                                     });
+                           };
+                      ];
+                  };
+             ];
+           decorators = [];
+         };
+    ]
+    [
+      +Statement.Assign
+         {
+           target = +Expression.Name (Name.Identifier "$local_Foo$Foo");
+           annotation = None;
+           value = +Expression.Name (Name.Identifier "None");
+         };
+      +Statement.Class
+         {
+           Class.name = Reference.create "Foo.Foo";
+           base_arguments = [];
+           top_level_unbound_names = [];
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"Foo.Foo.some_method";
+                        parameters =
+                          [+{ Parameter.name = "$parameter$self"; value = None; annotation = None }];
+                        decorators = [];
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = None;
+                      };
+                    captures = [];
+                    unbound_names = [];
+                    body =
+                      [
+                        +Statement.Assign
+                           {
+                             target =
+                               +Expression.Name (Name.Identifier "$local_Foo?Foo?some_method$x");
+                             annotation = Some (+Expression.Name (Name.Identifier "$local_Foo$Foo"));
+                             value =
+                               +Expression.Name
+                                  (Name.Attribute
+                                     {
+                                       base = +Expression.Name (Name.Identifier "$parameter$self");
+                                       attribute = "some_attribute";
+                                       special = false;
+                                     });
+                           };
+                      ];
+                  };
+             ];
+           decorators = [];
+         };
+    ];
+  (* Module name is `NotFoo`, global variable is `Foo`, and class is `Foo`. *)
+  assert_qualify
+    ~module_name:"NotFoo"
+    [
+      +Statement.Assign
+         {
+           target = +Expression.Name (Name.Identifier "Foo");
+           annotation = None;
+           value = +Expression.Name (Name.Identifier "None");
+         };
+      +Statement.Class
+         {
+           Class.name = Reference.create "Foo";
+           base_arguments = [];
+           top_level_unbound_names = [];
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"some_method";
+                        parameters = [+{ Parameter.name = "self"; value = None; annotation = None }];
+                        decorators = [];
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = None;
+                      };
+                    captures = [];
+                    unbound_names = [];
+                    body =
+                      [
+                        +Statement.Assign
+                           {
+                             target = +Expression.Name (Name.Identifier "x");
+                             annotation = Some (+Expression.Name (Name.Identifier "Foo"));
+                             value =
+                               +Expression.Name
+                                  (Name.Attribute
+                                     {
+                                       base = +Expression.Name (Name.Identifier "self");
+                                       attribute = "some_attribute";
+                                       special = false;
+                                     });
+                           };
+                      ];
+                  };
+             ];
+           decorators = [];
+         };
+    ]
+    [
+      +Statement.Assign
+         {
+           target = +Expression.Name (Name.Identifier "$local_NotFoo$Foo");
+           annotation = None;
+           value = +Expression.Name (Name.Identifier "None");
+         };
+      +Statement.Class
+         {
+           Class.name = Reference.create "NotFoo.Foo";
+           base_arguments = [];
+           top_level_unbound_names = [];
+           body =
+             [
+               +Statement.Define
+                  {
+                    signature =
+                      {
+                        name = !&"NotFoo.Foo.some_method";
+                        parameters =
+                          [+{ Parameter.name = "$parameter$self"; value = None; annotation = None }];
+                        decorators = [];
+                        return_annotation = None;
+                        async = false;
+                        generator = false;
+                        parent = None;
+                        nesting_define = None;
+                      };
+                    captures = [];
+                    unbound_names = [];
+                    body =
+                      [
+                        +Statement.Assign
+                           {
+                             target =
+                               +Expression.Name (Name.Identifier "$local_NotFoo?Foo?some_method$x");
+                             annotation =
+                               Some (+Expression.Name (Name.Identifier "$local_NotFoo$Foo"));
+                             value =
+                               +Expression.Name
+                                  (Name.Attribute
+                                     {
+                                       base = +Expression.Name (Name.Identifier "$parameter$self");
+                                       attribute = "some_attribute";
+                                       special = false;
+                                     });
+                           };
+                      ];
+                  };
+             ];
+           decorators = [];
+         };
+    ];
+  ()
+
+
 let test_replace_version_specific_code _ =
   let assert_preprocessed ~major_version ~minor_version ~micro_version source expected =
     let handle = "test.py" in
@@ -6115,6 +6460,8 @@ let () =
          "expand_type_alias_body" >:: test_expand_type_alias_body;
          "qualify_source" >:: test_qualify_source;
          "quality_ast" >:: test_qualify_ast;
+         "qualify_ast_class_with_same_name_as_local"
+         >:: test_qualify_ast_class_with_same_name_as_local;
          "replace_version_specific_code" >:: test_replace_version_specific_code;
          "replace_platform_specific_code" >:: test_replace_platform_specific_code;
          "expand_type_checking_imports" >:: test_expand_type_checking_imports;
