@@ -1094,21 +1094,52 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
         def foo(self) -> typing.Generator[int, None, None]: ...
     |}
     [];
+  (* Method resolution order. TODO(T124880784): the reason Pyre behaves this way in terms of
+     implementation is that when we resolve the parent attribute the lookup respects method
+     resolution order. But this is not actually sound - an instance of Bar is a valid value of type
+     Foo2, and therefore the `foo_legal_override` function is in fact not substitutable. *)
+  assert_type_errors
+    {|
+     class Foo1:
+       def foo_illegal_override(self, input: int) -> int:
+         return input
+       def foo_legal_override(self, input: int) -> int:
+         return input
+
+
+     class Foo2:
+       def foo_illegal_override(self, input: int) -> str:
+         return str(input)
+       def foo_legal_override(self, input: int) -> str:
+         return str(input)
+
+
+     class Bar(Foo1, Foo2):
+       def foo_illegal_override(self, input: int) -> str:
+         return "Bar_A: " + str(input)
+
+       def foo_legal_override(self, input: int) -> int:
+         return 0
+
+     |}
+    [
+      "Inconsistent override [15]: `test.Bar.foo_illegal_override` overrides method defined in \
+       `Foo1` inconsistently. Returned type `str` is not a subtype of the overridden return `int`.";
+    ];
   assert_type_errors
     {|
      class Foo:
-        foo: int = 3
+       def same_method(self, input: int) -> int:
+         return input
 
      class Bar(Foo):
-        def foo(self, input: int) -> str:
-          ...
-    |}
+       def same_method(self, input: int) -> str:
+         return str(input)
+  |}
     [
-      "Inconsistent override [15]: `foo` overrides attribute defined in `Foo` inconsistently. Type \
-       `typing.Callable(Bar.foo)[[Named(self, Bar), Named(input, int)], str]` is not a subtype of \
-       the overridden attribute `int`.";
+      "Inconsistent override [15]: `test.Bar.same_method` overrides method defined in `Foo` \
+       inconsistently. Returned type `str` is not a subtype of the overridden return `int`.";
     ];
-
   ()
 
 
@@ -1546,6 +1577,25 @@ let test_check_behavioral_subtyping__special_cases context =
         def f(self, *args: typing.Any, **kwargs: typing.Any) -> None: pass
     |}
     [];
+  ()
+
+
+let test_check_behavioral_subtyping__attribute_kinds context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+     class Foo:
+       foo: int = 3
+
+     class Bar(Foo):
+       def foo(self, input: int) -> str:
+          ...
+    |}
+    [
+      "Inconsistent override [15]: `foo` overrides attribute defined in `Foo` inconsistently. Type \
+       `typing.Callable(Bar.foo)[[Named(self, Bar), Named(input, int)], str]` is not a subtype of \
+       the overridden attribute `int`.";
+    ];
   ()
 
 
@@ -2414,23 +2464,6 @@ let test_check_override_decorator context =
      from pyre_extensions import override
 
      class Foo:
-       def same_method(self, input: int) -> int:
-         return input
-
-     class Bar(Foo):
-       @override
-       def same_method(self, input: int) -> str:
-         return str(input)
-  |}
-    [
-      "Inconsistent override [15]: `test.Bar.same_method` overrides method defined in `Foo` \
-       inconsistently. Returned type `str` is not a subtype of the overridden return `int`.";
-    ];
-  assert_type_errors
-    {|
-     from pyre_extensions import override
-
-     class Foo:
        @staticmethod
        def same_method(input: int) -> int:
          return input
@@ -2503,39 +2536,6 @@ let test_check_override_decorator context =
          return 0
     |}
     [];
-
-  assert_type_errors
-    {|
-     from pyre_extensions import override
-
-     class Foo1:
-       def foo_illegal_override(self, input: int) -> int:
-         return input
-       def foo_legal_override(self, input: int) -> int:
-         return input
-
-
-     class Foo2:
-       def foo_illegal_override(self, input: int) -> str:
-         return str(input)
-       def foo_legal_override(self, input: int) -> str:
-         return str(input)
-
-
-     class Bar(Foo1, Foo2):
-       @override
-       def foo_illegal_override(self, input: int) -> str:
-         return "Bar_A: " + str(input)
-
-       @override
-       def foo_legal_override(self, input: int) -> int:
-         return 0
-
-     |}
-    [
-      "Inconsistent override [15]: `test.Bar.foo_illegal_override` overrides method defined in \
-       `Foo1` inconsistently. Returned type `str` is not a subtype of the overridden return `int`.";
-    ];
   assert_type_errors
     {|
      from pyre_extensions import override
@@ -2551,7 +2551,6 @@ let test_check_override_decorator context =
     |}
     [ (* TODO: See T123628048. This should return an error, but isn't at the moment. Decorator logic
          needs to be checked. *) ];
-
   assert_type_errors
     {|
      from pyre_extensions import override
@@ -2564,24 +2563,6 @@ let test_check_override_decorator context =
        foo: str = "hello world"
     |}
     ["Parsing failure [404]: invalid syntax"];
-  assert_type_errors
-    {|
-     from pyre_extensions import override
-
-     class Foo:
-       foo: int = 3
-
-     class Bar(Foo):
-       @override
-       def foo(self, input: int) -> str:
-          ...
-    |}
-    [
-      "Inconsistent override [15]: `foo` overrides attribute defined in `Foo` inconsistently. Type \
-       `typing.Callable(Bar.foo)[[Named(self, Bar), Named(input, int)], str]` is not a subtype of \
-       the overridden attribute `int`.";
-    ];
-
   ()
 
 
@@ -3292,6 +3273,8 @@ let () =
          "check_behavioral_subtyping__overloads" >:: test_check_behavioral_subtyping__overloads;
          "check_behavioral_subtyping__special_cases"
          >:: test_check_behavioral_subtyping__special_cases;
+         "check_behavioral_subtyping__attribute_kinds"
+         >:: test_check_behavioral_subtyping__attribute_kinds;
          "check_nested_class_inheritance" >:: test_check_nested_class_inheritance;
          "check_method_resolution" >:: test_check_method_resolution;
          "check_callables" >:: test_check_callables;
