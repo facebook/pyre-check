@@ -499,6 +499,13 @@ let transform_expressions ~transform statement =
   | _ -> failwith "expected single statement"
 
 
+let transform_in_expression ~transform expression =
+  transform_expressions ~transform (Statement.Expression expression)
+  |> function
+  | Statement.Expression expression -> expression
+  | _ -> failwith "expected an expression statement"
+
+
 let sanitize_expression expression =
   let transform = function
     | Expression.Name (Name.Identifier identifier) ->

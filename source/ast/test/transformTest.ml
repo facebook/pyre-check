@@ -655,6 +655,46 @@ let test_transform_expression _ =
   ()
 
 
+let test_transform_in_expression _ =
+  let keep_first_argument = function
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Identifier given_callee_name); location };
+          arguments = argument :: _;
+        } ->
+        Expression.Call
+          {
+            Call.callee = { Node.value = Name (Identifier given_callee_name); location };
+            arguments = [argument];
+          }
+    | expression -> expression
+  in
+  let assert_transform given expected =
+    let actual =
+      parse_single_expression given
+      |> Transform.transform_in_expression ~transform:keep_first_argument
+    in
+    let printer x = [%sexp_of: Expression.t] x |> Sexp.to_string_hum in
+    assert_equal
+      ~cmp:(fun left right -> Expression.location_insensitive_compare left right = 0)
+      ~printer
+      ~pp_diff:(diff ~print:(fun format x -> Format.fprintf format "%s" (printer x)))
+      (parse_single_expression expected)
+      actual
+  in
+  assert_transform {|
+      bar(bar(1, bar(2, 3)), bar(4, 5))
+    |} {|
+      bar(bar(1))
+    |};
+  assert_transform {|
+      bar()
+    |} {|
+      bar()
+    |};
+  ()
+
+
 let test_sanitize_statement _ =
   let assert_sanitized statements expected =
     let given_statement, expected_statement =
@@ -810,6 +850,7 @@ let () =
          "statement_conditional_counter" >:: test_conditional_count;
          "statement_transformer" >:: test_statement_transformer;
          "transform_expression" >:: test_transform_expression;
+         "transform_in_expression" >:: test_transform_in_expression;
          "sanitize_statement" >:: test_sanitize_statement;
        ]
   |> Test.run
