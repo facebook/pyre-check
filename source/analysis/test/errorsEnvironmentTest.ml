@@ -33,6 +33,18 @@ let assert_errors ~context ~project expected =
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 
 
+let assert_overlay_errors ~context ~project ~overlay qualifier expected =
+  let actual =
+    ErrorsEnvironment.ReadOnly.get_errors_for_qualifier
+      (ErrorsEnvironment.Overlay.read_only overlay)
+      qualifier
+    |> instantiate_and_stringify
+         ~lookup:
+           (ScratchProject.ast_environment project |> AstEnvironment.ReadOnly.get_real_path_relative)
+  in
+  assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
+
+
 let test_postprocessing context =
   let code header_comment =
     Format.asprintf
@@ -201,11 +213,138 @@ let test_update_mode context =
   ()
 
 
+let test_overlay_basic context =
+  let project =
+    ScratchProject.setup
+      ~context
+      [
+        "code_changes.py", {|
+          class Foo:
+            x: int = "x"
+        |};
+        "unsafe_to_strict.py", {|
+          # pyre-unsafe
+          x = "x"
+        |};
+      ]
+  in
+  let parent = ScratchProject.errors_environment project in
+  let overlay = ErrorsEnvironment.Overlay.create parent in
+  assert_overlay_errors
+    ~context
+    ~project
+    ~overlay
+    !&"code_changes"
+    ["code_changes.py 3: Incompatible attribute type [8]: Attribute has type `int`; used as `str`."];
+  assert_overlay_errors ~context ~project ~overlay !&"unsafe_to_strict" [];
+  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  ErrorsEnvironment.Overlay.update_overlaid_code
+    overlay
+    ~code_updates:
+      [
+        ( Test.relative_artifact_path ~root:local_root ~relative:"code_changes.py",
+          Test.trim_extra_indentation
+            {|
+            class Foo:
+              x: int = 42.0
+            |} );
+        ( Test.relative_artifact_path ~root:local_root ~relative:"unsafe_to_strict.py",
+          Test.trim_extra_indentation
+            {|
+            # pyre-strict
+            x = "x"
+            |} );
+      ]
+  |> ignore;
+  assert_overlay_errors
+    ~context
+    ~project
+    ~overlay
+    !&"code_changes"
+    [
+      "code_changes.py 3: Incompatible attribute type [8]: Attribute has type `int`; used as \
+       `float`.";
+    ];
+  assert_overlay_errors ~context ~project ~overlay !&"unsafe_to_strict" [];
+  ()
+
+
+let test_overlay_dependency_filtering context =
+  let project =
+    ScratchProject.setup
+      ~context
+      [
+        "a.py", {|
+          class A:
+            x: float = 5.0
+        |};
+        ( "b.py",
+          {|
+          from a import A
+
+          class B(A):
+            y: str = "y"
+        |} );
+        ( "c.py",
+          {|
+          from b import B
+
+          def deconstruct(b: B) -> tuple[int, str]:
+            return (b.x, b.y)
+        |}
+        );
+      ]
+  in
+  let parent = ScratchProject.errors_environment project in
+  let overlay = ErrorsEnvironment.Overlay.create parent in
+  assert_overlay_errors ~context ~project ~overlay !&"a" [];
+  assert_overlay_errors
+    ~context
+    ~project
+    ~overlay
+    !&"c"
+    [
+      "c.py 5: Incompatible return type [7]: Expected `Tuple[int, str]` but got `Tuple[float, str]`.";
+    ];
+  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  ErrorsEnvironment.Overlay.update_overlaid_code
+    overlay
+    ~code_updates:
+      [
+        ( Test.relative_artifact_path ~root:local_root ~relative:"a.py",
+          Test.trim_extra_indentation
+            {|
+            class A:
+              x: int = 5.0
+            |} );
+      ]
+  |> ignore;
+  (* After updating, the new code in a.py should be detected, but c.py should still consume the
+     definition of class B from the parent enviornment. *)
+  assert_overlay_errors
+    ~context
+    ~project
+    ~overlay
+    !&"a"
+    ["a.py 3: Incompatible attribute type [8]: Attribute has type `int`; used as `float`."];
+  assert_overlay_errors
+    ~context
+    ~project
+    ~overlay
+    !&"c"
+    [
+      "c.py 5: Incompatible return type [7]: Expected `Tuple[int, str]` but got `Tuple[float, str]`.";
+    ];
+  ()
+
+
 let () =
   "environment"
   >::: [
          "postprocessing" >:: test_postprocessing;
          "update_ancestor" >:: test_update_ancestor;
          "update_mode" >:: test_update_mode;
+         "overlay_basic" >:: test_overlay_basic;
+         "overlay_dependency_filtering" >:: test_overlay_dependency_filtering;
        ]
   |> Test.run

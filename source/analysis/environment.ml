@@ -57,6 +57,18 @@ module PreviousEnvironment = struct
     val store : t -> unit
 
     val load : EnvironmentControls.t -> t
+
+    module Overlay : sig
+      type t
+
+      val create : ReadOnly.t -> t
+
+      val module_tracker : t -> ModuleTracker.Overlay.t
+
+      val update_overlaid_code : t -> code_updates:(ArtifactPath.t * string) list -> UpdateResult.t
+
+      val read_only : t -> ReadOnly.t
+    end
   end
 end
 
@@ -106,6 +118,8 @@ module EnvironmentTable = struct
 
     val show_key : Key.t -> string
 
+    val overlay_owns_key : ModuleTracker.Overlay.t -> Key.t -> bool
+
     val equal_value : Value.t -> Value.t -> bool
   end
 
@@ -145,6 +159,18 @@ module EnvironmentTable = struct
     end
 
     module UpdateResult : UpdateResult.S
+
+    module Overlay : sig
+      type t
+
+      val create : ReadOnly.t -> t
+
+      val module_tracker : t -> ModuleTracker.Overlay.t
+
+      val update_overlaid_code : t -> code_updates:(ArtifactPath.t * string) list -> UpdateResult.t
+
+      val read_only : t -> ReadOnly.t
+    end
 
     type t
 
@@ -390,6 +416,87 @@ module EnvironmentTable = struct
       let store { upstream_environment; _ } = In.PreviousEnvironment.store upstream_environment
 
       let load controls = In.PreviousEnvironment.load controls |> from_upstream_environment
+    end
+
+    module Overlay = struct
+      type t = {
+        parent: ReadOnly.t;
+        upstream_environment: In.PreviousEnvironment.Overlay.t;
+        from_read_only_upstream: FromReadOnlyUpstream.t;
+      }
+
+      let create parent =
+        let upstream_environment =
+          ReadOnly.upstream_environment parent |> In.PreviousEnvironment.Overlay.create
+        in
+        let from_read_only_upstream =
+          In.PreviousEnvironment.Overlay.read_only upstream_environment
+          |> FromReadOnlyUpstream.create
+        in
+        { parent; upstream_environment; from_read_only_upstream }
+
+
+      let module_tracker { upstream_environment; _ } =
+        In.PreviousEnvironment.Overlay.module_tracker upstream_environment
+
+
+      let overlay_owns_key environment = module_tracker environment |> In.overlay_owns_key
+
+      let owns_trigger environment trigger =
+        In.convert_trigger trigger |> overlay_owns_key environment
+
+
+      let compute_owned_trigger_map environment upstream_triggered_dependencies =
+        List.fold
+          upstream_triggered_dependencies
+          ~init:FromReadOnlyUpstream.TriggerMap.empty
+          ~f:(fun triggers upstream_dependencies ->
+            SharedMemoryKeys.DependencyKey.RegisteredSet.fold
+              (fun dependency triggers ->
+                match
+                  In.filter_upstream_dependency (SharedMemoryKeys.DependencyKey.get_key dependency)
+                  |> Option.filter ~f:(owns_trigger environment)
+                with
+                | None -> triggers
+                | Some trigger -> (
+                    match
+                      FromReadOnlyUpstream.TriggerMap.add triggers ~key:trigger ~data:dependency
+                    with
+                    | `Ok updated -> updated
+                    | `Duplicate -> triggers))
+              upstream_dependencies
+              triggers)
+
+
+      let update_overlaid_code
+          ({ upstream_environment; from_read_only_upstream; _ } as environment)
+          ~code_updates
+        =
+        let upstream_update =
+          In.PreviousEnvironment.Overlay.update_overlaid_code upstream_environment ~code_updates
+        in
+        let triggered_dependencies =
+          In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update
+          |> compute_owned_trigger_map environment
+          |> FromReadOnlyUpstream.update_only_this_environment
+               from_read_only_upstream
+               ~scheduler:(Scheduler.create_sequential ())
+        in
+        { UpdateResult.triggered_dependencies; upstream = upstream_update }
+
+
+      let read_only ({ parent; upstream_environment; from_read_only_upstream } as environment) =
+        let this_read_only = FromReadOnlyUpstream.read_only from_read_only_upstream in
+        let get ?dependency key =
+          if overlay_owns_key environment key then
+            ReadOnly.get this_read_only ?dependency key
+          else
+            ReadOnly.get parent ?dependency key
+        in
+        {
+          ReadOnly.get;
+          upstream_environment = In.PreviousEnvironment.Overlay.read_only upstream_environment;
+        }
     end
 
     include Base

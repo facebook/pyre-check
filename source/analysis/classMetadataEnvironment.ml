@@ -116,6 +116,10 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
 
   let show_key = Fn.id
 
+  let overlay_owns_key module_tracker_overlay =
+    ModuleTracker.Overlay.owns_identifier module_tracker_overlay
+
+
   let equal_value = Option.equal [%compare.equal: class_metadata]
 end)
 

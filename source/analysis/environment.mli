@@ -56,6 +56,18 @@ module PreviousEnvironment : sig
     val store : t -> unit
 
     val load : EnvironmentControls.t -> t
+
+    module Overlay : sig
+      type t
+
+      val create : ReadOnly.t -> t
+
+      val module_tracker : t -> ModuleTracker.Overlay.t
+
+      val update_overlaid_code : t -> code_updates:(ArtifactPath.t * string) list -> UpdateResult.t
+
+      val read_only : t -> ReadOnly.t
+    end
   end
 end
 
@@ -117,6 +129,8 @@ module EnvironmentTable : sig
 
     val show_key : Key.t -> string
 
+    val overlay_owns_key : ModuleTracker.Overlay.t -> Key.t -> bool
+
     val equal_value : Value.t -> Value.t -> bool
   end
 
@@ -136,6 +150,18 @@ module EnvironmentTable : sig
     end
 
     module UpdateResult : UpdateResult.S
+
+    module Overlay : sig
+      type t
+
+      val create : ReadOnly.t -> t
+
+      val module_tracker : t -> ModuleTracker.Overlay.t
+
+      val update_overlaid_code : t -> code_updates:(ArtifactPath.t * string) list -> UpdateResult.t
+
+      val read_only : t -> ReadOnly.t
+    end
 
     type t
 

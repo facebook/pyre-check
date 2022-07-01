@@ -60,6 +60,10 @@ module CheckResultsTable = Environment.EnvironmentTable.WithCache (struct
 
   let show_key = Reference.show
 
+  let overlay_owns_key module_tracker_overlay =
+    ModuleTracker.Overlay.owns_reference module_tracker_overlay
+
+
   let lazy_incremental = false
 
   let produce_value = produce_check_results

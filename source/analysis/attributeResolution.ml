@@ -4632,6 +4632,11 @@ module ParseAnnotationCache = struct
 
 
     let trigger_to_dependency key = SharedMemoryKeys.ParseAnnotation key
+
+    (* It is difficult to set fine-grained ownership for fine-grained annotations, so for now the
+       overlay will own all annotations. Our hope is that lazy evaluation plus the limited fanout on
+       other environments will prevent this from becoming too big a problem *)
+    let overlay_owns_key _ _ = true
   end)
 
   include Cache
@@ -4692,6 +4697,9 @@ module MetaclassCache = struct
 
 
     let trigger_to_dependency key = SharedMemoryKeys.Metaclass key
+
+    let overlay_owns_key module_tracker_overlay =
+      ModuleTracker.Overlay.owns_identifier module_tracker_overlay
   end)
 
   include Cache
@@ -4758,6 +4766,9 @@ module AttributeCache = struct
 
 
     let trigger_to_dependency key = SharedMemoryKeys.AttributeTable key
+
+    let overlay_owns_key module_tracker_overlay { SharedMemoryKeys.AttributeTableKey.name; _ } =
+      ModuleTracker.Overlay.owns_identifier module_tracker_overlay name
   end)
 
   include Cache
@@ -4800,6 +4811,10 @@ end
 module GlobalAnnotationCache = struct
   module Cache = Environment.EnvironmentTable.WithCache (struct
     let show_key = Reference.show
+
+    let overlay_owns_key module_tracker_overlay =
+      ModuleTracker.Overlay.owns_reference module_tracker_overlay
+
 
     module PreviousEnvironment = AttributeCache
     module Key = SharedMemoryKeys.ReferenceKey

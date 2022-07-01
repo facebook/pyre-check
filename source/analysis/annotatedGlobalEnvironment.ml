@@ -79,6 +79,9 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
   let trigger_to_dependency name = SharedMemoryKeys.AnnotateGlobalLocation name
 
   let equal_value = Option.equal [%compare.equal: Location.WithModule.t]
+
+  let overlay_owns_key module_tracker_overlay =
+    ModuleTracker.Overlay.owns_reference module_tracker_overlay
 end)
 
 include GlobalLocationTable

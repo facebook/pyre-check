@@ -37,6 +37,8 @@ module type In = sig
   val filter_upstream_dependency : SharedMemoryKeys.dependency -> Key.t option
 
   val trigger_to_dependency : Key.t -> SharedMemoryKeys.dependency
+
+  val overlay_owns_key : ModuleTracker.Overlay.t -> Key.t -> bool
 end
 
 module Make (In : In) = struct

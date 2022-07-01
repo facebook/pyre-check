@@ -157,6 +157,10 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
   let show_key = IndexTracker.annotation
 
+  let overlay_owns_key module_tracker_overlay index =
+    key_to_trigger index |> ModuleTracker.Overlay.owns_identifier module_tracker_overlay
+
+
   let equal_value = Option.equal [%compare.equal: edges]
 end)
 
@@ -250,4 +254,5 @@ let update_this_and_all_preceding_environments
 
 module HierarchyReadOnly = ReadOnly
 module UpdateResult = Edges.UpdateResult
+module Overlay = Edges.Overlay
 module Testing = Edges.Testing
