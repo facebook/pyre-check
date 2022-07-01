@@ -159,7 +159,7 @@ let rename_local_variables ~pairs define =
         | expression -> expression
       in
       match
-        Transform.transform_expressions ~transform:rename_identifier (Statement.Define define)
+        Transform.transform_in_statement ~transform:rename_identifier (Statement.Define define)
       with
       | Statement.Define define -> define
       | _ -> failwith "impossible")
@@ -190,7 +190,7 @@ let requalify_define ~old_qualifier ~new_qualifier define =
     | Expression.Name name -> Expression.Name (requalify_name ~old_qualifier ~new_qualifier name)
     | expression -> expression
   in
-  match Transform.transform_expressions ~transform (Statement.Define define) with
+  match Transform.transform_in_statement ~transform (Statement.Define define) with
   | Statement.Define define -> define
   | _ -> failwith "expected define"
 
@@ -488,7 +488,7 @@ let call_function_with_precise_parameters
     | expression -> expression
   in
   match
-    ( Transform.transform_expressions
+    ( Transform.transform_in_statement
         ~transform:pass_precise_arguments_instead_of_args_kwargs
         (Statement.Define define),
       !inferred_args_kwargs_parameters )

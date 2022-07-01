@@ -55,7 +55,7 @@ module MakeStatementTransformer (Transformer : StatementTransformer) : sig
   val transform : Transformer.t -> Source.t -> result
 end
 
-val transform_expressions
+val transform_in_statement
   :  transform:(Expression.expression -> Expression.expression) ->
   Statement.statement ->
   Statement.statement

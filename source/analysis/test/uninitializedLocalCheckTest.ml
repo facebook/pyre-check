@@ -306,7 +306,7 @@ let assert_defined_locals source expected =
       | other -> other
     in
     with_dummy_assert_origin statement
-    |> Node.map ~f:(Transform.transform_expressions ~transform:make_dunder_attribute_special)
+    |> Node.map ~f:(Transform.transform_in_statement ~transform:make_dunder_attribute_special)
   in
   let item_equal (left_statement, left_identifiers) (right_statement, right_identifiers) =
     Statement.location_insensitive_compare

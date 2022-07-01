@@ -608,7 +608,7 @@ let test_statement_transformer _ =
     28
 
 
-let test_transform_expression _ =
+let test_transform_in_statement _ =
   let keep_first_argument = function
     | Expression.Call
         {
@@ -625,7 +625,7 @@ let test_transform_expression _ =
   let assert_transform given expected =
     match parse given |> Source.statements, parse expected |> Source.statements with
     | [{ Node.value = given; _ }], [{ Node.value = expected; _ }] ->
-        let actual = Transform.transform_expressions ~transform:keep_first_argument given in
+        let actual = Transform.transform_in_statement ~transform:keep_first_argument given in
         let printer x = [%sexp_of: Statement.statement] x |> Sexp.to_string_hum in
         assert_equal
           ~cmp:(fun left right ->
@@ -849,7 +849,7 @@ let () =
          "statement_double_counter" >:: test_double_count;
          "statement_conditional_counter" >:: test_conditional_count;
          "statement_transformer" >:: test_statement_transformer;
-         "transform_expression" >:: test_transform_expression;
+         "transform_in_statement" >:: test_transform_in_statement;
          "transform_in_expression" >:: test_transform_in_expression;
          "sanitize_statement" >:: test_sanitize_statement;
        ]

@@ -478,7 +478,7 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
     { state = !state; source = { source with Source.statements } }
 end
 
-let transform_expressions ~transform statement =
+let transform_in_statement ~transform statement =
   let module TransformExpressions = Make (struct
     type t = unit
 
@@ -500,29 +500,25 @@ let transform_expressions ~transform statement =
 
 
 let transform_in_expression ~transform expression =
-  transform_expressions ~transform (Statement.Expression expression)
+  transform_in_statement ~transform (Statement.Expression expression)
   |> function
   | Statement.Expression expression -> expression
   | _ -> failwith "expected an expression statement"
 
 
-let sanitize_expression expression =
-  let transform = function
-    | Expression.Name (Name.Identifier identifier) ->
-        Expression.Name (Name.Identifier (Identifier.sanitized identifier))
-    | Name (Name.Attribute ({ attribute; _ } as attribute_expression)) ->
-        Name
-          (Name.Attribute { attribute_expression with attribute = Identifier.sanitized attribute })
-    | expression -> expression
-  in
-  match transform_expressions ~transform (Statement.Expression expression) with
-  | Statement.Expression expression -> expression
-  | _ -> expression
+let sanitize_expression =
+  transform_in_expression ~transform:(function
+      | Expression.Name (Name.Identifier identifier) ->
+          Expression.Name (Name.Identifier (Identifier.sanitized identifier))
+      | Name (Name.Attribute ({ attribute; _ } as attribute_expression)) ->
+          Name
+            (Name.Attribute { attribute_expression with attribute = Identifier.sanitized attribute })
+      | expression -> expression)
 
 
 let sanitize_statement statement =
-  (* The names in the function signatures are not strictly "expressions", so [transform_expressions]
-     doesn't transform them. We have to transform them in a separate pass. *)
+  (* The names in the function signatures are not strictly "expressions", so
+     [transform_in_statement] doesn't transform them. We have to transform them in a separate pass. *)
   let module SanitizeSignatures = MakeStatementTransformer (struct
     type t = unit
 
@@ -567,7 +563,7 @@ let sanitize_statement statement =
     let sanitize_signatures statement =
       SanitizeSignatures.transform () (Source.create [Node.create_with_default_location statement])
     in
-    transform_expressions ~transform:sanitize_expression statement
+    transform_in_statement ~transform:sanitize_expression statement
     |> sanitize_signatures
     |> SanitizeSignatures.source
     |> Source.statements
