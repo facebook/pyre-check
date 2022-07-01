@@ -4086,6 +4086,20 @@ module SelfType = struct
     Format.asprintf "_Self_%s__" (Reference.as_list class_reference |> String.concat ~sep:"_")
 
 
+  let replace_self_type_with ~synthetic_type_variable =
+    let map_name ~mapper:_ = function
+      | Name.Attribute
+          {
+            base = { Node.value = Name (Identifier ("typing_extensions" | "typing")); location };
+            attribute = "Self";
+            _;
+          } ->
+          create_name_from_reference ~location synthetic_type_variable
+      | name -> name
+    in
+    Mapper.map ~mapper:(Mapper.create_transformer ~map_name ())
+
+
   (* Ideally, we would return the potentially-transformed expression along with an indication of
      whether it was changed. But our current `Visit.Transformer` or `Expression.Mapper` APIs aren't
      powerful enough to express such a use. So, we do a separate check to decide whether we want to
@@ -4108,12 +4122,40 @@ module SelfType = struct
     return_annotation >>| expression_uses_self_type |> Option.value ~default:false
 
 
-  let replace_self_type_in_signature ({ Define.Signature.parameters; parent; _ } as signature) =
-    match parent, parameters with
-    | Some parent, { Node.value = { Parameter.annotation = None; _ }; _ } :: _
+  let replace_self_type_in_signature
+      ~qualifier
+      ({ Define.Signature.parameters; return_annotation; parent; _ } as signature)
+    =
+    match parent, parameters, return_annotation with
+    | ( Some parent,
+        ({ Node.value = { Parameter.annotation = None; _ } as self_parameter_value; location } as
+        self_parameter)
+        :: rest_parameters,
+        return_annotation )
       when signature_uses_self_type signature ->
-        (* TODO(T103914175): Replace `Self` in the signature. *)
-        (signature, parent) |> Option.some
+        let mangled_self_type_variable_reference =
+          self_variable_name parent |> qualify_local_identifier ~qualifier |> Reference.create
+        in
+        let self_parameter =
+          {
+            self_parameter with
+            value =
+              {
+                self_parameter_value with
+                annotation = Some (from_reference ~location mangled_self_type_variable_reference);
+              };
+          }
+        in
+        ( {
+            signature with
+            parameters = self_parameter :: rest_parameters;
+            return_annotation =
+              return_annotation
+              >>| replace_self_type_with
+                    ~synthetic_type_variable:mangled_self_type_variable_reference;
+          },
+          parent )
+        |> Option.some
     | _ -> None
 
 
@@ -4168,7 +4210,7 @@ module SelfType = struct
         let classes_with_self, value =
           match value with
           | Statement.Define ({ signature; _ } as define) -> (
-              match replace_self_type_in_signature signature with
+              match replace_self_type_in_signature ~qualifier signature with
               | Some (signature, class_with_self) ->
                   Set.add sofar class_with_self, Statement.Define { define with signature }
               | None -> sofar, value)

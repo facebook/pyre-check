@@ -6481,7 +6481,7 @@ let test_expand_self_type _ =
         def __init__(self, scale: float = 0.0) -> None:
           self.scale = scale
 
-        def set_scale(self, scale: float) -> Self:
+        def set_scale(self: _Self_test_Shape__, scale: float) -> _Self_test_Shape__:
           self.scale = scale
           return self
   |};
@@ -6520,7 +6520,7 @@ let test_expand_self_type _ =
 
       class Outer:
         class Inner:
-          def set_scale(self, scale: float) -> Self: ...
+          def set_scale(self: _Self_test_Outer_Inner__, scale: float) -> _Self_test_Outer_Inner__: ...
   |};
   assert_expand
     {|
@@ -6539,10 +6539,10 @@ let test_expand_self_type _ =
       from typing_extensions import Self
 
       class Base:
-        def set_scale(self, scale: float) -> Self: ...
+        def set_scale(self: _Self_test_Base__, scale: float) -> _Self_test_Base__: ...
 
       class Circle(Base):
-        def set_radius(self, scale: float) -> Self: ...
+        def set_radius(self: _Self_test_Circle__, scale: float) -> _Self_test_Circle__: ...
   |};
   ()
 
