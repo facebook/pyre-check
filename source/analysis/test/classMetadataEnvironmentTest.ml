@@ -433,7 +433,123 @@ let test_updates context =
   ()
 
 
+let assert_overlay_parents ~context ~overlay ~qualified_class_name expected_successors =
+  match
+    ClassMetadataEnvironment.ReadOnly.get_class_metadata
+      (ClassMetadataEnvironment.Overlay.read_only overlay)
+      qualified_class_name
+  with
+  | None -> failwith ("Failed to look up " ^ qualified_class_name)
+  | Some { ClassMetadataEnvironment.successors; _ } ->
+      assert_equal ~ctxt:context ~printer:[%show: Identifier.t list] expected_successors successors
+
+
+let test_overlay_dependency_filtering context =
+  let a_code_with_A_base base_type =
+    Format.asprintf
+      {|
+        class Base0: pass
+
+        class Base1: pass
+
+        Alias = %s
+
+        class A(%s): pass
+      |}
+      base_type
+      base_type
+    |> trim_extra_indentation
+  in
+  let b_code = trim_extra_indentation {|
+    from a import Alias
+
+    class B(Alias): pass
+  |} in
+  let c_code =
+    trim_extra_indentation
+      {|
+        from a import A
+        from b import B
+
+        class Ca(A): pass
+
+        class Cb(B): pass
+      |}
+  in
+  let project =
+    ScratchProject.setup
+      ~context
+      ["a.py", a_code_with_A_base "Base0"; "b.py", b_code; "c.py", c_code]
+  in
+  let parent =
+    ScratchProject.errors_environment project
+    |> ErrorsEnvironment.Testing.ReadOnly.class_metadata_environment
+  in
+  let overlay = ClassMetadataEnvironment.Overlay.create parent in
+  let assert_overlay_state qualified_class_name_successors_pairs =
+    let assert_pair (qualified_class_name, expected_successors) =
+      assert_overlay_parents ~context ~overlay ~qualified_class_name expected_successors
+    in
+    List.iter qualified_class_name_successors_pairs ~f:assert_pair
+  in
+  (* Initially, nothing inherits from Base1 *)
+  assert_overlay_state
+    [
+      "a.A", ["a.Base0"; "object"];
+      "b.B", ["a.Base0"; "object"];
+      "c.Ca", ["a.A"; "a.Base0"; "object"];
+      "c.Cb", ["b.B"; "a.Base0"; "object"];
+    ];
+  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  (* Update just a.py so that A inherits from Base1 rather than Base0. This should not affect
+     results for c.py at all, but should affect results for a.py *)
+  ClassMetadataEnvironment.Overlay.update_overlaid_code
+    overlay
+    ~code_updates:
+      [Test.relative_artifact_path ~root:local_root ~relative:"a.py", a_code_with_A_base "Base1"]
+  |> ignore;
+  (* After updating just a.py, we should see the type error from int-vs-float mismatch. The overlay
+     should see this update, but; "" c.py should behave exactly as before. *)
+  assert_overlay_state
+    [
+      "a.A", ["a.Base1"; "object"];
+      "b.B", ["a.Base0"; "object"];
+      "c.Ca", ["a.A"; "a.Base0"; "object"];
+      "c.Cb", ["b.B"; "a.Base0"; "object"];
+    ];
+  (* Add c.py to the overlay, without changing the actual code or including b.py in the overlay. to
+     detect the overlay. But instances of b.B should still behave as if a.A were defined on disk,
+     because we don't allow fanout to update the attribute table of b.B. *)
+  ClassMetadataEnvironment.Overlay.update_overlaid_code
+    overlay
+    ~code_updates:[Test.relative_artifact_path ~root:local_root ~relative:"c.py", c_code]
+  |> ignore;
+  assert_overlay_state
+    [
+      "a.A", ["a.Base1"; "object"];
+      "b.B", ["a.Base0"; "object"];
+      "c.Ca", ["a.A"; "a.Base1"; "object"];
+      "c.Cb", ["b.B"; "a.Base0"; "object"];
+    ];
+  ClassMetadataEnvironment.Overlay.update_overlaid_code
+    overlay
+    ~code_updates:[Test.relative_artifact_path ~root:local_root ~relative:"b.py", b_code]
+  |> ignore;
+  assert_overlay_state
+    [
+      "a.A", ["a.Base1"; "object"];
+      "b.B", ["a.Base1"; "object"];
+      "c.Ca", ["a.A"; "a.Base1"; "object"];
+      "c.Cb", ["b.B"; "a.Base1"; "object"];
+    ];
+  ()
+
+
 let () =
   "environment"
-  >::: ["simple_registration" >:: test_simple_registration; "updates" >:: test_updates]
+  >::: [
+         "simple_registration" >:: test_simple_registration;
+         "updates" >:: test_updates;
+         "overlay_dependency_filtering" >:: test_overlay_dependency_filtering;
+       ]
   |> Test.run

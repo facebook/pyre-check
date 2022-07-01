@@ -39,6 +39,7 @@ module LocalAnnotationMap = LocalAnnotationMap
 module LocationBasedLookup = LocationBasedLookup
 module MatchTranslate = MatchTranslate
 module ModuleTracker = ModuleTracker
+module MultiEnvironment = MultiEnvironment
 module NamedTuple = NamedTuple
 module Postprocessing = Postprocessing
 module Preprocessing = Preprocessing
