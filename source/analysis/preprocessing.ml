@@ -4081,6 +4081,111 @@ let expand_pytorch_register_buffer source =
   TransformConstructor.transform () source |> TransformConstructor.source
 
 
+module SelfType = struct
+  let self_variable_name class_reference =
+    Format.asprintf "_Self_%s__" (Reference.as_list class_reference |> String.concat ~sep:"_")
+
+
+  (* Ideally, we would return the potentially-transformed expression along with an indication of
+     whether it was changed. But our current `Visit.Transformer` or `Expression.Mapper` APIs aren't
+     powerful enough to express such a use. So, we do a separate check to decide whether we want to
+     replace Self types in a signature. *)
+  let signature_uses_self_type { Define.Signature.return_annotation; _ } =
+    let expression_uses_self_type expression =
+      let fold_name ~folder:_ ~state = function
+        | Name.Attribute
+            {
+              base = { Node.value = Name (Identifier ("typing_extensions" | "typing")); _ };
+              attribute = "Self";
+              _;
+            } ->
+            true
+        | _ -> state
+      in
+      let folder = Folder.create_with_uniform_location_fold ~fold_name () in
+      Folder.fold ~folder ~state:false expression
+    in
+    return_annotation >>| expression_uses_self_type |> Option.value ~default:false
+
+
+  let replace_self_type_in_signature ({ Define.Signature.parameters; parent; _ } as signature) =
+    match parent, parameters with
+    | Some parent, { Node.value = { Parameter.annotation = None; _ }; _ } :: _
+      when signature_uses_self_type signature ->
+        (* TODO(T103914175): Replace `Self` in the signature. *)
+        (signature, parent) |> Option.some
+    | _ -> None
+
+
+  let make_type_variable_definition ~qualifier class_reference =
+    let location = Location.any in
+    let self_variable_reference =
+      self_variable_name class_reference |> qualify_local_identifier ~qualifier |> Reference.create
+    in
+    Statement.Assign
+      {
+        target = from_reference ~location self_variable_reference;
+        value =
+          Expression.Call
+            {
+              callee = Reference.create "typing.TypeVar" |> from_reference ~location;
+              arguments =
+                [
+                  {
+                    Call.Argument.name = None;
+                    value =
+                      Expression.Constant
+                        (Constant.String
+                           {
+                             StringLiteral.kind = String;
+                             value = self_variable_name class_reference;
+                           })
+                      |> Node.create_with_default_location;
+                  };
+                  {
+                    Call.Argument.name = Some (Node.create_with_default_location "$parameter$bound");
+                    value =
+                      Expression.Constant
+                        (Constant.String
+                           { StringLiteral.kind = String; value = Reference.show class_reference })
+                      |> Node.create_with_default_location;
+                  };
+                ];
+            }
+          |> Node.create_with_default_location;
+        annotation = None;
+      }
+    |> Node.create_with_default_location
+
+
+  let expand_self_type ({ Source.module_path = { qualifier; _ }; _ } as source) =
+    let module Transform = Transform.MakeStatementTransformer (struct
+      type classes_with_self = Reference.Set.t
+
+      type t = classes_with_self
+
+      let statement sofar { Node.location; value } =
+        let classes_with_self, value =
+          match value with
+          | Statement.Define ({ signature; _ } as define) -> (
+              match replace_self_type_in_signature signature with
+              | Some (signature, class_with_self) ->
+                  Set.add sofar class_with_self, Statement.Define { define with signature }
+              | None -> sofar, value)
+          | _ -> sofar, value
+        in
+        classes_with_self, [{ Node.location; value }]
+    end)
+    in
+    let { Transform.source; state = classes_with_self } =
+      Transform.transform Reference.Set.empty source
+    in
+    let type_variable_definitions =
+      Set.to_list classes_with_self |> List.map ~f:(make_type_variable_definition ~qualifier)
+    in
+    { source with statements = type_variable_definitions @ Source.statements source }
+end
+
 let preprocess_phase0 source =
   source
   |> expand_relative_imports

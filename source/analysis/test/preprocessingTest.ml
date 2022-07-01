@@ -6452,6 +6452,101 @@ let test_expand_pytorch_register_buffer _ =
   ()
 
 
+let test_expand_self_type _ =
+  let assert_expand ?(handle = "test.py") source expected =
+    let expected = parse ~handle expected |> Preprocessing.qualify in
+    let actual =
+      parse ~handle source |> Preprocessing.qualify |> Preprocessing.SelfType.expand_self_type
+    in
+    assert_source_equal ~location_insensitive:true expected actual
+  in
+  assert_expand
+    {|
+      from typing_extensions import Self
+
+      class Shape:
+        def __init__(self, scale: float = 0.0) -> None:
+          self.scale = scale
+
+        def set_scale(self, scale: float) -> Self:
+          self.scale = scale
+          return self
+  |}
+    {|
+      _Self_test_Shape__ = typing.TypeVar("_Self_test_Shape__", bound="Shape")
+
+      from typing_extensions import Self
+
+      class Shape:
+        def __init__(self, scale: float = 0.0) -> None:
+          self.scale = scale
+
+        def set_scale(self, scale: float) -> Self:
+          self.scale = scale
+          return self
+  |};
+  assert_expand
+    {|
+      class NoSelf:
+        def some_method(self, scale: float) -> None:
+          pass
+  |}
+    {|
+      class NoSelf:
+        def some_method(self, scale: float) -> None:
+          pass
+  |};
+  assert_expand
+    {|
+      def some_function(scale: float) -> None:
+        pass
+  |}
+    {|
+      def some_function(scale: float) -> None:
+        pass
+  |};
+  assert_expand
+    {|
+      from typing_extensions import Self
+
+      class Outer:
+        class Inner:
+          def set_scale(self, scale: float) -> Self: ...
+  |}
+    {|
+      _Self_test_Outer_Inner__ = typing.TypeVar("_Self_test_Outer_Inner__", bound="Outer.Inner")
+
+      from typing_extensions import Self
+
+      class Outer:
+        class Inner:
+          def set_scale(self, scale: float) -> Self: ...
+  |};
+  assert_expand
+    {|
+      from typing_extensions import Self
+
+      class Base:
+        def set_scale(self, scale: float) -> Self: ...
+
+      class Circle(Base):
+        def set_radius(self, scale: float) -> Self: ...
+  |}
+    {|
+      _Self_test_Base__ = typing.TypeVar("_Self_test_Base__", bound="Base")
+      _Self_test_Circle__ = typing.TypeVar("_Self_test_Circle__", bound="Circle")
+
+      from typing_extensions import Self
+
+      class Base:
+        def set_scale(self, scale: float) -> Self: ...
+
+      class Circle(Base):
+        def set_radius(self, scale: float) -> Self: ...
+  |};
+  ()
+
+
 let () =
   "preprocessing"
   >::: [
@@ -6484,5 +6579,6 @@ let () =
          "six_metaclass_decorator" >:: test_six_metaclass_decorator;
          "expand_import_python_calls" >:: test_expand_import_python_calls;
          "expand_pytorch_register_buffer" >:: test_expand_pytorch_register_buffer;
+         "self_type" >:: test_expand_self_type;
        ]
   |> Test.run

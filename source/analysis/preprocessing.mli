@@ -126,3 +126,7 @@ module Qualify (Context : QualifyContext) : sig
 
   val qualify_pattern : scope:scope -> Statement.Match.Pattern.t -> Statement.Match.Pattern.t
 end
+
+module SelfType : sig
+  val expand_self_type : Source.t -> Source.t
+end
