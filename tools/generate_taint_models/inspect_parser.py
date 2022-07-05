@@ -7,6 +7,7 @@
 
 
 import inspect
+import re
 import types
 from typing import Callable, List, Mapping, Optional
 
@@ -33,7 +34,9 @@ def extract_qualified_name(callable_object: Callable[..., object]) -> Optional[s
     return ".".join(filter(None, [module_name, view_name]))
 
 
-def extract_parameters(callable_object: Callable[..., object]) -> List[Parameter]:
+def extract_parameters(
+    callable_object: Callable[..., object], strip_annotated: bool = True
+) -> List[Parameter]:
     callable_parameters: Mapping[str, inspect.Parameter] = {}
     if isinstance(callable_object, types.FunctionType):
         callable_parameters = inspect.signature(callable_object).parameters
@@ -53,7 +56,7 @@ def extract_parameters(callable_object: Callable[..., object]) -> List[Parameter
         parameters.append(
             Parameter(
                 _extract_parameter_name(parameter),
-                _extract_parameter_annotation(parameter),
+                _extract_parameter_annotation(parameter, strip_annotated),
                 kind,
             )
         )
@@ -61,10 +64,22 @@ def extract_parameters(callable_object: Callable[..., object]) -> List[Parameter
     return parameters
 
 
-def _extract_parameter_annotation(parameter: inspect.Parameter) -> Optional[str]:
+def _strip_annotated(annotation: str) -> str:
+    if matched_annotation := re.search("^Annotated\\[([^,]*),", annotation):
+        return matched_annotation.group(1)
+    else:
+        return annotation
+
+
+def _extract_parameter_annotation(
+    parameter: inspect.Parameter, strip_annotated: bool
+) -> Optional[str]:
     annotation = parameter.annotation
     if isinstance(annotation, str):
-        return annotation
+        if strip_annotated:
+            return _strip_annotated(annotation)
+        else:
+            return annotation
     elif isinstance(annotation, type):
         return annotation.__name__
     else:
