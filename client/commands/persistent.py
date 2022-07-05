@@ -1152,16 +1152,16 @@ def uncovered_range_to_diagnostic(uncovered_range: CodeRange) -> lsp.Diagnostic:
 def to_coverage_result(
     covered_and_uncovered_lines: CoveredAndUncoveredLines,
     uncovered_ranges: List[CodeRange],
-) -> lsp.TypeCoverageResult:
+) -> lsp.TypeCoverageResponse:
     num_covered = len(covered_and_uncovered_lines.covered_lines)
     num_uncovered = len(covered_and_uncovered_lines.uncovered_lines)
     num_total = num_covered + num_uncovered
     if num_total == 0:
-        return lsp.TypeCoverageResult(
+        return lsp.TypeCoverageResponse(
             covered_percent=100.0, uncovered_ranges=[], default_message=""
         )
     else:
-        return lsp.TypeCoverageResult(
+        return lsp.TypeCoverageResponse(
             covered_percent=100.0 * num_covered / num_total,
             uncovered_ranges=[
                 uncovered_range_to_diagnostic(uncovered_range)
@@ -1171,8 +1171,8 @@ def to_coverage_result(
         )
 
 
-def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResult:
-    return lsp.TypeCoverageResult(
+def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
+    return lsp.TypeCoverageResponse(
         covered_percent=0.0,
         uncovered_ranges=[
             lsp.Diagnostic(
@@ -1190,7 +1190,9 @@ def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResult:
     )
 
 
-def path_to_coverage_result(path: Path, strict_default: bool) -> lsp.TypeCoverageResult:
+def path_to_coverage_response(
+    path: Path, strict_default: bool
+) -> lsp.TypeCoverageResponse:
     module = statistics.parse_path_to_module(path)
     if module is None:
         raise lsp.RequestCancelledError(
@@ -1295,12 +1297,12 @@ class PyreQueryHandler(connection.BackgroundTask):
         path: Path,
         strict_default: bool,
         socket_path: Path,
-    ) -> Optional[lsp.TypeCoverageResult]:
+    ) -> Optional[lsp.TypeCoverageResponse]:
         is_typechecked = await self._query_is_typechecked(path, socket_path)
         if is_typechecked is None:
             return None
         elif is_typechecked:
-            return path_to_coverage_result(path, strict_default)
+            return path_to_coverage_response(path, strict_default)
         else:
             return file_not_typechecked_coverage_result()
 

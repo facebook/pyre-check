@@ -606,7 +606,7 @@ class TypeCoverageTextDocumentParameters:
     undefined=dataclasses_json.Undefined.EXCLUDE,
 )
 @dataclasses.dataclass(frozen=True)
-class TypeCoverageResult:
+class TypeCoverageResponse:
     """Result for nuclide-vscode-lsp coverage feature."""
 
     covered_percent: float
