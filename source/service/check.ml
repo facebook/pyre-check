@@ -11,8 +11,7 @@ open Pyre
 let check
     ~scheduler
     ~configuration:
-      ({ Configuration.Analysis.project_root; source_paths; search_paths; debug; _ } as
-      configuration)
+      ({ Configuration.Analysis.project_root; source_paths; search_paths; _ } as configuration)
     ~populate_call_graph
   =
   (* Sanity check environment. *)
@@ -67,13 +66,6 @@ let check
         ClassHierarchy.to_dot (GlobalResolution.class_hierarchy global_resolution) ~indices
       in
       File.create ~content:class_hierarchy_dot type_order_file |> File.write);
-    if debug then
-      Statistics.event
-        ~section:`Memory
-        ~name:"shared memory size"
-        ~integers:["size", Memory.heap_size ()]
-        ();
-
     errors_environment
   in
   (* Run type check and then postprocessing - this is not as efficient as it could be, but we need
