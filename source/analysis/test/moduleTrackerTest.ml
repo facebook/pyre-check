@@ -1645,6 +1645,13 @@ let test_overlay_basic context =
   assert_raw_code !&"code" unsaved_content;
   overlay_owns !&"has_stub" |> assert_true;
   assert_raw_code !&"has_stub" content_on_disk;
+  (* Run an update where we reset code.py to read from disk. It stays owned by the overlay because
+     we have no efficient way to clear ownership should match the parent environment *)
+  update_overlay_and_assert_result
+    ~code_updates:["code.py", ModuleTracker.Overlay.CodeUpdate.ResetCode]
+    ~expected:["code.py"];
+  overlay_owns !&"code" |> assert_true;
+  assert_raw_code !&"code" content_on_disk;
   ()
 
 

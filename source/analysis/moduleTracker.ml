@@ -613,7 +613,9 @@ end
 
 module Overlay = struct
   module CodeUpdate = struct
-    type t = NewCode of raw_code
+    type t =
+      | NewCode of raw_code
+      | ResetCode
   end
 
   type t = {
@@ -649,6 +651,7 @@ module Overlay = struct
         match code_update with
         | CodeUpdate.NewCode new_code ->
             ModulePath.Table.set overlaid_code ~key:module_path ~data:new_code
+        | CodeUpdate.ResetCode -> ModulePath.Table.remove overlaid_code module_path
       in
       let () = Hash_set.add overlaid_qualifiers qualifier in
       IncrementalUpdate.NewExplicit module_path

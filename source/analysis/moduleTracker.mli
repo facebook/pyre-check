@@ -73,7 +73,9 @@ val read_only : t -> ReadOnly.t
 
 module Overlay : sig
   module CodeUpdate : sig
-    type t = NewCode of raw_code
+    type t =
+      | NewCode of raw_code
+      | ResetCode
   end
 
   type t
