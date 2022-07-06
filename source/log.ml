@@ -12,7 +12,6 @@ type section =
   | `Debug
   | `Dependencies
   | `DependencyGraph
-  | `Dotty
   | `Dump
   | `Environment
   | `Error
@@ -35,7 +34,6 @@ let section_to_string = function
   | `Debug -> "Debug"
   | `Dependencies -> "Dependencies"
   | `DependencyGraph -> "DependencyGraph"
-  | `Dotty -> "Dotty"
   | `Dump -> "Dump"
   | `Environment -> "Environment"
   | `Error -> "Error"

@@ -43,29 +43,8 @@ let check
     let errors_environment =
       EnvironmentControls.create ~populate_call_graph configuration |> ErrorsEnvironment.create
     in
-    let type_environment =
-      ErrorsEnvironment.read_only errors_environment |> ErrorsEnvironment.ReadOnly.type_environment
-    in
-
-    let global_environment = TypeEnvironment.ReadOnly.global_environment type_environment in
     Statistics.performance ~name:"full environment built" ~timer ();
 
-    if Log.is_enabled `Dotty then (
-      let type_order_file =
-        PyrePath.create_relative
-          ~root:(Configuration.Analysis.log_directory configuration)
-          ~relative:"type_order.dot"
-      in
-      Log.info "Emitting type order dotty file to %s" (PyrePath.absolute type_order_file);
-      let indices =
-        AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment global_environment
-        |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
-      in
-      let global_resolution = GlobalResolution.create global_environment in
-      let class_hierarchy_dot =
-        ClassHierarchy.to_dot (GlobalResolution.class_hierarchy global_resolution) ~indices
-      in
-      File.create ~content:class_hierarchy_dot type_order_file |> File.write);
     errors_environment
   in
   (* Run type check and then postprocessing - this is not as efficient as it could be, but we need

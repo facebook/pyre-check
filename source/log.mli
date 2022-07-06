@@ -23,7 +23,6 @@ type section =
   | `Debug
   | `Dependencies
   | `DependencyGraph
-  | `Dotty
   | `Dump
   | `Environment
   | `Error
