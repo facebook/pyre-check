@@ -185,10 +185,6 @@ class PartialConfiguration:
     version_hash: Optional[str] = None
 
     @staticmethod
-    def _get_depreacted_map() -> Dict[str, str]:
-        return {"do_not_check": "ignore_all_errors"}
-
-    @staticmethod
     def _get_extra_keys() -> Set[str]:
         return {
             "create_open_source_configuration",
@@ -497,17 +493,7 @@ class PartialConfiguration:
                 version_hash=ensure_option_type(configuration_json, "version", str),
             )
 
-            # Check for deprecated and unused keys
-            for (
-                deprecated_key,
-                replacement_key,
-            ) in PartialConfiguration._get_depreacted_map().items():
-                if deprecated_key in configuration_json:
-                    configuration_json.pop(deprecated_key)
-                    LOG.warning(
-                        f"Configuration file uses deprecated item `{deprecated_key}`. "
-                        f"Please migrate to its replacement `{replacement_key}`"
-                    )
+            # Check for unused keys
             extra_keys = PartialConfiguration._get_extra_keys()
             for unrecognized_key in configuration_json:
                 if unrecognized_key not in extra_keys:
