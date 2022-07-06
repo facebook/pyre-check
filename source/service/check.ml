@@ -7,6 +7,7 @@
 
 open Core
 open Pyre
+open Analysis
 
 let check
     ~scheduler
@@ -36,7 +37,6 @@ let check
   (* Profiling helper *)
   Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
   let environment =
-    let open Analysis in
     Log.info "Building type environment...";
 
     let timer = Timer.start () in
@@ -71,10 +71,10 @@ let check
   (* Run type check and then postprocessing - this is not as efficient as it could be, but we need
      to tune the map-reduce parameters before we can safely combine them into a single step *)
   let () =
-    Analysis.ErrorsEnvironment.type_environment environment
-    |> Analysis.TypeEnvironment.populate_for_project_modules ~scheduler
+    ErrorsEnvironment.type_environment environment
+    |> TypeEnvironment.populate_for_project_modules ~scheduler
   in
-  let () = Analysis.ErrorsEnvironment.populate_all_errors ~scheduler environment in
+  let () = ErrorsEnvironment.populate_all_errors ~scheduler environment in
   Profiling.track_shared_memory_usage ();
 
   (* Only destroy the scheduler if the check command created it. *)
