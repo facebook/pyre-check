@@ -111,7 +111,7 @@ let log_update_stats update_type ~timer ~updated_paths_count ~update_result ~new
   ()
 
 
-let run_update_root multi_environment ~scheduler artifact_paths =
+let run_update_root ({ overlays; _ } as multi_environment) ~scheduler artifact_paths =
   let timer = Timer.start () in
   prepare_for_update multi_environment ~scheduler;
   (* Repopulate the environment. *)
@@ -119,6 +119,8 @@ let run_update_root multi_environment ~scheduler artifact_paths =
   let updated_paths_count = List.length artifact_paths in
   let update_result = update_root multi_environment ~scheduler artifact_paths in
   let new_errors = root_errors multi_environment in
+  String.Table.iter overlays ~f:(fun overlay ->
+      ErrorsEnvironment.Overlay.propagate_parent_update overlay update_result |> ignore);
   (* Log updates *)
   log_update_stats UpdateType.Root ~timer ~update_result ~new_errors ~updated_paths_count
 
@@ -127,7 +129,7 @@ let run_update_overlay_with_code multi_environment ~code_updates identifier =
   let timer = Timer.start () in
   SharedMemory.invalidate_caches ();
   (* Repopulate the environment. *)
-  Log.info "Repopulating the environment...";
+  Log.info "Repopulating overlay environment...";
   let updated_paths_count = List.length code_updates in
   let update_result = update_overlay_with_code multi_environment identifier ~code_updates in
   let new_errors = overlay_errors multi_environment identifier in

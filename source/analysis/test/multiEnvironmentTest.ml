@@ -156,7 +156,88 @@ let test_update_overlays context =
   ()
 
 
+let test_overlay_propagation context =
+  let on_filesystem_code ~x_type ~y_type ~z_type =
+    Format.asprintf {|
+    x: %s = ...
+    y: %s = ...
+    z: %s = ...
+  |} x_type y_type z_type
+    |> trim_extra_indentation
+  in
+  let in_overlay_code ~varname =
+    Format.asprintf {|
+    import on_filesystem
+    reveal_type(on_filesystem.%s)
+  |} varname
+    |> trim_extra_indentation
+  in
+  let project =
+    ScratchProject.setup
+      ~context
+      ~in_memory:false
+      [
+        "on_filesystem.py", on_filesystem_code ~x_type:"int" ~y_type:"float" ~z_type:"str";
+        "in_overlay.py", in_overlay_code ~varname:"x";
+      ]
+  in
+  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let artifact_path = Test.relative_artifact_path ~root:local_root ~relative:"in_overlay.py" in
+  let multi_environment =
+    ScratchProject.ReadWrite.errors_environment project |> MultiEnvironment.create
+  in
+  (* Create two overlays, and check that we detect the right varnames *)
+  MultiEnvironment.update_overlay_with_code
+    multi_environment
+    ~code_updates:
+      [artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode (in_overlay_code ~varname:"y")]
+    "overlay_0"
+  |> ignore;
+  MultiEnvironment.update_overlay_with_code
+    multi_environment
+    ~code_updates:
+      [artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode (in_overlay_code ~varname:"z")]
+    "overlay_1"
+  |> ignore;
+  assert_overlay_errors
+    ~context
+    ~multi_environment
+    ~overlay_identifier:"overlay_0"
+    ["in_overlay.py 3: Revealed type [-1]: Revealed type for `on_filesystem.y` is `float`."];
+  assert_overlay_errors
+    ~context
+    ~multi_environment
+    ~overlay_identifier:"overlay_1"
+    ["in_overlay.py 3: Revealed type [-1]: Revealed type for `on_filesystem.z` is `str`."];
+  (* Update the parent environment and make sure the changes propagate *)
+  let update_code relative new_code =
+    ScratchProject.delete_file project ~relative;
+    ScratchProject.add_file project ~relative new_code;
+    ()
+  in
+  update_code "on_filesystem.py" (on_filesystem_code ~x_type:"float" ~y_type:"str" ~z_type:"int");
+  MultiEnvironment.run_update_root
+    multi_environment
+    ~scheduler:(Test.mock_scheduler ())
+    [Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"];
+  assert_overlay_errors
+    ~context
+    ~multi_environment
+    ~overlay_identifier:"overlay_0"
+    ["in_overlay.py 3: Revealed type [-1]: Revealed type for `on_filesystem.y` is `str`."];
+  assert_overlay_errors
+    ~context
+    ~multi_environment
+    ~overlay_identifier:"overlay_1"
+    ["in_overlay.py 3: Revealed type [-1]: Revealed type for `on_filesystem.z` is `int`."];
+  ()
+
+
 let () =
   "environment"
-  >::: ["update_root" >:: test_update_root; "update_overlays" >:: test_update_overlays]
+  >::: [
+         "update_root" >:: test_update_root;
+         "update_overlays" >:: test_update_overlays;
+         "overlay_propagation" >:: test_overlay_propagation;
+       ]
   |> Test.run
