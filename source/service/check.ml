@@ -36,17 +36,14 @@ let check
   search_paths |> List.iter ~f:check_search_path_exists;
   (* Profiling helper *)
   Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
+  Log.info "Building type environment...";
+
+  let timer = Timer.start () in
   let environment =
-    Log.info "Building type environment...";
-
-    let timer = Timer.start () in
-    let errors_environment =
-      EnvironmentControls.create ~populate_call_graph configuration |> ErrorsEnvironment.create
-    in
-    Statistics.performance ~name:"full environment built" ~timer ();
-
-    errors_environment
+    EnvironmentControls.create ~populate_call_graph configuration |> ErrorsEnvironment.create
   in
+  Statistics.performance ~name:"full environment built" ~timer ();
+
   (* Run type check and then postprocessing - this is not as efficient as it could be, but we need
      to tune the map-reduce parameters before we can safely combine them into a single step *)
   let () =
