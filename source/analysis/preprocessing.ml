@@ -4252,6 +4252,7 @@ let preprocess_phase1 source =
   |> expand_named_tuples
   |> inline_six_metaclass
   |> expand_pytorch_register_buffer
+  |> SelfType.expand_self_type
   |> populate_nesting_defines
   |> populate_captures
 

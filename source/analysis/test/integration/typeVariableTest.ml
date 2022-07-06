@@ -3554,6 +3554,213 @@ let test_variadic_callables context =
   ()
 
 
+let test_self_type context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing_extensions import Self
+
+      class Shape:
+        def __init__(self, scale: float = 0.0) -> None:
+          self.scale = scale
+
+        def set_scale(self, scale: float) -> Self:
+          reveal_type(self)
+          self.scale = scale
+          return self
+
+      class Circle(Shape):
+        def __init__(self, scale: float = 0.0, radius: float = 0.0) -> None:
+          super(Circle, self).__init__(scale)
+          self.radius = radius
+
+        def set_radius(self, radius: float) -> Self:
+          self.radius = radius
+          return self
+
+      def foo() -> None:
+        circle: Circle
+        y = circle.set_scale(0.5).set_radius(2.7)
+        reveal_type(y)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `self` is `Variable[_Self_test_Shape__ (bound to \
+       Shape)]`.";
+      "Revealed type [-1]: Revealed type for `y` is `Circle`.";
+    ];
+  (* Same example but with protocols. *)
+  assert_type_errors
+    {|
+      from typing_extensions import Self
+      from typing import Protocol
+
+      class ShapeProtocol(Protocol):
+        def __init__(self, scale: float = 0.0) -> None:
+          self.scale = scale
+
+        def set_scale(self, scale: float) -> Self:
+          reveal_type(self)
+          self.scale = scale
+          return self
+
+      class CircleProtocol(ShapeProtocol, Protocol):
+        def __init__(self, scale: float = 0.0, radius: float = 0.0) -> None:
+          super(CircleProtocol, self).__init__(scale)
+          self.radius = radius
+
+        def set_radius(self, radius: float) -> Self:
+          self.radius = radius
+          return self
+
+      def foo() -> None:
+        circle: CircleProtocol
+        y = circle.set_scale(0.5).set_radius(2.7)
+        reveal_type(y)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `self` is `Variable[_Self_test_ShapeProtocol__ (bound \
+       to ShapeProtocol)]`.";
+      "Revealed type [-1]: Revealed type for `y` is `CircleProtocol`.";
+    ];
+  assert_type_errors
+    {|
+      from typing_extensions import Self
+      from typing import Protocol
+
+      class ShapeProtocol(Protocol):
+        def set_scale(self, scale: float) -> Self: ...
+
+      class ReturnSelf:
+        scale: float = 1.0
+
+        def set_scale(self, scale: float) -> Self:
+          self.scale = scale
+          return self
+
+      class ReturnConcreteShape:
+        scale: float = 1.0
+
+        def set_scale(self, scale: float) -> ReturnConcreteShape:
+          self.scale = scale
+          return self
+
+      class BadReturnType:
+        scale: float = 1.0
+
+        def set_scale(self, scale: float) -> int:
+          self.scale = scale
+          return 42
+
+      def foo(shape: ShapeProtocol) -> None:
+        y = shape.set_scale(0.5)
+        reveal_type(y)
+
+      def main() -> None:
+        return_self_shape: ReturnSelf
+        return_concrete_shape: ReturnConcreteShape
+        bad_return_type: BadReturnType
+
+        foo(return_self_shape)
+        foo(return_concrete_shape)
+        foo(bad_return_type)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `y` is `ShapeProtocol`.";
+      "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
+       `ShapeProtocol` but got `BadReturnType`.";
+    ];
+  (* TODO(T103914175): Allow overriding a method that uses Self. *)
+  assert_type_errors
+    {|
+      from typing_extensions import Self
+
+      class Shape:
+        def __init__(self, scale: float = 0.0) -> None:
+          self.scale = scale
+
+        def set_scale(self, scale: float) -> Self:
+          self.scale = scale
+          return self
+
+      class Circle(Shape):
+        def set_scale(self, scale: float) -> Self:
+          self.scale = scale + 1.0
+          return self
+     |}
+    [
+      "Inconsistent override [14]: `test.Circle.set_scale` overrides method defined in `Shape` \
+       inconsistently. Parameter of type `Variable[_Self_test_Circle__ (bound to Circle)]` is not \
+       a supertype of the overridden parameter `Variable[_Self_test_Shape__ (bound to Shape)]`.";
+    ];
+  (* Generic class. *)
+  assert_type_errors
+    {|
+      from typing_extensions import Self
+      from typing import Generic, TypeVar
+
+      T = TypeVar("T")
+
+      class Container(Generic[T]):
+        def __init__(self, value: T) -> None:
+          self.value = value
+
+        def set_value(self, value: T) -> Self:
+          reveal_type(self)
+          self.value = value
+          return self
+
+      class ChildContainer(Container[T]): ...
+
+      class ConcreteContainer(ChildContainer[int]): ...
+
+      def foo() -> None:
+        child: ChildContainer[str]
+        y = child.set_value("hello")
+        reveal_type(y)
+        child.set_value(42)
+
+        concrete: ConcreteContainer
+        y2 = concrete.set_value(42)
+        reveal_type(y2)
+        concrete.set_value("bad")
+     |}
+    [
+      (* TODO(T103918696): Don't complain about the synthetic TypeVar bound. *)
+      "Invalid type parameters [24]: Generic type `Container` expects 1 type parameter.";
+      "Revealed type [-1]: Revealed type for `self` is `Variable[_Self_test_Container__ (bound to \
+       Container[typing.Any])]`.";
+      "Revealed type [-1]: Revealed type for `y` is `ChildContainer[str]`.";
+      "Incompatible parameter type [6]: In call `Container.set_value`, for 1st positional only \
+       parameter expected `str` but got `int`.";
+      "Revealed type [-1]: Revealed type for `y2` is `ConcreteContainer`.";
+      "Incompatible parameter type [6]: In call `Container.set_value`, for 1st positional only \
+       parameter expected `int` but got `str`.";
+    ];
+  (* Nested class using Self. *)
+  assert_type_errors
+    {|
+      from typing_extensions import Self
+
+      class Outer:
+        class Shape:
+          def __init__(self, scale: float = 0.0) -> None:
+            self.scale = scale
+
+          def set_scale(self, scale: float) -> Self:
+            self.scale = scale
+            return self
+
+        class Circle(Shape): ...
+
+      def foo() -> None:
+        circle: Outer.Circle
+        y = circle.set_scale(0.5)
+        reveal_type(y)
+     |}
+    ["Revealed type [-1]: Revealed type for `y` is `Outer.Circle`."];
+  ()
+
+
 let () =
   "typeVariable"
   >::: [
@@ -3573,5 +3780,6 @@ let () =
          "variadic_tuples" >:: test_variadic_tuples;
          "variadic_classes" >:: test_variadic_classes;
          "variadic_callables" >:: test_variadic_callables;
+         "self_type" >:: test_self_type;
        ]
   |> Test.run
