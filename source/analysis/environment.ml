@@ -474,21 +474,20 @@ module EnvironmentTable = struct
               triggers)
 
 
-      let update_overlaid_code
-          ({ upstream_environment; from_read_only_upstream; _ } as environment)
-          ~code_updates
-        =
-        let upstream_update =
-          In.PreviousEnvironment.Overlay.update_overlaid_code upstream_environment ~code_updates
-        in
+      let consume_upstream_update ({ from_read_only_upstream; _ } as environment) update_result =
         let triggered_dependencies =
-          In.PreviousEnvironment.UpdateResult.all_triggered_dependencies upstream_update
+          In.PreviousEnvironment.UpdateResult.all_triggered_dependencies update_result
           |> compute_owned_trigger_map environment
           |> FromReadOnlyUpstream.update_only_this_environment
                from_read_only_upstream
                ~scheduler:(Scheduler.create_sequential ())
         in
-        { UpdateResult.triggered_dependencies; upstream = upstream_update }
+        { UpdateResult.triggered_dependencies; upstream = update_result }
+
+
+      let update_overlaid_code ({ upstream_environment; _ } as environment) ~code_updates =
+        In.PreviousEnvironment.Overlay.update_overlaid_code upstream_environment ~code_updates
+        |> consume_upstream_update environment
 
 
       let read_only ({ parent; upstream_environment; from_read_only_upstream } as environment) =
