@@ -274,6 +274,131 @@ let test_overlay context =
   ()
 
 
+let test_error_filtering context =
+  (* This test cannot rely on ScratchProject because we want to manually create the configuration in
+     order to validate filtering logic that happens in postprocessing *)
+  let assert_errors
+      ?filter_directories
+      ?(ignore_all_errors = [])
+      ?(search_paths = [])
+      ~root
+      ~files
+      expected_errors
+    =
+    let external_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let add_source ~root (relative, content) =
+      let content = trim_extra_indentation content in
+      let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
+      File.write file
+    in
+    List.iter (typeshed_stubs ()) ~f:(add_source ~root:external_root);
+    let ignore_all_errors = external_root :: ignore_all_errors in
+    let search_paths = SearchPath.Root external_root :: search_paths in
+    let configuration =
+      Configuration.Analysis.create
+        ?filter_directories
+        ~ignore_all_errors
+        ~search_paths
+        ~project_root:root
+        ~local_root:root
+        ~source_paths:[SearchPath.Root root]
+        ()
+    in
+    let scheduler = Test.mock_scheduler () in
+    List.iter ~f:File.write files;
+    let environment =
+      let read_write =
+        EnvironmentControls.create ~populate_call_graph:true configuration
+        |> ErrorsEnvironment.create
+      in
+      ErrorsEnvironment.check_and_preprocess ~scheduler read_write;
+      ErrorsEnvironment.read_only read_write
+    in
+    let errors =
+      Analysis.ErrorsEnvironment.ReadOnly.get_all_errors environment
+      |> List.map ~f:(fun error ->
+             Analysis.AnalysisError.instantiate
+               ~show_error_traces:false
+               ~lookup:
+                 (Analysis.AstEnvironment.ReadOnly.get_real_path_relative
+                    (Analysis.ErrorsEnvironment.ReadOnly.ast_environment environment))
+               error
+             |> Analysis.AnalysisError.Instantiated.description)
+    in
+    Memory.reset_shared_memory ();
+    assert_equal
+      ~printer:(List.to_string ~f:ident)
+      ~cmp:(List.equal String.equal)
+      expected_errors
+      errors
+  in
+  let content =
+    {|
+      class C:
+        pass
+      class D:
+        def __init__(self):
+          pass
+      def foo() -> C:
+        return D()
+    |}
+    |> Test.trim_extra_indentation
+  in
+  let root = PyrePath.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
+  let check_path = PyrePath.create_relative ~root ~relative:"check/a.py" in
+  let ignore_path = PyrePath.create_relative ~root ~relative:"ignore/b.py" in
+  let files = [File.create ~content check_path; File.create ~content ignore_path] in
+  assert_errors
+    ~filter_directories:
+      [
+        PyrePath.create_relative ~root ~relative:"check";
+        PyrePath.create_relative ~root ~relative:"ignore";
+      ]
+    ~root
+    ~files
+    [
+      "Incompatible return type [7]: Expected `C` but got `D`.";
+      "Incompatible return type [7]: Expected `C` but got `D`.";
+    ];
+
+  let root = PyrePath.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
+  let check_path = PyrePath.create_relative ~root ~relative:"check/a.py" in
+  let ignore_path = PyrePath.create_relative ~root ~relative:"ignore/b.py" in
+  let files = [File.create ~content check_path; File.create ~content ignore_path] in
+  assert_errors
+    ~root
+    ~filter_directories:[PyrePath.create_relative ~root ~relative:"check"]
+    ~ignore_all_errors:[PyrePath.create_relative ~root ~relative:"check/search"]
+    ~files
+    ["Incompatible return type [7]: Expected `C` but got `D`."];
+
+  (* The structure:
+   *  /root/check <- pyre is meant to analyze here
+   *  /root/check/search <- this is added to the search path, handles are relative to here instead
+   *                       of check. The practical case here is resource_cache/typeshed. *)
+  let root = PyrePath.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
+  assert_errors
+    ~root
+    ~search_paths:[SearchPath.Root (PyrePath.create_relative ~root ~relative:"check/search")]
+    ~filter_directories:[PyrePath.create_relative ~root ~relative:"check"]
+    ~ignore_all_errors:[PyrePath.create_relative ~root ~relative:"check/search"]
+    ~files:
+      [
+        File.create ~content (PyrePath.create_relative ~root ~relative:"check/file.py");
+        File.create ~content (PyrePath.create_relative ~root ~relative:"check/search/file.py");
+      ]
+    ["Incompatible return type [7]: Expected `C` but got `D`."];
+  let root = PyrePath.create_absolute ~follow_symbolic_links:true (bracket_tmpdir context) in
+  assert_errors
+    ~root
+    ~filter_directories:[PyrePath.create_relative ~root ~relative:"check"]
+    ~ignore_all_errors:[PyrePath.create_relative ~root ~relative:"check/ignore"]
+    ~files:[File.create ~content (PyrePath.create_relative ~root ~relative:"check/ignore/file.py")]
+    []
+
+
 let () =
   "environment"
   >::: [
@@ -281,5 +406,6 @@ let () =
          "update_ancestor" >:: test_update_ancestor;
          "update_mode" >:: test_update_mode;
          "overlay" >:: test_overlay;
+         "error_filtering" >:: test_error_filtering;
        ]
   |> Test.run
