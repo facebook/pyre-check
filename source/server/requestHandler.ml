@@ -33,10 +33,10 @@ let instantiate_errors ~build_system ~configuration ~ast_environment errors =
 
 let process_display_type_error_request
     ~configuration
-    ~state:{ ServerState.errors_environment; build_system; _ }
+    ~state:{ ServerState.multi_environment; build_system; _ }
     paths
   =
-  let errors_environment = ErrorsEnvironment.read_only errors_environment in
+  let errors_environment = MultiEnvironment.root multi_environment in
   let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
   let modules =
     match paths with
@@ -88,13 +88,13 @@ let create_info_response
 
 let process_incremental_update_request
     ~properties:({ ServerProperties.configuration; critical_files; _ } as properties)
-    ~state:({ ServerState.errors_environment; subscriptions; build_system; _ } as state)
+    ~state:({ ServerState.multi_environment; subscriptions; build_system; _ } as state)
     paths
   =
   let open Lwt.Infix in
   let paths = List.map paths ~f:PyrePath.create_absolute in
   let subscriptions = ServerState.Subscriptions.all subscriptions in
-  let read_only_errors_environment = ErrorsEnvironment.read_only errors_environment in
+  let errors_environment = MultiEnvironment.root multi_environment in
   match CriticalFile.find critical_files ~within:paths with
   | Some path ->
       let message =
@@ -112,7 +112,7 @@ let process_incremental_update_request
       let create_type_errors_response =
         lazy
           (let errors =
-             ErrorsEnvironment.ReadOnly.get_all_errors read_only_errors_environment
+             ErrorsEnvironment.ReadOnly.get_all_errors errors_environment
              |> List.sort ~compare:AnalysisError.compare
            in
            Response.TypeErrors
@@ -120,8 +120,7 @@ let process_incremental_update_request
                 errors
                 ~build_system
                 ~configuration
-                ~ast_environment:
-                  (ErrorsEnvironment.ReadOnly.ast_environment read_only_errors_environment)))
+                ~ast_environment:(ErrorsEnvironment.ReadOnly.ast_environment errors_environment)))
       in
       Subscription.batch_send
         ~response:(create_status_update_response Response.ServerStatus.Rebuilding)
@@ -140,11 +139,7 @@ let process_incremental_update_request
       in
       let () =
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-            Service.IncrementalCheck.recheck
-              ~configuration
-              ~scheduler
-              ~environment:errors_environment
-              changed_paths)
+            MultiEnvironment.run_update_root multi_environment ~scheduler changed_paths)
       in
       Subscription.batch_send ~response:create_type_errors_response subscriptions
       >>= fun () -> Lwt.return state
@@ -152,7 +147,7 @@ let process_incremental_update_request
 
 let process_request
     ~properties:({ ServerProperties.configuration; _ } as properties)
-    ~state:({ ServerState.errors_environment; build_system; _ } as state)
+    ~state:({ ServerState.multi_environment; build_system; _ } as state)
     request
   =
   match request with
@@ -169,7 +164,7 @@ let process_request
           (Query.parse_and_process_request
              ~build_system
              ~environment:
-               (ErrorsEnvironment.read_only errors_environment
+               (MultiEnvironment.root multi_environment
                |> ErrorsEnvironment.ReadOnly.type_environment)
              query_text)
       in

@@ -21,14 +21,14 @@ end
 
 type t = private {
   build_system: BuildSystem.t;
-  errors_environment: Analysis.ErrorsEnvironment.t;
+  multi_environment: Analysis.MultiEnvironment.t;
   subscriptions: Subscriptions.t;
 }
 
 val create
   :  ?subscriptions:Subscriptions.t ->
   build_system:BuildSystem.t ->
-  errors_environment:Analysis.ErrorsEnvironment.t ->
+  multi_environment:Analysis.MultiEnvironment.t ->
   unit ->
   t
 

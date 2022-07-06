@@ -251,16 +251,16 @@ let initialize_server_state
   let _ = Memory.get_heap_handle configuration in
   let start_from_scratch ~build_system () =
     Log.info "Initializing server state from scratch...";
-    let environment =
+    let multi_environment =
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
           let environment =
             Analysis.EnvironmentControls.create ~populate_call_graph:true configuration
             |> Analysis.ErrorsEnvironment.create_for_production
           in
           let () = Analysis.ErrorsEnvironment.check_and_preprocess environment ~scheduler in
-          environment)
+          Analysis.MultiEnvironment.create environment)
     in
-    ServerState.create ~build_system ~errors_environment:environment ()
+    ServerState.create ~build_system ~multi_environment ()
   in
   let build_and_start_from_scratch ~build_system_initializer () =
     let open Lwt.Infix in

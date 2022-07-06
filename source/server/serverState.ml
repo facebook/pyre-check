@@ -24,14 +24,14 @@ end
 
 type t = {
   build_system: BuildSystem.t;
-  errors_environment: ErrorsEnvironment.t;
+  multi_environment: MultiEnvironment.t;
   subscriptions: Subscriptions.t;
 }
 
-let create ?subscriptions ~build_system ~errors_environment () =
+let create ?subscriptions ~build_system ~multi_environment () =
   {
     build_system;
-    errors_environment;
+    multi_environment;
     subscriptions = Option.value subscriptions ~default:(Subscriptions.create ());
   }
 
@@ -55,15 +55,17 @@ end)
 let load_stored_configuration = StoredConfiguration.load
 
 let load ~configuration ~build_system () =
-  let errors_environment =
-    EnvironmentControls.create configuration |> Analysis.ErrorsEnvironment.load
+  let multi_environment =
+    EnvironmentControls.create configuration
+    |> Analysis.ErrorsEnvironment.load
+    |> MultiEnvironment.create
   in
-  create ~build_system ~errors_environment ()
+  create ~build_system ~multi_environment ()
 
 
-let store ~path ~configuration { errors_environment; build_system; _ } =
+let store ~path ~configuration { multi_environment; build_system; _ } =
   Memory.SharedMemory.collect `aggressive;
-  Analysis.ErrorsEnvironment.store errors_environment;
+  Analysis.MultiEnvironment.store multi_environment;
   StoredConfiguration.store configuration;
   BuildSystem.store build_system;
   Memory.save_shared_memory ~path:(PyrePath.absolute path) ~configuration
