@@ -1034,7 +1034,10 @@ let make_overlay_testing_functions ~context ~test_sources =
   let update_and_assert_invalidated_modules ~relative ~code ~expected =
     let invalidated_modules =
       let code_updates =
-        [Test.relative_artifact_path ~root:local_root ~relative, trim_extra_indentation code]
+        [
+          ( Test.relative_artifact_path ~root:local_root ~relative,
+            ModuleTracker.Overlay.CodeUpdate.NewCode (trim_extra_indentation code) );
+        ]
       in
       AstEnvironment.Overlay.update_overlaid_code overlay_environment ~code_updates
       |> AstEnvironment.UpdateResult.invalidated_modules

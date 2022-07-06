@@ -612,6 +612,10 @@ module Base = struct
 end
 
 module Overlay = struct
+  module CodeUpdate = struct
+    type t = NewCode of raw_code
+  end
+
   type t = {
     parent: ReadOnly.t;
     controls: EnvironmentControls.t;
@@ -639,15 +643,19 @@ module Overlay = struct
 
 
   let update_overlaid_code { parent; overlaid_code; overlaid_qualifiers; _ } ~code_updates =
-    let add_or_update_code ~code module_path =
+    let add_or_update_code ~code_update module_path =
       let qualifier = ModulePath.qualifier module_path in
-      let () = ModulePath.Table.set overlaid_code ~key:module_path ~data:code in
+      let () =
+        match code_update with
+        | CodeUpdate.NewCode new_code ->
+            ModulePath.Table.set overlaid_code ~key:module_path ~data:new_code
+      in
       let () = Hash_set.add overlaid_qualifiers qualifier in
       IncrementalUpdate.NewExplicit module_path
     in
-    let process_code_update (artifact_path, code) =
+    let process_code_update (artifact_path, code_update) =
       let configuration = ReadOnly.controls parent |> EnvironmentControls.configuration in
-      ModulePath.create ~configuration artifact_path >>| add_or_update_code ~code
+      ModulePath.create ~configuration artifact_path >>| add_or_update_code ~code_update
     in
     List.filter_map code_updates ~f:process_code_update
 

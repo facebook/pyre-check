@@ -112,12 +112,12 @@ let test_update_overlays context =
   (* Create two overlays *)
   MultiEnvironment.update_overlay_with_code
     multi_environment
-    ~code_updates:[artifact_path, foo_has_str_error]
+    ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_str_error]
     "overlay_0"
   |> ignore;
   MultiEnvironment.update_overlay_with_code
     multi_environment
-    ~code_updates:[artifact_path, foo_has_float_error]
+    ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_float_error]
     "overlay_1"
   |> ignore;
   (* Validate that each overlay produces the expected errors, and there is no interference *)
@@ -134,12 +134,12 @@ let test_update_overlays context =
   (* Update the overlays - swap the code *)
   MultiEnvironment.update_overlay_with_code
     multi_environment
-    ~code_updates:[artifact_path, foo_has_float_error]
+    ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_float_error]
     "overlay_0"
   |> ignore;
   MultiEnvironment.update_overlay_with_code
     multi_environment
-    ~code_updates:[artifact_path, foo_has_str_error]
+    ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_str_error]
     "overlay_1"
   |> ignore;
   (* Validate that the errors reflect the update *)

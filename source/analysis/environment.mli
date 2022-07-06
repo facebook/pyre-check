@@ -64,7 +64,10 @@ module PreviousEnvironment : sig
 
       val module_tracker : t -> ModuleTracker.Overlay.t
 
-      val update_overlaid_code : t -> code_updates:(ArtifactPath.t * string) list -> UpdateResult.t
+      val update_overlaid_code
+        :  t ->
+        code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
+        UpdateResult.t
 
       val read_only : t -> ReadOnly.t
     end
@@ -158,7 +161,10 @@ module EnvironmentTable : sig
 
       val module_tracker : t -> ModuleTracker.Overlay.t
 
-      val update_overlaid_code : t -> code_updates:(ArtifactPath.t * string) list -> UpdateResult.t
+      val update_overlaid_code
+        :  t ->
+        code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
+        UpdateResult.t
 
       val read_only : t -> ReadOnly.t
     end

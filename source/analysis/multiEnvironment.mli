@@ -27,7 +27,7 @@ val update_root
 
 val update_overlay_with_code
   :  t ->
-  code_updates:(ArtifactPath.t * string) list ->
+  code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
   overlay_identifier ->
   ErrorsEnvironment.UpdateResult.t
 
@@ -39,6 +39,6 @@ val run_update_root : t -> scheduler:Scheduler.t -> ArtifactPath.t list -> unit
 
 val run_update_overlay_with_code
   :  t ->
-  code_updates:(ArtifactPath.t * string) list ->
+  code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
   overlay_identifier ->
   unit

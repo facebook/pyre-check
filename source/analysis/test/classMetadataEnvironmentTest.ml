@@ -506,7 +506,10 @@ let test_overlay_dependency_filtering context =
   ClassMetadataEnvironment.Overlay.update_overlaid_code
     overlay
     ~code_updates:
-      [Test.relative_artifact_path ~root:local_root ~relative:"a.py", a_code_with_A_base "Base1"]
+      [
+        ( Test.relative_artifact_path ~root:local_root ~relative:"a.py",
+          ModuleTracker.Overlay.CodeUpdate.NewCode (a_code_with_A_base "Base1") );
+      ]
   |> ignore;
   (* After updating just a.py, we should see the type error from int-vs-float mismatch. The overlay
      should see this update, but; "" c.py should behave exactly as before. *)
@@ -522,7 +525,11 @@ let test_overlay_dependency_filtering context =
      because we don't allow fanout to update the attribute table of b.B. *)
   ClassMetadataEnvironment.Overlay.update_overlaid_code
     overlay
-    ~code_updates:[Test.relative_artifact_path ~root:local_root ~relative:"c.py", c_code]
+    ~code_updates:
+      [
+        ( Test.relative_artifact_path ~root:local_root ~relative:"c.py",
+          ModuleTracker.Overlay.CodeUpdate.NewCode c_code );
+      ]
   |> ignore;
   assert_overlay_state
     [
@@ -533,7 +540,11 @@ let test_overlay_dependency_filtering context =
     ];
   ClassMetadataEnvironment.Overlay.update_overlaid_code
     overlay
-    ~code_updates:[Test.relative_artifact_path ~root:local_root ~relative:"b.py", b_code]
+    ~code_updates:
+      [
+        ( Test.relative_artifact_path ~root:local_root ~relative:"b.py",
+          ModuleTracker.Overlay.CodeUpdate.NewCode b_code );
+      ]
   |> ignore;
   assert_overlay_state
     [

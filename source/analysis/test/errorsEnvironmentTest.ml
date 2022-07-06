@@ -243,17 +243,19 @@ let test_overlay context =
     ~code_updates:
       [
         ( Test.relative_artifact_path ~root:local_root ~relative:"code_changes.py",
-          Test.trim_extra_indentation
-            {|
-            class Foo:
-              x: int = 42.0
-            |} );
+          ModuleTracker.Overlay.CodeUpdate.NewCode
+            (Test.trim_extra_indentation
+               {|
+               class Foo:
+                 x: int = 42.0
+               |}) );
         ( Test.relative_artifact_path ~root:local_root ~relative:"unsafe_to_strict.py",
-          Test.trim_extra_indentation
-            {|
-            # pyre-strict
-            x = 1 + 2
-            |} );
+          ModuleTracker.Overlay.CodeUpdate.NewCode
+            (Test.trim_extra_indentation
+               {|
+               # pyre-strict
+               x = 1 + 2
+               |}) );
       ]
   |> ignore;
   assert_overlay_errors
