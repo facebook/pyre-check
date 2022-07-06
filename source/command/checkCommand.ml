@@ -133,7 +133,7 @@ let do_check configuration =
       with_performance_tracking ~debug:configuration.debug (fun () ->
           let environment =
             let read_write_environment =
-              Analysis.EnvironmentControls.create ~populate_call_graph:true configuration
+              Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
               |> Analysis.ErrorsEnvironment.create_for_production
             in
             let () =
