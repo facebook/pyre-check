@@ -7,6 +7,7 @@
 
 open Ast
 open Core
+open Pyre
 module PreviousEnvironment = TypeEnvironment
 module Error = AnalysisError
 
@@ -246,3 +247,19 @@ module Testing = struct
       empty_stub_environment update_result |> EmptyStubEnvironment.Testing.UpdateResult.upstream
   end
 end
+
+let create_for_production controls =
+  let timer = Timer.start () in
+  EnvironmentControls.configuration controls |> Configuration.Analysis.validate_paths;
+  Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
+  Log.info "Creating environment...";
+  let environment = create controls in
+  Statistics.performance ~name:"full environment built" ~timer ();
+  environment
+
+
+let check_and_preprocess environment ~scheduler =
+  type_environment environment |> TypeEnvironment.populate_for_project_modules ~scheduler;
+  populate_all_errors ~scheduler environment;
+  Profiling.track_shared_memory_usage ~name:"After checking and preprocessing" ();
+  ()
