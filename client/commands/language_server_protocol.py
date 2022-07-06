@@ -105,37 +105,32 @@ def _parse_parameters(parameters: json_rpc.Parameters, target: Type[T]) -> T:
         raise json_rpc.InvalidRequestError(str(error)) from error
 
 
-class SerializationSafeIntEnum(enum.IntEnum):
-    def __repr(self) -> str:
-        return str(self.value)
-
-
-class DiagnosticTag(SerializationSafeIntEnum):
+class DiagnosticTag(enum.IntEnum):
     UNNECESSARY = 1
     DEPRECATED = 2
 
 
-class DiagnosticSeverity(SerializationSafeIntEnum):
+class DiagnosticSeverity(enum.IntEnum):
     ERROR = 1
     WARNING = 2
     INFORMATION = 3
     HINT = 4
 
 
-class TextDocumentSyncKind(SerializationSafeIntEnum):
+class TextDocumentSyncKind(enum.IntEnum):
     NONE = 0
     FULL = 1
     INCREMENTAL = 2
 
 
-class MessageType(SerializationSafeIntEnum):
+class MessageType(enum.IntEnum):
     ERROR = 1
     WARNING = 2
     INFO = 3
     LOG = 4
 
 
-class SymbolKind(SerializationSafeIntEnum):
+class SymbolKind(enum.IntEnum):
     FILE = 1
     MODULE = 2
     NAMESPACE = 3
