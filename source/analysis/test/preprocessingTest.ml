@@ -6544,6 +6544,32 @@ let test_expand_self_type _ =
       class Circle(Base):
         def set_radius(self: _Self_test_Circle__, scale: float) -> _Self_test_Circle__: ...
   |};
+  assert_expand
+    {|
+      from typing_extensions import Self
+
+      class Shape:
+        def __init__(self, scale: int) -> None: ...
+
+        @classmethod
+        def from_config(cls, config: dict[str, float]) -> Self:
+          return cls(config["scale"])
+  |}
+    {|
+      _Self_test_Shape__ = typing.TypeVar("_Self_test_Shape__", bound="Shape")
+
+      from typing_extensions import Self
+
+      class Shape:
+        def __init__(self, scale: int) -> None: ...
+
+        @classmethod
+        def from_config(
+          cls: typing.Type[_Self_test_Shape__],
+          config: dict[str, float]
+        ) -> _Self_test_Shape__:
+          return cls(config["scale"])
+  |};
   ()
 
 

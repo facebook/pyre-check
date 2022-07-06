@@ -4128,27 +4128,34 @@ module SelfType = struct
     =
     match parent, parameters, return_annotation with
     | ( Some parent,
-        ({ Node.value = { Parameter.annotation = None; _ } as self_parameter_value; location } as
-        self_parameter)
+        ({
+           Node.value = { Parameter.annotation = None; _ } as self_or_class_parameter_value;
+           location;
+         } as self_or_class_parameter)
         :: rest_parameters,
         return_annotation )
       when signature_uses_self_type signature ->
         let mangled_self_type_variable_reference =
           self_variable_name parent |> qualify_local_identifier ~qualifier |> Reference.create
         in
-        let self_parameter =
+        let self_or_class_parameter =
+          let annotation =
+            let variable_annotation =
+              from_reference ~location mangled_self_type_variable_reference
+            in
+            if Define.Signature.is_class_method signature then
+              get_item_call ~location "typing.Type" [variable_annotation] |> Node.create ~location
+            else
+              variable_annotation
+          in
           {
-            self_parameter with
-            value =
-              {
-                self_parameter_value with
-                annotation = Some (from_reference ~location mangled_self_type_variable_reference);
-              };
+            self_or_class_parameter with
+            value = { self_or_class_parameter_value with annotation = Some annotation };
           }
         in
         ( {
             signature with
-            parameters = self_parameter :: rest_parameters;
+            parameters = self_or_class_parameter :: rest_parameters;
             return_annotation =
               return_annotation
               >>| replace_self_type_with

@@ -3758,6 +3758,29 @@ let test_self_type context =
         reveal_type(y)
      |}
     ["Revealed type [-1]: Revealed type for `y` is `Outer.Circle`."];
+  assert_type_errors
+    {|
+      from typing_extensions import Self
+
+      class Shape:
+        def __init__(self, scale: float) -> None: ...
+
+        @classmethod
+        def from_config(cls, config: dict[str, float]) -> Self:
+          reveal_type(cls)
+          return cls(config["scale"])
+
+      class Circle(Shape): ...
+
+      def foo() -> None:
+        circle = Circle.from_config({"scale": 7.0})
+        reveal_type(circle)
+     |}
+    [
+      "Revealed type [-1]: Revealed type for `cls` is `typing.Type[Variable[_Self_test_Shape__ \
+       (bound to Shape)]]`.";
+      "Revealed type [-1]: Revealed type for `circle` is `Circle`.";
+    ];
   ()
 
 
