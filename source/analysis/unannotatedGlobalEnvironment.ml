@@ -1064,14 +1064,8 @@ module Overlay = struct
 
   let module_tracker { ast_environment; _ } = AstEnvironment.Overlay.module_tracker ast_environment
 
-  let update_overlaid_code
-      ({ ast_environment; from_read_only_upstream; _ } as environment)
-      ~code_updates
-    =
+  let consume_upstream_update ({ from_read_only_upstream; _ } as environment) update_result =
     let filtered_update_result =
-      let update_result =
-        AstEnvironment.Overlay.update_overlaid_code ast_environment ~code_updates
-      in
       let filtered_invalidated_modules =
         AstEnvironment.UpdateResult.invalidated_modules update_result
         |> List.filter ~f:(module_tracker environment |> ModuleTracker.Overlay.owns_qualifier)
@@ -1085,6 +1079,11 @@ module Overlay = struct
       from_read_only_upstream
       ~scheduler:(Scheduler.create_sequential ())
       filtered_update_result
+
+
+  let update_overlaid_code ({ ast_environment; _ } as environment) ~code_updates =
+    AstEnvironment.Overlay.update_overlaid_code ast_environment ~code_updates
+    |> consume_upstream_update environment
 
 
   let read_only ({ parent; from_read_only_upstream; _ } as environment) =
