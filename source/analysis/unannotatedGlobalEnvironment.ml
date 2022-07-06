@@ -1086,6 +1086,20 @@ module Overlay = struct
     |> consume_upstream_update environment
 
 
+  let propagate_parent_update
+      environment
+      { UpdateResult.triggered_dependencies = parent_triggered_dependencies; upstream }
+    =
+    let { UpdateResult.triggered_dependencies; _ } = consume_upstream_update environment upstream in
+    {
+      UpdateResult.triggered_dependencies =
+        SharedMemoryKeys.DependencyKey.RegisteredSet.union
+          parent_triggered_dependencies
+          triggered_dependencies;
+      upstream;
+    }
+
+
   let read_only ({ parent; from_read_only_upstream; _ } as environment) =
     let this_read_only = FromReadOnlyUpstream.read_only from_read_only_upstream in
     let { ReadOnly.all_classes; all_indices; all_unannotated_globals; _ } = parent in

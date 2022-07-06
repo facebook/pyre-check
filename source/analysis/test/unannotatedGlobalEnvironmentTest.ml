@@ -2205,12 +2205,12 @@ let test_get_define_names context =
 
 let equal compare value0 value1 = Int.equal (compare value0 value1) 0
 
-let create_overlay_test_data ~context sources =
+let create_overlay_test_data ~context ?(updatable = false) sources =
   let project =
     ScratchProject.setup
       ~include_typeshed_stubs:false
       ~incremental_style:FineGrained
-      ~in_memory:false
+      ~in_memory:(not updatable)
       sources
       ~context
   in
@@ -2421,6 +2421,98 @@ let test_overlay_update_filters context =
   ()
 
 
+let test_overlay_propagation context =
+  let sources =
+    [
+      "on_filesystem.py", {|
+        on_filesystem_old = 5
+      |};
+      "in_overlay.py", {|
+        from on_filesystem import *
+
+        in_overlay_old = 5
+      |};
+    ]
+  in
+  let project, parent, environment = create_overlay_test_data ~context ~updatable:true sources in
+  let read_only = UnannotatedGlobalEnvironment.Overlay.read_only environment in
+  let _, _, update_and_assert_invalidated_modules =
+    create_overlay_test_functions ~project ~parent ~environment
+  in
+  let assert_global ~exists name =
+    match UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global read_only name with
+    | Some _ ->
+        if not exists then
+          assert_failure ("Global " ^ Reference.show name ^ " exists, but was expected not to")
+    | None ->
+        if exists then
+          assert_failure ("Global " ^ Reference.show name ^ " does not exists, but was expected to")
+  in
+  (* Initially all x variables exist, no y variables exist *)
+  assert_global ~exists:true !&"on_filesystem.on_filesystem_old";
+  assert_global ~exists:false !&"on_filesystem.on_filesystem_new";
+  assert_global ~exists:true !&"in_overlay.in_overlay_old";
+  assert_global ~exists:false !&"in_overlay.in_overlay_new";
+  assert_global ~exists:true !&"in_overlay.on_filesystem_old";
+  assert_global ~exists:false !&"in_overlay.on_filesystem_new";
+  (* Run the initial update. Only the in_overlay variables should change *)
+  update_and_assert_invalidated_modules
+    [
+      ( "in_overlay.py",
+        ModuleTracker.Overlay.CodeUpdate.NewCode
+          (trim_extra_indentation
+             {|
+               from on_filesystem import *
+
+               in_overlay_new = 5
+             |})
+      );
+    ]
+    ~expected:[!&"in_overlay"];
+  assert_global ~exists:true !&"on_filesystem.on_filesystem_old";
+  assert_global ~exists:false !&"on_filesystem.on_filesystem_new";
+  assert_global ~exists:false !&"in_overlay.in_overlay_old";
+  assert_global ~exists:true !&"in_overlay.in_overlay_new";
+  assert_global ~exists:true !&"in_overlay.on_filesystem_old";
+  assert_global ~exists:false !&"in_overlay.on_filesystem_new";
+  (* Run an update on the parent, but do not propagate yet. The overlay-owned parts of the overlay
+     environment should see old data about the on_filesystem module, while the parent-owned parts
+     should see the updated information (this is a grey-box test, updating only the parent is an
+     illegal operation with undefined behavior in production!) *)
+  let update_code relative new_code =
+    ScratchProject.delete_file project ~relative;
+    ScratchProject.add_file project ~relative new_code;
+    ()
+  in
+  update_code "on_filesystem.py" {|
+    on_filesystem_new = 5
+  |};
+  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let parent_update_result =
+    ScratchProject.update_environment
+      project
+      [Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"]
+    |> ErrorsEnvironment.Testing.UpdateResult.unannotated_global_environment
+  in
+  assert_global ~exists:false !&"on_filesystem.on_filesystem_old";
+  assert_global ~exists:true !&"on_filesystem.on_filesystem_new";
+  assert_global ~exists:false !&"in_overlay.in_overlay_old";
+  assert_global ~exists:true !&"in_overlay.in_overlay_new";
+  assert_global ~exists:true !&"in_overlay.on_filesystem_old";
+  assert_global ~exists:false !&"in_overlay.on_filesystem_new";
+  (* Propagate the update to the overlay. Now the overlay-owned parts of the overlay environment
+     should reflect changes from the filesystem *)
+  UnannotatedGlobalEnvironment.Overlay.propagate_parent_update environment parent_update_result
+  |> ignore;
+  assert_global ~exists:false !&"on_filesystem.on_filesystem_old";
+  assert_global ~exists:true !&"on_filesystem.on_filesystem_new";
+  assert_global ~exists:false !&"in_overlay.in_overlay_old";
+  assert_global ~exists:true !&"in_overlay.in_overlay_new";
+  assert_global ~exists:false !&"in_overlay.on_filesystem_old";
+  assert_global ~exists:true !&"in_overlay.on_filesystem_new";
+  ()
+
+
 let () =
   "environment"
   >::: [
@@ -2439,5 +2531,6 @@ let () =
          "get_define_names" >:: test_get_define_names;
          "overlay_basic" >:: test_overlay_basic;
          "overlay_update_filters" >:: test_overlay_update_filters;
+         "overlay_propagation" >:: test_overlay_propagation;
        ]
   |> Test.run
