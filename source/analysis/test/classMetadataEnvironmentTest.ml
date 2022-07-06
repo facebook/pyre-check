@@ -444,6 +444,13 @@ let assert_overlay_parents ~context ~overlay ~qualified_class_name expected_succ
       assert_equal ~ctxt:context ~printer:[%show: Identifier.t list] expected_successors successors
 
 
+let assert_overlay_state ~context ~overlay qualified_class_name_successors_pairs =
+  let assert_pair (qualified_class_name, expected_successors) =
+    assert_overlay_parents ~context ~overlay ~qualified_class_name expected_successors
+  in
+  List.iter qualified_class_name_successors_pairs ~f:assert_pair
+
+
 let test_overlay_dependency_filtering context =
   let a_code_with_A_base base_type =
     Format.asprintf
@@ -486,14 +493,10 @@ let test_overlay_dependency_filtering context =
     |> ErrorsEnvironment.Testing.ReadOnly.class_metadata_environment
   in
   let overlay = ClassMetadataEnvironment.Overlay.create parent in
-  let assert_overlay_state qualified_class_name_successors_pairs =
-    let assert_pair (qualified_class_name, expected_successors) =
-      assert_overlay_parents ~context ~overlay ~qualified_class_name expected_successors
-    in
-    List.iter qualified_class_name_successors_pairs ~f:assert_pair
-  in
   (* Initially, nothing inherits from Base1 *)
   assert_overlay_state
+    ~context
+    ~overlay
     [
       "a.A", ["a.Base0"; "object"];
       "b.B", ["a.Base0"; "object"];
@@ -514,6 +517,8 @@ let test_overlay_dependency_filtering context =
   (* After updating just a.py, we should see the type error from int-vs-float mismatch. The overlay
      should see this update, but; "" c.py should behave exactly as before. *)
   assert_overlay_state
+    ~context
+    ~overlay
     [
       "a.A", ["a.Base1"; "object"];
       "b.B", ["a.Base0"; "object"];
@@ -532,6 +537,8 @@ let test_overlay_dependency_filtering context =
       ]
   |> ignore;
   assert_overlay_state
+    ~context
+    ~overlay
     [
       "a.A", ["a.Base1"; "object"];
       "b.B", ["a.Base0"; "object"];
@@ -547,11 +554,119 @@ let test_overlay_dependency_filtering context =
       ]
   |> ignore;
   assert_overlay_state
+    ~context
+    ~overlay
     [
       "a.A", ["a.Base1"; "object"];
       "b.B", ["a.Base1"; "object"];
       "c.Ca", ["a.A"; "a.Base1"; "object"];
       "c.Cb", ["b.B"; "a.Base1"; "object"];
+    ];
+  ()
+
+
+let test_overlay_propagation context =
+  let sources =
+    [
+      ( "on_filesystem.py",
+        {|
+          class A: pass
+          class B(A): pass
+          class C: pass
+        |} );
+      ( "in_overlay.py",
+        {|
+          import on_filesystem
+
+          class D(on_filesystem.B): pass
+        |} );
+    ]
+  in
+  let project = ScratchProject.setup ~context ~in_memory:false sources in
+  let parent =
+    ScratchProject.errors_environment project
+    |> ErrorsEnvironment.Testing.ReadOnly.class_metadata_environment
+  in
+  let overlay = ClassMetadataEnvironment.Overlay.create parent in
+  (* Initially all metadata is from disk *)
+  assert_overlay_state
+    ~context
+    ~overlay
+    [
+      "on_filesystem.A", ["object"];
+      "on_filesystem.B", ["on_filesystem.A"; "object"];
+      "on_filesystem.C", ["object"];
+      "in_overlay.D", ["on_filesystem.B"; "on_filesystem.A"; "object"];
+    ];
+  (* After we update the overlay, the overlay should see consistent state *)
+  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  ClassMetadataEnvironment.Overlay.update_overlaid_code
+    overlay
+    ~code_updates:
+      [
+        ( Test.relative_artifact_path ~root:local_root ~relative:"in_overlay.py",
+          ModuleTracker.Overlay.CodeUpdate.NewCode
+            (trim_extra_indentation
+               {|
+                 import on_filesystem
+
+                 class D(on_filesystem.C): pass
+               |})
+        );
+      ]
+  |> ignore;
+  assert_overlay_state
+    ~context
+    ~overlay
+    [
+      "on_filesystem.A", ["object"];
+      "on_filesystem.B", ["on_filesystem.A"; "object"];
+      "on_filesystem.C", ["object"];
+      "in_overlay.D", ["on_filesystem.C"; "object"];
+    ];
+  (* Run an update on the parent, but do not propagate yet. The overlay-owned parts of the overlay
+     environment should see old data about the on_filesystem module, while the parent-owned parts
+     should see the updated information (this is a grey-box test, updating only the parent is an
+     illegal operation with undefined behavior in production!) *)
+  let update_code relative new_code =
+    ScratchProject.delete_file project ~relative;
+    ScratchProject.add_file project ~relative new_code;
+    ()
+  in
+  update_code
+    "on_filesystem.py"
+    {|
+      class A: pass
+      class B: pass
+      class C(A): pass
+    |};
+  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let parent_update_result =
+    ScratchProject.update_environment
+      project
+      [Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"]
+    |> ErrorsEnvironment.Testing.UpdateResult.class_metadata_environment
+  in
+  assert_overlay_state
+    ~context
+    ~overlay
+    [
+      "on_filesystem.A", ["object"];
+      "on_filesystem.B", ["object"];
+      "on_filesystem.C", ["on_filesystem.A"; "object"];
+      "in_overlay.D", ["on_filesystem.C"; "object"];
+    ];
+  (* Now propagate the update. We should see a consistent state where the overlay-owned metadat afor
+     in_overlay.py reflects the new on_filesystem.py source *)
+  ClassMetadataEnvironment.Overlay.propagate_parent_update overlay parent_update_result |> ignore;
+  assert_overlay_state
+    ~context
+    ~overlay
+    [
+      "on_filesystem.A", ["object"];
+      "on_filesystem.B", ["object"];
+      "on_filesystem.C", ["on_filesystem.A"; "object"];
+      "in_overlay.D", ["on_filesystem.C"; "on_filesystem.A"; "object"];
     ];
   ()
 
@@ -562,5 +677,6 @@ let () =
          "simple_registration" >:: test_simple_registration;
          "updates" >:: test_updates;
          "overlay_dependency_filtering" >:: test_overlay_dependency_filtering;
+         "overlay_propagation" >:: test_overlay_propagation;
        ]
   |> Test.run

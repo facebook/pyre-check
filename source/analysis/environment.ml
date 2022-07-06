@@ -70,6 +70,8 @@ module PreviousEnvironment = struct
         code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
         UpdateResult.t
 
+      val propagate_parent_update : t -> UpdateResult.t -> UpdateResult.t
+
       val read_only : t -> ReadOnly.t
     end
   end
@@ -175,6 +177,8 @@ module EnvironmentTable = struct
         code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
         UpdateResult.t
 
+      val propagate_parent_update : t -> UpdateResult.t -> UpdateResult.t
+
       val read_only : t -> ReadOnly.t
     end
 
@@ -257,6 +261,9 @@ module EnvironmentTable = struct
       let invalidated_modules previous =
         unannotated_global_environment_update_result previous
         |> UnannotatedGlobalEnvironment.UpdateResult.invalidated_modules
+
+
+      let upstream { upstream; _ } = upstream
     end
 
     module FromReadOnlyUpstream = struct
@@ -488,6 +495,21 @@ module EnvironmentTable = struct
       let update_overlaid_code ({ upstream_environment; _ } as environment) ~code_updates =
         In.PreviousEnvironment.Overlay.update_overlaid_code upstream_environment ~code_updates
         |> consume_upstream_update environment
+
+
+      let propagate_parent_update ({ upstream_environment; _ } as environment) parent_update_result =
+        let upstream =
+          UpdateResult.upstream parent_update_result
+          |> In.PreviousEnvironment.Overlay.propagate_parent_update upstream_environment
+        in
+        let direct_update_result = consume_upstream_update environment upstream in
+        {
+          UpdateResult.triggered_dependencies =
+            SharedMemoryKeys.DependencyKey.RegisteredSet.union
+              (UpdateResult.locally_triggered_dependencies parent_update_result)
+              (UpdateResult.locally_triggered_dependencies direct_update_result);
+          upstream;
+        }
 
 
       let read_only ({ parent; upstream_environment; from_read_only_upstream } as environment) =

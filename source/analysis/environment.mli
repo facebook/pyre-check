@@ -69,6 +69,8 @@ module PreviousEnvironment : sig
         code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
         UpdateResult.t
 
+      val propagate_parent_update : t -> UpdateResult.t -> UpdateResult.t
+
       val read_only : t -> ReadOnly.t
     end
   end
@@ -165,6 +167,8 @@ module EnvironmentTable : sig
         :  t ->
         code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
         UpdateResult.t
+
+      val propagate_parent_update : t -> UpdateResult.t -> UpdateResult.t
 
       val read_only : t -> ReadOnly.t
     end
