@@ -67,6 +67,9 @@ module.exports = {
         'remark-code-snippets': {
           baseDir: '../..',
         },
+        gtag: {
+          trackingID: 'G-8CK1L365DB',
+        },
 
         // ...
       },
@@ -152,9 +155,6 @@ module.exports = {
       copyright: `Copyright &#169; ${new Date().getFullYear()} Meta Platforms, Inc.`,
     },
     image: 'img/docusaurus.png',
-    gtag: {
-      trackingID: 'G-8CK1L365DB',
-    },
   },
   customFields: {
     fbRepoName: 'fbsource',
