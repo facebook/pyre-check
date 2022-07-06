@@ -64,42 +64,6 @@ let assert_errors
     errors
 
 
-let type_check_sources_list_test context =
-  let create_files ~root content =
-    let default_content =
-      {|
-        class object():
-          def __sizeof__(self) -> int: pass
-        class Sized: ...
-        class float():
-          pass
-        class int(float):
-          pass
-      |}
-      |> trim_extra_indentation
-    in
-    [
-      File.create
-        ~content:(default_content ^ "\n" ^ (content |> trim_extra_indentation))
-        (PyrePath.create_relative ~root ~relative:"test.py");
-    ]
-  in
-  let check _ =
-    let root = PyrePath.current_working_directory () in
-    let files = {|
-        def foo() -> str:
-          return 1
-      |} |> create_files ~root in
-    assert_errors
-      ~filter_directories:[root]
-      ~root
-      ~files
-      ~context
-      ["Incompatible return type [7]: Expected `str` but got `int`."]
-  in
-  with_bracket_chdir context (bracket_tmpdir context) check
-
-
 let test_filter_directories context =
   let assert_errors = assert_errors ~context in
   let content =
@@ -170,7 +134,6 @@ let test_filter_directories context =
 let () =
   "typeChecker"
   >::: [
-         "type_check_sources_list" >:: type_check_sources_list_test;
          "filter_directories" >:: test_filter_directories;
        ]
   |> Test.run
