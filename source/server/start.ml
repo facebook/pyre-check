@@ -253,7 +253,12 @@ let initialize_server_state
     Log.info "Initializing server state from scratch...";
     let environment =
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-          Service.Check.check ~scheduler ~configuration ~populate_call_graph:true)
+          let environment =
+            Analysis.EnvironmentControls.create ~populate_call_graph:true configuration
+            |> Analysis.ErrorsEnvironment.create_for_production
+          in
+          let () = Analysis.ErrorsEnvironment.check_and_preprocess environment ~scheduler in
+          environment)
     in
     ServerState.create ~build_system ~errors_environment:environment ()
   in
