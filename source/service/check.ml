@@ -9,13 +9,9 @@ open Core
 open Pyre
 open Analysis
 
-let check
-    ~scheduler
-    ~configuration:
-      ({ Configuration.Analysis.project_root; source_paths; search_paths; _ } as configuration)
-    ~populate_call_graph
+let validate_configuration_paths
+    { Configuration.Analysis.project_root; source_paths; search_paths; _ }
   =
-  (* Sanity check environment. *)
   let check_directory_exists directory =
     if not (PyrePath.is_directory directory) then
       raise (Invalid_argument (Format.asprintf "`%a` is not a directory" PyrePath.pp directory))
@@ -34,6 +30,11 @@ let check
   source_paths |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
   check_directory_exists project_root;
   search_paths |> List.iter ~f:check_search_path_exists;
+  ()
+
+
+let check ~scheduler ~configuration ~populate_call_graph =
+  validate_configuration_paths configuration;
   (* Profiling helper *)
   Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
   Log.info "Building type environment...";
