@@ -187,6 +187,8 @@ module Analysis : sig
   val extension_suffixes : t -> string list
 
   val find_extension : t -> ArtifactPath.t -> Extension.t option
+
+  val validate_paths : t -> unit
 end
 
 module StaticAnalysis : sig
