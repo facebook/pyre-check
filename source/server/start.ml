@@ -258,7 +258,7 @@ let initialize_server_state
             |> Analysis.ErrorsEnvironment.create_for_production
           in
           let () = Analysis.ErrorsEnvironment.check_and_preprocess environment ~scheduler in
-          Analysis.MultiEnvironment.create environment)
+          Analysis.OverlaidEnvironment.create environment)
     in
     ServerState.create ~build_system ~multi_environment ()
   in

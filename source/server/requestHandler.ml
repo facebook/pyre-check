@@ -36,7 +36,7 @@ let process_display_type_error_request
     ~state:{ ServerState.multi_environment; build_system; _ }
     paths
   =
-  let errors_environment = MultiEnvironment.root multi_environment in
+  let errors_environment = OverlaidEnvironment.root multi_environment in
   let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
   let modules =
     match paths with
@@ -94,7 +94,7 @@ let process_incremental_update_request
   let open Lwt.Infix in
   let paths = List.map paths ~f:PyrePath.create_absolute in
   let subscriptions = ServerState.Subscriptions.all subscriptions in
-  let errors_environment = MultiEnvironment.root multi_environment in
+  let errors_environment = OverlaidEnvironment.root multi_environment in
   match CriticalFile.find critical_files ~within:paths with
   | Some path ->
       let message =
@@ -139,7 +139,7 @@ let process_incremental_update_request
       in
       let () =
         Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
-            MultiEnvironment.run_update_root multi_environment ~scheduler changed_paths)
+            OverlaidEnvironment.run_update_root multi_environment ~scheduler changed_paths)
       in
       Subscription.batch_send ~response:create_type_errors_response subscriptions
       >>= fun () -> Lwt.return state
@@ -164,7 +164,7 @@ let process_request
           (Query.parse_and_process_request
              ~build_system
              ~environment:
-               (MultiEnvironment.root multi_environment
+               (OverlaidEnvironment.root multi_environment
                |> ErrorsEnvironment.ReadOnly.type_environment)
              query_text)
       in

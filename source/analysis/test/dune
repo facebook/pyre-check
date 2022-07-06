@@ -6,7 +6,7 @@
    classHierarchyTest classHierarchyEnvironmentTest classMetadataEnvironmentTest
    constraintsSetTest dataClassTest errorsEnvironmentTest environmentTest fixpointTest
    globalResolutionTest inlineDecoratorTest matchTranslateTest
-   locationBasedLookupTest moduleTrackerTest multiEnvironmentTest newTypeTest namedTupleTest
+   locationBasedLookupTest moduleTrackerTest overlaidEnvironmentTest newTypeTest namedTupleTest
    preprocessingTest refinementTest resolutionTest resolvedCallableTest
    scopeTest sqlAlchemyTest typeCheckTest typeConstraintsTest
    typedDictionaryAttributeTest typeOperationTest typeOrderTest typeTest

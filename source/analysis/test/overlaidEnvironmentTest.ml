@@ -24,10 +24,10 @@ let instantiate_and_stringify ~lookup errors =
 
 let assert_root_errors ~context ~multi_environment expected =
   let actual =
-    MultiEnvironment.root_errors multi_environment
+    OverlaidEnvironment.root_errors multi_environment
     |> instantiate_and_stringify
          ~lookup:
-           (MultiEnvironment.root multi_environment
+           (OverlaidEnvironment.root multi_environment
            |> ErrorsEnvironment.ReadOnly.ast_environment
            |> AstEnvironment.ReadOnly.get_real_path_relative)
   in
@@ -36,10 +36,10 @@ let assert_root_errors ~context ~multi_environment expected =
 
 let assert_overlay_errors ~context ~multi_environment ~overlay_identifier expected =
   let actual =
-    MultiEnvironment.overlay_errors multi_environment overlay_identifier
+    OverlaidEnvironment.overlay_errors multi_environment overlay_identifier
     |> instantiate_and_stringify
          ~lookup:
-           (MultiEnvironment.root multi_environment
+           (OverlaidEnvironment.root multi_environment
            |> ErrorsEnvironment.ReadOnly.ast_environment
            |> AstEnvironment.ReadOnly.get_real_path_relative)
   in
@@ -59,7 +59,7 @@ let test_update_root context =
   let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
   let errors_environment = ScratchProject.ReadWrite.errors_environment project in
   ErrorsEnvironment.populate_all_errors errors_environment ~scheduler:(Test.mock_scheduler ());
-  let multi_environment = MultiEnvironment.create errors_environment in
+  let multi_environment = OverlaidEnvironment.create errors_environment in
   assert_root_errors
     ~context
     ~multi_environment
@@ -73,7 +73,7 @@ let test_update_root context =
     def foo(x: int) -> int:
         return 1.0 * x
   |};
-  MultiEnvironment.update_root
+  OverlaidEnvironment.update_root
     multi_environment
     ~scheduler:(Test.mock_scheduler ())
     [Test.relative_artifact_path ~root:local_root ~relative:"a.py"]
@@ -107,15 +107,15 @@ let test_update_overlays context =
     Test.relative_artifact_path ~root:local_root ~relative:"a.py"
   in
   let multi_environment =
-    ScratchProject.ReadWrite.errors_environment project |> MultiEnvironment.create
+    ScratchProject.ReadWrite.errors_environment project |> OverlaidEnvironment.create
   in
   (* Create two overlays *)
-  MultiEnvironment.update_overlay_with_code
+  OverlaidEnvironment.update_overlay_with_code
     multi_environment
     ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_str_error]
     "overlay_0"
   |> ignore;
-  MultiEnvironment.update_overlay_with_code
+  OverlaidEnvironment.update_overlay_with_code
     multi_environment
     ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_float_error]
     "overlay_1"
@@ -132,12 +132,12 @@ let test_update_overlays context =
     ~overlay_identifier:"overlay_1"
     ["a.py 3: Incompatible return type [7]: Expected `int` but got `float`."];
   (* Update the overlays - swap the code *)
-  MultiEnvironment.update_overlay_with_code
+  OverlaidEnvironment.update_overlay_with_code
     multi_environment
     ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_float_error]
     "overlay_0"
   |> ignore;
-  MultiEnvironment.update_overlay_with_code
+  OverlaidEnvironment.update_overlay_with_code
     multi_environment
     ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_str_error]
     "overlay_1"
@@ -184,16 +184,16 @@ let test_overlay_propagation context =
   let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
   let artifact_path = Test.relative_artifact_path ~root:local_root ~relative:"in_overlay.py" in
   let multi_environment =
-    ScratchProject.ReadWrite.errors_environment project |> MultiEnvironment.create
+    ScratchProject.ReadWrite.errors_environment project |> OverlaidEnvironment.create
   in
   (* Create two overlays, and check that we detect the right varnames *)
-  MultiEnvironment.update_overlay_with_code
+  OverlaidEnvironment.update_overlay_with_code
     multi_environment
     ~code_updates:
       [artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode (in_overlay_code ~varname:"y")]
     "overlay_0"
   |> ignore;
-  MultiEnvironment.update_overlay_with_code
+  OverlaidEnvironment.update_overlay_with_code
     multi_environment
     ~code_updates:
       [artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode (in_overlay_code ~varname:"z")]
@@ -216,7 +216,7 @@ let test_overlay_propagation context =
     ()
   in
   update_code "on_filesystem.py" (on_filesystem_code ~x_type:"float" ~y_type:"str" ~z_type:"int");
-  MultiEnvironment.run_update_root
+  OverlaidEnvironment.run_update_root
     multi_environment
     ~scheduler:(Test.mock_scheduler ())
     [Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"];
