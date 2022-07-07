@@ -12,7 +12,14 @@ from typing import Iterable, List, Tuple, Union
 from dataclasses_json import dataclass_json
 
 from .. import configuration as configuration_module, log
-from . import commands, coverage, frontend_configuration, query, server_connection
+from . import (
+    commands,
+    coverage,
+    frontend_configuration,
+    language_server_protocol as lsp,
+    query,
+    server_connection,
+)
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -172,6 +179,33 @@ def summary_expression_level(response: object) -> str:
     )
     percent_output += f"Overall: {percent_covered}% expressions are covered"
     return percent_output
+
+
+def location_to_range(location: Location) -> lsp.Range:
+    return lsp.Range(
+        start=lsp.Position(
+            line=location.start.line - 1, character=location.start.column
+        ),
+        end=lsp.Position(line=location.stop.line - 1, character=location.stop.column),
+    )
+
+
+def make_diagnostic_for_coverage_gap(coverage_gap: CoverageGap) -> lsp.Diagnostic:
+    range = location_to_range(coverage_gap.location)
+    message = f"This expression has a {coverage_gap.reason[0]} coverage gap."
+    return lsp.Diagnostic(range=range, message=message)
+
+
+def get_uncovered_expression_diagnostics(
+    expression_coverage: ExpressionLevelCoverageResponse,
+) -> List[lsp.Diagnostic]:
+    if not isinstance(expression_coverage.response[0], CoverageAtPathResponse):
+        return []
+    # pyre-ignore[16]: Pyre doesn't understand Union of dataclasses_json within dataclasses_json
+    coverage_gaps = expression_coverage.response[0].CoverageAtPath.coverage_gaps
+    return [
+        make_diagnostic_for_coverage_gap(coverage_gap) for coverage_gap in coverage_gaps
+    ]
 
 
 def run_query(
