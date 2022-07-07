@@ -134,6 +134,48 @@ class ExpressionLevelTest(testslide.TestCase):
             (7, 1),
         )
 
+    def test_get_percent_covered_per_path(self) -> None:
+        def assert_get_percent_covered_per_path(
+            response: expression_level_coverage.CoverageAtPathResponse, expected: float
+        ) -> None:
+            self.assertEqual(
+                expression_level_coverage.get_percent_covered_per_path(response),
+                expected,
+            )
+
+        assert_get_percent_covered_per_path(
+            expression_level_coverage.CoverageAtPathResponse(
+                CoverageAtPath=expression_level_coverage.CoverageAtPath(
+                    path="test.py",
+                    total_expressions=0,
+                    coverage_gaps=[],
+                )
+            ),
+            100.0,
+        )
+
+        assert_get_percent_covered_per_path(
+            expression_level_coverage.CoverageAtPathResponse(
+                CoverageAtPath=expression_level_coverage.CoverageAtPath(
+                    path="test.py",
+                    total_expressions=5,
+                    coverage_gaps=[
+                        expression_level_coverage.CoverageGap(
+                            location=expression_level_coverage.Location(
+                                start=expression_level_coverage.Pair(
+                                    line=11, column=16
+                                ),
+                                stop=expression_level_coverage.Pair(line=11, column=17),
+                            ),
+                            type_="typing.Any",
+                            reason=["TypeIsAny"],
+                        )
+                    ],
+                )
+            ),
+            80.0,
+        )
+
     def test_summary_expression_level_coverage(self) -> None:
         def assert_summary_expression_level_coverage(
             response: object, expected: str

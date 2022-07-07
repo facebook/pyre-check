@@ -145,6 +145,13 @@ def _get_total_and_uncovered_expressions(
     return coverage.total_expressions, len(coverage.coverage_gaps)
 
 
+def get_percent_covered_per_path(path_response: CoverageAtPathResponse) -> float:
+    total_expressions, uncovered_expressions = _get_total_and_uncovered_expressions(
+        path_response.CoverageAtPath
+    )
+    return _calculate_percent_covered(uncovered_expressions, total_expressions)
+
+
 def summary_expression_level(response: object) -> str:
     percent_output = ""
     overall_total_expressions = 0
@@ -158,9 +165,7 @@ def summary_expression_level(response: object) -> str:
         )
         overall_total_expressions += total_expressions
         overall_uncovered_expressions += uncovered_expressions
-        percent_covered = _calculate_percent_covered(
-            uncovered_expressions, total_expressions
-        )
+        percent_covered = get_percent_covered_per_path(path_response)
         percent_output += f"{expression_level_coverage.path}: {percent_covered}% expressions are covered\n"
     percent_covered = _calculate_percent_covered(
         overall_uncovered_expressions, overall_total_expressions
