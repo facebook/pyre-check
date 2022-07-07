@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Tuple, Union
 
-from dataclasses_json import dataclass_json
+import dataclasses_json
 
 from .. import configuration as configuration_module, log
 from . import (
@@ -24,58 +24,50 @@ from . import (
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class Pair:
+class Pair(dataclasses_json.DataClassJsonMixin):
     line: int
     column: int
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class Location:
+class Location(dataclasses_json.DataClassJsonMixin):
     start: Pair
     stop: Pair
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class CoverageGap:
+class CoverageGap(dataclasses_json.DataClassJsonMixin):
     location: Location
     type_: str
     reason: List[str]
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class CoverageAtPath:
+class CoverageAtPath(dataclasses_json.DataClassJsonMixin):
     path: str
     total_expressions: int
     coverage_gaps: List[CoverageGap]
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class CoverageAtPathResponse:
+class CoverageAtPathResponse(dataclasses_json.DataClassJsonMixin):
     CoverageAtPath: CoverageAtPath
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class ErrorAtPath:
+class ErrorAtPath(dataclasses_json.DataClassJsonMixin):
     path: str
     error: str
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class ErrorAtPathResponse:
+class ErrorAtPathResponse(dataclasses_json.DataClassJsonMixin):
     ErrorAtPath: ErrorAtPath
 
 
-@dataclass_json
 @dataclass(frozen=True)
-class ExpressionLevelCoverageResponse:
+class ExpressionLevelCoverageResponse(dataclasses_json.DataClassJsonMixin):
     response: List[Union[CoverageAtPathResponse, ErrorAtPathResponse]]
 
 
@@ -91,17 +83,19 @@ def _make_expression_level_coverage_response(
     ) -> Union[CoverageAtPathResponse, ErrorAtPathResponse]:
         if path[0] == "CoverageAtPath":
             return CoverageAtPathResponse(
-                # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
+                # pyre-ignore[6]: For 1st param expected `Union[None,
+                #  List[typing.Any], Dict[typing.Any, typing.Any], bool, float, int,
+                #  str]` but got `object`.
                 CoverageAtPath=CoverageAtPath.from_dict(path[1])
             )
         else:
-            return ErrorAtPathResponse(
-                # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
-                ErrorAtPath=ErrorAtPath.from_dict(path[1])
-            )
+            # pyre-ignore[6]: For 1st param expected `Union[None, List[typing.Any],
+            #  Dict[typing.Any, typing.Any], bool, float, int, str]` but got `object`.
+            return ErrorAtPathResponse(ErrorAtPath=ErrorAtPath.from_dict(path[1]))
 
     try:
-        # pyre-ignore[16]: Pyre doesn't understand Union of dataclasses_json within dataclasses_json
+        if not isinstance(json, dict):
+            raise ErrorParsingFailure(f"Error: expect a dictionary JSON but got {json}")
         response = [parse_path_response(path) for path in json["response"]]
         return ExpressionLevelCoverageResponse(response=response)
     except (AssertionError, AttributeError, KeyError, TypeError) as error:
