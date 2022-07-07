@@ -21,7 +21,12 @@ import dataclasses_json
 import libcst
 from libcst.codemod import CodemodContext
 
-from .. import command_arguments, configuration as configuration_module, log
+from .. import (
+    command_arguments,
+    configuration as configuration_module,
+    dataclasses_json_extensions as json_mixins,
+    log,
+)
 from ..libcst_vendored_visitors import ApplyTypeAnnotationsVisitor
 from . import backend_arguments, commands, frontend_configuration, start
 
@@ -49,12 +54,8 @@ class Arguments:
         }
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class RawAnnotationLocation:
+class RawAnnotationLocation(json_mixins.CamlCaseAndExcludeJsonMixin):
     qualifier: str
     path: str
     line: int
@@ -66,43 +67,27 @@ class RawAnnotation:
     location: RawAnnotationLocation
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class RawGlobalAnnotation(RawAnnotation):
+class RawGlobalAnnotation(json_mixins.CamlCaseAndExcludeJsonMixin, RawAnnotation):
     annotation: str
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class RawAttributeAnnotation(RawAnnotation):
+class RawAttributeAnnotation(json_mixins.CamlCaseAndExcludeJsonMixin, RawAnnotation):
     parent: str
     annotation: str
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class RawParameter:
+class RawParameter(json_mixins.CamlCaseAndExcludeJsonMixin):
     name: str
     index: int
     annotation: Optional[str] = None
     value: Optional[str] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class RawDefineAnnotation(RawAnnotation):
+class RawDefineAnnotation(json_mixins.CamlCaseAndExcludeJsonMixin, RawAnnotation):
     parent: Optional[str] = None
     return_: Optional[str] = dataclasses.field(
         metadata=dataclasses_json.config(field_name="return"), default=None
@@ -116,12 +101,8 @@ class RawDefineAnnotation(RawAnnotation):
 TAnnotation = TypeVar("TAnnotation", bound=RawAnnotation)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class RawInferOutput:
+class RawInferOutput(json_mixins.CamlCaseAndExcludeJsonMixin):
     global_annotations: List[RawGlobalAnnotation] = dataclasses.field(
         metadata=dataclasses_json.config(field_name="globals"), default_factory=list
     )
@@ -138,7 +119,7 @@ class RawInferOutput:
     @staticmethod
     def create_from_string(input: str) -> "RawInferOutput":
         try:
-            # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
+            # pyre-fixme[7]: Imprecise return type of `loads()`
             return RawInferOutput.schema().loads(input)
         except (
             TypeError,
@@ -190,12 +171,8 @@ class RawInferOutput:
         }
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class RawInferOutputForPath:
+class RawInferOutputForPath(json_mixins.CamlCaseAndExcludeJsonMixin):
     qualifier: str
     global_annotations: List[RawGlobalAnnotation] = dataclasses.field(
         metadata=dataclasses_json.config(field_name="globals"), default_factory=list
@@ -209,7 +186,7 @@ class RawInferOutputForPath:
 
     @staticmethod
     def create_from_json(input: Dict[str, object]) -> "RawInferOutputForPath":
-        # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
+        # pyre-fixme[7]: Imprecise return type of `loads()`
         return RawInferOutputForPath.schema().loads(json.dumps(input))
 
 
@@ -898,7 +875,6 @@ def _print_inferences(
     infer_output: RawInferOutput, module_annotations: Sequence[ModuleAnnotations]
 ) -> None:
     LOG.log(log.SUCCESS, "Raw Infer Outputs:")
-    # pyre-ignore[16]: Pyre does not understand `dataclasses_json`
     LOG.log(log.SUCCESS, json.dumps(infer_output.to_dict(), indent=2))
     LOG.log(log.SUCCESS, "Generated Stubs:")
     LOG.log(
