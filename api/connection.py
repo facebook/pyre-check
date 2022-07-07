@@ -58,12 +58,14 @@ class PyreConnection:
         self,
         pyre_directory: Optional[Path] = None,
         pyre_arguments: Optional[List[str]] = None,
+        skip_initial_type_check: bool = False,
     ) -> None:
         self.pyre_directory: Path = (
             pyre_directory if pyre_directory is not None else Path.cwd()
         )
         self.pyre_arguments: List[str] = pyre_arguments or []
         self.server_initialized = False
+        self.skip_initial_type_check = skip_initial_type_check
 
     def __enter__(self) -> "PyreConnection":
         self.start_server()
@@ -82,16 +84,36 @@ class PyreConnection:
         self.pyre_arguments += arguments
 
     def start_server(self) -> PyreCheckResult:
-        # incremental will start a new server when needed.
-        result = subprocess.run(
-            ["pyre", "--noninteractive", *self.pyre_arguments, "incremental"],
-            stdout=subprocess.PIPE,
-            cwd=str(self.pyre_directory),
-        )
-        self.server_initialized = True
-        return _parse_check_output(result)
+        if self.skip_initial_type_check:
+            result = subprocess.run(
+                [
+                    "pyre",
+                    "--noninteractive",
+                    *self.pyre_arguments,
+                    "start",
+                    "--skip-initial-type-check",
+                ],
+                stdout=subprocess.PIPE,
+                cwd=str(self.pyre_directory),
+            )
+            self.server_initialized = True
+            return PyreCheckResult(exit_code=result.returncode, errors=None)
+        else:
+            # incremental will start a new server when needed.
+            result = subprocess.run(
+                ["pyre", "--noninteractive", *self.pyre_arguments, "incremental"],
+                stdout=subprocess.PIPE,
+                cwd=str(self.pyre_directory),
+            )
+            self.server_initialized = True
+            return _parse_check_output(result)
 
     def restart_server(self) -> PyreCheckResult:
+        if self.skip_initial_type_check:
+            raise ValueError(
+                "Restarts are not currently supported when using the "
+                + "skip_initial_type_check option."
+            )
         result = _parse_check_output(
             subprocess.run(
                 ["pyre", "--noninteractive", *self.pyre_arguments, "restart"],

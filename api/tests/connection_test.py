@@ -47,13 +47,16 @@ class ConnectionApiTest(unittest.TestCase):
         )
         run.reset_mock()
 
-        pyre_connection = PyreConnection(Path("/tmp"))
+        pyre_connection = PyreConnection(
+            Path("/tmp"),
+            skip_initial_type_check=True,
+        )
         pyre_connection.query_server("hi")
         self.assertEqual(
             run.call_args_list,
             [
                 call(
-                    ["pyre", "--noninteractive", "incremental"],
+                    ["pyre", "--noninteractive", "start", "--skip-initial-type-check"],
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
