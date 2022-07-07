@@ -241,6 +241,7 @@ let initialize_server_state
     ?watchman_subscriber
     ~build_system_initializer
     ~saved_state_action
+    ~skip_initial_type_check
     ({
        ServerProperties.configuration = { Configuration.Analysis.log_directory; _ } as configuration;
        critical_files;
@@ -257,7 +258,12 @@ let initialize_server_state
             Analysis.EnvironmentControls.create ~populate_call_graph:true configuration
             |> Analysis.ErrorsEnvironment.create_for_production
           in
-          let () = Analysis.ErrorsEnvironment.check_and_preprocess environment ~scheduler in
+          let () =
+            if skip_initial_type_check then
+              ()
+            else
+              Analysis.ErrorsEnvironment.check_and_preprocess environment ~scheduler
+          in
           Analysis.OverlaidEnvironment.create environment)
     in
     ServerState.create ~build_system ~multi_environment ()
@@ -512,8 +518,14 @@ let with_server
     ?build_system_initializer
     ~configuration:({ Configuration.Analysis.extensions; _ } as configuration)
     ~f
-    ({ StartOptions.socket_path; source_paths; watchman_root; critical_files; saved_state_action }
-    as start_options)
+    ({
+       StartOptions.socket_path;
+       source_paths;
+       watchman_root;
+       critical_files;
+       saved_state_action;
+       skip_initial_type_check;
+     } as start_options)
   =
   let open Lwt in
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
@@ -536,6 +548,7 @@ let with_server
           ?watchman_subscriber
           ~build_system_initializer
           ~saved_state_action
+          ~skip_initial_type_check
           server_properties)
   in
   LwtSocketServer.establish prepared_socket ~f:(handle_connection ~server_properties ~server_state)

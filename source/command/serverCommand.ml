@@ -86,10 +86,18 @@ module ServerConfiguration = struct
         watchman_root;
         critical_files;
         saved_state_action;
+        skip_initial_type_check;
         _;
       }
     =
-    { StartOptions.source_paths; socket_path; watchman_root; critical_files; saved_state_action }
+    {
+      StartOptions.source_paths;
+      socket_path;
+      watchman_root;
+      critical_files;
+      saved_state_action;
+      skip_initial_type_check;
+    }
 
 
   let analysis_configuration_of

@@ -148,6 +148,7 @@ module ScratchProject = struct
         watchman_root;
         critical_files = [];
         saved_state_action = None;
+        skip_initial_type_check = false;
       }
     in
     {
