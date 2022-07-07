@@ -1420,7 +1420,43 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     socket_path=Path("fake_socket_path"),
                     expression_level_coverage_enabled=True,
                 )
-            self.assertEqual(len(memory_bytes_writer.items()), 1)
+            self.assertEqual(len(memory_bytes_writer.items()), 2)
+            self.assertTrue(
+                memory_bytes_writer.items()[0].startswith(
+                    b'["Query", "modules_of_path('
+                )
+            )
+            self.assertTrue(result is not None)
+            self.assertEqual(len(result.uncovered_ranges), 0)
+            self.assertTrue(result.covered_percent == 100.0)
+
+    @setup.async_test
+    async def test_query_expression_coverage_gaps(self) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
+            tmpfile.write(b"def foo(x):\n  pass\n")
+            tmpfile.flush()
+            test_path = Path(tmpfile.name)
+            bytes_writer = MemoryBytesWriter()
+            server_start_options_reader = _fake_option_reader()
+            pyre_query_manager = PyreQueryHandler(
+                state=PyreQueryState(),
+                server_start_options_reader=server_start_options_reader,
+                client_output_channel=TextWriter(bytes_writer),
+            )
+            strict = False
+            input_channel = create_memory_text_reader(
+                '["Query", {"response": ["test"]}]\n ["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":4,"coverage_gaps":[{"location": {"start": {"line": 11, "column": 16}, "stop": {"line": 11, "column": 17}}, "type_": "typing.Any", "reason": ["TypeIsAny"]}]}]]}]\n'
+            )
+            memory_bytes_writer = MemoryBytesWriter()
+            output_channel = TextWriter(memory_bytes_writer)
+            with patch_connect_in_text_mode(input_channel, output_channel):
+                result = await pyre_query_manager._query_type_coverage(
+                    path=test_path,
+                    strict_default=strict,
+                    socket_path=Path("fake_socket_path"),
+                    expression_level_coverage_enabled=True,
+                )
+            self.assertEqual(len(memory_bytes_writer.items()), 2)
             self.assertTrue(
                 memory_bytes_writer.items()[0].startswith(
                     b'["Query", "modules_of_path('
@@ -1428,7 +1464,76 @@ class PyreQueryHandlerTest(testslide.TestCase):
             )
             self.assertTrue(result is not None)
             self.assertEqual(len(result.uncovered_ranges), 1)
-            self.assertTrue(result.covered_percent == 0)
+            self.assertTrue(result.covered_percent == 75.0)
+
+    @setup.async_test
+    async def test_query_expression_coverage__bad_json(self) -> None:
+        pyre_query_manager = PyreQueryHandler(
+            state=PyreQueryState(),
+            server_start_options_reader=_fake_option_reader(),
+            client_output_channel=TextWriter(MemoryBytesWriter()),
+        )
+        input_channel = create_memory_text_reader(
+            '{ "error": "Oops" }\n["Query", {"response": [["ErrorAtPath",{"path":"/fake/path.py","error":"oops"}]]}]\n'
+        )
+        output_channel = TextWriter(MemoryBytesWriter())
+        with patch_connect_in_text_mode(input_channel, output_channel):
+            result = await pyre_query_manager._query_type_coverage(
+                path=Path("test.py"),
+                strict_default=False,
+                socket_path=Path("fake_socket_path"),
+                expression_level_coverage_enabled=True,
+            )
+        self.assertTrue(result is None)
+
+    @setup.async_test
+    async def test_query_expression_coverage__strict(self) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
+            tmpfile.write(b"def foo(x):\n  pass\n")
+            tmpfile.flush()
+            test_path = Path(tmpfile.name)
+            pyre_query_manager = PyreQueryHandler(
+                state=PyreQueryState(),
+                server_start_options_reader=_fake_option_reader(),
+                client_output_channel=TextWriter(MemoryBytesWriter()),
+            )
+            strict = True
+            input_channel = create_memory_text_reader(
+                '["Query", {"response": ["test"]}]\n["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":0,"coverage_gaps":[]}]]}]\n'
+            )
+            output_channel = TextWriter(MemoryBytesWriter())
+            with patch_connect_in_text_mode(input_channel, output_channel):
+                result = await pyre_query_manager._query_type_coverage(
+                    path=test_path,
+                    strict_default=strict,
+                    socket_path=Path("fake_socket_path"),
+                    expression_level_coverage_enabled=True,
+                )
+            self.assertTrue(result is not None)
+            self.assertEqual(len(result.uncovered_ranges), 0)
+            self.assertEqual(result.covered_percent, 100.0)
+
+    @setup.async_test
+    async def test_query_expression_coverage__not_typechecked(self) -> None:
+        pyre_query_manager = PyreQueryHandler(
+            state=PyreQueryState(),
+            server_start_options_reader=_fake_option_reader(),
+            client_output_channel=TextWriter(MemoryBytesWriter()),
+        )
+        input_channel = create_memory_text_reader(
+            '["Query", {"response": []}]\n["Query", {"response": [["CoverageAtPath",{"path":"/fake/test.py","total_expressions":0,"coverage_gaps":[]}]]}]\n'
+        )
+        output_channel = TextWriter(MemoryBytesWriter())
+        with patch_connect_in_text_mode(input_channel, output_channel):
+            result = await pyre_query_manager._query_type_coverage(
+                path=Path("test.py"),
+                strict_default=False,
+                socket_path=Path("fake_socket_path"),
+                expression_level_coverage_enabled=True,
+            )
+        self.assertTrue(result is not None)
+        self.assertEqual(result.covered_percent, 100.0)
+        self.assertEqual(len(result.uncovered_ranges), 0)
 
     @setup.async_test
     async def test_query_definition_location(self) -> None:

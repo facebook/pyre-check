@@ -44,6 +44,7 @@ from . import (
     async_server_connection as connection,
     backend_arguments,
     commands,
+    expression_level_coverage,
     frontend_configuration,
     incremental,
     language_server_protocol as lsp,
@@ -1206,6 +1207,30 @@ def path_to_coverage_response(
     return to_coverage_result(covered_and_uncovered_lines, uncovered_ranges)
 
 
+def path_to_expression_coverage_response(
+    strict_default: bool,
+    expression_coverage: expression_level_coverage.ExpressionLevelCoverageResponse,
+) -> lsp.TypeCoverageResponse:
+    path_coverage = expression_coverage.response[0]
+    if isinstance(path_coverage, expression_level_coverage.ErrorAtPathResponse):
+        uncovered_expressions_diagnostics = []
+        covered_percent = 0
+    else:
+        uncovered_expressions_diagnostics = (
+            expression_level_coverage.get_uncovered_expression_diagnostics(
+                expression_coverage
+            )
+        )
+        covered_percent = expression_level_coverage.get_percent_covered_per_path(
+            path_coverage
+        )
+    return lsp.TypeCoverageResponse(
+        covered_percent=covered_percent,
+        uncovered_ranges=uncovered_expressions_diagnostics,
+        default_message="Consider adding type annotations.",
+    )
+
+
 class PyreQueryHandler(connection.BackgroundTask):
     def __init__(
         self,
@@ -1303,7 +1328,21 @@ class PyreQueryHandler(connection.BackgroundTask):
         if is_typechecked is None:
             return None
         elif expression_level_coverage_enabled:
-            return file_not_typechecked_coverage_result()
+            query_response = await self._query(
+                f"expression_level_coverage('{path}')", socket_path
+            )
+            if query_response is None:
+                return None
+            expression_coverage = (
+                expression_level_coverage._make_expression_level_coverage_response(
+                    query_response.payload
+                )
+            )
+            if expression_coverage is None:
+                return file_not_typechecked_coverage_result()
+            return path_to_expression_coverage_response(
+                strict_default, expression_coverage
+            )
         elif is_typechecked:
             return path_to_coverage_response(path, strict_default)
         else:
