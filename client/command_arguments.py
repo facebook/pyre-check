@@ -96,6 +96,7 @@ class StartArguments:
     store_type_check_resolution: bool = False
     terminal: bool = False
     wait_on_initialization: bool = False
+    skip_initial_type_check: bool = False
 
 
 @dataclass(frozen=True)

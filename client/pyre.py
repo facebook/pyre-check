@@ -1012,6 +1012,12 @@ def servers_stop(context: click.Context) -> int:
     hidden=True,
     help="When `--terminal` is unset, wait for server initialization to finish.",
 )
+@click.option(
+    "--skip-initial-type-check/--no-skip-initial-type-check",
+    default=False,
+    hidden=True,
+    help="Skip the initial type check of all in-project modules.",
+)
 @click.pass_context
 def start(
     context: click.Context,
@@ -1019,6 +1025,7 @@ def start(
     store_type_check_resolution: bool,
     no_watchman: bool,
     wait_on_initialization: bool,
+    skip_initial_type_check: bool,
 ) -> int:
     """
     Starts a pyre server as a daemon.
@@ -1049,6 +1056,7 @@ def start(
             store_type_check_resolution=store_type_check_resolution,
             terminal=terminal,
             wait_on_initialization=wait_on_initialization,
+            skip_initial_type_check=skip_initial_type_check,
         ),
     )
 
