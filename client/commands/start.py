@@ -137,6 +137,7 @@ class Arguments:
     store_type_check_resolution: bool = False
     critical_files: Sequence[CriticalFile] = dataclasses.field(default_factory=list)
     saved_state_action: Optional[SavedStateAction] = None
+    skip_initial_type_check: bool = False
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -165,6 +166,7 @@ class Arguments:
                 if self.saved_state_action is None
                 else {"saved_state_action": self.saved_state_action.serialize()}
             ),
+            "skip_initial_type_check": self.skip_initial_type_check,
         }
 
 
@@ -320,6 +322,7 @@ def create_server_arguments(
         else get_saved_state_action(
             start_arguments, relative_local_root=relative_local_root
         ),
+        skip_initial_type_check=start_arguments.skip_initial_type_check,
     )
 
 

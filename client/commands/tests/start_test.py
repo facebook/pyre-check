@@ -435,6 +435,29 @@ class StartTest(testslide.TestCase):
             )
             self.assertIsNone(arguments.saved_state_action)
 
+    def test_create_server_arguments_skip_initial_type_check(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            setup.ensure_directories_exists(root_path, [".pyre", "src"])
+            setup.write_configuration_file(
+                root_path,
+                {"source_directories": ["src"]},
+            )
+            arguments = create_server_arguments(
+                frontend_configuration.OpenSource(
+                    configuration.create_configuration(
+                        command_arguments.CommandArguments(
+                            dot_pyre_directory=root_path / ".pyre",
+                        ),
+                        root_path,
+                    )
+                ),
+                command_arguments.StartArguments(
+                    skip_initial_type_check=True,
+                ),
+            )
+            self.assertTrue(arguments.skip_initial_type_check)
+
     def test_create_server_arguments_logging(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
