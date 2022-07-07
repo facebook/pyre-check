@@ -19,6 +19,7 @@ module ServerConfiguration : sig
     store_type_check_resolution: bool;
     critical_files: Server.CriticalFile.t list;
     saved_state_action: Server.SavedStateAction.t option;
+    skip_initial_type_check: bool;
   }
   [@@deriving sexp, compare, hash, of_yojson]
 end

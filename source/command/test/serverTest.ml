@@ -40,6 +40,7 @@ let test_json_parsing context =
       taint_model_paths = [];
       store_type_check_resolution = false;
       saved_state_action = None;
+      skip_initial_type_check = false;
     }
   in
 
@@ -100,6 +101,9 @@ let test_json_parsing context =
             (Server.SavedStateAction.LoadFromProject
                { project_name = "project"; project_metadata = None });
       };
+  assert_parsed
+    (`Assoc (("skip_initial_type_check", `Bool true) :: dummy_server_json))
+    ~expected:{ dummy_server_configuration with skip_initial_type_check = true };
   ()
 
 
