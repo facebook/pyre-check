@@ -80,7 +80,6 @@ async def try_initialize(
         result = process_initialize_request(initialize_parameters)
         await lsp.write_json_rpc(
             output_channel,
-            # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
             json_rpc.SuccessResponse(id=request_id, result=result.to_dict()),
         )
 

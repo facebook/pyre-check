@@ -291,7 +291,6 @@ async def try_initialize(
             json_rpc.SuccessResponse(
                 id=request_id,
                 activity_key=request.activity_key,
-                # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
                 result=result.to_dict(),
             ),
         )
@@ -391,11 +390,7 @@ async def _publish_diagnostics(
             parameters=json_rpc.ByNameParameters(
                 {
                     "uri": lsp.DocumentUri.from_file_path(path).unparse(),
-                    "diagnostics": [
-                        # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
-                        diagnostic.to_dict()
-                        for diagnostic in diagnostics
-                    ],
+                    "diagnostics": [diagnostic.to_dict() for diagnostic in diagnostics],
                 }
             ),
         ),
@@ -762,8 +757,6 @@ class PyreServer:
             json_rpc.SuccessResponse(
                 id=request_id,
                 activity_key=activity_key,
-                # pyre-ignore[16]: Pyre does not understand
-                # `dataclasses_json`.
                 result=response.to_dict(),
             ),
         )
@@ -803,8 +796,6 @@ class PyreServer:
                 json_rpc.SuccessResponse(
                     id=request_id,
                     activity_key=activity_key,
-                    # pyre-ignore[16]: Pyre does not understand
-                    # `dataclasses_json`.
                     result=lsp.LspDefinitionResponse.schema().dump([], many=True),
                 ),
             )
@@ -850,8 +841,6 @@ class PyreServer:
             json_rpc.SuccessResponse(
                 id=request_id,
                 activity_key=activity_key,
-                # pyre-ignore[16]: Pyre does not understand
-                # `dataclasses_json`.
                 result=[s.to_dict() for s in symbols],
             ),
         )
@@ -874,8 +863,6 @@ class PyreServer:
                 json_rpc.SuccessResponse(
                     id=request_id,
                     activity_key=activity_key,
-                    # pyre-ignore[16]: Pyre does not understand
-                    # `dataclasses_json`.
                     result=lsp.LspDefinitionResponse.schema().dump([], many=True),
                 ),
             )
@@ -1364,8 +1351,6 @@ class PyreQueryHandler(connection.BackgroundTask):
                 json_rpc.SuccessResponse(
                     id=query.id,
                     activity_key=query.activity_key,
-                    # pyre-ignore[16]: Pyre does not understand
-                    # `dataclasses_json`.
                     result=type_coverage_result.to_dict(),
                 ),
             )
@@ -1394,8 +1379,6 @@ class PyreQueryHandler(connection.BackgroundTask):
             json_rpc.SuccessResponse(
                 id=query.id,
                 activity_key=query.activity_key,
-                # pyre-ignore[16]: Pyre does not understand
-                # `dataclasses_json`.
                 result=lsp.LspDefinitionResponse.schema().dump(
                     definitions,
                     many=True,
@@ -1427,8 +1410,6 @@ class PyreQueryHandler(connection.BackgroundTask):
             json_rpc.SuccessResponse(
                 id=query.id,
                 activity_key=query.activity_key,
-                # pyre-ignore[16]: Pyre does not understand
-                # `dataclasses_json`.
                 result=lsp.LspDefinitionResponse.schema().dump(
                     reference_locations,
                     many=True,

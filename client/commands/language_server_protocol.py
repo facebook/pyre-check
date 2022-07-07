@@ -14,7 +14,7 @@ from typing import Iterable, List, Optional, Type, TypeVar
 import dataclasses_json
 from pyre_extensions import override
 
-from .. import json_rpc
+from .. import dataclasses_json_extensions as json_mixins, json_rpc
 from . import async_server_connection
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -202,12 +202,8 @@ class DocumentUri:
         )
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True, order=True)
-class Position:
+class Position(json_mixins.CamlCaseAndExcludeJsonMixin):
     line: int
     character: int
 
@@ -215,12 +211,8 @@ class Position:
         return LspPosition(self.line - 1, self.character)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class LspPosition:
+class LspPosition(json_mixins.CamlCaseAndExcludeJsonMixin):
     """LSP uses 0-indexing for lines whereas Pyre uses 1-indexing."""
 
     line: int
@@ -230,12 +222,8 @@ class LspPosition:
         return Position(self.line + 1, self.character)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class Range:
+class Range(json_mixins.CamlCaseAndExcludeJsonMixin):
     start: Position
     end: Position
 
@@ -246,22 +234,14 @@ class Range:
         )
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class LspRange:
+class LspRange(json_mixins.CamlCaseAndExcludeJsonMixin):
     start: LspPosition
     end: LspPosition
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class Diagnostic:
+class Diagnostic(json_mixins.CamlCaseAndExcludeJsonMixin):
     range: Range
     message: str
     severity: Optional[DiagnosticSeverity] = None
@@ -269,111 +249,67 @@ class Diagnostic:
     source: Optional[str] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class Info:
+class Info(json_mixins.CamlCaseAndExcludeJsonMixin):
     name: str
     version: Optional[str] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class TextDocumentSyncClientCapabilities:
+class TextDocumentSyncClientCapabilities(json_mixins.CamlCaseAndExcludeJsonMixin):
     did_save: bool = False
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class PublishDiagnosticsClientTagSupport:
+class PublishDiagnosticsClientTagSupport(json_mixins.CamlCaseAndExcludeJsonMixin):
     value_set: List[DiagnosticTag] = dataclasses.field(default_factory=list)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class PublishDiagnosticsClientCapabilities:
+class PublishDiagnosticsClientCapabilities(json_mixins.CamlCaseAndExcludeJsonMixin):
     related_information: bool = False
     tag_support: Optional[PublishDiagnosticsClientTagSupport] = None
     version_support: bool = False
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class TextDocumentClientCapabilities:
+class TextDocumentClientCapabilities(json_mixins.CamlCaseAndExcludeJsonMixin):
     synchronization: Optional[TextDocumentSyncClientCapabilities] = None
     publish_diagnostics: Optional[PublishDiagnosticsClientCapabilities] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class ShowStatusRequestClientCapabilities:
+class ShowStatusRequestClientCapabilities(json_mixins.CamlCaseAndExcludeJsonMixin):
     pass
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class WindowClientCapabilities:
+class WindowClientCapabilities(json_mixins.CamlCaseAndExcludeJsonMixin):
     work_done_progress: Optional[bool] = None
     # Custom VSCode extension for status bar
     status: Optional[ShowStatusRequestClientCapabilities] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class ClientCapabilities:
+class ClientCapabilities(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: Optional[TextDocumentClientCapabilities] = None
     window: Optional[WindowClientCapabilities] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class SaveOptions:
+class SaveOptions(json_mixins.CamlCaseAndExcludeJsonMixin):
     include_text: Optional[bool] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class TextDocumentSyncOptions:
+class TextDocumentSyncOptions(json_mixins.CamlCaseAndExcludeJsonMixin):
     open_close: bool = False
     change: TextDocumentSyncKind = TextDocumentSyncKind.NONE
     save: Optional[SaveOptions] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class ServerCapabilities:
+class ServerCapabilities(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document_sync: Optional[TextDocumentSyncOptions] = None
     hover_provider: Optional[bool] = None
     definition_provider: Optional[bool] = None
@@ -381,21 +317,13 @@ class ServerCapabilities:
     references_provider: Optional[bool] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class InitializationOptions:
+class InitializationOptions(json_mixins.CamlCaseAndExcludeJsonMixin):
     notebook_number: Optional[int] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class InitializeParameters:
+class InitializeParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     capabilities: ClientCapabilities
     process_id: Optional[int] = None
     client_info: Optional[Info] = None
@@ -408,34 +336,22 @@ class InitializeParameters:
         return _parse_parameters(parameters, target=InitializeParameters)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class InitializeResult:
+class InitializeResult(json_mixins.CamlCaseAndExcludeJsonMixin):
     capabilities: ServerCapabilities
     server_info: Optional[Info] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class TextDocumentIdentifier:
+class TextDocumentIdentifier(json_mixins.CamlCaseAndExcludeJsonMixin):
     uri: str
 
     def document_uri(self) -> DocumentUri:
         return DocumentUri.parse(self.uri)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class TextDocumentItem:
+class TextDocumentItem(json_mixins.CamlCaseAndExcludeJsonMixin):
     uri: str
     language_id: str
     version: int
@@ -445,12 +361,8 @@ class TextDocumentItem:
         return DocumentUri.parse(self.uri)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class DidOpenTextDocumentParameters:
+class DidOpenTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentItem
 
     @staticmethod
@@ -460,12 +372,8 @@ class DidOpenTextDocumentParameters:
         return _parse_parameters(parameters, target=DidOpenTextDocumentParameters)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class DidCloseTextDocumentParameters:
+class DidCloseTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
 
     @staticmethod
@@ -475,12 +383,8 @@ class DidCloseTextDocumentParameters:
         return _parse_parameters(parameters, target=DidCloseTextDocumentParameters)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class DidSaveTextDocumentParameters:
+class DidSaveTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
     text: Optional[str] = None
 
@@ -491,21 +395,15 @@ class DidSaveTextDocumentParameters:
         return _parse_parameters(parameters, target=DidSaveTextDocumentParameters)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class WorkspaceConfiguration:
+class WorkspaceConfiguration(json_mixins.CamlCaseAndExcludeJsonMixin):
     kernel_runtime_dir: List[str]
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class WorkspaceDidChangeConfigurationParameters:
+class WorkspaceDidChangeConfigurationParameters(
+    json_mixins.CamlCaseAndExcludeJsonMixin
+):
     settings: WorkspaceConfiguration
 
     @staticmethod
@@ -517,12 +415,8 @@ class WorkspaceDidChangeConfigurationParameters:
         )
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class HoverTextDocumentParameters:
+class HoverTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
     position: LspPosition
 
@@ -533,12 +427,8 @@ class HoverTextDocumentParameters:
         return _parse_parameters(parameters, target=HoverTextDocumentParameters)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class HoverResponse:
+class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains the Markdown response to be shown in the hover card."""
 
     contents: str
@@ -548,12 +438,8 @@ class HoverResponse:
         return HoverResponse(contents="")
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class ReferencesTextDocumentParameters:
+class ReferencesTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
     position: LspPosition
 
@@ -564,12 +450,8 @@ class ReferencesTextDocumentParameters:
         return _parse_parameters(parameters, target=ReferencesTextDocumentParameters)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class ReferencesResponse:
+class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains code location of one reference."""
 
     path: str
@@ -581,12 +463,8 @@ class ReferencesResponse:
         return LspDefinitionResponse(uri=self.path, range=self.range.to_lsp_range())
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class TypeCoverageTextDocumentParameters:
+class TypeCoverageTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
 
     @staticmethod
@@ -596,12 +474,8 @@ class TypeCoverageTextDocumentParameters:
         return _parse_parameters(parameters, target=TypeCoverageTextDocumentParameters)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class TypeCoverageResponse:
+class TypeCoverageResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Result for nuclide-vscode-lsp coverage feature."""
 
     covered_percent: float
@@ -609,12 +483,8 @@ class TypeCoverageResponse:
     default_message: str
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class DefinitionTextDocumentParameters:
+class DefinitionTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
     position: LspPosition
 
@@ -625,12 +495,8 @@ class DefinitionTextDocumentParameters:
         return _parse_parameters(parameters, target=DefinitionTextDocumentParameters)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class PyreDefinitionResponse:
+class PyreDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains one possible definition for a symbol."""
 
     path: str
@@ -642,24 +508,16 @@ class PyreDefinitionResponse:
         return LspDefinitionResponse(uri=self.path, range=self.range.to_lsp_range())
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class LspDefinitionResponse:
+class LspDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains one possible definition for a symbol."""
 
     uri: str
     range: LspRange
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class DocumentSymbolsTextDocumentParameters:
+class DocumentSymbolsTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
 
     @staticmethod
@@ -671,12 +529,8 @@ class DocumentSymbolsTextDocumentParameters:
         )
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class DocumentSymbolsResponse:
+class DocumentSymbolsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains one possible definition for a symbol."""
 
     name: str

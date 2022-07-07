@@ -588,8 +588,6 @@ class PersistentTest(testslide.TestCase):
         def assert_hover_response(expected_hover_contents: str) -> None:
             expected_response = json_rpc.SuccessResponse(
                 id=42,
-                # pyre-ignore[16]: Pyre does not understand
-                # `dataclasses_json`.
                 result=lsp.HoverResponse(contents=expected_hover_contents).to_dict(),
             )
             response_string = json.dumps(expected_response.json())
@@ -918,8 +916,6 @@ class PersistentTest(testslide.TestCase):
             client_messages = memory_bytes_writer.items()
             expected_response = json_rpc.SuccessResponse(
                 id=42,
-                # pyre-ignore[16]: Pyre does not understand
-                # `dataclasses_json`.
                 result=lsp.LspDefinitionResponse.schema().dump(definitions, many=True),
             )
             response_string = json.dumps(expected_response.json())
@@ -1051,8 +1047,6 @@ class PersistentTest(testslide.TestCase):
             client_messages = memory_bytes_writer.items()
             expected_response = json_rpc.SuccessResponse(
                 id=42,
-                # pyre-ignore[16]: Pyre does not understand
-                # `dataclasses_json`.
                 result=lsp.ReferencesResponse.schema().dump(references, many=True),
             )
             response_string = json.dumps(expected_response.json())
@@ -1599,8 +1593,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         response = client_output_writer.items()[0].splitlines()[2]
         result = json.loads(response)["result"]
         self.assertEqual(
-            # pyre-ignore[16]: Pyre does not understand
-            # `dataclasses_json`.
             lsp.LspDefinitionResponse.schema().load(result, many=True),
             [
                 lsp.LspDefinitionResponse(
@@ -1729,8 +1721,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         response = client_output_writer.items()[0].splitlines()[2]
         result = json.loads(response)["result"]
         self.assertEqual(
-            # pyre-ignore[16]: Pyre does not understand
-            # `dataclasses_json`.
             lsp.LspDefinitionResponse.schema().load(result, many=True),
             [
                 lsp.LspDefinitionResponse(
