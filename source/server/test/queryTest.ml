@@ -1907,8 +1907,8 @@ let test_expression_level_coverage context =
               def foo(x) -> None:
                 print(x + 1)
             |};
-      "fizz.py", {|
-              def fizz(x) -> None:
+      "one.py", {|
+              def one(x) -> None:
                 print(x + 1)
             |};
       ( "two.py",
@@ -1932,12 +1932,123 @@ let test_expression_level_coverage context =
       "empty.txt", {||};
       "two_arguments.txt", {|
       foo.py
-      fizz.py
+      one.py
       |};
     ]
   in
   let custom_source_root =
     OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let build_response response =
+    Format.asprintf {|
+        {
+          "response": [%s]
+        }
+      |} response
+  in
+  let foo_response path function_name =
+    Format.asprintf
+      {|
+        [
+        "CoverageAtPath",
+          {
+              "path": "%s",
+              "total_expressions": 8,
+              "coverage_gaps": [
+                  {
+                      "location": {
+                          "start": {
+                              "line": 2,
+                              "column": 4
+                          },
+                          "stop": {
+                              "line": 2,
+                              "column": 7
+                          }
+                      },
+                      "type_": "typing.Callable(%s.%s)[[Named(x, unknown)], None]",
+                      "reason": [
+                          "CallableParameterIsUnknownOrAny"
+                      ]
+                  },
+                  {
+                      "location": {
+                          "start": {
+                              "line": 2,
+                              "column": 8
+                          },
+                          "stop": {
+                              "line": 2,
+                              "column": 9
+                          }
+                      },
+                      "type_": "typing.Any",
+                      "reason": [
+                          "TypeIsAny"
+                      ]
+                  },
+                  {
+                      "location": {
+                          "start": {
+                              "line": 3,
+                              "column": 8
+                          },
+                          "stop": {
+                              "line": 3,
+                              "column": 9
+                          }
+                      },
+                      "type_": "typing.Any",
+                      "reason": [
+                          "TypeIsAny"
+                      ]
+                  },
+                  {
+                      "location": {
+                          "start": {
+                              "line": 3,
+                              "column": 8
+                          },
+                          "stop": {
+                              "line": 3,
+                              "column": 13
+                          }
+                      },
+                      "type_": "typing.Any",
+                      "reason": [
+                          "TypeIsAny"
+                      ]
+                  }
+              ]
+          }
+        ]
+        |}
+      path
+      function_name
+      function_name
+  in
+  let error_response file_name error =
+    Format.sprintf
+      {|
+          ["ErrorAtPath",
+            {"path":"%s","error":"Not able to get lookups in: `%s` (%s)"}
+          ]
+      |}
+      file_name
+      file_name
+      error
+  in
+  let build_foo_response path function_name = build_response (foo_response path function_name) in
+  let build_error_response file_name error = build_response (error_response file_name error) in
+  let build_foo_and_error_response path function_name error_file_name error =
+    let response = foo_response path function_name ^ "," ^ error_response error_file_name error in
+    build_response response
+  in
+  let build_foo_and_bar_response path function_name other_path other_function_name =
+    let response =
+      foo_response path function_name ^ "," ^ foo_response other_path other_function_name
+    in
+    build_response response
   in
   let queries_and_expected_responses =
     [
@@ -1947,87 +2058,9 @@ let test_expression_level_coverage context =
       ( Format.sprintf
           "expression_level_coverage('%s')"
           (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
-        Format.asprintf
-          {|
-            {
-              "response": [
-                [
-                "CoverageAtPath",
-                  {
-                      "path": "%s/foo.py",
-                      "total_expressions": 8,
-                      "coverage_gaps": [
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 2,
-                                      "column": 4
-                                  },
-                                  "stop": {
-                                      "line": 2,
-                                      "column": 7
-                                  }
-                              },
-                              "type_": "typing.Callable(foo.foo)[[Named(x, unknown)], None]",
-                              "reason": [
-                                  "CallableParameterIsUnknownOrAny"
-                              ]
-                          },
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 2,
-                                      "column": 8
-                                  },
-                                  "stop": {
-                                      "line": 2,
-                                      "column": 9
-                                  }
-                              },
-                              "type_": "typing.Any",
-                              "reason": [
-                                  "TypeIsAny"
-                              ]
-                          },
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 3,
-                                      "column": 8
-                                  },
-                                  "stop": {
-                                      "line": 3,
-                                      "column": 9
-                                  }
-                              },
-                              "type_": "typing.Any",
-                              "reason": [
-                                  "TypeIsAny"
-                              ]
-                          },
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 3,
-                                      "column": 8
-                                  },
-                                  "stop": {
-                                      "line": 3,
-                                      "column": 13
-                                  }
-                              },
-                              "type_": "typing.Any",
-                              "reason": [
-                                  "TypeIsAny"
-                              ]
-                          }
-                      ]
-                  }
-                ]
-              ]
-          }
-         |}
-          (PyrePath.absolute custom_source_root) );
+        build_foo_response
+          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute)
+          "foo" );
       (* No type annotations in signature. *)
       ( Format.sprintf
           "expression_level_coverage('%s')"
@@ -2117,50 +2150,23 @@ let test_expression_level_coverage context =
       ( Format.sprintf
           "expression_level_coverage('%s')"
           (PyrePath.append custom_source_root ~element:"file_not_found.py" |> PyrePath.absolute),
-        Format.asprintf
-          {|
-          {"response":
-            [
-              ["ErrorAtPath",
-                {"path":"%s","error":"Not able to get lookups in: `%s` (file not found)"}
-              ]
-            ]
-          }
-          |}
+        build_error_response
           (PyrePath.append custom_source_root ~element:"file_not_found.py" |> PyrePath.absolute)
-          (PyrePath.append custom_source_root ~element:"file_not_found.py" |> PyrePath.absolute) );
+          "file not found" );
       (* Test Error StubShadowing *)
       ( Format.sprintf
           "expression_level_coverage('%s')"
           (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute),
-        Format.asprintf
-          {|
-          {"response":
-            [
-              ["ErrorAtPath",
-                {"path":"%s","error":"Not able to get lookups in: `%s` (file shadowed by .pyi stub file)"}
-              ]
-            ]
-          }
-          |}
+        build_error_response
           (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute)
-          (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute) );
+          "file shadowed by .pyi stub file" );
       (* Test @not_existing.txt not found *)
       ( Format.sprintf
           "expression_level_coverage('@%s')"
           (PyrePath.append custom_source_root ~element:"not_existing.txt" |> PyrePath.absolute),
-        Format.asprintf
-          {|
-          {"response":
-            [
-              ["ErrorAtPath",
-                {"path":"%s","error":"Not able to get lookups in: `%s` (file not found)"}
-              ]
-            ]
-          }
-          |}
+        build_error_response
           (PyrePath.append custom_source_root ~element:"not_existing.txt" |> PyrePath.absolute)
-          (PyrePath.append custom_source_root ~element:"not_existing.txt" |> PyrePath.absolute) );
+          "file not found" );
       (* Test @empty.txt not found *)
       ( Format.sprintf
           "expression_level_coverage('@%s')"
@@ -2177,335 +2183,21 @@ let test_expression_level_coverage context =
           "expression_level_coverage('%s','%s')"
           (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute)
           (PyrePath.append custom_source_root ~element:"not_existing.py" |> PyrePath.absolute),
-        Format.asprintf
-          {|
-            {
-              "response": [
-                [
-                "CoverageAtPath",
-                  {
-                      "path": "%s",
-                      "total_expressions": 8,
-                      "coverage_gaps": [
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 2,
-                                      "column": 4
-                                  },
-                                  "stop": {
-                                      "line": 2,
-                                      "column": 7
-                                  }
-                              },
-                              "type_": "typing.Callable(foo.foo)[[Named(x, unknown)], None]",
-                              "reason": [
-                                  "CallableParameterIsUnknownOrAny"
-                              ]
-                          },
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 2,
-                                      "column": 8
-                                  },
-                                  "stop": {
-                                      "line": 2,
-                                      "column": 9
-                                  }
-                              },
-                              "type_": "typing.Any",
-                              "reason": [
-                                  "TypeIsAny"
-                              ]
-                          },
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 3,
-                                      "column": 8
-                                  },
-                                  "stop": {
-                                      "line": 3,
-                                      "column": 9
-                                  }
-                              },
-                              "type_": "typing.Any",
-                              "reason": [
-                                  "TypeIsAny"
-                              ]
-                          },
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 3,
-                                      "column": 8
-                                  },
-                                  "stop": {
-                                      "line": 3,
-                                      "column": 13
-                                  }
-                              },
-                              "type_": "typing.Any",
-                              "reason": [
-                                  "TypeIsAny"
-                              ]
-                          }
-                      ]
-                  }
-                ],
-              ["ErrorAtPath",
-                {"path":"%s","error":"Not able to get lookups in: `%s` (file not found)"}
-              ]
-            ]
-          }
-         |}
+        build_foo_and_error_response
           (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute)
+          "foo"
           (PyrePath.append custom_source_root ~element:"not_existing.py" |> PyrePath.absolute)
-          (PyrePath.append custom_source_root ~element:"not_existing.py" |> PyrePath.absolute) );
+          "file not found" );
       (* Test @arguments.txt *)
       ( Format.sprintf
           "expression_level_coverage('@%s')"
           (PyrePath.append custom_source_root ~element:"arguments.txt" |> PyrePath.absolute),
-        Format.asprintf
-          {|
-            {
-              "response": [
-                [
-                "CoverageAtPath",
-                  {
-                      "path": "foo.py",
-                      "total_expressions": 8,
-                      "coverage_gaps": [
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 2,
-                                      "column": 4
-                                  },
-                                  "stop": {
-                                      "line": 2,
-                                      "column": 7
-                                  }
-                              },
-                              "type_": "typing.Callable(foo.foo)[[Named(x, unknown)], None]",
-                              "reason": [
-                                  "CallableParameterIsUnknownOrAny"
-                              ]
-                          },
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 2,
-                                      "column": 8
-                                  },
-                                  "stop": {
-                                      "line": 2,
-                                      "column": 9
-                                  }
-                              },
-                              "type_": "typing.Any",
-                              "reason": [
-                                  "TypeIsAny"
-                              ]
-                          },
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 3,
-                                      "column": 8
-                                  },
-                                  "stop": {
-                                      "line": 3,
-                                      "column": 9
-                                  }
-                              },
-                              "type_": "typing.Any",
-                              "reason": [
-                                  "TypeIsAny"
-                              ]
-                          },
-                          {
-                              "location": {
-                                  "start": {
-                                      "line": 3,
-                                      "column": 8
-                                  },
-                                  "stop": {
-                                      "line": 3,
-                                      "column": 13
-                                  }
-                              },
-                              "type_": "typing.Any",
-                              "reason": [
-                                  "TypeIsAny"
-                              ]
-                          }
-                      ]
-                  }
-                ]
-              ]
-          }
-         |}
-      );
+        build_foo_response "foo.py" "foo" );
       (* Test @two_arguments.txt *)
       ( Format.sprintf
           "expression_level_coverage('@%s')"
           (PyrePath.append custom_source_root ~element:"two_arguments.txt" |> PyrePath.absolute),
-        Format.asprintf
-          {|
-            {
-    "response": [
-      [
-      "CoverageAtPath",
-        {
-            "path": "foo.py",
-            "total_expressions": 8,
-            "coverage_gaps": [
-                {
-                    "location": {
-                        "start": {
-                            "line": 2,
-                            "column": 4
-                        },
-                        "stop": {
-                            "line": 2,
-                            "column": 7
-                        }
-                    },
-                    "type_": "typing.Callable(foo.foo)[[Named(x, unknown)], None]",
-                    "reason": [
-                        "CallableParameterIsUnknownOrAny"
-                    ]
-                },
-                {
-                    "location": {
-                        "start": {
-                            "line": 2,
-                            "column": 8
-                        },
-                        "stop": {
-                            "line": 2,
-                            "column": 9
-                        }
-                    },
-                    "type_": "typing.Any",
-                    "reason": [
-                        "TypeIsAny"
-                    ]
-                },
-                {
-                    "location": {
-                        "start": {
-                            "line": 3,
-                            "column": 8
-                        },
-                        "stop": {
-                            "line": 3,
-                            "column": 9
-                        }
-                    },
-                    "type_": "typing.Any",
-                    "reason": [
-                        "TypeIsAny"
-                    ]
-                },
-                {
-                    "location": {
-                        "start": {
-                            "line": 3,
-                            "column": 8
-                        },
-                        "stop": {
-                            "line": 3,
-                            "column": 13
-                        }
-                    },
-                    "type_": "typing.Any",
-                    "reason": [
-                        "TypeIsAny"
-                    ]
-                }
-            ]
-      }
-      ],
-      [
-      "CoverageAtPath",
-        {
-            "path": "fizz.py",
-            "total_expressions": 8,
-            "coverage_gaps": [
-                {
-                    "location": {
-                        "start": {
-                            "line": 2,
-                            "column": 4
-                        },
-                        "stop": {
-                            "line": 2,
-                            "column": 8
-                        }
-                    },
-                    "type_": "typing.Callable(fizz.fizz)[[Named(x, unknown)], None]",
-                    "reason": [
-                        "CallableParameterIsUnknownOrAny"
-                    ]
-                },
-                {
-                    "location": {
-                        "start": {
-                            "line": 2,
-                            "column": 9
-                        },
-                        "stop": {
-                            "line": 2,
-                            "column": 10
-                        }
-                    },
-                    "type_": "typing.Any",
-                    "reason": [
-                        "TypeIsAny"
-                    ]
-                },
-                {
-                    "location": {
-                        "start": {
-                            "line": 3,
-                            "column": 8
-                        },
-                        "stop": {
-                            "line": 3,
-                            "column": 9
-                        }
-                    },
-                    "type_": "typing.Any",
-                    "reason": [
-                        "TypeIsAny"
-                    ]
-                },
-                {
-                    "location": {
-                        "start": {
-                            "line": 3,
-                            "column": 8
-                        },
-                        "stop": {
-                            "line": 3,
-                            "column": 13
-                        }
-                    },
-                    "type_": "typing.Any",
-                    "reason": [
-                        "TypeIsAny"
-                    ]
-                }
-            ]
-        }
-      ]
-    ]
-}
-         |}
-      );
+        build_foo_and_bar_response "foo.py" "foo" "one.py" "one" );
     ]
   in
   assert_queries_with_local_root
