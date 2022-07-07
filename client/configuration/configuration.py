@@ -13,7 +13,7 @@ import shutil
 import site
 import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import field
 from logging import Logger
 from pathlib import Path
 from typing import (
@@ -42,6 +42,7 @@ from ..find_directories import (
 )
 from . import (
     exceptions,
+    extension,
     ide_features as ide_features_module,
     platform_aware,
     python_version as python_version_module,
@@ -69,40 +70,6 @@ def _expand_all_globs(patterns: Iterable[str]) -> List[str]:
     return [expanded for pattern in patterns for expanded in _expand_glob(pattern)]
 
 
-@dataclasses.dataclass
-class ExtensionElement:
-    suffix: str
-    include_suffix_in_module_qualifier: bool
-
-    def command_line_argument(self) -> str:
-        options = ""
-        if self.include_suffix_in_module_qualifier:
-            options = "$" + "include_suffix_in_module_qualifier"
-        return self.suffix + options
-
-    @staticmethod
-    def from_json(json: Union[str, Dict[str, Union[str, bool]]]) -> "ExtensionElement":
-        if isinstance(json, str):
-            return ExtensionElement(
-                suffix=json, include_suffix_in_module_qualifier=False
-            )
-        elif isinstance(json, dict):
-            include_suffix_in_module_qualifier = False
-            if "include_suffix_in_module_qualifier" in json:
-                value = json["include_suffix_in_module_qualifier"]
-                if isinstance(value, bool):
-                    include_suffix_in_module_qualifier = value
-            if "suffix" in json:
-                suffix = json["suffix"]
-                if isinstance(suffix, str):
-                    return ExtensionElement(
-                        suffix=suffix,
-                        include_suffix_in_module_qualifier=include_suffix_in_module_qualifier,
-                    )
-
-        raise exceptions.InvalidConfiguration(f"Invalid extension element: {json}")
-
-
 def get_default_site_roots() -> List[str]:
     try:
         return [site.getusersitepackages()] + site.getsitepackages()
@@ -119,7 +86,7 @@ def get_default_site_roots() -> List[str]:
 
 
 @dataclasses_merge.dataclass_merge
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class PartialConfiguration:
     binary: Optional[str] = None
     buck_mode: Optional[platform_aware.PlatformAware[str]] = field(
@@ -135,7 +102,7 @@ class PartialConfiguration:
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
     )
-    extensions: Sequence[ExtensionElement] = field(
+    extensions: Sequence[extension.Element] = field(
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
     )
@@ -452,8 +419,7 @@ class PartialConfiguration:
                     configuration_json, "exclude", allow_single_string=True
                 ),
                 extensions=[
-                    # pyre-fixme[6]: we did not fully verify the type of `json`
-                    ExtensionElement.from_json(json)
+                    extension.Element.from_json(json)
                     for json in ensure_list(configuration_json, "extensions")
                 ],
                 ide_features=ide_features,
@@ -586,7 +552,7 @@ def merge_partial_configurations(
         raise exceptions.InvalidConfiguration(str(error))
 
 
-@dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True)
 class Configuration:
     project_root: str
     dot_pyre_directory: Path
@@ -595,7 +561,7 @@ class Configuration:
     buck_mode: Optional[platform_aware.PlatformAware[str]] = None
     do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
     excludes: Sequence[str] = field(default_factory=list)
-    extensions: Sequence[ExtensionElement] = field(default_factory=list)
+    extensions: Sequence[extension.Element] = field(default_factory=list)
     ide_features: Optional[ide_features_module.IdeFeatures] = None
     ignore_all_errors: Sequence[str] = field(default_factory=list)
     isolation_prefix: Optional[str] = None
@@ -942,14 +908,14 @@ class Configuration:
 
     def get_valid_extension_suffixes(self) -> List[str]:
         vaild_extensions = []
-        for extension in self.extensions:
-            if not extension.suffix.startswith("."):
+        for element in self.extensions:
+            if not element.suffix.startswith("."):
                 LOG.warning(
                     "Filtering out extension which does not start with `.`: "
-                    f"`{extension.suffix}`"
+                    f"`{element.suffix}`"
                 )
             else:
-                vaild_extensions.append(extension.command_line_argument())
+                vaild_extensions.append(element.command_line_argument())
         return vaild_extensions
 
     def get_python_version(self) -> python_version_module.PythonVersion:

@@ -27,11 +27,11 @@ from ..configuration import (
     check_nested_local_configuration,
     Configuration,
     create_configuration,
-    ExtensionElement,
     get_default_site_roots,
     PartialConfiguration,
 )
 from ..exceptions import InvalidConfiguration
+from ..extension import Element as ExtensionElement
 from ..ide_features import IdeFeatures
 from ..platform_aware import PlatformAware
 from ..python_version import PythonVersion
