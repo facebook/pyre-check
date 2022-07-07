@@ -32,6 +32,7 @@ from libcst.metadata import CodeRange
 from .. import (
     command_arguments,
     configuration as configuration_module,
+    dataclasses_json_extensions as json_mixins,
     error,
     json_rpc,
     log,
@@ -434,12 +435,8 @@ class DefinitionLocationQuery:
     activity_key: Optional[Dict[str, object]] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class DefinitionLocationResponse:
+class DefinitionLocationResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[lsp.PyreDefinitionResponse]
 
 
@@ -451,12 +448,8 @@ class ReferencesQuery:
     activity_key: Optional[Dict[str, object]] = None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class ReferencesResponse:
+class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[lsp.ReferencesResponse]
 
 
@@ -495,12 +488,8 @@ class PyreQueryState:
         return lsp.HoverResponse(contents=f"```{type_info}```")
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class LineColumn:
+class LineColumn(json_mixins.CamlCaseAndExcludeJsonMixin):
     line: int
     column: int
 
@@ -508,32 +497,20 @@ class LineColumn:
         return lsp.Position(line=self.line, character=self.column)
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class LocationInfo:
+class LocationInfo(json_mixins.CamlCaseAndExcludeJsonMixin):
     start: LineColumn
     stop: LineColumn
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class LocationAnnotation:
+class LocationAnnotation(json_mixins.CamlCaseAndExcludeJsonMixin):
     location: LocationInfo
     annotation: str
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class PathTypeInfo:
+class PathTypeInfo(json_mixins.CamlCaseAndExcludeJsonMixin):
     path: str
     types: List[LocationAnnotation]
 
@@ -572,21 +549,13 @@ async def _receive_query_response(
             return None
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class QueryTypesResponse:
+class QueryTypesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[PathTypeInfo]
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.CAMEL,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses.dataclass(frozen=True)
-class QueryModulesOfPathResponse:
+class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[str]
 
 
