@@ -4,21 +4,17 @@
 # LICENSE file in the root directory of this source tree.
 
 import dataclasses
-from typing import ClassVar, Dict, Optional
+from typing import ClassVar, Optional
 
 import dataclasses_json
 
-from .. import dataclasses_merge
+from .. import dataclasses_json_extensions as json_mixins, dataclasses_merge
 from . import exceptions
 
 
-@dataclasses_json.dataclass_json(
-    letter_case=dataclasses_json.LetterCase.SNAKE,
-    undefined=dataclasses_json.Undefined.EXCLUDE,
-)
 @dataclasses_merge.dataclass_merge
 @dataclasses.dataclass(frozen=True)
-class IdeFeatures:
+class IdeFeatures(json_mixins.SnakeCaseAndExcludeJsonMixin):
     hover_enabled: Optional[bool] = None
     DEFAULT_HOVER_ENABLED: ClassVar[bool] = False
     go_to_definition_enabled: Optional[bool] = None
@@ -44,7 +40,7 @@ class IdeFeatures:
     @staticmethod
     def create_from_json(input: object) -> "IdeFeatures":
         try:
-            # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
+            # pyre-ignore[6, 7]: Imprecise typing of `load()`
             return IdeFeatures.schema().load(input)
         except (
             TypeError,
@@ -55,37 +51,6 @@ class IdeFeatures:
             raise exceptions.InvalidConfiguration(
                 f"Invalid JSON for `IdeFeatures`: {str(error)}"
             )
-
-    def to_json(self) -> Dict[str, int]:
-        return {
-            **(
-                {"hover_enabled": self.hover_enabled}
-                if self.hover_enabled is not None
-                else {}
-            ),
-            **(
-                {"go_to_definition_enabled": self.go_to_definition_enabled}
-                if self.go_to_definition_enabled is not None
-                else {}
-            ),
-            **(
-                {"find_symbols_enabled": self.find_symbols_enabled}
-                if self.find_symbols_enabled is not None
-                else {}
-            ),
-            **(
-                {"find_all_references_enabled": self.find_all_references_enabled}
-                if self.find_all_references_enabled is not None
-                else {}
-            ),
-            **(
-                {
-                    "expression_level_coverage_enabled": self.expression_level_coverage_enabled
-                }
-                if self.expression_level_coverage_enabled is not None
-                else {}
-            ),
-        }
 
     def is_hover_enabled(self) -> bool:
         return (
