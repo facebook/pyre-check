@@ -1297,10 +1297,13 @@ class PyreQueryHandler(connection.BackgroundTask):
         path: Path,
         strict_default: bool,
         socket_path: Path,
+        expression_level_coverage_enabled: bool,
     ) -> Optional[lsp.TypeCoverageResponse]:
         is_typechecked = await self._query_is_typechecked(path, socket_path)
         if is_typechecked is None:
             return None
+        elif expression_level_coverage_enabled:
+            return file_not_typechecked_coverage_result()
         elif is_typechecked:
             return path_to_coverage_response(path, strict_default)
         else:
@@ -1311,11 +1314,10 @@ class PyreQueryHandler(connection.BackgroundTask):
         query: TypeCoverageQuery,
         strict_default: bool,
         socket_path: Path,
+        expression_level_coverage_enabled: bool,
     ) -> None:
         type_coverage_result = await self._query_type_coverage(
-            query.path,
-            strict_default,
-            socket_path,
+            query.path, strict_default, socket_path, expression_level_coverage_enabled
         )
         if type_coverage_result is not None:
             await lsp.write_json_rpc(
@@ -1406,6 +1408,10 @@ class PyreQueryHandler(connection.BackgroundTask):
             server_start_options.ide_features is not None
             and server_start_options.ide_features.is_hover_enabled()
         )
+        expression_level_coverage_enabled = (
+            server_start_options.ide_features is not None
+            and server_start_options.ide_features.is_expression_level_coverage_enabled()
+        )
         while True:
             query = await self.state.queries.get()
             if isinstance(query, TypesQuery):
@@ -1413,7 +1419,10 @@ class PyreQueryHandler(connection.BackgroundTask):
                     await self._update_types_for_paths([query.path], socket_path)
             elif isinstance(query, TypeCoverageQuery):
                 await self._handle_type_coverage_query(
-                    query, strict_default, socket_path
+                    query,
+                    strict_default,
+                    socket_path,
+                    expression_level_coverage_enabled,
                 )
             elif isinstance(query, DefinitionLocationQuery):
                 await self._query_and_send_definition_location(query, socket_path)
