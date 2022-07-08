@@ -32,7 +32,7 @@ type coverage_gap = {
 type coverage_gap_by_location = {
   location: Location.t;
   type_: Type.t;
-  reason: reason;
+  reason: string list;
 }
 [@@deriving compare, sexp, show, hash, to_yojson]
 
@@ -843,6 +843,16 @@ let coverage_gaps_in_module coverage_data_list =
   List.map ~f:classify_coverage_data coverage_data_list |> List.filter_opt
 
 
+let type_is_any_message =
+  ["This expression is unsafe, Pyre will be unable to perform further checks."]
+
+
+let container_parameter_is_any_message = ["Consider adding stronger annotations to the container."]
+
+let callable_parameter_is_unknown_or_any_message =
+  ["Consider adding stronger annotations to the parameters."]
+
+
 let get_expression_level_coverage coverage_data_lookup =
   let all_nodes = get_all_nodes_and_coverage_data coverage_data_lookup in
   let total_expressions = List.length all_nodes in
@@ -853,7 +863,14 @@ let get_expression_level_coverage coverage_data_lookup =
   let coverage_gap_by_locations =
     List.filter_map coverage_gap_and_locations ~f:(fun (location, coverage_gap) ->
         match coverage_gap with
-        | Some { coverage_data = { type_; _ }; reason } -> Some { location; type_; reason }
+        | Some { coverage_data = { type_; _ }; reason } ->
+            let message reason =
+              match reason with
+              | TypeIsAny -> type_is_any_message
+              | ContainerParameterIsAny -> container_parameter_is_any_message
+              | CallableParameterIsUnknownOrAny -> callable_parameter_is_unknown_or_any_message
+            in
+            Some { location; type_; reason = message reason }
         | None -> None)
   in
   let sorted_coverage_gap_by_locations =

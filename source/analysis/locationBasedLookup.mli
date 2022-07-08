@@ -28,7 +28,7 @@ type coverage_gap = {
 type coverage_gap_by_location = {
   location: Location.t;
   type_: Type.t;
-  reason: reason;
+  reason: string list;
 }
 [@@deriving compare, sexp, show, hash, to_yojson]
 
@@ -109,3 +109,9 @@ val hover_info_for_position
   module_reference:Reference.t ->
   Location.position ->
   string
+
+val type_is_any_message : string list
+
+val container_parameter_is_any_message : string list
+
+val callable_parameter_is_unknown_or_any_message : string list

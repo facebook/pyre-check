@@ -186,8 +186,7 @@ def location_to_range(location: Location) -> lsp.Range:
 
 def make_diagnostic_for_coverage_gap(coverage_gap: CoverageGap) -> lsp.Diagnostic:
     range = location_to_range(coverage_gap.location)
-    message = f"This expression has a {coverage_gap.reason[0]} coverage gap."
-    return lsp.Diagnostic(range=range, message=message)
+    return lsp.Diagnostic(range=range, message=coverage_gap.reason[0])
 
 
 def get_uncovered_expression_diagnostics(

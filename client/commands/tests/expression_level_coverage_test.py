@@ -41,7 +41,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                                 "stop": {"line": 11, "column": 17},
                                             },
                                             "type_": "typing.Any",
-                                            "reason": ["TypeIsAny"],
+                                            "reason": ["TypeIsAny message."],
                                         },
                                     ],
                                 },
@@ -67,7 +67,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                         ),
                                     ),
                                     type_="typing.Any",
-                                    reason=["TypeIsAny"],
+                                    reason=["TypeIsAny message."],
                                 )
                             ],
                         )
@@ -126,7 +126,7 @@ class ExpressionLevelTest(testslide.TestCase):
                         stop=expression_level_coverage.Pair(line=11, column=17),
                     ),
                     type_="typing.Any",
-                    reason=["TypeIsAny"],
+                    reason=["TypeIsAny message."],
                 )
             ],
         )
@@ -169,7 +169,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                 stop=expression_level_coverage.Pair(line=11, column=17),
                             ),
                             type_="typing.Any",
-                            reason=["TypeIsAny"],
+                            reason=["TypeIsAny message."],
                         )
                     ],
                 )
@@ -223,7 +223,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                             "stop": {"line": 11, "column": 17},
                                         },
                                         "type_": "typing.Any",
-                                        "reason": ["TypeIsAny"],
+                                        "reason": ["TypeIsAny message."],
                                     },
                                     {
                                         "location": {
@@ -231,7 +231,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                             "stop": {"line": 12, "column": 12},
                                         },
                                         "type_": "typing.Any",
-                                        "reason": ["TypeIsAny"],
+                                        "reason": ["TypeIsAny message."],
                                     },
                                 ],
                             },
@@ -265,7 +265,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                             "stop": {"line": 11, "column": 17},
                                         },
                                         "type_": "typing.Any",
-                                        "reason": ["TypeIsAny"],
+                                        "reason": ["TypeIsAny message."],
                                     },
                                     {
                                         "location": {
@@ -273,7 +273,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                             "stop": {"line": 12, "column": 12},
                                         },
                                         "type_": "typing.Any",
-                                        "reason": ["TypeIsAny"],
+                                        "reason": ["TypeIsAny message."],
                                     },
                                 ],
                             },
@@ -306,7 +306,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                             "stop": {"line": 11, "column": 17},
                                         },
                                         "type_": "typing.Any",
-                                        "reason": ["TypeIsAny"],
+                                        "reason": ["TypeIsAny message."],
                                     },
                                     {
                                         "location": {
@@ -314,7 +314,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                             "stop": {"line": 12, "column": 12},
                                         },
                                         "type_": "typing.Any",
-                                        "reason": ["TypeIsAny"],
+                                        "reason": ["TypeIsAny message."],
                                     },
                                 ],
                             },
@@ -463,14 +463,14 @@ class ExpressionLevelTest(testslide.TestCase):
                     stop=expression_level_coverage.Pair(line=1, column=7),
                 ),
                 type_="typing.Any",
-                reason=["TypeIsAny"],
+                reason=["TypeIsAny message."],
             ),
             lsp.Diagnostic(
                 range=lsp.Range(
                     start=lsp.Position(line=0, character=1),
                     end=lsp.Position(line=0, character=7),
                 ),
-                message="This expression has a TypeIsAny coverage gap.",
+                message="TypeIsAny message.",
             ),
         )
 
@@ -518,7 +518,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                         ),
                                     ),
                                     type_="typing.Any",
-                                    reason=["TypeIsAny"],
+                                    reason=["TypeIsAny message."],
                                 )
                             ],
                         )
@@ -531,7 +531,7 @@ class ExpressionLevelTest(testslide.TestCase):
                         start=lsp.Position(line=0, character=1),
                         end=lsp.Position(line=0, character=7),
                     ),
-                    message="This expression has a TypeIsAny coverage gap.",
+                    message="TypeIsAny message.",
                 )
             ],
         )
@@ -553,7 +553,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                         ),
                                     ),
                                     type_="typing.List[typing.Any]",
-                                    reason=["ContainerParameterIsAny"],
+                                    reason=["ContainerParameterIsAny message."],
                                 ),
                                 expression_level_coverage.CoverageGap(
                                     location=expression_level_coverage.Location(
@@ -565,7 +565,7 @@ class ExpressionLevelTest(testslide.TestCase):
                                         ),
                                     ),
                                     type_="typing.Callable(foo.foo)[[Named(x, unknown)], None]",
-                                    reason=["CallableParameterIsUnknownOrAny"],
+                                    reason=["CallableParameterIsUnknownOrAny message."],
                                 ),
                             ],
                         )
@@ -578,14 +578,14 @@ class ExpressionLevelTest(testslide.TestCase):
                         start=lsp.Position(line=0, character=1),
                         end=lsp.Position(line=0, character=7),
                     ),
-                    message="This expression has a ContainerParameterIsAny coverage gap.",
+                    message="ContainerParameterIsAny message.",
                 ),
                 lsp.Diagnostic(
                     range=lsp.Range(
                         start=lsp.Position(line=1, character=4),
                         end=lsp.Position(line=1, character=7),
                     ),
-                    message="This expression has a CallableParameterIsUnknownOrAny coverage gap.",
+                    message="CallableParameterIsUnknownOrAny message.",
                 ),
             ],
         )
