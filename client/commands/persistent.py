@@ -765,7 +765,9 @@ class PyreServer:
                 json_rpc.SuccessResponse(
                     id=request_id,
                     activity_key=activity_key,
-                    result=lsp.LspDefinitionResponse.schema().dump([], many=True),
+                    result=lsp.LspDefinitionResponse.cached_schema().dump(
+                        [], many=True
+                    ),
                 ),
             )
             return
@@ -832,7 +834,9 @@ class PyreServer:
                 json_rpc.SuccessResponse(
                     id=request_id,
                     activity_key=activity_key,
-                    result=lsp.LspDefinitionResponse.schema().dump([], many=True),
+                    result=lsp.LspDefinitionResponse.cached_schema().dump(
+                        [], many=True
+                    ),
                 ),
             )
             return
@@ -1348,7 +1352,7 @@ class PyreQueryHandler(connection.BackgroundTask):
             json_rpc.SuccessResponse(
                 id=query.id,
                 activity_key=query.activity_key,
-                result=lsp.LspDefinitionResponse.schema().dump(
+                result=lsp.LspDefinitionResponse.cached_schema().dump(
                     definitions,
                     many=True,
                 ),
@@ -1379,7 +1383,7 @@ class PyreQueryHandler(connection.BackgroundTask):
             json_rpc.SuccessResponse(
                 id=query.id,
                 activity_key=query.activity_key,
-                result=lsp.LspDefinitionResponse.schema().dump(
+                result=lsp.LspDefinitionResponse.cached_schema().dump(
                     reference_locations,
                     many=True,
                 ),

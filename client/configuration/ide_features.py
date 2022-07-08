@@ -41,7 +41,7 @@ class IdeFeatures(json_mixins.SnakeCaseAndExcludeJsonMixin):
     def create_from_json(input: object) -> "IdeFeatures":
         try:
             # pyre-ignore[6, 7]: Imprecise typing of `load()`
-            return IdeFeatures.schema().load(input)
+            return IdeFeatures.cached_schema().load(input)
         except (
             TypeError,
             KeyError,

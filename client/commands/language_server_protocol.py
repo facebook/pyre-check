@@ -19,7 +19,7 @@ from . import async_server_connection
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-T = TypeVar("T")
+T = TypeVar("T", bound=json_mixins.DataclassJsonMixinWithCachedSchema)
 Point = TypeVar("Point")
 Value = TypeVar("Value")
 
@@ -99,8 +99,8 @@ def _parse_parameters(parameters: json_rpc.Parameters, target: Type[T]) -> T:
             "Parameters for LSP requests must be passed by name"
         )
     try:
-        # pyre-fixme[16]: Pyre doesn't understand `dataclasses_json`
-        return target.schema().load(parameters.values)
+        # pyre-ignore[6, 7]: Imprecise typing of `load()`
+        return target.cached_schema().load(parameters.values)
     except (KeyError, ValueError, dataclasses_json.mm.ValidationError) as error:
         raise json_rpc.InvalidRequestError(str(error)) from error
 

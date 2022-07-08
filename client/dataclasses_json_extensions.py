@@ -3,12 +3,20 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import functools
 from typing import Mapping
 
 import dataclasses_json
 
 
-class CamlCaseAndExcludeJsonMixin(dataclasses_json.DataClassJsonMixin):
+class DataclassJsonMixinWithCachedSchema(dataclasses_json.DataClassJsonMixin):
+    @classmethod
+    @functools.lru_cache
+    def cached_schema(cls) -> dataclasses_json.api.SchemaType:
+        return cls.schema()
+
+
+class CamlCaseAndExcludeJsonMixin(DataclassJsonMixinWithCachedSchema):
     dataclass_json_config: Mapping[str, object] = dataclasses_json.config(
         # pyre-ignore[6]: Incorrect typing in upstream `dataclasses_json`
         letter_case=dataclasses_json.LetterCase.CAMEL,
@@ -16,7 +24,7 @@ class CamlCaseAndExcludeJsonMixin(dataclasses_json.DataClassJsonMixin):
     )["dataclasses_json"]
 
 
-class SnakeCaseAndExcludeJsonMixin(dataclasses_json.DataClassJsonMixin):
+class SnakeCaseAndExcludeJsonMixin(DataclassJsonMixinWithCachedSchema):
     dataclass_json_config: Mapping[str, object] = dataclasses_json.config(
         # pyre-ignore[6]: Incorrect typing in upstream `dataclasses_json`
         letter_case=dataclasses_json.LetterCase.SNAKE,

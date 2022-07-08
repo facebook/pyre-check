@@ -916,7 +916,9 @@ class PersistentTest(testslide.TestCase):
             client_messages = memory_bytes_writer.items()
             expected_response = json_rpc.SuccessResponse(
                 id=42,
-                result=lsp.LspDefinitionResponse.schema().dump(definitions, many=True),
+                result=lsp.LspDefinitionResponse.cached_schema().dump(
+                    definitions, many=True
+                ),
             )
             response_string = json.dumps(expected_response.json())
             self.assertEqual(
@@ -1047,7 +1049,9 @@ class PersistentTest(testslide.TestCase):
             client_messages = memory_bytes_writer.items()
             expected_response = json_rpc.SuccessResponse(
                 id=42,
-                result=lsp.ReferencesResponse.schema().dump(references, many=True),
+                result=lsp.ReferencesResponse.cached_schema().dump(
+                    references, many=True
+                ),
             )
             response_string = json.dumps(expected_response.json())
             self.assertEqual(
@@ -1593,7 +1597,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         response = client_output_writer.items()[0].splitlines()[2]
         result = json.loads(response)["result"]
         self.assertEqual(
-            lsp.LspDefinitionResponse.schema().load(result, many=True),
+            lsp.LspDefinitionResponse.cached_schema().load(result, many=True),
             [
                 lsp.LspDefinitionResponse(
                     uri="/foo.py",
@@ -1721,7 +1725,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         response = client_output_writer.items()[0].splitlines()[2]
         result = json.loads(response)["result"]
         self.assertEqual(
-            lsp.LspDefinitionResponse.schema().load(result, many=True),
+            lsp.LspDefinitionResponse.cached_schema().load(result, many=True),
             [
                 lsp.LspDefinitionResponse(
                     uri="/foo.py",

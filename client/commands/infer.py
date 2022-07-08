@@ -120,7 +120,7 @@ class RawInferOutput(json_mixins.CamlCaseAndExcludeJsonMixin):
     def create_from_string(input: str) -> "RawInferOutput":
         try:
             # pyre-fixme[7]: Imprecise return type of `loads()`
-            return RawInferOutput.schema().loads(input)
+            return RawInferOutput.cached_schema().loads(input)
         except (
             TypeError,
             KeyError,
@@ -187,7 +187,7 @@ class RawInferOutputForPath(json_mixins.CamlCaseAndExcludeJsonMixin):
     @staticmethod
     def create_from_json(input: Dict[str, object]) -> "RawInferOutputForPath":
         # pyre-fixme[7]: Imprecise return type of `loads()`
-        return RawInferOutputForPath.schema().loads(json.dumps(input))
+        return RawInferOutputForPath.cached_schema().loads(json.dumps(input))
 
 
 def _sanitize_name(name: str) -> str:
