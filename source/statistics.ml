@@ -221,8 +221,17 @@ let log_model_query_outputs
   =
   Log.log ~section "Model Query `%s` generated %d models." model_query_name generated_models_count;
   sample
-    ~integers:["Models Generated", generated_models_count]
-    ~normals:["ModelQuery Name", model_query_name]
+    ~integers:
+      [
+        "models_generated", generated_models_count;
+        ( "sandcastle_instance_id",
+          int_of_string (Option.value (Sys.getenv "SANDCASTLE_INSTANCE_ID") ~default:"-1") );
+      ]
+    ~normals:
+      [
+        "model_query_name", model_query_name;
+        "sandcastle_alias", Option.value (Sys.getenv "SANDCASTLE_ALIAS") ~default:"N/A";
+      ]
     ()
   |> log ~flush "perfpipe_pysa_dsl_model_query_output"
 
