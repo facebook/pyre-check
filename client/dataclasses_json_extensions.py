@@ -11,7 +11,7 @@ import dataclasses_json
 
 class DataclassJsonMixinWithCachedSchema(dataclasses_json.DataClassJsonMixin):
     @classmethod
-    @functools.lru_cache
+    @functools.lru_cache(maxsize=64)
     def cached_schema(cls) -> dataclasses_json.api.SchemaType:
         return cls.schema()
 
