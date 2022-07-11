@@ -193,7 +193,7 @@ module Base = struct
         | FileSystemEvent.Update path -> (
             match ModulePath.create ~configuration path with
             | None ->
-                Log.warning "`%a` not found in search path." ArtifactPath.pp path;
+                Log.log ~section:`Server "`%a` not found in search path." ArtifactPath.pp path;
                 None
             | Some ({ ModulePath.qualifier; _ } as module_path) -> (
                 match Hashtbl.find module_to_files qualifier with
@@ -215,7 +215,7 @@ module Base = struct
         | FileSystemEvent.Remove path -> (
             match ModulePath.create ~configuration path with
             | None ->
-                Log.warning "`%a` not found in search path." ArtifactPath.pp path;
+                Log.log ~section:`Server "`%a` not found in search path." ArtifactPath.pp path;
                 None
             | Some ({ ModulePath.qualifier; _ } as module_path) -> (
                 Hashtbl.find module_to_files qualifier
