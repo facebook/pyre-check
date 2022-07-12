@@ -83,7 +83,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), "hg update --clean old_hash"),
             CommandInput(
                 Path("old_root"),
-                "pyre --option2 --no-saved-state --enable-profiling restart",
+                "pyre --option2 --no-saved-state --enable-profiling --noninteractive restart",
             ),
             CommandInput(
                 Path("old_root"), "pyre profile --profile-output=cold_start_phases"
@@ -260,7 +260,7 @@ class RunnerTest(unittest.TestCase):
             CommandInput(
                 Path("old_root"),
                 "client --binary bin --typeshed bikeshed --option2 "
-                "--no-saved-state --enable-profiling restart",
+                "--no-saved-state --enable-profiling --noninteractive restart",
             ),
             CommandInput(
                 Path("old_root"),
@@ -343,7 +343,8 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), "hg whereami"),
             CommandInput(Path("old_root"), "hg update --clean old_hash"),
             CommandInput(
-                Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
+                Path("old_root"),
+                "pyre  --no-saved-state --enable-profiling --noninteractive restart",
             ),
             CommandInput(
                 Path("old_root"), "pyre profile --profile-output=cold_start_phases"
@@ -411,7 +412,8 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), "hg whereami"),
             CommandInput(Path("old_root"), "hg update --clean old_hash"),
             CommandInput(
-                Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
+                Path("old_root"),
+                "pyre  --no-saved-state --enable-profiling --noninteractive restart",
             ),
             CommandInput(
                 Path("old_root"), "pyre profile --profile-output=cold_start_phases"
@@ -483,7 +485,8 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), "hg whereami"),
             CommandInput(Path("old_root"), "hg update --clean old_hash"),
             CommandInput(
-                Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
+                Path("old_root"),
+                "pyre  --no-saved-state --enable-profiling --noninteractive restart",
             ),
             CommandInput(
                 Path("old_root"), "pyre profile --profile-output=cold_start_phases"
@@ -559,7 +562,8 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("/mock/tmp"), f"tee {handle_b}", content_b),
             CommandInput(Path("/mock/tmp"), "watchman watch ."),
             CommandInput(
-                Path("/mock/tmp"), "pyre  --no-saved-state --enable-profiling restart"
+                Path("/mock/tmp"),
+                "pyre  --no-saved-state --enable-profiling --noninteractive restart",
             ),
             CommandInput(
                 Path("/mock/tmp"), "pyre profile --profile-output=cold_start_phases"
@@ -631,7 +635,8 @@ class RunnerTest(unittest.TestCase):
             CommandInput(Path("old_root"), "hg update --clean new_hashA"),
             CommandInput(Path("old_root"), "hg update --clean new_hashB"),
             CommandInput(
-                Path("old_root"), "pyre  --no-saved-state --enable-profiling restart"
+                Path("old_root"),
+                "pyre  --no-saved-state --enable-profiling --noninteractive restart",
             ),
             CommandInput(
                 Path("old_root"), "pyre profile --profile-output=cold_start_phases"

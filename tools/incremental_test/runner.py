@@ -104,7 +104,7 @@ class PyreRunner:
             # - Kill existing servers
             # - Force the initial check to finish
             f"{self._pyre_invocation} {self._specification.pyre_start_pyre_options} "
-            "--no-saved-state --enable-profiling "
+            "--no-saved-state --enable-profiling --noninteractive "
             f"restart {self._specification.pyre_start_options}"
         ).rstrip()
         self._environment.checked_run(
