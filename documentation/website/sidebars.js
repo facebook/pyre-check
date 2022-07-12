@@ -15,7 +15,10 @@ module.exports = {
     ...fbContent({
       external: ['installation'],
     }),
-    'configuration',
+    ...fbContent({
+      external: ['configuration'],
+      internal: ['fb/configuration'],
+    }),
     'types-in-python',
     ...fbInternalOnly(['fb/increasing-type-coverage']),
     'errors',

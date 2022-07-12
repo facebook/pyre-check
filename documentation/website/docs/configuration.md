@@ -3,16 +3,7 @@ id: configuration
 title: Configuration
 sidebar_label: Configuration
 ---
-import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
-import FbConfiguration from './fb/configuration.md';
-
-<FbInternalOnly>
-
-<FbConfiguration />
-
-</FbInternalOnly>
-
-<OssOnly>
+<!-- There is a separate page for internal config at ./fb/configuration.md -->
 
 Pyre can be run without a configuration (see [Command Line Arguments](configuration.md#command-line-arguments)) but we do recommend that you create a configuration (see [Getting Started](getting_started.md)) and commit that to your version control system to make sure everyone working on your project is using the same settings.
 
@@ -149,5 +140,3 @@ If you use virtual environments to manage separate dependencies for each project
 `pyre` as a development dependency in each one; by default Pyre will detect system packages
 from the environment it is installed in, so this will cause each project to detect the
 correct dependencies (assuming you activate the virtual environment before running Pyre).
-
-</OssOnly>
