@@ -86,6 +86,4 @@ module Testing : sig
   end
 end
 
-val create_for_production : EnvironmentControls.t -> t
-
 val check_and_preprocess : t -> scheduler:Scheduler.t -> unit

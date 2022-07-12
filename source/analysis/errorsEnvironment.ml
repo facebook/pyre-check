@@ -248,7 +248,7 @@ module Testing = struct
   end
 end
 
-let create_for_production controls =
+let create controls =
   let timer = Timer.start () in
   EnvironmentControls.configuration controls |> Configuration.Analysis.validate_paths;
   Profiling.track_shared_memory_usage ~name:"Before module tracking" ();

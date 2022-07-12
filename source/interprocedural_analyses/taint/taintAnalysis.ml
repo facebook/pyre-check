@@ -68,7 +68,7 @@ let type_check ~scheduler ~configuration ~cache =
       in
       let type_environment =
         Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
-        |> Analysis.ErrorsEnvironment.create_for_production
+        |> Analysis.ErrorsEnvironment.create
         |> Analysis.ErrorsEnvironment.type_environment
       in
       let () = Analysis.TypeEnvironment.populate_for_project_modules ~scheduler type_environment in

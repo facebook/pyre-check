@@ -134,7 +134,7 @@ let do_check configuration =
           let environment =
             let read_write_environment =
               Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
-              |> Analysis.ErrorsEnvironment.create_for_production
+              |> Analysis.ErrorsEnvironment.create
             in
             let () =
               Analysis.ErrorsEnvironment.check_and_preprocess read_write_environment ~scheduler

@@ -256,7 +256,7 @@ let initialize_server_state
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
           let environment =
             Analysis.EnvironmentControls.create ~populate_call_graph:true configuration
-            |> Analysis.ErrorsEnvironment.create_for_production
+            |> Analysis.ErrorsEnvironment.create
           in
           let () =
             if skip_initial_type_check then
