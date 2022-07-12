@@ -683,11 +683,57 @@ let test_defined_locals_at_each_statement _ =
   ()
 
 
+(* All local actions that lead to jump conditions are reflected statically in the CFG, so that for
+   example raising an uncaught exception in an if/else will cause that branch to be ignored in the
+   join, which means that branch can fail to define locals used lower in the function.
+
+   The one scenario where the CFG cannot do the right thing is a call to a function annotated with
+   `typing.NoReturn`. This should be handled exactly like an exception, but the CFG does not have
+   type information and therefore cannot account for it.
+
+   As a result, it merits a separate test suite because the implementation is separate from the
+   implementation of langauge features that can be represented in the CFG. *)
+let test_no_return context =
+  let assert_uninitialized_errors = assert_uninitialized_errors ~context in
+  assert_uninitialized_errors
+    {|
+      from typing import NoReturn
+
+      def does_not_return() -> NoReturn:
+          raise Exception()
+
+      def foo(flag: bool) -> None:
+          if flag:
+              x = 5
+          else:
+              does_not_return()
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+  assert_uninitialized_errors
+    {|
+      from typing import NoReturn
+
+      async def does_not_return() -> NoReturn:
+          raise Exception()
+
+      async def foo(flag: bool) -> None:
+          if flag:
+              x = 5
+          else:
+              await does_not_return()
+          print(x)
+    |}
+    ["Uninitialized local [61]: Local variable `x` is undefined, or not always defined."];
+  ()
+
+
 let () =
   "uninitializedCheck"
   >::: [
          "simple" >:: test_simple;
          "cfg" >:: test_cfg;
          "defined_locals_at_each_statement" >:: test_defined_locals_at_each_statement;
+         "no_return" >:: test_no_return;
        ]
   |> Test.run
