@@ -17,8 +17,13 @@ type coverage_data = {
 }
 [@@deriving compare, sexp, show, hash, to_yojson]
 
+type typeisany =
+  | ParameterIsAny
+  | ExpressionIsAny
+[@@deriving compare, sexp, show, hash, to_yojson]
+
 type reason =
-  | TypeIsAny
+  | TypeIsAny of typeisany
   | ContainerParameterIsAny
   | CallableParameterIsUnknownOrAny
 [@@deriving compare, sexp, show, hash, to_yojson]
@@ -821,7 +826,13 @@ let location_of_definition ~type_environment ~module_reference position =
 let classify_coverage_data { expression; type_ } =
   let make_coverage_gap reason = Some { coverage_data = { expression; type_ }; reason } in
   match type_ with
-  | Any -> make_coverage_gap TypeIsAny
+  | Any -> (
+      match expression with
+      | Some { value = Expression.Name (Name.Identifier name); _ } -> (
+          match String.chop_prefix name ~prefix:"$parameter$" with
+          | Some _ -> make_coverage_gap (TypeIsAny ParameterIsAny)
+          | None -> make_coverage_gap (TypeIsAny ExpressionIsAny))
+      | _ -> make_coverage_gap (TypeIsAny ExpressionIsAny))
   | Parametric { name = "list" | "set"; parameters = [Single Any] }
   | Parametric { name = "dict"; parameters = [Single Any; Single Any] } ->
       make_coverage_gap ContainerParameterIsAny
@@ -843,8 +854,18 @@ let coverage_gaps_in_module coverage_data_list =
   List.map ~f:classify_coverage_data coverage_data_list |> List.filter_opt
 
 
-let type_is_any_message =
-  ["This expression is unsafe, Pyre will be unable to perform further checks."]
+let parameter_is_any_message =
+  [
+    "This parameter has the 'Any' type, which is unsafe, Pyre will be unable to perform further \
+     checks with this expression.";
+  ]
+
+
+let expression_is_any_message =
+  [
+    "This expression has the 'Any' type, which is unsafe, Pyre will be unable to perform further \
+     checks with this expression.";
+  ]
 
 
 let container_parameter_is_any_message = ["Consider adding stronger annotations to the container."]
@@ -866,7 +887,8 @@ let get_expression_level_coverage coverage_data_lookup =
         | Some { coverage_data = { type_; _ }; reason } ->
             let message reason =
               match reason with
-              | TypeIsAny -> type_is_any_message
+              | TypeIsAny ParameterIsAny -> parameter_is_any_message
+              | TypeIsAny ExpressionIsAny -> expression_is_any_message
               | ContainerParameterIsAny -> container_parameter_is_any_message
               | CallableParameterIsUnknownOrAny -> callable_parameter_is_unknown_or_any_message
             in

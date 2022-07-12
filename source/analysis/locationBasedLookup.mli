@@ -13,8 +13,13 @@ type coverage_data = {
 }
 [@@deriving compare, sexp, show, hash, to_yojson]
 
+type typeisany =
+  | ParameterIsAny
+  | ExpressionIsAny
+[@@deriving compare, sexp, show, hash, to_yojson]
+
 type reason =
-  | TypeIsAny
+  | TypeIsAny of typeisany
   | ContainerParameterIsAny
   | CallableParameterIsUnknownOrAny
 [@@deriving compare, sexp, show, hash, to_yojson]
@@ -110,7 +115,9 @@ val hover_info_for_position
   Location.position ->
   string
 
-val type_is_any_message : string list
+val parameter_is_any_message : string list
+
+val expression_is_any_message : string list
 
 val container_parameter_is_any_message : string list
 

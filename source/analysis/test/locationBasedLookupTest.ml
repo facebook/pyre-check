@@ -2097,7 +2097,7 @@ let test_classify_coverage_data _ =
   assert_coverage_gap_any
     ~expression:"print(x + 1)"
     ~type_:"typing.Any"
-    (Some LocationBasedLookup.TypeIsAny);
+    (Some (LocationBasedLookup.TypeIsAny LocationBasedLookup.ExpressionIsAny));
   assert_coverage_gap_any ~expression:"1" ~type_:"typing_extensions.Literal[1]" None;
   assert_coverage_gap_any
     ~expression:"x"
@@ -2472,7 +2472,7 @@ let test_coverage_gaps_in_module context =
                 |> Node.create_with_default_location);
             type_ = Type.Any;
           };
-        reason = TypeIsAny;
+        reason = TypeIsAny ParameterIsAny;
       };
       {
         LocationBasedLookup.coverage_data =
@@ -2483,7 +2483,7 @@ let test_coverage_gaps_in_module context =
                 |> Node.create_with_default_location);
             type_ = Type.Any;
           };
-        reason = TypeIsAny;
+        reason = TypeIsAny ParameterIsAny;
       };
       {
         LocationBasedLookup.coverage_data =
@@ -2515,7 +2515,7 @@ let test_coverage_gaps_in_module context =
                 |> Node.create_with_default_location);
             type_ = Type.Any;
           };
-        reason = TypeIsAny;
+        reason = TypeIsAny ExpressionIsAny;
       };
       {
         LocationBasedLookup.coverage_data =
@@ -2575,7 +2575,7 @@ let test_coverage_gaps_in_module context =
               Some (Expression.Constant Constant.Ellipsis |> Node.create_with_default_location);
             type_ = Type.Any;
           };
-        reason = TypeIsAny;
+        reason = TypeIsAny ExpressionIsAny;
       };
       {
         LocationBasedLookup.coverage_data =
@@ -2586,7 +2586,7 @@ let test_coverage_gaps_in_module context =
                 |> Node.create_with_default_location);
             type_ = Type.Any;
           };
-        reason = TypeIsAny;
+        reason = TypeIsAny ExpressionIsAny;
       };
     ];
   assert_coverage_gaps_in_module ~context ~source:{|
