@@ -100,6 +100,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 enable_find_symbols=True,
                 enable_find_all_references=True,
                 enable_expression_level_coverage=True,
+                enable_consume_unsaved_changes=True,
             )
         )
         assert configuration.ide_features is not None
@@ -110,6 +111,7 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertTrue(
             configuration.ide_features.is_expression_level_coverage_enabled()
         )
+        self.assertTrue(configuration.ide_features.is_consume_unsaved_changes_enabled())
 
         configuration = PartialConfiguration.from_command_arguments(
             command_arguments.CommandArguments(
@@ -124,6 +126,9 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertFalse(configuration.ide_features.is_find_all_references_enabled())
         self.assertFalse(
             configuration.ide_features.is_expression_level_coverage_enabled()
+        )
+        self.assertFalse(
+            configuration.ide_features.is_consume_unsaved_changes_enabled()
         )
 
         configuration = PartialConfiguration.from_command_arguments(
@@ -606,6 +611,7 @@ class ConfigurationTest(testslide.TestCase):
                     find_symbols_enabled=True,
                     find_all_references_enabled=True,
                     expression_level_coverage_enabled=True,
+                    consume_unsaved_changes_enabled=True,
                 ),
                 ignore_all_errors=["bar"],
                 logger="logger",
@@ -644,6 +650,7 @@ class ConfigurationTest(testslide.TestCase):
                 find_symbols_enabled=True,
                 find_all_references_enabled=True,
                 expression_level_coverage_enabled=True,
+                consume_unsaved_changes_enabled=True,
             ),
         )
         self.assertListEqual(list(configuration.ignore_all_errors), ["bar"])
@@ -1088,6 +1095,21 @@ class ConfigurationTest(testslide.TestCase):
                 dot_pyre_directory=Path(".pyre"),
                 ide_features=IdeFeatures(expression_level_coverage_enabled=True),
             ).is_expression_level_coverage_enabled(),
+        )
+
+    def test_is_consume_unsaved_changes_enabled(self) -> None:
+        self.assertFalse(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+            ).is_consume_unsaved_changes_enabled(),
+        )
+        self.assertTrue(
+            Configuration(
+                project_root="irrelevant",
+                dot_pyre_directory=Path(".pyre"),
+                ide_features=IdeFeatures(consume_unsaved_changes_enabled=True),
+            ).is_consume_unsaved_changes_enabled(),
         )
 
     def test_create_from_command_arguments_only(self) -> None:

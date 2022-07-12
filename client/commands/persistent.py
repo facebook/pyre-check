@@ -196,10 +196,15 @@ def process_initialize_request(
     )
 
     server_info = lsp.Info(name="pyre", version=version.__version__)
+    did_change_result = (
+        lsp.TextDocumentSyncKind.FULL
+        if ide_features is not None and ide_features.is_consume_unsaved_changes_enabled
+        else lsp.TextDocumentSyncKind.NONE
+    )
     server_capabilities = lsp.ServerCapabilities(
         text_document_sync=lsp.TextDocumentSyncOptions(
             open_close=True,
-            change=lsp.TextDocumentSyncKind.NONE,
+            change=did_change_result,
             save=lsp.SaveOptions(include_text=False),
         ),
         **(
@@ -672,6 +677,26 @@ class PyreServer:
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
+    async def process_did_change_request(
+        self,
+        parameters: lsp.DidChangeTextDocumentParameters,
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+
+        if document_path not in self.state.opened_documents:
+            return
+
+        # TODO: Implement some kind of logic in the Pyre server.
+
+        # Attempt to trigger a background Pyre server start on each file change
+        if not self.pyre_manager.is_task_running():
+            await self._try_restart_pyre_server()
+
     async def process_did_save_request(
         self,
         parameters: lsp.DidSaveTextDocumentParameters,
@@ -902,6 +927,17 @@ class PyreServer:
                             parameters
                         ),
                         request.activity_key,
+                    )
+                elif request.method == "textDocument/didChange":
+                    parameters = request.parameters
+                    if parameters is None:
+                        raise json_rpc.InvalidRequestError(
+                            "Missing parameters for didChange method"
+                        )
+                    await self.process_did_change_request(
+                        lsp.DidChangeTextDocumentParameters.from_json_rpc_parameters(
+                            parameters
+                        )
                     )
                 elif request.method == "textDocument/didClose":
                     parameters = request.parameters

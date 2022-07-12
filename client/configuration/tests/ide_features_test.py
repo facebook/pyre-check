@@ -62,6 +62,16 @@ class IdeFeaturesTest(testslide.TestCase):
         )
         assert_ide_features_raises({"expression_level_coverage_enabled": 42})
 
+        assert_ide_features_equal(
+            {"consume_unsaved_changes_enabled": True},
+            IdeFeatures(consume_unsaved_changes_enabled=True),
+        )
+        assert_ide_features_equal(
+            {"consume_unsaved_changes_enabled": False},
+            IdeFeatures(consume_unsaved_changes_enabled=False),
+        )
+        assert_ide_features_raises({"consume_unsaved_changes_enabled": 42})
+
     def test_merge(self) -> None:
         def assert_merged(
             base_ide_features: Optional[IdeFeatures],
@@ -132,4 +142,24 @@ class IdeFeaturesTest(testslide.TestCase):
             IdeFeatures(expression_level_coverage_enabled=True),
             IdeFeatures(expression_level_coverage_enabled=False),
             IdeFeatures(expression_level_coverage_enabled=False),
+        )
+        assert_merged(
+            IdeFeatures(consume_unsaved_changes_enabled=True),
+            None,
+            IdeFeatures(consume_unsaved_changes_enabled=True),
+        )
+        assert_merged(
+            None,
+            IdeFeatures(consume_unsaved_changes_enabled=True),
+            IdeFeatures(consume_unsaved_changes_enabled=True),
+        )
+        assert_merged(
+            IdeFeatures(consume_unsaved_changes_enabled=False),
+            IdeFeatures(consume_unsaved_changes_enabled=True),
+            IdeFeatures(consume_unsaved_changes_enabled=True),
+        )
+        assert_merged(
+            IdeFeatures(consume_unsaved_changes_enabled=True),
+            IdeFeatures(consume_unsaved_changes_enabled=False),
+            IdeFeatures(consume_unsaved_changes_enabled=False),
         )

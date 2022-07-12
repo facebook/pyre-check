@@ -74,6 +74,7 @@ class CommandArguments:
     enable_find_symbols: Optional[bool] = None
     enable_find_all_references: Optional[bool] = None
     enable_expression_level_coverage: Optional[bool] = None
+    enable_consume_unsaved_changes: Optional[bool] = None
     use_buck2: Optional[bool] = None
 
 

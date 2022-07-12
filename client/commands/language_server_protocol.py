@@ -384,6 +384,18 @@ class DidCloseTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
+class DidChangeTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+    text_document: TextDocumentIdentifier
+    # TODO: Potentially add a new field to this for changed_text, if the server request requires it.
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "DidChangeTextDocumentParameters":
+        return _parse_parameters(parameters, target=DidChangeTextDocumentParameters)
+
+
+@dataclasses.dataclass(frozen=True)
 class DidSaveTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
     text: Optional[str] = None

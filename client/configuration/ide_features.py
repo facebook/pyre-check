@@ -25,6 +25,8 @@ class IdeFeatures(json_mixins.SnakeCaseAndExcludeJsonMixin):
     DEFAULT_FIND_ALL_REFERENCES_ENABLED: ClassVar[bool] = False
     expression_level_coverage_enabled: Optional[bool] = None
     DEFAULT_EXPRESSION_LEVEL_COVERAGE_ENABLED: ClassVar[bool] = False
+    consume_unsaved_changes_enabled: Optional[bool] = None
+    DEFAULT_CONSUME_UNSAVED_CHANGES_ENABLED: ClassVar[bool] = False
 
     @staticmethod
     def merge_optional(
@@ -85,4 +87,11 @@ class IdeFeatures(json_mixins.SnakeCaseAndExcludeJsonMixin):
             self.expression_level_coverage_enabled
             if self.expression_level_coverage_enabled is not None
             else self.DEFAULT_EXPRESSION_LEVEL_COVERAGE_ENABLED
+        )
+
+    def is_consume_unsaved_changes_enabled(self) -> bool:
+        return (
+            self.consume_unsaved_changes_enabled
+            if self.consume_unsaved_changes_enabled is not None
+            else self.DEFAULT_CONSUME_UNSAVED_CHANGES_ENABLED
         )

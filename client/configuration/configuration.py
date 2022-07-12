@@ -181,12 +181,14 @@ class PartialConfiguration:
                 find_symbols_enabled=arguments.enable_find_symbols,
                 find_all_references_enabled=arguments.enable_find_all_references,
                 expression_level_coverage_enabled=arguments.enable_expression_level_coverage,
+                consume_unsaved_changes_enabled=arguments.enable_consume_unsaved_changes,
             )
             if arguments.enable_hover is not None
             or arguments.enable_go_to_definition is not None
             or arguments.enable_find_symbols is not None
             or arguments.enable_find_all_references is not None
             or arguments.enable_expression_level_coverage is not None
+            or arguments.enable_consume_unsaved_changes is not None
             else None
         )
         return PartialConfiguration(
@@ -905,6 +907,13 @@ class Configuration:
                 ide_features_module.IdeFeatures.DEFAULT_EXPRESSION_LEVEL_COVERAGE_ENABLED
             )
         return self.ide_features.is_expression_level_coverage_enabled()
+
+    def is_consume_unsaved_changes_enabled(self) -> bool:
+        if self.ide_features is None:
+            return (
+                ide_features_module.IdeFeatures.DEFAULT_CONSUME_UNSAVED_CHANGES_ENABLED
+            )
+        return self.ide_features.is_consume_unsaved_changes_enabled()
 
     def get_valid_extension_suffixes(self) -> List[str]:
         vaild_extensions = []

@@ -20,6 +20,7 @@ from ..async_server_connection import (
 from ..language_server_protocol import (
     ClientCapabilities,
     DiagnosticTag,
+    DidChangeTextDocumentParameters,
     DidCloseTextDocumentParameters,
     DidOpenTextDocumentParameters,
     DidSaveTextDocumentParameters,
@@ -339,5 +340,40 @@ class LSPParsingTest(testslide.TestCase):
             expected=DidSaveTextDocumentParameters(
                 text_document=TextDocumentIdentifier(uri="file:///home/user/test.py"),
                 text="foo",
+            ),
+        )
+
+    def test_parse_did_change(self) -> None:
+        assert_parsed = functools.partial(
+            self.assert_parsed, DidChangeTextDocumentParameters.from_json_rpc_parameters
+        )
+        assert_not_parsed = functools.partial(
+            self.assert_not_parsed,
+            DidChangeTextDocumentParameters.from_json_rpc_parameters,
+        )
+
+        assert_not_parsed({})
+        assert_not_parsed({"no_text_document": 42})
+        assert_not_parsed({"textDocument": "derp"})
+
+        assert_parsed(
+            {
+                "textDocument": {
+                    "uri": "file:///home/user/test.py",
+                }
+            },
+            expected=DidChangeTextDocumentParameters(
+                text_document=TextDocumentIdentifier(uri="file:///home/user/test.py")
+            ),
+        )
+        assert_parsed(
+            {
+                "textDocument": {
+                    "uri": "file:///home/user/test.py",
+                },
+                "text": "foo",
+            },
+            expected=DidChangeTextDocumentParameters(
+                text_document=TextDocumentIdentifier(uri="file:///home/user/test.py"),
             ),
         )
