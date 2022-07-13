@@ -22,24 +22,24 @@ let instantiate_and_stringify ~lookup errors =
   |> List.map ~f:to_string
 
 
-let assert_root_errors ~context ~multi_environment expected =
+let assert_root_errors ~context ~overlaid_environment expected =
   let actual =
-    OverlaidEnvironment.root_errors multi_environment
+    OverlaidEnvironment.root_errors overlaid_environment
     |> instantiate_and_stringify
          ~lookup:
-           (OverlaidEnvironment.root multi_environment
+           (OverlaidEnvironment.root overlaid_environment
            |> ErrorsEnvironment.ReadOnly.ast_environment
            |> AstEnvironment.ReadOnly.get_real_path_relative)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 
 
-let assert_overlay_errors ~context ~multi_environment ~overlay_identifier expected =
+let assert_overlay_errors ~context ~overlaid_environment ~overlay_identifier expected =
   let actual =
-    OverlaidEnvironment.overlay_errors multi_environment overlay_identifier
+    OverlaidEnvironment.overlay_errors overlaid_environment overlay_identifier
     |> instantiate_and_stringify
          ~lookup:
-           (OverlaidEnvironment.root multi_environment
+           (OverlaidEnvironment.root overlaid_environment
            |> ErrorsEnvironment.ReadOnly.ast_environment
            |> AstEnvironment.ReadOnly.get_real_path_relative)
   in
@@ -59,10 +59,10 @@ let test_update_root context =
   let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
   let errors_environment = ScratchProject.ReadWrite.errors_environment project in
   ErrorsEnvironment.populate_all_errors errors_environment ~scheduler:(Test.mock_scheduler ());
-  let multi_environment = OverlaidEnvironment.create errors_environment in
+  let overlaid_environment = OverlaidEnvironment.create errors_environment in
   assert_root_errors
     ~context
-    ~multi_environment
+    ~overlaid_environment
     ["a.py 3: Incompatible return type [7]: Expected `int` but got `str`."];
   let update_code relative new_code =
     ScratchProject.delete_file project ~relative;
@@ -74,13 +74,13 @@ let test_update_root context =
         return 1.0 * x
   |};
   OverlaidEnvironment.update_root
-    multi_environment
+    overlaid_environment
     ~scheduler:(Test.mock_scheduler ())
     [Test.relative_artifact_path ~root:local_root ~relative:"a.py"]
   |> ignore;
   assert_root_errors
     ~context
-    ~multi_environment
+    ~overlaid_environment
     ["a.py 3: Incompatible return type [7]: Expected `int` but got `float`."];
   ()
 
@@ -106,51 +106,51 @@ let test_update_overlays context =
     let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
     Test.relative_artifact_path ~root:local_root ~relative:"a.py"
   in
-  let multi_environment =
+  let overlaid_environment =
     ScratchProject.ReadWrite.errors_environment project |> OverlaidEnvironment.create
   in
   (* Create two overlays *)
   OverlaidEnvironment.update_overlay_with_code
-    multi_environment
+    overlaid_environment
     ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_str_error]
     "overlay_0"
   |> ignore;
   OverlaidEnvironment.update_overlay_with_code
-    multi_environment
+    overlaid_environment
     ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_float_error]
     "overlay_1"
   |> ignore;
   (* Validate that each overlay produces the expected errors, and there is no interference *)
   assert_overlay_errors
     ~context
-    ~multi_environment
+    ~overlaid_environment
     ~overlay_identifier:"overlay_0"
     ["a.py 3: Incompatible return type [7]: Expected `int` but got `str`."];
   assert_overlay_errors
     ~context
-    ~multi_environment
+    ~overlaid_environment
     ~overlay_identifier:"overlay_1"
     ["a.py 3: Incompatible return type [7]: Expected `int` but got `float`."];
   (* Update the overlays - swap the code *)
   OverlaidEnvironment.update_overlay_with_code
-    multi_environment
+    overlaid_environment
     ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_float_error]
     "overlay_0"
   |> ignore;
   OverlaidEnvironment.update_overlay_with_code
-    multi_environment
+    overlaid_environment
     ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_str_error]
     "overlay_1"
   |> ignore;
   (* Validate that the errors reflect the update *)
   assert_overlay_errors
     ~context
-    ~multi_environment
+    ~overlaid_environment
     ~overlay_identifier:"overlay_0"
     ["a.py 3: Incompatible return type [7]: Expected `int` but got `float`."];
   assert_overlay_errors
     ~context
-    ~multi_environment
+    ~overlaid_environment
     ~overlay_identifier:"overlay_1"
     ["a.py 3: Incompatible return type [7]: Expected `int` but got `str`."];
   ()
@@ -183,30 +183,30 @@ let test_overlay_propagation context =
   in
   let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
   let artifact_path = Test.relative_artifact_path ~root:local_root ~relative:"in_overlay.py" in
-  let multi_environment =
+  let overlaid_environment =
     ScratchProject.ReadWrite.errors_environment project |> OverlaidEnvironment.create
   in
   (* Create two overlays, and check that we detect the right varnames *)
   OverlaidEnvironment.update_overlay_with_code
-    multi_environment
+    overlaid_environment
     ~code_updates:
       [artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode (in_overlay_code ~varname:"y")]
     "overlay_0"
   |> ignore;
   OverlaidEnvironment.update_overlay_with_code
-    multi_environment
+    overlaid_environment
     ~code_updates:
       [artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode (in_overlay_code ~varname:"z")]
     "overlay_1"
   |> ignore;
   assert_overlay_errors
     ~context
-    ~multi_environment
+    ~overlaid_environment
     ~overlay_identifier:"overlay_0"
     ["in_overlay.py 3: Revealed type [-1]: Revealed type for `on_filesystem.y` is `float`."];
   assert_overlay_errors
     ~context
-    ~multi_environment
+    ~overlaid_environment
     ~overlay_identifier:"overlay_1"
     ["in_overlay.py 3: Revealed type [-1]: Revealed type for `on_filesystem.z` is `str`."];
   (* Update the parent environment and make sure the changes propagate *)
@@ -217,17 +217,17 @@ let test_overlay_propagation context =
   in
   update_code "on_filesystem.py" (on_filesystem_code ~x_type:"float" ~y_type:"str" ~z_type:"int");
   OverlaidEnvironment.run_update_root
-    multi_environment
+    overlaid_environment
     ~scheduler:(Test.mock_scheduler ())
     [Test.relative_artifact_path ~root:local_root ~relative:"on_filesystem.py"];
   assert_overlay_errors
     ~context
-    ~multi_environment
+    ~overlaid_environment
     ~overlay_identifier:"overlay_0"
     ["in_overlay.py 3: Revealed type [-1]: Revealed type for `on_filesystem.y` is `str`."];
   assert_overlay_errors
     ~context
-    ~multi_environment
+    ~overlaid_environment
     ~overlay_identifier:"overlay_1"
     ["in_overlay.py 3: Revealed type [-1]: Revealed type for `on_filesystem.z` is `int`."];
   ()

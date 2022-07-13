@@ -24,14 +24,14 @@ end
 
 type t = {
   build_system: BuildSystem.t;
-  multi_environment: OverlaidEnvironment.t;
+  overlaid_environment: OverlaidEnvironment.t;
   subscriptions: Subscriptions.t;
 }
 
-let create ?subscriptions ~build_system ~multi_environment () =
+let create ?subscriptions ~build_system ~overlaid_environment () =
   {
     build_system;
-    multi_environment;
+    overlaid_environment;
     subscriptions = Option.value subscriptions ~default:(Subscriptions.create ());
   }
 
@@ -55,17 +55,17 @@ end)
 let load_stored_configuration = StoredConfiguration.load
 
 let load ~configuration ~build_system () =
-  let multi_environment =
+  let overlaid_environment =
     EnvironmentControls.create configuration
     |> Analysis.ErrorsEnvironment.load
     |> OverlaidEnvironment.create
   in
-  create ~build_system ~multi_environment ()
+  create ~build_system ~overlaid_environment ()
 
 
-let store ~path ~configuration { multi_environment; build_system; _ } =
+let store ~path ~configuration { overlaid_environment; build_system; _ } =
   Memory.SharedMemory.collect `aggressive;
-  Analysis.OverlaidEnvironment.store multi_environment;
+  Analysis.OverlaidEnvironment.store overlaid_environment;
   StoredConfiguration.store configuration;
   BuildSystem.store build_system;
   Memory.save_shared_memory ~path:(PyrePath.absolute path) ~configuration

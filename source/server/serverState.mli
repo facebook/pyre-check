@@ -21,14 +21,14 @@ end
 
 type t = private {
   build_system: BuildSystem.t;
-  multi_environment: Analysis.OverlaidEnvironment.t;
+  overlaid_environment: Analysis.OverlaidEnvironment.t;
   subscriptions: Subscriptions.t;
 }
 
 val create
   :  ?subscriptions:Subscriptions.t ->
   build_system:BuildSystem.t ->
-  multi_environment:Analysis.OverlaidEnvironment.t ->
+  overlaid_environment:Analysis.OverlaidEnvironment.t ->
   unit ->
   t
 

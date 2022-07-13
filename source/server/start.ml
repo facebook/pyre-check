@@ -252,7 +252,7 @@ let initialize_server_state
   let _ = Memory.get_heap_handle configuration in
   let start_from_scratch ~build_system () =
     Log.info "Initializing server state from scratch...";
-    let multi_environment =
+    let overlaid_environment =
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
           let environment =
             Analysis.EnvironmentControls.create ~populate_call_graph:true configuration
@@ -266,7 +266,7 @@ let initialize_server_state
           in
           Analysis.OverlaidEnvironment.create environment)
     in
-    ServerState.create ~build_system ~multi_environment ()
+    ServerState.create ~build_system ~overlaid_environment ()
   in
   let build_and_start_from_scratch ~build_system_initializer () =
     let open Lwt.Infix in
