@@ -10,13 +10,14 @@ from typing import Optional
 import dataclasses_json
 
 from .. import command_arguments, configuration as configuration_module, version
-from . import commands, frontend_configuration
+from . import commands, frontend_configuration, server_connection
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(frozen=True)
 class Info(dataclasses_json.DataClassJsonMixin):
+    socket_path: str
     binary_location: Optional[str]
     client_version: str
     binary_version: Optional[str]
@@ -52,7 +53,12 @@ class Info(dataclasses_json.DataClassJsonMixin):
             binary_version = configuration.get_binary_version()
         except Exception:
             binary_version = None
+        socket_path = server_connection.get_default_socket_path(
+            project_root=configuration.get_global_root(),
+            relative_local_root=configuration.get_relative_local_root(),
+        )
         return cls(
+            socket_path=str(socket_path),
             current_server_logs=str(current_server_logs),
             log_directory=str(log_directory),
             server_log_directory=str(server_log_directory),
