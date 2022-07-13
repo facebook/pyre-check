@@ -890,6 +890,25 @@ def rage(
 
 
 @pyre.command()
+@click.pass_context
+def info(
+    context: click.Context,
+) -> int:
+    """
+    Collects troubleshooting diagnostics for Pyre, and writes this information
+    to the terminal or to a file.
+    """
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
+    return commands.info.run(
+        configuration,
+        command_argument,
+    )
+
+
+@pyre.command()
 @click.option(
     "--terminal", is_flag=True, default=False, help="Run the server in the terminal."
 )

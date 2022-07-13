@@ -11,6 +11,7 @@ from . import (  # noqa F401  # noqa F401  # noqa F401  # noqa F401  # noqa F401
     expression_level_coverage,
     incremental,
     infer,
+    info,
     initialize,
     initialize_pysa,
     kill,
