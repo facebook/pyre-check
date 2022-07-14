@@ -396,7 +396,7 @@ let test_register_aliases context =
   ()
 
 
-let test_register_implicit_submodules context =
+let test_register_implicit_namespace_modules context =
   let environment = create_environment ~context ~additional_sources:["a/b/c.py", ""] () in
   let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
   let global_resolution = GlobalResolution.create environment in
@@ -408,8 +408,11 @@ let test_register_implicit_submodules context =
     "Can get the module definition of a/b/c.py"
     (GlobalResolution.module_exists global_resolution (Reference.create "a.b.c"));
   let is_module = GlobalResolution.module_exists global_resolution in
+  (* We do consider a.b a valid namespace module, because it has python files as direct children *)
   assert_true (is_module (Reference.create "a.b"));
-  assert_true (is_module (Reference.create "a"))
+  (* We do not consider a a valid namespace module, because it has no python files as direct
+     children *)
+  assert_false (is_module (Reference.create "a"))
 
 
 let test_register_globals context =
@@ -1326,7 +1329,7 @@ let () =
          "populate" >:: test_populate;
          "register_aliases" >:: test_register_aliases;
          "register_globals" >:: test_register_globals;
-         "register_implicit_submodules" >:: test_register_implicit_submodules;
+         "register_implicit_namespace_modules" >:: test_register_implicit_namespace_modules;
          "default_class_hierarchy" >:: test_default_class_hierarchy;
          "connect_to_top" >:: test_connect_annotations_to_top;
          "deduplicate" >:: test_deduplicate;

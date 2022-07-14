@@ -1451,7 +1451,7 @@ let test_update context =
     ~expected:[Event.create_new_explicit "a/b.py"; Event.NewImplicit "a"];
   assert_incremental
     [{ handle = "a/b/c.py"; operation = FileOperation.Add }]
-    ~expected:[Event.create_new_explicit "a/b/c.py"; Event.NewImplicit "a"; Event.NewImplicit "a.b"];
+    ~expected:[Event.create_new_explicit "a/b/c.py"; Event.NewImplicit "a.b"];
   assert_incremental
     [
       { handle = "a/b/c.py"; operation = FileOperation.Add };
@@ -1461,7 +1461,6 @@ let test_update context =
       [
         Event.create_new_explicit "a/b/c.py";
         Event.create_new_explicit "a/b/d.py";
-        Event.NewImplicit "a";
         Event.NewImplicit "a.b";
       ];
   assert_incremental
@@ -1486,7 +1485,7 @@ let test_update context =
   (* Implicit submodule remove *)
   assert_incremental
     [{ handle = "a/b/c.py"; operation = FileOperation.Remove }]
-    ~expected:[Event.Delete "a.b.c"; Event.Delete "a.b"; Event.Delete "a"];
+    ~expected:[Event.Delete "a.b.c"; Event.Delete "a.b"];
   assert_incremental
     [
       { handle = "a/b/c.py"; operation = FileOperation.Remove };
@@ -1504,7 +1503,7 @@ let test_update context =
       { handle = "a/b/c.py"; operation = FileOperation.LeftAlone };
       { handle = "a/d.py"; operation = FileOperation.Remove };
     ]
-    ~expected:[Event.Delete "a.d"];
+    ~expected:[Event.Delete "a.d"; Event.Delete "a"];
   assert_incremental
     [
       { handle = "a/b.py"; operation = FileOperation.LeftAlone };
@@ -1547,7 +1546,7 @@ let test_update context =
       { handle = "a/b/c.py"; operation = FileOperation.LeftAlone };
       { handle = "a/b/d.py"; operation = FileOperation.LeftAlone };
     ]
-    ~expected:[Event.Delete "a.b"];
+    ~expected:[Event.Delete "a.b"; Event.Delete "a"];
   assert_incremental
     [
       { handle = "a/b.py"; operation = FileOperation.Remove };
@@ -1557,6 +1556,7 @@ let test_update context =
     ~expected:
       [
         Event.Delete "a.b";
+        Event.Delete "a";
         Event.create_new_explicit "a/b/c.py";
         Event.create_new_explicit "a/b/d.py";
       ];
@@ -1566,7 +1566,13 @@ let test_update context =
       { handle = "a/b/c.py"; operation = FileOperation.Remove };
       { handle = "a/b/d.py"; operation = FileOperation.Remove };
     ]
-    ~expected:[Event.Delete "a.b.c"; Event.Delete "a.b.d"; Event.create_new_explicit "a/b.py"];
+    ~expected:
+      [
+        Event.Delete "a.b.c";
+        Event.Delete "a.b.d";
+        Event.NewImplicit "a";
+        Event.create_new_explicit "a/b.py";
+      ];
   ()
 
 

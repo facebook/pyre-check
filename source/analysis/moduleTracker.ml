@@ -142,14 +142,16 @@ module Base = struct
     let create_submodule_refcounts module_to_files =
       let submodule_refcounts = Reference.Table.create () in
       let process_module qualifier =
-        let rec process_submodule = function
+        let rec process_submodule ?(process_parent = true) maybe_qualifier =
+          match maybe_qualifier with
           | None -> ()
           | Some qualifier when Reference.is_empty qualifier -> ()
           | Some qualifier ->
               Reference.Table.update submodule_refcounts qualifier ~f:(function
                   | None -> 1
                   | Some count -> count + 1);
-              process_submodule (Reference.prefix qualifier)
+              if process_parent then
+                process_submodule ~process_parent:false (Reference.prefix qualifier)
         in
         process_submodule (Some qualifier)
       in
@@ -320,14 +322,15 @@ module Base = struct
       let aggregate_updates events =
         let aggregated_refcounts = Reference.Table.create () in
         let process_event event =
-          let rec do_update ~f = function
+          let rec do_update ?(parent = false) ~f = function
             | None -> ()
             | Some qualifier when Reference.is_empty qualifier -> ()
             | Some qualifier ->
                 Hashtbl.update aggregated_refcounts qualifier ~f:(function
                     | None -> f 0
                     | Some count -> f count);
-                do_update (Reference.prefix qualifier) ~f
+                if not parent then
+                  do_update (Reference.prefix qualifier) ~parent:true ~f
           in
           match event with
           | IncrementalExplicitUpdate.Changed _ -> ()
