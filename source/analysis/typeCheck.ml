@@ -2767,34 +2767,80 @@ module State (Context : Context) = struct
         }
     | Name (Name.Identifier identifier) ->
         forward_reference ~resolution ~errors:[] (Reference.create identifier)
-    | Name (Name.Attribute { base; attribute; special }) ->
-        let ({ Resolved.errors; resolved = resolved_base; _ } as base_resolved) =
-          forward_expression ~resolution base
-        in
-        let errors, resolved_base =
-          if Type.Variable.contains_escaped_free_variable resolved_base then
-            let errors =
-              emit_error
-                ~errors
-                ~location
-                ~kind:
-                  (Error.IncompleteType
-                     {
-                       target = base;
-                       annotation = resolved_base;
-                       attempted_action = Error.AttributeAccess attribute;
-                     })
+    | Name (Name.Attribute { base; attribute; special } as name) -> (
+        (*
+         * Attribute accesses are recursively resolved by stripping mames off
+         * of the end and then trying
+         * to resolve the prefix. For example, `foo().bar` will be stripped to
+         * `foo()` first, then once that type is resolved we'll look up the
+         * `bar` attribute.
+         *
+         * But to handle lazy module tracking, which requires us to only
+         * support limited cases of implicit namespace modules, we also want
+         * to check whether the reference can be directly resolved to a type
+         * (for example `pandas.core.DataFrame`) and short-circuit the
+         * recursion in that case.
+         *
+         * Our method for doing this is to decide whether a name can be
+         * directly looked up, short ciruiting the recursion, by using
+         * - `name_to_reference`, which produces a reference when a `Name`
+         *    corresponds to a plain reference (for example `foo().bar` does
+         *    not but `pandas.core.DataFrame` does, and
+         * - `resolve_exports`, which does a principled syntax-based lookup
+         *    to see if a name makes sense as a module top-level name
+         *
+         * TODO(T125828725) Use the resolved name coming from
+         * resolve_exports, rather than throwing away that name and falling
+         * back to legacy_resolve_exports.  This requires either using better
+         * qualification architecture or refactors of existing python code
+         * that relies on the legacy behaviror in the presence of ambiguous
+         * fully-qualified names.
+         *)
+        match
+          Ast.Expression.name_to_reference name
+          >>= GlobalResolution.resolve_exports global_resolution
+          >>= (function
+                | UnannotatedGlobalEnvironment.ResolvedReference.Module qualifier -> Some qualifier
+                | UnannotatedGlobalEnvironment.ResolvedReference.PlaceholderStub
+                    { stub_module; remaining } ->
+                    Some (Reference.combine stub_module (Reference.create_from_list remaining))
+                | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
+                    { from; name; remaining = []; _ } ->
+                    Some (Reference.create ~prefix:from name)
+                | _ -> None)
+          >>= fun _ ->
+          Ast.Expression.name_to_reference name
+          >>| fun reference -> GlobalResolution.legacy_resolve_exports global_resolution ~reference
+        with
+        | Some name_reference -> forward_reference ~resolution ~errors:[] name_reference
+        | None ->
+            let ({ Resolved.errors; resolved = resolved_base; _ } as base_resolved) =
+              forward_expression ~resolution base
             in
-            errors, Type.Variable.convert_all_escaped_free_variables_to_anys resolved_base
-          else
-            errors, resolved_base
-        in
-        resolve_attribute_access
-          ~base_resolved:{ base_resolved with errors; resolved = resolved_base }
-          ~base
-          ~special
-          ~attribute
-          ~has_default:false
+            let errors, resolved_base =
+              if Type.Variable.contains_escaped_free_variable resolved_base then
+                let errors =
+                  emit_error
+                    ~errors
+                    ~location
+                    ~kind:
+                      (Error.IncompleteType
+                         {
+                           target = base;
+                           annotation = resolved_base;
+                           attempted_action = Error.AttributeAccess attribute;
+                         })
+                in
+                errors, Type.Variable.convert_all_escaped_free_variables_to_anys resolved_base
+              else
+                errors, resolved_base
+            in
+            resolve_attribute_access
+              ~base_resolved:{ base_resolved with errors; resolved = resolved_base }
+              ~base
+              ~special
+              ~attribute
+              ~has_default:false)
     | Constant Constant.NoneLiteral ->
         {
           resolution;
