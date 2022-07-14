@@ -653,6 +653,16 @@ This is usually caused by failing to import the proper module.
 Pyre will raise error 21 instead ("Undefined import") when the import statement is present, but the module to be imported could not be found in the search path.
 If the module provides stub files, please provide their location via the `--search-path` commandline parameter.
 
+#### Namespace Package Modules
+
+One case where you may run into undefined imports on code that works at runtime is when importing namespace modules.
+The CPython runtime allows you to import a directory that is on your `PYTHONPATH`, even if it contains no `__init__.py`; this behavior is defined in [PEP 420](https://peps.python.org/pep-0420/) and the module is called a namespace package.
+In order to make Pyre both fast and consistent on incremental updates, in Pyre we only allow importing namespace packages that have at least one python file as a direct child.
+
+So, for example, if I have a directory tree with just `a/b/c.py` then Pyre will allow `import a.b.c` and `import a.b` but not `import a`.
+A namespace package module can never contain useful types or code so it is rare to directly import it, but in special cases it might be useful (for example to access the `__name__` attribute).
+In these cases, you'll need to suppress Pyre errors.
+
 ### 19: Too Many Argument
 
 Pyre verifies that you pass a legal number of arguments to functions.
