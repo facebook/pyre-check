@@ -224,6 +224,7 @@ module Breadcrumb = struct
     | WidenBroadening (* Taint tree was collapsed during widening *)
     | TitoBroadening (* Taint tree was collapsed when applying tito *)
     | IssueBroadening (* Taint tree was collapsed when matching sources and sinks *)
+    | CRTEX (* Taint comes from the Cross Repository Taint EXchange *)
   [@@deriving compare]
 
   let pp formatter breadcrumb =
@@ -246,6 +247,7 @@ module Breadcrumb = struct
     | WidenBroadening -> Format.fprintf formatter "WidenBroadening"
     | TitoBroadening -> Format.fprintf formatter "TitoBroadening"
     | IssueBroadening -> Format.fprintf formatter "IssueBroadening"
+    | CRTEX -> Format.fprintf formatter "CRTEX"
 
 
   let show = Format.asprintf "%a" pp
@@ -271,6 +273,7 @@ module Breadcrumb = struct
     | WidenBroadening -> `Assoc [prefix ^ "via", `String "widen-broadening"]
     | TitoBroadening -> `Assoc [prefix ^ "via", `String "tito-broadening"]
     | IssueBroadening -> `Assoc [prefix ^ "via", `String "issue-broadening"]
+    | CRTEX -> `Assoc [prefix ^ "via", `String "crtex"]
 
 
   let simple_via ~allowed name =

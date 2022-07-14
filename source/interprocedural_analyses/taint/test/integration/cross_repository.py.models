@@ -18,6 +18,7 @@
           {
             "kinds": [
               {
+                "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
                     "port": "producer:1:result",
@@ -58,7 +59,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [
+      { "always-via": "special_sink" },
+      { "always-via": "crtex" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -149,6 +153,7 @@
           {
             "kinds": [
               {
+                "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
                     "port": "producer:1:result",
@@ -183,6 +188,7 @@
           {
             "kinds": [
               {
+                "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
                     "port": "producer:1:result",
@@ -295,6 +301,7 @@
           {
             "kinds": [
               {
+                "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
                     "port": "producer:1:formal(0)",
@@ -353,6 +360,7 @@
           {
             "kinds": [
               {
+                "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
                     "port": "producer:1:formal(0)",
@@ -393,7 +401,10 @@
         ]
       }
     ],
-    "features": [ { "always-via": "special_sink" } ],
+    "features": [
+      { "always-via": "special_sink" },
+      { "always-via": "crtex" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -415,6 +426,7 @@
           {
             "kinds": [
               {
+                "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
                     "port": "producer:1:formal(x)",
@@ -443,6 +455,7 @@
           {
             "kinds": [
               {
+                "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
                     "port": "producer:1:result",
@@ -471,6 +484,7 @@
           {
             "kinds": [
               {
+                "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
                     "port": "producer:1:formal(x)",
@@ -504,6 +518,7 @@
           {
             "kinds": [
               {
+                "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
                     "port": "producer:1:formal(x)",
