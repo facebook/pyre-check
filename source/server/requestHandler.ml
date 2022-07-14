@@ -169,3 +169,6 @@ let process_request
              query_text)
       in
       Lwt.return (state, response)
+  | Request.OverlayUpdate _ ->
+      (* This is a no-op for now, we just want to see that the request comes in via the logs *)
+      Lwt.return (state, Response.Ok)
