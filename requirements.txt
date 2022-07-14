@@ -5,7 +5,7 @@ dataclasses-json
 intervaltree
 libcst
 psutil
-pyre-extensions
+pyre-extensions>=0.0.29
 tabulate
 testslide>=2.7.0
 typing_extensions
