@@ -159,21 +159,37 @@ module ReadOnly = struct
     let visited_set = ResolveExportItem.Hash_set.create () in
     let rec resolve_module_alias ~current_module ~names_to_resolve () =
       match get_module_metadata ?dependency read_only current_module with
-      | None ->
-          let rec resolve_placeholder_stub sofar = function
-            | [] -> None
-            | name :: prefixes -> (
-                let checked_module = List.rev prefixes |> Reference.create_from_list in
-                let sofar = name :: sofar in
-                match get_module_metadata ?dependency read_only checked_module with
-                | Some module_metadata when Module.empty_stub module_metadata ->
-                    Some
-                      (ResolvedReference.PlaceholderStub
-                         { stub_module = checked_module; remaining = sofar })
-                | _ -> resolve_placeholder_stub sofar prefixes)
-          in
-          (* Make sure none of the parent of `current_module` is placeholder stub *)
-          resolve_placeholder_stub names_to_resolve (Reference.as_list current_module |> List.rev)
+      | None -> (
+          (* If the module is not found:
+           *  - first try to look up the more-specific module from including
+           *    more of the reference we are looking up
+           *    - this is necessary in order to do lazy module tracking which
+           *      prevents us from fully supporting namespace modules.
+           * - If that also fails, check for a placeholder stub.
+           *)
+          match names_to_resolve with
+          | head :: tail ->
+              resolve_module_alias
+                ~current_module:(Reference.create ~prefix:current_module head)
+                ~names_to_resolve:tail
+                ()
+          | [] ->
+              let rec resolve_placeholder_stub sofar = function
+                | [] -> None
+                | name :: prefixes -> (
+                    let checked_module = List.rev prefixes |> Reference.create_from_list in
+                    let sofar = name :: sofar in
+                    match get_module_metadata ?dependency read_only checked_module with
+                    | Some module_metadata when Module.empty_stub module_metadata ->
+                        Some
+                          (ResolvedReference.PlaceholderStub
+                             { stub_module = checked_module; remaining = sofar })
+                    | _ -> resolve_placeholder_stub sofar prefixes)
+              in
+              (* Make sure none of the parent of `current_module` is placeholder stub *)
+              resolve_placeholder_stub
+                names_to_resolve
+                (Reference.as_list current_module |> List.rev))
       | Some module_metadata -> (
           match Module.empty_stub module_metadata with
           | true ->
