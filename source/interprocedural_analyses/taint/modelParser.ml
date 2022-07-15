@@ -618,7 +618,7 @@ let rec parse_annotations
                       leaf_names = leaf_name :: source.leaf_names;
                       leaf_name_provided = true;
                       trace_length = Option.merge ~f:min source.trace_length (Some trace_length);
-                      breadcrumbs = Features.Breadcrumb.CRTEX :: source.breadcrumbs;
+                      breadcrumbs = Features.Breadcrumb.Crtex :: source.breadcrumbs;
                     }
               | Sink sink ->
                   Sink
@@ -627,7 +627,7 @@ let rec parse_annotations
                       leaf_names = leaf_name :: sink.leaf_names;
                       leaf_name_provided = true;
                       trace_length = Option.merge ~f:min sink.trace_length (Some trace_length);
-                      breadcrumbs = Features.Breadcrumb.CRTEX :: sink.breadcrumbs;
+                      breadcrumbs = Features.Breadcrumb.Crtex :: sink.breadcrumbs;
                     }
               | _ -> annotation
             in
