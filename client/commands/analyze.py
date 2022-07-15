@@ -224,7 +224,7 @@ def _run_analyze_command(
             return_code = result.returncode
 
             # Interpretation of the return code needs to be kept in sync with
-            # `command/newAnalyzeCommand.ml`.
+            # `command/analyzeCommand.ml`.
             if return_code == 0:
                 if forward_stdout:
                     log.stdout.write(result.stdout)
