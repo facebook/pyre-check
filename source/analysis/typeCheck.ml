@@ -2799,15 +2799,7 @@ module State (Context : Context) = struct
         match
           Ast.Expression.name_to_reference name
           >>= GlobalResolution.resolve_exports global_resolution
-          >>= (function
-                | UnannotatedGlobalEnvironment.ResolvedReference.Module qualifier -> Some qualifier
-                | UnannotatedGlobalEnvironment.ResolvedReference.PlaceholderStub
-                    { stub_module; remaining } ->
-                    Some (Reference.combine stub_module (Reference.create_from_list remaining))
-                | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
-                    { from; name; remaining = []; _ } ->
-                    Some (Reference.create ~prefix:from name)
-                | _ -> None)
+          >>= UnannotatedGlobalEnvironment.ResolvedReference.as_module_toplevel_reference
           >>= fun _ ->
           Ast.Expression.name_to_reference name
           >>| fun reference -> GlobalResolution.legacy_resolve_exports global_resolution ~reference

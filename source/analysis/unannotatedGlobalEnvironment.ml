@@ -30,6 +30,16 @@ module ResolvedReference = struct
         remaining: Identifier.t list;
       }
   [@@deriving sexp, compare, hash]
+
+  (* In type-checking code, we want to short-circuit recursion for Expression.Name resolution
+     whenever the name points to a top-level module attribute. We do not want to short-circuit for
+     nested attributes. This function facilitates making that decision. *)
+  let as_module_toplevel_reference = function
+    | Module qualifier -> Some qualifier
+    | PlaceholderStub { stub_module; remaining } ->
+        Some (Reference.combine stub_module (Reference.create_from_list remaining))
+    | ModuleAttribute { from; name; remaining = []; _ } -> Some (Reference.create ~prefix:from name)
+    | ModuleAttribute _ -> None
 end
 
 module ReadOnly = struct

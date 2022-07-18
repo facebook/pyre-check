@@ -12,6 +12,36 @@ open Analysis
 open Pyre
 open Test
 
+let test_as_module_toplevel_reference context =
+  let open UnannotatedGlobalEnvironment.ResolvedReference in
+  let assert_as_module_toplevel expected resolved =
+    assert_equal
+      ~ctxt:context
+      ~printer:[%show: Reference.t option]
+      ~cmp:[%equal: Reference.t option]
+      expected
+      (as_module_toplevel_reference resolved)
+  in
+  assert_as_module_toplevel
+    None
+    (ModuleAttribute
+       {
+         from = !&"package.module";
+         name = "name";
+         export = FromModuleGetattr;
+         remaining = ["remaining"];
+       });
+  assert_as_module_toplevel
+    (Some !&"package.module.name")
+    (ModuleAttribute
+       { from = !&"package.module"; name = "name"; export = FromModuleGetattr; remaining = [] });
+  assert_as_module_toplevel
+    (Some !&"package.module.remaining.names")
+    (PlaceholderStub { stub_module = !&"package.module"; remaining = ["remaining"; "names"] });
+  assert_as_module_toplevel (Some !&"package.module") (Module !&"package.module");
+  ()
+
+
 let location (start_line, start_column) (stop_line, stop_column) =
   {
     Location.start = { Location.line = start_line; column = start_column };
@@ -2517,6 +2547,7 @@ let () =
   "environment"
   >::: [
          (* Simple tests *)
+         "as_module_toplevel_reference" >:: test_as_module_toplevel_reference;
          "global_registration" >:: test_global_registration;
          "define_registration" >:: test_define_registration;
          "simple_globals" >:: test_simple_global_registration;

@@ -28,6 +28,8 @@ module ResolvedReference : sig
         remaining: Identifier.t list;
       }
   [@@deriving sexp, compare, hash]
+
+  val as_module_toplevel_reference : t -> Reference.t option
 end
 
 module ReadOnly : sig
