@@ -1119,6 +1119,38 @@ let test_creation context =
       ~is_stub:false
       ~is_external:false
   in
+  (* This test verifies that module tracker does not respect CPython logic on namespace modules:
+     even when there is an explicit package (with an __init__) or a regualar module that should mask
+     implicit namespace packages, we expose them. This is intentional - unit tests will trivially
+     expose cases where this causes problems at runtime, and it significantly simplifies Pyre's
+     incremental update logic. *)
+  let test_namespace_modules () =
+    let root_that_masks =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    let local_root =
+      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+    in
+    List.iter ~f:(create_file root_that_masks) ["package0.py"; "package1/__init__.py"];
+    List.iter ~f:(create_file local_root) ["package0/a.py"; "package1/subpackage/b.py"];
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~source_paths:[SearchPath.Root local_root; SearchPath.Root root_that_masks]
+        ~filter_directories:[local_root]
+        ()
+    in
+    let module_tracker =
+      EnvironmentControls.create configuration |> ModuleTracker.create |> ModuleTracker.read_only
+    in
+    (* In CPython, only package0 and package1 would be visible, but Pyre also treats package0.a and
+       package1.subpackage.b as valid module paths. *)
+    assert_equal
+      ~cmp:Int.equal
+      ~printer:Int.to_string
+      4
+      (ModuleTracker.ReadOnly.module_paths module_tracker |> List.length)
+  in
   test_basic ();
   test_submodules ();
   test_search_path_subdirectory ();
@@ -1132,7 +1164,9 @@ let test_creation context =
   test_overlapping2 ();
   test_root_independence ();
   test_hidden_files ();
-  test_hidden_files2 ()
+  test_hidden_files2 ();
+  test_namespace_modules ();
+  ()
 
 
 module IncrementalTest = struct
