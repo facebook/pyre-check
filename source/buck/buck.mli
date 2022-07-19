@@ -300,7 +300,7 @@ module Raw : sig
     type t [@@deriving sexp_of]
     (** This type represents the argument list for a raw Buck invocation. *)
 
-    val to_buck_command : t -> string
+    val to_buck_command : buck_command:string -> t -> string
     (** Reconstruct the shell command Pyre uses to invoke Buck from an {!ArgumentList.t}. *)
 
     val length : t -> int
@@ -309,6 +309,7 @@ module Raw : sig
 
   exception
     BuckError of {
+      buck_command: string;
       arguments: ArgumentList.t;
       description: string;
       exit_code: int option;

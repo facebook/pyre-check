@@ -10,7 +10,7 @@ open Base
 module ArgumentList = struct
   type t = string list [@@deriving sexp_of]
 
-  let to_buck_command arguments =
+  let to_buck_command ~buck_command arguments =
     let open Core in
     let escaped_arguments =
       let quote argument =
@@ -22,7 +22,7 @@ module ArgumentList = struct
       in
       List.map arguments ~f:quote
     in
-    String.concat ~sep:" " ("buck" :: escaped_arguments)
+    String.concat ~sep:" " (buck_command :: escaped_arguments)
 
 
   let length = List.length
@@ -54,6 +54,7 @@ end
 
 exception
   BuckError of {
+    buck_command: string;
     arguments: ArgumentList.t;
     description: string;
     exit_code: int option;
@@ -107,13 +108,14 @@ let consume_stderr ~log_buffer stderr_channel =
   consume_line stderr_channel
 
 
-let on_completion ~arguments ~log_buffer = function
+let on_completion ~buck_command ~arguments ~log_buffer = function
   | { LwtSubprocess.Completed.status; stdout; _ } -> (
       Log.debug "buck command finished";
       let fail_with_error ?exit_code description =
         Lwt.fail
           (BuckError
              {
+               buck_command;
                arguments;
                description;
                exit_code;
@@ -141,6 +143,7 @@ let on_completion ~arguments ~log_buffer = function
 
 
 let create ?(additional_log_size = 0) () =
+  let buck1 = "buck1" in
   let open Lwt.Infix in
   let invoke_buck ?mode ?isolation_prefix ~command arguments =
     command :: arguments
@@ -166,7 +169,7 @@ let create ?(additional_log_size = 0) () =
             ]
         in
         let consume_stderr = consume_stderr ~log_buffer in
-        LwtSubprocess.run "buck1" ~arguments ~consume_stderr)
+        LwtSubprocess.run buck1 ~arguments ~consume_stderr)
     >>= fun result ->
     let arguments =
       List.concat
@@ -177,7 +180,7 @@ let create ?(additional_log_size = 0) () =
           arguments;
         ]
     in
-    on_completion ~arguments ~log_buffer result
+    on_completion ~buck_command:buck1 ~arguments ~log_buffer result
   in
   let query ?mode ?isolation_prefix arguments =
     invoke_buck ?mode ?isolation_prefix ~command:"query" arguments
@@ -189,6 +192,7 @@ let create ?(additional_log_size = 0) () =
 
 
 let create_v2 ?(additional_log_size = 0) () =
+  let buck2 = "buck2" in
   let open Lwt.Infix in
   let invoke_buck ?mode ?isolation_prefix ~command arguments =
     command :: arguments
@@ -214,7 +218,7 @@ let create_v2 ?(additional_log_size = 0) () =
             ]
         in
         let consume_stderr = consume_stderr ~log_buffer in
-        LwtSubprocess.run "buck2" ~arguments ~consume_stderr)
+        LwtSubprocess.run buck2 ~arguments ~consume_stderr)
     >>= fun result ->
     let arguments =
       List.concat
@@ -225,7 +229,7 @@ let create_v2 ?(additional_log_size = 0) () =
           arguments;
         ]
     in
-    on_completion ~arguments ~log_buffer result
+    on_completion ~buck_command:buck2 ~arguments ~log_buffer result
   in
   let query ?mode ?isolation_prefix arguments =
     invoke_buck ?mode ?isolation_prefix ~command:"query" arguments

@@ -651,7 +651,7 @@ let start_server_and_wait ?event_channel ~configuration start_options =
     ~on_exception:(fun exn ->
       let kind, message =
         match exn with
-        | Buck.Raw.BuckError { arguments; description; exit_code; additional_logs } ->
+        | Buck.Raw.BuckError { buck_command; arguments; description; exit_code; additional_logs } ->
             (* Buck exit code >=10 are considered internal:
                https://buck.build/command/exit_codes.html *)
             let kind =
@@ -664,7 +664,7 @@ let start_server_and_wait ?event_channel ~configuration start_options =
                 [
                   Format.sprintf
                     "To reproduce this error, run `%s`."
-                    (Buck.Raw.ArgumentList.to_buck_command arguments);
+                    (Buck.Raw.ArgumentList.to_buck_command ~buck_command arguments);
                 ]
               else
                 []
