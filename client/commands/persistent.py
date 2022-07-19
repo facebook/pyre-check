@@ -113,10 +113,13 @@ class PyreServerStartOptions:
     ide_features: Optional[configuration_module.IdeFeatures]
     strict_default: bool
     excludes: Sequence[str]
+    enabled_telemetry_event: bool = False
 
     @staticmethod
     def read_from(
-        command_argument: command_arguments.CommandArguments, base_directory: Path
+        command_argument: command_arguments.CommandArguments,
+        base_directory: Path,
+        enabled_telemetry_event: bool,
     ) -> "PyreServerStartOptions":
         configuration = frontend_configuration.OpenSource(
             configuration_module.create_configuration(command_argument, base_directory)
@@ -162,6 +165,7 @@ class PyreServerStartOptions:
             ide_features=configuration.get_ide_features(),
             strict_default=configuration.is_strict(),
             excludes=configuration.get_excludes(),
+            enabled_telemetry_event=enabled_telemetry_event,
         )
 
 
@@ -1365,7 +1369,10 @@ class PyreQueryHandler(connection.BackgroundTask):
             )
 
     async def _query_and_send_definition_location(
-        self, query: DefinitionLocationQuery, socket_path: Path
+        self,
+        query: DefinitionLocationQuery,
+        socket_path: Path,
+        enabled_telemetry_event: bool,
     ) -> None:
         path_string = f"'{query.path}'"
         query_text = (
@@ -1383,6 +1390,23 @@ class PyreQueryHandler(connection.BackgroundTask):
             if definition_response is not None
             else []
         )
+
+        await _write_telemetry(
+            enabled_telemetry_event,
+            self.client_output_channel,
+            {
+                "type": "LSP",
+                "operation": "definition",
+                "filePath": str(query.path),
+                "count": len(definitions),
+                "definitions": lsp.LspDefinitionResponse.cached_schema().dump(
+                    definitions,
+                    many=True,
+                ),
+            },
+            query.activity_key,
+        )
+
         await lsp.write_json_rpc(
             self.client_output_channel,
             json_rpc.SuccessResponse(
@@ -1441,6 +1465,7 @@ class PyreQueryHandler(connection.BackgroundTask):
             server_start_options.ide_features is not None
             and server_start_options.ide_features.is_expression_level_coverage_enabled()
         )
+        enabled_telemetry_event = server_start_options.enabled_telemetry_event
         while True:
             query = await self.state.queries.get()
             if isinstance(query, TypesQuery):
@@ -1454,7 +1479,9 @@ class PyreQueryHandler(connection.BackgroundTask):
                     expression_level_coverage_enabled,
                 )
             elif isinstance(query, DefinitionLocationQuery):
-                await self._query_and_send_definition_location(query, socket_path)
+                await self._query_and_send_definition_location(
+                    query, socket_path, enabled_telemetry_event
+                )
             elif isinstance(query, ReferencesQuery):
                 await self._handle_find_all_references_query(query, socket_path)
 
@@ -1490,6 +1517,23 @@ def _client_has_status_bar_support(
         return window_capabilities.status is not None
     else:
         return False
+
+
+async def _write_telemetry(
+    enabled: bool,
+    output_channel: connection.TextWriter,
+    parameters: Dict[str, object],
+    activity_key: Optional[Dict[str, object]],
+) -> None:
+    if enabled:
+        await lsp.write_json_rpc(
+            output_channel,
+            json_rpc.Request(
+                activity_key=activity_key,
+                method="telemetry/event",
+                parameters=json_rpc.ByNameParameters(parameters),
+            ),
+        )
 
 
 async def _write_status(
@@ -2001,9 +2045,12 @@ def run(
     command_argument: command_arguments.CommandArguments,
     base_directory: Path,
     remote_logging: Optional[backend_arguments.RemoteLogging],
+    enable_telemetry_event: bool = False,
 ) -> int:
     def read_server_start_options() -> PyreServerStartOptions:
-        return PyreServerStartOptions.read_from(command_argument, base_directory)
+        return PyreServerStartOptions.read_from(
+            command_argument, base_directory, enable_telemetry_event
+        )
 
     command_timer = timer.Timer()
     error_message: Optional[str] = None

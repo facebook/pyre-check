@@ -1625,6 +1625,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     position=lsp.Position(line=42, character=10),
                 ),
                 socket_path=Path("fake_socket_path"),
+                enabled_telemetry_event=False,
             )
 
         self.assertEqual(
@@ -1681,6 +1682,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     position=lsp.Position(line=42, character=10),
                 ),
                 socket_path=Path("fake_socket_path"),
+                enabled_telemetry_event=False,
             )
 
         self.assertEqual(len(client_output_writer.items()), 1)
