@@ -15,7 +15,6 @@ from unittest.mock import CallableMixin, patch
 
 import testslide
 from libcst.metadata import CodePosition, CodeRange
-from tools.pyre.client.commands.persistent import path_to_coverage_response
 
 from ... import configuration as configuration_module, error, json_rpc
 from ...commands.language_server_protocol import SymbolKind
@@ -45,6 +44,7 @@ from ..persistent import (
     InitializationFailure,
     InitializationSuccess,
     LocationTypeLookup,
+    path_to_coverage_response,
     PyreQueryHandler,
     PyreQueryState,
     PyreServer,
