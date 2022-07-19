@@ -198,7 +198,8 @@ def process_initialize_request(
     server_info = lsp.Info(name="pyre", version=version.__version__)
     did_change_result = (
         lsp.TextDocumentSyncKind.FULL
-        if ide_features is not None and ide_features.is_consume_unsaved_changes_enabled
+        if ide_features is not None
+        and ide_features.is_consume_unsaved_changes_enabled()
         else lsp.TextDocumentSyncKind.NONE
     )
     server_capabilities = lsp.ServerCapabilities(
