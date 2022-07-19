@@ -7,6 +7,7 @@ import asyncio
 import json
 import sys
 import tempfile
+import textwrap
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterable, Iterator, Optional, Sequence
@@ -14,6 +15,7 @@ from unittest.mock import CallableMixin, patch
 
 import testslide
 from libcst.metadata import CodePosition, CodeRange
+from tools.pyre.client.commands.persistent import path_to_coverage_response
 
 from ... import configuration as configuration_module, error, json_rpc
 from ...commands.language_server_protocol import SymbolKind
@@ -1112,6 +1114,45 @@ class PersistentTest(testslide.TestCase):
 
         self.assertTrue(fake_task_manager.is_task_running())
         assert_references_response([])
+
+    def test_path_to_coverage_response(self) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
+            path = Path(temporary_file.name)
+            source = """
+            def uncovered(x):
+                print(x)
+            """
+            path.write_text(textwrap.dedent(source))
+            self.assertEqual(
+                lsp.TypeCoverageResponse(
+                    covered_percent=50.0,
+                    uncovered_ranges=[
+                        lsp.Diagnostic(
+                            range=lsp.Range(
+                                start=lsp.Position(line=1, character=0),
+                                end=lsp.Position(line=2, character=12),
+                            ),
+                            message="This function is not type checked. Consider adding parameter or return type annotations.",
+                            severity=None,
+                            code=None,
+                            source=None,
+                        )
+                    ],
+                    default_message="Consider adding type annotations.",
+                ),
+                path_to_coverage_response(path, strict_default=False),
+            )
+
+    def test_path_to_coverage_response__invalid_syntax(self) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
+            path = Path(temporary_file.name)
+            source = """
+            def invalid_syntax
+            """
+            path.write_text(textwrap.dedent(source))
+            self.assertIsNone(
+                path_to_coverage_response(path, strict_default=False),
+            )
 
 
 class PyreQueryStateTest(testslide.TestCase):
