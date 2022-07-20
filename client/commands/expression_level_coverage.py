@@ -5,13 +5,14 @@
 
 import json
 import logging
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Tuple, Union
 
 import dataclasses_json
 
-from .. import configuration as configuration_module, log
+from .. import configuration as configuration_module, log, statistics_logger
 from . import (
     commands,
     coverage,
@@ -201,6 +202,40 @@ def get_uncovered_expression_diagnostics(
     ]
 
 
+def _log_expression_coverage_to_remote(
+    configuration: frontend_configuration.Base,
+    response: object,
+) -> None:
+    run_id = str(time.time_ns())
+    for path_response in _make_expression_level_coverage_response(response).response:
+        if isinstance(path_response, ErrorAtPathResponse):
+            continue
+        expression_level_coverage = path_response.CoverageAtPath
+        total_expressions = expression_level_coverage.total_expressions
+        covered_expressions = total_expressions - len(
+            expression_level_coverage.coverage_gaps
+        )
+
+        logger = configuration.get_remote_logger()
+        if logger is None:
+            return
+        statistics_logger.log(
+            category=statistics_logger.LoggerCategory.EXPRESSION_LEVEL_COVERAGE,
+            logger=logger,
+            integers={
+                "total_expressions": total_expressions,
+                "covered_expressions": covered_expressions,
+            },
+            normals={
+                "run_id": run_id,
+                "project_root": str(configuration.get_global_root()),
+                "root": configuration.get_relative_local_root(),
+                "path": expression_level_coverage.path,
+                "binary": configuration.get_binary_version(),
+            },
+        )
+
+
 def run_query(
     configuration: frontend_configuration.Base,
     query_text: str,
@@ -212,6 +247,7 @@ def run_query(
     )
     try:
         response = query.query_server(socket_path, query_text)
+        _log_expression_coverage_to_remote(configuration, response.payload)
         if not print_summary:
             log.stdout.write(json.dumps(response.payload))
         else:
