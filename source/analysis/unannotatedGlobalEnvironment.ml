@@ -860,7 +860,6 @@ module FromReadOnlyUpstream = struct
     let function_definitions = FunctionDefinitions.create ~loader function_definitions in
     let unannotated_globals = UnannotatedGlobals.create ~loader unannotated_globals in
     (* Define the basic getters and existence checks *)
-    let get_module = Modules.get modules in
     let get_module_metadata ?dependency qualifier =
       let qualifier =
         match Reference.as_list qualifier with
@@ -869,9 +868,11 @@ module FromReadOnlyUpstream = struct
             Reference.empty
         | _ -> qualifier
       in
-      match get_module ?dependency qualifier with
+      match Modules.get modules ?dependency qualifier with
       | Some _ as result -> result
       | None -> (
+          (* Handle implicit namespace modules. These are tracked in ModuleTracker, but not by
+             AstEnvironment or by any of the tables in this environment. *)
           match AstEnvironment.ReadOnly.is_module_tracked ast_environment qualifier with
           | true -> Some (Module.create_implicit ())
           | false -> None)
