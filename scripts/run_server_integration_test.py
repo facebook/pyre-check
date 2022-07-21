@@ -267,7 +267,7 @@ def run_incremental_test(
 # In general, saved state load/saves are a distributed system problem - the file systems
 # are completely different. Make sure that Pyre doesn't rely on absolute paths when
 # loading via this test.
-def run_saved_state_test(typeshed_zip_path: str, repository_path: str) -> int:
+def run_saved_state_test(typeshed_zip_path: str, repository_path: str, debug: bool) -> int:
     # Copy files over to a temporary directory.
     original_directory = os.getcwd()
     saved_state_path = tempfile.NamedTemporaryFile().name
@@ -276,7 +276,7 @@ def run_saved_state_test(typeshed_zip_path: str, repository_path: str) -> int:
             typeshed_zip_path,
             saved_state_create_directory,
             repository_path,
-            debug=False,
+            debug,
         )
         repository.run_pyre(
             "--save-initial-state-to", saved_state_path, "incremental", "--no-watchman"
@@ -352,7 +352,7 @@ def run(repository_location: str, typeshed_zip_path: Optional[str], debug: bool)
                 sys.exit(exit_code)
             print("### Running Saved State Test ###")
             os.chdir(original_directory)
-            return run_saved_state_test(typeshed_zip_path, repository_location)
+            return run_saved_state_test(typeshed_zip_path, repository_location, debug)
         except Exception as e:
             # Retry the integration test for uncaught exceptions. Caught issues will
             # result in an exit code of 1.
