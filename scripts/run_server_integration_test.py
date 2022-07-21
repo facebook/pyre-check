@@ -256,9 +256,9 @@ def run_incremental_test(
             print(repository.run_pyre("rage"), file=sys.stderr)
             LOG.error("Found discrepancies between incremental and complete checks!")
             for revision, (actual_error, expected_error) in discrepancies.items():
-                print("Difference found for revision: {}".format(revision))
-                print("Actual errors (pyre incremental): {}".format(actual_error))
-                print("Expected errors (pyre check): {}".format(expected_error))
+                print("Difference found for revision: {}".format(revision), file=sys.stderr)
+                print("Actual errors (pyre incremental): {}".format(actual_error), file=sys.stderr)
+                print("Expected errors (pyre check): {}".format(expected_error), file=sys.stderr)
             return 1
 
     return 0
@@ -315,8 +315,8 @@ def run_saved_state_test(typeshed_zip_path: str, repository_path: str, debug: bo
 
     if actual_errors != expected_errors:
         LOG.error("Actual errors are not equal to expected errors.")
-        print("Actual errors (pyre incremental): {}".format(actual_errors))
-        print("Expected errors (pyre check): {}".format(expected_errors))
+        print("Actual errors (pyre incremental): {}".format(actual_errors), file=sys.stderr)
+        print("Expected errors (pyre check): {}".format(expected_errors), file=sys.stderr)
         return 1
     return 0
 
@@ -350,7 +350,7 @@ def run(repository_location: str, typeshed_zip_path: Optional[str], debug: bool)
             )
             if exit_code != 0:
                 sys.exit(exit_code)
-            print("### Running Saved State Test ###")
+            print("### Running Saved State Test ###", file=sys.stderr)
             os.chdir(original_directory)
             return run_saved_state_test(typeshed_zip_path, repository_location, debug)
         except Exception as e:
