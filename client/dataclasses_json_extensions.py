@@ -18,7 +18,6 @@ class DataclassJsonMixinWithCachedSchema(dataclasses_json.DataClassJsonMixin):
 
 class CamlCaseAndExcludeJsonMixin(DataclassJsonMixinWithCachedSchema):
     dataclass_json_config: Mapping[str, object] = dataclasses_json.config(
-        # pyre-ignore[6]: Incorrect typing in upstream `dataclasses_json`
         letter_case=dataclasses_json.LetterCase.CAMEL,
         undefined=dataclasses_json.Undefined.EXCLUDE,
     )["dataclasses_json"]
@@ -26,7 +25,6 @@ class CamlCaseAndExcludeJsonMixin(DataclassJsonMixinWithCachedSchema):
 
 class SnakeCaseAndExcludeJsonMixin(DataclassJsonMixinWithCachedSchema):
     dataclass_json_config: Mapping[str, object] = dataclasses_json.config(
-        # pyre-ignore[6]: Incorrect typing in upstream `dataclasses_json`
         letter_case=dataclasses_json.LetterCase.SNAKE,
         undefined=dataclasses_json.Undefined.EXCLUDE,
     )["dataclasses_json"]
