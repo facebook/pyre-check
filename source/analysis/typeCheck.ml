@@ -5959,7 +5959,7 @@ module State (Context : Context) = struct
                              { Type.Callable.Parameter.name; annotation; default = false })
                       |> Type.Callable.Parameter.create
                     in
-                    let validate_match ~errors ~overridden_parameter ~expected = function
+                    let validate_match ~errors ~index ~overridden_parameter ~expected = function
                       | Some actual -> (
                           let is_compatible =
                             let expected = Type.Variable.mark_all_variables_as_bound expected in
@@ -5968,8 +5968,15 @@ module State (Context : Context) = struct
                               ~left:expected
                               ~right:actual
                           in
+                          let is_self_or_class_parameter =
+                            index = 0 && not (StatementDefine.is_static_method define)
+                          in
                           try
-                            if (not (Type.is_top expected)) && not is_compatible then
+                            if
+                              (not (Type.is_top expected))
+                              && (not is_compatible)
+                              && not is_self_or_class_parameter
+                            then
                               emit_error
                                 ~errors
                                 ~location
@@ -6022,14 +6029,19 @@ module State (Context : Context) = struct
                                          (Error.NotFound overridden_parameter);
                                    })
                     in
-                    let check_parameter errors = function
+                    let check_parameter index errors = function
                       | `Both (overridden_parameter, overriding_parameter) -> (
                           match
                             ( Type.Callable.RecordParameter.annotation overridden_parameter,
                               Type.Callable.RecordParameter.annotation overriding_parameter )
                           with
                           | Some expected, Some actual ->
-                              validate_match ~errors ~overridden_parameter ~expected (Some actual)
+                              validate_match
+                                ~errors
+                                ~index
+                                ~overridden_parameter
+                                ~expected
+                                (Some actual)
                           | None, _
                           | _, None ->
                               (* TODO(T53997072): There is no reasonable way to compare Variable
@@ -6038,7 +6050,7 @@ module State (Context : Context) = struct
                       | `Left overridden_parameter -> (
                           match Type.Callable.RecordParameter.annotation overridden_parameter with
                           | Some expected ->
-                              validate_match ~errors ~overridden_parameter ~expected None
+                              validate_match ~errors ~index ~overridden_parameter ~expected None
                           | None -> errors)
                       | `Right _ -> errors
                     in
@@ -6046,7 +6058,7 @@ module State (Context : Context) = struct
                       Type.Callable.Overload.parameters implementation |> Option.value ~default:[]
                     in
                     Type.Callable.Parameter.zip overridden_parameters overriding_parameters
-                    |> List.fold ~init:errors ~f:check_parameter
+                    |> List.foldi ~init:errors ~f:check_parameter
                 | _ -> errors)
             | _ -> None
           end

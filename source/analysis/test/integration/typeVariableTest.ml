@@ -3677,7 +3677,6 @@ let test_self_type context =
       "Incompatible parameter type [6]: In call `foo`, for 1st positional only parameter expected \
        `ShapeProtocol` but got `BadReturnType`.";
     ];
-  (* TODO(T103914175): Allow overriding a method that uses Self. *)
   assert_type_errors
     {|
       from typing_extensions import Self
@@ -3694,12 +3693,36 @@ let test_self_type context =
         def set_scale(self, scale: float) -> Self:
           self.scale = scale + 1.0
           return self
+
+      class CircleArc(Circle):
+        def set_scale(self, scale: float) -> Self:
+          self.scale = scale * 3.14
+          return self
      |}
-    [
-      "Inconsistent override [14]: `test.Circle.set_scale` overrides method defined in `Shape` \
-       inconsistently. Parameter of type `Variable[_Self_test_Circle__ (bound to Circle)]` is not \
-       a supertype of the overridden parameter `Variable[_Self_test_Shape__ (bound to Shape)]`.";
-    ];
+    [];
+  assert_type_errors
+    {|
+      from typing_extensions import Self
+
+      class Shape:
+        def __init__(self, scale: float = 0.0) -> None:
+          self.scale = scale
+
+        @classmethod
+        def with_scale(cls, scale: float) -> Self:
+          return cls(scale)
+
+      class Circle(Shape):
+        @classmethod
+        def with_scale(cls, scale: float) -> Self:
+          return cls(scale + 1.0)
+
+      class CircleArc(Circle):
+        @classmethod
+        def with_scale(cls, scale: float) -> Self:
+          return cls(scale * 3.14)
+     |}
+    [];
   (* Generic class. *)
   assert_type_errors
     {|

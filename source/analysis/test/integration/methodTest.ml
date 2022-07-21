@@ -1577,6 +1577,82 @@ let test_check_behavioral_subtyping__special_cases context =
         def f(self, *args: typing.Any, **kwargs: typing.Any) -> None: pass
     |}
     [];
+  (* Overrides with strengthened condition on self is okay *)
+  assert_default_type_errors
+    {|
+      class Shape:
+        def __init__(self: Shape, scale: float = 0.0) -> None:
+          self.scale = scale
+
+        def set_scale(self: Shape, scale: float) -> Shape:
+          self.scale = scale
+          return self
+
+      class Circle(Shape):
+        def set_scale(self: Circle, scale: float) -> Circle:
+          self.scale = scale + 1.0
+          return self
+     |}
+    [];
+  (* Overrides with strengthened condition on cls is okay *)
+  assert_default_type_errors
+    {|
+      from typing import Type
+
+      class Shape:
+        def __init__(self, scale: float = 0.0) -> None:
+          self.scale = scale
+
+        @classmethod
+        def with_scale(cls: Type[Shape], scale: float) -> Shape:
+          return cls(scale)
+
+      class Circle(Shape):
+        @classmethod
+        def with_scale(cls: Type[Circle], scale: float) -> Circle:
+          return cls(scale + 1.0)
+     |}
+    [];
+  (* Overrides on static methods are unchanged *)
+  assert_default_type_errors
+    {|
+      class Shape:
+        def __init__(self, scale: float = 0.0) -> None:
+          self.scale = scale
+
+        @staticmethod
+        def with_scale(scale: float) -> Shape:
+          return Shape(scale)
+
+      class Circle(Shape):
+        @staticmethod
+        def with_scale(scale: float) -> Circle:
+          return Circle(scale + 1.0)
+     |}
+    [];
+  (* The first parameter of a static method gets no special treatment *)
+  assert_default_type_errors
+    {|
+      from typing_extensions import Self
+
+      class Shape:
+        def __init__(self, scale: float = 0.0) -> None:
+          self.scale = scale
+
+        @staticmethod
+        def with_scale(scale: float) -> Shape:
+          return Shape(scale)
+
+      class Circle(Shape):
+        @staticmethod
+        def with_scale(scale: int) -> Circle:
+          return Circle(scale + 1.0)
+     |}
+    [
+      "Inconsistent override [14]: `test.Circle.with_scale` overrides method defined in `Shape` \
+       inconsistently. Parameter of type `int` is not a supertype of the overridden parameter \
+       `float`.";
+    ];
   ()
 
 
