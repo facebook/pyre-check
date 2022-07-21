@@ -14,6 +14,8 @@ module ErrorsEnvironmentReadOnly : sig
 
   val module_tracker : t -> ModuleTracker.ReadOnly.t
 
+  val project_qualifiers : t -> Ast.Reference.t list
+
   val get_errors_for_qualifier : t -> Ast.Reference.t -> AnalysisError.t list
 
   (* Get all errors for in-project modules; use this to grab errors that are already computed *)
@@ -29,7 +31,9 @@ val type_environment : t -> TypeEnvironment.t
 
 val module_tracker : t -> ModuleTracker.t
 
-val populate_all_errors : scheduler:Scheduler.t -> t -> unit
+val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
+
+val project_qualifiers : t -> Ast.Reference.t list
 
 module UpdateStatistics : sig
   type t = {
@@ -86,4 +90,4 @@ module Testing : sig
   end
 end
 
-val check_and_preprocess : t -> scheduler:Scheduler.t -> unit
+val check_and_preprocess : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit

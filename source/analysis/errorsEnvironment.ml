@@ -76,10 +76,12 @@ module ReadOnly = struct
 
   let get_errors_for_qualifier environment qualifier = get environment qualifier
 
+  let project_qualifiers environment =
+    ModuleTracker.ReadOnly.project_qualifiers (module_tracker environment)
+
+
   let get_all_errors environment =
-    module_tracker environment
-    |> ModuleTracker.ReadOnly.project_qualifiers
-    |> List.concat_map ~f:(get_errors_for_qualifier environment)
+    project_qualifiers environment |> List.concat_map ~f:(get_errors_for_qualifier environment)
 end
 
 let type_environment = Unsafe.upstream
@@ -88,14 +90,13 @@ let module_tracker environment = ast_environment environment |> AstEnvironment.m
 
 module ErrorsEnvironmentReadOnly = ReadOnly
 
-let populate_all_errors ~scheduler environment =
+let project_qualifiers environment = read_only environment |> ReadOnly.project_qualifiers
+
+let populate_for_modules ~scheduler environment qualifiers =
   (* Because of lazy evaluation, we can actually perform this operation using only a read-only
      environment. But we put it on the read-write API because the behavior is explicitly stateful. *)
   let environment = read_only environment in
   let timer = Timer.start () in
-  let qualifiers =
-    ReadOnly.module_tracker environment |> ModuleTracker.ReadOnly.project_qualifiers
-  in
   let number_of_qualifiers = List.length qualifiers in
   Log.log ~section:`Progress "Postprocessing %d sources..." number_of_qualifiers;
   let map _ modules =
@@ -258,8 +259,8 @@ let create controls =
   environment
 
 
-let check_and_preprocess environment ~scheduler =
-  type_environment environment |> TypeEnvironment.populate_for_project_modules ~scheduler;
-  populate_all_errors ~scheduler environment;
+let check_and_preprocess ~scheduler environment qualifiers =
+  (type_environment environment |> TypeEnvironment.populate_for_modules ~scheduler) qualifiers;
+  populate_for_modules ~scheduler environment qualifiers;
   Profiling.track_shared_memory_usage ~name:"After checking and preprocessing" ();
   ()

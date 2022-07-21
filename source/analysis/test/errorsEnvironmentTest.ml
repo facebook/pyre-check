@@ -45,6 +45,13 @@ let assert_overlay_errors ~context ~project ~overlay qualifier expected =
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 
 
+let populate_errors_environment project =
+  let errors_environment = ScratchProject.ReadWrite.errors_environment project in
+  ErrorsEnvironment.project_qualifiers errors_environment
+  |> ErrorsEnvironment.populate_for_modules ~scheduler:(Test.mock_scheduler ()) errors_environment;
+  ()
+
+
 let test_postprocessing context =
   let code header_comment =
     Format.asprintf
@@ -78,8 +85,7 @@ let test_postprocessing context =
         "strict.py", code "# pyre-strict";
       ]
   in
-  ScratchProject.ReadWrite.errors_environment project
-  |> ErrorsEnvironment.populate_all_errors ~scheduler:(Test.mock_scheduler ());
+  populate_errors_environment project;
   (* Note that the output is always sorted, we can depend on this in tests *)
   assert_errors
     ~context
@@ -132,8 +138,7 @@ let test_update_ancestor context =
         );
       ]
   in
-  ScratchProject.ReadWrite.errors_environment project
-  |> ErrorsEnvironment.populate_all_errors ~scheduler:(Test.mock_scheduler ());
+  populate_errors_environment project;
   (* validate initial state *)
   assert_errors
     ~context
@@ -175,8 +180,7 @@ let test_update_mode context =
         |} );
       ]
   in
-  ScratchProject.ReadWrite.errors_environment project
-  |> ErrorsEnvironment.populate_all_errors ~scheduler:(Test.mock_scheduler ());
+  populate_errors_environment project;
   (* validate initial state *)
   assert_errors ~context ~project [];
   (* update and validate new errors *)
@@ -315,7 +319,8 @@ let test_error_filtering context =
         EnvironmentControls.create ~populate_call_graph:true configuration
         |> ErrorsEnvironment.create
       in
-      ErrorsEnvironment.check_and_preprocess ~scheduler read_write;
+      ErrorsEnvironment.project_qualifiers read_write
+      |> ErrorsEnvironment.check_and_preprocess ~scheduler read_write;
       ErrorsEnvironment.read_only read_write
     in
     let errors =
