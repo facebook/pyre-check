@@ -131,6 +131,14 @@ let test_check_bounded_variables context =
         ...
       |}
     [];
+  assert_type_errors
+    {|
+      from typing import *
+      T = TypeVar("T", Callable[[], str], Callable[[], int])
+      def foo(f: T) -> None:
+        f()
+    |}
+    [];
   ()
 
 

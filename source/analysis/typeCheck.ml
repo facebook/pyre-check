@@ -1306,6 +1306,17 @@ module State (Context : Context) = struct
                     callable_from_type annotation
                     >>| fun callable -> known_callable_before_application callable)
                 |> Option.all
+            | Type.Variable ({ constraints = Type.Variable.Explicit _; _ } as explicit) ->
+                let upper_bound = Type.Variable.Unary.upper_bound explicit in
+                let callee =
+                  match callee with
+                  | Callee.Attribute { attribute; base; expression } ->
+                      Callee.Attribute
+                        { base; attribute = { attribute with resolved = upper_bound }; expression }
+                  | Callee.NonAttribute callee ->
+                      Callee.NonAttribute { callee with resolved = upper_bound }
+                in
+                get_callables callee
             | Type.Variable { constraints = Type.Variable.Bound parent; _ } ->
                 let callee =
                   match callee with
