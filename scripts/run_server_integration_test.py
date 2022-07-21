@@ -354,10 +354,15 @@ def run(repository_location: str, typeshed_zip_path: Optional[str], debug: bool)
             os.chdir(original_directory)
             return run_saved_state_test(typeshed_zip_path, repository_location)
         except Exception as e:
-            LOG.error("Exception raised in integration test:\n %s \nretrying...", e)
             # Retry the integration test for uncaught exceptions. Caught issues will
             # result in an exit code of 1.
             retries = retries - 1
+            message = (
+                "retrying..."
+                if retries > 0 else
+                "Retries exceeded, try running with the --debug flag for more information"
+            )
+            LOG.error("Exception raised in integration test:\n %s \n%s", e, message)
     return 1
 
 
