@@ -219,7 +219,7 @@ class Repository:
         return output.decode("utf-8")
 
 
-def run_integration_test(
+def run_incremental_test(
     typeshed_zip_path: str, repository_path: str, debug: bool
 ) -> int:
     if not shutil.which("watchman"):
@@ -345,7 +345,7 @@ def run(repository_location: str, typeshed_zip_path: Optional[str], debug: bool)
     while retries > 0:
         try:
             os.chdir(original_directory)
-            exit_code = run_integration_test(
+            exit_code = run_incremental_test(
                 typeshed_zip_path, repository_location, debug
             )
             if exit_code != 0:
