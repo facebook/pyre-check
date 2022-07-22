@@ -62,10 +62,3 @@ class PysaVersionUpdate(Command):
             return
         configuration.set_pysa_version(self._hash)
         configuration.write()
-
-        self._repository.commit_changes(
-            commit=(not self._no_commit),
-            title="Update global configuration pysa version",
-            summary=f"Automatic upgrade to hash `{self._hash}`",
-            ignore_failures=True,
-        )

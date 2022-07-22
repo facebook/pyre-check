@@ -47,9 +47,3 @@ class UpdatePysaVersionTest(unittest.TestCase):
             PysaVersionUpdate.from_arguments(arguments, repository).run()
             configuration_set_pysa_version.assert_has_calls([call("new")])
             configuration_write.assert_has_calls([call()])
-            commit_changes.assert_called_once_with(
-                commit=True,
-                title="Update global configuration pysa version",
-                summary="Automatic upgrade to hash `new`",
-                ignore_failures=True,
-            )
