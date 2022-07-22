@@ -10,6 +10,11 @@ open Commands
 
 let commands =
   [
+    "analyze", Analyze.command;
+    "check", Check.command;
+    "infer", Infer.command;
+    "server", Server.command;
+    (* TODO(T126811354) remove these once the client is updated *)
     "newanalyze", Analyze.command;
     "newcheck", Check.command;
     "newinfer", Infer.command;
