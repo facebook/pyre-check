@@ -2180,7 +2180,7 @@ let test_invalid_models context =
     |}
     ~expect:
       {|The model query arguments at `{ Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
-  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause.|}
+  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -2193,7 +2193,7 @@ let test_invalid_models context =
     |}
     ~expect:
       {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
-  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause.|}
+  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -2206,7 +2206,7 @@ let test_invalid_models context =
     |}
     ~expect:
       {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some model);
-  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause.|}
+  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
   assert_invalid_model
     ~model_source:
@@ -2218,7 +2218,7 @@ let test_invalid_models context =
       )
     |}
     ~expect:
-      {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }` are invalid: expected a name, find, where and model clause.|}
+      {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
   assert_invalid_model
     ~source:{|
@@ -3214,8 +3214,46 @@ let test_invalid_models context =
     |}
     ~expect:
       {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some fnid); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
-  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause.|}
+  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        find = "functions",
+        where = name.matches("foo"),
+        model = Returns(TaintSource[Test])
+      )
+    |}
+    ~expect:
+      {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
+  value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = name.matches("foo"),
+        model = Returns(TaintSource[Test]),
+        expected_models = [
+          "def test.food() -> Returns(TaintSource[Test]): ..."
+        ],
+        expected_models = [
+          "def test.food() -> Returns(TaintSource[Test]): ..."
+        ]
+      )
+    |}
+    ~expect:
+      {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
+  value = Returns(TaintSource[Test]) }, { Expression.Call.Argument.name = (Some expected_models);
+  value = ["def test.food() -> Returns(TaintSource[Test]): ..."] }, { Expression.Call.Argument.name = (Some expected_models);
+  value = ["def test.food() -> Returns(TaintSource[Test]): ..."] }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+    ();
+
   (* Test Decorator clause in model queries *)
   assert_valid_model
     ~source:{|
@@ -3791,6 +3829,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -3829,6 +3869,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -3871,6 +3913,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -3920,6 +3964,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -3969,6 +4015,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4018,6 +4066,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4056,6 +4106,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4094,6 +4146,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4142,6 +4196,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4190,6 +4246,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4233,6 +4291,8 @@ let test_query_parsing context =
                     ];
                 };
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4275,6 +4335,8 @@ let test_query_parsing context =
                     ];
                 };
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4317,6 +4379,8 @@ let test_query_parsing context =
                     ];
                 };
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4354,6 +4418,8 @@ let test_query_parsing context =
                     ];
                 };
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4390,6 +4456,8 @@ let test_query_parsing context =
                     ];
                 };
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4439,6 +4507,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4488,6 +4558,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4526,6 +4598,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4564,6 +4638,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4613,6 +4689,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4670,6 +4748,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4713,6 +4793,8 @@ let test_query_parsing context =
                        });
                 ];
             ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
@@ -4788,6 +4870,102 @@ let test_query_parsing context =
                     ];
                 };
             ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+
+  (* Expected models *)
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "functions",
+     where = name.matches("foo"),
+     model = Returns(TaintSource[Test]),
+     expected_models = [
+       "def test.food() -> Returns(TaintSource[Test]): ...",
+       "def test.foo() -> Returns(TaintSource[Test]): ..."
+     ]
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 11; column = 1 } };
+          name = "get_foo";
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          rule_kind = FunctionModel;
+          productions =
+            [
+              ReturnTaint
+                [
+                  TaintAnnotation
+                    (Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         via_features = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                         trace_length = None;
+                       });
+                ];
+            ];
+          expected_models =
+            [
+              "def test.food() -> Returns(TaintSource[Test]): ...";
+              "def test.foo() -> Returns(TaintSource[Test]): ...";
+            ];
+          unexpected_models = [];
+        };
+      ]
+    ();
+
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "functions",
+     where = name.matches("foo"),
+     model = Returns(TaintSource[Test]),
+     unexpected_models = [
+       "def test.bar() -> Returns(TaintSource[Test]): ..."
+     ]
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
+          name = "get_foo";
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          rule_kind = FunctionModel;
+          productions =
+            [
+              ReturnTaint
+                [
+                  TaintAnnotation
+                    (Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         via_features = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                         trace_length = None;
+                       });
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = ["def test.bar() -> Returns(TaintSource[Test]): ..."];
         };
       ]
     ();

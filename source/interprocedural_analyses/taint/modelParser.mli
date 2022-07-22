@@ -179,6 +179,8 @@ module Internal : sig
       productions: production list;
       rule_kind: kind;
       name: string;
+      expected_models: string list;
+      unexpected_models: string list;
     }
     [@@deriving show, compare]
   end

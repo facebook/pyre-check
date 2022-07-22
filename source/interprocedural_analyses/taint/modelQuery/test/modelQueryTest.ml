@@ -116,6 +116,8 @@ let test_apply_rule context =
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -130,6 +132,8 @@ let test_apply_rule context =
         query = [NameConstraint (Equals "foo")];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
@@ -144,6 +148,8 @@ let test_apply_rule context =
         query = [NameConstraint (Equals "test.foo")];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -165,6 +171,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.barfoo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -184,6 +192,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
@@ -201,6 +211,8 @@ let test_apply_rule context =
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
@@ -217,6 +229,8 @@ let test_apply_rule context =
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -238,6 +252,8 @@ let test_apply_rule context =
             NamedParameterTaint { name = "x"; taint = [TaintAnnotation (source "Test")] };
           ];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
@@ -262,6 +278,8 @@ let test_apply_rule context =
         productions =
           [AllParametersTaint { excludes = []; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
@@ -288,6 +306,8 @@ let test_apply_rule context =
         productions =
           [AllParametersTaint { excludes = ["x"]; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
@@ -310,6 +330,8 @@ let test_apply_rule context =
         productions =
           [AllParametersTaint { excludes = ["y"]; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
@@ -340,6 +362,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
@@ -368,6 +392,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
@@ -400,6 +426,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
@@ -433,6 +461,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
@@ -463,6 +493,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:
@@ -490,6 +522,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -517,6 +551,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -548,6 +584,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -580,6 +618,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -609,6 +649,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -636,6 +678,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -663,6 +707,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -683,6 +729,8 @@ let test_apply_rule context =
         query = [NameConstraint (Matches (Re2.create_exn "foo"))];
         productions = [ParameterTaint { where = []; taint = [TaintAnnotation (source "Test")] }];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -711,6 +759,8 @@ let test_apply_rule context =
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -725,6 +775,8 @@ let test_apply_rule context =
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
@@ -739,6 +791,8 @@ let test_apply_rule context =
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
@@ -753,6 +807,8 @@ let test_apply_rule context =
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -767,6 +823,8 @@ let test_apply_rule context =
         query = [AnyParameterConstraint (AnnotationConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -789,6 +847,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -810,6 +870,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -835,6 +897,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -867,6 +931,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
@@ -890,6 +956,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -912,6 +980,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
@@ -933,6 +1003,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
@@ -959,6 +1031,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -991,6 +1065,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -1018,6 +1094,8 @@ let test_apply_rule context =
               ];
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source ~subkind:"B" "Dynamic"];
@@ -1041,6 +1119,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -1078,6 +1158,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -1110,6 +1192,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -1142,6 +1226,8 @@ let test_apply_rule context =
               };
           ];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:
@@ -1163,6 +1249,8 @@ let test_apply_rule context =
         query = [ReturnConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1178,6 +1266,8 @@ let test_apply_rule context =
         query = [ReturnConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[];
@@ -1193,6 +1283,8 @@ let test_apply_rule context =
         query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1208,6 +1300,8 @@ let test_apply_rule context =
         query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "str")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1222,6 +1316,8 @@ let test_apply_rule context =
         query = [ReturnConstraint IsAnnotatedTypeConstraint];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1236,6 +1332,8 @@ let test_apply_rule context =
         query = [ReturnConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "foo")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1267,6 +1365,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1296,6 +1396,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[];
@@ -1325,6 +1427,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1350,6 +1454,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1379,6 +1485,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1408,6 +1516,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1448,6 +1558,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[];
@@ -1488,6 +1600,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1529,6 +1643,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[];
@@ -1570,6 +1686,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1618,6 +1736,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1666,6 +1786,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
@@ -1714,6 +1836,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.baz"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1735,6 +1859,8 @@ let test_apply_rule context =
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1755,6 +1881,8 @@ let test_apply_rule context =
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[];
@@ -1776,6 +1904,8 @@ let test_apply_rule context =
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1804,6 +1934,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1832,6 +1964,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
@@ -1872,6 +2006,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
@@ -1912,6 +2048,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -1931,6 +2069,8 @@ let test_apply_rule context =
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:None
@@ -1949,6 +2089,8 @@ let test_apply_rule context =
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (sink "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:None
@@ -1967,6 +2109,8 @@ let test_apply_rule context =
         query = [ParentConstraint (NameSatisfies (Matches (Re2.create_exn "C")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.D.y"
     ~annotation:None
@@ -1985,6 +2129,8 @@ let test_apply_rule context =
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:None
@@ -2004,6 +2150,8 @@ let test_apply_rule context =
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.D.y"
     ~annotation:None
@@ -2025,6 +2173,8 @@ let test_apply_rule context =
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = false })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.E.z"
     ~annotation:None
@@ -2042,6 +2192,8 @@ let test_apply_rule context =
         query = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:(Some "int")
@@ -2059,6 +2211,8 @@ let test_apply_rule context =
         query = [AnnotationConstraint (AnnotationNameConstraint (Equals "int"))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.y"
     ~annotation:(Some "str")
@@ -2084,6 +2238,8 @@ let test_apply_rule context =
         query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:(Some "typing.Type[Foo1]")
@@ -2109,6 +2265,8 @@ let test_apply_rule context =
         query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.y"
     ~annotation:(Some "typing.Type[Foo2]")
@@ -2134,6 +2292,8 @@ let test_apply_rule context =
         query = [AnnotationConstraint (AnnotationNameConstraint (Matches (Re2.create_exn "Foo")))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.z"
     ~annotation:(Some "typing.Type[Bar]")
@@ -2153,6 +2313,8 @@ let test_apply_rule context =
         query = [AnnotationConstraint IsAnnotatedTypeConstraint];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:(Some "int")
@@ -2172,6 +2334,8 @@ let test_apply_rule context =
         query = [AnnotationConstraint IsAnnotatedTypeConstraint];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.y"
     ~annotation:(Some "typing.Annotated[str, \"foo\"]")
@@ -2194,6 +2358,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -2213,6 +2379,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.barfoo"; kind = Normal })
     ~expected:[];
@@ -2229,6 +2397,8 @@ let test_apply_rule context =
         query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[];
@@ -2253,6 +2423,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -2277,6 +2449,8 @@ let test_apply_rule context =
           ];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.DC"; method_name = "foo"; kind = Normal })
     ~expected:[];
@@ -2293,6 +2467,8 @@ let test_apply_rule context =
         query = [Not (ReturnConstraint IsAnnotatedTypeConstraint)];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = FunctionModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.bar"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];
@@ -2313,6 +2489,8 @@ let test_apply_rule context =
         query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:None
@@ -2334,6 +2512,8 @@ let test_apply_rule context =
         query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.D.y"
     ~annotation:None
@@ -2355,6 +2535,8 @@ let test_apply_rule context =
         query = [Not (ParentConstraint (Extends { class_name = "test.C"; is_transitive = false }))];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.E.z"
     ~annotation:None
@@ -2378,6 +2560,8 @@ let test_apply_rule context =
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.E.z"
     ~annotation:None
@@ -2399,6 +2583,8 @@ let test_apply_rule context =
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.D.y"
     ~annotation:None
@@ -2420,6 +2606,8 @@ let test_apply_rule context =
         query = [ParentConstraint (Extends { class_name = "test.C"; is_transitive = true })];
         productions = [AttributeTaint [TaintAnnotation (source "Test")]];
         rule_kind = AttributeModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~name:"test.C.x"
     ~annotation:None
@@ -2443,6 +2631,8 @@ let test_apply_rule context =
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal })
     ~expected:[];
@@ -2465,6 +2655,8 @@ let test_apply_rule context =
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.B"; method_name = "foo"; kind = Normal })
     ~expected:[];
@@ -2487,6 +2679,8 @@ let test_apply_rule context =
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal })
     ~expected:[];
@@ -2509,6 +2703,8 @@ let test_apply_rule context =
         query = [Not (ParentConstraint (Extends { class_name = "test.A"; is_transitive = true }))];
         productions = [ReturnTaint [TaintAnnotation (source "Test")]];
         rule_kind = MethodModel;
+        expected_models = [];
+        unexpected_models = [];
       }
     ~callable:(Target.Method { class_name = "test.D"; method_name = "foo"; kind = Normal })
     ~expected:[ModelParser.ReturnAnnotation, source "Test"];

@@ -193,6 +193,8 @@ module Internal = struct
       productions: production list;
       rule_kind: kind;
       name: string;
+      expected_models: string list;
+      unexpected_models: string list;
     }
     [@@deriving show, compare]
   end
@@ -1938,6 +1940,26 @@ let parse_model_clause
   | _ -> parse_model expression >>| List.return
 
 
+let parse_output_models_clause ~path expression =
+  match expression with
+  | Some ({ Node.value; location } as expression) -> (
+      let open Core.Result in
+      let parse_constraint ({ Node.value; _ } as constraint_expression) =
+        match value with
+        | Expression.Constant (Constant.String { StringLiteral.value; _ }) -> Ok value
+        | _ ->
+            Error
+              (model_verification_error
+                 ~path
+                 ~location
+                 (UnsupportedConstraint constraint_expression))
+      in
+      match value with
+      | Expression.List items -> List.map items ~f:parse_constraint |> all
+      | _ -> parse_constraint expression >>| List.return)
+  | None -> Ok []
+
+
 let parameters_of_callable_annotation { Type.Callable.implementation; overloads; _ } =
   let parameters_of_overload = function
     | { Type.Callable.parameters = Type.Callable.Defined parameters; _ } ->
@@ -2744,6 +2766,35 @@ let parse_statement ~resolution ~path ~configuration statement =
        };
    location;
   } ->
+      let parse_model_query
+          ~name
+          ~find_clause
+          ~where_clause
+          ~model_clause
+          expected_models_clause
+          unexpected_models_clause
+        =
+        let parsed_find_clause = parse_find_clause ~path find_clause in
+        let is_object_target = not (is_callable_clause_kind parsed_find_clause) in
+        let parsed_expected_models_clause =
+          parse_output_models_clause ~path expected_models_clause
+        in
+        let parsed_unexpected_models_clause =
+          parse_output_models_clause ~path unexpected_models_clause
+        in
+        Ok
+          ( name,
+            parsed_find_clause,
+            parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
+            parse_model_clause
+              ~path
+              ~configuration
+              ~find_clause:parsed_find_clause
+              ~is_object_target
+              model_clause,
+            parsed_expected_models_clause,
+            parsed_unexpected_models_clause )
+      in
       let clauses =
         match arguments with
         | [
@@ -2759,30 +2810,115 @@ let parse_statement ~resolution ~path ~configuration statement =
          { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
          { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
         ] ->
-            let parsed_find_clause = parse_find_clause ~path find_clause in
-            let is_object_target = not (is_callable_clause_kind parsed_find_clause) in
-            Ok
-              ( name,
-                parsed_find_clause,
-                parse_where_clause ~path ~find_clause:parsed_find_clause where_clause,
-                parse_model_clause
-                  ~path
-                  ~configuration
-                  ~find_clause:parsed_find_clause
-                  ~is_object_target
-                  model_clause )
+            parse_model_query ~name ~find_clause ~where_clause ~model_clause None None
+        | [
+         {
+           Call.Argument.name = Some { Node.value = "name"; _ };
+           value =
+             {
+               Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ });
+               _;
+             };
+         };
+         { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
+         { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
+         { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
+         {
+           Call.Argument.name = Some { Node.value = "expected_models"; _ };
+           value = expected_models_clause;
+         };
+        ] ->
+            parse_model_query
+              ~name
+              ~find_clause
+              ~where_clause
+              ~model_clause
+              (Some expected_models_clause)
+              None
+        | [
+         {
+           Call.Argument.name = Some { Node.value = "name"; _ };
+           value =
+             {
+               Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ });
+               _;
+             };
+         };
+         { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
+         { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
+         { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
+         {
+           Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
+           value = unexpected_models_clause;
+         };
+        ] ->
+            parse_model_query
+              ~name
+              ~find_clause
+              ~where_clause
+              ~model_clause
+              None
+              (Some unexpected_models_clause)
+        | [
+         {
+           Call.Argument.name = Some { Node.value = "name"; _ };
+           value =
+             {
+               Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ });
+               _;
+             };
+         };
+         { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
+         { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
+         { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
+         {
+           Call.Argument.name = Some { Node.value = "expected_models"; _ };
+           value = expected_models_clause;
+         };
+         {
+           Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
+           value = unexpected_models_clause;
+         };
+        ] ->
+            parse_model_query
+              ~name
+              ~find_clause
+              ~where_clause
+              ~model_clause
+              (Some expected_models_clause)
+              (Some unexpected_models_clause)
         | _ -> Error (model_verification_error ~path ~location (InvalidModelQueryClauses arguments))
       in
 
       clauses
-      >>= fun (name, find_clause, where_clause, model_clause) ->
+      >>= fun ( name,
+                find_clause,
+                where_clause,
+                model_clause,
+                expected_models_clause,
+                unexpected_models_clause ) ->
       find_clause
       >>= fun rule_kind ->
       where_clause
       >>= fun query ->
       model_clause
-      >>| fun productions ->
-      [ParsedQuery { ModelQuery.rule_kind; query; productions; name; location }]
+      >>= fun productions ->
+      expected_models_clause
+      >>= fun expected_models ->
+      unexpected_models_clause
+      >>| fun unexpected_models ->
+      [
+        ParsedQuery
+          {
+            ModelQuery.rule_kind;
+            query;
+            productions;
+            name;
+            location;
+            expected_models;
+            unexpected_models;
+          };
+      ]
   | { Node.location; _ } ->
       Error (model_verification_error ~path ~location (UnexpectedStatement statement))
 
