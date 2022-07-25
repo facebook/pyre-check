@@ -437,8 +437,7 @@ module Base = struct
   let find_module_paths
       ({ Configuration.Analysis.source_paths; search_paths; excludes; _ } as configuration)
     =
-    let visited_directories = String.Hash_set.create () in
-    let visited_files = String.Hash_set.create () in
+    let visited_paths = String.Hash_set.create () in
     let valid_suffixes =
       ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration
     in
@@ -461,7 +460,7 @@ module Base = struct
           || String.equal path root_path)
           (* Do not scan excluding directories to speed up the traversal *)
           && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
-          && not (mark_visited visited_directories path)
+          && not (mark_visited visited_paths path)
         in
         let file_filter path =
           let extension =
@@ -474,7 +473,7 @@ module Base = struct
           (not (String.is_prefix (Filename.basename path) ~prefix:"."))
           (* Only consider files with valid suffix *)
           && List.exists ~f:(String.equal extension) valid_suffixes
-          && not (mark_visited visited_files path)
+          && not (mark_visited visited_paths path)
         in
         PyrePath.list ~file_filter ~directory_filter ~root () |> List.map ~f:ArtifactPath.create)
     |> List.concat
