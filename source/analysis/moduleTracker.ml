@@ -81,29 +81,29 @@ module Base = struct
       submodule_refcounts: int Reference.Table.t;
     }
 
-    let insert_module_path ~configuration ~inserted existing_files =
+    let insert_module_path ~configuration ~to_insert existing_paths =
       let rec insert sofar = function
-        | [] -> List.rev_append sofar [inserted]
-        | current_file :: rest as existing -> (
-            match ModulePath.same_module_compare ~configuration inserted current_file with
+        | [] -> List.rev_append sofar [to_insert]
+        | current_path :: rest as existing -> (
+            match ModulePath.same_module_compare ~configuration to_insert current_path with
             | 0 ->
                 (* We have the following precondition for files that are in the same module: *)
                 (* `same_module_compare a b = 0` implies `equal a b` *)
-                assert (ModulePath.equal inserted current_file);
+                assert (ModulePath.equal to_insert current_path);
 
                 (* Duplicate entry detected. Do nothing *)
-                existing_files
-            | x when x > 0 -> List.rev_append sofar (inserted :: existing)
-            | _ -> insert (current_file :: sofar) rest)
+                existing_paths
+            | x when x > 0 -> List.rev_append sofar (to_insert :: existing)
+            | _ -> insert (current_path :: sofar) rest)
       in
-      insert [] existing_files
+      insert [] existing_paths
 
 
-    let remove_module_path ~configuration ~removed existing_files =
+    let remove_module_path ~configuration ~to_remove existing_paths =
       let rec remove sofar = function
-        | [] -> existing_files
-        | current_file :: rest -> (
-            match ModulePath.same_module_compare ~configuration removed current_file with
+        | [] -> existing_paths
+        | current_path :: rest -> (
+            match ModulePath.same_module_compare ~configuration to_remove current_path with
             | 0 ->
                 let () =
                   (* For removed files, we only check for equality on relative path & priority. *)
@@ -116,13 +116,13 @@ module Base = struct
                     String.equal left_relative right_relative
                     && Int.equal left_priority right_priority
                   in
-                  assert (partially_equal removed current_file)
+                  assert (partially_equal to_remove current_path)
                 in
                 List.rev_append sofar rest
-            | x when x > 0 -> existing_files
-            | _ -> remove (current_file :: sofar) rest)
+            | x when x > 0 -> existing_paths
+            | _ -> remove (current_path :: sofar) rest)
       in
-      remove [] existing_files
+      remove [] existing_paths
 
 
     let create_qualifier_to_modules ~configuration module_paths =
@@ -131,7 +131,7 @@ module Base = struct
         let update_table = function
           | None -> [module_path]
           | Some module_paths ->
-              insert_module_path ~configuration ~inserted:module_path module_paths
+              insert_module_path ~configuration ~to_insert:module_path module_paths
         in
         Hashtbl.update qualifier_to_modules qualifier ~f:update_table
       in
@@ -205,7 +205,7 @@ module Base = struct
                     Some (IncrementalExplicitUpdate.New module_path)
                 | Some module_paths ->
                     let new_module_paths =
-                      insert_module_path ~configuration ~inserted:module_path module_paths
+                      insert_module_path ~configuration ~to_insert:module_path module_paths
                     in
                     let new_module_path = List.hd_exn new_module_paths in
                     Hashtbl.set qualifier_to_modules ~key:qualifier ~data:new_module_paths;
@@ -228,7 +228,7 @@ module Base = struct
                     Hashtbl.remove qualifier_to_modules qualifier;
                     None
                 | old_module_path :: _ -> (
-                    match remove_module_path ~configuration ~removed:module_path module_paths with
+                    match remove_module_path ~configuration ~to_remove:module_path module_paths with
                     | [] ->
                         (* Last remaining file for the module gets removed. *)
                         Hashtbl.remove qualifier_to_modules qualifier;
