@@ -413,6 +413,41 @@ let test_builtin_modules context =
   ()
 
 
+let test_legacy_resolve_exports context =
+  let open UnannotatedGlobalEnvironment in
+  let assert_resolved ?(include_typeshed = false) ~expected ~reference sources =
+    Memory.reset_shared_memory ();
+    let project =
+      if include_typeshed then
+        ScratchProject.setup ~context sources
+      else
+        ScratchProject.setup
+          ~context
+          ~include_typeshed_stubs:false
+          ~include_helper_builtins:false
+          ~external_sources:
+            [
+              "outer/middle/inner/a.py", "class A: pass";
+              "outer/middle/inner/b.py", "from .a import A";
+            ]
+          sources
+    in
+    let read_only =
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
+    in
+    let actual = ReadOnly.legacy_resolve_exports read_only reference in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Reference.t]
+      ~printer:Reference.show
+      expected
+      actual
+  in
+  assert_resolved [] ~reference:!&"outer.middle.inner.b.A" ~expected:!&"outer.middle.inner.a.A";
+  ()
+
+
 let test_resolve_exports context =
   let open UnannotatedGlobalEnvironment in
   let assert_resolved ?(include_typeshed = false) ~expected ?from ~reference sources =
@@ -2552,6 +2587,7 @@ let () =
          "define_registration" >:: test_define_registration;
          "simple_globals" >:: test_simple_global_registration;
          "builtins" >:: test_builtin_modules;
+         "legacy_resolve_exports" >:: test_legacy_resolve_exports;
          "resolve_exports" >:: test_resolve_exports;
          (* Tests of dependency tracking across an update *)
          "get_class_summary" >:: test_get_class_summary;
