@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Callable, Mapping, Optional, TypeVar
 
 import testslide
+from tools.pyre.client.commands.language_server_protocol import ContentChange
 
 from ... import json_rpc
 from ...tests import setup
@@ -360,10 +361,12 @@ class LSPParsingTest(testslide.TestCase):
             {
                 "textDocument": {
                     "uri": "file:///home/user/test.py",
-                }
+                },
+                "contentChanges": [{"text": "x = 5"}],
             },
             expected=DidChangeTextDocumentParameters(
-                text_document=TextDocumentIdentifier(uri="file:///home/user/test.py")
+                text_document=TextDocumentIdentifier(uri="file:///home/user/test.py"),
+                content_changes=[ContentChange("x = 5")],
             ),
         )
         assert_parsed(
@@ -371,9 +374,10 @@ class LSPParsingTest(testslide.TestCase):
                 "textDocument": {
                     "uri": "file:///home/user/test.py",
                 },
-                "text": "foo",
+                "contentChanges": [{"text": "x = 5"}, {"text": "file2: str"}],
             },
             expected=DidChangeTextDocumentParameters(
                 text_document=TextDocumentIdentifier(uri="file:///home/user/test.py"),
+                content_changes=[ContentChange("x = 5"), ContentChange("file2: str")],
             ),
         )

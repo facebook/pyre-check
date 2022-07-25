@@ -362,6 +362,11 @@ class TextDocumentItem(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
+class ContentChange(json_mixins.CamlCaseAndExcludeJsonMixin):
+    text: str
+
+
+@dataclasses.dataclass(frozen=True)
 class DidOpenTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentItem
 
@@ -386,7 +391,7 @@ class DidCloseTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class DidChangeTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
-    # TODO: Potentially add a new field to this for changed_text, if the server request requires it.
+    content_changes: List[ContentChange]
 
     @staticmethod
     def from_json_rpc_parameters(
