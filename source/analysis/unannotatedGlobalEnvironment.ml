@@ -118,7 +118,7 @@ module ReadOnly = struct
       else
         let rec resolve_exports ~lead ~tail =
           match tail with
-          | head :: tail ->
+          | head :: tail -> (
               let incremented_lead = lead @ [head] in
               if
                 Option.is_some
@@ -130,11 +130,12 @@ module ReadOnly = struct
                 resolve_exports ~lead:incremented_lead ~tail
               else
                 get_module_metadata ?dependency read_only (Reference.create_from_list lead)
-                >>| (fun definition ->
-                      match Module.legacy_aliased_export definition (Reference.create head) with
-                      | Some export -> Reference.combine export (Reference.create_from_list tail)
-                      | _ -> resolve_exports ~lead:(lead @ [head]) ~tail)
-                |> Option.value ~default:reference
+                >>= (fun definition ->
+                      Module.legacy_aliased_export definition (Reference.create head))
+                >>| (fun export -> Reference.combine export (Reference.create_from_list tail))
+                |> function
+                | Some reference -> reference
+                | None -> resolve_exports ~lead:(lead @ [head]) ~tail)
           | _ -> reference
         in
         match Reference.as_list reference with
