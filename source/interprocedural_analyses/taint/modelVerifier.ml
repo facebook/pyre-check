@@ -31,17 +31,17 @@ end)
 let containing_source ~resolution reference =
   let global_resolution = Resolution.global_resolution resolution in
   let ast_environment = GlobalResolution.ast_environment global_resolution in
-  let rec qualifier ~lead ~tail =
+  let rec qualifier ~found ~lead ~tail =
     match tail with
     | head :: (_ :: _ as tail) ->
         let new_lead = Reference.create ~prefix:lead head in
-        if not (GlobalResolution.module_exists global_resolution new_lead) then
-          lead
+        if GlobalResolution.module_exists global_resolution new_lead then
+          qualifier ~found:new_lead ~lead:new_lead ~tail
         else
-          qualifier ~lead:new_lead ~tail
-    | _ -> lead
+          qualifier ~found ~lead:new_lead ~tail
+    | _ -> found
   in
-  qualifier ~lead:Reference.empty ~tail:(Reference.as_list reference)
+  qualifier ~found:Reference.empty ~lead:Reference.empty ~tail:(Reference.as_list reference)
   |> AstEnvironment.ReadOnly.get_processed_source ast_environment
 
 
