@@ -7,7 +7,7 @@
  * @format
  */
 
-const {fbContent, fbInternalOnly} = require('internaldocs-fb-helpers');
+const {fbContent, fbInternalOnly} = require('docusaurus-plugin-internaldocs-fb/internal');
 
 module.exports = {
   pyre: [

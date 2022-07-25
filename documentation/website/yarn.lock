@@ -5918,11 +5918,6 @@ internal-slot@^1.0.3:
     has "^1.0.3"
     side-channel "^1.0.4"
 
-internaldocs-fb-helpers@^1.2.0:
-  version "1.6.4"
-  resolved "https://registry.yarnpkg.com/internaldocs-fb-helpers/-/internaldocs-fb-helpers-1.6.4.tgz#b67cbf83a83cbd720067847af21c499715b9e32a"
-  integrity sha512-eoMHtKcd7zVp0LNVdCPpP8NJQ9zDyCqQCr/yXL0z4rJdOaZCbsbAbW/We2IBxDKKCg6ItheFAVrAv1PF4v7+Sg==
-
 internaldocs-fb-helpers@^1.7.1:
   version "1.7.1"
   resolved "https://registry.yarnpkg.com/internaldocs-fb-helpers/-/internaldocs-fb-helpers-1.7.1.tgz#ab337a74fc2701927305e402e423000e93fa9f66"
@@ -8497,7 +8492,7 @@ react-youtube@^7.14.0:
     prop-types "15.7.2"
     youtube-player "5.5.2"
 
-react@^17.0.1:
+react@^17.0.2:
   version "17.0.2"
   resolved "https://registry.yarnpkg.com/react/-/react-17.0.2.tgz#d0b5cc516d29eb3eee383f75b62864cfb6800037"
   integrity sha512-gnhPt75i/dq/z3/6q/0asP78D0u592D5L1pd7M8P+dck6Fu/jJeL6iVVK23fptSUZj8Vjf++7wXA8UNclGQcbA==

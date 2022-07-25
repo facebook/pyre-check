@@ -7,7 +7,7 @@
  * @format
  */
 
-const {fbContent} = require('internaldocs-fb-helpers');
+const {fbContent} = require('docusaurus-plugin-internaldocs-fb/internal');
 
 /* List of projects/orgs using Pyre for the users page */
 
