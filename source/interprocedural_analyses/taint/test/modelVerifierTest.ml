@@ -349,7 +349,45 @@ let test_resolve context =
       x: int = 1
     |}]
     "test.x"
-    ~expect:(Some (Global.Attribute Type.integer))
+    ~expect:(Some (Global.Attribute Type.integer));
+
+  (* Deeply nested code, where outer packages are not importable *)
+  assert_resolve
+    ~context
+    [
+      "outer/middle/inner/a.py", {|
+      def foo() -> None: ...
+    |};
+      "outer/middle/inner/b.py", {|
+      from .a import foo
+    |};
+    ]
+    "outer.middle.inner.b.foo"
+    ~expect:
+      (Some
+         (Global.Attribute
+            (create_callable ~annotation:Type.NoneType ~name:"outer.middle.inner.a.foo" ())));
+  assert_resolve
+    ~context
+    [
+      "outer/middle/inner/a.py", {|
+      class Foo:
+        def bar(self): ...
+    |};
+      "outer/middle/inner/b.py", {|
+      from .a import Foo
+    |};
+    ]
+    "outer.middle.inner.b.Foo.bar"
+    ~expect:
+      (Some
+         (Global.Attribute
+            (create_callable
+               ~name:"outer.middle.inner.a.Foo.bar"
+               ~parameters:
+                 [create_parameter ~annotation:(Type.Primitive "outer.middle.inner.a.Foo") "self"]
+               ())));
+  ()
 
 
 let () = "model_verifier" >::: ["resolve" >:: test_resolve] |> Test.run
