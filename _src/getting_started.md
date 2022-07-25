@@ -3,7 +3,7 @@ id: getting-started
 title: Getting Started
 sidebar_label: Getting Started
 ---
-import {OssOnly, FbInternalOnly} from 'internaldocs-fb-helpers';
+import {OssOnly, FbInternalOnly} from 'docusaurus-plugin-internaldocs-fb/internal';
 import FbGettingStarted from './fb/getting_started.md';
 import YouTube from 'react-youtube';
 
