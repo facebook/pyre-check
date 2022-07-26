@@ -2094,10 +2094,23 @@ let test_classify_coverage_data _ =
     let coverage_data = make_coverage_data_record ~expression:(parse_expression expression) type_ in
     assert_coverage_gap ~coverage_data reason
   in
+  let assert_coverage_gap_parse_type ~expression ~type_ reason =
+    let coverage_data = make_coverage_data_record ~expression (parse_type type_) in
+    assert_coverage_gap ~coverage_data reason
+  in
+  assert_coverage_gap_parse_both
+    ~expression:"x"
+    ~type_:"typing.Any"
+    (Some (LocationBasedLookup.TypeIsAny LocationBasedLookup.OtherExpressionIsAny));
+  assert_coverage_gap_parse_type
+    ~expression:
+      (Some (Expression.Name (Name.Identifier "$parameter$x") |> Node.create_with_default_location))
+    ~type_:"typing.Any"
+    (Some (LocationBasedLookup.TypeIsAny LocationBasedLookup.ParameterIsAny));
   assert_coverage_gap_parse_both
     ~expression:"print(x + 1)"
     ~type_:"typing.Any"
-    (Some (LocationBasedLookup.TypeIsAny LocationBasedLookup.ExpressionIsAny));
+    (Some (LocationBasedLookup.TypeIsAny LocationBasedLookup.OtherExpressionIsAny));
   assert_coverage_gap_parse_both ~expression:"1" ~type_:"typing_extensions.Literal[1]" None;
   assert_coverage_gap_parse_both
     ~expression:"x"
@@ -2515,7 +2528,7 @@ let test_coverage_gaps_in_module context =
                 |> Node.create_with_default_location);
             type_ = Type.Any;
           };
-        reason = TypeIsAny ExpressionIsAny;
+        reason = TypeIsAny OtherExpressionIsAny;
       };
       {
         LocationBasedLookup.coverage_data =
@@ -2575,7 +2588,7 @@ let test_coverage_gaps_in_module context =
               Some (Expression.Constant Constant.Ellipsis |> Node.create_with_default_location);
             type_ = Type.Any;
           };
-        reason = TypeIsAny ExpressionIsAny;
+        reason = TypeIsAny OtherExpressionIsAny;
       };
       {
         LocationBasedLookup.coverage_data =
@@ -2586,7 +2599,7 @@ let test_coverage_gaps_in_module context =
                 |> Node.create_with_default_location);
             type_ = Type.Any;
           };
-        reason = TypeIsAny ExpressionIsAny;
+        reason = TypeIsAny OtherExpressionIsAny;
       };
     ];
   assert_coverage_gaps_in_module ~context ~source:{|

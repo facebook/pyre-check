@@ -15,7 +15,7 @@ type coverage_data = {
 
 type typeisany =
   | ParameterIsAny
-  | ExpressionIsAny
+  | OtherExpressionIsAny
 [@@deriving compare, sexp, show, hash, to_yojson]
 
 type reason =
@@ -33,6 +33,7 @@ type coverage_gap = {
 
 type coverage_gap_by_location = {
   location: Location.t;
+  function_name: string option;
   type_: Type.t;
   reason: string list;
 }
