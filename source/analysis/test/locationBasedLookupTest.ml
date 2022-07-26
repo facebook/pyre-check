@@ -2084,44 +2084,44 @@ let test_classify_coverage_data _ =
       (make_coverage_gap ~coverage_data reason)
       (LocationBasedLookup.classify_coverage_data coverage_data)
   in
-  let assert_coverage_gap_any ~expression ~type_ reason =
+  let assert_coverage_gap_parse_both ~expression ~type_ reason =
     let coverage_data =
       make_coverage_data_record ~expression:(parse_expression expression) (parse_type type_)
     in
     assert_coverage_gap ~coverage_data reason
   in
-  let assert_coverage_gap_callable ~expression ~type_ reason =
+  let assert_coverage_gap_parse_expression ~expression ~type_ reason =
     let coverage_data = make_coverage_data_record ~expression:(parse_expression expression) type_ in
     assert_coverage_gap ~coverage_data reason
   in
-  assert_coverage_gap_any
+  assert_coverage_gap_parse_both
     ~expression:"print(x + 1)"
     ~type_:"typing.Any"
     (Some (LocationBasedLookup.TypeIsAny LocationBasedLookup.ExpressionIsAny));
-  assert_coverage_gap_any ~expression:"1" ~type_:"typing_extensions.Literal[1]" None;
-  assert_coverage_gap_any
+  assert_coverage_gap_parse_both ~expression:"1" ~type_:"typing_extensions.Literal[1]" None;
+  assert_coverage_gap_parse_both
     ~expression:"x"
     ~type_:"typing.List[typing.Any]"
     (Some LocationBasedLookup.ContainerParameterIsAny);
-  assert_coverage_gap_any ~expression:"x" ~type_:"typing.List[float]" None;
-  assert_coverage_gap_any
+  assert_coverage_gap_parse_both ~expression:"x" ~type_:"typing.List[float]" None;
+  assert_coverage_gap_parse_both
     ~expression:"x"
     ~type_:"typing.Set[typing.Any]"
     (Some LocationBasedLookup.ContainerParameterIsAny);
-  assert_coverage_gap_any ~expression:"x" ~type_:"typing.Set[int]" None;
-  assert_coverage_gap_any
+  assert_coverage_gap_parse_both ~expression:"x" ~type_:"typing.Set[int]" None;
+  assert_coverage_gap_parse_both
     ~expression:"x"
     ~type_:"typing.Dict[typing.Any, typing.Any]"
     (Some LocationBasedLookup.ContainerParameterIsAny);
-  assert_coverage_gap_any ~expression:"x" ~type_:"typing.Dict[str, typing.Any]" None;
-  assert_coverage_gap_any ~expression:"Foo[Any]" ~type_:"Foo[Any]" None;
+  assert_coverage_gap_parse_both ~expression:"x" ~type_:"typing.Dict[str, typing.Any]" None;
+  assert_coverage_gap_parse_both ~expression:"Foo[Any]" ~type_:"Foo[Any]" None;
   (* TODO(T123023697): We only identify coverage gaps in Callable when all the parameters are
      Unknown or Any. Task handles niche cases such as keyword-only or positional arguments*)
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:(Type.Callable.create ~annotation:Type.bytes ())
     None;
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
       (Type.Callable.create
@@ -2131,7 +2131,7 @@ let test_classify_coverage_data _ =
          ~annotation:Type.bytes
          ())
     (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
       (Type.Callable.create
@@ -2141,7 +2141,7 @@ let test_classify_coverage_data _ =
          ~annotation:Type.bytes
          ())
     (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
       (Type.Callable.create
@@ -2154,7 +2154,7 @@ let test_classify_coverage_data _ =
          ~annotation:Type.bytes
          ())
     None;
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
       (Type.Callable.create
@@ -2167,7 +2167,7 @@ let test_classify_coverage_data _ =
          ~annotation:Type.bytes
          ())
     (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
       (Type.Callable.create
@@ -2180,7 +2180,7 @@ let test_classify_coverage_data _ =
          ~annotation:Type.bytes
          ())
     (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
       (Type.Callable.create
@@ -2193,7 +2193,7 @@ let test_classify_coverage_data _ =
          ~annotation:Type.bytes
          ())
     (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
       (Type.Callable.create
@@ -2207,7 +2207,7 @@ let test_classify_coverage_data _ =
          ~annotation:Type.bytes
          ())
     (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
       (Type.Callable.create
@@ -2221,7 +2221,7 @@ let test_classify_coverage_data _ =
          ~annotation:Type.bytes
          ())
     (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
       (Type.Callable.create
@@ -2235,7 +2235,7 @@ let test_classify_coverage_data _ =
          ~annotation:Type.bytes
          ())
     (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:
       (Type.Callable.create
@@ -2249,7 +2249,7 @@ let test_classify_coverage_data _ =
          ~annotation:Type.bytes
          ())
     (Some LocationBasedLookup.CallableParameterIsUnknownOrAny);
-  assert_coverage_gap_callable
+  assert_coverage_gap_parse_expression
     ~expression:"foo"
     ~type_:(Type.Callable.create ~parameters:(Type.Callable.Defined []) ~annotation:Type.bytes ())
     None;
