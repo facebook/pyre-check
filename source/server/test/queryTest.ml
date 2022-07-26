@@ -1967,7 +1967,7 @@ let test_expression_level_coverage context =
                               "column": 7
                           }
                       },
-                      "function_name": null,
+                      "function_name": "%s.%s",
                       "type_": "typing.Callable(%s.%s)[[Named(x, unknown)], None]",
                       "reason": ["%s"]
                   },
@@ -2021,6 +2021,8 @@ let test_expression_level_coverage context =
         ]
         |}
       path
+      function_name
+      function_name
       function_name
       function_name
       (List.nth_exn LocationBasedLookup.callable_parameter_is_unknown_or_any_message 0)
