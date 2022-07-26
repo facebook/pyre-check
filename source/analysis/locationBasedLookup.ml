@@ -26,6 +26,7 @@ type reason =
   | TypeIsAny of typeisany
   | ContainerParameterIsAny
   | CallableParameterIsUnknownOrAny
+  | CallableReturnIsAny
 [@@deriving compare, sexp, show, hash, to_yojson]
 
 type coverage_gap = {
@@ -836,6 +837,8 @@ let classify_coverage_data { expression; type_ } =
   | Parametric { name = "list" | "set"; parameters = [Single Any] }
   | Parametric { name = "dict"; parameters = [Single Any; Single Any] } ->
       make_coverage_gap ContainerParameterIsAny
+  | Callable { implementation = { annotation = Type.Any; _ }; _ } ->
+      make_coverage_gap CallableReturnIsAny
   | Callable { implementation = { parameters = Defined (_ :: _ as parameter_list); _ }; _ } ->
       let parameter_is_top_or_any = function
         | Type.Callable.Parameter.Named { annotation = Type.Any | Type.Top; _ } -> true
@@ -874,6 +877,8 @@ let callable_parameter_is_unknown_or_any_message =
   ["Consider adding stronger annotations to the parameters."]
 
 
+let callable_return_is_any_message = ["Consider adding stronger annotations to the return type."]
+
 let get_expression_level_coverage coverage_data_lookup =
   let all_nodes = get_all_nodes_and_coverage_data coverage_data_lookup in
   let total_expressions = List.length all_nodes in
@@ -891,6 +896,7 @@ let get_expression_level_coverage coverage_data_lookup =
               | TypeIsAny ExpressionIsAny -> expression_is_any_message
               | ContainerParameterIsAny -> container_parameter_is_any_message
               | CallableParameterIsUnknownOrAny -> callable_parameter_is_unknown_or_any_message
+              | CallableReturnIsAny -> callable_return_is_any_message
             in
             Some { location; type_; reason = message reason }
         | None -> None)

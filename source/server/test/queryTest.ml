@@ -2135,7 +2135,7 @@ let test_expression_level_coverage context =
           }
          |}
           (PyrePath.absolute custom_source_root)
-          (List.nth_exn LocationBasedLookup.callable_parameter_is_unknown_or_any_message 0)
+          (List.nth_exn LocationBasedLookup.callable_return_is_any_message 0)
           (List.nth_exn LocationBasedLookup.parameter_is_any_message 0)
           (List.nth_exn LocationBasedLookup.parameter_is_any_message 0)
           (List.nth_exn LocationBasedLookup.expression_is_any_message 0) );

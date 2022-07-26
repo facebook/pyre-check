@@ -22,6 +22,7 @@ type reason =
   | TypeIsAny of typeisany
   | ContainerParameterIsAny
   | CallableParameterIsUnknownOrAny
+  | CallableReturnIsAny
 [@@deriving compare, sexp, show, hash, to_yojson]
 
 type coverage_gap = {
@@ -122,3 +123,5 @@ val expression_is_any_message : string list
 val container_parameter_is_any_message : string list
 
 val callable_parameter_is_unknown_or_any_message : string list
+
+val callable_return_is_any_message : string list
