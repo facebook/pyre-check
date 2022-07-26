@@ -32,6 +32,7 @@ class LoggerCategory(Enum):
     QUALITY_ANALYZER = "perfpipe_pyre_quality_analyzer"
     QUALITY_ANALYZER_ISSUES = "perfpipe_pyre_quality_analyser_issues"
     STRICT_ADOPTION = "perfpipe_pyre_strict_adoption"
+    UNANNOTATED_FUNCTIONS = "perfpipe_alice0_unannotated_functions"  # TODO (T126552363) update with official name when set up
     USAGE = "perfpipe_pyre_usage"
 
 

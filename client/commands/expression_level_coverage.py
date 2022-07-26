@@ -8,7 +8,7 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 import dataclasses_json
 
@@ -192,42 +192,92 @@ def make_diagnostic_for_coverage_gap(coverage_gap: CoverageGap) -> lsp.Diagnosti
 
 
 def get_uncovered_expression_diagnostics(
-    expression_coverage: ExpressionLevelCoverageResponse,
+    expression_level_coverage: ExpressionLevelCoverageResponse,
 ) -> List[lsp.Diagnostic]:
-    if not isinstance(expression_coverage.response[0], CoverageAtPathResponse):
+    if not isinstance(expression_level_coverage.response[0], CoverageAtPathResponse):
         return []
     # pyre-ignore[16]: Pyre doesn't understand Union of dataclasses_json within dataclasses_json
-    coverage_gaps = expression_coverage.response[0].CoverageAtPath.coverage_gaps
+    coverage_gaps = expression_level_coverage.response[0].CoverageAtPath.coverage_gaps
     return [
         make_diagnostic_for_coverage_gap(coverage_gap) for coverage_gap in coverage_gaps
     ]
 
 
-def _log_expression_coverage_to_remote(
+def _log_expression_level_coverage_to_remote(
     configuration: frontend_configuration.Base,
     response: object,
 ) -> None:
+    logger = configuration.get_remote_logger()
+    if logger is None:
+        return
     run_id = str(time.time_ns())
     for path_response in _make_expression_level_coverage_response(response).response:
         if isinstance(path_response, ErrorAtPathResponse):
             continue
         expression_level_coverage = path_response.CoverageAtPath
-        total_expressions = expression_level_coverage.total_expressions
-        covered_expressions = total_expressions - len(
-            expression_level_coverage.coverage_gaps
+        _log_number_expression_level_coverage(
+            configuration, logger, run_id, expression_level_coverage
+        )
+        unannotated_functions = {}
+        for coverage_gap in expression_level_coverage.coverage_gaps:
+            function_name = coverage_gap.function_name
+            if function_name is None:
+                continue
+            if function_name not in unannotated_functions:
+                unannotated_functions[function_name] = 0
+            unannotated_functions[function_name] += 1
+        _log_unannotated_functions(
+            configuration,
+            logger,
+            run_id,
+            expression_level_coverage,
+            unannotated_functions,
         )
 
-        logger = configuration.get_remote_logger()
-        if logger is None:
-            return
+
+def _log_number_expression_level_coverage(
+    configuration: frontend_configuration.Base,
+    logger: str,
+    run_id: str,
+    expression_level_coverage: CoverageAtPath,
+) -> None:
+    total_expressions = expression_level_coverage.total_expressions
+    covered_expressions = total_expressions - len(
+        expression_level_coverage.coverage_gaps
+    )
+    statistics_logger.log(
+        category=statistics_logger.LoggerCategory.EXPRESSION_LEVEL_COVERAGE,
+        logger=logger,
+        integers={
+            "total_expressions": total_expressions,
+            "covered_expressions": covered_expressions,
+        },
+        normals={
+            "run_id": run_id,
+            "project_root": str(configuration.get_global_root()),
+            "root": configuration.get_relative_local_root(),
+            "path": expression_level_coverage.path,
+            "binary": configuration.get_binary_version(),
+        },
+    )
+
+
+def _log_unannotated_functions(
+    configuration: frontend_configuration.Base,
+    logger: str,
+    run_id: str,
+    expression_level_coverage: CoverageAtPath,
+    unannotated_functions: Dict[str, int],
+) -> None:
+    for function_name, count in unannotated_functions.items():
         statistics_logger.log(
-            category=statistics_logger.LoggerCategory.EXPRESSION_LEVEL_COVERAGE,
+            category=statistics_logger.LoggerCategory.UNANNOTATED_FUNCTIONS,
             logger=logger,
             integers={
-                "total_expressions": total_expressions,
-                "covered_expressions": covered_expressions,
+                "count": count,
             },
             normals={
+                "function_name": function_name,
                 "run_id": run_id,
                 "project_root": str(configuration.get_global_root()),
                 "root": configuration.get_relative_local_root(),
@@ -248,7 +298,7 @@ def run_query(
     )
     try:
         response = query.query_server(socket_path, query_text)
-        _log_expression_coverage_to_remote(configuration, response.payload)
+        _log_expression_level_coverage_to_remote(configuration, response.payload)
         if not print_summary:
             log.stdout.write(json.dumps(response.payload))
         else:
