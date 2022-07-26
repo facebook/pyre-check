@@ -903,31 +903,9 @@ let get_expression_level_coverage coverage_data_lookup =
           | _ -> None
         in
         match coverage_gap_option with
-        | Some coverage_gap -> (
-            match coverage_gap with
-            | { coverage_data = { type_; _ }; reason = CallableReturnIsAny } ->
-                Some
-                  {
-                    location;
-                    function_name = get_function_name type_;
-                    type_;
-                    reason = message CallableReturnIsAny;
-                  }
-            | { coverage_data = { type_; _ }; reason = CallableParameterIsUnknownOrAny } ->
-                let get_function_name type_ =
-                  match type_ with
-                  | Type.Callable { kind = Named name; _ } -> Some (Reference.show name)
-                  | _ -> None
-                in
-                Some
-                  {
-                    location;
-                    function_name = get_function_name type_;
-                    type_;
-                    reason = message CallableParameterIsUnknownOrAny;
-                  }
-            | { coverage_data = { type_; _ }; reason } ->
-                Some { location; function_name = None; type_; reason = message reason })
+        | Some { coverage_data = { type_; _ }; reason } ->
+            Some
+              { location; function_name = get_function_name type_; type_; reason = message reason }
         | None -> None)
   in
   let sorted_coverage_gap_by_locations =
