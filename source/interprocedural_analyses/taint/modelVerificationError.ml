@@ -120,6 +120,11 @@ type kind =
     }
   | DuplicateNameClauses of string
   | NoOutputFromModelQuery of string
+  | UnmatchedModels of {
+      expected: bool;
+      model_query_name: string;
+      models: string list;
+    }
 [@@deriving sexp, compare, show]
 
 type t = {
@@ -323,6 +328,19 @@ let description error =
         name
   | NoOutputFromModelQuery model_query_name ->
       Format.sprintf "ModelQuery `%s` output no models." model_query_name
+  | UnmatchedModels { expected; model_query_name; models } ->
+      let starting_string =
+        if expected then
+          Format.sprintf
+            "The output of ModelQuery `%s` did not match the following expected models: ["
+            model_query_name
+        else
+          Format.sprintf
+            "The output of ModelQuery `%s` matched the following unexpected models: ["
+            model_query_name
+      in
+      let strings = List.map models ~f:(fun model -> Format.sprintf "\"%s\"; " model) in
+      starting_string ^ Option.value_exn (List.reduce strings ~f:( ^ )) ^ "]"
 
 
 let code { kind; _ } =
@@ -368,6 +386,7 @@ let code { kind; _ } =
   | InvalidDecoratorClause _ -> 39
   | DuplicateNameClauses _ -> 40
   | NoOutputFromModelQuery _ -> 41
+  | UnmatchedModels _ -> 42
 
 
 let display { kind = error; path; location } =

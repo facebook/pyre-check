@@ -119,6 +119,11 @@ type kind =
     }
   | DuplicateNameClauses of string
   | NoOutputFromModelQuery of string
+  | UnmatchedModels of {
+      expected: bool;
+      model_query_name: string;
+      models: string list;
+    }
 [@@deriving sexp, compare]
 
 type t = {

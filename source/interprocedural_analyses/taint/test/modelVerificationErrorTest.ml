@@ -63,6 +63,66 @@ let test_to_json _ =
           stop = { Ast.Location.line = 3; column = 4 };
         };
       path = Some (PyrePath.create_absolute "/a/b.pysa");
+    };
+  assert_json
+    ~expected:
+      {|
+        {
+          "description": "The output of ModelQuery `get_foo` did not match the following expected models: [\"def test.food() -> Returns(TaintSource[Test]): ...\"; \"def test.foo() -> Returns(TaintSource[Test]): ...\"; ]",
+          "line": 1,
+          "column": 2,
+          "stop_line": 3,
+          "stop_column": 4,
+          "path": "/a/b.pysa",
+          "code": 42
+        }
+        |}
+    {
+      ModelVerificationError.kind =
+        ModelVerificationError.UnmatchedModels
+          {
+            expected = true;
+            model_query_name = "get_foo";
+            models =
+              [
+                "def test.food() -> Returns(TaintSource[Test]): ...";
+                "def test.foo() -> Returns(TaintSource[Test]): ...";
+              ];
+          };
+      location =
+        {
+          Ast.Location.start = { Ast.Location.line = 1; column = 2 };
+          stop = { Ast.Location.line = 3; column = 4 };
+        };
+      path = Some (PyrePath.create_absolute "/a/b.pysa");
+    };
+  assert_json
+    ~expected:
+      {|
+        {
+          "description": "The output of ModelQuery `get_foo` matched the following unexpected models: [\"def test.bar() -> Returns(TaintSource[Test]): ...\"; ]",
+          "line": 1,
+          "column": 2,
+          "stop_line": 3,
+          "stop_column": 4,
+          "path": "/a/b.pysa",
+          "code": 42
+        }
+        |}
+    {
+      ModelVerificationError.kind =
+        ModelVerificationError.UnmatchedModels
+          {
+            expected = false;
+            model_query_name = "get_foo";
+            models = ["def test.bar() -> Returns(TaintSource[Test]): ..."];
+          };
+      location =
+        {
+          Ast.Location.start = { Ast.Location.line = 1; column = 2 };
+          stop = { Ast.Location.line = 3; column = 4 };
+        };
+      path = Some (PyrePath.create_absolute "/a/b.pysa");
     }
 
 
