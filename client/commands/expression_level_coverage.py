@@ -8,7 +8,7 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Tuple, Union
+from typing import Iterable, List, Optional, Tuple, Union
 
 import dataclasses_json
 
@@ -41,6 +41,7 @@ class Location(dataclasses_json.DataClassJsonMixin):
 class CoverageGap(dataclasses_json.DataClassJsonMixin):
     location: Location
     type_: str
+    function_name: Optional[str]
     reason: List[str]
 
 

@@ -1484,7 +1484,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             )
             strict = False
             input_channel = create_memory_text_reader(
-                '["Query", {"response": ["test"]}]\n ["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":4,"coverage_gaps":[{"location": {"start": {"line": 11, "column": 16}, "stop": {"line": 11, "column": 17}}, "type_": "typing.Any", "reason": ["TypeIsAny"]}]}]]}]\n'
+                '["Query", {"response": ["test"]}]\n ["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":4,"coverage_gaps":[{"location": {"start": {"line": 11, "column": 16}, "stop": {"line": 11, "column": 17}}, "function_name":"foo","type_": "typing.Any", "reason": ["TypeIsAny"]}]}]]}]\n'
             )
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = TextWriter(memory_bytes_writer)
