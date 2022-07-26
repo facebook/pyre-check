@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Callable, Mapping, Optional, TypeVar
 
 import testslide
-from tools.pyre.client.commands.language_server_protocol import ContentChange
 
 from ... import json_rpc
 from ...tests import setup
@@ -20,6 +19,7 @@ from ..async_server_connection import (
 )
 from ..language_server_protocol import (
     ClientCapabilities,
+    ContentChange,
     DiagnosticTag,
     DidChangeTextDocumentParameters,
     DidCloseTextDocumentParameters,
