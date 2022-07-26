@@ -18,6 +18,10 @@ type t =
   | DisplayTypeError of string list
   | IncrementalUpdate of string list
   | Query of string
+  | QueryWithOverlay of {
+      query_text: string;
+      overlay_id: string option;
+    }
   | OverlayUpdate of {
       overlay_id: string;
       source_path: string;
@@ -30,4 +34,5 @@ let name_of = function
   | DisplayTypeError _ -> "DisplayTypeErrors"
   | IncrementalUpdate _ -> "IncrementalCheck"
   | Query _ -> "Query"
+  | QueryWithOverlay _ -> "QueryWithOverlay"
   | OverlayUpdate _ -> "OverlayUpdate"

@@ -193,14 +193,15 @@ val help : unit -> string
 val parse_request : string -> (Request.t, string) Core.Result.t
 
 val process_request
-  :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  :  environment:Analysis.TypeEnvironment.TypeEnvironmentReadOnly.t ->
   build_system:BuildSystem.t ->
   Request.t ->
   Response.t
 
 (* A handy wrapper that invokes `parse_request` followed by `process_request`. *)
 val parse_and_process_request
-  :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  :  environment:Analysis.OverlaidEnvironment.t ->
   build_system:BuildSystem.t ->
   string ->
+  string option ->
   Response.t

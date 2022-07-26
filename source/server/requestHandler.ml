@@ -200,10 +200,19 @@ let process_request
         Response.Query
           (Query.parse_and_process_request
              ~build_system
-             ~environment:
-               (OverlaidEnvironment.root overlaid_environment
-               |> ErrorsEnvironment.ReadOnly.type_environment)
-             query_text)
+             ~environment:overlaid_environment
+             query_text
+             None)
+      in
+      Lwt.return (state, response)
+  | Request.QueryWithOverlay { query_text; overlay_id } ->
+      let response =
+        Response.Query
+          (Query.parse_and_process_request
+             ~build_system
+             ~environment:overlaid_environment
+             query_text
+             overlay_id)
       in
       Lwt.return (state, response)
   | Request.OverlayUpdate { overlay_id; source_path; code_update } ->
