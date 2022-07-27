@@ -668,7 +668,17 @@ let test_forward context =
           pass
     |}
     (* TODO(T53600647): Mention y in the error message. *)
-    ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."]
+    ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> bool: ...
+
+      def foo():
+        if awaitable():
+          pass
+    |}
+    ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
+  ()
 
 
 let test_initial context =
