@@ -71,12 +71,12 @@ module type Context = sig
 end
 
 module State (Context : Context) = struct
-  type state =
+  type awaitable_state =
     | Unawaited of Expression.t
     | Awaited
   [@@deriving show]
 
-  let _ = show_state (* unused *)
+  let _ = show_awaitable_state (* unused *)
 
   type alias =
     | Reference of Reference.t
@@ -90,7 +90,7 @@ module State (Context : Context) = struct
   type t = {
     (* For every location where we encounter an awaitable, we maintain whether that awaitable's
        state, i.e., has it been awaited or not? *)
-    unawaited: state Location.Map.t;
+    unawaited: awaitable_state Location.Map.t;
     (* For an alias, what awaitable locations could it point to? *)
     awaitables_for_alias: Location.Set.t AliasMap.t;
     need_to_await: bool;
@@ -99,8 +99,8 @@ module State (Context : Context) = struct
   let show { unawaited; awaitables_for_alias; need_to_await } =
     let unawaited =
       Map.to_alist unawaited
-      |> List.map ~f:(fun (location, state) ->
-             Format.asprintf "%a -> %a" Location.pp location pp_state state)
+      |> List.map ~f:(fun (location, awaitable_state) ->
+             Format.asprintf "%a -> %a" Location.pp location pp_awaitable_state awaitable_state)
       |> String.concat ~sep:", "
     in
     let awaitables_for_alias =
@@ -202,8 +202,8 @@ module State (Context : Context) = struct
 
 
   let less_or_equal ~left ~right =
-    let less_or_equal_unawaited (reference, state) =
-      match state, Map.find right.unawaited reference with
+    let less_or_equal_unawaited (reference, awaitable_state) =
+      match awaitable_state, Map.find right.unawaited reference with
       | Unawaited _, Some _ -> true
       | Awaited, Some Awaited -> true
       | _ -> false
