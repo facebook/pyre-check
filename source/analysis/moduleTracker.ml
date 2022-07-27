@@ -74,16 +74,56 @@ module ReadOnly = struct
     |> List.map ~f:ModulePath.qualifier
 end
 
-let find_module_paths
-    ({ Configuration.Analysis.source_paths; search_paths; excludes; _ } as configuration)
-  =
+module ModuleFinder = struct
+  type t = {
+    valid_suffixes: string list;
+    excludes: Str.regexp list;
+    configuration: Configuration.Analysis.t;
+  }
+
+  let create ({ Configuration.Analysis.excludes; _ } as configuration) =
+    {
+      valid_suffixes = ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration;
+      excludes;
+      configuration;
+    }
+
+
+  let mark_visited visited_paths path =
+    match visited_paths with
+    | Some set -> (
+        match Hash_set.strict_add set path with
+        | Result.Ok () -> false
+        | _ -> true)
+    | None -> false
+
+
+  let python_file_filter { valid_suffixes; _ } ?visited_paths path =
+    let extension =
+      Filename.split_extension path
+      |> snd
+      >>| (fun extension -> "." ^ extension)
+      |> Option.value ~default:""
+    in
+    (* Don't bother with hidden files as they are non-importable in Python by default *)
+    (not (String.is_prefix (Filename.basename path) ~prefix:"."))
+    (* Only consider files with valid suffix *)
+    && List.exists ~f:(String.equal extension) valid_suffixes
+    && not (mark_visited visited_paths path)
+
+
+  let package_directory_filter { excludes; _ } ?visited_paths ~root_path path =
+    (* Don't bother with hidden directories (except in the case where the root itself is hidden) as
+       they are non-importable in Python by default *)
+    ((not (String.is_prefix (Filename.basename path) ~prefix:".")) || String.equal path root_path)
+    (* Do not scan excluding directories to speed up the traversal *)
+    && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
+    && not (mark_visited visited_paths path)
+end
+
+let find_module_paths ({ Configuration.Analysis.source_paths; search_paths; _ } as configuration) =
+  let module_finder = ModuleFinder.create configuration in
   let visited_paths = String.Hash_set.create () in
-  let valid_suffixes = ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration in
-  let mark_visited set path =
-    match Hash_set.strict_add set path with
-    | Result.Ok () -> false
-    | _ -> true
-  in
   let search_roots =
     List.append
       (List.map ~f:SearchPath.to_path source_paths)
@@ -91,28 +131,10 @@ let find_module_paths
   in
   List.map search_roots ~f:(fun root ->
       let root_path = PyrePath.absolute root in
-      let directory_filter path =
-        (* Don't bother with hidden directories (except in the case where the root itself is hidden)
-           as they are non-importable in Python by default *)
-        ((not (String.is_prefix (Filename.basename path) ~prefix:"."))
-        || String.equal path root_path)
-        (* Do not scan excluding directories to speed up the traversal *)
-        && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
-        && not (mark_visited visited_paths path)
+      let directory_filter =
+        ModuleFinder.package_directory_filter module_finder ~visited_paths ~root_path
       in
-      let file_filter path =
-        let extension =
-          Filename.split_extension path
-          |> snd
-          >>| (fun extension -> "." ^ extension)
-          |> Option.value ~default:""
-        in
-        (* Don't bother with hidden files as they are non-importable in Python by default *)
-        (not (String.is_prefix (Filename.basename path) ~prefix:"."))
-        (* Only consider files with valid suffix *)
-        && List.exists ~f:(String.equal extension) valid_suffixes
-        && not (mark_visited visited_paths path)
-      in
+      let file_filter = ModuleFinder.python_file_filter module_finder ~visited_paths in
       PyrePath.list ~file_filter ~directory_filter ~root () |> List.map ~f:ArtifactPath.create)
   |> List.concat
   |> List.filter_map ~f:(ModulePath.create ~configuration)
