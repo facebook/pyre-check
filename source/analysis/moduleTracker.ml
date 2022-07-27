@@ -242,11 +242,19 @@ module Base = struct
 
     module FileSystemEvent = struct
       type t =
-        | Update of ArtifactPath.t
-        | Remove of ArtifactPath.t
+        | Update of ModulePath.t
+        | Remove of ModulePath.t
 
-      let create path =
-        if PyrePath.file_exists (ArtifactPath.raw path) then Update path else Remove path
+      let create ~configuration path =
+        match ModulePath.create ~configuration path with
+        | None ->
+            Log.log ~section:`Server "`%a` not found in search path." ArtifactPath.pp path;
+            None
+        | Some module_path ->
+            if PyrePath.file_exists (ArtifactPath.raw path) then
+              Some (Update module_path)
+            else
+              Some (Remove module_path)
     end
 
     let create_filesystem_events ~configuration artifact_paths =
@@ -254,7 +262,7 @@ module Base = struct
          duplicate ArtifactPaths in our filesystem events. *)
       List.dedup_and_sort ~compare:ArtifactPath.compare artifact_paths
       |> List.filter ~f:(ModuleFinder.is_valid_filename (ModuleFinder.create configuration))
-      |> List.map ~f:FileSystemEvent.create
+      |> List.filter_map ~f:(FileSystemEvent.create ~configuration)
 
 
     module IncrementalExplicitUpdate = struct
@@ -275,54 +283,44 @@ module Base = struct
     let update_explicit_modules ~configuration qualifier_to_modules filesystem_events =
       (* Process a single filesystem event *)
       let process_filesystem_event ~configuration = function
-        | FileSystemEvent.Update path -> (
-            match ModulePath.create ~configuration path with
+        | FileSystemEvent.Update ({ ModulePath.qualifier; _ } as module_path) -> (
+            match Hashtbl.find qualifier_to_modules qualifier with
             | None ->
-                Log.log ~section:`Server "`%a` not found in search path." ArtifactPath.pp path;
+                (* New file for a new module *)
+                Hashtbl.set qualifier_to_modules ~key:qualifier ~data:[module_path];
+                Some (IncrementalExplicitUpdate.New module_path)
+            | Some module_paths ->
+                let new_module_paths =
+                  insert_module_path ~configuration ~to_insert:module_path module_paths
+                in
+                let new_module_path = List.hd_exn new_module_paths in
+                Hashtbl.set qualifier_to_modules ~key:qualifier ~data:new_module_paths;
+                if ModulePath.equal new_module_path module_path then
+                  (* Updating a shadowing file means the module gets changed *)
+                  Some (IncrementalExplicitUpdate.Changed module_path)
+                else (* Updating a shadowed file should not trigger any reanalysis *)
+                  None)
+        | FileSystemEvent.Remove ({ ModulePath.qualifier; _ } as module_path) -> (
+            Hashtbl.find qualifier_to_modules qualifier
+            >>= fun module_paths ->
+            match module_paths with
+            | [] ->
+                (* This should never happen but handle it just in case *)
+                Hashtbl.remove qualifier_to_modules qualifier;
                 None
-            | Some ({ ModulePath.qualifier; _ } as module_path) -> (
-                match Hashtbl.find qualifier_to_modules qualifier with
-                | None ->
-                    (* New file for a new module *)
-                    Hashtbl.set qualifier_to_modules ~key:qualifier ~data:[module_path];
-                    Some (IncrementalExplicitUpdate.New module_path)
-                | Some module_paths ->
-                    let new_module_paths =
-                      insert_module_path ~configuration ~to_insert:module_path module_paths
-                    in
-                    let new_module_path = List.hd_exn new_module_paths in
-                    Hashtbl.set qualifier_to_modules ~key:qualifier ~data:new_module_paths;
-                    if ModulePath.equal new_module_path module_path then
-                      (* Updating a shadowing file means the module gets changed *)
-                      Some (IncrementalExplicitUpdate.Changed module_path)
-                    else (* Updating a shadowed file should not trigger any reanalysis *)
-                      None))
-        | FileSystemEvent.Remove path -> (
-            match ModulePath.create ~configuration path with
-            | None ->
-                Log.log ~section:`Server "`%a` not found in search path." ArtifactPath.pp path;
-                None
-            | Some ({ ModulePath.qualifier; _ } as module_path) -> (
-                Hashtbl.find qualifier_to_modules qualifier
-                >>= fun module_paths ->
-                match module_paths with
+            | old_module_path :: _ -> (
+                match remove_module_path ~configuration ~to_remove:module_path module_paths with
                 | [] ->
-                    (* This should never happen but handle it just in case *)
+                    (* Last remaining file for the module gets removed. *)
                     Hashtbl.remove qualifier_to_modules qualifier;
-                    None
-                | old_module_path :: _ -> (
-                    match remove_module_path ~configuration ~to_remove:module_path module_paths with
-                    | [] ->
-                        (* Last remaining file for the module gets removed. *)
-                        Hashtbl.remove qualifier_to_modules qualifier;
-                        Some (IncrementalExplicitUpdate.Delete qualifier)
-                    | new_module_path :: _ as new_module_paths ->
-                        Hashtbl.set qualifier_to_modules ~key:qualifier ~data:new_module_paths;
-                        if ModulePath.equal old_module_path new_module_path then
-                          (* Removing a shadowed file should not trigger any reanalysis *)
-                          None
-                        else (* Removing module_path un-shadows another source file. *)
-                          Some (IncrementalExplicitUpdate.Changed new_module_path))))
+                    Some (IncrementalExplicitUpdate.Delete qualifier)
+                | new_module_path :: _ as new_module_paths ->
+                    Hashtbl.set qualifier_to_modules ~key:qualifier ~data:new_module_paths;
+                    if ModulePath.equal old_module_path new_module_path then
+                      (* Removing a shadowed file should not trigger any reanalysis *)
+                      None
+                    else (* Removing module_path un-shadows another source file. *)
+                      Some (IncrementalExplicitUpdate.Changed new_module_path)))
       in
       (* Make sure we have only one update per module *)
       let merge_updates updates =
