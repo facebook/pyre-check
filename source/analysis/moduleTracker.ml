@@ -249,6 +249,14 @@ module Base = struct
         if PyrePath.file_exists (ArtifactPath.raw path) then Update path else Remove path
     end
 
+    let create_filesystem_events ~configuration artifact_paths =
+      (* Since the logic in `process_filesystem_event` is not idempotent, we don't want any
+         duplicate ArtifactPaths in our filesystem events. *)
+      List.dedup_and_sort ~compare:ArtifactPath.compare artifact_paths
+      |> List.filter ~f:(ModuleFinder.is_valid_filename (ModuleFinder.create configuration))
+      |> List.map ~f:FileSystemEvent.create
+
+
     module IncrementalExplicitUpdate = struct
       type t =
         | New of ModulePath.t
@@ -264,7 +272,7 @@ module Base = struct
       [@@deriving sexp, compare]
     end
 
-    let update_explicit_modules ~configuration ~artifact_paths qualifier_to_modules =
+    let update_explicit_modules ~configuration qualifier_to_modules filesystem_events =
       (* Process a single filesystem event *)
       let process_filesystem_event ~configuration = function
         | FileSystemEvent.Update path -> (
@@ -385,12 +393,7 @@ module Base = struct
         List.iter updates ~f:process_update;
         Hashtbl.data table
       in
-      (* Since `process_filesystem_event` is not idempotent, we don't want duplicated filesystem
-         events *)
-      List.dedup_and_sort ~compare:ArtifactPath.compare artifact_paths
-      |> List.filter ~f:(ModuleFinder.is_valid_filename (ModuleFinder.create configuration))
-      |> List.map ~f:FileSystemEvent.create
-      |> List.filter_map ~f:(process_filesystem_event ~configuration)
+      List.filter_map filesystem_events ~f:(process_filesystem_event ~configuration)
       |> merge_updates
 
 
@@ -454,7 +457,8 @@ module Base = struct
 
     let update ~configuration ~artifact_paths { qualifier_to_modules; submodule_refcounts } =
       let explicit_updates =
-        update_explicit_modules qualifier_to_modules ~configuration ~artifact_paths
+        create_filesystem_events ~configuration artifact_paths
+        |> update_explicit_modules qualifier_to_modules ~configuration
       in
       let implicit_updates = update_submodules submodule_refcounts ~events:explicit_updates in
       (* Explicit updates should shadow implicit updates *)
