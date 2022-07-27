@@ -682,6 +682,13 @@ let test_forward context =
 
 
 let test_initial context =
+  (* Technically, just defining this function will not cause a `RuntimeWarning`.
+
+     However, calling this function *will* cause a `RuntimeWarning`.
+
+     So, our emitting an unawaited-awaitable error in the function definition is the same as our
+     emitting an incompatible-variable error for a function where we assign `x: str = 1`. As a
+     static type checker, we have to be conservative. *)
   assert_awaitable_errors
     ~context
     {|
@@ -874,7 +881,22 @@ let test_aliases context =
         c = a + b
         await c
     |}
-    []
+    [];
+  assert_awaitable_errors
+    ~context
+    {|
+      from typing import Awaitable
+
+      async def awaitable() -> int: ...
+
+      class C:
+        x: Awaitable[int] = ...
+
+        def my_method(self) -> None:
+          self.x = awaitable()
+    |}
+    ["Unawaited awaitable [1001]: Awaitable assigned to `self.x` is never awaited."];
+  ()
 
 
 let test_return context =
@@ -962,6 +984,23 @@ let test_assign context =
     ["Unawaited awaitable [1001]: `test.foo()` is never awaited."]
 
 
+let test_globals context =
+  assert_awaitable_errors
+    ~context
+    {|
+      from typing import Awaitable
+
+      MY_GLOBAL: Awaitable[int] = ...
+
+      async def awaitable() -> Awaitable[int]: ...
+
+      async def foo() -> int:
+        MY_GLOBAL = awaitable()
+    |}
+    ["Unawaited awaitable [1001]: Awaitable assigned to `MY_GLOBAL` is never awaited."];
+  ()
+
+
 let () =
   "awaitableCheck"
   >::: [
@@ -972,5 +1011,6 @@ let () =
          "aliases" >:: test_aliases;
          "assign" >:: test_assign;
          "return" >:: test_return;
+         "globals" >:: test_globals;
        ]
   |> Test.run

@@ -11,6 +11,21 @@ open Statement
 open Pyre
 module Error = AnalysisError
 
+(** This module allows us to statically catch `RuntimeWarning`s that "coroutine `foo` was never
+    awaited".
+
+    Usual Pyre type errors are for catching runtime `TypeError`s. Pyre is considered "sound" iff
+    Pyre emitting no type errors implies that there are no runtime `TypeError`s.
+
+    This module extends the same notion to coroutine `RuntimeWarning`s as well.
+
+    In an *ideal* world, if Pyre does not emit any unawaited-awaitable errors, then there should not
+    be any `RuntimeWarning`s about coroutines never being awaited. However, to be practical, we may
+    relax our checks in some cases to avoid noisy false positives. For example, in classes that
+    inherit from `Awaitable`, we don't emit an error when assigning an awaitable to an attribute,
+    because that led to many false positives in widely-used frameworks. So, the above notion of
+    soundness is an ideal we are tending towards, but by no means a hard guarantee. *)
+
 let is_awaitable ~global_resolution annotation =
   (not (Type.equal annotation Type.Any))
   && GlobalResolution.less_or_equal
