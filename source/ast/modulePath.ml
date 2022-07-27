@@ -106,7 +106,7 @@ let should_type_check
   analyze_external_sources || is_internal_path ~configuration path
 
 
-let create_from_search_path ~is_external ~search_paths ?extension path =
+let create_from_search_path ~is_external ~search_paths ~extension path =
   SearchPath.search_for_path ~search_paths path
   >>= fun SearchPath.{ relative_path; priority } ->
   let relative = PyrePath.RelativePath.relative relative_path in
@@ -125,19 +125,15 @@ let create_from_search_path ~is_external ~search_paths ?extension path =
 
 let create ~configuration:({ Configuration.Analysis.excludes; _ } as configuration) path =
   let absolute_path = ArtifactPath.raw path |> PyrePath.absolute in
-  let create ?extension path =
+  let create ~extension path =
     let search_paths = Configuration.Analysis.search_paths configuration in
     let is_external = not (should_type_check ~configuration path) in
-    create_from_search_path ~is_external ~search_paths ?extension path
+    create_from_search_path ~is_external ~search_paths ~extension path
   in
-  let is_excluded =
-    List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0)
-  in
-  let extension = Configuration.Analysis.find_extension configuration path in
-  match is_excluded, extension with
-  | true, _ -> None
-  | false, Some extension -> create ~extension path
-  | false, None -> create path
+  if List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0) then
+    None
+  else
+    create ~extension:(Configuration.Analysis.find_extension configuration path) path
 
 
 let qualifier { qualifier; _ } = qualifier
