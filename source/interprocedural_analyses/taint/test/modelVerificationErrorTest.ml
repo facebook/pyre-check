@@ -79,9 +79,8 @@ let test_to_json _ =
         |}
     {
       ModelVerificationError.kind =
-        ModelVerificationError.UnmatchedModels
+        ModelVerificationError.ExpectedModelsAreMissing
           {
-            expected = true;
             model_query_name = "get_foo";
             models =
               [
@@ -106,14 +105,13 @@ let test_to_json _ =
           "stop_line": 3,
           "stop_column": 4,
           "path": "/a/b.pysa",
-          "code": 42
+          "code": 43
         }
         |}
     {
       ModelVerificationError.kind =
-        ModelVerificationError.UnmatchedModels
+        ModelVerificationError.UnexpectedModelsArePresent
           {
-            expected = false;
             model_query_name = "get_foo";
             models = ["def test.bar() -> Returns(TaintSource[Test]): ..."];
           };

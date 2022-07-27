@@ -119,8 +119,11 @@ type kind =
     }
   | DuplicateNameClauses of string
   | NoOutputFromModelQuery of string
-  | UnmatchedModels of {
-      expected: bool;
+  | ExpectedModelsAreMissing of {
+      model_query_name: string;
+      models: string list;
+    }
+  | UnexpectedModelsArePresent of {
       model_query_name: string;
       models: string list;
     }
