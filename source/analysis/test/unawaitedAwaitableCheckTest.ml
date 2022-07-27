@@ -1001,6 +1001,23 @@ let test_globals context =
   ()
 
 
+let test_if context =
+  let assert_awaitable_errors = assert_awaitable_errors ~context in
+  (* TODO(T79853064): This should emit an error about the awaitable sometimes not being awaited. *)
+  assert_awaitable_errors
+    {|
+      def awaitable() -> typing.Awaitable[int]: ...
+
+      def foo(b: bool) -> None:
+        unawaited = awaitable()
+
+        if b:
+          await unawaited
+    |}
+    [];
+  ()
+
+
 let () =
   "awaitableCheck"
   >::: [
@@ -1012,5 +1029,6 @@ let () =
          "assign" >:: test_assign;
          "return" >:: test_return;
          "globals" >:: test_globals;
+         "if" >:: test_if;
        ]
   |> Test.run

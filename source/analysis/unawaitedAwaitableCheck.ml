@@ -180,6 +180,8 @@ module State (Context : Context) = struct
     && Map.to_alist left.locals |> List.for_all ~f:less_or_equal_locals
 
 
+  (* TODO(T79853064): If an awaitable is unawaited in one branch, we should consider it as
+     unawaited. *)
   let join left right =
     let merge_unawaited ~key:_ left right =
       match left, right with
