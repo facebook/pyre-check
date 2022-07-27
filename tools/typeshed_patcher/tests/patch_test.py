@@ -3,7 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Callable, Mapping, TypeVar
+import textwrap
+from pathlib import Path
+from typing import Callable, List, Mapping, TypeVar
 
 import testslide
 
@@ -14,6 +16,7 @@ from ..patch import (
     AddPosition,
     DeleteAction,
     DeleteImportAction,
+    FilePatch,
     Patch,
     QualifiedName,
     ReadPatchException,
@@ -147,3 +150,160 @@ class PatchReaderTest(testslide.TestCase):
         self.assert_not_parsed_patch(False)
         self.assert_not_parsed_patch({})
         self.assert_not_parsed_patch({"parent": "foo.bar"})
+
+    def assert_parsed_file_patches(
+        self, input: Mapping[str, object], expected: List[FilePatch]
+    ) -> None:
+        self._assert_parsed(input, FilePatch.from_json, expected)
+
+    def assert_not_parsed_file_patches(self, input: Mapping[str, object]) -> None:
+        self._assert_not_parsed(input, FilePatch.from_json)
+
+    def test_read_file_patches(self) -> None:
+        self.assert_parsed_file_patches({}, [])
+        self.assert_parsed_file_patches(
+            {"foo.pyi": []}, [FilePatch(path=Path("foo.pyi"), patches=[])]
+        )
+        self.assert_parsed_file_patches(
+            {
+                "foo.pyi": [
+                    {"action": "add", "content": "doom slayer"},
+                    {"action": "delete", "name": "cyberdemon", "parent": "Hell"},
+                ]
+            },
+            [
+                FilePatch(
+                    path=Path("foo.pyi"),
+                    patches=[
+                        Patch(
+                            action=AddAction(content="doom slayer"),
+                            parent=QualifiedName.from_string(""),
+                        ),
+                        Patch(
+                            parent=QualifiedName(["Hell"]),
+                            action=DeleteAction(name="cyberdemon"),
+                        ),
+                    ],
+                )
+            ],
+        )
+        self.assert_parsed_file_patches(
+            {
+                "foo.pyi": [
+                    {"action": "add", "content": "doom slayer"},
+                ],
+                "bar.pyi": [
+                    {"action": "delete", "name": "cyberdemon", "parent": "Hell"},
+                ],
+            },
+            [
+                FilePatch(
+                    path=Path("foo.pyi"),
+                    patches=[
+                        Patch(
+                            action=AddAction(content="doom slayer"),
+                            parent=QualifiedName.from_string(""),
+                        ),
+                    ],
+                ),
+                FilePatch(
+                    path=Path("bar.pyi"),
+                    patches=[
+                        Patch(
+                            parent=QualifiedName(["Hell"]),
+                            action=DeleteAction(name="cyberdemon"),
+                        ),
+                    ],
+                ),
+            ],
+        )
+        self.assert_not_parsed_file_patches({"foo.pyi": 42})
+        self.assert_not_parsed_file_patches({"foo.pyi": [{"doom": "eternal"}]})
+
+    def assert_parsed_toml(self, input: str, expected: List[FilePatch]) -> None:
+        self._assert_parsed(
+            textwrap.dedent(input), FilePatch.from_toml_string, expected
+        )
+
+    def assert_not_parsed_toml(self, input: str) -> None:
+        self._assert_not_parsed(textwrap.dedent(input), FilePatch.from_toml_string)
+
+    def test_read_toml_basic(self) -> None:
+        self.assert_parsed_toml("", [])
+        self.assert_parsed_toml(
+            """
+            [["foo.pyi"]]
+            action = "add"
+            content = "doom slayer"
+
+            [["foo.pyi"]]
+            action = "delete"
+            name = "cyberdemon"
+            parent = "Hell"
+            """,
+            [
+                FilePatch(
+                    path=Path("foo.pyi"),
+                    patches=[
+                        Patch(
+                            action=AddAction(content="doom slayer"),
+                            parent=QualifiedName.from_string(""),
+                        ),
+                        Patch(
+                            parent=QualifiedName(["Hell"]),
+                            action=DeleteAction(name="cyberdemon"),
+                        ),
+                    ],
+                )
+            ],
+        )
+        self.assert_parsed_toml(
+            """
+            [["foo.pyi"]]
+            action = "add"
+            content = "doom slayer"
+
+            [["bar.pyi"]]
+            action = "delete"
+            name = "cyberdemon"
+            parent = "Hell"
+            """,
+            [
+                FilePatch(
+                    path=Path("foo.pyi"),
+                    patches=[
+                        Patch(
+                            action=AddAction(content="doom slayer"),
+                            parent=QualifiedName.from_string(""),
+                        ),
+                    ],
+                ),
+                FilePatch(
+                    path=Path("bar.pyi"),
+                    patches=[
+                        Patch(
+                            parent=QualifiedName(["Hell"]),
+                            action=DeleteAction(name="cyberdemon"),
+                        ),
+                    ],
+                ),
+            ],
+        )
+
+        self.assert_not_parsed_toml("derp")
+        self.assert_not_parsed_toml("42")
+        self.assert_not_parsed_toml('[["foo.pyi"]]')
+        self.assert_not_parsed_toml(
+            """
+            [["foo.pyi"]]
+            action = "add"
+            """
+        )
+        self.assert_not_parsed_toml(
+            """
+            [["foo.pyi"]]
+            action = "add"
+            content = "test"
+            parent = 42
+            """
+        )

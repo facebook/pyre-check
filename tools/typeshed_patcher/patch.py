@@ -9,6 +9,8 @@ import pathlib
 
 from typing import ClassVar, List, Mapping, Optional, Union
 
+import toml
+
 from typing_extensions import TypeAlias
 
 
@@ -161,3 +163,26 @@ def patches_from_json(input_object: object) -> List[Patch]:
 class FilePatch:
     path: pathlib.Path
     patches: List[Patch] = dataclasses.field(default_factory=list)
+
+    @staticmethod
+    def from_json(input_dictionary: Mapping[str, object]) -> "List[FilePatch]":
+        return [
+            FilePatch(
+                path=pathlib.Path(_read_string(key)), patches=patches_from_json(value)
+            )
+            for key, value in input_dictionary.items()
+        ]
+
+    @staticmethod
+    def from_toml_string(input_string: str) -> "List[FilePatch]":
+        try:
+            return FilePatch.from_json(toml.loads(input_string))
+        except (toml.decoder.TomlDecodeError, TypeError) as error:
+            raise ReadPatchException("Cannot parse TOML") from error
+
+    @staticmethod
+    def from_toml_path(path: pathlib.Path) -> "List[FilePatch]":
+        try:
+            return FilePatch.from_toml_string(path.read_text())
+        except OSError as error:
+            raise ReadPatchException("Cannot read from {path}") from error
