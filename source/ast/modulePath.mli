@@ -7,6 +7,16 @@
 
 open Core
 
+module Raw : sig
+  type t = {
+    relative: string;
+    priority: int;
+  }
+  [@@deriving compare, hash, sexp]
+
+  val create : configuration:Configuration.Analysis.t -> ArtifactPath.t -> t option
+end
+
 type t = private {
   relative: string;
   qualifier: Reference.t;

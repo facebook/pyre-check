@@ -8,6 +8,20 @@
 open Core
 open Pyre
 
+module Raw = struct
+  type t = {
+    relative: string;
+    priority: int;
+  }
+  [@@deriving compare, hash, sexp]
+
+  let create ~configuration path =
+    let search_paths = Configuration.Analysis.search_paths configuration in
+    SearchPath.search_for_path ~search_paths path
+    >>| fun SearchPath.{ relative_path; priority } ->
+    { relative = PyrePath.RelativePath.relative relative_path; priority }
+end
+
 module T = struct
   type t = {
     relative: string;
@@ -111,10 +125,8 @@ let create ~configuration:({ Configuration.Analysis.excludes; _ } as configurati
   if List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0) then
     None
   else
-    let search_paths = Configuration.Analysis.search_paths configuration in
-    SearchPath.search_for_path ~search_paths path
-    >>= fun SearchPath.{ relative_path; priority } ->
-    let relative = PyrePath.RelativePath.relative relative_path in
+    Raw.create ~configuration path
+    >>= fun Raw.{ relative; priority } ->
     let qualifier =
       match Configuration.Analysis.find_extension configuration path with
       | Some { Configuration.Extension.include_suffix_in_module_qualifier; _ }
