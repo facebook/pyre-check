@@ -138,8 +138,8 @@ def subprocess.getstatusoutput(cmd: TaintSink[RemoteCodeExecution, ViaTypeOf[cmd
 
 def subprocess.getoutput(cmd: TaintSink[RemoteCodeExecution, ViaTypeOf[cmd]]): ...
 
-def subprocess.Popen.__new__(
-  cls,
+def subprocess.Popen.__init__(
+  self,
   args: TaintSink[ExecArgSink, ViaTypeOf[args], ViaValueOf[shell, WithTag["shell"]]],
   bufsize,
   executable: TaintSink[ExecArgSink],

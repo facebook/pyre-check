@@ -1,26 +1,26 @@
 --- old-builtins.pyi	2022-04-08 18:52:55.542928114 -0700
 +++ new-builtins.pyi	2022-04-08 18:55:18.426779398 -0700
-@@ -56,6 +56,7 @@
+@@ -55,6 +55,7 @@ from typing import (  # noqa: Y027
      overload,
  )
- from typing_extensions import Literal, SupportsIndex, TypeGuard, final
+ from typing_extensions import Literal, LiteralString, SupportsIndex, TypeAlias, TypeGuard, final
 +from pyre_extensions import Add, Multiply, Divide
- 
+
  if sys.version_info >= (3, 9):
      from types import GenericAlias
-@@ -76,6 +77,8 @@
+@@ -75,6 +76,8 @@ _SupportsNextT = TypeVar("_SupportsNextT", bound=SupportsNext[Any], covariant=Tr
  _SupportsAnextT = TypeVar("_SupportsAnextT", bound=SupportsAnext[Any], covariant=True)
  _AwaitableT = TypeVar("_AwaitableT", bound=Awaitable[Any])
  _AwaitableT_co = TypeVar("_AwaitableT_co", bound=Awaitable[Any], covariant=True)
 +N1 = TypeVar("N1", bound=int)
 +N2 = TypeVar("N2", bound=int)
- 
- class _SupportsIter(Protocol[_T_co]):
-     def __iter__(self) -> _T_co: ...
-@@ -228,10 +231,10 @@
-         *,
-         signed: bool = ...,
-     ) -> Self: ...
+
+ class object:
+     __doc__: str | None
+@@ -238,10 +241,10 @@ class int:
+             signed: bool = ...,
+         ) -> Self: ...
+
 -    def __add__(self, __x: int) -> int: ...
 -    def __sub__(self, __x: int) -> int: ...
 -    def __mul__(self, __x: int) -> int: ...
@@ -32,24 +32,13 @@
      def __truediv__(self, __x: int) -> float: ...
      def __mod__(self, __x: int) -> int: ...
      def __divmod__(self, __x: int) -> tuple[int, int]: ...
-@@ -448,6 +451,9 @@
-     @staticmethod
-     @overload
-     def maketrans(__x: str, __y: str, __z: str | None = ...) -> dict[int, int | None]: ...
-+    @overload
-+    def __add__(self: Literal[str], __s: Literal[str]) -> Literal[str]: ...
-+    @overload
-     def __add__(self, __s: str) -> str: ...
-     # Incompatible with Sequence.__contains__
-     def __contains__(self, __o: str) -> bool: ...  # type: ignore[override]
-@@ -1606,6 +1612,10 @@
-     def __init__(self, *args: object) -> None: ...
-     def with_traceback(self: Self, __tb: TracebackType | None) -> Self: ...
- 
+@@ -1778,6 +1781,10 @@ class BaseException:
+         __notes__: list[str]
+         def add_note(self, __note: str) -> None: ...
+
 +    # Define `__str__` and `__repr__` explicitly so pysa can mark them as sources.
 +    def __str__(self) -> str: ...  # noqa: Y029
 +    def __repr__(self) -> str: ...  # noqa: Y029
 +
  class GeneratorExit(BaseException): ...
  class KeyboardInterrupt(BaseException): ...
- 
