@@ -92,41 +92,49 @@ module State (Context : Context) = struct
        state, i.e., has it been awaited or not? *)
     unawaited: state Location.Map.t;
     (* For an alias, what awaitable locations could it point to? *)
-    locals: Location.Set.t AliasMap.t;
+    awaitables_for_alias: Location.Set.t AliasMap.t;
     need_to_await: bool;
   }
 
-  let show { unawaited; locals; need_to_await } =
+  let show { unawaited; awaitables_for_alias; need_to_await } =
     let unawaited =
       Map.to_alist unawaited
       |> List.map ~f:(fun (location, state) ->
              Format.asprintf "%a -> %a" Location.pp location pp_state state)
       |> String.concat ~sep:", "
     in
-    let locals =
+    let awaitables_for_alias =
       let show_locations locations =
         Set.to_list locations |> List.map ~f:Location.show |> String.concat ~sep:", "
       in
-      Map.to_alist locals
+      Map.to_alist awaitables_for_alias
       |> List.map ~f:(fun (alias, locations) ->
              Format.asprintf "%a -> {%s}" pp_alias alias (show_locations locations))
       |> String.concat ~sep:", "
     in
     Format.sprintf
-      "Unawaited expressions: %s\nLocals: %s\nNeed to await: %b"
+      "Unawaited expressions: %s\nAwaitables for aliases: %s\nNeed to await: %b"
       unawaited
-      locals
+      awaitables_for_alias
       need_to_await
 
 
   let pp format state = Format.fprintf format "%s" (show state)
 
-  let bottom = { unawaited = Location.Map.empty; locals = AliasMap.empty; need_to_await = false }
+  let bottom =
+    { unawaited = Location.Map.empty; awaitables_for_alias = AliasMap.empty; need_to_await = false }
+
 
   let initial ~global_resolution { Define.signature = { Define.Signature.parameters; _ }; _ } =
-    let state = { unawaited = Location.Map.empty; locals = AliasMap.empty; need_to_await = true } in
+    let state =
+      {
+        unawaited = Location.Map.empty;
+        awaitables_for_alias = AliasMap.empty;
+        need_to_await = true;
+      }
+    in
     let forward_parameter
-        ({ unawaited; locals; need_to_await } as state)
+        ({ unawaited; awaitables_for_alias; need_to_await } as state)
         { Node.value = { Expression.Parameter.name; annotation; _ }; location }
       =
       let is_awaitable =
@@ -151,9 +159,9 @@ module State (Context : Context) = struct
               unawaited
               ~key:location
               ~data:(Unawaited { Node.value = Name (Expression.Name.Identifier name); location });
-          locals =
+          awaitables_for_alias =
             Map.set
-              locals
+              awaitables_for_alias
               ~key:(Reference (Reference.create name))
               ~data:(Location.Set.singleton location);
           need_to_await;
@@ -164,7 +172,7 @@ module State (Context : Context) = struct
     List.fold ~init:state ~f:forward_parameter parameters
 
 
-  let errors { unawaited; locals; _ } =
+  let errors { unawaited; awaitables_for_alias; _ } =
     let errors =
       let keep_unawaited = function
         | Unawaited expression -> Some { Error.references = []; expression }
@@ -190,7 +198,7 @@ module State (Context : Context) = struct
         ~kind:(Error.UnawaitedAwaitable unawaited_awaitable)
         ~define:Context.define
     in
-    Map.fold locals ~init:errors ~f:add_reference |> Map.to_alist |> List.map ~f:error
+    Map.fold awaitables_for_alias ~init:errors ~f:add_reference |> Map.to_alist |> List.map ~f:error
 
 
   let less_or_equal ~left ~right =
@@ -200,13 +208,13 @@ module State (Context : Context) = struct
       | Awaited, Some Awaited -> true
       | _ -> false
     in
-    let less_or_equal_locals (reference, locations) =
-      match Map.find right.locals reference with
+    let less_or_equal_awaitables_for_alias (reference, locations) =
+      match Map.find right.awaitables_for_alias reference with
       | Some other_locations -> Set.is_subset locations ~of_:other_locations
       | None -> false
     in
     Map.to_alist left.unawaited |> List.for_all ~f:less_or_equal_unawaited
-    && Map.to_alist left.locals |> List.for_all ~f:less_or_equal_locals
+    && Map.to_alist left.awaitables_for_alias |> List.for_all ~f:less_or_equal_awaitables_for_alias
 
 
   (* TODO(T79853064): If an awaitable is unawaited in one branch, we should consider it as
@@ -219,41 +227,49 @@ module State (Context : Context) = struct
           Awaited
       | unawaited, _ -> unawaited
     in
-    let merge_locals ~key:_ left right = Set.union left right in
+    let merge_awaitables ~key:_ left right = Set.union left right in
     {
       unawaited = Map.merge_skewed left.unawaited right.unawaited ~combine:merge_unawaited;
-      locals = Map.merge_skewed left.locals right.locals ~combine:merge_locals;
+      awaitables_for_alias =
+        Map.merge_skewed
+          left.awaitables_for_alias
+          right.awaitables_for_alias
+          ~combine:merge_awaitables;
       need_to_await = left.need_to_await || right.need_to_await;
     }
 
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
-  let mark_name_as_awaited { unawaited; locals; need_to_await } ~name =
+  let mark_name_as_awaited { unawaited; awaitables_for_alias; need_to_await } ~name =
     if Expression.is_simple_name name then
       let unawaited =
         let await_location unawaited location = Map.set unawaited ~key:location ~data:Awaited in
-        Map.find locals (Reference (Expression.name_to_reference_exn name))
+        Map.find awaitables_for_alias (Reference (Expression.name_to_reference_exn name))
         >>| (fun locations -> Set.fold locations ~init:unawaited ~f:await_location)
         |> Option.value ~default:unawaited
       in
-      { unawaited; locals; need_to_await }
+      { unawaited; awaitables_for_alias; need_to_await }
     else (* Non-simple names cannot store awaitables. *)
-      { unawaited; locals; need_to_await }
+      { unawaited; awaitables_for_alias; need_to_await }
 
 
-  let mark_location_as_awaited { unawaited; locals; need_to_await } ~location =
+  let mark_location_as_awaited { unawaited; awaitables_for_alias; need_to_await } ~location =
     if Map.mem unawaited location then
-      { unawaited = Map.set unawaited ~key:location ~data:Awaited; locals; need_to_await }
+      {
+        unawaited = Map.set unawaited ~key:location ~data:Awaited;
+        awaitables_for_alias;
+        need_to_await;
+      }
     else
-      match Map.find locals (Location location) with
+      match Map.find awaitables_for_alias (Location location) with
       | Some locations ->
           let unawaited =
             Set.fold locations ~init:unawaited ~f:(fun unawaited location ->
                 Map.set unawaited ~key:location ~data:Awaited)
           in
-          { unawaited; locals; need_to_await }
-      | None -> { unawaited; locals; need_to_await }
+          { unawaited; awaitables_for_alias; need_to_await }
+      | None -> { unawaited; awaitables_for_alias; need_to_await }
 
 
   let ( |>> ) (new_awaitables, state) awaitables = List.rev_append new_awaitables awaitables, state
@@ -323,21 +339,22 @@ module State (Context : Context) = struct
               let new_awaitables, state = forward_expression ~resolution ~state ~expression:value in
               match Node.value base with
               | Name name when is_simple_name name && not (List.is_empty new_awaitables) ->
-                  let { locals; _ } = state in
+                  let { awaitables_for_alias; _ } = state in
                   let name = name_to_reference_exn name in
                   let awaitable_locations =
                     new_awaitables |> List.map ~f:Node.location |> Location.Set.of_list
                   in
-                  let locals =
-                    match Map.find locals (Reference name) with
+                  let awaitables_for_alias =
+                    match Map.find awaitables_for_alias (Reference name) with
                     | Some awaitables ->
                         Map.set
-                          locals
+                          awaitables_for_alias
                           ~key:(Reference name)
                           ~data:(Set.union awaitables awaitable_locations)
-                    | None -> Map.set locals ~key:(Reference name) ~data:awaitable_locations
+                    | None ->
+                        Map.set awaitables_for_alias ~key:(Reference name) ~data:awaitable_locations
                   in
-                  List.rev_append new_awaitables awaitables, { state with locals }
+                  List.rev_append new_awaitables awaitables, { state with awaitables_for_alias }
               | _ -> awaitables, state)
           | _ ->
               let need_to_await = state.need_to_await in
@@ -353,15 +370,15 @@ module State (Context : Context) = struct
               awaitables, state
         in
         let annotation = Resolution.resolve_expression_to_type resolution expression in
-        let { unawaited; locals; need_to_await } = state in
+        let { unawaited; awaitables_for_alias; need_to_await } = state in
         let find_aliases { Node.value; location } =
           if Map.mem unawaited location then
             Some (Location.Set.singleton location)
           else
             match value with
             | Expression.Name name when is_simple_name name ->
-                Map.find locals (Reference (name_to_reference_exn name))
-            | _ -> Map.find locals (Location location)
+                Map.find awaitables_for_alias (Reference (name_to_reference_exn name))
+            | _ -> Map.find awaitables_for_alias (Location location)
         in
         if
           need_to_await
@@ -377,21 +394,22 @@ module State (Context : Context) = struct
                   ( awaitables,
                     {
                       unawaited;
-                      locals = Map.set locals ~key:(Location location) ~data:locations;
+                      awaitables_for_alias =
+                        Map.set awaitables_for_alias ~key:(Location location) ~data:locations;
                       need_to_await;
                     } )
               | None ->
                   ( awaitables,
                     {
                       unawaited = Map.set unawaited ~key:location ~data:(Unawaited expression);
-                      locals;
+                      awaitables_for_alias;
                       need_to_await;
                     } ))
           | _ ->
               ( awaitables,
                 {
                   unawaited = Map.set unawaited ~key:location ~data:(Unawaited expression);
-                  locals;
+                  awaitables_for_alias;
                   need_to_await;
                 } )
         else
@@ -408,7 +426,8 @@ module State (Context : Context) = struct
                   ( awaitables,
                     {
                       unawaited;
-                      locals = Map.set locals ~key:(Location location) ~data:locations;
+                      awaitables_for_alias =
+                        Map.set awaitables_for_alias ~key:(Location location) ~data:locations;
                       need_to_await;
                     } )
               | None -> awaitables, state)
@@ -473,7 +492,7 @@ module State (Context : Context) = struct
     | Name (Name.Attribute { base; _ }) -> forward_expression ~resolution ~state ~expression:base
     | Name name when is_simple_name name ->
         let awaitables =
-          match Map.find state.locals (Reference (name_to_reference_exn name)) with
+          match Map.find state.awaitables_for_alias (Reference (name_to_reference_exn name)) with
           | Some aliases ->
               let add_unawaited unawaited location =
                 match Map.find state.unawaited location with
@@ -497,7 +516,7 @@ module State (Context : Context) = struct
 
   and forward_assign
       ~resolution
-      ~state:({ unawaited; locals; need_to_await } as state)
+      ~state:({ unawaited; awaitables_for_alias; need_to_await } as state)
       ~annotation
       ~expression
       ~awaitables
@@ -519,30 +538,33 @@ module State (Context : Context) = struct
         match expression with
         | { Node.value = Expression.Name value; _ } when is_simple_name value ->
             (* Aliasing. *)
-            let locals =
-              Map.find locals (Reference (name_to_reference_exn value))
+            let awaitables_for_alias =
+              Map.find awaitables_for_alias (Reference (name_to_reference_exn value))
               >>| (fun locations ->
-                    Map.set locals ~key:(Reference (name_to_reference_exn target)) ~data:locations)
-              |> Option.value ~default:locals
+                    Map.set
+                      awaitables_for_alias
+                      ~key:(Reference (name_to_reference_exn target))
+                      ~data:locations)
+              |> Option.value ~default:awaitables_for_alias
             in
-            { unawaited; locals; need_to_await }
+            { unawaited; awaitables_for_alias; need_to_await }
         | _ ->
             (* The expression must be analyzed before we call `forward_assign` on it, as that's
                where unawaitables are introduced. *)
-            let locals =
+            let awaitables_for_alias =
               let location = Node.location expression in
               let key = Reference (name_to_reference_exn target) in
               if not (List.is_empty awaitables) then
                 let awaitable_locations =
                   List.map awaitables ~f:Node.location |> Location.Set.of_list
                 in
-                Map.set locals ~key ~data:awaitable_locations
+                Map.set awaitables_for_alias ~key ~data:awaitable_locations
               else if Map.mem unawaited location then
-                Map.set locals ~key ~data:(Location.Set.singleton location)
+                Map.set awaitables_for_alias ~key ~data:(Location.Set.singleton location)
               else
-                locals
+                awaitables_for_alias
             in
-            { unawaited; locals; need_to_await })
+            { unawaited; awaitables_for_alias; need_to_await })
     | List elements
     | Tuple elements
       when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (
