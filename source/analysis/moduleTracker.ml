@@ -76,17 +76,36 @@ end
 
 module ModuleFinder = struct
   type t = {
-    valid_suffixes: string list;
+    valid_suffixes: String.Set.t;
     excludes: Str.regexp list;
     configuration: Configuration.Analysis.t;
   }
 
   let create ({ Configuration.Analysis.excludes; _ } as configuration) =
     {
-      valid_suffixes = ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration;
+      valid_suffixes =
+        ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration
+        |> String.Set.of_list;
       excludes;
       configuration;
     }
+
+
+  let is_valid_filename_raw { valid_suffixes; _ } raw_path =
+    let extension =
+      Filename.split_extension raw_path
+      |> snd
+      >>| (fun extension -> "." ^ extension)
+      |> Option.value ~default:""
+    in
+    (* Don't bother with hidden files as they are non-importable in Python by default *)
+    (not (String.is_prefix (Filename.basename raw_path) ~prefix:"."))
+    (* Only consider files with valid suffix *)
+    && Set.mem valid_suffixes extension
+
+
+  let is_valid_filename finder artifact_path =
+    ArtifactPath.raw artifact_path |> PyrePath.absolute |> is_valid_filename_raw finder
 
 
   let mark_visited visited_paths path =
@@ -98,18 +117,8 @@ module ModuleFinder = struct
     | None -> false
 
 
-  let python_file_filter { valid_suffixes; _ } ?visited_paths path =
-    let extension =
-      Filename.split_extension path
-      |> snd
-      >>| (fun extension -> "." ^ extension)
-      |> Option.value ~default:""
-    in
-    (* Don't bother with hidden files as they are non-importable in Python by default *)
-    (not (String.is_prefix (Filename.basename path) ~prefix:"."))
-    (* Only consider files with valid suffix *)
-    && List.exists ~f:(String.equal extension) valid_suffixes
-    && not (mark_visited visited_paths path)
+  let python_file_filter finder ?visited_paths path =
+    is_valid_filename_raw finder path && not (mark_visited visited_paths path)
 
 
   let package_directory_filter { excludes; _ } ?visited_paths ~root_path path =
@@ -379,6 +388,7 @@ module Base = struct
       (* Since `process_filesystem_event` is not idempotent, we don't want duplicated filesystem
          events *)
       List.dedup_and_sort ~compare:ArtifactPath.compare artifact_paths
+      |> List.filter ~f:(ModuleFinder.is_valid_filename (ModuleFinder.create configuration))
       |> List.map ~f:FileSystemEvent.create
       |> List.filter_map ~f:(process_filesystem_event ~configuration)
       |> merge_updates
