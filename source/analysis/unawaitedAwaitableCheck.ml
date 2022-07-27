@@ -107,14 +107,19 @@ module State (Context : Context) = struct
 
   let _ = show_awaitable_state (* unused *)
 
-  type alias =
+  type alias_for_awaitable =
     (* This is a variable that refers to an awaitable. *)
     | NamedAlias of Reference.t
-    | Location of Location.t
+    (* This represents an expression that contains nested aliases.
+
+       For example, if `foo` is an instance of a class that derives from `Awaitable`, then we may
+       have `foo.set_x(1).set_y(2)`. Awaiting the whole expression needs to mark `foo`'s awaitable
+       as awaited. *)
+    | ExpressionWithNestedAliases of { expression_location: Location.t }
   [@@deriving compare, sexp, show]
 
   module AliasMap = Map.Make (struct
-    type t = alias [@@deriving sexp, compare]
+    type t = alias_for_awaitable [@@deriving sexp, compare]
   end)
 
   type t = {
@@ -138,8 +143,12 @@ module State (Context : Context) = struct
         Set.to_list awaitables |> List.map ~f:Awaitable.show |> String.concat ~sep:", "
       in
       Map.to_alist awaitables_for_alias
-      |> List.map ~f:(fun (alias, locations) ->
-             Format.asprintf "%a -> {%s}" pp_alias alias (show_awaitables locations))
+      |> List.map ~f:(fun (alias_for_awaitable, locations) ->
+             Format.asprintf
+               "%a -> {%s}"
+               pp_alias_for_awaitable
+               alias_for_awaitable
+               (show_awaitables locations))
       |> String.concat ~sep:", "
     in
     Format.sprintf
@@ -226,7 +235,7 @@ module State (Context : Context) = struct
             | None -> errors
           in
           Awaitable.Set.fold awaitables ~init:errors ~f:add_reference
-      | Location _ -> errors
+      | ExpressionWithNestedAliases _ -> errors
     in
     let error (awaitable, unawaited_awaitable) =
       Error.create
@@ -300,7 +309,11 @@ module State (Context : Context) = struct
         need_to_await;
       }
     else
-      match Map.find awaitables_for_alias (Location location) with
+      match
+        Map.find
+          awaitables_for_alias
+          (ExpressionWithNestedAliases { expression_location = location })
+      with
       | Some awaitables ->
           let unawaited =
             Set.fold awaitables ~init:unawaited ~f:(fun unawaited awaitable ->
@@ -424,7 +437,10 @@ module State (Context : Context) = struct
             match value with
             | Expression.Name name when is_simple_name name ->
                 Map.find awaitables_for_alias (NamedAlias (name_to_reference_exn name))
-            | _ -> Map.find awaitables_for_alias (Location location)
+            | _ ->
+                Map.find
+                  awaitables_for_alias
+                  (ExpressionWithNestedAliases { expression_location = location })
         in
         if
           need_to_await
@@ -442,7 +458,10 @@ module State (Context : Context) = struct
                     {
                       unawaited;
                       awaitables_for_alias =
-                        Map.set awaitables_for_alias ~key:(Location location) ~data:locations;
+                        Map.set
+                          awaitables_for_alias
+                          ~key:(ExpressionWithNestedAliases { expression_location = location })
+                          ~data:locations;
                       need_to_await;
                     } )
               | None ->
@@ -474,7 +493,10 @@ module State (Context : Context) = struct
                     {
                       unawaited;
                       awaitables_for_alias =
-                        Map.set awaitables_for_alias ~key:(Location location) ~data:locations;
+                        Map.set
+                          awaitables_for_alias
+                          ~key:(ExpressionWithNestedAliases { expression_location = location })
+                          ~data:locations;
                       need_to_await;
                     } )
               | None -> awaitables, state)
