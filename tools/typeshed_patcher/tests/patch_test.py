@@ -3,9 +3,11 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import Callable, TypeVar
+
 import testslide
 
-from ..patch import QualifiedName
+from ..patch import QualifiedName, ReadPatchException
 
 
 class PatchTest(testslide.TestCase):
@@ -20,3 +22,30 @@ class PatchTest(testslide.TestCase):
 
         self.assertTrue(QualifiedName.from_string("").is_empty())
         self.assertFalse(QualifiedName.from_string("foo").is_empty())
+
+
+T = TypeVar("T")
+U = TypeVar("U")
+
+
+class PatchReaderTest(testslide.TestCase):
+    def _assert_parsed(self, input: T, parser: Callable[[T], U], expected: U) -> None:
+        self.assertEqual(parser(input), expected)
+
+    def _assert_not_parsed(self, input: T, parser: Callable[[T], U]) -> None:
+        with self.assertRaises(ReadPatchException):
+            parser(input)
+
+    def assert_parsed_parent(self, input: object, expected: QualifiedName) -> None:
+        self._assert_parsed(input, QualifiedName.from_json, expected)
+
+    def assert_not_parsed_parent(self, input: object) -> None:
+        self._assert_not_parsed(input, QualifiedName.from_json)
+
+    def test_read_parent(self) -> None:
+        self.assert_parsed_parent("foo", expected=QualifiedName(["foo"]))
+        self.assert_parsed_parent("foo.bar", expected=QualifiedName(["foo", "bar"]))
+        self.assert_not_parsed_parent(42)
+        self.assert_not_parsed_parent([])
+        self.assert_not_parsed_parent({})
+        self.assert_not_parsed_parent(False)

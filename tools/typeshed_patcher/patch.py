@@ -7,9 +7,22 @@ import dataclasses
 import enum
 import pathlib
 
-from typing import List, Union
+from typing import List, Optional, Union
 
 from typing_extensions import TypeAlias
+
+
+class ReadPatchException(Exception):
+    pass
+
+
+def _read_string(input_object: object, field_name: Optional[str] = None) -> str:
+    if not isinstance(input_object, str):
+        field_message = f" for field `{field_name}`" if field_name is not None else ""
+        raise ReadPatchException(
+            f"Expect a string{field_message} but got {input_object}"
+        )
+    return input_object
 
 
 @dataclasses.dataclass(frozen=True)
@@ -25,6 +38,11 @@ class QualifiedName:
             return QualifiedName([])
         else:
             return QualifiedName(qualified_name.split("."))
+
+    @staticmethod
+    def from_json(input_object: object) -> "QualifiedName":
+        input_string = _read_string(input_object, field_name="parent")
+        return QualifiedName.from_string(input_string)
 
     def is_empty(self) -> bool:
         return len(self.names) == 0
