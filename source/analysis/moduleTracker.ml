@@ -109,19 +109,16 @@ module ModuleFinder = struct
 
 
   let mark_visited visited_paths path =
-    match visited_paths with
-    | Some set -> (
-        match Hash_set.strict_add set path with
-        | Result.Ok () -> false
-        | _ -> true)
-    | None -> false
+    match Hash_set.strict_add visited_paths path with
+    | Result.Ok () -> false
+    | _ -> true
 
 
-  let python_file_filter finder ?visited_paths path =
+  let python_file_filter finder ~visited_paths path =
     is_valid_filename_raw finder path && not (mark_visited visited_paths path)
 
 
-  let package_directory_filter { excludes; _ } ?visited_paths ~root_path path =
+  let package_directory_filter { excludes; _ } ~visited_paths ~root_path path =
     (* Don't bother with hidden directories (except in the case where the root itself is hidden) as
        they are non-importable in Python by default *)
     ((not (String.is_prefix (Filename.basename path) ~prefix:".")) || String.equal path root_path)
