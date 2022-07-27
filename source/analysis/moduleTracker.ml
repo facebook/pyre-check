@@ -264,13 +264,6 @@ module Base = struct
       [@@deriving sexp, compare]
     end
 
-    module IncrementalImplicitUpdate = struct
-      type t =
-        | New of Reference.t
-        | Delete of Reference.t
-      [@@deriving sexp, compare]
-    end
-
     let update_explicit_modules ~configuration qualifier_to_modules filesystem_events =
       (* Process a single filesystem event *)
       let process_filesystem_event ~configuration = function
@@ -385,6 +378,13 @@ module Base = struct
       List.filter_map filesystem_events ~f:(process_filesystem_event ~configuration)
       |> merge_updates
 
+
+    module IncrementalImplicitUpdate = struct
+      type t =
+        | New of Reference.t
+        | Delete of Reference.t
+      [@@deriving sexp, compare]
+    end
 
     let update_submodules ~events submodule_refcounts =
       let aggregate_updates events =
