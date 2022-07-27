@@ -9,17 +9,30 @@ open Core
 open Pyre
 
 module Raw = struct
-  type t = {
-    relative: string;
-    priority: int;
-  }
-  [@@deriving compare, hash, sexp]
+  module T = struct
+    type t = {
+      relative: string;
+      priority: int;
+    }
+    [@@deriving compare, hash, sexp]
 
-  let create ~configuration path =
-    let search_paths = Configuration.Analysis.search_paths configuration in
-    SearchPath.search_for_path ~search_paths path
-    >>| fun SearchPath.{ relative_path; priority } ->
-    { relative = PyrePath.RelativePath.relative relative_path; priority }
+    let create ~configuration path =
+      let search_paths = Configuration.Analysis.search_paths configuration in
+      SearchPath.search_for_path ~search_paths path
+      >>| fun SearchPath.{ relative_path; priority } ->
+      { relative = PyrePath.RelativePath.relative relative_path; priority }
+
+
+    let full_path ~configuration { relative; priority; _ } =
+      let root =
+        Configuration.Analysis.search_paths configuration
+        |> fun search_paths -> List.nth_exn search_paths priority |> SearchPath.get_root
+      in
+      PyrePath.create_relative ~root ~relative |> ArtifactPath.create
+  end
+
+  include T
+  module Set = Caml.Set.Make (T)
 end
 
 module T = struct
@@ -160,11 +173,7 @@ let create_for_testing ~relative ~is_external ~priority =
 
 
 let full_path ~configuration { relative; priority; _ } =
-  let root =
-    Configuration.Analysis.search_paths configuration
-    |> fun search_paths -> List.nth_exn search_paths priority |> SearchPath.get_root
-  in
-  PyrePath.create_relative ~root ~relative |> ArtifactPath.create
+  Raw.full_path ~configuration Raw.{ relative; priority }
 
 
 (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module

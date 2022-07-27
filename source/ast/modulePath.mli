@@ -14,7 +14,11 @@ module Raw : sig
   }
   [@@deriving compare, hash, sexp]
 
+  module Set : Caml.Set.S with type elt = t
+
   val create : configuration:Configuration.Analysis.t -> ArtifactPath.t -> t option
+
+  val full_path : configuration:Configuration.Analysis.t -> t -> ArtifactPath.t
 end
 
 type t = private {
