@@ -136,10 +136,8 @@ let create ~configuration:({ Configuration.Analysis.excludes; _ } as configurati
   let extension = Configuration.Analysis.find_extension configuration path in
   match is_excluded, extension with
   | true, _ -> None
-  | _, Some extension -> create ~extension path
-  | _, None when String.is_suffix ~suffix:".py" absolute_path -> create path
-  | _, None when String.is_suffix ~suffix:".pyi" absolute_path -> create path
-  | _ -> None
+  | false, Some extension -> create ~extension path
+  | false, None -> create path
 
 
 let qualifier { qualifier; _ } = qualifier

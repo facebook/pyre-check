@@ -283,8 +283,6 @@ let test_creation context =
       ~is_init:false;
     assert_create_fail external_root "thereisnospoon.py";
     assert_create_fail external_root "foo/thereisnospoon.py";
-    assert_create_fail local_root "untracked_extension.txt";
-    assert_create_fail external_root "untracked_extension.txt";
     let extension_first = create_exn local_root "dir/a.first" in
     let extension_second = create_exn local_root "dir/a.second" in
     let extension_third = create_exn local_root "dir/a.third" in
