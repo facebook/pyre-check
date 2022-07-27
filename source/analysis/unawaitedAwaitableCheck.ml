@@ -24,7 +24,33 @@ module Error = AnalysisError
     relax our checks in some cases to avoid noisy false positives. For example, in classes that
     inherit from `Awaitable`, we don't emit an error when assigning an awaitable to an attribute,
     because that led to many false positives in widely-used frameworks. So, the above notion of
-    soundness is an ideal we are tending towards, but by no means a hard guarantee. *)
+    soundness is an ideal we are tending towards, but by no means a hard guarantee.
+
+    Strategy: Reaching-definitions analysis + Alias analysis.
+
+    1. Reaching-definitions analysis: We want to find out which awaitables are not awaited by the
+    time the function returns (at least along some code path).
+
+    - If an awaitable is awaited in some expression, then the awaitable doesn't reach the return
+      point of the function. We can say that the `await` "kills" the "reach" of the awaitable.
+
+    - If the awaitable is never awaited along some code path, then it reaches the return statement
+      and is thus an unawaited awaitable.
+
+    We can think of the original awaitable as a "definition". Getting all definitions that reach a
+    certain point without being "killed" in between is called reaching-definition analysis.
+
+    In our case, a "definition" is an awaitable expression (more precisely, its location in the
+    code). "Killing" an awaitable means using `await` on it. We want all definitions (awaitables)
+    that reach the return point of the function without being killed (awaited).
+
+    Reaching-definitions analysis means we need a forward analysis. For more details, see
+    https://en.wikipedia.org/wiki/Reaching_definition.
+
+    2. Alias analysis: Awaitables can be stored in variables. If we await any variable that it has
+    been assigned to (or any variable to which those variables have been assigned), then we should
+    mark the original awaitable as awaited. So, whenever we detect that a variable is being assigned
+    some other variable, we copy over all the awaitables that are pointed to by the other variable. *)
 
 let is_awaitable ~global_resolution annotation =
   (not (Type.equal annotation Type.Any))
