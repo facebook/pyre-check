@@ -142,10 +142,10 @@ module State (Context : Context) = struct
        the individual awaitable expressions. That way, if someone passes the overall expression into
        `asyncio.gather` or some other function, they will all be marked as awaited (or
        not-unawaited). In short, we won't have to emit unawaited errors for them. *)
-    awaitables: Expression.t list;
+    nested_awaitable_expressions: Expression.t list;
   }
 
-  let result_state { state; awaitables = _ } = state
+  let result_state { state; nested_awaitable_expressions = _ } = state
 
   let show { unawaited; awaitables_for_alias; need_to_await } =
     let unawaited =
@@ -339,8 +339,12 @@ module State (Context : Context) = struct
       | None -> { unawaited; awaitables_for_alias; need_to_await }
 
 
-  let ( |>> ) { state; awaitables } existing_awaitables =
-    { state; awaitables = List.rev_append awaitables existing_awaitables }
+  let ( |>> ) { state; nested_awaitable_expressions } existing_awaitables =
+    {
+      state;
+      nested_awaitable_expressions =
+        List.rev_append nested_awaitable_expressions existing_awaitables;
+    }
 
 
   let await_all_subexpressions ~state ~expression =
@@ -354,42 +358,44 @@ module State (Context : Context) = struct
 
   let rec forward_generator
       ~resolution
-      { state; awaitables }
+      { state; nested_awaitable_expressions }
       { Comprehension.Generator.target = _; iterator; conditions; async = _ }
     =
-    let { state; awaitables } =
+    let { state; nested_awaitable_expressions } =
       List.fold
         conditions
-        ~f:(fun { state; awaitables } expression ->
-          forward_expression ~resolution ~state ~expression |>> awaitables)
-        ~init:{ state; awaitables }
+        ~f:(fun { state; nested_awaitable_expressions } expression ->
+          forward_expression ~resolution ~state ~expression |>> nested_awaitable_expressions)
+        ~init:{ state; nested_awaitable_expressions }
     in
-    forward_expression ~resolution ~state ~expression:iterator |>> awaitables
+    forward_expression ~resolution ~state ~expression:iterator |>> nested_awaitable_expressions
 
 
   and forward_call ~resolution ~state ~location ({ Call.callee; arguments } as call) =
     let expression = { Node.value = Expression.Call call; location } in
-    let { state; awaitables } = forward_expression ~resolution ~state ~expression:callee in
+    let { state; nested_awaitable_expressions } =
+      forward_expression ~resolution ~state ~expression:callee
+    in
     let is_special_function =
       match Node.value callee with
       | Name (Name.Attribute { special = true; _ }) -> true
       | _ -> false
     in
-    let forward_argument { state; awaitables } { Call.Argument.value; _ } =
+    let forward_argument { state; nested_awaitable_expressions } { Call.Argument.value; _ } =
       (* For special methods such as `+`, ensure that we still require you to await the expressions. *)
       if is_special_function then
-        forward_expression ~resolution ~state ~expression:value |>> awaitables
+        forward_expression ~resolution ~state ~expression:value |>> nested_awaitable_expressions
       else
         let state = await_all_subexpressions ~state ~expression:value in
-        { state; awaitables }
+        { state; nested_awaitable_expressions }
     in
 
-    let { state; awaitables } =
+    let { state; nested_awaitable_expressions } =
       match Node.value callee, arguments with
       (* a["b"] = c gets converted to a.__setitem__("b", c). *)
       | ( Name (Name.Attribute { attribute = "__setitem__"; base; _ }),
           [_; { Call.Argument.value; _ }] ) -> (
-          let { state; awaitables = new_awaitable_expressions } =
+          let { state; nested_awaitable_expressions = new_awaitable_expressions } =
             forward_expression ~resolution ~state ~expression:value
           in
           match Node.value base with
@@ -404,31 +410,36 @@ module State (Context : Context) = struct
               in
               let awaitables_for_alias =
                 match Map.find awaitables_for_alias (NamedAlias name) with
-                | Some awaitables ->
+                | Some nested_awaitable_expressions ->
                     Map.set
                       awaitables_for_alias
                       ~key:(NamedAlias name)
-                      ~data:(Set.union awaitables new_awaitables)
+                      ~data:(Set.union nested_awaitable_expressions new_awaitables)
                 | None -> Map.set awaitables_for_alias ~key:(NamedAlias name) ~data:new_awaitables
               in
 
               {
                 state = { state with awaitables_for_alias };
-                awaitables = List.rev_append new_awaitable_expressions awaitables;
+                nested_awaitable_expressions =
+                  List.rev_append new_awaitable_expressions nested_awaitable_expressions;
               }
-          | _ -> { state; awaitables })
+          | _ -> { state; nested_awaitable_expressions })
       | _ ->
           let need_to_await = state.need_to_await in
           (* Don't introduce awaitables for the arguments of a call, as they will be consumed by the
              call anyway. *)
-          let { state; awaitables } =
+          let { state; nested_awaitable_expressions } =
             List.fold
               arguments
-              ~init:{ state = { state with need_to_await = is_special_function }; awaitables }
+              ~init:
+                {
+                  state = { state with need_to_await = is_special_function };
+                  nested_awaitable_expressions;
+                }
               ~f:forward_argument
           in
           let state = { state with need_to_await } in
-          { state; awaitables }
+          { state; nested_awaitable_expressions }
     in
     let annotation = Resolution.resolve_expression_to_type resolution expression in
     let { unawaited; awaitables_for_alias; need_to_await } = state in
@@ -451,7 +462,7 @@ module State (Context : Context) = struct
     then
       (* If the callee is a method on an awaitable, make the assumption that the returned value is
          the same awaitable. *)
-      let awaitables = expression :: awaitables in
+      let nested_awaitable_expressions = expression :: nested_awaitable_expressions in
       let awaitable = Awaitable.create location in
       match Node.value callee with
       | Name (Name.Attribute { base; _ }) -> (
@@ -468,7 +479,7 @@ module State (Context : Context) = struct
                         ~data:locations;
                     need_to_await;
                   };
-                awaitables;
+                nested_awaitable_expressions;
               }
           | None ->
               {
@@ -478,7 +489,7 @@ module State (Context : Context) = struct
                     awaitables_for_alias;
                     need_to_await;
                   };
-                awaitables;
+                nested_awaitable_expressions;
               })
       | _ ->
           {
@@ -488,7 +499,7 @@ module State (Context : Context) = struct
                 awaitables_for_alias;
                 need_to_await;
               };
-            awaitables;
+            nested_awaitable_expressions;
           }
     else
       match Node.value callee with
@@ -512,10 +523,10 @@ module State (Context : Context) = struct
                         ~data:locations;
                     need_to_await;
                   };
-                awaitables;
+                nested_awaitable_expressions;
               }
-          | None -> { state; awaitables })
-      | _ -> { state; awaitables }
+          | None -> { state; nested_awaitable_expressions })
+      | _ -> { state; nested_awaitable_expressions }
 
 
   (** Add any awaitables introduced in the expression to the tracked awaitables in state. If any
@@ -525,85 +536,108 @@ module State (Context : Context) = struct
   and forward_expression ~resolution ~(state : t) ~expression:{ Node.value; location } =
     match value with
     | Await ({ Node.value = Name name; _ } as expression) when is_simple_name name ->
-        let { state; awaitables } = forward_expression ~resolution ~state ~expression in
-        { state = mark_name_as_awaited state ~name; awaitables }
+        let { state; nested_awaitable_expressions } =
+          forward_expression ~resolution ~state ~expression
+        in
+        { state = mark_name_as_awaited state ~name; nested_awaitable_expressions }
     | Await ({ Node.location; _ } as expression) ->
-        let { state; awaitables } = forward_expression ~resolution ~state ~expression in
-        { state = mark_location_as_awaited state ~location; awaitables }
+        let { state; nested_awaitable_expressions } =
+          forward_expression ~resolution ~state ~expression
+        in
+        { state = mark_location_as_awaited state ~location; nested_awaitable_expressions }
     | BooleanOperator { BooleanOperator.left; right; _ } ->
-        let { state; awaitables = left_awaitable_expressions } =
+        let { state; nested_awaitable_expressions = left_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:left
         in
-        let { state; awaitables = right_awaitable_expressions } =
+        let { state; nested_awaitable_expressions = right_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:right
         in
         {
           state;
-          awaitables = List.rev_append left_awaitable_expressions right_awaitable_expressions;
+          nested_awaitable_expressions =
+            List.rev_append left_awaitable_expressions right_awaitable_expressions;
         }
     | Call call -> forward_call ~resolution ~state ~location call
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
-        let { state; awaitables } = forward_expression ~resolution ~state ~expression:left in
-        forward_expression ~resolution ~state ~expression:right |>> awaitables
+        let { state; nested_awaitable_expressions } =
+          forward_expression ~resolution ~state ~expression:left
+        in
+        forward_expression ~resolution ~state ~expression:right |>> nested_awaitable_expressions
     | Dictionary { Dictionary.entries; keywords } ->
-        let forward_entry { state; awaitables } { Dictionary.Entry.key; value } =
-          let { state; awaitables } =
-            forward_expression ~resolution ~state ~expression:key |>> awaitables
+        let forward_entry { state; nested_awaitable_expressions } { Dictionary.Entry.key; value } =
+          let { state; nested_awaitable_expressions } =
+            forward_expression ~resolution ~state ~expression:key |>> nested_awaitable_expressions
           in
-          forward_expression ~resolution ~state ~expression:value |>> awaitables
+          forward_expression ~resolution ~state ~expression:value |>> nested_awaitable_expressions
         in
-        let { state; awaitables } =
-          List.fold entries ~init:{ state; awaitables = [] } ~f:forward_entry
+        let { state; nested_awaitable_expressions } =
+          List.fold entries ~init:{ state; nested_awaitable_expressions = [] } ~f:forward_entry
         in
-        let forward_keywords { state; awaitables } expression =
-          forward_expression ~resolution ~state ~expression |>> awaitables
+        let forward_keywords { state; nested_awaitable_expressions } expression =
+          forward_expression ~resolution ~state ~expression |>> nested_awaitable_expressions
         in
-        List.fold keywords ~init:{ state; awaitables } ~f:forward_keywords
+        List.fold keywords ~init:{ state; nested_awaitable_expressions } ~f:forward_keywords
     | Lambda { Lambda.body; _ } -> forward_expression ~resolution ~state ~expression:body
     | Starred (Starred.Once expression)
     | Starred (Starred.Twice expression) ->
         forward_expression ~resolution ~state ~expression
     | Ternary { Ternary.target; test; alternative } ->
-        let { state; awaitables } = forward_expression ~resolution ~state ~expression:target in
-        let { state; awaitables } =
-          forward_expression ~resolution ~state ~expression:test |>> awaitables
+        let { state; nested_awaitable_expressions } =
+          forward_expression ~resolution ~state ~expression:target
         in
-        forward_expression ~resolution ~state ~expression:alternative |>> awaitables
+        let { state; nested_awaitable_expressions } =
+          forward_expression ~resolution ~state ~expression:test |>> nested_awaitable_expressions
+        in
+        forward_expression ~resolution ~state ~expression:alternative
+        |>> nested_awaitable_expressions
     | List items
     | Set items
     | Tuple items ->
-        List.fold items ~init:{ state; awaitables = [] } ~f:(fun { state; awaitables } expression ->
-            forward_expression ~resolution ~state ~expression |>> awaitables)
+        List.fold
+          items
+          ~init:{ state; nested_awaitable_expressions = [] }
+          ~f:(fun { state; nested_awaitable_expressions } expression ->
+            forward_expression ~resolution ~state ~expression |>> nested_awaitable_expressions)
     | UnaryOperator { UnaryOperator.operand; _ } ->
         forward_expression ~resolution ~state ~expression:operand
     | WalrusOperator { target; value; _ } ->
-        let { state; awaitables } = forward_expression ~resolution ~state ~expression:target in
-        forward_expression ~resolution ~state ~expression:value |>> awaitables
+        let { state; nested_awaitable_expressions } =
+          forward_expression ~resolution ~state ~expression:target
+        in
+        forward_expression ~resolution ~state ~expression:value |>> nested_awaitable_expressions
     | Yield (Some expression)
     | YieldFrom expression ->
-        let { state; awaitables } = forward_expression ~resolution ~state ~expression in
+        let { state; nested_awaitable_expressions } =
+          forward_expression ~resolution ~state ~expression
+        in
         let state = await_all_subexpressions ~state ~expression in
-        { state; awaitables }
-    | Yield None -> { state; awaitables = [] }
+        { state; nested_awaitable_expressions }
+    | Yield None -> { state; nested_awaitable_expressions = [] }
     | Generator { Comprehension.element; generators }
     | ListComprehension { Comprehension.element; generators }
     | SetComprehension { Comprehension.element; generators } ->
-        let { state; awaitables } =
-          List.fold generators ~init:{ state; awaitables = [] } ~f:(forward_generator ~resolution)
+        let { state; nested_awaitable_expressions } =
+          List.fold
+            generators
+            ~init:{ state; nested_awaitable_expressions = [] }
+            ~f:(forward_generator ~resolution)
         in
-        forward_expression ~resolution ~state ~expression:element |>> awaitables
+        forward_expression ~resolution ~state ~expression:element |>> nested_awaitable_expressions
     | DictionaryComprehension
         { Comprehension.element = { Dictionary.Entry.key; value }; generators } ->
-        let { state; awaitables } =
-          List.fold generators ~init:{ state; awaitables = [] } ~f:(forward_generator ~resolution)
+        let { state; nested_awaitable_expressions } =
+          List.fold
+            generators
+            ~init:{ state; nested_awaitable_expressions = [] }
+            ~f:(forward_generator ~resolution)
         in
-        let { state; awaitables } =
-          forward_expression ~resolution ~state ~expression:key |>> awaitables
+        let { state; nested_awaitable_expressions } =
+          forward_expression ~resolution ~state ~expression:key |>> nested_awaitable_expressions
         in
-        forward_expression ~resolution ~state ~expression:value |>> awaitables
+        forward_expression ~resolution ~state ~expression:value |>> nested_awaitable_expressions
     | Name (Name.Attribute { base; _ }) -> forward_expression ~resolution ~state ~expression:base
     | Name name when is_simple_name name ->
-        let awaitables =
+        let nested_awaitable_expressions =
           match Map.find state.awaitables_for_alias (NamedAlias (name_to_reference_exn name)) with
           | Some aliases ->
               let add_unawaited unawaited location =
@@ -614,19 +648,19 @@ module State (Context : Context) = struct
               Set.fold aliases ~init:[] ~f:add_unawaited
           | None -> []
         in
-        { state; awaitables }
+        { state; nested_awaitable_expressions }
     | FormatString substrings ->
         List.fold
           substrings
-          ~init:{ state; awaitables = [] }
-          ~f:(fun { state; awaitables } substring ->
+          ~init:{ state; nested_awaitable_expressions = [] }
+          ~f:(fun { state; nested_awaitable_expressions } substring ->
             match substring with
             | Substring.Format expression -> forward_expression ~resolution ~state ~expression
-            | Substring.Literal _ -> { state; awaitables })
+            | Substring.Literal _ -> { state; nested_awaitable_expressions })
     (* Base cases. *)
     | Constant _
     | Name _ ->
-        { state; awaitables = [] }
+        { state; nested_awaitable_expressions = [] }
 
 
   and forward_assign
@@ -670,12 +704,12 @@ module State (Context : Context) = struct
               let awaitable = Node.location expression |> Awaitable.create in
               let key = NamedAlias (name_to_reference_exn target) in
               if not (List.is_empty awaitable_expressions_so_far) then
-                let awaitables =
+                let nested_awaitable_expressions =
                   List.map awaitable_expressions_so_far ~f:Node.location
                   |> List.map ~f:Awaitable.create
                   |> Awaitable.Set.of_list
                 in
-                Map.set awaitables_for_alias ~key ~data:awaitables
+                Map.set awaitables_for_alias ~key ~data:nested_awaitable_expressions
               else if Map.mem unawaited awaitable then
                 Map.set awaitables_for_alias ~key ~data:(Awaitable.Set.singleton awaitable)
               else
@@ -761,14 +795,16 @@ module State (Context : Context) = struct
     | Statement.Assert { Assert.test; _ } ->
         forward_expression ~resolution ~state ~expression:test |> result_state
     | Assign { value; target; _ } ->
-        let { state; awaitables } = forward_expression ~resolution ~state ~expression:value in
+        let { state; nested_awaitable_expressions } =
+          forward_expression ~resolution ~state ~expression:value
+        in
         let annotation = Resolution.resolve_expression_to_type resolution value in
         forward_assign
           ~state
           ~resolution:global_resolution
           ~annotation
           ~expression:value
-          ~awaitable_expressions_so_far:awaitables
+          ~awaitable_expressions_so_far:nested_awaitable_expressions
           ~target
     | Delete expressions ->
         let f state expression =
