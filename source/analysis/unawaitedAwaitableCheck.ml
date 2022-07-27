@@ -108,7 +108,8 @@ module State (Context : Context) = struct
   let _ = show_awaitable_state (* unused *)
 
   type alias =
-    | Reference of Reference.t
+    (* This is a variable that refers to an awaitable. *)
+    | NamedAlias of Reference.t
     | Location of Location.t
   [@@deriving compare, sexp, show]
 
@@ -195,7 +196,7 @@ module State (Context : Context) = struct
           awaitables_for_alias =
             Map.set
               awaitables_for_alias
-              ~key:(Reference (Reference.create name))
+              ~key:(NamedAlias (Reference.create name))
               ~data:(Awaitable.create location |> Awaitable.Set.singleton);
           need_to_await;
         }
@@ -217,7 +218,7 @@ module State (Context : Context) = struct
       let awaitables = data in
       let alias = key in
       match alias with
-      | Reference name ->
+      | NamedAlias name ->
           let add_reference errors awaitable =
             match Map.find errors awaitable with
             | Some { Error.references; expression } ->
@@ -282,7 +283,7 @@ module State (Context : Context) = struct
     if Expression.is_simple_name name then
       let unawaited =
         let await_location unawaited location = Map.set unawaited ~key:location ~data:Awaited in
-        Map.find awaitables_for_alias (Reference (Expression.name_to_reference_exn name))
+        Map.find awaitables_for_alias (NamedAlias (Expression.name_to_reference_exn name))
         >>| (fun locations -> Set.fold locations ~init:unawaited ~f:await_location)
         |> Option.value ~default:unawaited
       in
@@ -388,14 +389,14 @@ module State (Context : Context) = struct
                     |> Awaitable.Set.of_list
                   in
                   let awaitables_for_alias =
-                    match Map.find awaitables_for_alias (Reference name) with
+                    match Map.find awaitables_for_alias (NamedAlias name) with
                     | Some awaitables ->
                         Map.set
                           awaitables_for_alias
-                          ~key:(Reference name)
+                          ~key:(NamedAlias name)
                           ~data:(Set.union awaitables new_awaitables)
                     | None ->
-                        Map.set awaitables_for_alias ~key:(Reference name) ~data:new_awaitables
+                        Map.set awaitables_for_alias ~key:(NamedAlias name) ~data:new_awaitables
                   in
                   ( List.rev_append new_awaitable_expressions awaitables,
                     { state with awaitables_for_alias } )
@@ -422,7 +423,7 @@ module State (Context : Context) = struct
           else
             match value with
             | Expression.Name name when is_simple_name name ->
-                Map.find awaitables_for_alias (Reference (name_to_reference_exn name))
+                Map.find awaitables_for_alias (NamedAlias (name_to_reference_exn name))
             | _ -> Map.find awaitables_for_alias (Location location)
         in
         if
@@ -538,7 +539,7 @@ module State (Context : Context) = struct
     | Name (Name.Attribute { base; _ }) -> forward_expression ~resolution ~state ~expression:base
     | Name name when is_simple_name name ->
         let awaitables =
-          match Map.find state.awaitables_for_alias (Reference (name_to_reference_exn name)) with
+          match Map.find state.awaitables_for_alias (NamedAlias (name_to_reference_exn name)) with
           | Some aliases ->
               let add_unawaited unawaited location =
                 match Map.find state.unawaited location with
@@ -585,11 +586,11 @@ module State (Context : Context) = struct
         | { Node.value = Expression.Name value; _ } when is_simple_name value ->
             (* Aliasing. *)
             let awaitables_for_alias =
-              Map.find awaitables_for_alias (Reference (name_to_reference_exn value))
+              Map.find awaitables_for_alias (NamedAlias (name_to_reference_exn value))
               >>| (fun locations ->
                     Map.set
                       awaitables_for_alias
-                      ~key:(Reference (name_to_reference_exn target))
+                      ~key:(NamedAlias (name_to_reference_exn target))
                       ~data:locations)
               |> Option.value ~default:awaitables_for_alias
             in
@@ -599,7 +600,7 @@ module State (Context : Context) = struct
                where unawaitables are introduced. *)
             let awaitables_for_alias =
               let awaitable = Node.location expression |> Awaitable.create in
-              let key = Reference (name_to_reference_exn target) in
+              let key = NamedAlias (name_to_reference_exn target) in
               if not (List.is_empty awaitable_expressions) then
                 let awaitables =
                   List.map awaitable_expressions ~f:Node.location
