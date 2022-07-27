@@ -965,12 +965,12 @@ let test_assign context =
 let () =
   "awaitableCheck"
   >::: [
-         "aliases" >:: test_aliases;
-         "assign" >:: test_assign;
-         "attribute_access" >:: test_attribute_access;
          "forward" >:: test_forward;
          "initial" >:: test_initial;
-         "return" >:: test_return;
          "state" >:: test_state;
+         "attribute_access" >:: test_attribute_access;
+         "aliases" >:: test_aliases;
+         "assign" >:: test_assign;
+         "return" >:: test_return;
        ]
   |> Test.run
