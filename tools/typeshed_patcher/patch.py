@@ -136,6 +136,26 @@ class Patch:
     action: Action
     parent: QualifiedName  # Can be empty, which implies global scope.
 
+    @staticmethod
+    def from_json(input_object: object) -> "Patch":
+        if not isinstance(input_object, dict):
+            raise ReadPatchException(
+                f"Expect a dictionary for attribute patch but got {input_object}"
+            )
+        parent = QualifiedName.from_string(
+            input_object["parent"] if "parent" in input_object else ""
+        )
+        action = action_from_json(input_object)
+        return Patch(action=action, parent=parent)
+
+
+def patches_from_json(input_object: object) -> List[Patch]:
+    if not isinstance(input_object, list):
+        raise ReadPatchException(
+            f"Expect an attribute patch list but got {input_object}"
+        )
+    return [Patch.from_json(element) for element in input_object]
+
 
 @dataclasses.dataclass(frozen=True)
 class FilePatch:

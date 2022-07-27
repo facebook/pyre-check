@@ -14,6 +14,7 @@ from ..patch import (
     AddPosition,
     DeleteAction,
     DeleteImportAction,
+    Patch,
     QualifiedName,
     ReadPatchException,
     ReplaceAction,
@@ -120,3 +121,29 @@ class PatchReaderTest(testslide.TestCase):
         self.assert_not_parsed_action({"action": "replace", "doom": "eternal"})
         self.assert_not_parsed_action({"action": "replace", "name": "doom"})
         self.assert_not_parsed_action({"action": "replace", "content": "BFG"})
+
+    def assert_parsed_patch(self, input: object, expected: Patch) -> None:
+        self._assert_parsed(input, Patch.from_json, expected)
+
+    def assert_not_parsed_patch(self, input: object) -> None:
+        self._assert_not_parsed(input, Patch.from_json)
+
+    def test_read_patch(self) -> None:
+        self.assert_parsed_patch(
+            {"parent": "foo.bar", "action": "delete", "name": "doom"},
+            Patch(
+                parent=QualifiedName(["foo", "bar"]),
+                action=DeleteAction(name="doom"),
+            ),
+        )
+        self.assert_parsed_patch(
+            {"action": "delete", "name": "doom"},
+            Patch(
+                action=DeleteAction(name="doom"), parent=QualifiedName.from_string("")
+            ),
+        )
+        self.assert_not_parsed_patch(42)
+        self.assert_not_parsed_patch([])
+        self.assert_not_parsed_patch(False)
+        self.assert_not_parsed_patch({})
+        self.assert_not_parsed_patch({"parent": "foo.bar"})
