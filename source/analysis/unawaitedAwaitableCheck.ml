@@ -62,7 +62,10 @@ module State (Context : Context) = struct
   end)
 
   type t = {
+    (* For every location where we encounter an awaitable, we maintain whether that awaitable's
+       state, i.e., has it been awaited or not? *)
     unawaited: state Location.Map.t;
+    (* For an alias, what awaitable locations could it point to? *)
     locals: Location.Set.t AliasMap.t;
     need_to_await: bool;
   }
@@ -368,6 +371,12 @@ module State (Context : Context) = struct
         else
           match Node.value callee with
           | Name (Name.Attribute { base; _ }) -> (
+              (* If we can't resolve the type of the method as being an awaitable, be unsound and
+                 assume the method awaits the `base` awaitable. Otherwise, we will complain that the
+                 awaitable pointed to by `base` was never awaited.
+
+                 Do this by pretending that the entire expression actually refers to the same
+                 awaitable(s) pointed to by `base`. *)
               match find_aliases base with
               | Some locations ->
                   ( awaitables,
