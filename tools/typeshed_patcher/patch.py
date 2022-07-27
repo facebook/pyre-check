@@ -16,6 +16,19 @@ from typing_extensions import TypeAlias
 class QualifiedName:
     names: List[str] = dataclasses.field(default_factory=list)
 
+    def to_string(self) -> str:
+        return ".".join(self.names)
+
+    @staticmethod
+    def from_string(qualified_name: str) -> "QualifiedName":
+        if len(qualified_name) == 0:
+            return QualifiedName([])
+        else:
+            return QualifiedName(qualified_name.split("."))
+
+    def is_empty(self) -> bool:
+        return len(self.names) == 0
+
 
 class AddPosition(str, enum.Enum):
     TOP_OF_SCOPE: str = "top"
