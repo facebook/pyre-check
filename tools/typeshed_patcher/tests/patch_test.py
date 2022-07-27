@@ -7,7 +7,7 @@ from typing import Callable, TypeVar
 
 import testslide
 
-from ..patch import QualifiedName, ReadPatchException
+from ..patch import AddPosition, QualifiedName, ReadPatchException
 
 
 class PatchTest(testslide.TestCase):
@@ -49,3 +49,17 @@ class PatchReaderTest(testslide.TestCase):
         self.assert_not_parsed_parent([])
         self.assert_not_parsed_parent({})
         self.assert_not_parsed_parent(False)
+
+    def assert_parsed_add_position(self, input: object, expected: AddPosition) -> None:
+        self._assert_parsed(input, AddPosition.from_json, expected)
+
+    def assert_not_parsed_add_position(self, input: object) -> None:
+        self._assert_not_parsed(input, AddPosition.from_json)
+
+    def test_read_add_position(self) -> None:
+        self.assert_parsed_add_position("top", expected=AddPosition.TOP_OF_SCOPE)
+        self.assert_parsed_add_position("bottom", expected=AddPosition.BOTTOM_OF_SCOPE)
+        self.assert_not_parsed_add_position(42)
+        self.assert_not_parsed_add_position([])
+        self.assert_not_parsed_add_position({})
+        self.assert_not_parsed_add_position(False)

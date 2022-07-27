@@ -52,6 +52,13 @@ class AddPosition(str, enum.Enum):
     TOP_OF_SCOPE: str = "top"
     BOTTOM_OF_SCOPE: str = "bottom"
 
+    @staticmethod
+    def from_json(input_object: object) -> "AddPosition":
+        for element in AddPosition:
+            if element.value == input_object:
+                return element
+        raise ReadPatchException(f"Unrecognized position: {input_object}")
+
 
 @dataclasses.dataclass(frozen=True)
 class DeleteAction:
