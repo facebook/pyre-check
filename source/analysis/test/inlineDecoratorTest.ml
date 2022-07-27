@@ -98,8 +98,8 @@ let test_decorator_body context =
         ScratchProject.setup ~context ~external_sources:[] [expected_handle, expected]
         |> ScratchProject.build_type_environment
       in
-      List.find_exn sources ~f:(fun { Source.module_path = { ModulePath.relative; _ }; _ } ->
-          String.equal relative expected_handle)
+      List.find_exn sources ~f:(fun { Source.module_path; _ } ->
+          String.equal (ModulePath.relative module_path) expected_handle)
       |> InlineDecorator.sanitize_defines ~strip_decorators:true
       |> Source.statements
       |> List.last_exn
@@ -171,8 +171,8 @@ let get_expected_actual_sources ~context ~additional_sources ~handle source expe
       ScratchProject.setup ~context ~external_sources:[] [handle, expected]
       |> ScratchProject.build_type_environment
     in
-    List.find_exn sources ~f:(fun { Source.module_path = { ModulePath.relative; _ }; _ } ->
-        String.equal relative handle)
+    List.find_exn sources ~f:(fun { Source.module_path; _ } ->
+        String.equal (ModulePath.relative module_path) handle)
     |> InlineDecorator.sanitize_defines ~strip_decorators:false
   in
   expected, actual

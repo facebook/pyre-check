@@ -1083,7 +1083,8 @@ let merge_errors ~global_resolution errors =
 let legacy_infer_for_define
     ~configuration
     ~global_resolution
-    ~source:({ Source.module_path = { ModulePath.qualifier; relative; _ }; _ } as source)
+    ~source:
+      ({ Source.module_path = { ModulePath.raw = { relative; _ }; qualifier; _ }; _ } as source)
     ~define:({ Node.location; value = { Define.signature = { name; _ }; _ } } as define)
   =
   try
@@ -1199,7 +1200,7 @@ let infer_for_module
     ~filename_lookup
     ({ Ast.Source.module_path = { qualifier; _ } as module_path; _ } as source)
   =
-  Log.debug "Running infer for %s..." module_path.relative;
+  Log.debug "Running infer for %s..." (ModulePath.relative module_path);
   (* We cannot use should_analyze_define as a filter because we need to know about all defines in
      order to reliably exclude duplicates from overloads *)
   let check define =

@@ -2327,7 +2327,7 @@ let rec messages ~concise ~signature location kind =
       | Class
           {
             class_origin = ClassType class_type;
-            parent_module_path = Some { ModulePath.relative; is_stub = true; _ };
+            parent_module_path = Some { ModulePath.raw = { relative; _ }; is_stub = true; _ };
           }
         when not (Type.is_optional_primitive class_type) ->
           let stub_trace =
@@ -2342,7 +2342,7 @@ let rec messages ~concise ~signature location kind =
               (private_attribute_warning ())
           in
           [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute; stub_trace]
-      | Module (ExplicitModule { ModulePath.relative; is_stub = true; _ }) ->
+      | Module (ExplicitModule { ModulePath.raw = { relative; _ }; is_stub = true; _ }) ->
           let stub_trace =
             Format.asprintf
               "This module is shadowed by a stub file at `%s`. Ensure `%a` is defined in the stub \
@@ -2394,7 +2394,7 @@ let rec messages ~concise ~signature location kind =
            https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import"
         in
         match from with
-        | ExplicitModule { ModulePath.qualifier; relative; is_stub = true; _ } ->
+        | ExplicitModule { ModulePath.raw = { relative; _ }; qualifier; is_stub = true; _ } ->
             ( qualifier,
               Format.asprintf
                 "This module is shadowed by a stub file at `%s`. Ensure `%a` is defined in the \

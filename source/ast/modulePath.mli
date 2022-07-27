@@ -12,7 +12,7 @@ module Raw : sig
     relative: string;
     priority: int;
   }
-  [@@deriving compare, hash, sexp]
+  [@@deriving compare, equal, hash, sexp]
 
   module Set : Caml.Set.S with type elt = t
 
@@ -21,10 +21,9 @@ module Raw : sig
   val full_path : configuration:Configuration.Analysis.t -> t -> ArtifactPath.t
 end
 
-type t = private {
-  relative: string;
+type t = {
+  raw: Raw.t;
   qualifier: Reference.t;
-  priority: int;
   is_stub: bool;
   is_external: bool;
   is_init: bool;
@@ -38,6 +37,10 @@ val pp : Format.formatter -> t -> unit
 val create : configuration:Configuration.Analysis.t -> ArtifactPath.t -> t option
 
 val qualifier : t -> Reference.t
+
+val raw : t -> Raw.t
+
+val relative : t -> string
 
 val is_in_project : t -> bool
 

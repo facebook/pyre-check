@@ -211,9 +211,10 @@ let transform_annotations ~transform_annotation_expression source =
   Transform.transform () source |> Transform.source
 
 
-let expand_string_annotations ({ Source.module_path = { ModulePath.relative; _ }; _ } as source) =
+let expand_string_annotations ({ Source.module_path; _ } as source) =
   transform_annotations
-    ~transform_annotation_expression:(transform_string_annotation_expression ~relative)
+    ~transform_annotation_expression:
+      (transform_string_annotation_expression ~relative:(ModulePath.relative module_path))
     source
 
 
@@ -1210,7 +1211,8 @@ module Qualify (Context : QualifyContext) = struct
 end
 
 let qualify
-    ({ Source.module_path = { ModulePath.relative; qualifier; _ }; statements; _ } as source)
+    ({ Source.module_path = { ModulePath.raw = { relative; _ }; qualifier; _ }; statements; _ } as
+    source)
   =
   let module Context = struct
     let source_relative = relative
@@ -2066,10 +2068,8 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
   LazyImportTransformer.transform () source |> LazyImportTransformer.source
 
 
-let replace_mypy_extensions_stub
-    ({ Source.module_path = { ModulePath.relative; _ }; statements; _ } as source)
-  =
-  if String.is_suffix relative ~suffix:"mypy_extensions.pyi" then
+let replace_mypy_extensions_stub ({ Source.module_path; statements; _ } as source) =
+  if String.is_suffix (ModulePath.relative module_path) ~suffix:"mypy_extensions.pyi" then
     let typed_dictionary_stub ~location =
       let node value = Node.create ~location value in
       Statement.Assign

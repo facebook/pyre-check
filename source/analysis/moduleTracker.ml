@@ -52,13 +52,11 @@ module ReadOnly = struct
     let configuration = controls tracker |> EnvironmentControls.configuration in
     match ModulePath.create ~configuration path with
     | None -> PathLookup.NotFound
-    | Some { ModulePath.relative; priority; qualifier; _ } -> (
+    | Some { ModulePath.raw; qualifier; _ } -> (
         match lookup_module_path tracker qualifier with
         | None -> PathLookup.NotFound
-        | Some
-            ({ ModulePath.relative = tracked_relative; priority = tracked_priority; _ } as
-            module_path) ->
-            if String.equal relative tracked_relative && Int.equal priority tracked_priority then
+        | Some ({ ModulePath.raw = tracked_raw; _ } as module_path) ->
+            if ModulePath.Raw.equal raw tracked_raw then
               PathLookup.Found module_path
             else
               PathLookup.ShadowedBy module_path)
@@ -181,12 +179,8 @@ module Base = struct
                   (* For removed files, we only check for equality on relative path & priority. *)
                   (* There's a corner case (where symlink is involved) that may cause `removed` to
                      have a different `is_external` flag. *)
-                  let partially_equal
-                      { ModulePath.relative = left_relative; priority = left_priority; _ }
-                      { ModulePath.relative = right_relative; priority = right_priority; _ }
-                    =
-                    String.equal left_relative right_relative
-                    && Int.equal left_priority right_priority
+                  let partially_equal { ModulePath.raw = left; _ } { ModulePath.raw = right; _ } =
+                    ModulePath.Raw.equal left right
                   in
                   assert (partially_equal to_remove current_path)
                 in

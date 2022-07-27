@@ -2984,8 +2984,8 @@ let assert_errors
           type_environment )
       in
       let source =
-        List.find_exn sources ~f:(fun { Source.module_path = { ModulePath.relative; _ }; _ } ->
-            String.equal handle relative)
+        List.find_exn sources ~f:(fun { Source.module_path; _ } ->
+            String.equal handle (ModulePath.relative module_path))
       in
       check ~environment ~source
       |> List.map

@@ -16,6 +16,10 @@ module Raw = struct
     }
     [@@deriving compare, hash, sexp]
 
+    let pp formatter { relative; priority } = Format.fprintf formatter "%d/%s" priority relative
+
+    let equal = [%compare.equal: t]
+
     let create ~configuration path =
       let search_paths = Configuration.Analysis.search_paths configuration in
       SearchPath.search_for_path ~search_paths path
@@ -37,9 +41,8 @@ end
 
 module T = struct
   type t = {
-    relative: string;
+    raw: Raw.t;
     qualifier: Reference.t;
-    priority: int;
     is_stub: bool;
     is_external: bool;
     is_init: bool;
@@ -52,15 +55,15 @@ include T
 
 let equal = [%compare.equal: t]
 
-let pp formatter { relative; qualifier; priority; is_stub; is_external; is_init } =
+let pp formatter { raw; qualifier; is_stub; is_external; is_init } =
   let is_stub = if is_stub then " [STUB]" else "" in
   let is_external = if is_external then " [EXTERNAL]" else "" in
   let is_init = if is_init then " [INIT]" else "" in
   Format.fprintf
     formatter
-    "[%d/%s(%a)%s%s%s]"
-    priority
-    relative
+    "[%a(%a)%s%s%s]"
+    Raw.pp
+    raw
     Reference.pp
     qualifier
     is_stub
@@ -139,7 +142,7 @@ let create ~configuration:({ Configuration.Analysis.excludes; _ } as configurati
     None
   else
     Raw.create ~configuration path
-    >>= fun Raw.{ relative; priority } ->
+    >>= fun (Raw.{ relative; _ } as raw) ->
     let qualifier =
       match Configuration.Analysis.find_extension configuration path with
       | Some { Configuration.Extension.include_suffix_in_module_qualifier; _ }
@@ -152,9 +155,8 @@ let create ~configuration:({ Configuration.Analysis.excludes; _ } as configurati
     let is_init = PyrePath.is_path_python_init relative in
     Some
       {
-        relative;
+        raw;
         qualifier;
-        priority;
         is_stub;
         is_external = not (should_type_check ~configuration path);
         is_init;
@@ -163,35 +165,36 @@ let create ~configuration:({ Configuration.Analysis.excludes; _ } as configurati
 
 let qualifier { qualifier; _ } = qualifier
 
+let raw { raw; _ } = raw
+
+let relative { raw = { relative; _ }; _ } = relative
+
 let is_in_project { is_external; _ } = not is_external
 
 let create_for_testing ~relative ~is_external ~priority =
+  let raw = Raw.{ relative; priority } in
   let qualifier = qualifier_of_relative relative in
   let is_stub = PyrePath.is_path_python_stub relative in
   let is_init = PyrePath.is_path_python_init relative in
-  { relative; qualifier; priority; is_stub; is_external; is_init }
+  { raw; qualifier; is_stub; is_external; is_init }
 
 
-let full_path ~configuration { relative; priority; _ } =
-  Raw.full_path ~configuration Raw.{ relative; priority }
-
+let full_path ~configuration { raw; _ } = Raw.full_path ~configuration raw
 
 (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module
    only. Do NOT use it on aribitrary SourceFiles. *)
 let same_module_compare
     ~configuration
     {
-      priority = left_priority;
+      raw = { relative = left_path; priority = left_priority };
       is_stub = left_is_stub;
       is_init = left_is_init;
-      relative = left_path;
       _;
     }
     {
-      priority = right_priority;
+      raw = { relative = right_path; priority = right_priority };
       is_stub = right_is_stub;
       is_init = right_is_init;
-      relative = right_path;
       _;
     }
   =

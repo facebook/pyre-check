@@ -135,7 +135,7 @@ let test_creation context =
       ~search_root
       ~relative
       ({
-         ModulePath.priority = actual_priority;
+         ModulePath.raw = { priority = actual_priority; _ };
          is_stub = actual_is_stub;
          is_external = actual_is_external;
          is_init = actual_is_init;
@@ -1247,7 +1247,8 @@ module IncrementalTest = struct
     let updates = ModuleTracker.update ~artifact_paths module_tracker in
     let actual =
       let create_event = function
-        | ModuleTracker.IncrementalUpdate.NewExplicit { ModulePath.relative; is_external; _ } ->
+        | ModuleTracker.IncrementalUpdate.NewExplicit
+            { ModulePath.raw = { relative; _ }; is_external; _ } ->
             Event.NewExplicit { relative; is_external }
         | ModuleTracker.IncrementalUpdate.NewImplicit qualifier ->
             Event.NewImplicit (Reference.show qualifier)
