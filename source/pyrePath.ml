@@ -145,7 +145,7 @@ let follow_symbolic_link path =
 
 
 (* Variant of Sys.readdir where names are sorted in alphabetical order *)
-let read_directory_ordered path =
+let read_directory_ordered_raw path =
   let entries = Core.Sys.readdir path in
   Array.sort ~compare:String.compare entries;
   entries
@@ -156,7 +156,7 @@ let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~roo
     match Core.Sys.is_directory path with
     | `Yes ->
         if directory_filter path then (
-          match read_directory_ordered path with
+          match read_directory_ordered_raw path with
           | entries ->
               let collect sofar entry = list sofar (path ^/ entry) in
               Array.fold ~init:sofar ~f:collect entries
@@ -169,6 +169,10 @@ let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~roo
     | _ -> sofar
   in
   list [] (absolute root)
+
+
+let read_directory_ordered path =
+  absolute path |> read_directory_ordered_raw |> Array.map ~f:create_absolute |> Array.to_list
 
 
 let directory_contains ~directory path =

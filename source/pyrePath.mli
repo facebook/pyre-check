@@ -63,6 +63,8 @@ val list
   unit ->
   t list
 
+val read_directory_ordered : t -> t list
+
 val directory_contains : directory:t -> t -> bool
 
 module FileType : sig
