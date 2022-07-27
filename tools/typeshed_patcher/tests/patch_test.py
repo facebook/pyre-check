@@ -3,11 +3,21 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from typing import Callable, TypeVar
+from typing import Callable, Mapping, TypeVar
 
 import testslide
 
-from ..patch import AddPosition, QualifiedName, ReadPatchException
+from ..patch import (
+    Action,
+    action_from_json,
+    AddAction,
+    AddPosition,
+    DeleteAction,
+    DeleteImportAction,
+    QualifiedName,
+    ReadPatchException,
+    ReplaceAction,
+)
 
 
 class PatchTest(testslide.TestCase):
@@ -63,3 +73,50 @@ class PatchReaderTest(testslide.TestCase):
         self.assert_not_parsed_add_position([])
         self.assert_not_parsed_add_position({})
         self.assert_not_parsed_add_position(False)
+
+    def assert_parsed_action(
+        self, input: Mapping[str, object], expected: Action
+    ) -> None:
+        self._assert_parsed(input, action_from_json, expected)
+
+    def assert_not_parsed_action(self, input: Mapping[str, object]) -> None:
+        self._assert_not_parsed(input, action_from_json)
+
+    def test_read_add_action(self) -> None:
+        self.assert_parsed_action(
+            {"action": "add", "content": "derp"}, AddAction(content="derp")
+        )
+        self.assert_parsed_action(
+            {"action": "add", "content": "derp", "position": "top"},
+            AddAction(content="derp", position=AddPosition.TOP_OF_SCOPE),
+        )
+        self.assert_not_parsed_action({"doom": "eternal"})
+        self.assert_not_parsed_action({"action": "doom"})
+        self.assert_not_parsed_action({"action": "add", "doom": "eternal"})
+
+    def test_read_delete_action(self) -> None:
+        self.assert_parsed_action(
+            {"action": "delete", "name": "derp"}, DeleteAction(name="derp")
+        )
+        self.assert_not_parsed_action({"doom": "eternal"})
+        self.assert_not_parsed_action({"action": "doom"})
+        self.assert_not_parsed_action({"action": "delete", "doom": "eternal"})
+
+    def test_read_delete_import_action(self) -> None:
+        self.assert_parsed_action(
+            {"action": "delete_import", "name": "derp"}, DeleteImportAction(name="derp")
+        )
+        self.assert_not_parsed_action({"doom": "eternal"})
+        self.assert_not_parsed_action({"action": "doom"})
+        self.assert_not_parsed_action({"action": "delete_import", "doom": "eternal"})
+
+    def test_read_replace_action(self) -> None:
+        self.assert_parsed_action(
+            {"action": "replace", "name": "doom", "content": "BFG"},
+            ReplaceAction(name="doom", content="BFG"),
+        )
+        self.assert_not_parsed_action({"doom": "eternal"})
+        self.assert_not_parsed_action({"action": "doom"})
+        self.assert_not_parsed_action({"action": "replace", "doom": "eternal"})
+        self.assert_not_parsed_action({"action": "replace", "name": "doom"})
+        self.assert_not_parsed_action({"action": "replace", "content": "BFG"})
