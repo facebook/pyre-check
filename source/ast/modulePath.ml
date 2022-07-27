@@ -106,34 +106,34 @@ let should_type_check
   analyze_external_sources || is_internal_path ~configuration path
 
 
-let create_from_search_path ~is_external ~search_paths ~extension path =
-  SearchPath.search_for_path ~search_paths path
-  >>= fun SearchPath.{ relative_path; priority } ->
-  let relative = PyrePath.RelativePath.relative relative_path in
-  let qualifier =
-    match extension with
-    | Some { Configuration.Extension.include_suffix_in_module_qualifier; _ }
-      when include_suffix_in_module_qualifier ->
-        (* Ensure extension is not stripped when creating qualifier *)
-        qualifier_of_relative (relative ^ ".py")
-    | _ -> qualifier_of_relative relative
-  in
-  let is_stub = PyrePath.is_path_python_stub relative in
-  let is_init = PyrePath.is_path_python_init relative in
-  Some { relative; qualifier; priority; is_stub; is_external; is_init }
-
-
 let create ~configuration:({ Configuration.Analysis.excludes; _ } as configuration) path =
   let absolute_path = ArtifactPath.raw path |> PyrePath.absolute in
-  let create ~extension path =
-    let search_paths = Configuration.Analysis.search_paths configuration in
-    let is_external = not (should_type_check ~configuration path) in
-    create_from_search_path ~is_external ~search_paths ~extension path
-  in
   if List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0) then
     None
   else
-    create ~extension:(Configuration.Analysis.find_extension configuration path) path
+    let search_paths = Configuration.Analysis.search_paths configuration in
+    SearchPath.search_for_path ~search_paths path
+    >>= fun SearchPath.{ relative_path; priority } ->
+    let relative = PyrePath.RelativePath.relative relative_path in
+    let qualifier =
+      match Configuration.Analysis.find_extension configuration path with
+      | Some { Configuration.Extension.include_suffix_in_module_qualifier; _ }
+        when include_suffix_in_module_qualifier ->
+          (* Ensure extension is not stripped when creating qualifier *)
+          qualifier_of_relative (relative ^ ".py")
+      | _ -> qualifier_of_relative relative
+    in
+    let is_stub = PyrePath.is_path_python_stub relative in
+    let is_init = PyrePath.is_path_python_init relative in
+    Some
+      {
+        relative;
+        qualifier;
+        priority;
+        is_stub;
+        is_external = not (should_type_check ~configuration path);
+        is_init;
+      }
 
 
 let qualifier { qualifier; _ } = qualifier
