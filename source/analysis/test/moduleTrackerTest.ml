@@ -1200,7 +1200,13 @@ module IncrementalTest = struct
 
   open Test
 
-  let assert_incremental ?(external_setups = []) ~context ~expected setups =
+  let assert_incremental
+      ?(external_setups = [])
+      ~context
+      ~expected
+      ?(expect_invalid_state = false)
+      setups
+    =
     let get_old_inputs setups =
       List.filter_map setups ~f:(fun { handle; operation } ->
           match operation with
@@ -1265,23 +1271,25 @@ module IncrementalTest = struct
       (List.sort ~compare:Event.compare expected)
       (List.sort ~compare:Event.compare actual);
 
-    (* Also check that the module tracker is in a consistent state: we should track exactly the same
-       modules and source files after the update as if we build a fresh module tracker from scratch. *)
-    let actual_module_paths =
-      ModuleTracker.all_module_paths module_tracker |> List.sort ~compare:ModulePath.compare
-    in
-    let expected_module_paths =
-      EnvironmentControls.create configuration
-      |> ModuleTracker.create
-      |> ModuleTracker.all_module_paths
-      |> List.sort ~compare:ModulePath.compare
-    in
-    assert_equal
-      ~cmp:(List.equal ModulePath.equal)
-      ~printer:(fun module_paths ->
-        [%message (module_paths : ModulePath.t list)] |> Sexp.to_string_hum)
-      expected_module_paths
-      actual_module_paths
+    if not expect_invalid_state then
+      (* Also check that the module tracker is in a consistent state: we should track exactly the
+         same modules and source files after the update as if we build a fresh module tracker from
+         scratch. *)
+      let actual_module_paths =
+        ModuleTracker.all_module_paths module_tracker |> List.sort ~compare:ModulePath.compare
+      in
+      let expected_module_paths =
+        EnvironmentControls.create configuration
+        |> ModuleTracker.create
+        |> ModuleTracker.all_module_paths
+        |> List.sort ~compare:ModulePath.compare
+      in
+      assert_equal
+        ~cmp:(List.equal ModulePath.equal)
+        ~printer:(fun module_paths ->
+          [%message (module_paths : ModulePath.t list)] |> Sexp.to_string_hum)
+        expected_module_paths
+        actual_module_paths
 end
 
 let test_update context =
@@ -1607,6 +1615,15 @@ let test_update context =
         Event.NewImplicit "a";
         Event.create_new_explicit "a/b.py";
       ];
+
+  (* Updates are not filtered to avoid hidden files *)
+  assert_incremental
+    [
+      { handle = "a.py"; operation = FileOperation.LeftAlone };
+      { handle = ".hidden.py"; operation = FileOperation.Add };
+    ]
+    ~expected:[Event.create_new_explicit ".hidden.py"; Event.NewImplicit ""]
+    ~expect_invalid_state:true;
   ()
 
 
