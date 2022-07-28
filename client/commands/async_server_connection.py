@@ -88,23 +88,30 @@ class TextReader:
 
     bytes_reader: BytesReader
     encoding: str
+    errors: str
 
-    def __init__(self, bytes_reader: BytesReader, encoding: str = "utf-8") -> None:
+    def __init__(
+        self,
+        bytes_reader: BytesReader,
+        encoding: str = "utf-8",
+        errors: str = "replace",
+    ) -> None:
         self.bytes_reader = bytes_reader
         self.encoding = encoding
+        self.errors = errors
 
     async def read_until(self, separator: str = "\n") -> str:
         separator_bytes = separator.encode(self.encoding)
         result_bytes = await self.bytes_reader.read_until(separator_bytes)
-        return result_bytes.decode(self.encoding)
+        return result_bytes.decode(self.encoding, errors=self.errors)
 
     async def read_exactly(self, count: int) -> str:
         result_bytes = await self.bytes_reader.read_exactly(count)
-        return result_bytes.decode(self.encoding)
+        return result_bytes.decode(self.encoding, errors=self.errors)
 
     async def readline(self) -> str:
         result_bytes = await self.bytes_reader.readline()
-        return result_bytes.decode(self.encoding)
+        return result_bytes.decode(self.encoding, errors=self.errors)
 
 
 class TextWriter:

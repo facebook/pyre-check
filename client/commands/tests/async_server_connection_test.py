@@ -112,11 +112,8 @@ class AsyncConnectionTest(testslide.TestCase):
     async def test_text_errors(self) -> None:
         bytes_reader = MemoryBytesReader("∅\n".encode("utf-16"))
         text_reader = TextReader(bytes_reader, encoding="utf-8")
-        try:
-            (await text_reader.readline()).strip()
-            raise AssertionError("Expected unicode decode error")
-        except UnicodeDecodeError:
-            pass
+        result = (await text_reader.readline()).strip()
+        self.assertEqual(result, '��\x05"')
 
 
 class WaitForeverTask(BackgroundTask):
