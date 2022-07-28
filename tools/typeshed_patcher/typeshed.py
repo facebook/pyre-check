@@ -4,10 +4,13 @@
 # LICENSE file in the root directory of this source tree.
 
 import abc
+import contextlib
 import pathlib
+import shutil
+import tempfile
 import zipfile
 
-from typing import Dict, Iterable, Mapping, Optional, Set
+from typing import Dict, Iterable, Iterator, Mapping, Optional, Set
 
 
 class Typeshed(abc.ABC):
@@ -34,6 +37,54 @@ class Typeshed(abc.ABC):
         order.
         """
         raise NotImplementedError
+
+
+def _write_to_files(typeshed: Typeshed, root: pathlib.Path) -> None:
+    for path in typeshed.all_files():
+        content = typeshed.get_file_content(path)
+        if content is None:
+            continue
+        full_path = root / path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(content)
+
+
+@contextlib.contextmanager
+def _create_temporary_typeshed_directory(typeshed: Typeshed) -> Iterator[pathlib.Path]:
+    with tempfile.TemporaryDirectory() as temporary_root:
+        temporary_root_path = pathlib.Path(temporary_root)
+        _write_to_files(typeshed, temporary_root_path)
+        yield temporary_root_path
+
+
+def write_to_files(typeshed: Typeshed, target: pathlib.Path) -> None:
+    """
+    Write the given `Typeshed` into a directory rooted at `target` on the filesystem.
+
+    The `target` directory is assumed to be nonexistent before this function gets
+    invoked.
+    """
+    if target.exists():
+        raise ValueError(f"Cannot write to file that already exists: `{target}`")
+    with _create_temporary_typeshed_directory(typeshed) as temporary_root:
+        temporary_root.rename(target)
+
+
+def write_to_zip(typeshed: Typeshed, target: pathlib.Path) -> None:
+    """
+    Write the given `Typeshed` into a zip file `target`.
+
+    File at `target` path is assumed to be nonexistent before this function gets
+    invoked. The `target` path is also assumed to have `.zip` as its suffix.
+    """
+    if target.exists():
+        raise ValueError(f"Cannot write to file that already exists: `{target}`")
+    if target.suffix != ".zip":
+        raise ValueError(f"Cannot write to `{target}` as zip file: wrong suffix.")
+    with _create_temporary_typeshed_directory(typeshed) as temporary_root:
+        shutil.make_archive(
+            str(target.with_suffix("")), format="zip", root_dir=temporary_root
+        )
 
 
 class MemoryBackedTypeshed(Typeshed):

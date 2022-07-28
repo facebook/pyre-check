@@ -13,6 +13,8 @@ from ..typeshed import (
     FileBackedTypeshed,
     MemoryBackedTypeshed,
     PatchedTypeshed,
+    write_to_files,
+    write_to_zip,
     ZipBackedTypeshed,
 )
 
@@ -80,3 +82,33 @@ class TypeshedReaderTest(testslide.TestCase):
         self.assertIsNone(patched_typeshed.get_file_content(path1))
         self.assertEqual(patched_typeshed.get_file_content(path2), "bfg")
         self.assertIsNone(patched_typeshed.get_file_content(Path("doesnotexist")))
+
+    def test_write_to_files(self) -> None:
+        path0 = Path("foo/bar.pyi")
+        path1 = Path("baz.pyi")
+        with tempfile.TemporaryDirectory() as root:
+            target_path = Path(root) / "target"
+            write_to_files(
+                MemoryBackedTypeshed({path0: "doom", path1: "ripandtear"}), target_path
+            )
+
+            typeshed = FileBackedTypeshed(target_path)
+            self.assertCountEqual(typeshed.all_files(), [path0, path1])
+            self.assertEqual(typeshed.get_file_content(path0), "doom")
+            self.assertEqual(typeshed.get_file_content(path1), "ripandtear")
+            self.assertIsNone(typeshed.get_file_content(Path("doesnotexist")))
+
+    def test_write_to_zip(self) -> None:
+        path0 = Path("foo/bar.pyi")
+        path1 = Path("baz.pyi")
+        with tempfile.TemporaryDirectory() as root:
+            zip_path = Path(root) / "test.zip"
+            write_to_zip(
+                MemoryBackedTypeshed({path0: "doom", path1: "ripandtear"}), zip_path
+            )
+
+            typeshed = ZipBackedTypeshed(zip_path)
+            self.assertCountEqual(typeshed.all_files(), [path0, path1])
+            self.assertEqual(typeshed.get_file_content(path0), "doom")
+            self.assertEqual(typeshed.get_file_content(path1), "ripandtear")
+            self.assertIsNone(typeshed.get_file_content(Path("doesnotexist")))
