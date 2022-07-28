@@ -16,7 +16,9 @@ from ..async_server_connection import (
     connect_in_text_mode,
     MemoryBytesReader,
     MemoryBytesWriter,
+    TextReader,
 )
+
 from .server_connection_test import EchoServerRequestHandler
 
 
@@ -106,6 +108,15 @@ class AsyncConnectionTest(testslide.TestCase):
                 await output_channel.write(message)
                 result = await input_channel.read_until(b"\n")
                 self.assertEqual(message, result)
+
+    async def test_text_errors(self) -> None:
+        bytes_reader = MemoryBytesReader("∅\n".encode("utf-16"))
+        text_reader = TextReader(bytes_reader, encoding="utf-8")
+        try:
+            (await text_reader.readline()).strip()
+            raise AssertionError("Expected unicode decode error")
+        except UnicodeDecodeError:
+            pass
 
 
 class WaitForeverTask(BackgroundTask):
