@@ -9,7 +9,12 @@ from pathlib import Path
 
 import testslide
 
-from ..typeshed import FileBackedTypeshed, MemoryBackedTypeshed, ZipBackedTypeshed
+from ..typeshed import (
+    FileBackedTypeshed,
+    MemoryBackedTypeshed,
+    PatchedTypeshed,
+    ZipBackedTypeshed,
+)
 
 
 class TypeshedReaderTest(testslide.TestCase):
@@ -55,3 +60,23 @@ class TypeshedReaderTest(testslide.TestCase):
             self.assertEqual(typeshed.get_file_content(path0), "doom")
             self.assertEqual(typeshed.get_file_content(path1), "ripandtear")
             self.assertIsNone(typeshed.get_file_content(Path("doesnotexist")))
+
+    def test_patched_typeshed(self) -> None:
+        path0 = Path("foo/bar.pyi")
+        path1 = Path("baz.pyi")
+        path2 = Path("foo/qux.pyi")
+        base_typeshed = MemoryBackedTypeshed({path0: "doom", path1: "ripandtear"})
+        patched_typeshed = PatchedTypeshed(
+            base_typeshed,
+            {
+                path0: "eternal",
+                path1: None,
+                path2: "bfg",
+            },
+        )
+
+        self.assertCountEqual(patched_typeshed.all_files(), [path0, path2])
+        self.assertEqual(patched_typeshed.get_file_content(path0), "eternal")
+        self.assertIsNone(patched_typeshed.get_file_content(path1))
+        self.assertEqual(patched_typeshed.get_file_content(path2), "bfg")
+        self.assertIsNone(patched_typeshed.get_file_content(Path("doesnotexist")))

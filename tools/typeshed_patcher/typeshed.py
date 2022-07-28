@@ -7,7 +7,7 @@ import abc
 import pathlib
 import zipfile
 
-from typing import Iterable, Mapping, Optional, Set
+from typing import Dict, Iterable, Mapping, Optional, Set
 
 
 class Typeshed(abc.ABC):
@@ -108,3 +108,43 @@ class ZipBackedTypeshed(Typeshed):
             return self.zip_file.read(str(path)).decode("utf-8")
         except (KeyError, ValueError):
             return None
+
+
+class PatchedTypeshed(Typeshed):
+    """
+    A typeshed backed up by another `Typeshed` object and a set of patches that
+    overwrite file contents in the base `Typeshed` object.
+
+    Patches are specified as a dictionary from paths to either a `str` or `None`.
+    When the value is a string, it serves as the new content for the corresponding
+    file (or the content of a new file if the file did not exist before). When the
+    value is `None`, it indicates that the corresponding file will be removed.
+    """
+
+    base: Typeshed
+    updated_files: Dict[pathlib.Path, str]
+    removed_files: Set[pathlib.Path]
+
+    def __init__(
+        self, base: Typeshed, patches: Dict[pathlib.Path, Optional[str]]
+    ) -> None:
+        self.base = base
+        self.updated_files = {
+            path: content for path, content in patches.items() if content is not None
+        }
+        self.removed_files = {
+            path for path, content in patches.items() if content is None
+        }
+
+    def all_files(self) -> Iterable[pathlib.Path]:
+        return (
+            set(self.base.all_files()) | self.updated_files.keys()
+        ) - self.removed_files
+
+    def get_file_content(self, path: pathlib.Path) -> Optional[str]:
+        if path in self.removed_files:
+            return None
+        updated_content = self.updated_files.get(path, None)
+        if updated_content is not None:
+            return updated_content
+        return self.base.get_file_content(path)
