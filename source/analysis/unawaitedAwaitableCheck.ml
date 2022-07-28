@@ -129,7 +129,14 @@ module State (Context : Context) = struct
     unawaited: awaitable_state Awaitable.Map.t;
     (* For an alias, what awaitable locations could it point to? *)
     awaitables_for_alias: Awaitable.Set.t AliasMap.t;
-    need_to_await: bool;
+    (* HACK: This flag represents whether an expression should be expected to await.
+
+       This is used to indicate that expressions that are returned or passed to a callee should not
+       cause unawaited-errors even if they were not awaited. This is because the job of awaiting
+       them is up to the caller or the callee, respectively. Note that if the function returns or
+       passes an expression of the wrong type, that will be a type error in the normal fixpoint. So,
+       we don't need to worry about that here. *)
+    expect_expressions_to_be_awaited: bool;
   }
 
   (* The result of `forward_expression`. *)
@@ -147,7 +154,7 @@ module State (Context : Context) = struct
 
   let result_state { state; nested_awaitable_expressions = _ } = state
 
-  let show { unawaited; awaitables_for_alias; need_to_await } =
+  let show { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited } =
     let unawaited =
       Map.to_alist unawaited
       |> List.map ~f:(fun (location, awaitable_state) ->
@@ -171,7 +178,7 @@ module State (Context : Context) = struct
       "Unawaited expressions: %s\nAwaitables for aliases: %s\nNeed to await: %b"
       unawaited
       awaitables_for_alias
-      need_to_await
+      expect_expressions_to_be_awaited
 
 
   let pp format state = Format.fprintf format "%s" (show state)
@@ -180,7 +187,7 @@ module State (Context : Context) = struct
     {
       unawaited = Awaitable.Map.empty;
       awaitables_for_alias = AliasMap.empty;
-      need_to_await = false;
+      expect_expressions_to_be_awaited = false;
     }
 
 
@@ -189,11 +196,11 @@ module State (Context : Context) = struct
       {
         unawaited = Awaitable.Map.empty;
         awaitables_for_alias = AliasMap.empty;
-        need_to_await = true;
+        expect_expressions_to_be_awaited = true;
       }
     in
     let forward_parameter
-        ({ unawaited; awaitables_for_alias; need_to_await } as state)
+        ({ unawaited; awaitables_for_alias; expect_expressions_to_be_awaited } as state)
         { Node.value = { Parameter.name; annotation; _ }; location }
       =
       let is_awaitable =
@@ -223,7 +230,7 @@ module State (Context : Context) = struct
               awaitables_for_alias
               ~key:(NamedAlias (Reference.create name))
               ~data:(Awaitable.create location |> Awaitable.Set.singleton);
-          need_to_await;
+          expect_expressions_to_be_awaited;
         }
       else
         state
@@ -298,13 +305,17 @@ module State (Context : Context) = struct
           left.awaitables_for_alias
           right.awaitables_for_alias
           ~combine:merge_awaitables;
-      need_to_await = left.need_to_await || right.need_to_await;
+      expect_expressions_to_be_awaited =
+        left.expect_expressions_to_be_awaited || right.expect_expressions_to_be_awaited;
     }
 
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
-  let mark_name_as_awaited { unawaited; awaitables_for_alias; need_to_await } ~name =
+  let mark_name_as_awaited
+      { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
+      ~name
+    =
     if is_simple_name name then
       let unawaited =
         let await_location unawaited location = Map.set unawaited ~key:location ~data:Awaited in
@@ -312,17 +323,20 @@ module State (Context : Context) = struct
         >>| (fun locations -> Set.fold locations ~init:unawaited ~f:await_location)
         |> Option.value ~default:unawaited
       in
-      { unawaited; awaitables_for_alias; need_to_await }
+      { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
     else (* Non-simple names cannot store awaitables. *)
-      { unawaited; awaitables_for_alias; need_to_await }
+      { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
 
 
-  let mark_location_as_awaited { unawaited; awaitables_for_alias; need_to_await } ~location =
+  let mark_location_as_awaited
+      { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
+      ~location
+    =
     if Map.mem unawaited (Awaitable.create location) then
       {
         unawaited = Map.set unawaited ~key:(Awaitable.create location) ~data:Awaited;
         awaitables_for_alias;
-        need_to_await;
+        expect_expressions_to_be_awaited;
       }
     else
       match
@@ -335,8 +349,8 @@ module State (Context : Context) = struct
             Set.fold awaitables ~init:unawaited ~f:(fun unawaited awaitable ->
                 Map.set unawaited ~key:awaitable ~data:Awaited)
           in
-          { unawaited; awaitables_for_alias; need_to_await }
-      | None -> { unawaited; awaitables_for_alias; need_to_await }
+          { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
+      | None -> { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
 
 
   let ( |>> ) { state; nested_awaitable_expressions } existing_awaitables =
@@ -425,7 +439,7 @@ module State (Context : Context) = struct
               }
           | _ -> { state; nested_awaitable_expressions })
       | _ ->
-          let need_to_await = state.need_to_await in
+          let expect_expressions_to_be_awaited = state.expect_expressions_to_be_awaited in
           (* Don't introduce awaitables for the arguments of a call, as they will be consumed by the
              call anyway. *)
           let { state; nested_awaitable_expressions } =
@@ -433,16 +447,16 @@ module State (Context : Context) = struct
               arguments
               ~init:
                 {
-                  state = { state with need_to_await = is_special_function };
+                  state = { state with expect_expressions_to_be_awaited = is_special_function };
                   nested_awaitable_expressions;
                 }
               ~f:forward_argument
           in
-          let state = { state with need_to_await } in
+          let state = { state with expect_expressions_to_be_awaited } in
           { state; nested_awaitable_expressions }
     in
     let annotation = Resolution.resolve_expression_to_type resolution expression in
-    let { unawaited; awaitables_for_alias; need_to_await } = state in
+    let { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited } = state in
     let find_aliases { Node.value; location } =
       let awaitable = Awaitable.create location in
       if Map.mem unawaited awaitable then
@@ -457,7 +471,7 @@ module State (Context : Context) = struct
               (ExpressionWithNestedAliases { expression_location = location })
     in
     if
-      need_to_await
+      expect_expressions_to_be_awaited
       && is_awaitable ~global_resolution:(Resolution.global_resolution resolution) annotation
     then
       (* If the callee is a method on an awaitable, make the assumption that the returned value is
@@ -477,7 +491,7 @@ module State (Context : Context) = struct
                         awaitables_for_alias
                         ~key:(ExpressionWithNestedAliases { expression_location = location })
                         ~data:locations;
-                    need_to_await;
+                    expect_expressions_to_be_awaited;
                   };
                 nested_awaitable_expressions;
               }
@@ -487,7 +501,7 @@ module State (Context : Context) = struct
                   {
                     unawaited = Map.set unawaited ~key:awaitable ~data:(Unawaited expression);
                     awaitables_for_alias;
-                    need_to_await;
+                    expect_expressions_to_be_awaited;
                   };
                 nested_awaitable_expressions;
               })
@@ -497,7 +511,7 @@ module State (Context : Context) = struct
               {
                 unawaited = Map.set unawaited ~key:awaitable ~data:(Unawaited expression);
                 awaitables_for_alias;
-                need_to_await;
+                expect_expressions_to_be_awaited;
               };
             nested_awaitable_expressions;
           }
@@ -521,7 +535,7 @@ module State (Context : Context) = struct
                         awaitables_for_alias
                         ~key:(ExpressionWithNestedAliases { expression_location = location })
                         ~data:locations;
-                    need_to_await;
+                    expect_expressions_to_be_awaited;
                   };
                 nested_awaitable_expressions;
               }
@@ -665,7 +679,7 @@ module State (Context : Context) = struct
 
   and forward_assign
       ~resolution
-      ~state:({ unawaited; awaitables_for_alias; need_to_await } as state)
+      ~state:({ unawaited; awaitables_for_alias; expect_expressions_to_be_awaited } as state)
       ~annotation
       ~expression
       ~awaitable_expressions_so_far
@@ -696,7 +710,7 @@ module State (Context : Context) = struct
                       ~data:locations)
               |> Option.value ~default:awaitables_for_alias
             in
-            { unawaited; awaitables_for_alias; need_to_await }
+            { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited }
         | _ ->
             (* The expression must be analyzed before we call `forward_assign` on it, as that's
                where unawaitables are introduced. *)
@@ -715,7 +729,7 @@ module State (Context : Context) = struct
               else
                 awaitables_for_alias
             in
-            { unawaited; awaitables_for_alias; need_to_await })
+            { unawaited; awaitables_for_alias; expect_expressions_to_be_awaited })
     | List elements
     | Tuple elements
       when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (
@@ -816,11 +830,14 @@ module State (Context : Context) = struct
     | Raise { Raise.expression = Some expression; _ } ->
         forward_expression ~resolution ~state ~expression |> result_state
     | Return { expression = Some expression; _ } ->
-        let need_to_await = state.need_to_await in
+        let expect_expressions_to_be_awaited = state.expect_expressions_to_be_awaited in
         let { state; _ } =
-          forward_expression ~resolution ~state:{ state with need_to_await = false } ~expression
+          forward_expression
+            ~resolution
+            ~state:{ state with expect_expressions_to_be_awaited = false }
+            ~expression
         in
-        let state = { state with need_to_await } in
+        let state = { state with expect_expressions_to_be_awaited } in
         await_all_subexpressions ~state ~expression
     | Return { expression = None; _ } -> state
     (* Control flow and nested functions/classes doesn't need to be analyzed explicitly. *)
