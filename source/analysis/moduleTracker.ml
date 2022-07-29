@@ -172,9 +172,44 @@ let find_module_paths ({ Configuration.Analysis.source_paths; search_paths; _ } 
 
 module Base = struct
   module Layouts = struct
+    module ExplicitModules = struct
+      module Value = struct
+        type t = ModulePath.t list
+      end
+
+      module Update = struct
+        type t =
+          | New of ModulePath.t
+          | Changed of ModulePath.t
+          | Delete of Reference.t
+        [@@deriving sexp, compare]
+      end
+
+      module Table = struct
+        type t = Value.t Reference.Table.t
+      end
+    end
+
+    module ImplicitModules = struct
+      module Value = struct
+        type t = ModulePath.Raw.Set.t
+      end
+
+      module Update = struct
+        type t =
+          | New of Reference.t
+          | Delete of Reference.t
+        [@@deriving sexp, compare]
+      end
+
+      module Table = struct
+        type t = Value.t Reference.Table.t
+      end
+    end
+
     type t = {
-      qualifier_to_modules: ModulePath.t list Reference.Table.t;
-      qualifier_to_implicits: ModulePath.Raw.Set.t Reference.Table.t;
+      qualifier_to_modules: ExplicitModules.Table.t;
+      qualifier_to_implicits: ImplicitModules.Table.t;
     }
 
     let insert_module_path ~configuration ~to_insert existing_paths =
@@ -282,14 +317,6 @@ module Base = struct
       |> List.filter_map ~f:(FileSystemEvent.create ~configuration)
 
 
-    module IncrementalExplicitUpdate = struct
-      type t =
-        | New of ModulePath.t
-        | Changed of ModulePath.t
-        | Delete of Reference.t
-      [@@deriving sexp, compare]
-    end
-
     let update_explicit_modules ~configuration ~filesystem_events qualifier_to_modules =
       (* Process a single filesystem event *)
       let process_filesystem_event ~configuration = function
@@ -298,7 +325,7 @@ module Base = struct
             | None ->
                 (* New file for a new module *)
                 Hashtbl.set qualifier_to_modules ~key:qualifier ~data:[module_path];
-                Some (IncrementalExplicitUpdate.New module_path)
+                Some (ExplicitModules.Update.New module_path)
             | Some module_paths ->
                 let new_module_paths =
                   insert_module_path ~configuration ~to_insert:module_path module_paths
@@ -307,7 +334,7 @@ module Base = struct
                 Hashtbl.set qualifier_to_modules ~key:qualifier ~data:new_module_paths;
                 if ModulePath.equal new_module_path module_path then
                   (* Updating a shadowing file means the module gets changed *)
-                  Some (IncrementalExplicitUpdate.Changed module_path)
+                  Some (ExplicitModules.Update.Changed module_path)
                 else (* Updating a shadowed file should not trigger any reanalysis *)
                   None)
         | FileSystemEvent.Remove ({ ModulePath.qualifier; _ } as module_path) -> (
@@ -323,31 +350,31 @@ module Base = struct
                 | [] ->
                     (* Last remaining file for the module gets removed. *)
                     Hashtbl.remove qualifier_to_modules qualifier;
-                    Some (IncrementalExplicitUpdate.Delete qualifier)
+                    Some (ExplicitModules.Update.Delete qualifier)
                 | new_module_path :: _ as new_module_paths ->
                     Hashtbl.set qualifier_to_modules ~key:qualifier ~data:new_module_paths;
                     if ModulePath.equal old_module_path new_module_path then
                       (* Removing a shadowed file should not trigger any reanalysis *)
                       None
                     else (* Removing module_path un-shadows another source file. *)
-                      Some (IncrementalExplicitUpdate.Changed new_module_path)))
+                      Some (ExplicitModules.Update.Changed new_module_path)))
       in
       (* Make sure we have only one update per module *)
       let merge_updates updates =
         let table = Reference.Table.create () in
         let process_update update =
           match update with
-          | IncrementalExplicitUpdate.New ({ ModulePath.qualifier; _ } as module_path) ->
+          | ExplicitModules.Update.New ({ ModulePath.qualifier; _ } as module_path) ->
               let update = function
                 | None -> update
-                | Some (IncrementalExplicitUpdate.Delete _) ->
-                    IncrementalExplicitUpdate.Changed module_path
-                | Some (IncrementalExplicitUpdate.New _) ->
+                | Some (ExplicitModules.Update.Delete _) ->
+                    ExplicitModules.Update.Changed module_path
+                | Some (ExplicitModules.Update.New _) ->
                     let message =
                       Format.asprintf "Illegal state: double new module %a" Reference.pp qualifier
                     in
                     failwith message
-                | Some (IncrementalExplicitUpdate.Changed _) ->
+                | Some (ExplicitModules.Update.Changed _) ->
                     let message =
                       Format.asprintf
                         "Illegal state: new after changed module %a"
@@ -357,14 +384,13 @@ module Base = struct
                     failwith message
               in
               Hashtbl.update table qualifier ~f:update
-          | IncrementalExplicitUpdate.Changed ({ ModulePath.qualifier; _ } as module_path) ->
+          | ExplicitModules.Update.Changed ({ ModulePath.qualifier; _ } as module_path) ->
               let update = function
                 | None
-                | Some (IncrementalExplicitUpdate.Changed _) ->
+                | Some (ExplicitModules.Update.Changed _) ->
                     update
-                | Some (IncrementalExplicitUpdate.New _) ->
-                    IncrementalExplicitUpdate.New module_path
-                | Some (IncrementalExplicitUpdate.Delete _) ->
+                | Some (ExplicitModules.Update.New _) -> ExplicitModules.Update.New module_path
+                | Some (ExplicitModules.Update.Delete _) ->
                     let message =
                       Format.asprintf
                         "Illegal state: changing a deleted module %a"
@@ -374,12 +400,12 @@ module Base = struct
                     failwith message
               in
               Hashtbl.update table qualifier ~f:update
-          | IncrementalExplicitUpdate.Delete qualifier ->
+          | ExplicitModules.Update.Delete qualifier ->
               let update = function
                 | None
-                | Some (IncrementalExplicitUpdate.Changed _) ->
+                | Some (ExplicitModules.Update.Changed _) ->
                     Some update
-                | Some (IncrementalExplicitUpdate.New _) ->
+                | Some (ExplicitModules.Update.New _) ->
                     let message =
                       Format.asprintf
                         "Illegal state: delete after new module %a"
@@ -387,7 +413,7 @@ module Base = struct
                         qualifier
                     in
                     failwith message
-                | Some (IncrementalExplicitUpdate.Delete _) ->
+                | Some (ExplicitModules.Update.Delete _) ->
                     let message =
                       Format.asprintf
                         "Illegal state: double delete module %a"
@@ -404,13 +430,6 @@ module Base = struct
       List.filter_map filesystem_events ~f:(process_filesystem_event ~configuration)
       |> merge_updates
 
-
-    module IncrementalImplicitUpdate = struct
-      type t =
-        | New of Reference.t
-        | Delete of Reference.t
-      [@@deriving sexp, compare]
-    end
 
     let update_implicits ~filesystem_events qualifier_to_implicits =
       let treat_as_importable explicit_children =
@@ -455,8 +474,8 @@ module Base = struct
       in
       let to_implicit_update ~key ~data =
         match ModuleFinder.Implicits.Existence.to_change data with
-        | Add -> Some (IncrementalImplicitUpdate.New key)
-        | Remove -> Some (IncrementalImplicitUpdate.Delete key)
+        | Add -> Some (ImplicitModules.Update.New key)
+        | Remove -> Some (ImplicitModules.Update.Delete key)
         | Unchanged -> None
       in
       Reference.Map.filter_mapi existence ~f:to_implicit_update |> Reference.Map.data
@@ -473,11 +492,11 @@ module Base = struct
         let explicitly_modified_qualifiers = Reference.Hash_set.create () in
         let explicits =
           let process_explicit_update = function
-            | IncrementalExplicitUpdate.New ({ ModulePath.qualifier; _ } as module_path)
-            | IncrementalExplicitUpdate.Changed ({ ModulePath.qualifier; _ } as module_path) ->
+            | ExplicitModules.Update.New ({ ModulePath.qualifier; _ } as module_path)
+            | ExplicitModules.Update.Changed ({ ModulePath.qualifier; _ } as module_path) ->
                 Hash_set.add explicitly_modified_qualifiers qualifier;
                 IncrementalUpdate.NewExplicit module_path
-            | IncrementalExplicitUpdate.Delete qualifier ->
+            | ExplicitModules.Update.Delete qualifier ->
                 Hash_set.add explicitly_modified_qualifiers qualifier;
                 IncrementalUpdate.Delete qualifier
           in
@@ -485,12 +504,12 @@ module Base = struct
         in
         let implicits =
           let process_implicit_update = function
-            | IncrementalImplicitUpdate.New qualifier ->
+            | ImplicitModules.Update.New qualifier ->
                 if Hash_set.mem explicitly_modified_qualifiers qualifier then
                   None
                 else
                   Some (IncrementalUpdate.NewImplicit qualifier)
-            | IncrementalImplicitUpdate.Delete qualifier ->
+            | ImplicitModules.Update.Delete qualifier ->
                 if Hash_set.mem explicitly_modified_qualifiers qualifier then
                   None
                 else
@@ -504,12 +523,12 @@ module Base = struct
         ~section:`Server
         "Explicit Module Update: %a"
         Sexp.pp
-        [%message (explicit_updates : IncrementalExplicitUpdate.t list)];
+        [%message (explicit_updates : ExplicitModules.Update.t list)];
       Log.log
         ~section:`Server
         "Implicit Module Update: %a"
         Sexp.pp
-        [%message (implicit_updates : IncrementalImplicitUpdate.t list)];
+        [%message (implicit_updates : ImplicitModules.Update.t list)];
       updates
   end
 
