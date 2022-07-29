@@ -331,6 +331,55 @@ module Base = struct
           in
           List.iter module_paths ~f:process_module_path;
           explicit_modules
+
+
+        let update ~configuration ~module_path_updates explicit_modules =
+          (* Process a single module_path update *)
+          let process_module_path_update ~configuration = function
+            | ModulePaths.Update.NewOrChanged ({ ModulePath.qualifier; _ } as module_path) -> (
+                match Hashtbl.find explicit_modules qualifier with
+                | None ->
+                    (* New file for a new module *)
+                    Hashtbl.set explicit_modules ~key:qualifier ~data:[module_path];
+                    Some (Update.New module_path)
+                | Some module_paths ->
+                    let new_module_paths =
+                      Value.insert_module_path ~configuration ~to_insert:module_path module_paths
+                    in
+                    let new_module_path = List.hd_exn new_module_paths in
+                    Hashtbl.set explicit_modules ~key:qualifier ~data:new_module_paths;
+                    if ModulePath.equal new_module_path module_path then
+                      (* Updating a shadowing file means the module gets changed *)
+                      Some (Update.Changed module_path)
+                    else (* Updating a shadowed file should not trigger any reanalysis *)
+                      None)
+            | ModulePaths.Update.Remove ({ ModulePath.qualifier; _ } as module_path) -> (
+                Hashtbl.find explicit_modules qualifier
+                >>= fun module_paths ->
+                match module_paths with
+                | [] ->
+                    (* This should never happen but handle it just in case *)
+                    Hashtbl.remove explicit_modules qualifier;
+                    None
+                | old_module_path :: _ -> (
+                    match
+                      Value.remove_module_path ~configuration ~to_remove:module_path module_paths
+                    with
+                    | [] ->
+                        (* Last remaining file for the module gets removed. *)
+                        Hashtbl.remove explicit_modules qualifier;
+                        Some (Update.Delete qualifier)
+                    | new_module_path :: _ as new_module_paths ->
+                        Hashtbl.set explicit_modules ~key:qualifier ~data:new_module_paths;
+                        if ModulePath.equal old_module_path new_module_path then
+                          (* Removing a shadowed file should not trigger any reanalysis *)
+                          None
+                        else (* Removing module_path un-shadows another source file. *)
+                          Some (Update.Changed new_module_path)))
+          in
+          (* Make sure we have only one update per module *)
+          List.filter_map module_path_updates ~f:(process_module_path_update ~configuration)
+          |> Update.merge_updates
       end
     end
 
@@ -361,6 +410,61 @@ module Base = struct
           in
           Hashtbl.iter explicit_modules ~f:(List.iter ~f:process_module_path);
           implicit_modules
+
+
+        let update ~module_path_updates implicit_modules =
+          let treat_as_importable explicit_children =
+            not (ModulePath.Raw.Set.is_empty explicit_children)
+          in
+          let process_module_path_update previous_existence module_path_update =
+            let module_path = ModulePaths.Update.module_path module_path_update in
+            match ModuleFinder.Implicits.parent_qualifier_and_raw module_path with
+            | None -> previous_existence
+            | Some (parent_qualifier, raw) ->
+                (* Get the previous state and new state *)
+                let previous_explicit_children =
+                  Reference.Table.find implicit_modules parent_qualifier
+                  |> Option.value ~default:ModulePath.Raw.Set.empty
+                in
+                let next_explicit_children =
+                  match module_path_update with
+                  | ModulePaths.Update.NewOrChanged _ ->
+                      ModulePath.Raw.Set.add raw previous_explicit_children
+                  | ModulePaths.Update.Remove _ ->
+                      ModulePath.Raw.Set.remove raw previous_explicit_children
+                in
+                (* update implicit_modules as a side effect *)
+                let () =
+                  Reference.Table.update implicit_modules parent_qualifier ~f:(fun _ ->
+                      next_explicit_children)
+                in
+                (* As we fold the updates, track existince before-and-after *)
+                let next_existence =
+                  let open ModuleFinder.Implicits.Existence in
+                  Reference.Map.update previous_existence parent_qualifier ~f:(function
+                      | None ->
+                          {
+                            existed_before = treat_as_importable previous_explicit_children;
+                            exists_after = treat_as_importable next_explicit_children;
+                          }
+                      | Some { existed_before; _ } ->
+                          {
+                            existed_before;
+                            exists_after = treat_as_importable next_explicit_children;
+                          })
+                in
+                next_existence
+          in
+          let existence =
+            List.fold module_path_updates ~init:Reference.Map.empty ~f:process_module_path_update
+          in
+          let to_implicit_update ~key ~data =
+            match ModuleFinder.Implicits.Existence.to_change data with
+            | Add -> Some (Update.New key)
+            | Remove -> Some (Update.Delete key)
+            | Unchanged -> None
+          in
+          Reference.Map.filter_mapi existence ~f:to_implicit_update |> Reference.Map.data
       end
     end
 
@@ -383,119 +487,12 @@ module Base = struct
       |> List.filter_map ~f:(ModulePaths.Update.create ~configuration)
 
 
-    let update_explicit_modules ~configuration ~module_path_updates explicit_modules =
-      (* Process a single module_path update *)
-      let process_module_path_update ~configuration = function
-        | ModulePaths.Update.NewOrChanged ({ ModulePath.qualifier; _ } as module_path) -> (
-            match Hashtbl.find explicit_modules qualifier with
-            | None ->
-                (* New file for a new module *)
-                Hashtbl.set explicit_modules ~key:qualifier ~data:[module_path];
-                Some (ExplicitModules.Update.New module_path)
-            | Some module_paths ->
-                let new_module_paths =
-                  ExplicitModules.Value.insert_module_path
-                    ~configuration
-                    ~to_insert:module_path
-                    module_paths
-                in
-                let new_module_path = List.hd_exn new_module_paths in
-                Hashtbl.set explicit_modules ~key:qualifier ~data:new_module_paths;
-                if ModulePath.equal new_module_path module_path then
-                  (* Updating a shadowing file means the module gets changed *)
-                  Some (ExplicitModules.Update.Changed module_path)
-                else (* Updating a shadowed file should not trigger any reanalysis *)
-                  None)
-        | ModulePaths.Update.Remove ({ ModulePath.qualifier; _ } as module_path) -> (
-            Hashtbl.find explicit_modules qualifier
-            >>= fun module_paths ->
-            match module_paths with
-            | [] ->
-                (* This should never happen but handle it just in case *)
-                Hashtbl.remove explicit_modules qualifier;
-                None
-            | old_module_path :: _ -> (
-                match
-                  ExplicitModules.Value.remove_module_path
-                    ~configuration
-                    ~to_remove:module_path
-                    module_paths
-                with
-                | [] ->
-                    (* Last remaining file for the module gets removed. *)
-                    Hashtbl.remove explicit_modules qualifier;
-                    Some (ExplicitModules.Update.Delete qualifier)
-                | new_module_path :: _ as new_module_paths ->
-                    Hashtbl.set explicit_modules ~key:qualifier ~data:new_module_paths;
-                    if ModulePath.equal old_module_path new_module_path then
-                      (* Removing a shadowed file should not trigger any reanalysis *)
-                      None
-                    else (* Removing module_path un-shadows another source file. *)
-                      Some (ExplicitModules.Update.Changed new_module_path)))
-      in
-      (* Make sure we have only one update per module *)
-      List.filter_map module_path_updates ~f:(process_module_path_update ~configuration)
-      |> ExplicitModules.Update.merge_updates
-
-
-    let update_implicits ~module_path_updates implicit_modules =
-      let treat_as_importable explicit_children =
-        not (ModulePath.Raw.Set.is_empty explicit_children)
-      in
-      let process_module_path_update previous_existence module_path_update =
-        let module_path = ModulePaths.Update.module_path module_path_update in
-        match ModuleFinder.Implicits.parent_qualifier_and_raw module_path with
-        | None -> previous_existence
-        | Some (parent_qualifier, raw) ->
-            (* Get the previous state and new state *)
-            let previous_explicit_children =
-              Reference.Table.find implicit_modules parent_qualifier
-              |> Option.value ~default:ModulePath.Raw.Set.empty
-            in
-            let next_explicit_children =
-              match module_path_update with
-              | ModulePaths.Update.NewOrChanged _ ->
-                  ModulePath.Raw.Set.add raw previous_explicit_children
-              | ModulePaths.Update.Remove _ ->
-                  ModulePath.Raw.Set.remove raw previous_explicit_children
-            in
-            (* update implicit_modules as a side effect *)
-            let () =
-              Reference.Table.update implicit_modules parent_qualifier ~f:(fun _ ->
-                  next_explicit_children)
-            in
-            (* As we fold the updates, track existince before-and-after *)
-            let next_existence =
-              let open ModuleFinder.Implicits.Existence in
-              Reference.Map.update previous_existence parent_qualifier ~f:(function
-                  | None ->
-                      {
-                        existed_before = treat_as_importable previous_explicit_children;
-                        exists_after = treat_as_importable next_explicit_children;
-                      }
-                  | Some { existed_before; _ } ->
-                      { existed_before; exists_after = treat_as_importable next_explicit_children })
-            in
-            next_existence
-      in
-      let existence =
-        List.fold module_path_updates ~init:Reference.Map.empty ~f:process_module_path_update
-      in
-      let to_implicit_update ~key ~data =
-        match ModuleFinder.Implicits.Existence.to_change data with
-        | Add -> Some (ImplicitModules.Update.New key)
-        | Remove -> Some (ImplicitModules.Update.Delete key)
-        | Unchanged -> None
-      in
-      Reference.Map.filter_mapi existence ~f:to_implicit_update |> Reference.Map.data
-
-
     let update ~configuration ~artifact_paths { explicit_modules; implicit_modules } =
       let module_path_updates = create_module_path_updates ~configuration artifact_paths in
       let explicit_updates =
-        update_explicit_modules ~configuration ~module_path_updates explicit_modules
+        ExplicitModules.Table.update ~configuration ~module_path_updates explicit_modules
       in
-      let implicit_updates = update_implicits ~module_path_updates implicit_modules in
+      let implicit_updates = ImplicitModules.Table.update ~module_path_updates implicit_modules in
       (* Explicit updates should shadow implicit updates *)
       let updates =
         let explicitly_modified_qualifiers = Reference.Hash_set.create () in
