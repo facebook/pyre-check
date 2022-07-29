@@ -123,32 +123,6 @@ module ModuleFinder = struct
     (* Do not scan excluding directories to speed up the traversal *)
     && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
     && not (mark_visited visited_paths path)
-
-
-  module Implicits = struct
-    module Existence = struct
-      type t = {
-        existed_before: bool;
-        exists_after: bool;
-      }
-
-      type change =
-        | Add
-        | Remove
-        | Unchanged
-
-      let to_change { existed_before; exists_after } =
-        match existed_before, exists_after with
-        | false, true -> Add
-        | true, false -> Remove
-        | true, true
-        | false, false ->
-            Unchanged
-    end
-
-    let parent_qualifier_and_raw { ModulePath.raw; qualifier; _ } =
-      Reference.prefix qualifier >>| fun parent_qualifier -> parent_qualifier, raw
-  end
 end
 
 let find_module_paths ({ Configuration.Analysis.source_paths; search_paths; _ } as configuration) =
@@ -384,6 +358,12 @@ module Base = struct
     end
 
     module ImplicitModules = struct
+      (* Given a ModulePath.t, determine the qualifier of the parent (the key in our
+         ImplicitModules.Table) and the ModulePath.Raw.t representing this child *)
+      let parent_qualifier_and_raw { ModulePath.raw; qualifier; _ } =
+        Reference.prefix qualifier >>| fun parent_qualifier -> parent_qualifier, raw
+
+
       module Value = struct
         type t = ModulePath.Raw.Set.t
       end
@@ -401,7 +381,7 @@ module Base = struct
         let create explicit_modules =
           let implicit_modules = Reference.Table.create () in
           let process_module_path module_path =
-            match ModuleFinder.Implicits.parent_qualifier_and_raw module_path with
+            match parent_qualifier_and_raw module_path with
             | None -> ()
             | Some (parent_qualifier, raw) ->
                 Reference.Table.update implicit_modules parent_qualifier ~f:(function
@@ -412,13 +392,28 @@ module Base = struct
           implicit_modules
 
 
+        module Existence = struct
+          type t = {
+            existed_before: bool;
+            exists_after: bool;
+          }
+
+          let to_update ~qualifier { existed_before; exists_after } =
+            match existed_before, exists_after with
+            | false, true -> Some (Update.New qualifier)
+            | true, false -> Some (Update.Delete qualifier)
+            | true, true
+            | false, false ->
+                None
+        end
+
         let update ~module_path_updates implicit_modules =
           let treat_as_importable explicit_children =
             not (ModulePath.Raw.Set.is_empty explicit_children)
           in
           let process_module_path_update previous_existence module_path_update =
             let module_path = ModulePaths.Update.module_path module_path_update in
-            match ModuleFinder.Implicits.parent_qualifier_and_raw module_path with
+            match parent_qualifier_and_raw module_path with
             | None -> previous_existence
             | Some (parent_qualifier, raw) ->
                 (* Get the previous state and new state *)
@@ -440,7 +435,7 @@ module Base = struct
                 in
                 (* As we fold the updates, track existince before-and-after *)
                 let next_existence =
-                  let open ModuleFinder.Implicits.Existence in
+                  let open Existence in
                   Reference.Map.update previous_existence parent_qualifier ~f:(function
                       | None ->
                           {
@@ -458,12 +453,7 @@ module Base = struct
           let existence =
             List.fold module_path_updates ~init:Reference.Map.empty ~f:process_module_path_update
           in
-          let to_implicit_update ~key ~data =
-            match ModuleFinder.Implicits.Existence.to_change data with
-            | Add -> Some (Update.New key)
-            | Remove -> Some (Update.Delete key)
-            | Unchanged -> None
-          in
+          let to_implicit_update ~key ~data = Existence.to_update ~qualifier:key data in
           Reference.Map.filter_mapi existence ~f:to_implicit_update |> Reference.Map.data
       end
     end
