@@ -47,6 +47,7 @@ async def _read_headers(input_channel: async_server_connection.TextReader) -> Li
 
 def _get_content_length(headers: Iterable[str]) -> int:
     try:
+        parts: List[str] = []
         for header in headers:
             parts = [part.strip().lower() for part in header.split(":", maxsplit=1)]
             if len(parts) <= 1:
@@ -55,10 +56,11 @@ def _get_content_length(headers: Iterable[str]) -> int:
             if parts[0] == "content-length":
                 return int(parts[1])
 
-        # pyre-fixme[61]: `parts` may not be initialized here.
         raise json_rpc.ParseError(f"Failed to find content length header from {parts}")
     except ValueError as error:
-        raise json_rpc.ParseError(f"Cannot parse content length into integer: {error}")
+        raise json_rpc.ParseError(
+            "Cannot parse content length into integer."
+        ) from error
 
 
 async def read_json_rpc(
