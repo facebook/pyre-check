@@ -225,7 +225,7 @@ def _entry_path_to_patch_path(input: str) -> Path:
 
 
 def _apply_patches(
-    patches_path: Path, trimmed_typeshed: TypeshedTrimmingResult
+    patch_directory: Path, trimmed_typeshed: TypeshedTrimmingResult
 ) -> TypeshedPatchingResult:
     with tempfile.TemporaryDirectory() as temporary_root:
         temporary_root_path = Path(temporary_root)
@@ -235,7 +235,7 @@ def _apply_patches(
                 _patch_entry(
                     entry,
                     temporary_root_path,
-                    patches_path / _entry_path_to_patch_path(entry.path),
+                    patch_directory / _entry_path_to_patch_path(entry.path),
                 )
                 for entry in trimmed_typeshed.entries
             ]
@@ -274,13 +274,13 @@ def main() -> None:
         format="[%(asctime)s][%(levelname)s]: %(message)s", level=logging.INFO
     )
 
-    path = Path(arguments.patch_directory)
+    patch_directory = Path(arguments.patch_directory)
     url = get_typeshed_url(arguments.url)
     downloaded = download_typeshed(url)
     LOG.info(f"{downloaded.getbuffer().nbytes} bytes downloaded from {url}")
     trimmed_typeshed = trim_typeshed(downloaded)
     log_trim_statistics(trimmed_typeshed.statistics)
-    patched_typeshed = _apply_patches(path, trimmed_typeshed)
+    patched_typeshed = _apply_patches(patch_directory, trimmed_typeshed)
     write_output(patched_typeshed, arguments.output)
     LOG.info(f"Zip file written to {arguments.output}")
 
