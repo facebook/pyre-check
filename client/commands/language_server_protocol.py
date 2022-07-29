@@ -30,6 +30,12 @@ class ServerNotInitializedError(json_rpc.JSONRPCException):
         return -32002
 
 
+class RequestFailedError(json_rpc.JSONRPCException):
+    @override
+    def error_code(self) -> int:
+        return -32803
+
+
 class RequestCancelledError(json_rpc.JSONRPCException):
     @override
     def error_code(self) -> int:

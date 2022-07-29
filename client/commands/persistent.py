@@ -46,6 +46,7 @@ from . import (
     backend_arguments,
     commands,
     expression_level_coverage,
+    find_symbols,
     frontend_configuration,
     incremental,
     language_server_protocol as lsp,
@@ -57,7 +58,6 @@ from . import (
     statistics,
     subscription,
 )
-from .find_symbols import parse_source_and_collect_symbols, UnparseableError
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -292,7 +292,7 @@ async def try_initialize(
                 server_start_options_reader, remote_logging=None
             )
         except configuration_module.InvalidConfiguration as e:
-            raise lsp.ServerNotInitializedError(str(e))
+            raise lsp.ServerNotInitializedError(str(e)) from None
 
         result = process_initialize_request(
             initialize_parameters, server_start_options.ide_features
@@ -856,23 +856,23 @@ class PyreServer:
             )
         try:
             source = document_path.read_text()
-        except Exception:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI is not a readable file: {parameters.text_document.uri}"
+            symbols = find_symbols.parse_source_and_collect_symbols(source)
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=[s.to_dict() for s in symbols],
+                ),
             )
-        try:
-            symbols = parse_source_and_collect_symbols(source)
-        except UnparseableError as e:
-            raise json_rpc.ParseError(e)
-
-        await lsp.write_json_rpc(
-            self.output_channel,
-            json_rpc.SuccessResponse(
-                id=request_id,
-                activity_key=activity_key,
-                result=[s.to_dict() for s in symbols],
-            ),
-        )
+        except find_symbols.UnparseableError as error:
+            raise lsp.RequestFailedError(
+                f"Document URI is not parsable: {parameters.text_document.uri}"
+            ) from error
+        except OSError as error:
+            raise lsp.RequestFailedError(
+                f"Document URI is not a readable file: {parameters.text_document.uri}"
+            ) from error
 
     async def process_find_all_references_request(
         self,
