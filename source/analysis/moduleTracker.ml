@@ -123,6 +123,32 @@ module ModuleFinder = struct
     (* Do not scan excluding directories to speed up the traversal *)
     && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
     && not (mark_visited visited_paths path)
+
+
+  module Implicits = struct
+    module Existence = struct
+      type t = {
+        existed_before: bool;
+        exists_after: bool;
+      }
+
+      type change =
+        | Add
+        | Remove
+        | Unchanged
+
+      let to_change { existed_before; exists_after } =
+        match existed_before, exists_after with
+        | false, true -> Add
+        | true, false -> Remove
+        | true, true
+        | false, false ->
+            Unchanged
+    end
+
+    let parent_qualifier_and_raw { ModulePath.raw; qualifier; _ } =
+      Reference.prefix qualifier >>| fun parent_qualifier -> parent_qualifier, raw
+  end
 end
 
 let find_module_paths ({ Configuration.Analysis.source_paths; search_paths; _ } as configuration) =
@@ -148,7 +174,7 @@ module Base = struct
   module Layouts = struct
     type t = {
       qualifier_to_modules: ModulePath.t list Reference.Table.t;
-      submodule_refcounts: int Reference.Table.t;
+      qualifier_to_implicits: ModulePath.Raw.Set.t Reference.Table.t;
     }
 
     let insert_module_path ~configuration ~to_insert existing_paths =
@@ -205,30 +231,24 @@ module Base = struct
       qualifier_to_modules
 
 
-    let create_submodule_refcounts qualifier_to_modules =
-      let submodule_refcounts = Reference.Table.create () in
-      let process_module qualifier =
-        let rec process_submodule ?(process_parent = true) maybe_qualifier =
-          match maybe_qualifier with
-          | None -> ()
-          | Some qualifier when Reference.is_empty qualifier -> ()
-          | Some qualifier ->
-              Reference.Table.update submodule_refcounts qualifier ~f:(function
-                  | None -> 1
-                  | Some count -> count + 1);
-              if process_parent then
-                process_submodule ~process_parent:false (Reference.prefix qualifier)
-        in
-        process_submodule (Some qualifier)
+    let create_qualifier_to_implicits qualifier_to_modules =
+      let qualifier_to_implicits = Reference.Table.create () in
+      let process_module_path module_path =
+        match ModuleFinder.Implicits.parent_qualifier_and_raw module_path with
+        | None -> ()
+        | Some (parent_qualifier, raw) ->
+            Reference.Table.update qualifier_to_implicits parent_qualifier ~f:(function
+                | None -> ModulePath.Raw.Set.singleton raw
+                | Some paths -> ModulePath.Raw.Set.add raw paths)
       in
-      Hashtbl.keys qualifier_to_modules |> List.iter ~f:process_module;
-      submodule_refcounts
+      Hashtbl.iter qualifier_to_modules ~f:(List.iter ~f:process_module_path);
+      qualifier_to_implicits
 
 
     let create ~configuration module_paths =
       let qualifier_to_modules = create_qualifier_to_modules ~configuration module_paths in
-      let submodule_refcounts = create_submodule_refcounts qualifier_to_modules in
-      { qualifier_to_modules; submodule_refcounts }
+      let qualifier_to_implicits = create_qualifier_to_implicits qualifier_to_modules in
+      { qualifier_to_modules; qualifier_to_implicits }
 
 
     module FileSystemEvent = struct
@@ -246,6 +266,12 @@ module Base = struct
               Some (Update module_path)
             else
               Some (Remove module_path)
+
+
+      let module_path = function
+        | Update module_path
+        | Remove module_path ->
+            module_path
     end
 
     let create_filesystem_events ~configuration artifact_paths =
@@ -264,7 +290,7 @@ module Base = struct
       [@@deriving sexp, compare]
     end
 
-    let update_explicit_modules ~configuration qualifier_to_modules filesystem_events =
+    let update_explicit_modules ~configuration ~filesystem_events qualifier_to_modules =
       (* Process a single filesystem event *)
       let process_filesystem_event ~configuration = function
         | FileSystemEvent.Update ({ ModulePath.qualifier; _ } as module_path) -> (
@@ -386,82 +412,73 @@ module Base = struct
       [@@deriving sexp, compare]
     end
 
-    let update_submodules ~events submodule_refcounts =
-      let aggregate_updates events =
-        let aggregated_refcounts = Reference.Table.create () in
-        let process_event event =
-          let rec do_update ?(parent = false) ~f = function
-            | None -> ()
-            | Some qualifier when Reference.is_empty qualifier -> ()
-            | Some qualifier ->
-                Hashtbl.update aggregated_refcounts qualifier ~f:(function
-                    | None -> f 0
-                    | Some count -> f count);
-                if not parent then
-                  do_update (Reference.prefix qualifier) ~parent:true ~f
-          in
-          match event with
-          | IncrementalExplicitUpdate.Changed _ -> ()
-          | IncrementalExplicitUpdate.New { ModulePath.qualifier; _ } ->
-              do_update (Some qualifier) ~f:(fun count -> count + 1)
-          | IncrementalExplicitUpdate.Delete qualifier ->
-              do_update (Some qualifier) ~f:(fun count -> count - 1)
-        in
-        List.iter events ~f:process_event;
-        aggregated_refcounts
+    let update_implicits ~filesystem_events qualifier_to_implicits =
+      let treat_as_importable explicit_children =
+        not (ModulePath.Raw.Set.is_empty explicit_children)
       in
-      let commit_updates update_table =
-        let commit_update ~key ~data sofar =
-          match data with
-          | 0 -> List.rev sofar
-          | delta -> (
-              let original_refcount =
-                Hashtbl.find submodule_refcounts key |> Option.value ~default:0
-              in
-              let new_refcount = original_refcount + delta in
-              match new_refcount with
-              | 0 ->
-                  Hashtbl.remove submodule_refcounts key;
-                  IncrementalImplicitUpdate.Delete key :: sofar
-              | count when count < 0 ->
-                  let message =
-                    Format.asprintf
-                      "Illegal state: negative refcount (%d) for module %a"
-                      count
-                      Reference.pp
-                      key
-                  in
-                  failwith message
-              | _ ->
-                  Hashtbl.set submodule_refcounts ~key ~data:new_refcount;
-                  if Int.equal original_refcount 0 then
-                    IncrementalImplicitUpdate.New key :: sofar
-                  else
-                    sofar)
-        in
-        Hashtbl.fold update_table ~init:[] ~f:commit_update
+      let process_filesystem_event previous_existence filesystem_event =
+        let module_path = FileSystemEvent.module_path filesystem_event in
+        match ModuleFinder.Implicits.parent_qualifier_and_raw module_path with
+        | None -> previous_existence
+        | Some (parent_qualifier, raw) ->
+            (* Get the previous state and new state *)
+            let previous_explicit_children =
+              Reference.Table.find qualifier_to_implicits parent_qualifier
+              |> Option.value ~default:ModulePath.Raw.Set.empty
+            in
+            let next_explicit_children =
+              match filesystem_event with
+              | FileSystemEvent.Update _ -> ModulePath.Raw.Set.add raw previous_explicit_children
+              | FileSystemEvent.Remove _ -> ModulePath.Raw.Set.remove raw previous_explicit_children
+            in
+            (* update qualifier_to_implicits as a side effect *)
+            let () =
+              Reference.Table.update qualifier_to_implicits parent_qualifier ~f:(fun _ ->
+                  next_explicit_children)
+            in
+            (* As we fold the updates, track existince before-and-after *)
+            let next_existence =
+              let open ModuleFinder.Implicits.Existence in
+              Reference.Map.update previous_existence parent_qualifier ~f:(function
+                  | None ->
+                      {
+                        existed_before = treat_as_importable previous_explicit_children;
+                        exists_after = treat_as_importable next_explicit_children;
+                      }
+                  | Some { existed_before; _ } ->
+                      { existed_before; exists_after = treat_as_importable next_explicit_children })
+            in
+            next_existence
       in
-      aggregate_updates events |> commit_updates
+      let existence =
+        List.fold filesystem_events ~init:Reference.Map.empty ~f:process_filesystem_event
+      in
+      let to_implicit_update ~key ~data =
+        match ModuleFinder.Implicits.Existence.to_change data with
+        | Add -> Some (IncrementalImplicitUpdate.New key)
+        | Remove -> Some (IncrementalImplicitUpdate.Delete key)
+        | Unchanged -> None
+      in
+      Reference.Map.filter_mapi existence ~f:to_implicit_update |> Reference.Map.data
 
 
-    let update ~configuration ~artifact_paths { qualifier_to_modules; submodule_refcounts } =
+    let update ~configuration ~artifact_paths { qualifier_to_modules; qualifier_to_implicits } =
+      let filesystem_events = create_filesystem_events ~configuration artifact_paths in
       let explicit_updates =
-        create_filesystem_events ~configuration artifact_paths
-        |> update_explicit_modules qualifier_to_modules ~configuration
+        update_explicit_modules ~configuration ~filesystem_events qualifier_to_modules
       in
-      let implicit_updates = update_submodules submodule_refcounts ~events:explicit_updates in
+      let implicit_updates = update_implicits ~filesystem_events qualifier_to_implicits in
       (* Explicit updates should shadow implicit updates *)
       let updates =
-        let new_qualifiers = Reference.Hash_set.create () in
-        let deleted_qualifiers = Reference.Hash_set.create () in
+        let explicitly_modified_qualifiers = Reference.Hash_set.create () in
         let explicits =
           let process_explicit_update = function
             | IncrementalExplicitUpdate.New ({ ModulePath.qualifier; _ } as module_path)
             | IncrementalExplicitUpdate.Changed ({ ModulePath.qualifier; _ } as module_path) ->
-                Hash_set.add new_qualifiers qualifier;
+                Hash_set.add explicitly_modified_qualifiers qualifier;
                 IncrementalUpdate.NewExplicit module_path
             | IncrementalExplicitUpdate.Delete qualifier ->
-                Hash_set.add deleted_qualifiers qualifier;
+                Hash_set.add explicitly_modified_qualifiers qualifier;
                 IncrementalUpdate.Delete qualifier
           in
           List.map explicit_updates ~f:process_explicit_update
@@ -469,12 +486,12 @@ module Base = struct
         let implicits =
           let process_implicit_update = function
             | IncrementalImplicitUpdate.New qualifier ->
-                if Hash_set.mem new_qualifiers qualifier then
+                if Hash_set.mem explicitly_modified_qualifiers qualifier then
                   None
                 else
                   Some (IncrementalUpdate.NewImplicit qualifier)
             | IncrementalImplicitUpdate.Delete qualifier ->
-                if Hash_set.mem deleted_qualifiers qualifier then
+                if Hash_set.mem explicitly_modified_qualifiers qualifier then
                   None
                 else
                   Some (IncrementalUpdate.Delete qualifier)
@@ -585,21 +602,21 @@ module Base = struct
       type nonrec t = Layouts.t
 
       module Serialized = struct
-        type t = (Reference.t * ModulePath.t list) list * (Reference.t * int) list
+        type t = (Reference.t * ModulePath.t list) list * (Reference.t * ModulePath.Raw.Set.t) list
 
         let prefix = Prefix.make ()
 
         let description = "Module tracker"
       end
 
-      let serialize { Layouts.qualifier_to_modules; submodule_refcounts } =
-        Hashtbl.to_alist qualifier_to_modules, Hashtbl.to_alist submodule_refcounts
+      let serialize { Layouts.qualifier_to_modules; qualifier_to_implicits } =
+        Hashtbl.to_alist qualifier_to_modules, Hashtbl.to_alist qualifier_to_implicits
 
 
-      let deserialize (module_data, submodule_data) =
+      let deserialize (module_data, implicits_data) =
         {
           Layouts.qualifier_to_modules = Reference.Table.of_alist_exn module_data;
-          submodule_refcounts = Reference.Table.of_alist_exn submodule_data;
+          qualifier_to_implicits = Reference.Table.of_alist_exn implicits_data;
         }
     end)
 
@@ -617,7 +634,7 @@ module Base = struct
   end
 
   let read_only
-      ({ layouts = { qualifier_to_modules; submodule_refcounts }; controls; get_raw_code; _ } as
+      ({ layouts = { qualifier_to_modules; qualifier_to_implicits }; controls; get_raw_code; _ } as
       tracker)
     =
     let lookup_module_path module_name =
@@ -626,7 +643,11 @@ module Base = struct
       | _ -> None
     in
     let is_module_tracked qualifier =
-      Hashtbl.mem qualifier_to_modules qualifier || Hashtbl.mem submodule_refcounts qualifier
+      Hashtbl.mem qualifier_to_modules qualifier
+      || not
+           (Hashtbl.find qualifier_to_implicits qualifier
+           |> Option.value ~default:ModulePath.Raw.Set.empty
+           |> ModulePath.Raw.Set.is_empty)
     in
     {
       ReadOnly.lookup_module_path;
