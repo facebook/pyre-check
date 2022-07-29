@@ -208,6 +208,72 @@ module Base = struct
           | Changed of ModulePath.t
           | Delete of Reference.t
         [@@deriving sexp, compare]
+
+        let merge_updates updates =
+          let table = Reference.Table.create () in
+          let process_update update =
+            match update with
+            | New ({ ModulePath.qualifier; _ } as module_path) ->
+                let update = function
+                  | None -> update
+                  | Some (Delete _) -> Changed module_path
+                  | Some (New _) ->
+                      let message =
+                        Format.asprintf "Illegal state: double new module %a" Reference.pp qualifier
+                      in
+                      failwith message
+                  | Some (Changed _) ->
+                      let message =
+                        Format.asprintf
+                          "Illegal state: new after changed module %a"
+                          Reference.pp
+                          qualifier
+                      in
+                      failwith message
+                in
+                Hashtbl.update table qualifier ~f:update
+            | Changed ({ ModulePath.qualifier; _ } as module_path) ->
+                let update = function
+                  | None
+                  | Some (Changed _) ->
+                      update
+                  | Some (New _) -> New module_path
+                  | Some (Delete _) ->
+                      let message =
+                        Format.asprintf
+                          "Illegal state: changing a deleted module %a"
+                          Reference.pp
+                          qualifier
+                      in
+                      failwith message
+                in
+                Hashtbl.update table qualifier ~f:update
+            | Delete qualifier ->
+                let update = function
+                  | None
+                  | Some (Changed _) ->
+                      Some update
+                  | Some (New _) ->
+                      let message =
+                        Format.asprintf
+                          "Illegal state: delete after new module %a"
+                          Reference.pp
+                          qualifier
+                      in
+                      failwith message
+                  | Some (Delete _) ->
+                      let message =
+                        Format.asprintf
+                          "Illegal state: double delete module %a"
+                          Reference.pp
+                          qualifier
+                      in
+                      failwith message
+                in
+                Hashtbl.change table qualifier ~f:update
+          in
+          List.iter updates ~f:process_update;
+          Hashtbl.data table
       end
 
       module Table = struct
@@ -362,75 +428,8 @@ module Base = struct
                       Some (ExplicitModules.Update.Changed new_module_path)))
       in
       (* Make sure we have only one update per module *)
-      let merge_updates updates =
-        let table = Reference.Table.create () in
-        let process_update update =
-          match update with
-          | ExplicitModules.Update.New ({ ModulePath.qualifier; _ } as module_path) ->
-              let update = function
-                | None -> update
-                | Some (ExplicitModules.Update.Delete _) ->
-                    ExplicitModules.Update.Changed module_path
-                | Some (ExplicitModules.Update.New _) ->
-                    let message =
-                      Format.asprintf "Illegal state: double new module %a" Reference.pp qualifier
-                    in
-                    failwith message
-                | Some (ExplicitModules.Update.Changed _) ->
-                    let message =
-                      Format.asprintf
-                        "Illegal state: new after changed module %a"
-                        Reference.pp
-                        qualifier
-                    in
-                    failwith message
-              in
-              Hashtbl.update table qualifier ~f:update
-          | ExplicitModules.Update.Changed ({ ModulePath.qualifier; _ } as module_path) ->
-              let update = function
-                | None
-                | Some (ExplicitModules.Update.Changed _) ->
-                    update
-                | Some (ExplicitModules.Update.New _) -> ExplicitModules.Update.New module_path
-                | Some (ExplicitModules.Update.Delete _) ->
-                    let message =
-                      Format.asprintf
-                        "Illegal state: changing a deleted module %a"
-                        Reference.pp
-                        qualifier
-                    in
-                    failwith message
-              in
-              Hashtbl.update table qualifier ~f:update
-          | ExplicitModules.Update.Delete qualifier ->
-              let update = function
-                | None
-                | Some (ExplicitModules.Update.Changed _) ->
-                    Some update
-                | Some (ExplicitModules.Update.New _) ->
-                    let message =
-                      Format.asprintf
-                        "Illegal state: delete after new module %a"
-                        Reference.pp
-                        qualifier
-                    in
-                    failwith message
-                | Some (ExplicitModules.Update.Delete _) ->
-                    let message =
-                      Format.asprintf
-                        "Illegal state: double delete module %a"
-                        Reference.pp
-                        qualifier
-                    in
-                    failwith message
-              in
-              Hashtbl.change table qualifier ~f:update
-        in
-        List.iter updates ~f:process_update;
-        Hashtbl.data table
-      in
       List.filter_map module_path_updates ~f:(process_module_path_update ~configuration)
-      |> merge_updates
+      |> ExplicitModules.Update.merge_updates
 
 
     let update_implicits ~module_path_updates qualifier_to_implicits =
