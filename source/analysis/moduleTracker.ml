@@ -318,6 +318,19 @@ module Base = struct
 
       module Table = struct
         type t = Value.t Reference.Table.t
+
+        let create ~configuration module_paths =
+          let explicit_modules = Reference.Table.create () in
+          let process_module_path ({ ModulePath.qualifier; _ } as module_path) =
+            let update_table = function
+              | None -> [module_path]
+              | Some module_paths ->
+                  Value.insert_module_path ~configuration ~to_insert:module_path module_paths
+            in
+            Hashtbl.update explicit_modules qualifier ~f:update_table
+          in
+          List.iter module_paths ~f:process_module_path;
+          explicit_modules
       end
     end
 
@@ -335,6 +348,19 @@ module Base = struct
 
       module Table = struct
         type t = Value.t Reference.Table.t
+
+        let create explicit_modules =
+          let implicit_modules = Reference.Table.create () in
+          let process_module_path module_path =
+            match ModuleFinder.Implicits.parent_qualifier_and_raw module_path with
+            | None -> ()
+            | Some (parent_qualifier, raw) ->
+                Reference.Table.update implicit_modules parent_qualifier ~f:(function
+                    | None -> ModulePath.Raw.Set.singleton raw
+                    | Some paths -> ModulePath.Raw.Set.add raw paths)
+          in
+          Hashtbl.iter explicit_modules ~f:(List.iter ~f:process_module_path);
+          implicit_modules
       end
     end
 
@@ -343,40 +369,9 @@ module Base = struct
       implicit_modules: ImplicitModules.Table.t;
     }
 
-    let create_explicit_modules ~configuration module_paths =
-      let explicit_modules = Reference.Table.create () in
-      let process_module_path ({ ModulePath.qualifier; _ } as module_path) =
-        let update_table = function
-          | None -> [module_path]
-          | Some module_paths ->
-              ExplicitModules.Value.insert_module_path
-                ~configuration
-                ~to_insert:module_path
-                module_paths
-        in
-        Hashtbl.update explicit_modules qualifier ~f:update_table
-      in
-      List.iter module_paths ~f:process_module_path;
-      explicit_modules
-
-
-    let create_implicit_modules explicit_modules =
-      let implicit_modules = Reference.Table.create () in
-      let process_module_path module_path =
-        match ModuleFinder.Implicits.parent_qualifier_and_raw module_path with
-        | None -> ()
-        | Some (parent_qualifier, raw) ->
-            Reference.Table.update implicit_modules parent_qualifier ~f:(function
-                | None -> ModulePath.Raw.Set.singleton raw
-                | Some paths -> ModulePath.Raw.Set.add raw paths)
-      in
-      Hashtbl.iter explicit_modules ~f:(List.iter ~f:process_module_path);
-      implicit_modules
-
-
     let create ~configuration module_paths =
-      let explicit_modules = create_explicit_modules ~configuration module_paths in
-      let implicit_modules = create_implicit_modules explicit_modules in
+      let explicit_modules = ExplicitModules.Table.create ~configuration module_paths in
+      let implicit_modules = ImplicitModules.Table.create explicit_modules in
       { explicit_modules; implicit_modules }
 
 
