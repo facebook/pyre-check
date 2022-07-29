@@ -172,6 +172,31 @@ let find_module_paths ({ Configuration.Analysis.source_paths; search_paths; _ } 
 
 module Base = struct
   module Layouts = struct
+    module ModulePaths = struct
+      module Update = struct
+        type t =
+          | NewOrChanged of ModulePath.t
+          | Remove of ModulePath.t
+
+        let create ~configuration path =
+          match ModulePath.create ~configuration path with
+          | None ->
+              Log.log ~section:`Server "`%a` not found in search path." ArtifactPath.pp path;
+              None
+          | Some module_path ->
+              if PyrePath.file_exists (ArtifactPath.raw path) then
+                Some (NewOrChanged module_path)
+              else
+                Some (Remove module_path)
+
+
+        let module_path = function
+          | NewOrChanged module_path
+          | Remove module_path ->
+              module_path
+      end
+    end
+
     module ExplicitModules = struct
       module Value = struct
         type t = ModulePath.t list
@@ -286,41 +311,18 @@ module Base = struct
       { qualifier_to_modules; qualifier_to_implicits }
 
 
-    module FileSystemEvent = struct
-      type t =
-        | NewOrChanged of ModulePath.t
-        | Remove of ModulePath.t
-
-      let create ~configuration path =
-        match ModulePath.create ~configuration path with
-        | None ->
-            Log.log ~section:`Server "`%a` not found in search path." ArtifactPath.pp path;
-            None
-        | Some module_path ->
-            if PyrePath.file_exists (ArtifactPath.raw path) then
-              Some (NewOrChanged module_path)
-            else
-              Some (Remove module_path)
-
-
-      let module_path = function
-        | NewOrChanged module_path
-        | Remove module_path ->
-            module_path
-    end
-
-    let create_filesystem_events ~configuration artifact_paths =
-      (* Since the logic in `process_filesystem_event` is not idempotent, we don't want any
-         duplicate ArtifactPaths in our filesystem events. *)
+    let create_module_path_updates ~configuration artifact_paths =
+      (* Since the logic in `process_module_path_update` is not idempotent, we don't want any
+         duplicate ArtifactPaths in our module_path updates *)
       List.dedup_and_sort ~compare:ArtifactPath.compare artifact_paths
       |> List.filter ~f:(ModuleFinder.is_valid_filename (ModuleFinder.create configuration))
-      |> List.filter_map ~f:(FileSystemEvent.create ~configuration)
+      |> List.filter_map ~f:(ModulePaths.Update.create ~configuration)
 
 
-    let update_explicit_modules ~configuration ~filesystem_events qualifier_to_modules =
-      (* Process a single filesystem event *)
-      let process_filesystem_event ~configuration = function
-        | FileSystemEvent.NewOrChanged ({ ModulePath.qualifier; _ } as module_path) -> (
+    let update_explicit_modules ~configuration ~module_path_updates qualifier_to_modules =
+      (* Process a single module_path update *)
+      let process_module_path_update ~configuration = function
+        | ModulePaths.Update.NewOrChanged ({ ModulePath.qualifier; _ } as module_path) -> (
             match Hashtbl.find qualifier_to_modules qualifier with
             | None ->
                 (* New file for a new module *)
@@ -337,7 +339,7 @@ module Base = struct
                   Some (ExplicitModules.Update.Changed module_path)
                 else (* Updating a shadowed file should not trigger any reanalysis *)
                   None)
-        | FileSystemEvent.Remove ({ ModulePath.qualifier; _ } as module_path) -> (
+        | ModulePaths.Update.Remove ({ ModulePath.qualifier; _ } as module_path) -> (
             Hashtbl.find qualifier_to_modules qualifier
             >>= fun module_paths ->
             match module_paths with
@@ -427,16 +429,16 @@ module Base = struct
         List.iter updates ~f:process_update;
         Hashtbl.data table
       in
-      List.filter_map filesystem_events ~f:(process_filesystem_event ~configuration)
+      List.filter_map module_path_updates ~f:(process_module_path_update ~configuration)
       |> merge_updates
 
 
-    let update_implicits ~filesystem_events qualifier_to_implicits =
+    let update_implicits ~module_path_updates qualifier_to_implicits =
       let treat_as_importable explicit_children =
         not (ModulePath.Raw.Set.is_empty explicit_children)
       in
-      let process_filesystem_event previous_existence filesystem_event =
-        let module_path = FileSystemEvent.module_path filesystem_event in
+      let process_module_path_update previous_existence module_path_update =
+        let module_path = ModulePaths.Update.module_path module_path_update in
         match ModuleFinder.Implicits.parent_qualifier_and_raw module_path with
         | None -> previous_existence
         | Some (parent_qualifier, raw) ->
@@ -446,10 +448,11 @@ module Base = struct
               |> Option.value ~default:ModulePath.Raw.Set.empty
             in
             let next_explicit_children =
-              match filesystem_event with
-              | FileSystemEvent.NewOrChanged _ ->
+              match module_path_update with
+              | ModulePaths.Update.NewOrChanged _ ->
                   ModulePath.Raw.Set.add raw previous_explicit_children
-              | FileSystemEvent.Remove _ -> ModulePath.Raw.Set.remove raw previous_explicit_children
+              | ModulePaths.Update.Remove _ ->
+                  ModulePath.Raw.Set.remove raw previous_explicit_children
             in
             (* update qualifier_to_implicits as a side effect *)
             let () =
@@ -471,7 +474,7 @@ module Base = struct
             next_existence
       in
       let existence =
-        List.fold filesystem_events ~init:Reference.Map.empty ~f:process_filesystem_event
+        List.fold module_path_updates ~init:Reference.Map.empty ~f:process_module_path_update
       in
       let to_implicit_update ~key ~data =
         match ModuleFinder.Implicits.Existence.to_change data with
@@ -483,11 +486,11 @@ module Base = struct
 
 
     let update ~configuration ~artifact_paths { qualifier_to_modules; qualifier_to_implicits } =
-      let filesystem_events = create_filesystem_events ~configuration artifact_paths in
+      let module_path_updates = create_module_path_updates ~configuration artifact_paths in
       let explicit_updates =
-        update_explicit_modules ~configuration ~filesystem_events qualifier_to_modules
+        update_explicit_modules ~configuration ~module_path_updates qualifier_to_modules
       in
-      let implicit_updates = update_implicits ~filesystem_events qualifier_to_implicits in
+      let implicit_updates = update_implicits ~module_path_updates qualifier_to_implicits in
       (* Explicit updates should shadow implicit updates *)
       let updates =
         let explicitly_modified_qualifiers = Reference.Hash_set.create () in
