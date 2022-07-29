@@ -288,7 +288,7 @@ module Base = struct
 
     module FileSystemEvent = struct
       type t =
-        | Update of ModulePath.t
+        | NewOrChanged of ModulePath.t
         | Remove of ModulePath.t
 
       let create ~configuration path =
@@ -298,13 +298,13 @@ module Base = struct
             None
         | Some module_path ->
             if PyrePath.file_exists (ArtifactPath.raw path) then
-              Some (Update module_path)
+              Some (NewOrChanged module_path)
             else
               Some (Remove module_path)
 
 
       let module_path = function
-        | Update module_path
+        | NewOrChanged module_path
         | Remove module_path ->
             module_path
     end
@@ -320,7 +320,7 @@ module Base = struct
     let update_explicit_modules ~configuration ~filesystem_events qualifier_to_modules =
       (* Process a single filesystem event *)
       let process_filesystem_event ~configuration = function
-        | FileSystemEvent.Update ({ ModulePath.qualifier; _ } as module_path) -> (
+        | FileSystemEvent.NewOrChanged ({ ModulePath.qualifier; _ } as module_path) -> (
             match Hashtbl.find qualifier_to_modules qualifier with
             | None ->
                 (* New file for a new module *)
@@ -447,7 +447,8 @@ module Base = struct
             in
             let next_explicit_children =
               match filesystem_event with
-              | FileSystemEvent.Update _ -> ModulePath.Raw.Set.add raw previous_explicit_children
+              | FileSystemEvent.NewOrChanged _ ->
+                  ModulePath.Raw.Set.add raw previous_explicit_children
               | FileSystemEvent.Remove _ -> ModulePath.Raw.Set.remove raw previous_explicit_children
             in
             (* update qualifier_to_implicits as a side effect *)
