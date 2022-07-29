@@ -339,12 +339,12 @@ module Base = struct
     end
 
     type t = {
-      qualifier_to_modules: ExplicitModules.Table.t;
-      qualifier_to_implicits: ImplicitModules.Table.t;
+      explicit_modules: ExplicitModules.Table.t;
+      implicit_modules: ImplicitModules.Table.t;
     }
 
-    let create_qualifier_to_modules ~configuration module_paths =
-      let qualifier_to_modules = Reference.Table.create () in
+    let create_explicit_modules ~configuration module_paths =
+      let explicit_modules = Reference.Table.create () in
       let process_module_path ({ ModulePath.qualifier; _ } as module_path) =
         let update_table = function
           | None -> [module_path]
@@ -354,30 +354,30 @@ module Base = struct
                 ~to_insert:module_path
                 module_paths
         in
-        Hashtbl.update qualifier_to_modules qualifier ~f:update_table
+        Hashtbl.update explicit_modules qualifier ~f:update_table
       in
       List.iter module_paths ~f:process_module_path;
-      qualifier_to_modules
+      explicit_modules
 
 
-    let create_qualifier_to_implicits qualifier_to_modules =
-      let qualifier_to_implicits = Reference.Table.create () in
+    let create_implicit_modules explicit_modules =
+      let implicit_modules = Reference.Table.create () in
       let process_module_path module_path =
         match ModuleFinder.Implicits.parent_qualifier_and_raw module_path with
         | None -> ()
         | Some (parent_qualifier, raw) ->
-            Reference.Table.update qualifier_to_implicits parent_qualifier ~f:(function
+            Reference.Table.update implicit_modules parent_qualifier ~f:(function
                 | None -> ModulePath.Raw.Set.singleton raw
                 | Some paths -> ModulePath.Raw.Set.add raw paths)
       in
-      Hashtbl.iter qualifier_to_modules ~f:(List.iter ~f:process_module_path);
-      qualifier_to_implicits
+      Hashtbl.iter explicit_modules ~f:(List.iter ~f:process_module_path);
+      implicit_modules
 
 
     let create ~configuration module_paths =
-      let qualifier_to_modules = create_qualifier_to_modules ~configuration module_paths in
-      let qualifier_to_implicits = create_qualifier_to_implicits qualifier_to_modules in
-      { qualifier_to_modules; qualifier_to_implicits }
+      let explicit_modules = create_explicit_modules ~configuration module_paths in
+      let implicit_modules = create_implicit_modules explicit_modules in
+      { explicit_modules; implicit_modules }
 
 
     let create_module_path_updates ~configuration artifact_paths =
@@ -388,14 +388,14 @@ module Base = struct
       |> List.filter_map ~f:(ModulePaths.Update.create ~configuration)
 
 
-    let update_explicit_modules ~configuration ~module_path_updates qualifier_to_modules =
+    let update_explicit_modules ~configuration ~module_path_updates explicit_modules =
       (* Process a single module_path update *)
       let process_module_path_update ~configuration = function
         | ModulePaths.Update.NewOrChanged ({ ModulePath.qualifier; _ } as module_path) -> (
-            match Hashtbl.find qualifier_to_modules qualifier with
+            match Hashtbl.find explicit_modules qualifier with
             | None ->
                 (* New file for a new module *)
-                Hashtbl.set qualifier_to_modules ~key:qualifier ~data:[module_path];
+                Hashtbl.set explicit_modules ~key:qualifier ~data:[module_path];
                 Some (ExplicitModules.Update.New module_path)
             | Some module_paths ->
                 let new_module_paths =
@@ -405,19 +405,19 @@ module Base = struct
                     module_paths
                 in
                 let new_module_path = List.hd_exn new_module_paths in
-                Hashtbl.set qualifier_to_modules ~key:qualifier ~data:new_module_paths;
+                Hashtbl.set explicit_modules ~key:qualifier ~data:new_module_paths;
                 if ModulePath.equal new_module_path module_path then
                   (* Updating a shadowing file means the module gets changed *)
                   Some (ExplicitModules.Update.Changed module_path)
                 else (* Updating a shadowed file should not trigger any reanalysis *)
                   None)
         | ModulePaths.Update.Remove ({ ModulePath.qualifier; _ } as module_path) -> (
-            Hashtbl.find qualifier_to_modules qualifier
+            Hashtbl.find explicit_modules qualifier
             >>= fun module_paths ->
             match module_paths with
             | [] ->
                 (* This should never happen but handle it just in case *)
-                Hashtbl.remove qualifier_to_modules qualifier;
+                Hashtbl.remove explicit_modules qualifier;
                 None
             | old_module_path :: _ -> (
                 match
@@ -428,10 +428,10 @@ module Base = struct
                 with
                 | [] ->
                     (* Last remaining file for the module gets removed. *)
-                    Hashtbl.remove qualifier_to_modules qualifier;
+                    Hashtbl.remove explicit_modules qualifier;
                     Some (ExplicitModules.Update.Delete qualifier)
                 | new_module_path :: _ as new_module_paths ->
-                    Hashtbl.set qualifier_to_modules ~key:qualifier ~data:new_module_paths;
+                    Hashtbl.set explicit_modules ~key:qualifier ~data:new_module_paths;
                     if ModulePath.equal old_module_path new_module_path then
                       (* Removing a shadowed file should not trigger any reanalysis *)
                       None
@@ -443,7 +443,7 @@ module Base = struct
       |> ExplicitModules.Update.merge_updates
 
 
-    let update_implicits ~module_path_updates qualifier_to_implicits =
+    let update_implicits ~module_path_updates implicit_modules =
       let treat_as_importable explicit_children =
         not (ModulePath.Raw.Set.is_empty explicit_children)
       in
@@ -454,7 +454,7 @@ module Base = struct
         | Some (parent_qualifier, raw) ->
             (* Get the previous state and new state *)
             let previous_explicit_children =
-              Reference.Table.find qualifier_to_implicits parent_qualifier
+              Reference.Table.find implicit_modules parent_qualifier
               |> Option.value ~default:ModulePath.Raw.Set.empty
             in
             let next_explicit_children =
@@ -464,9 +464,9 @@ module Base = struct
               | ModulePaths.Update.Remove _ ->
                   ModulePath.Raw.Set.remove raw previous_explicit_children
             in
-            (* update qualifier_to_implicits as a side effect *)
+            (* update implicit_modules as a side effect *)
             let () =
-              Reference.Table.update qualifier_to_implicits parent_qualifier ~f:(fun _ ->
+              Reference.Table.update implicit_modules parent_qualifier ~f:(fun _ ->
                   next_explicit_children)
             in
             (* As we fold the updates, track existince before-and-after *)
@@ -495,12 +495,12 @@ module Base = struct
       Reference.Map.filter_mapi existence ~f:to_implicit_update |> Reference.Map.data
 
 
-    let update ~configuration ~artifact_paths { qualifier_to_modules; qualifier_to_implicits } =
+    let update ~configuration ~artifact_paths { explicit_modules; implicit_modules } =
       let module_path_updates = create_module_path_updates ~configuration artifact_paths in
       let explicit_updates =
-        update_explicit_modules ~configuration ~module_path_updates qualifier_to_modules
+        update_explicit_modules ~configuration ~module_path_updates explicit_modules
       in
-      let implicit_updates = update_implicits ~module_path_updates qualifier_to_implicits in
+      let implicit_updates = update_implicits ~module_path_updates implicit_modules in
       (* Explicit updates should shadow implicit updates *)
       let updates =
         let explicitly_modified_qualifiers = Reference.Hash_set.create () in
@@ -600,12 +600,12 @@ module Base = struct
     { layouts; controls; is_updatable = false; get_raw_code }
 
 
-  let all_module_paths { layouts = { qualifier_to_modules; _ }; _ } =
-    Hashtbl.data qualifier_to_modules |> List.concat
+  let all_module_paths { layouts = { explicit_modules; _ }; _ } =
+    Hashtbl.data explicit_modules |> List.concat
 
 
-  let module_paths { layouts = { qualifier_to_modules; _ }; _ } =
-    Hashtbl.data qualifier_to_modules |> List.filter_map ~f:List.hd
+  let module_paths { layouts = { explicit_modules; _ }; _ } =
+    Hashtbl.data explicit_modules |> List.filter_map ~f:List.hd
 
 
   let controls { controls; _ } = controls
@@ -642,14 +642,14 @@ module Base = struct
         let description = "Module tracker"
       end
 
-      let serialize { Layouts.qualifier_to_modules; qualifier_to_implicits } =
-        Hashtbl.to_alist qualifier_to_modules, Hashtbl.to_alist qualifier_to_implicits
+      let serialize { Layouts.explicit_modules; implicit_modules } =
+        Hashtbl.to_alist explicit_modules, Hashtbl.to_alist implicit_modules
 
 
       let deserialize (module_data, implicits_data) =
         {
-          Layouts.qualifier_to_modules = Reference.Table.of_alist_exn module_data;
-          qualifier_to_implicits = Reference.Table.of_alist_exn implicits_data;
+          Layouts.explicit_modules = Reference.Table.of_alist_exn module_data;
+          implicit_modules = Reference.Table.of_alist_exn implicits_data;
         }
     end)
 
@@ -667,18 +667,17 @@ module Base = struct
   end
 
   let read_only
-      ({ layouts = { qualifier_to_modules; qualifier_to_implicits }; controls; get_raw_code; _ } as
-      tracker)
+      ({ layouts = { explicit_modules; implicit_modules }; controls; get_raw_code; _ } as tracker)
     =
     let lookup_module_path module_name =
-      match Hashtbl.find qualifier_to_modules module_name with
+      match Hashtbl.find explicit_modules module_name with
       | Some (module_path :: _) -> Some module_path
       | _ -> None
     in
     let is_module_tracked qualifier =
-      Hashtbl.mem qualifier_to_modules qualifier
+      Hashtbl.mem explicit_modules qualifier
       || not
-           (Hashtbl.find qualifier_to_implicits qualifier
+           (Hashtbl.find implicit_modules qualifier
            |> Option.value ~default:ModulePath.Raw.Set.empty
            |> ModulePath.Raw.Set.is_empty)
     in
