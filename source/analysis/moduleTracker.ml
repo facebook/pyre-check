@@ -293,10 +293,7 @@ module ExplicitModules = struct
         find: qualifier:Reference.t -> Value.t option;
         set: qualifier:Reference.t -> Value.t -> unit;
         remove: qualifier:Reference.t -> unit;
-        is_explicit_module: qualifier:Reference.t -> bool;
-        lookup_module_path: qualifier:Reference.t -> ModulePath.t option;
-        module_paths: unit -> ModulePath.t list;
-        all_module_paths: unit -> ModulePath.t list;
+        data: unit -> Value.t list;
       }
 
       let update_module_paths ~configuration ~module_path_updates { find; set; remove; _ } =
@@ -369,22 +366,8 @@ module ExplicitModules = struct
         let find ~qualifier = Reference.Table.find eager qualifier in
         let set ~qualifier value = Reference.Table.set eager ~key:qualifier ~data:value in
         let remove ~qualifier = Reference.Table.remove eager qualifier in
-        let is_explicit_module ~qualifier = Reference.Table.mem eager qualifier in
-        let lookup_module_path ~qualifier =
-          Reference.Table.find eager qualifier >>= Value.module_path
-        in
-        let module_paths () = Hashtbl.data eager |> List.filter_map ~f:List.hd in
-        let all_module_paths () = Hashtbl.data eager |> List.concat in
-        Api.
-          {
-            find;
-            set;
-            remove;
-            is_explicit_module;
-            lookup_module_path;
-            module_paths;
-            all_module_paths;
-          }
+        let data () = Hashtbl.data eager in
+        Api.{ find; set; remove; data }
     end
   end
 end
@@ -414,7 +397,6 @@ module ImplicitModules = struct
       type t = {
         find: qualifier:Reference.t -> Value.t option;
         update: qualifier:Reference.t -> f:(Value.t option -> Value.t) -> unit;
-        is_implicit_module: qualifier:Reference.t -> bool;
       }
 
       module Existence = struct
@@ -493,12 +475,7 @@ module ImplicitModules = struct
       let to_api eager =
         let find ~qualifier = Reference.Table.find eager qualifier in
         let update ~qualifier = Reference.Table.update eager qualifier in
-        let is_implicit_module ~qualifier =
-          Reference.Table.find eager qualifier
-          >>| Value.is_importable
-          |> Option.value ~default:false
-        in
-        Api.{ find; update; is_implicit_module }
+        Api.{ find; update }
     end
   end
 end
@@ -577,6 +554,24 @@ module Layouts = struct
         Sexp.pp
         [%message (implicit_updates : ImplicitModules.Update.t list)];
       updates
+
+
+    let is_implicit_module { implicit_modules = { find; _ }; _ } ~qualifier =
+      find ~qualifier >>| ImplicitModules.Value.is_importable |> Option.value ~default:false
+
+
+    let lookup_module_path { explicit_modules = { find; _ }; _ } ~qualifier =
+      find ~qualifier >>= ExplicitModules.Value.module_path
+
+
+    let is_explicit_module layouts ~qualifier =
+      lookup_module_path layouts ~qualifier |> Option.is_some
+
+
+    let all_module_paths { explicit_modules = { data; _ }; _ } = data () |> List.concat
+
+    let module_paths { explicit_modules = { data; _ }; _ } =
+      data () |> List.filter_map ~f:ExplicitModules.Value.module_path
   end
 
   module Eager = struct
@@ -717,19 +712,14 @@ module Base = struct
   end
 
   let read_only { layouts; controls; get_raw_code; _ } =
-    let {
-      Layouts.Api.explicit_modules =
-        { lookup_module_path; is_explicit_module; module_paths; all_module_paths; _ };
-      implicit_modules = { is_implicit_module; _ };
-      _;
-    }
-      =
-      Layouts.Eager.to_api layouts
-    in
-    let lookup_module_path qualifier = lookup_module_path ~qualifier in
+    let layouts = Layouts.Eager.to_api layouts in
+    let lookup_module_path qualifier = Layouts.Api.lookup_module_path layouts ~qualifier in
     let is_module_tracked qualifier =
-      is_explicit_module ~qualifier || is_implicit_module ~qualifier
+      Layouts.Api.is_explicit_module layouts ~qualifier
+      || Layouts.Api.is_implicit_module layouts ~qualifier
     in
+    let module_paths () = Layouts.Api.module_paths layouts in
+    let all_module_paths () = Layouts.Api.all_module_paths layouts in
     {
       ReadOnly.lookup_module_path;
       is_module_tracked;
