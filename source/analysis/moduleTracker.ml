@@ -436,11 +436,9 @@ module ImplicitModules = struct
             in
             next_existence
       in
-      let existence =
-        List.fold module_path_updates ~init:Reference.Map.empty ~f:process_module_path_update
-      in
-      let to_implicit_update ~key ~data = Existence.to_update ~qualifier:key data in
-      Reference.Map.filter_mapi existence ~f:to_implicit_update |> Reference.Map.data
+      List.fold module_path_updates ~init:Reference.Map.empty ~f:process_module_path_update
+      |> Reference.Map.filter_mapi ~f:(fun ~key ~data -> Existence.to_update ~qualifier:key data)
+      |> Reference.Map.data
   end
 end
 
