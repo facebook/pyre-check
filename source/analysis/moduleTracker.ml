@@ -27,6 +27,7 @@ module ReadOnly = struct
     is_module_tracked: Reference.t -> bool;
     get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
     module_paths: unit -> ModulePath.t list;
+    all_module_paths: unit -> ModulePath.t list;
     controls: unit -> EnvironmentControls.t;
   }
 
@@ -35,6 +36,8 @@ module ReadOnly = struct
   let lookup_module_path { lookup_module_path; _ } = lookup_module_path
 
   let module_paths { module_paths; _ } = module_paths ()
+
+  let all_module_paths { all_module_paths; _ } = all_module_paths ()
 
   let is_module_tracked { is_module_tracked; _ } = is_module_tracked
 
@@ -168,6 +171,11 @@ module ExplicitModules = struct
   module Value = struct
     type t = ModulePath.t list
 
+    let module_path = function
+      | module_path :: _ -> Some module_path
+      | [] -> None
+
+
     let insert_module_path ~configuration ~to_insert existing_paths =
       let rec insert sofar = function
         | [] -> List.rev_append sofar [to_insert]
@@ -285,9 +293,13 @@ module ExplicitModules = struct
         find: qualifier:Reference.t -> Value.t option;
         set: qualifier:Reference.t -> Value.t -> unit;
         remove: qualifier:Reference.t -> unit;
+        is_explicit_module: qualifier:Reference.t -> bool;
+        lookup_module_path: qualifier:Reference.t -> ModulePath.t option;
+        module_paths: unit -> ModulePath.t list;
+        all_module_paths: unit -> ModulePath.t list;
       }
 
-      let update_module_paths ~configuration ~module_path_updates { find; set; remove } =
+      let update_module_paths ~configuration ~module_path_updates { find; set; remove; _ } =
         (* Process a single module_path update *)
         let process_module_path_update ~configuration = function
           | ModulePaths.Update.NewOrChanged ({ ModulePath.qualifier; _ } as module_path) -> (
@@ -357,7 +369,22 @@ module ExplicitModules = struct
         let find ~qualifier = Reference.Table.find eager qualifier in
         let set ~qualifier value = Reference.Table.set eager ~key:qualifier ~data:value in
         let remove ~qualifier = Reference.Table.remove eager qualifier in
-        Api.{ find; set; remove }
+        let is_explicit_module ~qualifier = Reference.Table.mem eager qualifier in
+        let lookup_module_path ~qualifier =
+          Reference.Table.find eager qualifier >>= Value.module_path
+        in
+        let module_paths () = Hashtbl.data eager |> List.filter_map ~f:List.hd in
+        let all_module_paths () = Hashtbl.data eager |> List.concat in
+        Api.
+          {
+            find;
+            set;
+            remove;
+            is_explicit_module;
+            lookup_module_path;
+            module_paths;
+            all_module_paths;
+          }
 
 
       let update_module_paths ~configuration ~module_path_updates eager =
@@ -375,6 +402,8 @@ module ImplicitModules = struct
 
   module Value = struct
     type t = ModulePath.Raw.Set.t
+
+    let is_importable explicit_children = not (ModulePath.Raw.Set.is_empty explicit_children)
   end
 
   module Update = struct
@@ -389,6 +418,7 @@ module ImplicitModules = struct
       type t = {
         find: qualifier:Reference.t -> Value.t option;
         update: qualifier:Reference.t -> f:(Value.t option -> Value.t) -> unit;
+        is_implicit_module: qualifier:Reference.t -> bool;
       }
 
       module Existence = struct
@@ -406,10 +436,7 @@ module ImplicitModules = struct
               None
       end
 
-      let update_module_paths ~module_path_updates { find; update } =
-        let treat_as_importable explicit_children =
-          not (ModulePath.Raw.Set.is_empty explicit_children)
-        in
+      let update_module_paths ~module_path_updates { find; update; _ } =
         let process_module_path_update previous_existence module_path_update =
           let module_path = ModulePaths.Update.module_path module_path_update in
           match parent_qualifier_and_raw module_path with
@@ -434,13 +461,13 @@ module ImplicitModules = struct
                 Reference.Map.update previous_existence qualifier ~f:(function
                     | None ->
                         {
-                          existed_before = treat_as_importable previous_explicit_children;
-                          exists_after = treat_as_importable next_explicit_children;
+                          existed_before = Value.is_importable previous_explicit_children;
+                          exists_after = Value.is_importable next_explicit_children;
                         }
                     | Some { existed_before; _ } ->
                         {
                           existed_before;
-                          exists_after = treat_as_importable next_explicit_children;
+                          exists_after = Value.is_importable next_explicit_children;
                         })
               in
               next_existence
@@ -470,7 +497,12 @@ module ImplicitModules = struct
       let to_api eager =
         let find ~qualifier = Reference.Table.find eager qualifier in
         let update ~qualifier = Reference.Table.update eager qualifier in
-        Api.{ find; update }
+        let is_implicit_module ~qualifier =
+          Reference.Table.find eager qualifier
+          >>| Value.is_importable
+          |> Option.value ~default:false
+        in
+        Api.{ find; update; is_implicit_module }
 
 
       let update_module_paths ~module_path_updates eager =
@@ -638,14 +670,6 @@ module Base = struct
     { layouts; controls; is_updatable = false; get_raw_code }
 
 
-  let all_module_paths { layouts = { explicit_modules; _ }; _ } =
-    Hashtbl.data explicit_modules |> List.concat
-
-
-  let module_paths { layouts = { explicit_modules; _ }; _ } =
-    Hashtbl.data explicit_modules |> List.filter_map ~f:List.hd
-
-
   let controls { controls; _ } = controls
 
   let assert_can_update { controls; is_updatable; _ } =
@@ -684,28 +708,37 @@ module Base = struct
       }
   end
 
-  let read_only
-      ({ layouts = { explicit_modules; implicit_modules }; controls; get_raw_code; _ } as tracker)
-    =
-    let lookup_module_path module_name =
-      match Hashtbl.find explicit_modules module_name with
-      | Some (module_path :: _) -> Some module_path
-      | _ -> None
+  let read_only { layouts = { explicit_modules; implicit_modules }; controls; get_raw_code; _ } =
+    let {
+      ExplicitModules.Table.Api.lookup_module_path;
+      is_explicit_module;
+      module_paths;
+      all_module_paths;
+      _;
+    }
+      =
+      ExplicitModules.Table.Eager.to_api explicit_modules
     in
+    let { ImplicitModules.Table.Api.is_implicit_module; _ } =
+      ImplicitModules.Table.Eager.to_api implicit_modules
+    in
+    let lookup_module_path qualifier = lookup_module_path ~qualifier in
     let is_module_tracked qualifier =
-      Hashtbl.mem explicit_modules qualifier
-      || not
-           (Hashtbl.find implicit_modules qualifier
-           |> Option.value ~default:ModulePath.Raw.Set.empty
-           |> ModulePath.Raw.Set.is_empty)
+      is_explicit_module ~qualifier || is_implicit_module ~qualifier
     in
     {
       ReadOnly.lookup_module_path;
       is_module_tracked;
       get_raw_code;
-      module_paths = (fun () -> module_paths tracker);
+      module_paths;
+      all_module_paths;
       controls = (fun () -> controls);
     }
+
+
+  let module_paths tracker = read_only tracker |> ReadOnly.module_paths
+
+  let all_module_paths tracker = read_only tracker |> ReadOnly.all_module_paths
 end
 
 module Overlay = struct
