@@ -62,79 +62,60 @@ module ReadOnly = struct
     |> List.map ~f:ModulePath.qualifier
 end
 
-module ModuleFinder = struct
-  type t = {
-    valid_suffixes: String.Set.t;
-    excludes: Str.regexp list;
-    configuration: Configuration.Analysis.t;
-  }
-
-  let create ({ Configuration.Analysis.excludes; _ } as configuration) =
-    {
-      valid_suffixes =
-        ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration
-        |> String.Set.of_list;
-      excludes;
-      configuration;
+module ModulePaths = struct
+  module Finder = struct
+    type t = {
+      valid_suffixes: String.Set.t;
+      excludes: Str.regexp list;
+      configuration: Configuration.Analysis.t;
     }
 
-
-  let is_valid_filename_raw { valid_suffixes; _ } raw_path =
-    let extension =
-      Filename.split_extension raw_path
-      |> snd
-      >>| (fun extension -> "." ^ extension)
-      |> Option.value ~default:""
-    in
-    (* Don't bother with hidden files as they are non-importable in Python by default *)
-    (not (String.is_prefix (Filename.basename raw_path) ~prefix:"."))
-    (* Only consider files with valid suffix *)
-    && Set.mem valid_suffixes extension
+    let create ({ Configuration.Analysis.excludes; _ } as configuration) =
+      {
+        valid_suffixes =
+          ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration
+          |> String.Set.of_list;
+        excludes;
+        configuration;
+      }
 
 
-  let is_valid_filename finder artifact_path =
-    ArtifactPath.raw artifact_path |> PyrePath.absolute |> is_valid_filename_raw finder
-
-
-  let mark_visited visited_paths path =
-    match Hash_set.strict_add visited_paths path with
-    | Result.Ok () -> false
-    | _ -> true
-
-
-  let python_file_filter finder ~visited_paths path =
-    is_valid_filename_raw finder path && not (mark_visited visited_paths path)
-
-
-  let package_directory_filter { excludes; _ } ~visited_paths ~root_path path =
-    (* Don't bother with hidden directories (except in the case where the root itself is hidden) as
-       they are non-importable in Python by default *)
-    ((not (String.is_prefix (Filename.basename path) ~prefix:".")) || String.equal path root_path)
-    (* Do not scan excluding directories to speed up the traversal *)
-    && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
-    && not (mark_visited visited_paths path)
-end
-
-let find_module_paths ({ Configuration.Analysis.source_paths; search_paths; _ } as configuration) =
-  let module_finder = ModuleFinder.create configuration in
-  let visited_paths = String.Hash_set.create () in
-  let search_roots =
-    List.append
-      (List.map ~f:SearchPath.to_path source_paths)
-      (List.map ~f:SearchPath.to_path search_paths)
-  in
-  List.map search_roots ~f:(fun root ->
-      let root_path = PyrePath.absolute root in
-      let directory_filter =
-        ModuleFinder.package_directory_filter module_finder ~visited_paths ~root_path
+    let is_valid_filename_raw { valid_suffixes; _ } raw_path =
+      let extension =
+        Filename.split_extension raw_path
+        |> snd
+        >>| (fun extension -> "." ^ extension)
+        |> Option.value ~default:""
       in
-      let file_filter = ModuleFinder.python_file_filter module_finder ~visited_paths in
-      PyrePath.list ~file_filter ~directory_filter ~root () |> List.map ~f:ArtifactPath.create)
-  |> List.concat
-  |> List.filter_map ~f:(ModulePath.create ~configuration)
+      (* Don't bother with hidden files as they are non-importable in Python by default *)
+      (not (String.is_prefix (Filename.basename raw_path) ~prefix:"."))
+      (* Only consider files with valid suffix *)
+      && Set.mem valid_suffixes extension
 
 
-module ModulePaths = struct
+    let is_valid_filename finder artifact_path =
+      ArtifactPath.raw artifact_path |> PyrePath.absolute |> is_valid_filename_raw finder
+
+
+    let mark_visited visited_paths path =
+      match Hash_set.strict_add visited_paths path with
+      | Result.Ok () -> false
+      | _ -> true
+
+
+    let python_file_filter finder ~visited_paths path =
+      is_valid_filename_raw finder path && not (mark_visited visited_paths path)
+
+
+    let package_directory_filter { excludes; _ } ~visited_paths ~root_path path =
+      (* Don't bother with hidden directories (except in the case where the root itself is hidden)
+         as they are non-importable in Python by default *)
+      ((not (String.is_prefix (Filename.basename path) ~prefix:".")) || String.equal path root_path)
+      (* Do not scan excluding directories to speed up the traversal *)
+      && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
+      && not (mark_visited visited_paths path)
+  end
+
   module Update = struct
     type t =
       | NewOrChanged of ModulePath.t
@@ -157,6 +138,30 @@ module ModulePaths = struct
       | Remove module_path ->
           module_path
   end
+
+  let find_all ({ Configuration.Analysis.source_paths; search_paths; _ } as configuration) =
+    let finder = Finder.create configuration in
+    let visited_paths = String.Hash_set.create () in
+    let search_roots =
+      List.append
+        (List.map ~f:SearchPath.to_path source_paths)
+        (List.map ~f:SearchPath.to_path search_paths)
+    in
+    List.map search_roots ~f:(fun root ->
+        let root_path = PyrePath.absolute root in
+        let directory_filter = Finder.package_directory_filter finder ~visited_paths ~root_path in
+        let file_filter = Finder.python_file_filter finder ~visited_paths in
+        PyrePath.list ~file_filter ~directory_filter ~root () |> List.map ~f:ArtifactPath.create)
+    |> List.concat
+    |> List.filter_map ~f:(ModulePath.create ~configuration)
+
+
+  let create_updates ~configuration artifact_paths =
+    (* Since the logic in `process_module_path_update` is not idempotent, we don't want any
+       duplicate ArtifactPaths in our module_path updates *)
+    List.dedup_and_sort ~compare:ArtifactPath.compare artifact_paths
+    |> List.filter ~f:(Finder.is_valid_filename (Finder.create configuration))
+    |> List.filter_map ~f:(Update.create ~configuration)
 end
 
 module ExplicitModules = struct
@@ -494,16 +499,8 @@ module Base = struct
       { explicit_modules; implicit_modules }
 
 
-    let create_module_path_updates ~configuration artifact_paths =
-      (* Since the logic in `process_module_path_update` is not idempotent, we don't want any
-         duplicate ArtifactPaths in our module_path updates *)
-      List.dedup_and_sort ~compare:ArtifactPath.compare artifact_paths
-      |> List.filter ~f:(ModuleFinder.is_valid_filename (ModuleFinder.create configuration))
-      |> List.filter_map ~f:(ModulePaths.Update.create ~configuration)
-
-
     let update ~configuration ~artifact_paths { explicit_modules; implicit_modules } =
-      let module_path_updates = create_module_path_updates ~configuration artifact_paths in
+      let module_path_updates = ModulePaths.create_updates ~configuration artifact_paths in
       let explicit_updates =
         ExplicitModules.Table.update ~configuration ~module_path_updates explicit_modules
       in
@@ -548,7 +545,7 @@ module Base = struct
     Log.info "Building module tracker...";
     let timer = Timer.start () in
     let configuration = EnvironmentControls.configuration controls in
-    let source_paths = find_module_paths configuration in
+    let source_paths = ModulePaths.find_all configuration in
     let layouts = Layouts.create ~configuration source_paths in
     let get_raw_code = load_raw_code ~configuration in
     let is_updatable = configuration_allows_update configuration in
