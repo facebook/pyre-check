@@ -545,90 +545,87 @@ module IncrementalUpdate = struct
     List.append explicits implicits
 end
 
-module Base = struct
-  module Layouts = struct
-    module Api = struct
-      type t = {
-        explicit_modules: ExplicitModules.Table.Api.t;
-        implicit_modules: ImplicitModules.Table.Api.t;
-        store: unit -> unit;
-      }
+module Layouts = struct
+  module Api = struct
+    type t = {
+      explicit_modules: ExplicitModules.Table.Api.t;
+      implicit_modules: ImplicitModules.Table.Api.t;
+    }
 
-      let update ~configuration ~artifact_paths { explicit_modules; implicit_modules; _ } =
-        let module_path_updates = ModulePaths.create_updates ~configuration artifact_paths in
-        let explicit_updates =
-          ExplicitModules.Table.Api.update_module_paths
-            ~configuration
-            ~module_path_updates
-            explicit_modules
-        in
-        let implicit_updates =
-          ImplicitModules.Table.Api.update_module_paths ~module_path_updates implicit_modules
-        in
-        let updates =
-          IncrementalUpdate.combine_explicits_and_implicits explicit_updates implicit_updates
-        in
-        Log.log
-          ~section:`Server
-          "Explicit Module Update: %a"
-          Sexp.pp
-          [%message (explicit_updates : ExplicitModules.Update.t list)];
-        Log.log
-          ~section:`Server
-          "Implicit Module Update: %a"
-          Sexp.pp
-          [%message (implicit_updates : ImplicitModules.Update.t list)];
-        updates
-    end
-
-    module Eager = struct
-      type t = {
-        explicit_modules: ExplicitModules.Table.Eager.t;
-        implicit_modules: ImplicitModules.Table.Eager.t;
-      }
-
-      let create ~configuration module_paths =
-        let explicit_modules = ExplicitModules.Table.Eager.create ~configuration module_paths in
-        let implicit_modules = ImplicitModules.Table.Eager.create explicit_modules in
-        { explicit_modules; implicit_modules }
-
-
-      module Serializer = Memory.Serializer (struct
-        type nonrec t = t
-
-        module Serialized = struct
-          type t =
-            (Reference.t * ModulePath.t list) list * (Reference.t * ModulePath.Raw.Set.t) list
-
-          let prefix = Prefix.make ()
-
-          let description = "Module tracker"
-        end
-
-        let serialize { explicit_modules; implicit_modules } =
-          Hashtbl.to_alist explicit_modules, Hashtbl.to_alist implicit_modules
-
-
-        let deserialize (module_data, implicits_data) =
-          {
-            explicit_modules = Reference.Table.of_alist_exn module_data;
-            implicit_modules = Reference.Table.of_alist_exn implicits_data;
-          }
-      end)
-
-      let to_api ({ explicit_modules; implicit_modules } as layouts) =
-        Api.
-          {
-            explicit_modules = ExplicitModules.Table.Eager.to_api explicit_modules;
-            implicit_modules = ImplicitModules.Table.Eager.to_api implicit_modules;
-            store = (fun () -> Serializer.store layouts);
-          }
-
-
-      let load = Serializer.load
-    end
+    let update ~configuration ~artifact_paths { explicit_modules; implicit_modules; _ } =
+      let module_path_updates = ModulePaths.create_updates ~configuration artifact_paths in
+      let explicit_updates =
+        ExplicitModules.Table.Api.update_module_paths
+          ~configuration
+          ~module_path_updates
+          explicit_modules
+      in
+      let implicit_updates =
+        ImplicitModules.Table.Api.update_module_paths ~module_path_updates implicit_modules
+      in
+      let updates =
+        IncrementalUpdate.combine_explicits_and_implicits explicit_updates implicit_updates
+      in
+      Log.log
+        ~section:`Server
+        "Explicit Module Update: %a"
+        Sexp.pp
+        [%message (explicit_updates : ExplicitModules.Update.t list)];
+      Log.log
+        ~section:`Server
+        "Implicit Module Update: %a"
+        Sexp.pp
+        [%message (implicit_updates : ImplicitModules.Update.t list)];
+      updates
   end
 
+  module Eager = struct
+    type t = {
+      explicit_modules: ExplicitModules.Table.Eager.t;
+      implicit_modules: ImplicitModules.Table.Eager.t;
+    }
+
+    let create ~configuration module_paths =
+      let explicit_modules = ExplicitModules.Table.Eager.create ~configuration module_paths in
+      let implicit_modules = ImplicitModules.Table.Eager.create explicit_modules in
+      { explicit_modules; implicit_modules }
+
+
+    module Serializer = Memory.Serializer (struct
+      type nonrec t = t
+
+      module Serialized = struct
+        type t = (Reference.t * ModulePath.t list) list * (Reference.t * ModulePath.Raw.Set.t) list
+
+        let prefix = Prefix.make ()
+
+        let description = "Module tracker"
+      end
+
+      let serialize { explicit_modules; implicit_modules } =
+        Hashtbl.to_alist explicit_modules, Hashtbl.to_alist implicit_modules
+
+
+      let deserialize (module_data, implicits_data) =
+        {
+          explicit_modules = Reference.Table.of_alist_exn module_data;
+          implicit_modules = Reference.Table.of_alist_exn implicits_data;
+        }
+    end)
+
+    let to_api { explicit_modules; implicit_modules } =
+      Api.
+        {
+          explicit_modules = ExplicitModules.Table.Eager.to_api explicit_modules;
+          implicit_modules = ImplicitModules.Table.Eager.to_api implicit_modules;
+        }
+
+
+    let load = Serializer.load
+  end
+end
+
+module Base = struct
   type t = {
     layouts: Layouts.Eager.t;
     controls: EnvironmentControls.t;
