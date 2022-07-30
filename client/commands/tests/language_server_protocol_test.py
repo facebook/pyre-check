@@ -6,7 +6,7 @@
 import functools
 import json
 from pathlib import Path
-from typing import Callable, Mapping, Optional, TypeVar
+from typing import Callable, Mapping, Optional, Type, TypeVar
 
 import testslide
 
@@ -33,6 +33,7 @@ from ..language_server_protocol import (
     PublishDiagnosticsClientCapabilities,
     PublishDiagnosticsClientTagSupport,
     read_json_rpc,
+    ReadChannelClosedError,
     ShowStatusRequestClientCapabilities,
     TextDocumentClientCapabilities,
     TextDocumentIdentifier,
@@ -93,11 +94,13 @@ class LSPInputOutputTest(testslide.TestCase):
             actual = await read_json_rpc(create_memory_text_reader(input))
             self.assertEqual(actual, expected)
 
-        async def assert_not_parsed(input: str) -> None:
-            with self.assertRaises(json_rpc.ParseError):
+        async def assert_not_parsed(
+            input: str, exception_type: Type[Exception] = json_rpc.ParseError
+        ) -> None:
+            with self.assertRaises(exception_type):
                 await read_json_rpc(create_memory_text_reader(input))
 
-        await assert_not_parsed("")
+        await assert_not_parsed("", exception_type=ReadChannelClosedError)
         await assert_not_parsed("derp")
         await assert_not_parsed("Invalid-Header: \r\n\r\n{}")
         await assert_not_parsed("Not-Content-Length: 42\r\n\r\n{}")

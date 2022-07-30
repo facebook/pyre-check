@@ -42,6 +42,10 @@ class RequestCancelledError(json_rpc.JSONRPCException):
         return -32800
 
 
+class ReadChannelClosedError(Exception):
+    pass
+
+
 async def _read_headers(input_channel: async_server_connection.TextReader) -> List[str]:
     headers = []
     header = await input_channel.read_until("\r\n")
@@ -74,8 +78,8 @@ async def read_json_rpc(
 ) -> json_rpc.Request:
     """
     Asynchronously read a JSON-RPC request from the given input channel.
-    May raise `json_rpc.ParseError`, `json_rpc.InvalidRequestError` and
-    `json_prc.InvalidParameterError`.
+    May raise `json_rpc.ParseError`, `json_rpc.InvalidRequestError`,
+    `json_prc.InvalidParameterError`, and `ReadChannelClosedError`.
     """
     try:
         headers = await _read_headers(input_channel)
@@ -84,7 +88,12 @@ async def read_json_rpc(
         payload = await input_channel.read_exactly(content_length)
         return json_rpc.Request.from_string(payload)
     except asyncio.IncompleteReadError as error:
-        raise json_rpc.ParseError(str(error)) from error
+        if len(error.partial) == 0:
+            raise ReadChannelClosedError(
+                "Trying to read from a closed input channel"
+            ) from None
+        else:
+            raise json_rpc.ParseError(str(error)) from None
 
 
 async def write_json_rpc(
