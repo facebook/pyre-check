@@ -580,7 +580,13 @@ module Layouts = struct
       implicit_modules: ImplicitModules.Table.Eager.t;
     }
 
-    let create ~configuration module_paths =
+    let create ~controls =
+      let configuration = EnvironmentControls.configuration controls in
+      let module_paths =
+        match EnvironmentControls.in_memory_sources controls with
+        | None -> ModulePaths.find_all configuration
+        | Some in_memory_sources -> List.map in_memory_sources ~f:fst
+      in
       let explicit_modules = ExplicitModules.Table.Eager.create ~configuration module_paths in
       let implicit_modules = ImplicitModules.Table.Eager.create explicit_modules in
       { explicit_modules; implicit_modules }
@@ -634,13 +640,8 @@ module Base = struct
         Error (Format.asprintf "Cannot open file `%a` due to: %s" ArtifactPath.pp path error)
 
 
-  let make_module_paths ~configuration ~controls =
-    match EnvironmentControls.in_memory_sources controls with
-    | None -> ModulePaths.find_all configuration
-    | Some in_memory_sources -> List.map in_memory_sources ~f:fst
-
-
-  let make_get_raw_code ~configuration ~controls =
+  let make_get_raw_code ~controls =
+    let configuration = EnvironmentControls.configuration controls in
     match EnvironmentControls.in_memory_sources controls with
     | None -> load_raw_code ~configuration
     | Some in_memory_sources ->
@@ -663,10 +664,8 @@ module Base = struct
   let create controls =
     Log.info "Building module tracker...";
     let timer = Timer.start () in
-    let configuration = EnvironmentControls.configuration controls in
-    let module_paths = make_module_paths ~configuration ~controls in
-    let layouts = Layouts.Eager.create ~configuration module_paths in
-    let get_raw_code = make_get_raw_code ~configuration ~controls in
+    let layouts = Layouts.Eager.create ~controls in
+    let get_raw_code = make_get_raw_code ~controls in
     Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
     { layouts; controls; get_raw_code }
 
