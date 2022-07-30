@@ -557,16 +557,20 @@ module Layouts = struct
       updates
 
 
-    let is_implicit_module { implicit_modules = { find; _ }; _ } ~qualifier =
-      find ~qualifier >>| ImplicitModules.Value.is_importable |> Option.value ~default:false
-
-
     let lookup_module_path { explicit_modules = { find; _ }; _ } ~qualifier =
       find ~qualifier >>= ExplicitModules.Value.module_path
 
 
     let is_explicit_module layouts ~qualifier =
       lookup_module_path layouts ~qualifier |> Option.is_some
+
+
+    let is_implicit_module { implicit_modules = { find; _ }; _ } ~qualifier =
+      find ~qualifier >>| ImplicitModules.Value.is_importable |> Option.value ~default:false
+
+
+    let is_module_tracked layouts ~qualifier =
+      is_explicit_module layouts ~qualifier || is_implicit_module layouts ~qualifier
 
 
     let all_module_paths { explicit_modules = { data; _ }; _ } = data () |> List.concat
@@ -700,10 +704,7 @@ module Base = struct
 
   let read_only { layouts; controls; get_raw_code; _ } =
     let lookup_module_path qualifier = Layouts.Api.lookup_module_path layouts ~qualifier in
-    let is_module_tracked qualifier =
-      Layouts.Api.is_explicit_module layouts ~qualifier
-      || Layouts.Api.is_implicit_module layouts ~qualifier
-    in
+    let is_module_tracked qualifier = Layouts.Api.is_module_tracked layouts ~qualifier in
     let module_paths () = Layouts.Api.module_paths layouts in
     let all_module_paths () = Layouts.Api.all_module_paths layouts in
     {
