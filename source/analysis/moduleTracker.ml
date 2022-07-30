@@ -117,6 +117,23 @@ module ModulePaths = struct
       (* Do not scan excluding directories to speed up the traversal *)
       && (not (List.exists excludes ~f:(fun regexp -> Str.string_match regexp path 0)))
       && not (mark_visited visited_paths path)
+
+
+    let find_all ({ Configuration.Analysis.source_paths; search_paths; _ } as configuration) =
+      let finder = create configuration in
+      let visited_paths = String.Hash_set.create () in
+      let search_roots =
+        List.append
+          (List.map ~f:SearchPath.to_path source_paths)
+          (List.map ~f:SearchPath.to_path search_paths)
+      in
+      List.map search_roots ~f:(fun root ->
+          let root_path = PyrePath.absolute root in
+          let directory_filter = package_directory_filter finder ~visited_paths ~root_path in
+          let file_filter = python_file_filter finder ~visited_paths in
+          PyrePath.list ~file_filter ~directory_filter ~root () |> List.map ~f:ArtifactPath.create)
+      |> List.concat
+      |> List.filter_map ~f:(ModulePath.create ~configuration)
   end
 
   module Update = struct
@@ -140,31 +157,15 @@ module ModulePaths = struct
       | NewOrChanged module_path
       | Remove module_path ->
           module_path
+
+
+    let from_artifact_paths ~configuration artifact_paths =
+      (* Since the logic in `process_module_path_update` is not idempotent, we don't want any
+         duplicate ArtifactPaths in our module_path updates *)
+      List.dedup_and_sort ~compare:ArtifactPath.compare artifact_paths
+      |> List.filter ~f:(Finder.is_valid_filename (Finder.create configuration))
+      |> List.filter_map ~f:(create ~configuration)
   end
-
-  let find_all ({ Configuration.Analysis.source_paths; search_paths; _ } as configuration) =
-    let finder = Finder.create configuration in
-    let visited_paths = String.Hash_set.create () in
-    let search_roots =
-      List.append
-        (List.map ~f:SearchPath.to_path source_paths)
-        (List.map ~f:SearchPath.to_path search_paths)
-    in
-    List.map search_roots ~f:(fun root ->
-        let root_path = PyrePath.absolute root in
-        let directory_filter = Finder.package_directory_filter finder ~visited_paths ~root_path in
-        let file_filter = Finder.python_file_filter finder ~visited_paths in
-        PyrePath.list ~file_filter ~directory_filter ~root () |> List.map ~f:ArtifactPath.create)
-    |> List.concat
-    |> List.filter_map ~f:(ModulePath.create ~configuration)
-
-
-  let create_updates ~configuration artifact_paths =
-    (* Since the logic in `process_module_path_update` is not idempotent, we don't want any
-       duplicate ArtifactPaths in our module_path updates *)
-    List.dedup_and_sort ~compare:ArtifactPath.compare artifact_paths
-    |> List.filter ~f:(Finder.is_valid_filename (Finder.create configuration))
-    |> List.filter_map ~f:(Update.create ~configuration)
 end
 
 module ExplicitModules = struct
@@ -535,7 +536,9 @@ module Layouts = struct
     }
 
     let update ~configuration ~artifact_paths { explicit_modules; implicit_modules; _ } =
-      let module_path_updates = ModulePaths.create_updates ~configuration artifact_paths in
+      let module_path_updates =
+        ModulePaths.Update.from_artifact_paths ~configuration artifact_paths
+      in
       let explicit_updates =
         ExplicitModules.Table.Api.update_module_paths
           ~configuration
@@ -598,7 +601,7 @@ module Layouts = struct
       let configuration = EnvironmentControls.configuration controls in
       let module_paths =
         match EnvironmentControls.in_memory_sources controls with
-        | None -> ModulePaths.find_all configuration
+        | None -> ModulePaths.Finder.find_all configuration
         | Some in_memory_sources -> List.map in_memory_sources ~f:fst
       in
       let explicit_modules = ExplicitModules.Table.Eager.create ~configuration module_paths in
