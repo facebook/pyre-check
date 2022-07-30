@@ -559,6 +559,29 @@ module Base = struct
         Sexp.pp
         [%message (implicit_updates : ImplicitModules.Update.t list)];
       updates
+
+
+    module Serializer = Memory.Serializer (struct
+      type nonrec t = t
+
+      module Serialized = struct
+        type t = (Reference.t * ModulePath.t list) list * (Reference.t * ModulePath.Raw.Set.t) list
+
+        let prefix = Prefix.make ()
+
+        let description = "Module tracker"
+      end
+
+      let serialize { explicit_modules; implicit_modules } =
+        Hashtbl.to_alist explicit_modules, Hashtbl.to_alist implicit_modules
+
+
+      let deserialize (module_data, implicits_data) =
+        {
+          explicit_modules = Reference.Table.of_alist_exn module_data;
+          implicit_modules = Reference.Table.of_alist_exn implicits_data;
+        }
+    end)
   end
 
   type t = {
@@ -646,27 +669,7 @@ module Base = struct
 
 
   module Serializer = struct
-    module Layouts = Memory.Serializer (struct
-      type nonrec t = Layouts.t
-
-      module Serialized = struct
-        type t = (Reference.t * ModulePath.t list) list * (Reference.t * ModulePath.Raw.Set.t) list
-
-        let prefix = Prefix.make ()
-
-        let description = "Module tracker"
-      end
-
-      let serialize { Layouts.explicit_modules; implicit_modules } =
-        Hashtbl.to_alist explicit_modules, Hashtbl.to_alist implicit_modules
-
-
-      let deserialize (module_data, implicits_data) =
-        {
-          Layouts.explicit_modules = Reference.Table.of_alist_exn module_data;
-          implicit_modules = Reference.Table.of_alist_exn implicits_data;
-        }
-    end)
+    module Layouts = Layouts.Serializer
 
     let store_layouts { layouts; _ } = Layouts.store layouts
 
