@@ -380,9 +380,12 @@ module ImplicitModules = struct
 
 
   module Value = struct
+    (* This represents the raw paths of all *explicit* children. We treat a namespace package as
+       importable only when it has regular python files as children, i.e. when this set is nonempty. *)
     type t = ModulePath.Raw.Set.t
 
-    let is_importable explicit_children = not (ModulePath.Raw.Set.is_empty explicit_children)
+    let should_treat_as_importable explicit_children =
+      not (ModulePath.Raw.Set.is_empty explicit_children)
   end
 
   module Update = struct
@@ -396,7 +399,7 @@ module ImplicitModules = struct
     module Api = struct
       type t = {
         find: qualifier:Reference.t -> Value.t option;
-        update: qualifier:Reference.t -> f:(Value.t option -> Value.t) -> unit;
+        set: qualifier:Reference.t -> Value.t -> unit;
       }
 
       module Existence = struct
@@ -414,7 +417,7 @@ module ImplicitModules = struct
               None
       end
 
-      let update_module_paths ~module_path_updates { find; update; _ } =
+      let update_module_paths ~module_path_updates { find; set } =
         let process_module_path_update previous_existence module_path_update =
           let module_path = ModulePaths.Update.module_path module_path_update in
           match parent_qualifier_and_raw module_path with
@@ -432,20 +435,21 @@ module ImplicitModules = struct
                     ModulePath.Raw.Set.remove raw_child previous_explicit_children
               in
               (* update implicit_modules as a side effect *)
-              let () = update ~qualifier ~f:(fun _ -> next_explicit_children) in
+              let () = set ~qualifier next_explicit_children in
               (* As we fold the updates, track existince before-and-after *)
               let next_existence =
                 let open Existence in
                 Reference.Map.update previous_existence qualifier ~f:(function
                     | None ->
                         {
-                          existed_before = Value.is_importable previous_explicit_children;
-                          exists_after = Value.is_importable next_explicit_children;
+                          existed_before =
+                            Value.should_treat_as_importable previous_explicit_children;
+                          exists_after = Value.should_treat_as_importable next_explicit_children;
                         }
                     | Some { existed_before; _ } ->
                         {
                           existed_before;
-                          exists_after = Value.is_importable next_explicit_children;
+                          exists_after = Value.should_treat_as_importable next_explicit_children;
                         })
               in
               next_existence
@@ -474,8 +478,8 @@ module ImplicitModules = struct
 
       let to_api eager =
         let find ~qualifier = Reference.Table.find eager qualifier in
-        let update ~qualifier = Reference.Table.update eager qualifier in
-        Api.{ find; update }
+        let set ~qualifier data = Reference.Table.set eager ~key:qualifier ~data in
+        Api.{ find; set }
     end
   end
 end
@@ -566,7 +570,9 @@ module Layouts = struct
 
 
     let is_implicit_module { implicit_modules = { find; _ }; _ } ~qualifier =
-      find ~qualifier >>| ImplicitModules.Value.is_importable |> Option.value ~default:false
+      find ~qualifier
+      >>| ImplicitModules.Value.should_treat_as_importable
+      |> Option.value ~default:false
 
 
     let is_module_tracked layouts ~qualifier =
