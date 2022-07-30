@@ -385,10 +385,6 @@ module ExplicitModules = struct
             module_paths;
             all_module_paths;
           }
-
-
-      let update_module_paths ~configuration ~module_path_updates eager =
-        to_api eager |> Api.update_module_paths ~configuration ~module_path_updates
     end
   end
 end
@@ -503,10 +499,6 @@ module ImplicitModules = struct
           |> Option.value ~default:false
         in
         Api.{ find; update; is_implicit_module }
-
-
-      let update_module_paths ~module_path_updates eager =
-        to_api eager |> Api.update_module_paths ~module_path_updates
     end
   end
 end
@@ -555,69 +547,90 @@ end
 
 module Base = struct
   module Layouts = struct
-    type t = {
-      explicit_modules: ExplicitModules.Table.Eager.t;
-      implicit_modules: ImplicitModules.Table.Eager.t;
-    }
+    module Api = struct
+      type t = {
+        explicit_modules: ExplicitModules.Table.Api.t;
+        implicit_modules: ImplicitModules.Table.Api.t;
+        store: unit -> unit;
+      }
 
-    let create ~configuration module_paths =
-      let explicit_modules = ExplicitModules.Table.Eager.create ~configuration module_paths in
-      let implicit_modules = ImplicitModules.Table.Eager.create explicit_modules in
-      { explicit_modules; implicit_modules }
+      let update ~configuration ~artifact_paths { explicit_modules; implicit_modules; _ } =
+        let module_path_updates = ModulePaths.create_updates ~configuration artifact_paths in
+        let explicit_updates =
+          ExplicitModules.Table.Api.update_module_paths
+            ~configuration
+            ~module_path_updates
+            explicit_modules
+        in
+        let implicit_updates =
+          ImplicitModules.Table.Api.update_module_paths ~module_path_updates implicit_modules
+        in
+        let updates =
+          IncrementalUpdate.combine_explicits_and_implicits explicit_updates implicit_updates
+        in
+        Log.log
+          ~section:`Server
+          "Explicit Module Update: %a"
+          Sexp.pp
+          [%message (explicit_updates : ExplicitModules.Update.t list)];
+        Log.log
+          ~section:`Server
+          "Implicit Module Update: %a"
+          Sexp.pp
+          [%message (implicit_updates : ImplicitModules.Update.t list)];
+        updates
+    end
 
+    module Eager = struct
+      type t = {
+        explicit_modules: ExplicitModules.Table.Eager.t;
+        implicit_modules: ImplicitModules.Table.Eager.t;
+      }
 
-    let update ~configuration ~artifact_paths { explicit_modules; implicit_modules } =
-      let module_path_updates = ModulePaths.create_updates ~configuration artifact_paths in
-      let explicit_updates =
-        ExplicitModules.Table.Eager.update_module_paths
-          ~configuration
-          ~module_path_updates
-          explicit_modules
-      in
-      let implicit_updates =
-        ImplicitModules.Table.Eager.update_module_paths ~module_path_updates implicit_modules
-      in
-      let updates =
-        IncrementalUpdate.combine_explicits_and_implicits explicit_updates implicit_updates
-      in
-      Log.log
-        ~section:`Server
-        "Explicit Module Update: %a"
-        Sexp.pp
-        [%message (explicit_updates : ExplicitModules.Update.t list)];
-      Log.log
-        ~section:`Server
-        "Implicit Module Update: %a"
-        Sexp.pp
-        [%message (implicit_updates : ImplicitModules.Update.t list)];
-      updates
-
-
-    module Serializer = Memory.Serializer (struct
-      type nonrec t = t
-
-      module Serialized = struct
-        type t = (Reference.t * ModulePath.t list) list * (Reference.t * ModulePath.Raw.Set.t) list
-
-        let prefix = Prefix.make ()
-
-        let description = "Module tracker"
-      end
-
-      let serialize { explicit_modules; implicit_modules } =
-        Hashtbl.to_alist explicit_modules, Hashtbl.to_alist implicit_modules
+      let create ~configuration module_paths =
+        let explicit_modules = ExplicitModules.Table.Eager.create ~configuration module_paths in
+        let implicit_modules = ImplicitModules.Table.Eager.create explicit_modules in
+        { explicit_modules; implicit_modules }
 
 
-      let deserialize (module_data, implicits_data) =
-        {
-          explicit_modules = Reference.Table.of_alist_exn module_data;
-          implicit_modules = Reference.Table.of_alist_exn implicits_data;
-        }
-    end)
+      module Serializer = Memory.Serializer (struct
+        type nonrec t = t
+
+        module Serialized = struct
+          type t =
+            (Reference.t * ModulePath.t list) list * (Reference.t * ModulePath.Raw.Set.t) list
+
+          let prefix = Prefix.make ()
+
+          let description = "Module tracker"
+        end
+
+        let serialize { explicit_modules; implicit_modules } =
+          Hashtbl.to_alist explicit_modules, Hashtbl.to_alist implicit_modules
+
+
+        let deserialize (module_data, implicits_data) =
+          {
+            explicit_modules = Reference.Table.of_alist_exn module_data;
+            implicit_modules = Reference.Table.of_alist_exn implicits_data;
+          }
+      end)
+
+      let to_api ({ explicit_modules; implicit_modules } as layouts) =
+        Api.
+          {
+            explicit_modules = ExplicitModules.Table.Eager.to_api explicit_modules;
+            implicit_modules = ImplicitModules.Table.Eager.to_api implicit_modules;
+            store = (fun () -> Serializer.store layouts);
+          }
+
+
+      let load = Serializer.load
+    end
   end
 
   type t = {
-    layouts: Layouts.t;
+    layouts: Layouts.Eager.t;
     controls: EnvironmentControls.t;
     is_updatable: bool;
     get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
@@ -641,7 +654,7 @@ module Base = struct
     let timer = Timer.start () in
     let configuration = EnvironmentControls.configuration controls in
     let source_paths = ModulePaths.find_all configuration in
-    let layouts = Layouts.create ~configuration source_paths in
+    let layouts = Layouts.Eager.create ~configuration source_paths in
     let get_raw_code = load_raw_code ~configuration in
     let is_updatable = configuration_allows_update configuration in
     Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
@@ -652,7 +665,7 @@ module Base = struct
     let configuration = EnvironmentControls.configuration controls in
     let layouts =
       let module_paths = List.map ~f:fst module_path_code_pairs in
-      Layouts.create ~configuration module_paths
+      Layouts.Eager.create ~configuration module_paths
     in
     let in_memory_sources =
       let table = Reference.Table.create () in
@@ -686,20 +699,18 @@ module Base = struct
     assert_can_update tracker;
     let result =
       let configuration = EnvironmentControls.configuration controls in
-      Layouts.update ~configuration ~artifact_paths layouts
+      Layouts.Eager.to_api layouts |> Layouts.Api.update ~configuration ~artifact_paths
     in
     Statistics.performance ~name:"module tracker updated" ~timer ~phase_name:"Module tracking" ();
     result
 
 
   module Serializer = struct
-    module Layouts = Layouts.Serializer
-
-    let store_layouts { layouts; _ } = Layouts.store layouts
+    let store_layouts { layouts; _ } = Layouts.Eager.Serializer.store layouts
 
     let from_stored_layouts ~controls () =
       let configuration = EnvironmentControls.configuration controls in
-      let layouts = Layouts.load () in
+      let layouts = Layouts.Eager.load () in
       {
         layouts;
         controls;
@@ -708,19 +719,15 @@ module Base = struct
       }
   end
 
-  let read_only { layouts = { explicit_modules; implicit_modules }; controls; get_raw_code; _ } =
+  let read_only { layouts; controls; get_raw_code; _ } =
     let {
-      ExplicitModules.Table.Api.lookup_module_path;
-      is_explicit_module;
-      module_paths;
-      all_module_paths;
+      Layouts.Api.explicit_modules =
+        { lookup_module_path; is_explicit_module; module_paths; all_module_paths; _ };
+      implicit_modules = { is_implicit_module; _ };
       _;
     }
       =
-      ExplicitModules.Table.Eager.to_api explicit_modules
-    in
-    let { ImplicitModules.Table.Api.is_implicit_module; _ } =
-      ImplicitModules.Table.Eager.to_api implicit_modules
+      Layouts.Eager.to_api layouts
     in
     let lookup_module_path qualifier = lookup_module_path ~qualifier in
     let is_module_tracked qualifier =
