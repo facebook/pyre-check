@@ -97,6 +97,19 @@ async def write_json_rpc(
     await output_channel.write(f"Content-Length: {len(payload)}\r\n\r\n{payload}")
 
 
+async def write_json_rpc_ignore_connection_error(
+    output_channel: async_server_connection.TextWriter, response: json_rpc.JSONRPC
+) -> None:
+    """
+    Asynchronously write a JSON-RPC response to the given output channel, and ignore
+    any `ConnectionError` that occurred.
+    """
+    try:
+        write_json_rpc(output_channel, response)
+    except ConnectionError as error:
+        LOG.info(f"Ignoring connection error while writing JSON RPC. Error: {error}")
+
+
 def _parse_parameters(parameters: json_rpc.Parameters, target: Type[T]) -> T:
     """
     Parse the given JSON-RPC parameters into specified LSP parameters.

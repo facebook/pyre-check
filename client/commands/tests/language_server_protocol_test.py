@@ -13,6 +13,7 @@ import testslide
 from ... import json_rpc
 from ...tests import setup
 from ..async_server_connection import (
+    BytesWriter,
     create_memory_text_reader,
     MemoryBytesWriter,
     TextWriter,
@@ -39,9 +40,25 @@ from ..language_server_protocol import (
     TextDocumentSyncClientCapabilities,
     WindowClientCapabilities,
     write_json_rpc,
+    write_json_rpc_ignore_connection_error,
 )
 
 T = TypeVar("T")
+
+
+class ExceptionRaisingBytesWriter(BytesWriter):
+    """
+    A BytesWriter that always raises a given except when write is invoked.
+    """
+
+    def __init__(self, exception: Exception) -> None:
+        self.exception = exception
+
+    async def write(self, data: bytes) -> None:
+        raise self.exception
+
+    async def close(self) -> None:
+        pass
 
 
 class DocumentUriTest(testslide.TestCase):
@@ -139,6 +156,18 @@ class LSPInputOutputTest(testslide.TestCase):
                         "error": {"code": 42, "message": "derp"},
                     }
                 )
+            ),
+        )
+
+    @setup.async_test
+    async def test_write_json_rpc_ignore_connection_error(self) -> None:
+        # This invocation should not raise
+        write_json_rpc_ignore_connection_error(
+            TextWriter(ExceptionRaisingBytesWriter(ConnectionResetError())),
+            json_rpc.ErrorResponse(
+                id=None,
+                code=42,
+                message="dummy message",
             ),
         )
 

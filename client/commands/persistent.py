@@ -310,7 +310,7 @@ async def try_initialize(
         if initialized_notification.method == "shutdown":
             try:
                 await _wait_for_exit(input_channel, output_channel)
-            except (ConnectionError, json_rpc.ParseError) as error:
+            except json_rpc.ParseError as error:
                 # These errors can happen when the connection gets dropped unilaterally
                 # from the language client, which causes issue when we try to access
                 # the I/O channel.
@@ -332,7 +332,7 @@ async def try_initialize(
             initialization_options=initialize_parameters.initialization_options,
         )
     except json_rpc.JSONRPCException as json_rpc_error:
-        await lsp.write_json_rpc(
+        await lsp.write_json_rpc_ignore_connection_error(
             output_channel,
             json_rpc.ErrorResponse(
                 id=request.id if request is not None else None,
@@ -354,7 +354,7 @@ async def _read_lsp_request(
         message = await lsp.read_json_rpc(input_channel)
         yield message
     except json_rpc.JSONRPCException as json_rpc_error:
-        await lsp.write_json_rpc(
+        await lsp.write_json_rpc_ignore_connection_error(
             output_channel,
             json_rpc.ErrorResponse(
                 # pyre-ignore[16] - refinement doesn't work here for some reason
@@ -910,12 +910,12 @@ class PyreServer:
 
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> int:
         try:
-            await lsp.write_json_rpc(
+            await lsp.write_json_rpc_ignore_connection_error(
                 self.output_channel,
                 json_rpc.SuccessResponse(id=request_id, activity_key=None, result=None),
             )
             return await self.wait_for_exit()
-        except (ConnectionError, json_rpc.ParseError) as error:
+        except json_rpc.ParseError as error:
             # These errors can happen when the connection gets dropped unilaterally
             # from the language client, which causes issue when we try to access the
             # I/O channel.
@@ -1589,7 +1589,7 @@ async def _write_telemetry(
     activity_key: Optional[Dict[str, object]],
 ) -> None:
     if enabled:
-        await lsp.write_json_rpc(
+        await lsp.write_json_rpc_ignore_connection_error(
             output_channel,
             json_rpc.Request(
                 activity_key=activity_key,
