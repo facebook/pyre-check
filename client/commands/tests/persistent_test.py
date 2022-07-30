@@ -62,6 +62,7 @@ from ..persistent import (
     TypesQuery,
     uncovered_range_to_diagnostic,
 )
+from .language_server_protocol_test import ExceptionRaisingBytesWriter
 
 
 def _create_server_start_options_reader(
@@ -249,6 +250,94 @@ class PersistentTest(testslide.TestCase):
             input_channel, output_channel, _fake_option_reader()
         )
         self.assertIsInstance(result, InitializationExit)
+
+    @setup.async_test
+    async def test_try_initialize_exit__shutdown_without_exit(self) -> None:
+        input_channel = await _create_input_channel_with_requests(
+            [
+                json_rpc.Request(
+                    id=0,
+                    method="initialize",
+                    parameters=json_rpc.ByNameParameters(
+                        {
+                            "processId": 42,
+                            "rootUri": None,
+                            "capabilities": {},
+                        }
+                    ),
+                ),
+                json_rpc.Request(method="shutdown", parameters=None),
+            ]
+        )
+        output_channel = create_memory_text_writer()
+        result = await try_initialize(
+            input_channel, output_channel, _fake_option_reader()
+        )
+        self.assertIsInstance(result, InitializationExit)
+
+    @setup.async_test
+    async def test_server_exit(self) -> None:
+        server_state = ServerState()
+        noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())
+        input_channel = await _create_input_channel_with_requests(
+            [
+                json_rpc.Request(method="shutdown", parameters=None),
+                json_rpc.Request(method="exit", parameters=None),
+            ]
+        )
+        server = PyreServer(
+            input_channel=input_channel,
+            output_channel=create_memory_text_writer(),
+            state=server_state,
+            pyre_manager=noop_task_manager,
+            pyre_query_manager=noop_task_manager,
+        )
+
+        exit_code = await server.run()
+        self.assertEqual(exit_code, 0)
+
+    @setup.async_test
+    async def test_server_exit_gracefully_after_shutdown(self) -> None:
+        server_state = ServerState()
+        noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())
+        input_channel = await _create_input_channel_with_requests(
+            [
+                json_rpc.Request(method="shutdown", parameters=None),
+            ]
+        )
+        server = PyreServer(
+            # Feed only a shutdown request to input channel
+            input_channel=input_channel,
+            # Always rasing in the output channel
+            output_channel=TextWriter(
+                ExceptionRaisingBytesWriter(ConnectionResetError())
+            ),
+            state=server_state,
+            pyre_manager=noop_task_manager,
+            pyre_query_manager=noop_task_manager,
+        )
+
+        exit_code = await server.run()
+        self.assertEqual(exit_code, 0)
+
+    @setup.async_test
+    async def test_server_exit_gracefully_on_channel_closure(self) -> None:
+        server_state = ServerState()
+        noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())
+        server = PyreServer(
+            # Feed nothing to input channel
+            input_channel=create_memory_text_reader(""),
+            # Always rasing in the output channel
+            output_channel=TextWriter(
+                ExceptionRaisingBytesWriter(ConnectionResetError())
+            ),
+            state=server_state,
+            pyre_manager=noop_task_manager,
+            pyre_query_manager=noop_task_manager,
+        )
+
+        exit_code = await server.run()
+        self.assertEqual(exit_code, 0)
 
     @setup.async_test
     async def test_open_close(self) -> None:

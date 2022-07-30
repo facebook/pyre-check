@@ -310,14 +310,13 @@ async def try_initialize(
         if initialized_notification.method == "shutdown":
             try:
                 await _wait_for_exit(input_channel, output_channel)
-            except json_rpc.ParseError as error:
-                # These errors can happen when the connection gets dropped unilaterally
+            except lsp.ReadChannelClosedError:
+                # This error can happen when the connection gets closed unilaterally
                 # from the language client, which causes issue when we try to access
-                # the I/O channel.
-                # Since the language client has explicitly notified us it wants to
-                # shutdown at this point, it should be safe to just ignore the error
-                # and terminate the language server immediately.
-                LOG.info(f"Initialization connection dropped by LSP client: {error}")
+                # the input channel. This usually signals that the language client
+                # has exited, which implies that the language server should do that
+                # as well.
+                LOG.info("Initialization connection closed by LSP client")
             return InitializationExit()
         elif initialized_notification.method != "initialized":
             actual_message = json.dumps(initialized_notification.json())
@@ -909,21 +908,11 @@ class PyreServer:
         )
 
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> int:
-        try:
-            await lsp.write_json_rpc_ignore_connection_error(
-                self.output_channel,
-                json_rpc.SuccessResponse(id=request_id, activity_key=None, result=None),
-            )
-            return await self.wait_for_exit()
-        except json_rpc.ParseError as error:
-            # These errors can happen when the connection gets dropped unilaterally
-            # from the language client, which causes issue when we try to access the
-            # I/O channel.
-            # Since the language client has explicitly notified us it wants to
-            # shutdown at this point, it should be safe to just ignore the error and
-            # terminate the language server immediately.
-            LOG.info(f"Connection dropped by LSP client: {error}")
-            return commands.ExitCode.SUCCESS
+        await lsp.write_json_rpc_ignore_connection_error(
+            self.output_channel,
+            json_rpc.SuccessResponse(id=request_id, activity_key=None, result=None),
+        )
+        return await self.wait_for_exit()
 
     async def _run(self) -> int:
         while True:
@@ -1055,6 +1044,13 @@ class PyreServer:
             await self.pyre_manager.ensure_task_running()
             await self.pyre_query_manager.ensure_task_running()
             return await self._run()
+        except lsp.ReadChannelClosedError:
+            # This error can happen when the connection gets closed unilaterally
+            # from the language client, which causes issue when we try to access the
+            # input channel. This usually signals that the language client has exited,
+            # which implies that the language server should do that as well.
+            LOG.info("Connection closed by LSP client.")
+            return commands.ExitCode.SUCCESS
         finally:
             await self.pyre_manager.ensure_task_stop()
             await self.pyre_query_manager.ensure_task_stop()
