@@ -527,6 +527,7 @@ module Layouts = struct
     type t = {
       explicit_modules: ExplicitModules.Table.Api.t;
       implicit_modules: ImplicitModules.Table.Api.t;
+      store: unit -> unit;
     }
 
     let update ~configuration ~artifact_paths { explicit_modules; implicit_modules; _ } =
@@ -572,6 +573,9 @@ module Layouts = struct
 
     let module_paths { explicit_modules = { data; _ }; _ } =
       data () |> List.filter_map ~f:ExplicitModules.Value.module_path
+
+
+    let store { store; _ } = store ()
   end
 
   module Eager = struct
@@ -614,21 +618,23 @@ module Layouts = struct
         }
     end)
 
-    let to_api { explicit_modules; implicit_modules } =
+    let to_api ({ explicit_modules; implicit_modules } as layouts) =
       Api.
         {
           explicit_modules = ExplicitModules.Table.Eager.to_api explicit_modules;
           implicit_modules = ImplicitModules.Table.Eager.to_api implicit_modules;
+          store = (fun () -> Serializer.store layouts);
         }
-
-
-    let load = Serializer.load
   end
+
+  let create ~controls = Eager.create ~controls |> Eager.to_api
+
+  let load ~controls:_ = Eager.Serializer.load () |> Eager.to_api
 end
 
 module Base = struct
   type t = {
-    layouts: Layouts.Eager.t;
+    layouts: Layouts.Api.t;
     controls: EnvironmentControls.t;
     get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
   }
@@ -664,7 +670,7 @@ module Base = struct
   let create controls =
     Log.info "Building module tracker...";
     let timer = Timer.start () in
-    let layouts = Layouts.Eager.create ~controls in
+    let layouts = Layouts.create ~controls in
     let get_raw_code = make_get_raw_code ~controls in
     Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
     { layouts; controls; get_raw_code }
@@ -677,23 +683,22 @@ module Base = struct
     EnvironmentControls.assert_allow_updates controls;
     let result =
       let configuration = EnvironmentControls.configuration controls in
-      Layouts.Api.update (Layouts.Eager.to_api layouts) ~configuration ~artifact_paths
+      Layouts.Api.update layouts ~configuration ~artifact_paths
     in
     Statistics.performance ~name:"module tracker updated" ~timer ~phase_name:"Module tracking" ();
     result
 
 
   module Serializer = struct
-    let store_layouts { layouts; _ } = Layouts.Eager.Serializer.store layouts
+    let store_layouts { layouts; _ } = Layouts.Api.store layouts
 
     let from_stored_layouts ~controls () =
       let configuration = EnvironmentControls.configuration controls in
-      let layouts = Layouts.Eager.load () in
+      let layouts = Layouts.load ~controls in
       { layouts; controls; get_raw_code = load_raw_code ~configuration }
   end
 
   let read_only { layouts; controls; get_raw_code; _ } =
-    let layouts = Layouts.Eager.to_api layouts in
     let lookup_module_path qualifier = Layouts.Api.lookup_module_path layouts ~qualifier in
     let is_module_tracked qualifier =
       Layouts.Api.is_explicit_module layouts ~qualifier
