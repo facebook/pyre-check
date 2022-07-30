@@ -21,16 +21,6 @@ module PathLookup = struct
   [@@deriving show, sexp, compare]
 end
 
-module IncrementalUpdate = struct
-  type t =
-    | NewExplicit of Ast.ModulePath.t
-    | NewImplicit of Ast.Reference.t
-    | Delete of Reference.t
-  [@@deriving show, sexp, compare]
-
-  let equal = [%compare.equal: t]
-end
-
 module ReadOnly = struct
   type t = {
     lookup_module_path: Reference.t -> ModulePath.t option;
@@ -449,6 +439,48 @@ module ImplicitModules = struct
   end
 end
 
+module IncrementalUpdate = struct
+  type t =
+    | NewExplicit of Ast.ModulePath.t
+    | NewImplicit of Ast.Reference.t
+    | Delete of Reference.t
+  [@@deriving show, sexp, compare]
+
+  let equal = [%compare.equal: t]
+
+  let combine_explicites_and_implicits explicit_updates implicit_updates =
+    (* Explicit updates should shadow implicit updates *)
+    let explicitly_modified_qualifiers = Reference.Hash_set.create () in
+    let explicits =
+      let process_explicit_update = function
+        | ExplicitModules.Update.New ({ ModulePath.qualifier; _ } as module_path)
+        | ExplicitModules.Update.Changed ({ ModulePath.qualifier; _ } as module_path) ->
+            Hash_set.add explicitly_modified_qualifiers qualifier;
+            NewExplicit module_path
+        | ExplicitModules.Update.Delete qualifier ->
+            Hash_set.add explicitly_modified_qualifiers qualifier;
+            Delete qualifier
+      in
+      List.map explicit_updates ~f:process_explicit_update
+    in
+    let implicits =
+      let process_implicit_update = function
+        | ImplicitModules.Update.New qualifier ->
+            if Hash_set.mem explicitly_modified_qualifiers qualifier then
+              None
+            else
+              Some (NewImplicit qualifier)
+        | ImplicitModules.Update.Delete qualifier ->
+            if Hash_set.mem explicitly_modified_qualifiers qualifier then
+              None
+            else
+              Some (Delete qualifier)
+      in
+      List.filter_map implicit_updates ~f:process_implicit_update
+    in
+    List.append explicits implicits
+end
+
 module Base = struct
   module Layouts = struct
     type t = {
@@ -476,37 +508,8 @@ module Base = struct
         ExplicitModules.Table.update ~configuration ~module_path_updates explicit_modules
       in
       let implicit_updates = ImplicitModules.Table.update ~module_path_updates implicit_modules in
-      (* Explicit updates should shadow implicit updates *)
       let updates =
-        let explicitly_modified_qualifiers = Reference.Hash_set.create () in
-        let explicits =
-          let process_explicit_update = function
-            | ExplicitModules.Update.New ({ ModulePath.qualifier; _ } as module_path)
-            | ExplicitModules.Update.Changed ({ ModulePath.qualifier; _ } as module_path) ->
-                Hash_set.add explicitly_modified_qualifiers qualifier;
-                IncrementalUpdate.NewExplicit module_path
-            | ExplicitModules.Update.Delete qualifier ->
-                Hash_set.add explicitly_modified_qualifiers qualifier;
-                IncrementalUpdate.Delete qualifier
-          in
-          List.map explicit_updates ~f:process_explicit_update
-        in
-        let implicits =
-          let process_implicit_update = function
-            | ImplicitModules.Update.New qualifier ->
-                if Hash_set.mem explicitly_modified_qualifiers qualifier then
-                  None
-                else
-                  Some (IncrementalUpdate.NewImplicit qualifier)
-            | ImplicitModules.Update.Delete qualifier ->
-                if Hash_set.mem explicitly_modified_qualifiers qualifier then
-                  None
-                else
-                  Some (IncrementalUpdate.Delete qualifier)
-          in
-          List.filter_map implicit_updates ~f:process_implicit_update
-        in
-        List.append explicits implicits
+        IncrementalUpdate.combine_explicites_and_implicits explicit_updates implicit_updates
       in
       Log.log
         ~section:`Server
