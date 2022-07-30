@@ -5,9 +5,15 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+type raw_code = string
+
 type t
 
-val create : ?populate_call_graph:bool -> Configuration.Analysis.t -> t
+val create
+  :  ?populate_call_graph:bool ->
+  ?in_memory_sources:(Ast.ModulePath.t * string) list ->
+  Configuration.Analysis.t ->
+  t
 
 val create_for_overlay : t -> t
 
@@ -16,6 +22,10 @@ val configuration : t -> Configuration.Analysis.t
 val track_dependencies : t -> bool
 
 val debug : t -> bool
+
+val in_memory_sources : t -> (Ast.ModulePath.t * string) list option
+
+val assert_allow_updates : t -> unit
 
 module PythonVersionInfo : sig
   type t = {

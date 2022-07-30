@@ -5,12 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+type raw_code = string
+
 type t = {
   configuration: Configuration.Analysis.t;
   populate_call_graph: bool;
+  in_memory_sources: (Ast.ModulePath.t * raw_code) list option;
 }
 
-let create ?(populate_call_graph = false) configuration = { configuration; populate_call_graph }
+let create ?(populate_call_graph = false) ?in_memory_sources configuration =
+  { configuration; populate_call_graph; in_memory_sources }
+
 
 let create_for_overlay parent = { parent with populate_call_graph = false }
 
@@ -25,6 +30,16 @@ let track_dependencies { configuration = { Configuration.Analysis.incremental_st
 
 
 let debug { configuration = { Configuration.Analysis.debug; _ }; _ } = debug
+
+let in_memory_sources { in_memory_sources; _ } = in_memory_sources
+
+let assert_allow_updates controls =
+  if not (track_dependencies controls) then
+    failwith "Environments without dependency tracking cannot be updated";
+  if Option.is_some (in_memory_sources controls) then
+    failwith "Environments created using in-memory sources cannot be updated";
+  ()
+
 
 module PythonVersionInfo = struct
   type t = {

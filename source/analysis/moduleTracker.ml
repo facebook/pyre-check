@@ -624,7 +624,6 @@ module Base = struct
   type t = {
     layouts: Layouts.Eager.t;
     controls: EnvironmentControls.t;
-    is_updatable: bool;
     get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
   }
 
@@ -635,63 +634,51 @@ module Base = struct
         Error (Format.asprintf "Cannot open file `%a` due to: %s" ArtifactPath.pp path error)
 
 
-  let configuration_allows_update { Configuration.Analysis.incremental_style; _ } =
-    match incremental_style with
-    | Configuration.Analysis.Shallow -> false
-    | Configuration.Analysis.FineGrained -> true
+  let make_module_paths ~configuration ~controls =
+    match EnvironmentControls.in_memory_sources controls with
+    | None -> ModulePaths.find_all configuration
+    | Some in_memory_sources -> List.map in_memory_sources ~f:fst
+
+
+  let make_get_raw_code ~configuration ~controls =
+    match EnvironmentControls.in_memory_sources controls with
+    | None -> load_raw_code ~configuration
+    | Some in_memory_sources ->
+        let in_memory_sources =
+          let table = Reference.Table.create () in
+          let add_pair (module_path, code) =
+            Reference.Table.set table ~key:(ModulePath.qualifier module_path) ~data:code
+          in
+          List.iter in_memory_sources ~f:add_pair;
+          table
+        in
+        let get_raw_code ({ ModulePath.qualifier; _ } as module_path) =
+          match Reference.Table.find in_memory_sources qualifier with
+          | Some code -> Ok code
+          | None -> load_raw_code ~configuration module_path
+        in
+        get_raw_code
 
 
   let create controls =
     Log.info "Building module tracker...";
     let timer = Timer.start () in
     let configuration = EnvironmentControls.configuration controls in
-    let source_paths = ModulePaths.find_all configuration in
-    let layouts = Layouts.Eager.create ~configuration source_paths in
-    let get_raw_code = load_raw_code ~configuration in
-    let is_updatable = configuration_allows_update configuration in
+    let module_paths = make_module_paths ~configuration ~controls in
+    let layouts = Layouts.Eager.create ~configuration module_paths in
+    let get_raw_code = make_get_raw_code ~configuration ~controls in
     Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
-    { layouts; controls; is_updatable; get_raw_code }
-
-
-  let create_for_testing controls module_path_code_pairs =
-    let configuration = EnvironmentControls.configuration controls in
-    let layouts =
-      let module_paths = List.map ~f:fst module_path_code_pairs in
-      Layouts.Eager.create ~configuration module_paths
-    in
-    let in_memory_sources =
-      let table = Reference.Table.create () in
-      let add_pair (module_path, code) =
-        Reference.Table.set table ~key:(ModulePath.qualifier module_path) ~data:code
-      in
-      List.iter module_path_code_pairs ~f:add_pair;
-      table
-    in
-    let get_raw_code ({ ModulePath.qualifier; _ } as module_path) =
-      match Reference.Table.find in_memory_sources qualifier with
-      | Some code -> Ok code
-      | None -> load_raw_code ~configuration module_path
-    in
-    { layouts; controls; is_updatable = false; get_raw_code }
+    { layouts; controls; get_raw_code }
 
 
   let controls { controls; _ } = controls
 
-  let assert_can_update { controls; is_updatable; _ } =
-    if not (EnvironmentControls.track_dependencies controls) then
-      failwith "Environments without dependency tracking cannot be updated";
-    if not is_updatable then
-      failwith
-        "Environments created via create_for_testing with in-memory sources cannot be updated";
-    ()
-
-
-  let update ({ layouts; controls; _ } as tracker) ~artifact_paths =
+  let update { layouts; controls; _ } ~artifact_paths =
     let timer = Timer.start () in
-    assert_can_update tracker;
+    EnvironmentControls.assert_allow_updates controls;
     let result =
       let configuration = EnvironmentControls.configuration controls in
-      Layouts.Eager.to_api layouts |> Layouts.Api.update ~configuration ~artifact_paths
+      Layouts.Api.update (Layouts.Eager.to_api layouts) ~configuration ~artifact_paths
     in
     Statistics.performance ~name:"module tracker updated" ~timer ~phase_name:"Module tracking" ();
     result
@@ -703,12 +690,7 @@ module Base = struct
     let from_stored_layouts ~controls () =
       let configuration = EnvironmentControls.configuration controls in
       let layouts = Layouts.Eager.load () in
-      {
-        layouts;
-        controls;
-        is_updatable = configuration_allows_update configuration;
-        get_raw_code = load_raw_code ~configuration;
-      }
+      { layouts; controls; get_raw_code = load_raw_code ~configuration }
   end
 
   let read_only { layouts; controls; get_raw_code; _ } =

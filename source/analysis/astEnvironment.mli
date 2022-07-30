@@ -72,8 +72,6 @@ val controls : t -> EnvironmentControls.t
 
 val create : EnvironmentControls.t -> t
 
-val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * string) list -> t
-
 (* Load and store the environment to and from saved-state *)
 
 val load : EnvironmentControls.t -> t

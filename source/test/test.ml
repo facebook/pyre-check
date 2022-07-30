@@ -2736,51 +2736,51 @@ module ScratchProject = struct
         let log_directory = bracket_tmpdir context in
         local_root, external_root, log_directory
     in
-    let controls =
-      Configuration.Analysis.create
-        ~local_root
-        ~source_paths:[SearchPath.Root local_root]
-        ~search_paths:[SearchPath.Root external_root]
-        ~log_directory
-        ~filter_directories:[local_root]
-        ~ignore_all_errors:[external_root]
-        ~incremental_style
-        ~constraint_solving_style
-        ~show_error_traces
-        ~parallel:false
-        ?strict
-        ?debug
-        ()
-      |> EnvironmentControls.create ~populate_call_graph
-    in
     let external_sources =
       if include_typeshed_stubs then
         typeshed_stubs ~include_helper_builtins () @ external_sources
       else
         external_sources
     in
-    let errors_environment =
+    let controls =
+      let configuration =
+        Configuration.Analysis.create
+          ~local_root
+          ~source_paths:[SearchPath.Root local_root]
+          ~search_paths:[SearchPath.Root external_root]
+          ~log_directory
+          ~filter_directories:[local_root]
+          ~ignore_all_errors:[external_root]
+          ~incremental_style
+          ~constraint_solving_style
+          ~show_error_traces
+          ~parallel:false
+          ?strict
+          ?debug
+          ()
+      in
       if in_memory then
-        let to_module_path_code_pair (relative, content) ~is_external =
-          let code = trim_extra_indentation content in
-          let module_path = ModulePath.create_for_testing ~relative ~is_external ~priority:1 in
-          module_path, code
+        let in_memory_sources =
+          let to_in_memory_source (relative, content) ~is_external =
+            let code = trim_extra_indentation content in
+            let module_path = ModulePath.create_for_testing ~relative ~is_external ~priority:1 in
+            module_path, code
+          in
+          List.map sources ~f:(to_in_memory_source ~is_external:false)
+          @ List.map external_sources ~f:(to_in_memory_source ~is_external:true)
         in
-        let module_path_code_pairs =
-          List.map sources ~f:(to_module_path_code_pair ~is_external:false)
-          @ List.map external_sources ~f:(to_module_path_code_pair ~is_external:true)
-        in
-        ErrorsEnvironment.create_for_testing controls module_path_code_pairs
+        EnvironmentControls.create ~populate_call_graph ~in_memory_sources configuration
       else
         let add_source ~root (relative, content) =
           let content = trim_extra_indentation content in
           let file = File.create ~content (PyrePath.create_relative ~root ~relative) in
           File.write file
         in
-        List.iter sources ~f:(add_source ~root:local_root);
-        List.iter external_sources ~f:(add_source ~root:external_root);
-        ErrorsEnvironment.create controls
+        let () = List.iter sources ~f:(add_source ~root:local_root) in
+        let () = List.iter external_sources ~f:(add_source ~root:external_root) in
+        EnvironmentControls.create ~populate_call_graph configuration
     in
+    let errors_environment = ErrorsEnvironment.create controls in
     let () =
       let ast_environment = ErrorsEnvironment.ast_environment errors_environment in
       (* Clean shared memory up before the test *)

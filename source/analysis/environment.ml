@@ -42,8 +42,6 @@ module PreviousEnvironment = struct
 
     val create : EnvironmentControls.t -> t
 
-    val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * string) list -> t
-
     val ast_environment : t -> AstEnvironment.t
 
     val read_only : t -> ReadOnly.t
@@ -185,8 +183,6 @@ module EnvironmentTable = struct
     type t
 
     val create : EnvironmentControls.t -> t
-
-    val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * string) list -> t
 
     val ast_environment : t -> AstEnvironment.t
 
@@ -389,11 +385,6 @@ module EnvironmentTable = struct
 
 
       let create controls = In.PreviousEnvironment.create controls |> from_upstream_environment
-
-      let create_for_testing controls module_path_code_pairs =
-        In.PreviousEnvironment.create_for_testing controls module_path_code_pairs
-        |> from_upstream_environment
-
 
       let ast_environment { upstream_environment; _ } =
         In.PreviousEnvironment.ast_environment upstream_environment

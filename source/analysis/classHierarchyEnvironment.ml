@@ -226,10 +226,6 @@ type t = { edges: Edges.t }
 
 let create controls = { edges = Edges.create controls }
 
-let create_for_testing controls module_path_code_pairs =
-  { edges = Edges.create_for_testing controls module_path_code_pairs }
-
-
 let store { edges } = Edges.store edges
 
 let load controls = { edges = Edges.load controls }

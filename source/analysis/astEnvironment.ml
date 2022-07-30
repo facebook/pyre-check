@@ -522,10 +522,6 @@ module Base = struct
 
   let create controls = ModuleTracker.create controls |> from_module_tracker
 
-  let create_for_testing controls module_path_code_pairs =
-    ModuleTracker.create_for_testing controls module_path_code_pairs |> from_module_tracker
-
-
   let load controls =
     ModuleTracker.Serializer.from_stored_layouts ~controls () |> from_module_tracker
 

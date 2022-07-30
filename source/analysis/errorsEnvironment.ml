@@ -251,7 +251,12 @@ end
 
 let create controls =
   let timer = Timer.start () in
-  EnvironmentControls.configuration controls |> Configuration.Analysis.validate_paths;
+  (* Validate paths at creation, but only if the sources are not in memory *)
+  let () =
+    match EnvironmentControls.in_memory_sources controls with
+    | Some _ -> ()
+    | None -> EnvironmentControls.configuration controls |> Configuration.Analysis.validate_paths
+  in
   Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
   Log.info "Creating environment...";
   let environment = create controls in

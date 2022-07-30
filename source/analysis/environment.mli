@@ -41,8 +41,6 @@ module PreviousEnvironment : sig
 
     val create : EnvironmentControls.t -> t
 
-    val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * string) list -> t
-
     val ast_environment : t -> AstEnvironment.t
 
     val read_only : t -> ReadOnly.t
@@ -176,8 +174,6 @@ module EnvironmentTable : sig
     type t
 
     val create : EnvironmentControls.t -> t
-
-    val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * string) list -> t
 
     val ast_environment : t -> AstEnvironment.t
 

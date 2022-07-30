@@ -149,8 +149,6 @@ type t
 
 val create : EnvironmentControls.t -> t
 
-val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * string) list -> t
-
 val ast_environment : t -> AstEnvironment.t
 
 val controls : t -> EnvironmentControls.t

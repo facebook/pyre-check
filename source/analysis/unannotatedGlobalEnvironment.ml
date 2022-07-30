@@ -1033,15 +1033,6 @@ module Base = struct
     { ast_environment; from_read_only_upstream }
 
 
-  let create_for_testing controls module_path_code_pairs =
-    let ast_environment = AstEnvironment.create_for_testing controls module_path_code_pairs in
-    let from_read_only_upstream =
-      AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
-    in
-    FromReadOnlyUpstream.cold_start from_read_only_upstream;
-    { ast_environment; from_read_only_upstream }
-
-
   let update_this_and_all_preceding_environments
       { ast_environment; from_read_only_upstream }
       ~scheduler

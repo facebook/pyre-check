@@ -52,8 +52,6 @@ type t
 
 val create : EnvironmentControls.t -> t
 
-val create_for_testing : EnvironmentControls.t -> (Ast.ModulePath.t * raw_code) list -> t
-
 (* This function returns all SourcePaths that are tracked, including the shadowed ones. *)
 val all_module_paths : t -> Ast.ModulePath.t list
 
