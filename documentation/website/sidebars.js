@@ -157,7 +157,8 @@ module.exports = {
           'fb/pysa-sandcastle-internals',
           'fb/pysa-oncall-runbook',
           'fb/review-tma-system-coverage',
-          'fb/pysa-tasks-backlog'
+          'fb/pysa-tasks-backlog',
+          'fb/pysa-github-sync'
         ],
       },
     ]),
