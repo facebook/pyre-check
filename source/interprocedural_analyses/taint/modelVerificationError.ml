@@ -338,7 +338,7 @@ let description error =
           model_query_name
       in
       let strings = List.map models ~f:(fun model -> Format.sprintf "\"%s\"; " model) in
-      starting_string ^ List.fold strings ~init:"" ~f:( ^ ) ^ "]"
+      List.fold strings ~init:starting_string ~f:( ^ ) ^ "]"
   | UnexpectedModelsArePresent { model_query_name; models } ->
       let starting_string =
         Format.sprintf
@@ -346,7 +346,7 @@ let description error =
           model_query_name
       in
       let strings = List.map models ~f:(fun model -> Format.sprintf "\"%s\"; " model) in
-      starting_string ^ List.fold strings ~init:"" ~f:( ^ ) ^ "]"
+      List.fold strings ~init:starting_string ~f:( ^ ) ^ "]"
 
 
 let code { kind; _ } =

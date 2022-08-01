@@ -13,7 +13,7 @@ ModelQuery(
 )
 
 ModelQuery(
-  name = "get_model_query_parameters__test2_source",
+  name = "get_model_query_parameters_test2_source",
   find = "functions",
   where = [
     name.matches("test2_")
@@ -30,7 +30,7 @@ ModelQuery(
 
 
 ModelQuery(
-  name = "get_model_query_parameters__test3_source",
+  name = "get_model_query_parameters_test3_source",
   find = "functions",
   where = [
     name.matches("test3_")
