@@ -1385,7 +1385,10 @@ class PyreQueryHandlerTest(testslide.TestCase):
             },
         )
         self.assertEqual(
-            memory_bytes_writer.items(), [b'["Query", "types(\'test.py\')"]\n']
+            memory_bytes_writer.items(),
+            [
+                b'["QueryWithOverlay", {"query_text": "types(\'test.py\')", "overlay_id": null}]\n'
+            ],
         )
 
     @setup.async_test
@@ -1443,11 +1446,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     strict_default=strict,
                     socket_path=Path("fake_socket_path"),
                     expression_level_coverage_enabled=False,
+                    consume_unsaved_changes_enabled=False,
                 )
             self.assertEqual(len(memory_bytes_writer.items()), 1)
             self.assertTrue(
                 memory_bytes_writer.items()[0].startswith(
-                    b'["Query", "modules_of_path('
+                    b'["QueryWithOverlay", {"query_text": "modules_of_path('
                 )
             )
             self.assertTrue(result is not None)
@@ -1469,6 +1473,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 strict_default=False,
                 socket_path=Path("fake_socket_path"),
                 expression_level_coverage_enabled=False,
+                consume_unsaved_changes_enabled=False,
             )
         self.assertTrue(result is None)
 
@@ -1494,6 +1499,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     strict_default=strict,
                     socket_path=Path("fake_socket_path"),
                     expression_level_coverage_enabled=False,
+                    consume_unsaved_changes_enabled=False,
                 )
             self.assertTrue(result is not None)
             self.assertEqual(len(result.uncovered_ranges), 0)
@@ -1514,6 +1520,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 strict_default=False,
                 socket_path=Path("fake_socket_path"),
                 expression_level_coverage_enabled=False,
+                consume_unsaved_changes_enabled=False,
             )
         self.assertTrue(result is not None)
         self.assertEqual(result.covered_percent, 0.0)
@@ -1547,11 +1554,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     strict_default=strict,
                     socket_path=Path("fake_socket_path"),
                     expression_level_coverage_enabled=True,
+                    consume_unsaved_changes_enabled=False,
                 )
             self.assertEqual(len(memory_bytes_writer.items()), 2)
             self.assertTrue(
                 memory_bytes_writer.items()[0].startswith(
-                    b'["Query", "modules_of_path('
+                    b'["QueryWithOverlay", {"query_text": "modules_of_path('
                 )
             )
             self.assertTrue(result is not None)
@@ -1583,11 +1591,12 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     strict_default=strict,
                     socket_path=Path("fake_socket_path"),
                     expression_level_coverage_enabled=True,
+                    consume_unsaved_changes_enabled=False,
                 )
             self.assertEqual(len(memory_bytes_writer.items()), 2)
             self.assertTrue(
                 memory_bytes_writer.items()[0].startswith(
-                    b'["Query", "modules_of_path('
+                    b'["QueryWithOverlay", {"query_text": "modules_of_path('
                 )
             )
             self.assertTrue(result is not None)
@@ -1611,6 +1620,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 strict_default=False,
                 socket_path=Path("fake_socket_path"),
                 expression_level_coverage_enabled=True,
+                consume_unsaved_changes_enabled=False,
             )
         self.assertTrue(result is None)
 
@@ -1636,6 +1646,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     strict_default=strict,
                     socket_path=Path("fake_socket_path"),
                     expression_level_coverage_enabled=True,
+                    consume_unsaved_changes_enabled=False,
                 )
             self.assertTrue(result is not None)
             self.assertEqual(len(result.uncovered_ranges), 0)
@@ -1658,6 +1669,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 strict_default=False,
                 socket_path=Path("fake_socket_path"),
                 expression_level_coverage_enabled=True,
+                consume_unsaved_changes_enabled=False,
             )
         self.assertTrue(result is not None)
         self.assertEqual(result.covered_percent, 100.0)
@@ -1715,13 +1727,14 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 ),
                 socket_path=Path("fake_socket_path"),
                 enabled_telemetry_event=False,
+                consume_unsaved_changes_enabled=False,
             )
 
         self.assertEqual(
             memory_bytes_writer.items(),
             [
-                b'["Query", "location_of_definition(path=\'bar.py\','
-                b' line=42, column=10)"]\n'
+                b'["QueryWithOverlay", {"query_text": "location_of_definition(path=\'bar.py\','
+                b' line=42, column=10)", "overlay_id": null}]\n'
             ],
         )
         self.assertEqual(len(client_output_writer.items()), 1)
@@ -1772,6 +1785,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 ),
                 socket_path=Path("fake_socket_path"),
                 enabled_telemetry_event=False,
+                consume_unsaved_changes_enabled=False,
             )
 
         self.assertEqual(len(client_output_writer.items()), 1)
@@ -1844,13 +1858,14 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     position=lsp.Position(line=42, character=10),
                 ),
                 socket_path=Path("fake_socket_path"),
+                consume_unsaved_changes_enabled=False,
             )
 
         self.assertEqual(
             memory_bytes_writer.items(),
             [
-                b'["Query", "find_references(path=\'bar.py\','
-                b' line=42, column=10)"]\n'
+                b'["QueryWithOverlay", {"query_text": "find_references(path=\'bar.py\','
+                b' line=42, column=10)", "overlay_id": null}]\n'
             ],
         )
         self.assertEqual(len(client_output_writer.items()), 1)
@@ -1909,6 +1924,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                     position=lsp.Position(line=42, character=10),
                 ),
                 socket_path=Path("fake_socket_path"),
+                consume_unsaved_changes_enabled=False,
             )
 
         self.assertEqual(len(client_output_writer.items()), 1)

@@ -69,7 +69,26 @@ def _print_help_message() -> None:
     log.stdout.write(HELP_MESSAGE)
 
 
-def parse_query_response_json(response_json: object) -> Response:
+def _parse_query_with_overlay_response_json(response_json: object) -> Response:
+    if (
+        isinstance(response_json, list)
+        and len(response_json) > 1
+        and response_json[0] == "QueryWithOverlay"
+    ):
+        return Response(response_json[1])
+    raise InvalidQueryResponse(f"Unexpected JSON response from server: {response_json}")
+
+
+def parse_query_with_overlay_response(text: str) -> Response:
+    try:
+        response_json = json.loads(text)
+        return _parse_query_with_overlay_response_json(response_json)
+    except json.JSONDecodeError as decode_error:
+        message = f"Cannot parse response as JSON: {decode_error}"
+        raise InvalidQueryResponse(message) from decode_error
+
+
+def _parse_query_response_json(response_json: object) -> Response:
     if (
         isinstance(response_json, list)
         and len(response_json) > 1
@@ -82,7 +101,7 @@ def parse_query_response_json(response_json: object) -> Response:
 def parse_query_response(text: str) -> Response:
     try:
         response_json = json.loads(text)
-        return parse_query_response_json(response_json)
+        return _parse_query_response_json(response_json)
     except json.JSONDecodeError as decode_error:
         message = f"Cannot parse response as JSON: {decode_error}"
         raise InvalidQueryResponse(message) from decode_error

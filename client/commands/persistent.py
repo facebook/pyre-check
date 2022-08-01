@@ -557,7 +557,7 @@ async def _receive_response(
     input_channel: connection.TextReader,
 ) -> Optional[query.Response]:
     async with _read_server_response(input_channel) as raw_response:
-        LOG.debug(f"Received `{log.truncate(raw_response, 400)}`")
+        LOG.info(f"Received `{log.truncate(raw_response, 400)}`")
         try:
             return query.parse_query_response(raw_response)
         except query.InvalidQueryResponse as exception:
@@ -569,7 +569,9 @@ async def _receive_response(
 
 async def _consume_and_drop_response(input_channel: connection.TextReader) -> None:
     async with _read_server_response(input_channel) as raw_response:
-        LOG.debug(f"Received `{log.truncate(raw_response, 400)}`")
+        LOG.info(
+            f"Received and will drop response: `{log.truncate(raw_response, 400)}`"
+        )
         return None
 
 
@@ -1287,13 +1289,20 @@ class PyreQueryHandler(connection.BackgroundTask):
             )
             return None
 
+    # TODO:T126924773 Implement logic to not ALWAYS send overlay for certain requests - there are cases overlay is non-existent.
     async def _send_query_and_interpret_response(
         self,
         query_text: str,
         socket_path: Path,
         response_type: Type[_T],
+        overlay_id: Optional[str] = None,
     ) -> Optional[_T]:
-        json_query = json.dumps(["Query", query_text])
+        json_query_with_overlay = (
+            {"query_text": query_text, "overlay_id": overlay_id}
+            if overlay_id
+            else {"query_text": query_text, "overlay_id": None}
+        )
+        json_query = json.dumps(["QueryWithOverlay", json_query_with_overlay])
         query_response = await self._request(json_query, socket_path)
         if query_response is None:
             return None
@@ -1340,19 +1349,22 @@ class PyreQueryHandler(connection.BackgroundTask):
         self,
         path: Path,
         socket_path: Path,
+        consume_unsaved_changes_enabled: bool,
     ) -> Optional[QueryModulesOfPathResponse]:
+        overlay_id = str(path) if consume_unsaved_changes_enabled else None
         return await self._send_query_and_interpret_response(
             f"modules_of_path('{path}')",
             socket_path,
             QueryModulesOfPathResponse,
+            overlay_id,
         )
 
     async def _query_is_typechecked(
-        self,
-        path: Path,
-        socket_path: Path,
+        self, path: Path, socket_path: Path, consume_unsaved_changes_enabled: bool
     ) -> Optional[bool]:
-        response = await self._query_modules_of_path(path, socket_path)
+        response = await self._query_modules_of_path(
+            path, socket_path, consume_unsaved_changes_enabled
+        )
         if response is None:
             return None
         else:
@@ -1364,13 +1376,19 @@ class PyreQueryHandler(connection.BackgroundTask):
         strict_default: bool,
         socket_path: Path,
         expression_level_coverage_enabled: bool,
+        consume_unsaved_changes_enabled: bool,
     ) -> Optional[lsp.TypeCoverageResponse]:
-        is_typechecked = await self._query_is_typechecked(path, socket_path)
+        is_typechecked = await self._query_is_typechecked(
+            path, socket_path, consume_unsaved_changes_enabled
+        )
         if is_typechecked is None:
             return None
         elif expression_level_coverage_enabled:
-            query_text = f"expression_level_coverage('{path}')"
-            json_query = json.dumps(["Query", query_text])
+            query_text = {
+                "query_text": f"expression_level_coverage('{path}')",
+                "overlay_id": None,
+            }
+            json_query = json.dumps(["QueryWithOverlay", query_text])
             query_response = await self._request(json_query, socket_path)
             if query_response is None:
                 return None
@@ -1395,9 +1413,14 @@ class PyreQueryHandler(connection.BackgroundTask):
         strict_default: bool,
         socket_path: Path,
         expression_level_coverage_enabled: bool,
+        consume_unsaved_changes_enabled: bool,
     ) -> None:
         type_coverage_result = await self._query_type_coverage(
-            query.path, strict_default, socket_path, expression_level_coverage_enabled
+            query.path,
+            strict_default,
+            socket_path,
+            expression_level_coverage_enabled,
+            consume_unsaved_changes_enabled,
         )
         if type_coverage_result is not None:
             await lsp.write_json_rpc(
@@ -1414,14 +1437,16 @@ class PyreQueryHandler(connection.BackgroundTask):
         query: DefinitionLocationQuery,
         socket_path: Path,
         enabled_telemetry_event: bool,
+        consume_unsaved_changes_enabled: bool,
     ) -> None:
         path_string = f"'{query.path}'"
         query_text = (
             f"location_of_definition(path={path_string},"
             f" line={query.position.line}, column={query.position.character})"
         )
+        overlay_id = str(query.path) if consume_unsaved_changes_enabled else None
         definition_response = await self._send_query_and_interpret_response(
-            query_text, socket_path, DefinitionLocationResponse
+            query_text, socket_path, DefinitionLocationResponse, overlay_id
         )
         definitions = (
             [
@@ -1461,15 +1486,19 @@ class PyreQueryHandler(connection.BackgroundTask):
         )
 
     async def _handle_find_all_references_query(
-        self, query: ReferencesQuery, socket_path: Path
+        self,
+        query: ReferencesQuery,
+        socket_path: Path,
+        consume_unsaved_changes_enabled: bool,
     ) -> None:
         path_string = f"'{query.path}'"
         query_text = (
             f"find_references(path={path_string},"
             f" line={query.position.line}, column={query.position.character})"
         )
+        overlay_id = str(query.path) if consume_unsaved_changes_enabled else None
         find_all_references_response = await self._send_query_and_interpret_response(
-            query_text, socket_path, ReferencesResponse
+            query_text, socket_path, ReferencesResponse, overlay_id
         )
         reference_locations = (
             [
@@ -1523,24 +1552,37 @@ class PyreQueryHandler(connection.BackgroundTask):
             and server_start_options.ide_features.is_expression_level_coverage_enabled()
         )
         enabled_telemetry_event = server_start_options.enabled_telemetry_event
+        consume_unsaved_changes_enabled = (
+            server_start_options.ide_features is not None
+            and server_start_options.ide_features.is_consume_unsaved_changes_enabled()
+        )
         while True:
             query = await self.state.queries.get()
             if isinstance(query, TypesQuery):
                 if type_queries_enabled:
-                    await self._update_types_for_paths([query.path], socket_path)
+                    await self._update_types_for_paths(
+                        [query.path],
+                        socket_path,
+                    )
             elif isinstance(query, TypeCoverageQuery):
                 await self._handle_type_coverage_query(
                     query,
                     strict_default,
                     socket_path,
                     expression_level_coverage_enabled,
+                    consume_unsaved_changes_enabled,
                 )
             elif isinstance(query, DefinitionLocationQuery):
                 await self._query_and_send_definition_location(
-                    query, socket_path, enabled_telemetry_event
+                    query,
+                    socket_path,
+                    enabled_telemetry_event,
+                    consume_unsaved_changes_enabled,
                 )
             elif isinstance(query, ReferencesQuery):
-                await self._handle_find_all_references_query(query, socket_path)
+                await self._handle_find_all_references_query(
+                    query, socket_path, consume_unsaved_changes_enabled
+                )
             elif isinstance(query, OverlayUpdate):
                 await self._handle_overlay_update_request(query, socket_path)
 
