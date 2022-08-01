@@ -113,7 +113,7 @@ let handle_request ~properties ~state request =
   in
   Lwt.catch
     (fun () ->
-      Log.dump "Processing request %a..." Sexp.pp (Request.sexp_of_t request);
+      Log.log ~section:`Server "Processing request %a..." Sexp.pp (Request.sexp_of_t request);
       with_performance_logging
         ~normals:["request kind", Request.name_of request]
         ~name:"server request"
@@ -121,7 +121,6 @@ let handle_request ~properties ~state request =
     on_uncaught_server_exception
   >>= fun (new_state, response) ->
   Log.log ~section:`Server "Request `%a` processed" Sexp.pp (Request.sexp_of_t request);
-  let () = Log.dump "Printing response: %s" (Sexp.to_string (Response.sexp_of_t response)) in
   Lwt.return (new_state, response)
 
 
@@ -169,12 +168,9 @@ let handle_connection
             ConnectionState.cleanup ~server_state connection_state;
             Lwt.return (server_state, ()))
     | Some message ->
-        let () = Log.dump "Printing message: %s" message in
         let result =
           match ClientRequest.of_string message with
-          | ClientRequest.Error message ->
-              let () = Log.dump "ERror occurred with message: %s" message in
-              Lwt.return (connection_state, Response.Error message)
+          | ClientRequest.Error message -> Lwt.return (connection_state, Response.Error message)
           | ClientRequest.GetInfo ->
               let response = RequestHandler.create_info_response server_properties in
               Lwt.return (connection_state, response)
@@ -203,7 +199,6 @@ let handle_connection
                 ~properties:server_properties
                 ()
           | ClientRequest.Request request ->
-              let () = Log.dump "Request parsed with message: %s" message in
               ExclusiveLock.Lazy.write server_state ~f:(fun state ->
                   handle_request ~properties:server_properties ~state request
                   >>= fun (new_state, response) ->
