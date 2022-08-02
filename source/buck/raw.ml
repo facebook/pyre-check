@@ -232,7 +232,7 @@ let create_v2 ?(additional_log_size = 0) () =
     on_completion ~buck_command:buck2 ~arguments ~log_buffer result
   in
   let query ?mode ?isolation_prefix arguments =
-    invoke_buck ?mode ?isolation_prefix ~command:"query" arguments
+    invoke_buck ?mode ?isolation_prefix ~command:"uquery" arguments
   in
   let build ?mode ?isolation_prefix arguments =
     invoke_buck ?mode ?isolation_prefix ~command:"build" arguments
