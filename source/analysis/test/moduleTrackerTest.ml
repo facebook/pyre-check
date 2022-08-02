@@ -90,6 +90,67 @@ let create_test_configuration ~context ~local_tree ~external_tree =
   configuration, external_root
 
 
+let assert_module_path
+    ?priority
+    ?is_stub
+    ?is_external
+    ?is_init
+    ~configuration
+    ~search_root
+    ~relative
+    ({
+       ModulePath.raw = { priority = actual_priority; _ };
+       is_stub = actual_is_stub;
+       is_external = actual_is_external;
+       is_init = actual_is_init;
+       _;
+     } as module_path)
+  =
+  let expected_path = Test.relative_artifact_path ~root:search_root ~relative in
+  let actual_path = ModulePath.full_path ~configuration module_path in
+  assert_equal ~cmp:ArtifactPath.equal ~printer:ArtifactPath.show expected_path actual_path;
+  Option.iter priority ~f:(fun expected_priority ->
+      assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_priority actual_priority);
+  Option.iter is_stub ~f:(fun expected_is_stub ->
+      assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_stub actual_is_stub);
+  Option.iter is_external ~f:(fun expected_is_external ->
+      assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_external actual_is_external);
+  Option.iter is_init ~f:(fun expected_is_init ->
+      assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_init actual_is_init)
+
+
+let assert_no_module_path ~configuration root relative =
+  match create_module_path ~configuration root relative with
+  | None -> ()
+  | Some _ ->
+      let message =
+        Format.asprintf
+          "Creating source file %s under %a is supposed to fail"
+          relative
+          PyrePath.pp
+          root
+      in
+      assert_failure message
+
+
+let assert_same_module_greater
+    ~configuration
+    ({ ModulePath.qualifier = left_qualifier; _ } as left)
+    ({ ModulePath.qualifier = right_qualifier; _ } as right)
+  =
+  assert_equal ~cmp:Reference.equal ~printer:Reference.show left_qualifier right_qualifier;
+  let compare_result = ModulePath.same_module_compare ~configuration left right in
+  let message =
+    Format.asprintf
+      "\'%a\' is supposed to be greater than \'%a\'"
+      Sexp.pp_hum
+      (ModulePath.sexp_of_t left)
+      Sexp.pp_hum
+      (ModulePath.sexp_of_t right)
+  in
+  assert_bool message (compare_result > 0)
+
+
 let test_creation context =
   let ({ Configuration.Analysis.local_root; _ } as configuration), external_root =
     create_test_configuration
@@ -113,69 +174,11 @@ let test_creation context =
           TestFiles.File "c.pyi";
         ]
   in
-  let assert_create_fail ~configuration root relative =
-    match create_module_path ~configuration root relative with
-    | None -> ()
-    | Some _ ->
-        let message =
-          Format.asprintf
-            "Creating source file %s under %a is supposed to fail"
-            relative
-            PyrePath.pp
-            root
-        in
-        assert_failure message
-  in
-  let assert_module_path
-      ?priority
-      ?is_stub
-      ?is_external
-      ?is_init
-      ~configuration
-      ~search_root
-      ~relative
-      ({
-         ModulePath.raw = { priority = actual_priority; _ };
-         is_stub = actual_is_stub;
-         is_external = actual_is_external;
-         is_init = actual_is_init;
-         _;
-       } as module_path)
-    =
-    let expected_path = Test.relative_artifact_path ~root:search_root ~relative in
-    let actual_path = ModulePath.full_path ~configuration module_path in
-    assert_equal ~cmp:ArtifactPath.equal ~printer:ArtifactPath.show expected_path actual_path;
-    Option.iter priority ~f:(fun expected_priority ->
-        assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_priority actual_priority);
-    Option.iter is_stub ~f:(fun expected_is_stub ->
-        assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_stub actual_is_stub);
-    Option.iter is_external ~f:(fun expected_is_external ->
-        assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_external actual_is_external);
-    Option.iter is_init ~f:(fun expected_is_init ->
-        assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_init actual_is_init)
-  in
-  let assert_same_module_greater
-      ~configuration
-      ({ ModulePath.qualifier = left_qualifier; _ } as left)
-      ({ ModulePath.qualifier = right_qualifier; _ } as right)
-    =
-    assert_equal ~cmp:Reference.equal ~printer:Reference.show left_qualifier right_qualifier;
-    let compare_result = ModulePath.same_module_compare ~configuration left right in
-    let message =
-      Format.asprintf
-        "\'%a\' is supposed to be greater than \'%a\'"
-        Sexp.pp_hum
-        (ModulePath.sexp_of_t left)
-        Sexp.pp_hum
-        (ModulePath.sexp_of_t right)
-    in
-    assert_bool message (compare_result > 0)
-  in
   let test_basic () =
     let create_exn = create_module_path_exn ~configuration in
     let assert_module_path = assert_module_path ~configuration in
     let assert_same_module_greater = assert_same_module_greater ~configuration in
-    let assert_create_fail = assert_create_fail ~configuration in
+    let assert_no_module_path = assert_no_module_path ~configuration in
     (* Creation test *)
     let local_a = create_exn local_root "a.py" in
     assert_module_path
@@ -281,8 +284,8 @@ let test_creation context =
       ~is_stub:true
       ~is_external:true
       ~is_init:false;
-    assert_create_fail external_root "thereisnospoon.py";
-    assert_create_fail external_root "foo/thereisnospoon.py";
+    assert_no_module_path external_root "thereisnospoon.py";
+    assert_no_module_path external_root "foo/thereisnospoon.py";
     let extension_first = create_exn local_root "dir/a.first" in
     let extension_second = create_exn local_root "dir/a.second" in
     let extension_third = create_exn local_root "dir/a.third" in
@@ -397,7 +400,7 @@ let test_creation context =
         ()
     in
     let assert_path = assert_equal ~cmp:ArtifactPath.equal ~printer:ArtifactPath.show in
-    assert_create_fail ~configuration search_root "b.py";
+    assert_no_module_path ~configuration search_root "b.py";
     let module_path_a = create_module_path_exn ~configuration local_root "a.py" in
     assert_path
       (Test.relative_artifact_path ~root:local_root ~relative:"a.py")
@@ -614,10 +617,10 @@ let test_creation context =
     in
     let create_exn = create_module_path_exn ~configuration in
     let assert_module_path = assert_module_path ~configuration in
-    let assert_create_fail = assert_create_fail ~configuration in
+    let assert_no_module_path = assert_no_module_path ~configuration in
     assert_module_path (create_exn local_root "foo.py") ~search_root:local_root ~relative:"foo.py";
-    assert_create_fail local_root "bar.py";
-    assert_create_fail local_root "baz.py";
+    assert_no_module_path local_root "bar.py";
+    assert_no_module_path local_root "baz.py";
     assert_module_path
       (create_exn external_root "foo.py")
       ~search_root:external_root
