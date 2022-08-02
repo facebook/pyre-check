@@ -346,36 +346,6 @@ let test_creation context =
       ~is_external:false
       ~is_init:false
   in
-  let test_submodules () =
-    (* SETUP:
-     * local_root/a.py
-     * local_root/b/c.py
-     * local_root/d/__init__.py
-     * local_root/d/e/f.py
-     * external_root/d/g.py
-     * external_root/h/i/j/__init__.pyi
-     *)
-    let local_root =
-      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-    in
-    let external_root =
-      bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-    in
-    List.iter
-      ~f:Sys_utils.mkdir_no_fail
-      [
-        PyrePath.absolute local_root ^ "/b";
-        PyrePath.absolute local_root ^ "/d";
-        PyrePath.absolute local_root ^ "/d/e";
-        PyrePath.absolute external_root ^ "/d";
-        PyrePath.absolute external_root ^ "/h";
-        PyrePath.absolute external_root ^ "/h/i";
-        PyrePath.absolute external_root ^ "/h/i/j";
-      ];
-    List.iter ~f:(create_file local_root) ["a.py"; "b/c.py"; "d/__init__.py"; "d/e/f.py"];
-    List.iter ~f:(create_file external_root) ["d/g.py"; "h/i/j/__init__.pyi"];
-    ()
-  in
   let test_search_path_subdirectory () =
     let local_root =
       bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
@@ -1153,7 +1123,6 @@ let test_creation context =
       (ModuleTracker.ReadOnly.module_paths module_tracker |> List.length)
   in
   test_basic ();
-  test_submodules ();
   test_search_path_subdirectory ();
   test_exclude ();
   test_directory_filter ();
