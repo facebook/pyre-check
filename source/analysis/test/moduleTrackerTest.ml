@@ -151,7 +151,7 @@ let assert_same_module_greater
   assert_bool message (compare_result > 0)
 
 
-let test_creation context =
+let test_module_path context =
   let ({ Configuration.Analysis.local_root; _ } as configuration), external_root =
     create_test_configuration
       ~context
@@ -174,178 +174,205 @@ let test_creation context =
           TestFiles.File "c.pyi";
         ]
   in
-  let test_basic () =
-    let create_exn = create_module_path_exn ~configuration in
-    let assert_module_path = assert_module_path ~configuration in
-    let assert_same_module_greater = assert_same_module_greater ~configuration in
-    let assert_no_module_path = assert_no_module_path ~configuration in
-    (* Creation test *)
-    let local_a = create_exn local_root "a.py" in
-    assert_module_path
-      local_a
-      ~search_root:local_root
-      ~relative:"a.py"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:false;
-    let local_b = create_exn local_root "b.py" in
-    assert_module_path
-      local_b
-      ~search_root:local_root
-      ~relative:"b.py"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:false;
-    let local_c = create_exn local_root "c.py" in
-    assert_module_path
-      local_c
-      ~search_root:local_root
-      ~relative:"c.py"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:false;
-    let local_cstub = create_exn local_root "c.pyi" in
-    assert_module_path
-      local_cstub
-      ~search_root:local_root
-      ~relative:"c.pyi"
-      ~is_stub:true
-      ~is_external:false
-      ~is_init:false;
-    let local_d = create_exn local_root "d.py" in
-    assert_module_path
-      local_d
-      ~search_root:local_root
-      ~relative:"d.py"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:false;
-    let local_dinit = create_exn local_root "d/__init__.py" in
-    assert_module_path
-      local_dinit
-      ~search_root:local_root
-      ~relative:"d/__init__.py"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:true;
-    let local_e = create_exn local_root "e.py" in
-    assert_module_path
-      local_e
-      ~search_root:local_root
-      ~relative:"e.py"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:false;
-    let local_f = create_exn local_root "f.special" in
-    assert_module_path
-      local_f
-      ~search_root:local_root
-      ~relative:"f.special"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:false;
-    let external_a = create_exn external_root "a.py" in
-    assert_module_path
-      external_a
-      ~search_root:external_root
-      ~relative:"a.py"
-      ~is_stub:false
-      ~is_external:true
-      ~is_init:false;
-    let external_bstub = create_exn external_root "b.pyi" in
-    assert_module_path
-      external_bstub
-      ~search_root:external_root
-      ~relative:"b.pyi"
-      ~is_stub:true
-      ~is_external:true
-      ~is_init:false;
-    let external_binit = create_exn external_root "b/__init__.py" in
-    assert_module_path
-      external_binit
-      ~search_root:external_root
-      ~relative:"b/__init__.py"
-      ~is_stub:false
-      ~is_external:true
-      ~is_init:true;
-    let external_c = create_exn external_root "c.py" in
-    assert_module_path
-      external_c
-      ~search_root:external_root
-      ~relative:"c.py"
-      ~is_stub:false
-      ~is_external:true
-      ~is_init:false;
-    let external_cstub = create_exn external_root "c.pyi" in
-    assert_module_path
-      external_cstub
-      ~search_root:external_root
-      ~relative:"c.pyi"
-      ~is_stub:true
-      ~is_external:true
-      ~is_init:false;
-    assert_no_module_path external_root "thereisnospoon.py";
-    assert_no_module_path external_root "foo/thereisnospoon.py";
-    let extension_first = create_exn local_root "dir/a.first" in
-    let extension_second = create_exn local_root "dir/a.second" in
-    let extension_third = create_exn local_root "dir/a.third" in
-    let extension_py = create_exn local_root "dir/a.py" in
-    (* Comparison test *)
-    assert_same_module_greater external_a local_a;
-    assert_same_module_greater external_bstub local_b;
-    assert_same_module_greater external_binit local_b;
-    assert_same_module_greater external_bstub external_binit;
-    assert_same_module_greater local_cstub local_c;
-    assert_same_module_greater external_cstub external_c;
-    assert_same_module_greater external_cstub local_cstub;
-    assert_same_module_greater external_cstub local_c;
-    assert_same_module_greater local_cstub external_c;
-    assert_same_module_greater external_c local_c;
-    assert_same_module_greater local_dinit local_d;
-    assert_same_module_greater extension_first extension_second;
-    assert_same_module_greater extension_first extension_third;
-    assert_same_module_greater extension_py extension_first;
+  let create_exn = create_module_path_exn ~configuration in
+  let assert_module_path = assert_module_path ~configuration in
+  let assert_same_module_greater = assert_same_module_greater ~configuration in
+  let assert_no_module_path = assert_no_module_path ~configuration in
+  (* Creation test *)
+  let local_a = create_exn local_root "a.py" in
+  assert_module_path
+    local_a
+    ~search_root:local_root
+    ~relative:"a.py"
+    ~is_stub:false
+    ~is_external:false
+    ~is_init:false;
+  let local_b = create_exn local_root "b.py" in
+  assert_module_path
+    local_b
+    ~search_root:local_root
+    ~relative:"b.py"
+    ~is_stub:false
+    ~is_external:false
+    ~is_init:false;
+  let local_c = create_exn local_root "c.py" in
+  assert_module_path
+    local_c
+    ~search_root:local_root
+    ~relative:"c.py"
+    ~is_stub:false
+    ~is_external:false
+    ~is_init:false;
+  let local_cstub = create_exn local_root "c.pyi" in
+  assert_module_path
+    local_cstub
+    ~search_root:local_root
+    ~relative:"c.pyi"
+    ~is_stub:true
+    ~is_external:false
+    ~is_init:false;
+  let local_d = create_exn local_root "d.py" in
+  assert_module_path
+    local_d
+    ~search_root:local_root
+    ~relative:"d.py"
+    ~is_stub:false
+    ~is_external:false
+    ~is_init:false;
+  let local_dinit = create_exn local_root "d/__init__.py" in
+  assert_module_path
+    local_dinit
+    ~search_root:local_root
+    ~relative:"d/__init__.py"
+    ~is_stub:false
+    ~is_external:false
+    ~is_init:true;
+  let local_e = create_exn local_root "e.py" in
+  assert_module_path
+    local_e
+    ~search_root:local_root
+    ~relative:"e.py"
+    ~is_stub:false
+    ~is_external:false
+    ~is_init:false;
+  let local_f = create_exn local_root "f.special" in
+  assert_module_path
+    local_f
+    ~search_root:local_root
+    ~relative:"f.special"
+    ~is_stub:false
+    ~is_external:false
+    ~is_init:false;
+  let external_a = create_exn external_root "a.py" in
+  assert_module_path
+    external_a
+    ~search_root:external_root
+    ~relative:"a.py"
+    ~is_stub:false
+    ~is_external:true
+    ~is_init:false;
+  let external_bstub = create_exn external_root "b.pyi" in
+  assert_module_path
+    external_bstub
+    ~search_root:external_root
+    ~relative:"b.pyi"
+    ~is_stub:true
+    ~is_external:true
+    ~is_init:false;
+  let external_binit = create_exn external_root "b/__init__.py" in
+  assert_module_path
+    external_binit
+    ~search_root:external_root
+    ~relative:"b/__init__.py"
+    ~is_stub:false
+    ~is_external:true
+    ~is_init:true;
+  let external_c = create_exn external_root "c.py" in
+  assert_module_path
+    external_c
+    ~search_root:external_root
+    ~relative:"c.py"
+    ~is_stub:false
+    ~is_external:true
+    ~is_init:false;
+  let external_cstub = create_exn external_root "c.pyi" in
+  assert_module_path
+    external_cstub
+    ~search_root:external_root
+    ~relative:"c.pyi"
+    ~is_stub:true
+    ~is_external:true
+    ~is_init:false;
+  assert_no_module_path external_root "thereisnospoon.py";
+  assert_no_module_path external_root "foo/thereisnospoon.py";
+  let extension_first = create_exn local_root "dir/a.first" in
+  let extension_second = create_exn local_root "dir/a.second" in
+  let extension_third = create_exn local_root "dir/a.third" in
+  let extension_py = create_exn local_root "dir/a.py" in
+  (* Comparison test *)
+  assert_same_module_greater external_a local_a;
+  assert_same_module_greater external_bstub local_b;
+  assert_same_module_greater external_binit local_b;
+  assert_same_module_greater external_bstub external_binit;
+  assert_same_module_greater local_cstub local_c;
+  assert_same_module_greater external_cstub external_c;
+  assert_same_module_greater external_cstub local_cstub;
+  assert_same_module_greater external_cstub local_c;
+  assert_same_module_greater local_cstub external_c;
+  assert_same_module_greater external_c local_c;
+  assert_same_module_greater local_dinit local_d;
+  assert_same_module_greater extension_first extension_second;
+  assert_same_module_greater extension_first extension_third;
+  assert_same_module_greater extension_py extension_first;
+  ()
 
-    (* ModuleTracker initialization test *)
-    let tracker =
-      EnvironmentControls.create configuration |> ModuleTracker.create |> ModuleTracker.read_only
-    in
-    assert_module_path
-      (lookup_exn tracker (Reference.create "a"))
-      ~search_root:external_root
-      ~relative:"a.py"
-      ~is_stub:false
-      ~is_external:true
-      ~is_init:false;
-    assert_module_path
-      (lookup_exn tracker (Reference.create "b"))
-      ~search_root:external_root
-      ~relative:"b.pyi"
-      ~is_stub:true
-      ~is_external:true
-      ~is_init:false;
-    assert_module_path
-      (lookup_exn tracker (Reference.create "c"))
-      ~search_root:external_root
-      ~relative:"c.pyi"
-      ~is_stub:true
-      ~is_external:true
-      ~is_init:false;
-    assert_module_path
-      (lookup_exn tracker (Reference.create "d"))
-      ~search_root:local_root
-      ~relative:"d/__init__.py"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:true;
-    assert_module_path
-      (lookup_exn tracker (Reference.create "e"))
-      ~search_root:local_root
-      ~relative:"e.py"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:false
+
+let test_initialization context =
+  let ({ Configuration.Analysis.local_root; _ } as configuration), external_root =
+    create_test_configuration
+      ~context
+      ~local_tree:
+        [
+          TestFiles.File "a.py";
+          TestFiles.File "b.py";
+          TestFiles.File "c.py";
+          TestFiles.File "c.pyi";
+          TestFiles.File "d.py";
+          TestFiles.Directory { relative = "d"; children = [TestFiles.File "__init__.py"] };
+          TestFiles.File "e.py";
+        ]
+      ~external_tree:
+        [
+          TestFiles.File "a.py";
+          TestFiles.File "b.pyi";
+          TestFiles.Directory { relative = "b"; children = [TestFiles.File "__init__.py"] };
+          TestFiles.File "c.py";
+          TestFiles.File "c.pyi";
+        ]
   in
+  let assert_module_path = assert_module_path ~configuration in
+  (* ModuleTracker initialization test *)
+  let tracker =
+    EnvironmentControls.create configuration |> ModuleTracker.create |> ModuleTracker.read_only
+  in
+  assert_module_path
+    (lookup_exn tracker (Reference.create "a"))
+    ~search_root:external_root
+    ~relative:"a.py"
+    ~is_stub:false
+    ~is_external:true
+    ~is_init:false;
+  assert_module_path
+    (lookup_exn tracker (Reference.create "b"))
+    ~search_root:external_root
+    ~relative:"b.pyi"
+    ~is_stub:true
+    ~is_external:true
+    ~is_init:false;
+  assert_module_path
+    (lookup_exn tracker (Reference.create "c"))
+    ~search_root:external_root
+    ~relative:"c.pyi"
+    ~is_stub:true
+    ~is_external:true
+    ~is_init:false;
+  assert_module_path
+    (lookup_exn tracker (Reference.create "d"))
+    ~search_root:local_root
+    ~relative:"d/__init__.py"
+    ~is_stub:false
+    ~is_external:false
+    ~is_init:true;
+  assert_module_path
+    (lookup_exn tracker (Reference.create "e"))
+    ~search_root:local_root
+    ~relative:"e.py"
+    ~is_stub:false
+    ~is_external:false
+    ~is_init:false
+
+
+let test_creation context =
   let test_search_path_subdirectory () =
     let local_root =
       bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
@@ -406,7 +433,7 @@ let test_creation context =
     in
     let create_exn = create_module_path_exn ~configuration in
     let assert_module_path = assert_module_path ~configuration in
-    (* Creation test *)
+    (* Make sure ModulePath behavior is as expected *)
     List.iter local_paths ~f:(fun path ->
         assert_module_path
           (create_exn local_root path)
@@ -430,7 +457,6 @@ let test_creation context =
           ~priority:1
           ~is_external:true
           ~is_init:false);
-
     (* ModuleTracker initialization test *)
     let tracker =
       EnvironmentControls.create configuration |> ModuleTracker.create |> ModuleTracker.read_only
@@ -1122,7 +1148,6 @@ let test_creation context =
       4
       (ModuleTracker.ReadOnly.module_paths module_tracker |> List.length)
   in
-  test_basic ();
   test_search_path_subdirectory ();
   test_exclude ();
   test_directory_filter ();
@@ -1729,6 +1754,8 @@ let test_overlay_code_hiding context =
 let () =
   "environment"
   >::: [
+         "module_path" >:: test_module_path;
+         "initialization" >:: test_initialization;
          "creation" >:: test_creation;
          "update" >:: test_update;
          "overlay_basic" >:: test_overlay_basic;
