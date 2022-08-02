@@ -335,6 +335,27 @@ class PersistentTest(testslide.TestCase):
         exit_code = await server.run()
         self.assertEqual(exit_code, 0)
 
+    async def test_server_exit_unknown_request_after_shutdown(self) -> None:
+        server_state = ServerState()
+        noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())
+        input_channel = await _create_input_channel_with_requests(
+            [
+                json_rpc.Request(method="shutdown", parameters=None),
+                json_rpc.Request(method="derp", parameters=None),
+                json_rpc.Request(method="exit", parameters=None),
+            ]
+        )
+        server = PyreServer(
+            input_channel=input_channel,
+            output_channel=create_memory_text_writer(),
+            state=server_state,
+            pyre_manager=noop_task_manager,
+            pyre_query_manager=noop_task_manager,
+        )
+
+        exit_code = await server.run()
+        self.assertEqual(exit_code, 0)
+
     async def test_server_exit_gracefully_after_shutdown(self) -> None:
         server_state = ServerState()
         noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())

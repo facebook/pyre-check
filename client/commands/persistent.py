@@ -381,12 +381,14 @@ async def _wait_for_exit(
     """
     while True:
         async with read_lsp_request(input_channel, output_channel) as request:
-            if request is not None and request.method == "exit":
-                return
-            else:
-                raise json_rpc.InvalidRequestError(
-                    f"Only exit requests are accepted after shutdown. Got {request}."
-                )
+            if request is None:
+                LOG.debug("Request read error after shutdown")
+                continue
+            if request.method != "exit":
+                LOG.debug(f"Non-exit request received after shutdown: {request}")
+                continue
+            # Got an exit request. Stop the wait.
+            return
 
 
 async def _publish_diagnostics(
