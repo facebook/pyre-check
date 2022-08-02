@@ -154,6 +154,17 @@ let test_subscription context =
   Lwt.return_unit
 
 
+exception FakeLwtIOException
+
+let test_subscription_output_channel_error_dropped _ =
+  (* Fake an output channel that always raise exception. *)
+  let output_channel = Lwt_io.make ~mode:Lwt_io.Output (fun _ _ _ -> raise FakeLwtIOException) in
+  let subscription = Subscription.create ~name:"foo" ~output_channel () in
+  (* This invocation should raise no error, even if sending any data to the output channel would
+     fail. *)
+  Subscription.send ~response:Response.Ok subscription
+
+
 let watchman_version = "fake_watchman_version"
 
 let watchman_initial_clock = "fake:clock:0"
@@ -428,6 +439,8 @@ let () =
   >::: [
          "basic" >:: OUnitLwt.lwt_wrapper test_basic;
          "subscription" >:: OUnitLwt.lwt_wrapper test_subscription;
+         "subscription_output_channel_error_dropped"
+         >:: OUnitLwt.lwt_wrapper test_subscription_output_channel_error_dropped;
          "subscription_response" >:: OUnitLwt.lwt_wrapper test_subscription_responses;
          "watchman_integration" >:: OUnitLwt.lwt_wrapper test_watchman_integration;
          "watchman_failure" >:: OUnitLwt.lwt_wrapper test_watchman_failure;
