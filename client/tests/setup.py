@@ -3,34 +3,16 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import asyncio
 import contextlib
-import functools
 import json
 import os
 import socketserver
 import tempfile
 import threading
 from pathlib import Path
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Generator,
-    Iterable,
-    Mapping,
-    Optional,
-    Type,
-    TypeVar,
-)
-
-from pyre_extensions import ParameterSpecification
+from typing import Any, Generator, Iterable, Mapping, Optional, Type
 
 from ..find_directories import CONFIGURATION_FILE, LOCAL_CONFIGURATION_FILE
-
-
-TParams = ParameterSpecification("TParams")
-T = TypeVar("T")
 
 
 def ensure_files_exist(root: Path, relatives: Iterable[str]) -> None:
@@ -77,19 +59,6 @@ def switch_environment(environment: Mapping[str, str]) -> Generator[None, None, 
     finally:
         os.environ.clear()
         os.environ.update(old_environment)
-
-
-def async_test(func: Callable[TParams, Awaitable[T]]) -> Callable[TParams, T]:
-    """
-    Simple Decorator to allow for asyncio test methods in a standard
-    `unittest.TestCase`.
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args: TParams.args, **kwargs: TParams.kwargs) -> T:
-        return asyncio.get_event_loop().run_until_complete(func(*args, **kwargs))
-
-    return wrapper
 
 
 class TestServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):

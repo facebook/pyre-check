@@ -19,7 +19,6 @@ from libcst.metadata import CodePosition, CodeRange
 from ... import configuration as configuration_module, error, json_rpc
 from ...commands.language_server_protocol import SymbolKind
 from ...coverage_collector import CoveredAndUncoveredLines
-from ...tests import setup
 from .. import (
     async_server_connection,
     backend_arguments,
@@ -120,7 +119,6 @@ def _fake_option_reader() -> PyreServerStartOptionsReader:
 
 
 class PersistentTest(testslide.TestCase):
-    @setup.async_test
     async def test_try_initialize_success(self) -> None:
         input_channel = await _create_input_channel_with_requests(
             [
@@ -153,7 +151,6 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIsInstance(result, InitializationSuccess)
 
-    @setup.async_test
     async def test_try_initialize_failure__not_a_request(self) -> None:
         input_channel = await _create_input_channel_with_requests(
             [json_rpc.Request(method="derp", parameters=None)]
@@ -164,7 +161,6 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIsInstance(result, InitializationFailure)
 
-    @setup.async_test
     async def test_try_initialize_failure__invalid_parameters(self) -> None:
         input_channel = await _create_input_channel_with_requests(
             [json_rpc.Request(id=0, method="initialize", parameters=None)]
@@ -175,7 +171,6 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIsInstance(result, InitializationFailure)
 
-    @setup.async_test
     async def test_try_initialize_failure__no_initialized(self) -> None:
         input_channel = await _create_input_channel_with_requests(
             [
@@ -208,7 +203,6 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIsInstance(result, InitializationFailure)
 
-    @setup.async_test
     async def test_try_initialize_exit(self) -> None:
         input_channel = await _create_input_channel_with_requests(
             [json_rpc.Request(method="exit", parameters=None)]
@@ -219,7 +213,6 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIsInstance(result, InitializationExit)
 
-    @setup.async_test
     async def test_try_initialize_exit__shutdown_after_initialize(self) -> None:
         input_channel = await _create_input_channel_with_requests(
             [
@@ -251,7 +244,6 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIsInstance(result, InitializationExit)
 
-    @setup.async_test
     async def test_try_initialize_exit__shutdown_without_exit(self) -> None:
         input_channel = await _create_input_channel_with_requests(
             [
@@ -275,7 +267,6 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIsInstance(result, InitializationExit)
 
-    @setup.async_test
     async def test_server_exit(self) -> None:
         server_state = ServerState()
         noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())
@@ -296,7 +287,6 @@ class PersistentTest(testslide.TestCase):
         exit_code = await server.run()
         self.assertEqual(exit_code, 0)
 
-    @setup.async_test
     async def test_server_exit_gracefully_after_shutdown(self) -> None:
         server_state = ServerState()
         noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())
@@ -320,7 +310,6 @@ class PersistentTest(testslide.TestCase):
         exit_code = await server.run()
         self.assertEqual(exit_code, 0)
 
-    @setup.async_test
     async def test_server_exit_gracefully_on_channel_closure(self) -> None:
         server_state = ServerState()
         noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())
@@ -339,7 +328,6 @@ class PersistentTest(testslide.TestCase):
         exit_code = await server.run()
         self.assertEqual(exit_code, 0)
 
-    @setup.async_test
     async def test_open_close(self) -> None:
         server_state = ServerState()
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
@@ -406,7 +394,6 @@ class PersistentTest(testslide.TestCase):
             0,
         )
 
-    @setup.async_test
     async def test_subscription_protocol(self) -> None:
         server_state = ServerState(
             client_capabilities=lsp.ClientCapabilities(
@@ -460,7 +447,6 @@ class PersistentTest(testslide.TestCase):
         # Notify the user that incremental check has finished
         self.assertIn("window/showStatus", client_messages[3])
 
-    @setup.async_test
     async def test_subscription_error(self) -> None:
         def fake_server_start_options_reader() -> PyreServerStartOptions:
             # Server start option is not relevant to this test
@@ -476,7 +462,6 @@ class PersistentTest(testslide.TestCase):
                 subscription.Error(message="Doom Eternal")
             )
 
-    @setup.async_test
     async def test_busy_status_clear_diagnostics(self) -> None:
         path = Path("foo.py")
         server_state = ServerState(diagnostics={path: []})
@@ -504,7 +489,6 @@ class PersistentTest(testslide.TestCase):
         self.assertIn('"diagnostics": []', client_messages[0])
         self.assertIn('"diagnostics": []', client_messages[1])
 
-    @setup.async_test
     async def test_open_triggers_pyre_restart(self) -> None:
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
         fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
@@ -531,7 +515,6 @@ class PersistentTest(testslide.TestCase):
         await asyncio.sleep(0)
         self.assertTrue(fake_task_manager.is_task_running())
 
-    @setup.async_test
     async def test_open_triggers_pyre_restart__limit_reached(self) -> None:
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
         fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
@@ -560,7 +543,6 @@ class PersistentTest(testslide.TestCase):
         await asyncio.sleep(0)
         self.assertFalse(fake_task_manager.is_task_running())
 
-    @setup.async_test
     async def test_save_triggers_pyre_restart(self) -> None:
         test_path = Path("/foo.py")
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
@@ -584,7 +566,6 @@ class PersistentTest(testslide.TestCase):
         await asyncio.sleep(0)
         self.assertTrue(fake_task_manager.is_task_running())
 
-    @setup.async_test
     async def test_save_triggers_pyre_restart__limit_reached(self) -> None:
         test_path = Path("/foo.py")
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
@@ -611,7 +592,6 @@ class PersistentTest(testslide.TestCase):
         await asyncio.sleep(0)
         self.assertFalse(fake_task_manager.is_task_running())
 
-    @setup.async_test
     async def test_save_adds_path_to_queue(self) -> None:
         test_path = Path("/root/test.py")
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
@@ -640,7 +620,6 @@ class PersistentTest(testslide.TestCase):
             server.state.query_state.queries.get_nowait(), TypesQuery(test_path)
         )
 
-    @setup.async_test
     async def test_close_clears_hover_data(self) -> None:
         test_path = Path("/root/test.py")
         fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
@@ -674,7 +653,6 @@ class PersistentTest(testslide.TestCase):
         await asyncio.sleep(0)
         self.assertEqual(server.state.query_state.path_to_location_type_lookup, {})
 
-    @setup.async_test
     async def test_hover_always_responds(self) -> None:
         def assert_hover_response(expected_hover_contents: str) -> None:
             expected_response = json_rpc.SuccessResponse(
@@ -876,7 +854,6 @@ class PersistentTest(testslide.TestCase):
         self.assertEqual(coverage_result.covered_percent, 50.0)
         self.assertEqual(len(coverage_result.uncovered_ranges), 1)
 
-    @setup.async_test
     async def test_server_connection_lost(self) -> None:
         test_path = Path("/foo.py")
         server_state = ServerState(
@@ -929,7 +906,6 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertEqual(server_state.diagnostics, {})
 
-    @setup.async_test
     async def test_send_message_to_status_bar(self) -> None:
         bytes_writer = MemoryBytesWriter()
         server_handler = PyreServerHandler(
@@ -971,7 +947,6 @@ class PersistentTest(testslide.TestCase):
             ),
         )
 
-    @setup.async_test
     async def test_type_coverage_request(self) -> None:
         test_path = Path("/foo")
         bytes_writer = MemoryBytesWriter()
@@ -999,7 +974,6 @@ class PersistentTest(testslide.TestCase):
             TypeCoverageQuery(1, test_path),
         )
 
-    @setup.async_test
     async def test_definition(self) -> None:
         def assert_definition_response(
             definitions: Sequence[lsp.LspDefinitionResponse],
@@ -1071,7 +1045,6 @@ class PersistentTest(testslide.TestCase):
         self.assertTrue(fake_task_manager.is_task_running())
         assert_definition_response([])
 
-    @setup.async_test
     async def test_document_symbols_request(self) -> None:
         self.maxDiff = None
         with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
@@ -1132,7 +1105,6 @@ class PersistentTest(testslide.TestCase):
             actual_json = json.loads(actual[actual.index("{") :])
             self.assertDictEqual(actual_json, expected_response.json())
 
-    @setup.async_test
     async def test_references(self) -> None:
         def assert_references_response(
             references: Sequence[lsp.ReferencesResponse],
@@ -1304,7 +1276,6 @@ def patch_connect_in_text_mode(
 
 
 class PyreQueryHandlerTest(testslide.TestCase):
-    @setup.async_test
     async def test_query_types(self) -> None:
         json_output = """
         {
@@ -1391,7 +1362,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             ],
         )
 
-    @setup.async_test
     async def test_query_types__bad_json(self) -> None:
         bytes_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
@@ -1421,7 +1391,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
 
         self.assertEqual(result, None)
 
-    @setup.async_test
     async def test_query_type_coverage(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
@@ -1458,7 +1427,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             self.assertEqual(len(result.uncovered_ranges), 1)
             self.assertTrue(result.covered_percent < 100.0)
 
-    @setup.async_test
     async def test_query_type_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             state=PyreQueryState(),
@@ -1477,7 +1445,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             )
         self.assertTrue(result is None)
 
-    @setup.async_test
     async def test_query_type_coverage__strict(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
@@ -1505,7 +1472,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             self.assertEqual(len(result.uncovered_ranges), 0)
             self.assertEqual(result.covered_percent, 100.0)
 
-    @setup.async_test
     async def test_query_type_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             state=PyreQueryState(),
@@ -1529,7 +1495,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             result.uncovered_ranges[0].message, "This file is not type checked by Pyre."
         )
 
-    @setup.async_test
     async def test_query_expression_coverage(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
@@ -1566,7 +1531,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             self.assertEqual(len(result.uncovered_ranges), 0)
             self.assertTrue(result.covered_percent == 100.0)
 
-    @setup.async_test
     async def test_query_expression_coverage_gaps(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
@@ -1603,7 +1567,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             self.assertEqual(len(result.uncovered_ranges), 1)
             self.assertTrue(result.covered_percent == 75.0)
 
-    @setup.async_test
     async def test_query_expression_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             state=PyreQueryState(),
@@ -1624,7 +1587,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             )
         self.assertTrue(result is None)
 
-    @setup.async_test
     async def test_query_expression_coverage__strict(self) -> None:
         with tempfile.NamedTemporaryFile(suffix=".py") as tmpfile:
             tmpfile.write(b"def foo(x):\n  pass\n")
@@ -1652,7 +1614,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             self.assertEqual(len(result.uncovered_ranges), 0)
             self.assertEqual(result.covered_percent, 100.0)
 
-    @setup.async_test
     async def test_query_expression_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
             state=PyreQueryState(),
@@ -1675,7 +1636,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         self.assertEqual(result.covered_percent, 100.0)
         self.assertEqual(len(result.uncovered_ranges), 0)
 
-    @setup.async_test
     async def test_query_definition_location(self) -> None:
         json_output = """
         {
@@ -1753,7 +1713,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             ],
         )
 
-    @setup.async_test
     async def test_query_definition_location__bad_json(self) -> None:
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
@@ -1792,7 +1751,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
         response = client_output_writer.items()[0].splitlines()[2]
         self.assertEqual(json.loads(response)["result"], [])
 
-    @setup.async_test
     async def test_query_references(self) -> None:
         json_output = """
         {
@@ -1891,7 +1849,6 @@ class PyreQueryHandlerTest(testslide.TestCase):
             ],
         )
 
-    @setup.async_test
     async def test_query_references__bad_json(self) -> None:
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(

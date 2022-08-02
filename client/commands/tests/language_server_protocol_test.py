@@ -11,7 +11,6 @@ from typing import Callable, Mapping, Optional, Type, TypeVar
 import testslide
 
 from ... import json_rpc
-from ...tests import setup
 from ..async_server_connection import (
     BytesWriter,
     create_memory_text_reader,
@@ -88,7 +87,6 @@ class DocumentUriTest(testslide.TestCase):
 
 
 class LSPInputOutputTest(testslide.TestCase):
-    @setup.async_test
     async def test_read_lsp(self) -> None:
         async def assert_parses(input: str, expected: json_rpc.Request) -> None:
             actual = await read_json_rpc(create_memory_text_reader(input))
@@ -133,7 +131,6 @@ class LSPInputOutputTest(testslide.TestCase):
             expected=json_rpc.Request(id=0, method="foo"),
         )
 
-    @setup.async_test
     async def test_write_lsp(self) -> None:
         async def assert_write(response: json_rpc.Response, expected: str) -> None:
             bytes_writer = MemoryBytesWriter()
@@ -162,7 +159,6 @@ class LSPInputOutputTest(testslide.TestCase):
             ),
         )
 
-    @setup.async_test
     async def test_write_json_rpc_ignore_connection_error(self) -> None:
         # This invocation should not raise
         write_json_rpc_ignore_connection_error(

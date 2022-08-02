@@ -9,7 +9,6 @@ from typing import Type
 
 import testslide
 
-from ...tests import setup
 from ..async_server_connection import create_memory_text_reader
 from ..server_event import (
     create_from_string,
@@ -109,7 +108,6 @@ class ServerEventTest(testslide.TestCase):
             wait_on_initialization=True,
         )
 
-    @setup.async_test
     async def test_async_waiter(self) -> None:
         async def assert_ok(event_output: str, wait_on_initialization: bool) -> None:
             await Waiter(wait_on_initialization=wait_on_initialization).async_wait_on(
