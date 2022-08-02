@@ -8,7 +8,7 @@
  (libraries oUnit pyrelib.service pyrelib.analysis))
 
 (tests
- (names configurationTest fileTest logTest pathTest searchPathTest
+ (names configurationTest fileTest logTest pyrePathTest searchPathTest
    statisticsTest profilingTest)
  (modules :standard \ test)
  (preprocess
