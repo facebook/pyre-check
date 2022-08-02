@@ -51,6 +51,7 @@ from ..persistent import (
     PyreServerShutdown,
     PyreServerStartOptions,
     PyreServerStartOptionsReader,
+    read_lsp_request,
     ReferencesQuery,
     ServerState,
     to_coverage_result,
@@ -119,6 +120,53 @@ def _fake_option_reader() -> PyreServerStartOptionsReader:
 
 
 class PersistentTest(testslide.TestCase):
+    async def test_read_lsp_request_success(self) -> None:
+        input_channel = await _create_input_channel_with_requests(
+            [
+                json_rpc.Request(
+                    id=0,
+                    method="derp",
+                ),
+            ]
+        )
+        bytes_writer = MemoryBytesWriter()
+        output_channel = TextWriter(bytes_writer)
+        async with read_lsp_request(input_channel, output_channel) as request:
+            self.assertIsNotNone(request)
+        self.assertEqual(len(bytes_writer.items()), 0)
+
+    async def test_read_lsp_request_fail_channel_closed(self) -> None:
+        input_channel = create_memory_text_reader("")
+        bytes_writer = MemoryBytesWriter()
+        output_channel = TextWriter(bytes_writer)
+        with self.assertRaises(lsp.ReadChannelClosedError):
+            async with read_lsp_request(input_channel, output_channel) as request:
+                self.assertIsNone(request)
+        self.assertEqual(len(bytes_writer.items()), 0)
+
+    async def test_read_lsp_request_fail_incomplete_read(self) -> None:
+        input_channel = create_memory_text_reader("derp\n")
+        bytes_writer = MemoryBytesWriter()
+        output_channel = TextWriter(bytes_writer)
+        async with read_lsp_request(input_channel, output_channel) as request:
+            self.assertIsNone(request)
+        self.assertEqual(len(bytes_writer.items()), 1)
+
+    async def test_read_lsp_request_fail_processing_error(self) -> None:
+        input_channel = await _create_input_channel_with_requests(
+            [
+                json_rpc.Request(
+                    id=0,
+                    method="derp",
+                ),
+            ]
+        )
+        bytes_writer = MemoryBytesWriter()
+        output_channel = TextWriter(bytes_writer)
+        async with read_lsp_request(input_channel, output_channel):
+            raise lsp.RequestFailedError()
+        self.assertEqual(len(bytes_writer.items()), 1)
+
     async def test_try_initialize_success(self) -> None:
         input_channel = await _create_input_channel_with_requests(
             [

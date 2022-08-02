@@ -345,7 +345,7 @@ async def try_initialize(
 
 
 @connection.asynccontextmanager
-async def _read_lsp_request(
+async def read_lsp_request(
     input_channel: connection.TextReader, output_channel: connection.TextWriter
 ) -> AsyncIterator[Optional[json_rpc.Request]]:
     message = None
@@ -380,7 +380,7 @@ async def _wait_for_exit(
     "exit" request.
     """
     while True:
-        async with _read_lsp_request(input_channel, output_channel) as request:
+        async with read_lsp_request(input_channel, output_channel) as request:
             if request is not None and request.method == "exit":
                 return
             else:
@@ -920,7 +920,7 @@ class PyreServer:
 
     async def _run(self) -> int:
         while True:
-            async with _read_lsp_request(
+            async with read_lsp_request(
                 self.input_channel, self.output_channel
             ) as request:
                 if request is None:

@@ -24,13 +24,13 @@ from . import (
 )
 from .persistent import (
     _log_lsp_event,
-    _read_lsp_request,
     _wait_for_exit,
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
     LSPEvent,
     process_initialize_request,
+    read_lsp_request,
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -164,7 +164,7 @@ class PysaServer:
 
     async def wait_for_exit(self) -> int:
         while True:
-            async with _read_lsp_request(
+            async with read_lsp_request(
                 self.input_channel, self.output_channel
             ) as request:
                 LOG.debug(f"Received post-shutdown request: {request}")
@@ -208,7 +208,7 @@ class PysaServer:
 
     async def run(self) -> int:
         while True:
-            async with _read_lsp_request(
+            async with read_lsp_request(
                 self.input_channel, self.output_channel
             ) as request:
                 if request is None:
