@@ -172,7 +172,10 @@ let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~roo
 
 
 let read_directory_ordered path =
-  absolute path |> read_directory_ordered_raw |> Array.map ~f:create_absolute |> Array.to_list
+  absolute path
+  |> read_directory_ordered_raw
+  |> Array.map ~f:(fun relative -> create_relative ~root:path ~relative)
+  |> Array.to_list
 
 
 let directory_contains ~directory path =

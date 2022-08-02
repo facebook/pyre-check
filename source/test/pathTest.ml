@@ -218,6 +218,23 @@ let test_remove_contents_of_directory context =
   ()
 
 
+let test_read_directory_ordered context =
+  let _, root = root context in
+  let should_be_empty = PyrePath.read_directory_ordered root in
+  assert_equal ~ctxt:context ~printer:[%show: PyrePath.t list] should_be_empty [];
+  let inner_directory = PyrePath.create_relative ~root ~relative:"inner_directory" in
+  let inner_file = PyrePath.create_relative ~root ~relative:"inner_file.txt" in
+  Unix.mkdir (PyrePath.absolute inner_directory);
+  touch inner_file;
+  let should_have_two_entries = PyrePath.read_directory_ordered root in
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: PyrePath.t list]
+    should_have_two_entries
+    [inner_directory; inner_file];
+  ()
+
+
 let () =
   "path"
   >::: [
@@ -233,5 +250,6 @@ let () =
          "create_directory_recursively" >:: test_create_directory_recursively;
          "remove" >:: test_remove;
          "remove_contents_of_directory" >:: test_remove_contents_of_directory;
+         "read_directory_ordered" >:: test_read_directory_ordered;
        ]
   |> Test.run
