@@ -307,6 +307,39 @@ let test_module_path context =
   ()
 
 
+let test_search_path_subdirectory context =
+  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
+  let search_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let search_subdirectory_path = PyrePath.absolute search_root ^ "/sub" in
+  Sys_utils.mkdir_no_fail search_subdirectory_path;
+  let search_subdirectory =
+    PyrePath.create_absolute ~follow_symbolic_links:true search_subdirectory_path
+  in
+  create_file local_root "a.py";
+  create_file search_root "b.py";
+  create_file search_subdirectory "c.py";
+  let configuration =
+    Configuration.Analysis.create
+      ~local_root
+      ~source_paths:[SearchPath.Root local_root]
+      ~search_paths:[SearchPath.Subdirectory { root = search_root; subdirectory = "sub" }]
+      ~filter_directories:[local_root]
+      ()
+  in
+  let assert_path = assert_equal ~cmp:ArtifactPath.equal ~printer:ArtifactPath.show in
+  assert_no_module_path ~configuration search_root "b.py";
+  let module_path_a = create_module_path_exn ~configuration local_root "a.py" in
+  assert_path
+    (Test.relative_artifact_path ~root:local_root ~relative:"a.py")
+    (ModulePath.full_path ~configuration module_path_a);
+  let module_path_b = create_module_path_exn ~configuration search_subdirectory "c.py" in
+  assert_path
+    (Test.relative_artifact_path ~root:search_subdirectory ~relative:"c.py")
+    (ModulePath.full_path ~configuration module_path_b)
+
+
 let test_initialization context =
   let ({ Configuration.Analysis.local_root; _ } as configuration), external_root =
     create_test_configuration
@@ -370,39 +403,6 @@ let test_initialization context =
     ~is_stub:false
     ~is_external:false
     ~is_init:false
-
-
-let test_search_path_subdirectory context =
-  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  let search_root =
-    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-  in
-  let search_subdirectory_path = PyrePath.absolute search_root ^ "/sub" in
-  Sys_utils.mkdir_no_fail search_subdirectory_path;
-  let search_subdirectory =
-    PyrePath.create_absolute ~follow_symbolic_links:true search_subdirectory_path
-  in
-  create_file local_root "a.py";
-  create_file search_root "b.py";
-  create_file search_subdirectory "c.py";
-  let configuration =
-    Configuration.Analysis.create
-      ~local_root
-      ~source_paths:[SearchPath.Root local_root]
-      ~search_paths:[SearchPath.Subdirectory { root = search_root; subdirectory = "sub" }]
-      ~filter_directories:[local_root]
-      ()
-  in
-  let assert_path = assert_equal ~cmp:ArtifactPath.equal ~printer:ArtifactPath.show in
-  assert_no_module_path ~configuration search_root "b.py";
-  let module_path_a = create_module_path_exn ~configuration local_root "a.py" in
-  assert_path
-    (Test.relative_artifact_path ~root:local_root ~relative:"a.py")
-    (ModulePath.full_path ~configuration module_path_a);
-  let module_path_b = create_module_path_exn ~configuration search_subdirectory "c.py" in
-  assert_path
-    (Test.relative_artifact_path ~root:search_subdirectory ~relative:"c.py")
-    (ModulePath.full_path ~configuration module_path_b)
 
 
 let test_priority context =
@@ -1738,8 +1738,8 @@ let () =
   "environment"
   >::: [
          "module_path" >:: test_module_path;
-         "initialization" >:: test_initialization;
          "search_path_subdirectory " >:: test_search_path_subdirectory;
+         "initialization" >:: test_initialization;
          "exclude " >:: test_exclude;
          "directory_filter " >:: test_directory_filter;
          "directory_filter2 " >:: test_directory_filter2;
