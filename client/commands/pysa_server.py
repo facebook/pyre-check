@@ -169,7 +169,7 @@ class PysaServer:
             ) as request:
                 LOG.debug(f"Received post-shutdown request: {request}")
 
-                if request.method == "exit":
+                if request is not None and request.method == "exit":
                     return 0
                 else:
                     raise json_rpc.InvalidRequestError("LSP server has been shut down")
@@ -211,6 +211,8 @@ class PysaServer:
             async with _read_lsp_request(
                 self.input_channel, self.output_channel
             ) as request:
+                if request is None:
+                    continue
 
                 if request.method == "exit":
                     return commands.ExitCode.FAILURE

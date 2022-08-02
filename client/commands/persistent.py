@@ -347,12 +347,13 @@ async def try_initialize(
 @connection.asynccontextmanager
 async def _read_lsp_request(
     input_channel: connection.TextReader, output_channel: connection.TextWriter
-) -> AsyncIterator[json_rpc.Request]:
+) -> AsyncIterator[Optional[json_rpc.Request]]:
     message = None
     try:
         message = await lsp.read_json_rpc(input_channel)
         yield message
     except json_rpc.JSONRPCException as json_rpc_error:
+        LOG.debug(f"Exception occurred while reading JSON RPC: {json_rpc_error}")
         await lsp.write_json_rpc_ignore_connection_error(
             output_channel,
             json_rpc.ErrorResponse(
@@ -364,6 +365,7 @@ async def _read_lsp_request(
                 message=str(json_rpc_error),
             ),
         )
+        yield None
 
 
 async def _wait_for_exit(
@@ -379,7 +381,7 @@ async def _wait_for_exit(
     """
     while True:
         async with _read_lsp_request(input_channel, output_channel) as request:
-            if request.method == "exit":
+            if request is not None and request.method == "exit":
                 return
             else:
                 raise json_rpc.InvalidRequestError(
@@ -921,6 +923,9 @@ class PyreServer:
             async with _read_lsp_request(
                 self.input_channel, self.output_channel
             ) as request:
+                if request is None:
+                    LOG.debug("LSP request reading failed. Trying again...")
+                    continue
                 LOG.debug(f"Received LSP request: {log.truncate(str(request), 400)}")
 
                 if request.method == "exit":
