@@ -1252,7 +1252,7 @@ module IncrementalTest = struct
       actual_module_paths
 end
 
-let test_update context =
+let test_update_new_files context =
   let open IncrementalTest in
   let assert_incremental = assert_incremental ~context in
   (* Baseline: no update *)
@@ -1289,7 +1289,6 @@ let test_update context =
       { handle = "a.thrift"; operation = FileOperation.Add };
     ]
     ~expected:[];
-
   (* Adding new shadowing file for an existing module *)
   assert_incremental
     [
@@ -1313,7 +1312,6 @@ let test_update context =
         { handle = "a/__init__.pyi"; operation = FileOperation.Add };
       ]
     ~expected:[Event.create_new_explicit ~is_external:true "a/__init__.pyi"];
-
   (* Adding new shadowed file for an existing module *)
   assert_incremental
     [
@@ -1333,7 +1331,12 @@ let test_update context =
         { handle = "a.py"; operation = FileOperation.Add };
       ]
     ~expected:[];
+  ()
 
+
+let test_update_remove_files context =
+  let open IncrementalTest in
+  let assert_incremental = assert_incremental ~context in
   (* Removing a module *)
   assert_incremental
     [{ handle = "a.py"; operation = FileOperation.Remove }]
@@ -1366,7 +1369,6 @@ let test_update context =
       { handle = "b.thrift"; operation = FileOperation.Remove };
     ]
     ~expected:[];
-
   (* Removing shadowing file for a module *)
   assert_incremental
     [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
@@ -1387,7 +1389,6 @@ let test_update context =
         { handle = "a/__init__.pyi"; operation = FileOperation.Remove };
       ]
     ~expected:[Event.create_new_explicit "a.py"];
-
   (* Removing shadowed file for a module *)
   assert_incremental
     [{ handle = "a.py"; operation = FileOperation.Remove }]
@@ -1408,7 +1409,12 @@ let test_update context =
     ]
     ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.LeftAlone }]
     ~expected:[];
+  ()
 
+
+let test_update_changed_files context =
+  let open IncrementalTest in
+  let assert_incremental = assert_incremental ~context in
   (* Update file *)
   assert_incremental
     [{ handle = "a.py"; operation = FileOperation.Update }]
@@ -1446,7 +1452,12 @@ let test_update context =
       { handle = "a.pyi"; operation = FileOperation.Add };
     ]
     ~expected:[Event.create_new_explicit "a.pyi"];
+  ()
 
+
+let test_update_implicits context =
+  let open IncrementalTest in
+  let assert_incremental = assert_incremental ~context in
   (* Implicit submodule insertion *)
   assert_incremental
     [{ handle = "a/b.py"; operation = FileOperation.Add }]
@@ -1741,7 +1752,10 @@ let () =
          "hidden_files " >:: test_hidden_files;
          "hidden_files2 " >:: test_hidden_files2;
          "namespace_modules " >:: test_namespace_modules;
-         "update" >:: test_update;
+         "update_new_files" >:: test_update_new_files;
+         "update_remove_files" >:: test_update_remove_files;
+         "update_changed_files" >:: test_update_changed_files;
+         "update_implicits" >:: test_update_implicits;
          "overlay_basic" >:: test_overlay_basic;
          "overlay_code_hiding" >:: test_overlay_code_hiding;
        ]
