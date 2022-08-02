@@ -218,21 +218,21 @@ let same_module_compare
       >>| fst
     in
     match find_extension_index left_path, find_extension_index right_path with
-    | Some left, Some right -> right - left
+    | Some left, Some right -> left - right
     | _ -> 0
   in
   (* Stub file always takes precedence *)
   match left_is_stub, right_is_stub with
-  | true, false -> 1
-  | false, true -> -1
+  | true, false -> -1
+  | false, true -> 1
   | _, _ -> (
       (* Smaller int means higher priority *)
-      match Int.compare right_priority left_priority with
+      match Int.compare left_priority right_priority with
       | 0 -> (
           (* Package takes precedence over file module with the same name *)
           match left_is_init, right_is_init with
-          | true, false -> 1
-          | false, true -> -1
+          | true, false -> -1
+          | false, true -> 1
           | _, _ -> extension_priority ())
       | _ as result -> result)
 

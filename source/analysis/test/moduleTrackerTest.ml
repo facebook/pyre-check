@@ -133,7 +133,7 @@ let assert_no_module_path ~configuration root relative =
       assert_failure message
 
 
-let assert_same_module_greater
+let assert_same_module_less
     ~configuration
     ({ ModulePath.qualifier = left_qualifier; _ } as left)
     ({ ModulePath.qualifier = right_qualifier; _ } as right)
@@ -142,13 +142,13 @@ let assert_same_module_greater
   let compare_result = ModulePath.same_module_compare ~configuration left right in
   let message =
     Format.asprintf
-      "\'%a\' is supposed to be greater than \'%a\'"
+      "\'%a\' is supposed to be less than \'%a\'"
       Sexp.pp_hum
       (ModulePath.sexp_of_t left)
       Sexp.pp_hum
       (ModulePath.sexp_of_t right)
   in
-  assert_bool message (compare_result > 0)
+  assert_bool message (compare_result < 0)
 
 
 let test_module_path context =
@@ -176,7 +176,7 @@ let test_module_path context =
   in
   let create_exn = create_module_path_exn ~configuration in
   let assert_module_path = assert_module_path ~configuration in
-  let assert_same_module_greater = assert_same_module_greater ~configuration in
+  let assert_same_module_less = assert_same_module_less ~configuration in
   let assert_no_module_path = assert_no_module_path ~configuration in
   (* Creation test *)
   let local_a = create_exn local_root "a.py" in
@@ -290,20 +290,20 @@ let test_module_path context =
   let extension_third = create_exn local_root "dir/a.third" in
   let extension_py = create_exn local_root "dir/a.py" in
   (* Comparison test *)
-  assert_same_module_greater external_a local_a;
-  assert_same_module_greater external_bstub local_b;
-  assert_same_module_greater external_binit local_b;
-  assert_same_module_greater external_bstub external_binit;
-  assert_same_module_greater local_cstub local_c;
-  assert_same_module_greater external_cstub external_c;
-  assert_same_module_greater external_cstub local_cstub;
-  assert_same_module_greater external_cstub local_c;
-  assert_same_module_greater local_cstub external_c;
-  assert_same_module_greater external_c local_c;
-  assert_same_module_greater local_dinit local_d;
-  assert_same_module_greater extension_first extension_second;
-  assert_same_module_greater extension_first extension_third;
-  assert_same_module_greater extension_py extension_first;
+  assert_same_module_less external_a local_a;
+  assert_same_module_less external_bstub local_b;
+  assert_same_module_less external_binit local_b;
+  assert_same_module_less external_bstub external_binit;
+  assert_same_module_less local_cstub local_c;
+  assert_same_module_less external_cstub external_c;
+  assert_same_module_less external_cstub local_cstub;
+  assert_same_module_less external_cstub local_c;
+  assert_same_module_less local_cstub external_c;
+  assert_same_module_less external_c local_c;
+  assert_same_module_less local_dinit local_d;
+  assert_same_module_less extension_first extension_second;
+  assert_same_module_less extension_first extension_third;
+  assert_same_module_less extension_py extension_first;
   ()
 
 
@@ -955,7 +955,7 @@ let test_overlapping2 context =
   in
   let create_exn = create_module_path_exn ~configuration in
   let assert_module_path = assert_module_path ~configuration in
-  let assert_same_module_greater = assert_same_module_greater ~configuration in
+  let assert_same_module_less = assert_same_module_less ~configuration in
   assert_module_path
     (create_exn local_root "a.py")
     ~search_root:local_root
@@ -999,11 +999,11 @@ let test_overlapping2 context =
     ~is_stub:true
     ~is_external:false;
 
-  assert_same_module_greater (create_exn stubs_root "a.pyi") (create_exn venv_root "a.pyi");
-  assert_same_module_greater (create_exn stubs_root "a.pyi") (create_exn local_root "a.py");
-  assert_same_module_greater (create_exn venv_root "a.pyi") (create_exn local_root "a.py");
-  assert_same_module_greater (create_exn venv_root "b.pyi") (create_exn local_root "b.pyi");
-  assert_same_module_greater (create_exn local_root "c.pyi") (create_exn venv_root "c.py")
+  assert_same_module_less (create_exn stubs_root "a.pyi") (create_exn venv_root "a.pyi");
+  assert_same_module_less (create_exn stubs_root "a.pyi") (create_exn local_root "a.py");
+  assert_same_module_less (create_exn venv_root "a.pyi") (create_exn local_root "a.py");
+  assert_same_module_less (create_exn venv_root "b.pyi") (create_exn local_root "b.pyi");
+  assert_same_module_less (create_exn local_root "c.pyi") (create_exn venv_root "c.py")
 
 
 let test_root_independence context =

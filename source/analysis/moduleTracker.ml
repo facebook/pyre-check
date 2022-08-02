@@ -189,7 +189,7 @@ module ExplicitModules = struct
 
                 (* Duplicate entry detected. Do nothing *)
                 existing_paths
-            | x when x > 0 -> List.rev_append sofar (to_insert :: existing)
+            | x when x < 0 -> List.rev_append sofar (to_insert :: existing)
             | _ -> insert (current_path :: sofar) rest)
       in
       insert [] existing_paths
@@ -211,7 +211,7 @@ module ExplicitModules = struct
                   assert (partially_equal to_remove current_path)
                 in
                 List.rev_append sofar rest
-            | x when x > 0 -> existing_paths
+            | x when x < 0 -> existing_paths
             | _ -> remove (current_path :: sofar) rest)
       in
       remove [] existing_paths
