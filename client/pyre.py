@@ -1046,6 +1046,12 @@ def servers_stop(context: click.Context) -> int:
     hidden=True,
     help="Skip the initial type check of all in-project modules.",
 )
+@click.option(
+    "--use-lazy-module-tracking/--no-use-lazy-module-tracking",
+    default=False,
+    hidden=True,
+    help="Use lazy module tracking. This is experimental and cannot power full checks.",
+)
 @click.pass_context
 def start(
     context: click.Context,
@@ -1054,6 +1060,7 @@ def start(
     no_watchman: bool,
     wait_on_initialization: bool,
     skip_initial_type_check: bool,
+    use_lazy_module_tracking: bool,
 ) -> int:
     """
     Starts a pyre server as a daemon.
@@ -1085,6 +1092,7 @@ def start(
             terminal=terminal,
             wait_on_initialization=wait_on_initialization,
             skip_initial_type_check=skip_initial_type_check,
+            use_lazy_module_tracking=use_lazy_module_tracking,
         ),
     )
 

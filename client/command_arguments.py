@@ -98,6 +98,7 @@ class StartArguments:
     terminal: bool = False
     wait_on_initialization: bool = False
     skip_initial_type_check: bool = False
+    use_lazy_module_tracking: bool = False
 
 
 @dataclass(frozen=True)

@@ -138,7 +138,7 @@ class Arguments:
     critical_files: Sequence[CriticalFile] = dataclasses.field(default_factory=list)
     saved_state_action: Optional[SavedStateAction] = None
     skip_initial_type_check: bool = False
-    lazy_module_tracking: bool = False
+    use_lazy_module_tracking: bool = False
 
     def serialize(self) -> Dict[str, Any]:
         return {
@@ -168,6 +168,7 @@ class Arguments:
                 else {"saved_state_action": self.saved_state_action.serialize()}
             ),
             "skip_initial_type_check": self.skip_initial_type_check,
+            "use_lazy_module_tracking": self.use_lazy_module_tracking,
         }
 
 
@@ -324,6 +325,7 @@ def create_server_arguments(
             start_arguments, relative_local_root=relative_local_root
         ),
         skip_initial_type_check=start_arguments.skip_initial_type_check,
+        use_lazy_module_tracking=start_arguments.use_lazy_module_tracking,
     )
 
 
