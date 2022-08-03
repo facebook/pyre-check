@@ -55,6 +55,8 @@ val same_module_compare : configuration:Configuration.Analysis.t -> t -> t -> in
 
 val is_stub : t -> bool
 
+val is_init : t -> bool
+
 val is_internal_path : configuration:Configuration.Analysis.t -> ArtifactPath.t -> bool
 
 val expand_relative_import : from:Reference.t -> t -> Reference.t

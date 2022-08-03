@@ -239,6 +239,8 @@ let same_module_compare
 
 let is_stub { is_stub; _ } = is_stub
 
+let is_init { is_init; _ } = is_init
+
 let expand_relative_import ~from { is_init; qualifier; _ } =
   match Reference.show from with
   | "builtins" -> Reference.empty
