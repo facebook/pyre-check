@@ -149,6 +149,7 @@ module ScratchProject = struct
         critical_files = [];
         saved_state_action = None;
         skip_initial_type_check = false;
+        use_lazy_module_tracking = false;
       }
     in
     {

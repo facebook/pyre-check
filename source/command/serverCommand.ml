@@ -21,6 +21,7 @@ module ServerConfiguration = struct
     critical_files: CriticalFile.t list;
     saved_state_action: SavedStateAction.t option;
     skip_initial_type_check: bool;
+    use_lazy_module_tracking: bool;
   }
   [@@deriving sexp, compare, hash]
 
@@ -58,6 +59,9 @@ module ServerConfiguration = struct
           let skip_initial_type_check =
             json |> bool_member "skip_initial_type_check" ~default:false
           in
+          let use_lazy_module_tracking =
+            json |> bool_member "use_lazy_module_tracking" ~default:false
+          in
           Result.Ok
             {
               base;
@@ -71,6 +75,7 @@ module ServerConfiguration = struct
               store_type_check_resolution;
               additional_logging_sections;
               skip_initial_type_check;
+              use_lazy_module_tracking;
             }
     with
     | Type_error (message, _)
@@ -87,6 +92,7 @@ module ServerConfiguration = struct
         critical_files;
         saved_state_action;
         skip_initial_type_check;
+        use_lazy_module_tracking;
         _;
       }
     =
@@ -97,6 +103,7 @@ module ServerConfiguration = struct
       critical_files;
       saved_state_action;
       skip_initial_type_check;
+      use_lazy_module_tracking;
     }
 
 
@@ -134,6 +141,7 @@ module ServerConfiguration = struct
         saved_state_action = _;
         additional_logging_sections = _;
         skip_initial_type_check = _;
+        use_lazy_module_tracking = _;
       }
     =
     Configuration.Analysis.create

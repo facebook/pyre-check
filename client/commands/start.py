@@ -138,6 +138,7 @@ class Arguments:
     critical_files: Sequence[CriticalFile] = dataclasses.field(default_factory=list)
     saved_state_action: Optional[SavedStateAction] = None
     skip_initial_type_check: bool = False
+    lazy_module_tracking: bool = False
 
     def serialize(self) -> Dict[str, Any]:
         return {

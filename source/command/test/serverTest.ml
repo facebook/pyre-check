@@ -41,6 +41,7 @@ let test_json_parsing context =
       store_type_check_resolution = false;
       saved_state_action = None;
       skip_initial_type_check = false;
+      use_lazy_module_tracking = false;
     }
   in
 

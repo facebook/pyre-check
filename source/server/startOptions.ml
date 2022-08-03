@@ -14,5 +14,6 @@ type t = {
   critical_files: CriticalFile.t list;
   saved_state_action: SavedStateAction.t option;
   skip_initial_type_check: bool;
+  use_lazy_module_tracking: bool;
 }
 [@@deriving sexp, compare]

@@ -242,6 +242,7 @@ let initialize_server_state
     ~build_system_initializer
     ~saved_state_action
     ~skip_initial_type_check
+    ~use_lazy_module_tracking
     ({
        ServerProperties.configuration = { Configuration.Analysis.log_directory; _ } as configuration;
        critical_files;
@@ -255,7 +256,10 @@ let initialize_server_state
     let overlaid_environment =
       Scheduler.with_scheduler ~configuration ~f:(fun scheduler ->
           let environment =
-            Analysis.EnvironmentControls.create ~populate_call_graph:true configuration
+            Analysis.EnvironmentControls.create
+              ~populate_call_graph:true
+              ~use_lazy_module_tracking
+              configuration
             |> Analysis.ErrorsEnvironment.create
           in
           let () =
@@ -526,6 +530,7 @@ let with_server
        critical_files;
        saved_state_action;
        skip_initial_type_check;
+       use_lazy_module_tracking;
      } as start_options)
   =
   let open Lwt in
@@ -550,6 +555,7 @@ let with_server
           ~build_system_initializer
           ~saved_state_action
           ~skip_initial_type_check
+          ~use_lazy_module_tracking
           server_properties)
   in
   LwtSocketServer.establish prepared_socket ~f:(handle_connection ~server_properties ~server_state)
