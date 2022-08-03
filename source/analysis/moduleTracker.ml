@@ -274,7 +274,11 @@ end
 
 module ExplicitModules = struct
   module Value = struct
-    type t = ModulePath.t list
+    type t = ModulePath.t list [@@deriving compare]
+
+    let empty = []
+
+    let description = "ExplicitModules"
 
     let module_path = function
       | module_path :: _ -> Some module_path
@@ -395,55 +399,67 @@ module ExplicitModules = struct
   module Table = struct
     module Api = struct
       type t = {
+        process_update: qualifier:Reference.t -> bool;
         find: qualifier:Reference.t -> Value.t option;
         set: qualifier:Reference.t -> Value.t -> unit;
         remove: qualifier:Reference.t -> unit;
         data: unit -> Value.t list;
       }
 
-      let update_module_paths ~configuration ~module_path_updates { find; set; remove; _ } =
+      let update_module_paths
+          ~configuration
+          ~module_path_updates
+          { find; set; remove; process_update; _ }
+        =
         (* Process a single module_path update *)
-        let process_module_path_update ~configuration = function
-          | ModulePaths.Update.NewOrChanged ({ ModulePath.qualifier; _ } as module_path) -> (
-              match find ~qualifier with
-              | None ->
-                  (* New file for a new module *)
-                  set ~qualifier [module_path];
-                  Some (Update.New module_path)
-              | Some module_paths ->
-                  let new_module_paths =
-                    Value.insert_module_path ~configuration ~to_insert:module_path module_paths
-                  in
-                  let new_module_path = List.hd_exn new_module_paths in
-                  set ~qualifier new_module_paths;
-                  if ModulePath.equal new_module_path module_path then
-                    (* Updating a shadowing file means the module gets changed *)
-                    Some (Update.Changed module_path)
-                  else (* Updating a shadowed file should not trigger any reanalysis *)
-                    None)
-          | ModulePaths.Update.Remove ({ ModulePath.qualifier; _ } as module_path) -> (
-              find ~qualifier
-              >>= fun module_paths ->
-              match module_paths with
-              | [] ->
-                  (* This should never happen but handle it just in case *)
-                  remove ~qualifier;
-                  None
-              | old_module_path :: _ -> (
-                  match
-                    Value.remove_module_path ~configuration ~to_remove:module_path module_paths
-                  with
-                  | [] ->
-                      (* Last remaining file for the module gets removed. *)
-                      remove ~qualifier;
-                      Some (Update.Delete qualifier)
-                  | new_module_path :: _ as new_module_paths ->
-                      set ~qualifier new_module_paths;
-                      if ModulePath.equal old_module_path new_module_path then
-                        (* Removing a shadowed file should not trigger any reanalysis *)
-                        None
-                      else (* Removing module_path un-shadows another source file. *)
-                        Some (Update.Changed new_module_path)))
+        let process_module_path_update ~configuration module_path_update =
+          let ({ ModulePath.qualifier; _ } as module_path) =
+            ModulePaths.Update.module_path module_path_update
+          in
+          if not (process_update ~qualifier) then
+            None
+          else
+            match module_path_update with
+            | ModulePaths.Update.NewOrChanged _ -> (
+                match find ~qualifier with
+                | None ->
+                    (* New file for a new module *)
+                    set ~qualifier [module_path];
+                    Some (Update.New module_path)
+                | Some module_paths ->
+                    let new_module_paths =
+                      Value.insert_module_path ~configuration ~to_insert:module_path module_paths
+                    in
+                    let new_module_path = List.hd_exn new_module_paths in
+                    set ~qualifier new_module_paths;
+                    if ModulePath.equal new_module_path module_path then
+                      (* Updating a shadowing file means the module gets changed *)
+                      Some (Update.Changed module_path)
+                    else (* Updating a shadowed file should not trigger any reanalysis *)
+                      None)
+            | ModulePaths.Update.Remove _ -> (
+                find ~qualifier
+                >>= fun module_paths ->
+                match module_paths with
+                | [] ->
+                    (* This should never happen but handle it just in case *)
+                    remove ~qualifier;
+                    None
+                | old_module_path :: _ -> (
+                    match
+                      Value.remove_module_path ~configuration ~to_remove:module_path module_paths
+                    with
+                    | [] ->
+                        (* Last remaining file for the module gets removed. *)
+                        remove ~qualifier;
+                        Some (Update.Delete qualifier)
+                    | new_module_path :: _ as new_module_paths ->
+                        set ~qualifier new_module_paths;
+                        if ModulePath.equal old_module_path new_module_path then
+                          (* Removing a shadowed file should not trigger any reanalysis *)
+                          None
+                        else (* Removing module_path un-shadows another source file. *)
+                          Some (Update.Changed new_module_path)))
         in
         (* Make sure we have only one update per module *)
         List.filter_map module_path_updates ~f:(process_module_path_update ~configuration)
@@ -468,11 +484,33 @@ module ExplicitModules = struct
 
 
       let to_api eager =
+        let process_update ~qualifier:_ = true in
         let find ~qualifier = Reference.Table.find eager qualifier in
         let set ~qualifier value = Reference.Table.set eager ~key:qualifier ~data:value in
         let remove ~qualifier = Reference.Table.remove eager qualifier in
         let data () = Hashtbl.data eager in
-        Api.{ find; set; remove; data }
+        Api.{ process_update; find; set; remove; data }
+    end
+
+    module Lazy = struct
+      include LazyTracking.Table.Make (struct
+        include Value
+
+        let produce = ModulePaths.LazyFinder.find_module_paths
+      end)
+
+      let to_api table =
+        Api.
+          {
+            process_update = key_exists table;
+            find = find table;
+            set = set table;
+            remove = remove table;
+            data =
+              (fun () ->
+                failwith
+                  "Lazy module trackers cannot support APIs that require listing all qualifiers");
+          }
     end
   end
 end
@@ -487,7 +525,11 @@ module ImplicitModules = struct
   module Value = struct
     (* This represents the raw paths of all *explicit* children. We treat a namespace package as
        importable only when it has regular python files as children, i.e. when this set is nonempty. *)
-    type t = ModulePath.Raw.Set.t
+    type t = ModulePath.Raw.Set.t [@@deriving compare]
+
+    let empty = ModulePath.Raw.Set.empty
+
+    let description = "ImplicitModules"
 
     let should_treat_as_importable explicit_children =
       not (ModulePath.Raw.Set.is_empty explicit_children)
@@ -503,6 +545,7 @@ module ImplicitModules = struct
   module Table = struct
     module Api = struct
       type t = {
+        process_update: qualifier:Reference.t -> bool;
         find: qualifier:Reference.t -> Value.t option;
         set: qualifier:Reference.t -> Value.t -> unit;
       }
@@ -522,42 +565,44 @@ module ImplicitModules = struct
               None
       end
 
-      let update_module_paths ~module_path_updates { find; set } =
+      let update_module_paths ~module_path_updates { find; set; process_update } =
         let process_module_path_update previous_existence module_path_update =
           let module_path = ModulePaths.Update.module_path module_path_update in
           match parent_qualifier_and_raw module_path with
           | None -> previous_existence
           | Some (qualifier, raw_child) ->
-              (* Get the previous state and new state *)
-              let previous_explicit_children =
-                find ~qualifier |> Option.value ~default:ModulePath.Raw.Set.empty
-              in
-              let next_explicit_children =
-                match module_path_update with
-                | ModulePaths.Update.NewOrChanged _ ->
-                    ModulePath.Raw.Set.add raw_child previous_explicit_children
-                | ModulePaths.Update.Remove _ ->
-                    ModulePath.Raw.Set.remove raw_child previous_explicit_children
-              in
-              (* update implicit_modules as a side effect *)
-              let () = set ~qualifier next_explicit_children in
-              (* As we fold the updates, track existince before-and-after *)
-              let next_existence =
-                let open Existence in
-                Reference.Map.update previous_existence qualifier ~f:(function
-                    | None ->
-                        {
-                          existed_before =
-                            Value.should_treat_as_importable previous_explicit_children;
-                          exists_after = Value.should_treat_as_importable next_explicit_children;
-                        }
-                    | Some { existed_before; _ } ->
-                        {
-                          existed_before;
-                          exists_after = Value.should_treat_as_importable next_explicit_children;
-                        })
-              in
-              next_existence
+              if not (process_update ~qualifier) then
+                previous_existence
+              else (* Get the previous state and new state *)
+                let previous_explicit_children =
+                  find ~qualifier |> Option.value ~default:ModulePath.Raw.Set.empty
+                in
+                let next_explicit_children =
+                  match module_path_update with
+                  | ModulePaths.Update.NewOrChanged _ ->
+                      ModulePath.Raw.Set.add raw_child previous_explicit_children
+                  | ModulePaths.Update.Remove _ ->
+                      ModulePath.Raw.Set.remove raw_child previous_explicit_children
+                in
+                (* update implicit_modules as a side effect *)
+                let () = set ~qualifier next_explicit_children in
+                (* As we fold the updates, track existince before-and-after *)
+                let next_existence =
+                  let open Existence in
+                  Reference.Map.update previous_existence qualifier ~f:(function
+                      | None ->
+                          {
+                            existed_before =
+                              Value.should_treat_as_importable previous_explicit_children;
+                            exists_after = Value.should_treat_as_importable next_explicit_children;
+                          }
+                      | Some { existed_before; _ } ->
+                          {
+                            existed_before;
+                            exists_after = Value.should_treat_as_importable next_explicit_children;
+                          })
+                in
+                next_existence
         in
         List.fold module_path_updates ~init:Reference.Map.empty ~f:process_module_path_update
         |> Reference.Map.filter_mapi ~f:(fun ~key ~data -> Existence.to_update ~qualifier:key data)
@@ -582,9 +627,24 @@ module ImplicitModules = struct
 
 
       let to_api eager =
+        let process_update ~qualifier:_ = true in
         let find ~qualifier = Reference.Table.find eager qualifier in
         let set ~qualifier data = Reference.Table.set eager ~key:qualifier ~data in
-        Api.{ find; set }
+        Api.{ process_update; find; set }
+    end
+
+    module Lazy = struct
+      include LazyTracking.Table.Make (struct
+        include Value
+
+        let produce ~configuration qualifier =
+          ModulePaths.LazyFinder.directory_children ~configuration qualifier
+          |> List.filter_map ~f:(ModulePath.Raw.create ~configuration)
+          |> ModulePath.Raw.Set.of_list
+      end)
+
+      let to_api table =
+        Api.{ process_update = key_exists table; find = find table; set = set table }
     end
   end
 end
@@ -744,9 +804,31 @@ module Layouts = struct
         }
   end
 
+  module Lazy = struct
+    type t = {
+      explicit_modules: ExplicitModules.Table.Lazy.t;
+      implicit_modules: ImplicitModules.Table.Lazy.t;
+    }
+
+    let create ~controls =
+      let configuration = EnvironmentControls.configuration controls in
+      let explicit_modules = ExplicitModules.Table.Lazy.create ~configuration in
+      let implicit_modules = ImplicitModules.Table.Lazy.create ~configuration in
+      { explicit_modules; implicit_modules }
+
+
+    let to_api { explicit_modules; implicit_modules } =
+      Api.
+        {
+          explicit_modules = ExplicitModules.Table.Lazy.to_api explicit_modules;
+          implicit_modules = ImplicitModules.Table.Lazy.to_api implicit_modules;
+          store = (fun () -> failwith "Lazy ModuleTrackers cannot be stored");
+        }
+  end
+
   let create ~controls =
     if EnvironmentControls.use_lazy_module_tracking controls then
-      failwith "Lazy tracking is not yet implemented"
+      Lazy.create ~controls |> Lazy.to_api
     else
       Eager.create ~controls |> Eager.to_api
 

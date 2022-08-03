@@ -340,8 +340,7 @@ let test_search_path_subdirectory context =
     (ModulePath.full_path ~configuration module_path_b)
 
 
-(* TODO: allow lazy tests to run once we write the lazy tracker logic *)
-let run_lazy_and_nonlazy ~f = List.iter [false] ~f
+let run_lazy_and_nonlazy ~f = List.iter [true; false] ~f
 
 let test_initialization context =
   let ({ Configuration.Analysis.local_root; _ } as configuration), external_root =
@@ -1652,8 +1651,11 @@ let test_update_implicits context =
 let test_update_lazy_tracker context =
   let open IncrementalTest in
   let assert_incremental =
-    (* TODO: actually use a lazy tracker here once we implement it *)
-    assert_incremental ~context
+    let open Test in
+    assert_incremental
+      ~context
+      ~loading_style:
+        (LazyLookUpQualifiers [!&"looked_up"; !&"inner.looked_up"; !&"implicit_looked_up"])
   in
   (* TODO: get rid of this; without it the compiler will not let us include a not-yet-used variant. *)
   let _ = LoadingStyle.LazyLookUpQualifiers [] in
@@ -1665,12 +1667,7 @@ let test_update_lazy_tracker context =
       { handle = "not_looked_up.py"; operation = FileOperation.Add };
     ]
     ~expected:
-      [
-        Event.create_new_explicit "looked_up.py";
-        Event.create_new_explicit "inner/looked_up.py";
-        Event.NewImplicit "inner";
-        Event.create_new_explicit "not_looked_up.py";
-      ];
+      [Event.create_new_explicit "looked_up.py"; Event.create_new_explicit "inner/looked_up.py"];
   (* Updating modules *)
   assert_incremental
     [
@@ -1679,11 +1676,7 @@ let test_update_lazy_tracker context =
       { handle = "not_looked_up.py"; operation = FileOperation.Update };
     ]
     ~expected:
-      [
-        Event.create_new_explicit "looked_up.py";
-        Event.create_new_explicit "inner/looked_up.py";
-        Event.create_new_explicit "not_looked_up.py";
-      ];
+      [Event.create_new_explicit "looked_up.py"; Event.create_new_explicit "inner/looked_up.py"];
   (* Shadowing existing modules *)
   assert_incremental
     [
@@ -1698,7 +1691,6 @@ let test_update_lazy_tracker context =
       [
         Event.create_new_explicit "looked_up/__init__.py";
         Event.create_new_explicit "inner/looked_up.pyi";
-        Event.create_new_explicit "not_looked_up.pyi";
       ];
   (* Un-shadowing existing modules *)
   assert_incremental
@@ -1711,11 +1703,7 @@ let test_update_lazy_tracker context =
       { handle = "not_looked_up.pyi"; operation = FileOperation.Remove };
     ]
     ~expected:
-      [
-        Event.create_new_explicit "looked_up.py";
-        Event.create_new_explicit "inner/looked_up.py";
-        Event.create_new_explicit "not_looked_up.py";
-      ];
+      [Event.create_new_explicit "looked_up.py"; Event.create_new_explicit "inner/looked_up.py"];
   (* Removing modules *)
   assert_incremental
     [
@@ -1723,39 +1711,21 @@ let test_update_lazy_tracker context =
       { handle = "inner/looked_up.py"; operation = FileOperation.Remove };
       { handle = "not_looked_up.py"; operation = FileOperation.Remove };
     ]
-    ~expected:
-      [
-        Event.Delete "looked_up";
-        Event.Delete "inner.looked_up";
-        Event.Delete "inner";
-        Event.Delete "not_looked_up";
-      ];
+    ~expected:[Event.Delete "looked_up"; Event.Delete "inner.looked_up"];
   (* New implicits *)
   assert_incremental
     [
       { handle = "implicit_looked_up/submodule.py"; operation = FileOperation.Add };
       { handle = "implicit_not_looked_up/submodule.py"; operation = FileOperation.Add };
     ]
-    ~expected:
-      [
-        Event.create_new_explicit "implicit_looked_up/submodule.py";
-        Event.create_new_explicit "implicit_not_looked_up/submodule.py";
-        Event.NewImplicit "implicit_looked_up";
-        Event.NewImplicit "implicit_not_looked_up";
-      ];
+    ~expected:[Event.NewImplicit "implicit_looked_up"];
   (* Removing implicits *)
   assert_incremental
     [
       { handle = "implicit_looked_up/submodule.py"; operation = FileOperation.Remove };
       { handle = "implicit_not_looked_up/submodule.py"; operation = FileOperation.Remove };
     ]
-    ~expected:
-      [
-        Event.Delete "implicit_looked_up.submodule";
-        Event.Delete "implicit_not_looked_up.submodule";
-        Event.Delete "implicit_looked_up";
-        Event.Delete "implicit_not_looked_up";
-      ];
+    ~expected:[Event.Delete "implicit_looked_up"];
   ()
 
 
