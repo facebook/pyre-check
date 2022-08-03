@@ -151,7 +151,7 @@ let assert_same_module_less
   assert_bool message (compare_result < 0)
 
 
-let test_module_path context =
+let test_module_path_create context =
   let ({ Configuration.Analysis.local_root; _ } as configuration), external_root =
     create_test_configuration
       ~context
@@ -307,7 +307,7 @@ let test_module_path context =
   ()
 
 
-let test_search_path_subdirectory context =
+let test_module_path_search_path_subdirectory context =
   let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
   let search_root =
     bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
@@ -338,6 +338,428 @@ let test_search_path_subdirectory context =
   assert_path
     (Test.relative_artifact_path ~root:search_subdirectory ~relative:"c.py")
     (ModulePath.full_path ~configuration module_path_b)
+
+
+let test_module_path_exclude context =
+  (* Test that ${SOURCE_DIRECTORY} gets correctly replaced *)
+  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
+  let external_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  create_file local_root "foo.py";
+  create_file local_root "bar.py";
+  create_file local_root "baz.py";
+  create_file external_root "foo.py";
+  create_file external_root "bar.py";
+  create_file external_root "baz.py";
+
+  let configuration =
+    Configuration.Analysis.create
+      ~local_root
+      ~source_paths:[SearchPath.Root local_root]
+      ~search_paths:[SearchPath.Root external_root]
+      ~excludes:["${SOURCE_DIRECTORY}/ba.*"]
+      ()
+  in
+  let create_exn = create_module_path_exn ~configuration in
+  let assert_module_path = assert_module_path ~configuration in
+  let assert_no_module_path = assert_no_module_path ~configuration in
+  assert_module_path (create_exn local_root "foo.py") ~search_root:local_root ~relative:"foo.py";
+  assert_no_module_path local_root "bar.py";
+  assert_no_module_path local_root "baz.py";
+  assert_module_path
+    (create_exn external_root "foo.py")
+    ~search_root:external_root
+    ~relative:"foo.py";
+  assert_module_path
+    (create_exn external_root "bar.py")
+    ~search_root:external_root
+    ~relative:"bar.py";
+  assert_module_path
+    (create_exn external_root "baz.py")
+    ~search_root:external_root
+    ~relative:"baz.py"
+
+
+let test_module_path_directory_filter context =
+  (* SETUP:
+   * - all_root is the parent of both local_root and external_root
+   * - local_root is the local root
+   * - search_root is the root of other search paths
+   * - both derp and durp lives under search_root
+   * - search_root is allowlisted with filter_directories and durp is denylisted with ignore_all_errors
+   * We want to make sure that the is_external field is correct for this setup. *)
+  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
+  let search_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let derp_path = PyrePath.absolute search_root ^ "/derp" in
+  Sys_utils.mkdir_no_fail derp_path;
+  let durp_path = PyrePath.absolute search_root ^ "/durp" in
+  Sys_utils.mkdir_no_fail durp_path;
+  let derp = PyrePath.create_absolute ~follow_symbolic_links:true derp_path in
+  let durp = PyrePath.create_absolute ~follow_symbolic_links:true durp_path in
+  create_file local_root "a.py";
+  create_file search_root "b.py";
+  create_file derp "c.py";
+  create_file durp "d.py";
+  create_file local_root "e.py";
+
+  let configuration =
+    Configuration.Analysis.create
+      ~local_root
+      ~source_paths:[SearchPath.Root local_root]
+      ~search_paths:[SearchPath.Root search_root]
+      ~filter_directories:[search_root]
+      ~ignore_all_errors:[durp; PyrePath.create_relative ~root:local_root ~relative:"e.py"]
+      ()
+  in
+  let assert_module_path = assert_module_path ~configuration in
+  let create_exn = create_module_path_exn ~configuration in
+  assert_module_path
+    (create_exn local_root "a.py")
+    ~search_root:local_root
+    ~relative:"a.py"
+    ~is_external:true;
+  assert_module_path
+    (create_exn search_root "b.py")
+    ~search_root
+    ~relative:"b.py"
+    ~is_external:false;
+  assert_module_path
+    (create_exn search_root "derp/c.py")
+    ~search_root
+    ~relative:"derp/c.py"
+    ~is_external:false;
+  assert_module_path
+    (create_exn search_root "durp/d.py")
+    ~search_root
+    ~relative:"durp/d.py"
+    ~is_external:true;
+  assert_module_path
+    (create_exn local_root "e.py")
+    ~search_root:local_root
+    ~relative:"e.py"
+    ~is_external:true
+
+
+let test_module_path_directory_filter2 context =
+  (* SETUP:
+   * - local_root is the local root
+   * - search_root is the root of other search paths
+   * We want to test the case when `ignore_all_errors` contains nonexistent directories. *)
+  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
+  let search_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let nonexist_root = PyrePath.create_absolute "/whosyourdaddy" in
+  assert (not (PyrePath.file_exists nonexist_root));
+
+  create_file local_root "a.py";
+  create_file search_root "b.py";
+  let configuration =
+    Configuration.Analysis.create
+      ~local_root
+      ~source_paths:[SearchPath.Root local_root]
+      ~search_paths:[SearchPath.Root search_root]
+      ~filter_directories:[local_root]
+      ~ignore_all_errors:[search_root; nonexist_root]
+      ()
+  in
+  let create_exn = create_module_path_exn ~configuration in
+  assert_module_path
+    (create_exn local_root "a.py")
+    ~configuration
+    ~search_root:local_root
+    ~relative:"a.py"
+    ~is_external:false;
+  assert_module_path
+    (create_exn search_root "b.py")
+    ~configuration
+    ~search_root
+    ~relative:"b.py"
+    ~is_external:true
+
+
+let test_module_path_directory_filter3 context =
+  (* We want test that filter_directories follows symlinks *)
+  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
+  let search_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let link_local_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let link_search_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  create_file local_root "a.py";
+  create_file search_root "b.py";
+  Unix.symlink
+    ~link_name:(PyrePath.create_relative ~root:link_local_root ~relative:"a.py" |> PyrePath.absolute)
+    ~target:(PyrePath.create_relative ~root:local_root ~relative:"a.py" |> PyrePath.absolute);
+  Unix.symlink
+    ~link_name:
+      (PyrePath.create_relative ~root:link_search_root ~relative:"b.py" |> PyrePath.absolute)
+    ~target:(PyrePath.create_relative ~root:search_root ~relative:"b.py" |> PyrePath.absolute);
+
+  let configuration =
+    Configuration.Analysis.create
+      ~local_root
+      ~source_paths:[SearchPath.Root local_root]
+      ~search_paths:[SearchPath.Root link_search_root; SearchPath.Root link_local_root]
+      ~filter_directories:[local_root]
+      ~ignore_all_errors:[search_root]
+      ()
+  in
+  let create_exn = create_module_path_exn ~configuration in
+  assert_module_path
+    (create_exn link_local_root "a.py")
+    ~configuration
+    ~search_root:link_local_root
+    ~relative:"a.py"
+    ~is_external:false;
+  assert_module_path
+    (create_exn link_search_root "b.py")
+    ~configuration
+    ~search_root:link_search_root
+    ~relative:"b.py"
+    ~is_external:true
+
+
+let test_module_path_overlapping context =
+  (* SETUP:
+   * - external_root0 lives under local_root
+   * - external_root1 lives under external_root0
+   * Module resolution boils down to which root comes first in the search path *)
+  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
+  let external_root0_path = PyrePath.absolute local_root ^ "/external0" in
+  Sys_utils.mkdir_no_fail external_root0_path;
+  let external_root1_path = external_root0_path ^ "/external1" in
+  Sys_utils.mkdir_no_fail external_root1_path;
+  let external_root0 = PyrePath.create_absolute ~follow_symbolic_links:true external_root0_path in
+  let external_root1 = PyrePath.create_absolute ~follow_symbolic_links:true external_root1_path in
+  create_file external_root0 "a.py";
+  create_file external_root1 "a.py";
+  create_file local_root "a.py";
+  create_file local_root "b.py";
+
+  let test_external_root_0_before_1 () =
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~source_paths:[SearchPath.Root local_root]
+        ~search_paths:[SearchPath.Root external_root0; SearchPath.Root external_root1]
+        ~filter_directories:[local_root]
+        ~ignore_all_errors:[external_root0; external_root1]
+        ()
+    in
+    let create_exn = create_module_path_exn ~configuration in
+    let assert_module_path = assert_module_path ~configuration in
+    assert_module_path
+      (create_exn local_root "a.py")
+      ~search_root:local_root
+      ~relative:"a.py"
+      ~is_external:false;
+    assert_module_path
+      (create_exn external_root0 "a.py")
+      ~search_root:external_root0
+      ~relative:"a.py"
+      ~is_external:true;
+    assert_module_path
+      (create_exn local_root "external0/a.py")
+      ~search_root:external_root0
+      ~relative:"a.py"
+      ~is_external:true;
+
+    (* Resolves to external1.a since external_root0 has higher precedence *)
+    assert_module_path
+      (create_exn external_root1 "a.py")
+      ~search_root:external_root0
+      ~relative:"external1/a.py"
+      ~is_external:true;
+    assert_module_path
+      (create_exn external_root0 "external1/a.py")
+      ~search_root:external_root0
+      ~relative:"external1/a.py"
+      ~is_external:true;
+    assert_module_path
+      (create_exn local_root "external0/external1/a.py")
+      ~search_root:external_root0
+      ~relative:"external1/a.py"
+      ~is_external:true
+  in
+  let test_external_root_1_before_0 () =
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~source_paths:[SearchPath.Root local_root]
+        ~search_paths:[SearchPath.Root external_root1; SearchPath.Root external_root0]
+        ~filter_directories:[local_root]
+        ~ignore_all_errors:[external_root0; external_root1]
+        ()
+    in
+    let create_exn = create_module_path_exn ~configuration in
+    let assert_module_path = assert_module_path ~configuration in
+    assert_module_path
+      (create_exn local_root "a.py")
+      ~search_root:local_root
+      ~relative:"a.py"
+      ~is_external:false;
+    assert_module_path
+      (create_exn external_root0 "a.py")
+      ~search_root:external_root0
+      ~relative:"a.py"
+      ~is_external:true;
+    assert_module_path
+      (create_exn local_root "external0/a.py")
+      ~search_root:external_root0
+      ~relative:"a.py"
+      ~is_external:true;
+    assert_module_path
+      (create_exn external_root1 "a.py")
+      ~search_root:external_root1
+      ~relative:"a.py"
+      ~is_external:true;
+    assert_module_path
+      (create_exn external_root0 "external1/a.py")
+      ~search_root:external_root1
+      ~relative:"a.py"
+      ~is_external:true;
+    assert_module_path
+      (create_exn local_root "external0/external1/a.py")
+      ~search_root:external_root1
+      ~relative:"a.py"
+      ~is_external:true
+  in
+  let test_local_root_rules_it_all () =
+    let configuration =
+      Configuration.Analysis.create
+        ~local_root
+        ~source_paths:
+          [
+            SearchPath.Root local_root;
+            SearchPath.Root external_root0;
+            SearchPath.Root external_root1;
+          ]
+        ~filter_directories:[local_root; external_root0; external_root1]
+        ()
+    in
+    let create_exn = create_module_path_exn ~configuration in
+    let assert_module_path = assert_module_path ~configuration in
+    assert_module_path
+      (create_exn local_root "a.py")
+      ~search_root:local_root
+      ~relative:"a.py"
+      ~is_external:false;
+    assert_module_path
+      (create_exn external_root0 "a.py")
+      ~search_root:local_root
+      ~relative:"external0/a.py"
+      ~is_external:false;
+    assert_module_path
+      (create_exn local_root "external0/a.py")
+      ~search_root:local_root
+      ~relative:"external0/a.py"
+      ~is_external:false;
+    assert_module_path
+      (create_exn external_root1 "a.py")
+      ~search_root:local_root
+      ~relative:"external0/external1/a.py"
+      ~is_external:false;
+    assert_module_path
+      (create_exn external_root0 "external1/a.py")
+      ~search_root:local_root
+      ~relative:"external0/external1/a.py"
+      ~is_external:false;
+    assert_module_path
+      (create_exn local_root "external0/external1/a.py")
+      ~search_root:local_root
+      ~relative:"external0/external1/a.py"
+      ~is_external:false
+  in
+  test_external_root_0_before_1 ();
+  test_external_root_1_before_0 ();
+  test_local_root_rules_it_all ();
+  ()
+
+
+let test_module_path_overlapping2 context =
+  (* SETUP:
+   * - stubs_root lives under local_root (project-internal stubs)
+   * - venv_root lives outside local_root (project-external stubs)
+   *)
+  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
+  let stubs_path = PyrePath.absolute local_root ^ "/stubs" in
+  Sys_utils.mkdir_no_fail stubs_path;
+  let stubs_root = PyrePath.create_absolute ~follow_symbolic_links:true stubs_path in
+  let venv_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
+  create_file local_root "a.py";
+  create_file local_root "b.pyi";
+  create_file local_root "c.pyi";
+  create_file stubs_root "a.pyi";
+  create_file venv_root "a.pyi";
+  create_file venv_root "b.pyi";
+  create_file venv_root "c.py";
+  let configuration =
+    Configuration.Analysis.create
+      ~local_root
+      ~source_paths:[SearchPath.Root local_root]
+      ~search_paths:[SearchPath.Root stubs_root; SearchPath.Root venv_root]
+      ~filter_directories:[local_root]
+      ()
+  in
+  let create_exn = create_module_path_exn ~configuration in
+  let assert_module_path = assert_module_path ~configuration in
+  let assert_same_module_less = assert_same_module_less ~configuration in
+  assert_module_path
+    (create_exn local_root "a.py")
+    ~search_root:local_root
+    ~is_stub:false
+    ~relative:"a.py"
+    ~is_external:false;
+  assert_module_path
+    (create_exn stubs_root "a.pyi")
+    ~search_root:stubs_root
+    ~relative:"a.pyi"
+    ~is_stub:true
+    ~is_external:false;
+  assert_module_path
+    (create_exn venv_root "a.pyi")
+    ~search_root:venv_root
+    ~relative:"a.pyi"
+    ~is_stub:true
+    ~is_external:true;
+  assert_module_path
+    (create_exn venv_root "b.pyi")
+    ~search_root:venv_root
+    ~relative:"b.pyi"
+    ~is_stub:true
+    ~is_external:true;
+  assert_module_path
+    (create_exn local_root "b.pyi")
+    ~search_root:local_root
+    ~relative:"b.pyi"
+    ~is_stub:true
+    ~is_external:false;
+  assert_module_path
+    (create_exn venv_root "c.py")
+    ~search_root:venv_root
+    ~relative:"c.py"
+    ~is_stub:false
+    ~is_external:true;
+  assert_module_path
+    (create_exn local_root "c.pyi")
+    ~search_root:local_root
+    ~relative:"c.pyi"
+    ~is_stub:true
+    ~is_external:false;
+
+  assert_same_module_less (create_exn stubs_root "a.pyi") (create_exn venv_root "a.pyi");
+  assert_same_module_less (create_exn stubs_root "a.pyi") (create_exn local_root "a.py");
+  assert_same_module_less (create_exn venv_root "a.pyi") (create_exn local_root "a.py");
+  assert_same_module_less (create_exn venv_root "b.pyi") (create_exn local_root "b.pyi");
+  assert_same_module_less (create_exn local_root "c.pyi") (create_exn venv_root "c.py")
 
 
 let run_lazy_and_nonlazy ~f = List.iter [true; false] ~f
@@ -602,428 +1024,6 @@ let test_priority_multi_source_paths context =
     ()
   in
   run_lazy_and_nonlazy ~f:run_tracker_tests
-
-
-let test_exclude context =
-  (* Test that ${SOURCE_DIRECTORY} gets correctly replaced *)
-  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  let external_root =
-    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-  in
-  create_file local_root "foo.py";
-  create_file local_root "bar.py";
-  create_file local_root "baz.py";
-  create_file external_root "foo.py";
-  create_file external_root "bar.py";
-  create_file external_root "baz.py";
-
-  let configuration =
-    Configuration.Analysis.create
-      ~local_root
-      ~source_paths:[SearchPath.Root local_root]
-      ~search_paths:[SearchPath.Root external_root]
-      ~excludes:["${SOURCE_DIRECTORY}/ba.*"]
-      ()
-  in
-  let create_exn = create_module_path_exn ~configuration in
-  let assert_module_path = assert_module_path ~configuration in
-  let assert_no_module_path = assert_no_module_path ~configuration in
-  assert_module_path (create_exn local_root "foo.py") ~search_root:local_root ~relative:"foo.py";
-  assert_no_module_path local_root "bar.py";
-  assert_no_module_path local_root "baz.py";
-  assert_module_path
-    (create_exn external_root "foo.py")
-    ~search_root:external_root
-    ~relative:"foo.py";
-  assert_module_path
-    (create_exn external_root "bar.py")
-    ~search_root:external_root
-    ~relative:"bar.py";
-  assert_module_path
-    (create_exn external_root "baz.py")
-    ~search_root:external_root
-    ~relative:"baz.py"
-
-
-let test_directory_filter context =
-  (* SETUP:
-   * - all_root is the parent of both local_root and external_root
-   * - local_root is the local root
-   * - search_root is the root of other search paths
-   * - both derp and durp lives under search_root
-   * - search_root is allowlisted with filter_directories and durp is denylisted with ignore_all_errors
-   * We want to make sure that the is_external field is correct for this setup. *)
-  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  let search_root =
-    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-  in
-  let derp_path = PyrePath.absolute search_root ^ "/derp" in
-  Sys_utils.mkdir_no_fail derp_path;
-  let durp_path = PyrePath.absolute search_root ^ "/durp" in
-  Sys_utils.mkdir_no_fail durp_path;
-  let derp = PyrePath.create_absolute ~follow_symbolic_links:true derp_path in
-  let durp = PyrePath.create_absolute ~follow_symbolic_links:true durp_path in
-  create_file local_root "a.py";
-  create_file search_root "b.py";
-  create_file derp "c.py";
-  create_file durp "d.py";
-  create_file local_root "e.py";
-
-  let configuration =
-    Configuration.Analysis.create
-      ~local_root
-      ~source_paths:[SearchPath.Root local_root]
-      ~search_paths:[SearchPath.Root search_root]
-      ~filter_directories:[search_root]
-      ~ignore_all_errors:[durp; PyrePath.create_relative ~root:local_root ~relative:"e.py"]
-      ()
-  in
-  let assert_module_path = assert_module_path ~configuration in
-  let create_exn = create_module_path_exn ~configuration in
-  assert_module_path
-    (create_exn local_root "a.py")
-    ~search_root:local_root
-    ~relative:"a.py"
-    ~is_external:true;
-  assert_module_path
-    (create_exn search_root "b.py")
-    ~search_root
-    ~relative:"b.py"
-    ~is_external:false;
-  assert_module_path
-    (create_exn search_root "derp/c.py")
-    ~search_root
-    ~relative:"derp/c.py"
-    ~is_external:false;
-  assert_module_path
-    (create_exn search_root "durp/d.py")
-    ~search_root
-    ~relative:"durp/d.py"
-    ~is_external:true;
-  assert_module_path
-    (create_exn local_root "e.py")
-    ~search_root:local_root
-    ~relative:"e.py"
-    ~is_external:true
-
-
-let test_directory_filter2 context =
-  (* SETUP:
-   * - local_root is the local root
-   * - search_root is the root of other search paths
-   * We want to test the case when `ignore_all_errors` contains nonexistent directories. *)
-  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  let search_root =
-    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-  in
-  let nonexist_root = PyrePath.create_absolute "/whosyourdaddy" in
-  assert (not (PyrePath.file_exists nonexist_root));
-
-  create_file local_root "a.py";
-  create_file search_root "b.py";
-  let configuration =
-    Configuration.Analysis.create
-      ~local_root
-      ~source_paths:[SearchPath.Root local_root]
-      ~search_paths:[SearchPath.Root search_root]
-      ~filter_directories:[local_root]
-      ~ignore_all_errors:[search_root; nonexist_root]
-      ()
-  in
-  let create_exn = create_module_path_exn ~configuration in
-  assert_module_path
-    (create_exn local_root "a.py")
-    ~configuration
-    ~search_root:local_root
-    ~relative:"a.py"
-    ~is_external:false;
-  assert_module_path
-    (create_exn search_root "b.py")
-    ~configuration
-    ~search_root
-    ~relative:"b.py"
-    ~is_external:true
-
-
-let test_directory_filter3 context =
-  (* We want test that filter_directories follows symlinks *)
-  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  let search_root =
-    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-  in
-  let link_local_root =
-    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-  in
-  let link_search_root =
-    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-  in
-  create_file local_root "a.py";
-  create_file search_root "b.py";
-  Unix.symlink
-    ~link_name:(PyrePath.create_relative ~root:link_local_root ~relative:"a.py" |> PyrePath.absolute)
-    ~target:(PyrePath.create_relative ~root:local_root ~relative:"a.py" |> PyrePath.absolute);
-  Unix.symlink
-    ~link_name:
-      (PyrePath.create_relative ~root:link_search_root ~relative:"b.py" |> PyrePath.absolute)
-    ~target:(PyrePath.create_relative ~root:search_root ~relative:"b.py" |> PyrePath.absolute);
-
-  let configuration =
-    Configuration.Analysis.create
-      ~local_root
-      ~source_paths:[SearchPath.Root local_root]
-      ~search_paths:[SearchPath.Root link_search_root; SearchPath.Root link_local_root]
-      ~filter_directories:[local_root]
-      ~ignore_all_errors:[search_root]
-      ()
-  in
-  let create_exn = create_module_path_exn ~configuration in
-  assert_module_path
-    (create_exn link_local_root "a.py")
-    ~configuration
-    ~search_root:link_local_root
-    ~relative:"a.py"
-    ~is_external:false;
-  assert_module_path
-    (create_exn link_search_root "b.py")
-    ~configuration
-    ~search_root:link_search_root
-    ~relative:"b.py"
-    ~is_external:true
-
-
-let test_overlapping context =
-  (* SETUP:
-   * - external_root0 lives under local_root
-   * - external_root1 lives under external_root0
-   * Module resolution boils down to which root comes first in the search path *)
-  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  let external_root0_path = PyrePath.absolute local_root ^ "/external0" in
-  Sys_utils.mkdir_no_fail external_root0_path;
-  let external_root1_path = external_root0_path ^ "/external1" in
-  Sys_utils.mkdir_no_fail external_root1_path;
-  let external_root0 = PyrePath.create_absolute ~follow_symbolic_links:true external_root0_path in
-  let external_root1 = PyrePath.create_absolute ~follow_symbolic_links:true external_root1_path in
-  create_file external_root0 "a.py";
-  create_file external_root1 "a.py";
-  create_file local_root "a.py";
-  create_file local_root "b.py";
-
-  let test_external_root_0_before_1 () =
-    let configuration =
-      Configuration.Analysis.create
-        ~local_root
-        ~source_paths:[SearchPath.Root local_root]
-        ~search_paths:[SearchPath.Root external_root0; SearchPath.Root external_root1]
-        ~filter_directories:[local_root]
-        ~ignore_all_errors:[external_root0; external_root1]
-        ()
-    in
-    let create_exn = create_module_path_exn ~configuration in
-    let assert_module_path = assert_module_path ~configuration in
-    assert_module_path
-      (create_exn local_root "a.py")
-      ~search_root:local_root
-      ~relative:"a.py"
-      ~is_external:false;
-    assert_module_path
-      (create_exn external_root0 "a.py")
-      ~search_root:external_root0
-      ~relative:"a.py"
-      ~is_external:true;
-    assert_module_path
-      (create_exn local_root "external0/a.py")
-      ~search_root:external_root0
-      ~relative:"a.py"
-      ~is_external:true;
-
-    (* Resolves to external1.a since external_root0 has higher precedence *)
-    assert_module_path
-      (create_exn external_root1 "a.py")
-      ~search_root:external_root0
-      ~relative:"external1/a.py"
-      ~is_external:true;
-    assert_module_path
-      (create_exn external_root0 "external1/a.py")
-      ~search_root:external_root0
-      ~relative:"external1/a.py"
-      ~is_external:true;
-    assert_module_path
-      (create_exn local_root "external0/external1/a.py")
-      ~search_root:external_root0
-      ~relative:"external1/a.py"
-      ~is_external:true
-  in
-  let test_external_root_1_before_0 () =
-    let configuration =
-      Configuration.Analysis.create
-        ~local_root
-        ~source_paths:[SearchPath.Root local_root]
-        ~search_paths:[SearchPath.Root external_root1; SearchPath.Root external_root0]
-        ~filter_directories:[local_root]
-        ~ignore_all_errors:[external_root0; external_root1]
-        ()
-    in
-    let create_exn = create_module_path_exn ~configuration in
-    let assert_module_path = assert_module_path ~configuration in
-    assert_module_path
-      (create_exn local_root "a.py")
-      ~search_root:local_root
-      ~relative:"a.py"
-      ~is_external:false;
-    assert_module_path
-      (create_exn external_root0 "a.py")
-      ~search_root:external_root0
-      ~relative:"a.py"
-      ~is_external:true;
-    assert_module_path
-      (create_exn local_root "external0/a.py")
-      ~search_root:external_root0
-      ~relative:"a.py"
-      ~is_external:true;
-    assert_module_path
-      (create_exn external_root1 "a.py")
-      ~search_root:external_root1
-      ~relative:"a.py"
-      ~is_external:true;
-    assert_module_path
-      (create_exn external_root0 "external1/a.py")
-      ~search_root:external_root1
-      ~relative:"a.py"
-      ~is_external:true;
-    assert_module_path
-      (create_exn local_root "external0/external1/a.py")
-      ~search_root:external_root1
-      ~relative:"a.py"
-      ~is_external:true
-  in
-  let test_local_root_rules_it_all () =
-    let configuration =
-      Configuration.Analysis.create
-        ~local_root
-        ~source_paths:
-          [
-            SearchPath.Root local_root;
-            SearchPath.Root external_root0;
-            SearchPath.Root external_root1;
-          ]
-        ~filter_directories:[local_root; external_root0; external_root1]
-        ()
-    in
-    let create_exn = create_module_path_exn ~configuration in
-    let assert_module_path = assert_module_path ~configuration in
-    assert_module_path
-      (create_exn local_root "a.py")
-      ~search_root:local_root
-      ~relative:"a.py"
-      ~is_external:false;
-    assert_module_path
-      (create_exn external_root0 "a.py")
-      ~search_root:local_root
-      ~relative:"external0/a.py"
-      ~is_external:false;
-    assert_module_path
-      (create_exn local_root "external0/a.py")
-      ~search_root:local_root
-      ~relative:"external0/a.py"
-      ~is_external:false;
-    assert_module_path
-      (create_exn external_root1 "a.py")
-      ~search_root:local_root
-      ~relative:"external0/external1/a.py"
-      ~is_external:false;
-    assert_module_path
-      (create_exn external_root0 "external1/a.py")
-      ~search_root:local_root
-      ~relative:"external0/external1/a.py"
-      ~is_external:false;
-    assert_module_path
-      (create_exn local_root "external0/external1/a.py")
-      ~search_root:local_root
-      ~relative:"external0/external1/a.py"
-      ~is_external:false
-  in
-  test_external_root_0_before_1 ();
-  test_external_root_1_before_0 ();
-  test_local_root_rules_it_all ();
-  ()
-
-
-let test_overlapping2 context =
-  (* SETUP:
-   * - stubs_root lives under local_root (project-internal stubs)
-   * - venv_root lives outside local_root (project-external stubs)
-   *)
-  let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  let stubs_path = PyrePath.absolute local_root ^ "/stubs" in
-  Sys_utils.mkdir_no_fail stubs_path;
-  let stubs_root = PyrePath.create_absolute ~follow_symbolic_links:true stubs_path in
-  let venv_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  create_file local_root "a.py";
-  create_file local_root "b.pyi";
-  create_file local_root "c.pyi";
-  create_file stubs_root "a.pyi";
-  create_file venv_root "a.pyi";
-  create_file venv_root "b.pyi";
-  create_file venv_root "c.py";
-  let configuration =
-    Configuration.Analysis.create
-      ~local_root
-      ~source_paths:[SearchPath.Root local_root]
-      ~search_paths:[SearchPath.Root stubs_root; SearchPath.Root venv_root]
-      ~filter_directories:[local_root]
-      ()
-  in
-  let create_exn = create_module_path_exn ~configuration in
-  let assert_module_path = assert_module_path ~configuration in
-  let assert_same_module_less = assert_same_module_less ~configuration in
-  assert_module_path
-    (create_exn local_root "a.py")
-    ~search_root:local_root
-    ~is_stub:false
-    ~relative:"a.py"
-    ~is_external:false;
-  assert_module_path
-    (create_exn stubs_root "a.pyi")
-    ~search_root:stubs_root
-    ~relative:"a.pyi"
-    ~is_stub:true
-    ~is_external:false;
-  assert_module_path
-    (create_exn venv_root "a.pyi")
-    ~search_root:venv_root
-    ~relative:"a.pyi"
-    ~is_stub:true
-    ~is_external:true;
-  assert_module_path
-    (create_exn venv_root "b.pyi")
-    ~search_root:venv_root
-    ~relative:"b.pyi"
-    ~is_stub:true
-    ~is_external:true;
-  assert_module_path
-    (create_exn local_root "b.pyi")
-    ~search_root:local_root
-    ~relative:"b.pyi"
-    ~is_stub:true
-    ~is_external:false;
-  assert_module_path
-    (create_exn venv_root "c.py")
-    ~search_root:venv_root
-    ~relative:"c.py"
-    ~is_stub:false
-    ~is_external:true;
-  assert_module_path
-    (create_exn local_root "c.pyi")
-    ~search_root:local_root
-    ~relative:"c.pyi"
-    ~is_stub:true
-    ~is_external:false;
-
-  assert_same_module_less (create_exn stubs_root "a.pyi") (create_exn venv_root "a.pyi");
-  assert_same_module_less (create_exn stubs_root "a.pyi") (create_exn local_root "a.py");
-  assert_same_module_less (create_exn venv_root "a.pyi") (create_exn local_root "a.py");
-  assert_same_module_less (create_exn venv_root "b.pyi") (create_exn local_root "b.pyi");
-  assert_same_module_less (create_exn local_root "c.pyi") (create_exn venv_root "c.py")
 
 
 let test_root_independence context =
@@ -1877,17 +1877,17 @@ let test_overlay_code_hiding context =
 let () =
   "environment"
   >::: [
-         "module_path" >:: test_module_path;
-         "search_path_subdirectory " >:: test_search_path_subdirectory;
+         "module_path_create" >:: test_module_path_create;
+         "module_path_search_path_subdirectory " >:: test_module_path_search_path_subdirectory;
+         "module_path_exclude " >:: test_module_path_exclude;
+         "module_path_directory_filter " >:: test_module_path_directory_filter;
+         "module_path_directory_filter2 " >:: test_module_path_directory_filter2;
+         "module_path_directory_filter3 " >:: test_module_path_directory_filter3;
+         "module_path_overlapping " >:: test_module_path_overlapping;
+         "module_path_overlapping2 " >:: test_module_path_overlapping2;
          "initialization" >:: test_initialization;
-         "exclude " >:: test_exclude;
-         "directory_filter " >:: test_directory_filter;
-         "directory_filter2 " >:: test_directory_filter2;
-         "directory_filter3 " >:: test_directory_filter3;
          "priority " >:: test_priority;
          "priority_multi_source_paths " >:: test_priority_multi_source_paths;
-         "overlapping " >:: test_overlapping;
-         "overlapping2 " >:: test_overlapping2;
          "root_independence " >:: test_root_independence;
          "hidden_files " >:: test_hidden_files;
          "hidden_files2 " >:: test_hidden_files2;
