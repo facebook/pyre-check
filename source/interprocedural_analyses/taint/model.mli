@@ -94,7 +94,7 @@ val join_user_models : t -> t -> t
 
 val widen : iteration:int -> previous:t -> next:t -> t
 
-val reached_fixpoint : iteration:int -> previous:t -> next:t -> bool
+val less_or_equal : left:t -> right:t -> bool
 
 val strip_for_callsite : t -> t
 

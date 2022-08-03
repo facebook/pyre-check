@@ -54,12 +54,8 @@ module Forward = struct
     { source_taint = ForwardState.widen ~iteration ~prev ~next }
 
 
-  let reached_fixpoint
-      ~iteration:_
-      ~previous:{ source_taint = previous }
-      ~next:{ source_taint = next }
-    =
-    ForwardState.less_or_equal ~left:next ~right:previous
+  let less_or_equal ~left:{ source_taint = left } ~right:{ source_taint = right } =
+    ForwardState.less_or_equal ~left ~right
 end
 
 module Backward = struct
@@ -120,13 +116,12 @@ module Backward = struct
     { sink_taint; taint_in_taint_out }
 
 
-  let reached_fixpoint
-      ~iteration:_
-      ~previous:{ sink_taint = sink_taint_previous; taint_in_taint_out = tito_previous }
-      ~next:{ sink_taint = sink_taint_next; taint_in_taint_out = tito_next }
+  let less_or_equal
+      ~left:{ sink_taint = sink_taint_left; taint_in_taint_out = tito_left }
+      ~right:{ sink_taint = sink_taint_right; taint_in_taint_out = tito_right }
     =
-    BackwardState.less_or_equal ~left:sink_taint_next ~right:sink_taint_previous
-    && BackwardState.less_or_equal ~left:tito_next ~right:tito_previous
+    BackwardState.less_or_equal ~left:sink_taint_left ~right:sink_taint_right
+    && BackwardState.less_or_equal ~left:tito_left ~right:tito_right
 end
 
 module Sanitizers = struct
@@ -177,15 +172,13 @@ module Sanitizers = struct
 
   let widen ~iteration:_ ~previous ~next = join previous next
 
-  let reached_fixpoint
-      ~iteration:_
-      ~previous:
-        { global = global_previous; parameters = parameters_previous; roots = roots_previous }
-      ~next:{ global = global_next; parameters = parameters_next; roots = roots_next }
+  let less_or_equal
+      ~left:{ global = global_left; parameters = parameters_left; roots = roots_left }
+      ~right:{ global = global_right; parameters = parameters_right; roots = roots_right }
     =
-    Sanitize.less_or_equal ~left:global_next ~right:global_previous
-    && Sanitize.less_or_equal ~left:parameters_next ~right:parameters_previous
-    && SanitizeRootMap.less_or_equal ~left:roots_next ~right:roots_previous
+    Sanitize.less_or_equal ~left:global_left ~right:global_right
+    && Sanitize.less_or_equal ~left:parameters_left ~right:parameters_right
+    && SanitizeRootMap.less_or_equal ~left:roots_left ~right:roots_right
 end
 
 module Mode = struct
@@ -344,11 +337,11 @@ let widen ~iteration ~previous ~next =
   }
 
 
-let reached_fixpoint ~iteration ~previous ~next =
-  Forward.reached_fixpoint ~iteration ~previous:previous.forward ~next:next.forward
-  && Backward.reached_fixpoint ~iteration ~previous:previous.backward ~next:next.backward
-  && Sanitizers.reached_fixpoint ~iteration ~previous:previous.sanitizers ~next:next.sanitizers
-  && ModeSet.less_or_equal ~left:next.modes ~right:previous.modes
+let less_or_equal ~left ~right =
+  Forward.less_or_equal ~left:left.forward ~right:right.forward
+  && Backward.less_or_equal ~left:left.backward ~right:right.backward
+  && Sanitizers.less_or_equal ~left:left.sanitizers ~right:right.sanitizers
+  && ModeSet.less_or_equal ~left:left.modes ~right:right.modes
 
 
 let strip_for_callsite

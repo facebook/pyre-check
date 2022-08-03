@@ -21,7 +21,7 @@ module type MODEL = sig
 
   val widen : iteration:int -> callable:Target.t -> previous:t -> next:t -> t
 
-  val reached_fixpoint : iteration:int -> callable:Target.t -> previous:t -> next:t -> bool
+  val less_or_equal : callable:Target.t -> left:t -> right:t -> bool
 
   val strip_for_callsite : t -> t
 end
@@ -351,13 +351,7 @@ module Make (Analysis : ANALYSIS) = struct
 
   let widen_if_necessary ~step ~callable ~previous_model ~new_model ~result =
     (* Check if we've reached a fixed point *)
-    if
-      Model.reached_fixpoint
-        ~iteration:step.iteration
-        ~callable
-        ~previous:previous_model
-        ~next:new_model
-    then
+    if Model.less_or_equal ~callable ~left:new_model ~right:previous_model then
       State.{ is_partial = false; model = previous_model; result }
     else
       let model =

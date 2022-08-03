@@ -20,7 +20,7 @@ module type MODEL = sig
 
   val widen : iteration:int -> callable:Target.t -> previous:t -> next:t -> t
 
-  val reached_fixpoint : iteration:int -> callable:Target.t -> previous:t -> next:t -> bool
+  val less_or_equal : callable:Target.t -> left:t -> right:t -> bool
 
   val strip_for_callsite : t -> t
   (** Remove aspects from the model that are not needed at call sites. Just for optimization. *)

@@ -43,8 +43,8 @@ module Analysis = struct
       result
 
 
-    let reached_fixpoint ~iteration ~callable ~previous ~next =
-      let result = Model.reached_fixpoint ~iteration ~previous ~next in
+    let less_or_equal ~callable ~left ~right =
+      let result = Model.less_or_equal ~left ~right in
       let () =
         if result then
           Log.log
@@ -53,7 +53,7 @@ module Analysis = struct
             Interprocedural.Target.pp_pretty
             callable
             Model.pp
-            previous
+            right
       in
       result
   end
