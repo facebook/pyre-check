@@ -58,6 +58,35 @@ module ModulePaths : sig
   end
 end
 
+(* TODO: remove this private logic once lazy tracking is wired up *)
+module LazyTracking : sig
+  module Table : sig
+    module type LazyValue = sig
+      type t [@@deriving compare]
+
+      val empty : t
+
+      val description : string
+
+      val produce : configuration:Configuration.Analysis.t -> Ast.Reference.t -> t
+    end
+
+    module Make (Value : LazyValue) : sig
+      type t
+
+      val create : configuration:Configuration.Analysis.t -> t
+
+      val set : t -> qualifier:Ast.Reference.t -> Value.t -> unit
+
+      val remove : t -> qualifier:Ast.Reference.t -> unit
+
+      val key_exists : t -> qualifier:Ast.Reference.t -> bool
+
+      val find : t -> qualifier:Ast.Reference.t -> Value.t option
+    end
+  end
+end
+
 type t
 
 val create : EnvironmentControls.t -> t

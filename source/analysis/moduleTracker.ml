@@ -220,6 +220,58 @@ module ModulePaths = struct
   end
 end
 
+module LazyTracking = struct
+  module Table = struct
+    module type LazyValue = sig
+      type t [@@deriving compare]
+
+      val empty : t
+
+      val description : string
+
+      val produce : configuration:Configuration.Analysis.t -> Reference.t -> t
+    end
+
+    module Make (Value : LazyValue) = struct
+      module SharedMemory =
+        Memory.FirstClass.WithCache.Make
+          (SharedMemoryKeys.ReferenceKey)
+          (struct
+            type t = Value.t [@@deriving compare]
+
+            let prefix = Prefix.make ()
+
+            let description = Value.description
+          end)
+
+      type t = {
+        shared_memory: SharedMemory.t;
+        configuration: Configuration.Analysis.t;
+      }
+
+      let create ~configuration = { shared_memory = SharedMemory.create (); configuration }
+
+      let set { shared_memory; _ } ~qualifier value =
+        SharedMemory.remove_batch shared_memory (SharedMemory.KeySet.of_list [qualifier]);
+        SharedMemory.add shared_memory qualifier value;
+        ()
+
+
+      let remove table ~qualifier = set table ~qualifier Value.empty
+
+      let key_exists { shared_memory; _ } ~qualifier = SharedMemory.mem shared_memory qualifier
+
+      let find ({ shared_memory; configuration } as table) ~qualifier =
+        match SharedMemory.get shared_memory qualifier with
+        | Some value -> Some value
+        | None ->
+            let value = Value.produce ~configuration qualifier in
+            let () = set table ~qualifier value in
+            Some value
+    end
+  end
+end
+
 module ExplicitModules = struct
   module Value = struct
     type t = ModulePath.t list
