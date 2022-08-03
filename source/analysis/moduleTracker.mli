@@ -48,6 +48,16 @@ module ReadOnly : sig
   val get_raw_code : t -> Ast.ModulePath.t -> (raw_code, message) Result.t
 end
 
+(* TODO: remove this private logic once lazy tracking is wired up *)
+module ModulePaths : sig
+  module LazyFinder : sig
+    val find_module_paths
+      :  configuration:Configuration.Analysis.t ->
+      Ast.Reference.t ->
+      Ast.ModulePath.t list
+  end
+end
+
 type t
 
 val create : EnvironmentControls.t -> t

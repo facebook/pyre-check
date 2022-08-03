@@ -136,6 +136,58 @@ module ModulePaths = struct
       |> List.filter_map ~f:(ModulePath.create ~configuration)
   end
 
+  module LazyFinder = struct
+    let directory_paths ~configuration qualifier =
+      let relative =
+        match Reference.as_list qualifier with
+        | [] -> ""
+        | parts -> Filename.of_parts parts
+      in
+      let find_in_root search_path =
+        let root = SearchPath.get_root search_path in
+        let candidate_path = PyrePath.create_relative ~root ~relative in
+        if PyrePath.is_directory candidate_path then
+          Some candidate_path
+        else
+          None
+      in
+      Configuration.Analysis.search_paths configuration |> List.filter_map ~f:find_in_root
+
+
+    let directory_children ~configuration qualifier =
+      let finder = Finder.create configuration in
+      let list_directory path =
+        (* Technically this operation is subject to race conditions, so be careful here *)
+        try
+          PyrePath.read_directory_ordered path
+          |> List.map ~f:ArtifactPath.create
+          |> List.filter ~f:(Finder.is_valid_filename finder)
+        with
+        | Sys_error _ -> []
+      in
+      directory_paths ~configuration qualifier |> List.concat_map ~f:list_directory
+
+
+    let find_module_paths ~configuration qualifier =
+      (* Using Reference.empty as the "parent" of Reference.empty - which actually comes from
+         builtins.pyi - leads to correct behavior here. *)
+      let parent_qualifier = Reference.prefix qualifier |> Option.value ~default:Reference.empty in
+      let non_init_files =
+        directory_children ~configuration parent_qualifier
+        |> List.filter_map ~f:(ModulePath.create ~configuration)
+        |> List.filter ~f:(fun module_path ->
+               ModulePath.qualifier module_path |> Reference.equal qualifier)
+      in
+      let init_files =
+        directory_children ~configuration qualifier
+        |> List.filter_map ~f:(ModulePath.create ~configuration)
+        |> List.filter ~f:ModulePath.is_init
+      in
+      List.sort
+        (List.append init_files non_init_files)
+        ~compare:(ModulePath.same_module_compare ~configuration)
+  end
+
   module Update = struct
     type t =
       | NewOrChanged of ModulePath.t
