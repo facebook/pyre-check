@@ -2717,6 +2717,7 @@ module ScratchProject = struct
       ?(include_helper_builtins = true)
       ?(in_memory = true)
       ?(populate_call_graph = false)
+      ?(use_lazy_module_tracking = false)
       ?debug
       ?strict
       sources
@@ -2778,19 +2779,23 @@ module ScratchProject = struct
         in
         let () = List.iter sources ~f:(add_source ~root:local_root) in
         let () = List.iter external_sources ~f:(add_source ~root:external_root) in
-        EnvironmentControls.create ~populate_call_graph configuration
+        EnvironmentControls.create ~populate_call_graph ~use_lazy_module_tracking configuration
     in
     let errors_environment = ErrorsEnvironment.create controls in
     let () =
-      let ast_environment = ErrorsEnvironment.ast_environment errors_environment in
-      (* Clean shared memory up before the test *)
-      AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
-      let set_up_shared_memory _ = () in
-      let tear_down_shared_memory () _ =
-        AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment
-      in
-      (* Clean shared memory up after the test *)
-      OUnit2.bracket set_up_shared_memory tear_down_shared_memory context
+      if not use_lazy_module_tracking then (
+        (* Use AstEnvironment push updates to wipe shared memory. This isn't needed for correctness,
+           but it cuts down on RAM use. Skip it if we are testing the lazy module tracker; we don't
+           need to clean up in that case, and the cleanup relies on APIs that are only available
+           using nonlazy module tracking *)
+        let ast_environment = ErrorsEnvironment.ast_environment errors_environment in
+        AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
+        let set_up_shared_memory _ = () in
+        let tear_down_shared_memory () _ =
+          AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment
+        in
+        (* Clean shared memory up after the test *)
+        OUnit2.bracket set_up_shared_memory tear_down_shared_memory context)
     in
     { context; controls; errors_environment }
 
