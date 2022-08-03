@@ -640,7 +640,12 @@ module Layouts = struct
         }
   end
 
-  let create ~controls = Eager.create ~controls |> Eager.to_api
+  let create ~controls =
+    if EnvironmentControls.use_lazy_module_tracking controls then
+      failwith "Lazy tracking is not yet implemented"
+    else
+      Eager.create ~controls |> Eager.to_api
+
 
   let load ~controls:_ = Eager.Serializer.load () |> Eager.to_api
 end

@@ -11,10 +11,16 @@ type t = {
   configuration: Configuration.Analysis.t;
   populate_call_graph: bool;
   in_memory_sources: (Ast.ModulePath.t * raw_code) list option;
+  use_lazy_module_tracking: bool;
 }
 
-let create ?(populate_call_graph = false) ?in_memory_sources configuration =
-  { configuration; populate_call_graph; in_memory_sources }
+let create
+    ?(populate_call_graph = false)
+    ?in_memory_sources
+    ?(use_lazy_module_tracking = false)
+    configuration
+  =
+  { configuration; populate_call_graph; in_memory_sources; use_lazy_module_tracking }
 
 
 let create_for_overlay parent = { parent with populate_call_graph = false }
@@ -22,6 +28,8 @@ let create_for_overlay parent = { parent with populate_call_graph = false }
 let configuration { configuration; _ } = configuration
 
 let populate_call_graph { populate_call_graph; _ } = populate_call_graph
+
+let use_lazy_module_tracking { use_lazy_module_tracking; _ } = use_lazy_module_tracking
 
 let track_dependencies { configuration = { Configuration.Analysis.incremental_style; _ }; _ } =
   match incremental_style with

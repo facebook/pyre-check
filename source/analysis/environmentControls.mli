@@ -12,6 +12,7 @@ type t
 val create
   :  ?populate_call_graph:bool ->
   ?in_memory_sources:(Ast.ModulePath.t * string) list ->
+  ?use_lazy_module_tracking:bool ->
   Configuration.Analysis.t ->
   t
 
@@ -38,6 +39,8 @@ end
 val python_version_info : t -> PythonVersionInfo.t
 
 val populate_call_graph : t -> bool
+
+val use_lazy_module_tracking : t -> bool
 
 module TypeCheckControls : sig
   type t = {
