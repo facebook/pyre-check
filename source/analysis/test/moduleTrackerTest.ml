@@ -1190,7 +1190,28 @@ module IncrementalTest = struct
 
   open Test
 
-  let assert_incremental ?(external_setups = []) ~context ~expected setups =
+  module LoadingStyle = struct
+    type t =
+      | NonLazy
+      | LazyLookUpQualifiers of Reference.t list
+
+    let look_up_qualifiers = function
+      | NonLazy -> []
+      | LazyLookUpQualifiers qualifiers -> qualifiers
+
+
+    let use_lazy_module_tracking = function
+      | NonLazy -> false
+      | LazyLookUpQualifiers _ -> true
+  end
+
+  let assert_incremental
+      ?(external_setups = [])
+      ?(loading_style = LoadingStyle.NonLazy)
+      ~context
+      ~expected
+      setups
+    =
     let get_old_inputs setups =
       List.filter_map setups ~f:(fun { handle; operation } ->
           match operation with
@@ -1228,10 +1249,20 @@ module IncrementalTest = struct
           ~context
           ~external_sources:old_external_sources
           ~in_memory:false
+          ~use_lazy_module_tracking:(LoadingStyle.use_lazy_module_tracking loading_style)
           old_sources
       in
       let configuration = ScratchProject.configuration_of project in
       let module_tracker = ScratchProject.ReadWrite.module_tracker project in
+      (* For lazy module tracker tests, we have to populate tables by looking up qualifiers
+         explicitly *)
+      let () =
+        let read_only = ModuleTracker.read_only module_tracker in
+        List.map
+          (LoadingStyle.look_up_qualifiers loading_style)
+          ~f:(ModuleTracker.ReadOnly.is_module_tracked read_only)
+        |> ignore
+      in
       configuration, module_tracker
     in
     (* Compute the updates *)
@@ -1256,23 +1287,25 @@ module IncrementalTest = struct
       (List.sort ~compare:Event.compare expected)
       (List.sort ~compare:Event.compare actual);
 
-    (* Also check that the module tracker is in a consistent state: we should track exactly the same
-       modules and source files after the update as if we build a fresh module tracker from scratch. *)
-    let actual_module_paths =
-      ModuleTracker.all_module_paths module_tracker |> List.sort ~compare:ModulePath.compare
-    in
-    let expected_module_paths =
-      EnvironmentControls.create configuration
-      |> ModuleTracker.create
-      |> ModuleTracker.all_module_paths
-      |> List.sort ~compare:ModulePath.compare
-    in
-    assert_equal
-      ~cmp:(List.equal ModulePath.equal)
-      ~printer:(fun module_paths ->
-        [%message (module_paths : ModulePath.t list)] |> Sexp.to_string_hum)
-      expected_module_paths
-      actual_module_paths;
+    (if not (LoadingStyle.use_lazy_module_tracking loading_style) then
+       (* Also check that the module tracker is in a consistent state: we should track exactly the
+          same modules and source files after the update as if we build a fresh module tracker from
+          scratch. Skip this in lazy tests, because the `all_module_paths` API is nonlazy-only. *)
+       let actual_module_paths =
+         ModuleTracker.all_module_paths module_tracker |> List.sort ~compare:ModulePath.compare
+       in
+       let expected_module_paths =
+         EnvironmentControls.create configuration
+         |> ModuleTracker.create
+         |> ModuleTracker.all_module_paths
+         |> List.sort ~compare:ModulePath.compare
+       in
+       assert_equal
+         ~cmp:(List.equal ModulePath.equal)
+         ~printer:(fun module_paths ->
+           [%message (module_paths : ModulePath.t list)] |> Sexp.to_string_hum)
+         expected_module_paths
+         actual_module_paths);
     ()
 end
 
@@ -1613,6 +1646,119 @@ let test_update_implicits context =
   ()
 
 
+(* The update code is mostly shared between eager and lazy tracking (the only difference is really
+   that the lazy tracker skips processing qualifiers that are not yet in its cache). So rather than
+   duplicating all the tests - which are a bit slow - we just exercise each known edge case once *)
+let test_update_lazy_tracker context =
+  let open IncrementalTest in
+  let assert_incremental =
+    (* TODO: actually use a lazy tracker here once we implement it *)
+    assert_incremental ~context
+  in
+  (* TODO: get rid of this; without it the compiler will not let us include a not-yet-used variant. *)
+  let _ = LoadingStyle.LazyLookUpQualifiers [] in
+  (* Adding new entirely new modules *)
+  assert_incremental
+    [
+      { handle = "looked_up.py"; operation = FileOperation.Add };
+      { handle = "inner/looked_up.py"; operation = FileOperation.Add };
+      { handle = "not_looked_up.py"; operation = FileOperation.Add };
+    ]
+    ~expected:
+      [
+        Event.create_new_explicit "looked_up.py";
+        Event.create_new_explicit "inner/looked_up.py";
+        Event.NewImplicit "inner";
+        Event.create_new_explicit "not_looked_up.py";
+      ];
+  (* Updating modules *)
+  assert_incremental
+    [
+      { handle = "looked_up.py"; operation = FileOperation.Update };
+      { handle = "inner/looked_up.py"; operation = FileOperation.Update };
+      { handle = "not_looked_up.py"; operation = FileOperation.Update };
+    ]
+    ~expected:
+      [
+        Event.create_new_explicit "looked_up.py";
+        Event.create_new_explicit "inner/looked_up.py";
+        Event.create_new_explicit "not_looked_up.py";
+      ];
+  (* Shadowing existing modules *)
+  assert_incremental
+    [
+      { handle = "looked_up.py"; operation = FileOperation.LeftAlone };
+      { handle = "looked_up/__init__.py"; operation = FileOperation.Add };
+      { handle = "inner/looked_up.py"; operation = FileOperation.LeftAlone };
+      { handle = "inner/looked_up.pyi"; operation = FileOperation.Add };
+      { handle = "not_looked_up.py"; operation = FileOperation.LeftAlone };
+      { handle = "not_looked_up.pyi"; operation = FileOperation.Add };
+    ]
+    ~expected:
+      [
+        Event.create_new_explicit "looked_up/__init__.py";
+        Event.create_new_explicit "inner/looked_up.pyi";
+        Event.create_new_explicit "not_looked_up.pyi";
+      ];
+  (* Un-shadowing existing modules *)
+  assert_incremental
+    [
+      { handle = "looked_up.py"; operation = FileOperation.LeftAlone };
+      { handle = "looked_up/__init__.py"; operation = FileOperation.Remove };
+      { handle = "inner/looked_up.py"; operation = FileOperation.LeftAlone };
+      { handle = "inner/looked_up.pyi"; operation = FileOperation.Remove };
+      { handle = "not_looked_up.py"; operation = FileOperation.LeftAlone };
+      { handle = "not_looked_up.pyi"; operation = FileOperation.Remove };
+    ]
+    ~expected:
+      [
+        Event.create_new_explicit "looked_up.py";
+        Event.create_new_explicit "inner/looked_up.py";
+        Event.create_new_explicit "not_looked_up.py";
+      ];
+  (* Removing modules *)
+  assert_incremental
+    [
+      { handle = "looked_up.py"; operation = FileOperation.Remove };
+      { handle = "inner/looked_up.py"; operation = FileOperation.Remove };
+      { handle = "not_looked_up.py"; operation = FileOperation.Remove };
+    ]
+    ~expected:
+      [
+        Event.Delete "looked_up";
+        Event.Delete "inner.looked_up";
+        Event.Delete "inner";
+        Event.Delete "not_looked_up";
+      ];
+  (* New implicits *)
+  assert_incremental
+    [
+      { handle = "implicit_looked_up/submodule.py"; operation = FileOperation.Add };
+      { handle = "implicit_not_looked_up/submodule.py"; operation = FileOperation.Add };
+    ]
+    ~expected:
+      [
+        Event.create_new_explicit "implicit_looked_up/submodule.py";
+        Event.create_new_explicit "implicit_not_looked_up/submodule.py";
+        Event.NewImplicit "implicit_looked_up";
+        Event.NewImplicit "implicit_not_looked_up";
+      ];
+  (* Removing implicits *)
+  assert_incremental
+    [
+      { handle = "implicit_looked_up/submodule.py"; operation = FileOperation.Remove };
+      { handle = "implicit_not_looked_up/submodule.py"; operation = FileOperation.Remove };
+    ]
+    ~expected:
+      [
+        Event.Delete "implicit_looked_up.submodule";
+        Event.Delete "implicit_not_looked_up.submodule";
+        Event.Delete "implicit_looked_up";
+        Event.Delete "implicit_not_looked_up";
+      ];
+  ()
+
+
 let make_overlay_testing_functions ~context ~configuration ~local_root ~parent_tracker =
   let tracker = ModuleTracker.read_only parent_tracker |> ModuleTracker.Overlay.create in
   let read_only = ModuleTracker.Overlay.read_only tracker in
@@ -1780,6 +1926,7 @@ let () =
          "update_remove_files" >:: test_update_remove_files;
          "update_changed_files" >:: test_update_changed_files;
          "update_implicits" >:: test_update_implicits;
+         "update_lazy_tracker" >:: test_update_lazy_tracker;
          "overlay_basic" >:: test_overlay_basic;
          "overlay_code_hiding" >:: test_overlay_code_hiding;
        ]
