@@ -251,22 +251,22 @@ module LazyTracking = struct
 
       let create ~configuration = { shared_memory = SharedMemory.create (); configuration }
 
-      let set { shared_memory; _ } ~qualifier value =
+      let set { shared_memory; _ } qualifier value =
         SharedMemory.remove_batch shared_memory (SharedMemory.KeySet.of_list [qualifier]);
         SharedMemory.add shared_memory qualifier value;
         ()
 
 
-      let remove table ~qualifier = set table ~qualifier Value.empty
+      let remove table qualifier = set table qualifier Value.empty
 
-      let key_exists { shared_memory; _ } ~qualifier = SharedMemory.mem shared_memory qualifier
+      let key_exists { shared_memory; _ } qualifier = SharedMemory.mem shared_memory qualifier
 
-      let find ({ shared_memory; configuration } as table) ~qualifier =
+      let find ({ shared_memory; configuration } as table) qualifier =
         match SharedMemory.get shared_memory qualifier with
         | Some value -> Some value
         | None ->
             let value = Value.produce ~configuration qualifier in
-            let () = set table ~qualifier value in
+            let () = set table qualifier value in
             Some value
     end
   end
@@ -399,10 +399,10 @@ module ExplicitModules = struct
   module Table = struct
     module Api = struct
       type t = {
-        process_update: qualifier:Reference.t -> bool;
-        find: qualifier:Reference.t -> Value.t option;
-        set: qualifier:Reference.t -> Value.t -> unit;
-        remove: qualifier:Reference.t -> unit;
+        process_update: Reference.t -> bool;
+        find: Reference.t -> Value.t option;
+        set: Reference.t -> Value.t -> unit;
+        remove: Reference.t -> unit;
         data: unit -> Value.t list;
       }
 
@@ -416,34 +416,34 @@ module ExplicitModules = struct
           let ({ ModulePath.qualifier; _ } as module_path) =
             ModulePaths.Update.module_path module_path_update
           in
-          if not (process_update ~qualifier) then
+          if not (process_update qualifier) then
             None
           else
             match module_path_update with
             | ModulePaths.Update.NewOrChanged _ -> (
-                match find ~qualifier with
+                match find qualifier with
                 | None ->
                     (* New file for a new module *)
-                    set ~qualifier [module_path];
+                    set qualifier [module_path];
                     Some (Update.New module_path)
                 | Some module_paths ->
                     let new_module_paths =
                       Value.insert_module_path ~configuration ~to_insert:module_path module_paths
                     in
                     let new_module_path = List.hd_exn new_module_paths in
-                    set ~qualifier new_module_paths;
+                    set qualifier new_module_paths;
                     if ModulePath.equal new_module_path module_path then
                       (* Updating a shadowing file means the module gets changed *)
                       Some (Update.Changed module_path)
                     else (* Updating a shadowed file should not trigger any reanalysis *)
                       None)
             | ModulePaths.Update.Remove _ -> (
-                find ~qualifier
+                find qualifier
                 >>= fun module_paths ->
                 match module_paths with
                 | [] ->
                     (* This should never happen but handle it just in case *)
-                    remove ~qualifier;
+                    remove qualifier;
                     None
                 | old_module_path :: _ -> (
                     match
@@ -451,10 +451,10 @@ module ExplicitModules = struct
                     with
                     | [] ->
                         (* Last remaining file for the module gets removed. *)
-                        remove ~qualifier;
+                        remove qualifier;
                         Some (Update.Delete qualifier)
                     | new_module_path :: _ as new_module_paths ->
-                        set ~qualifier new_module_paths;
+                        set qualifier new_module_paths;
                         if ModulePath.equal old_module_path new_module_path then
                           (* Removing a shadowed file should not trigger any reanalysis *)
                           None
@@ -484,10 +484,10 @@ module ExplicitModules = struct
 
 
       let to_api eager =
-        let process_update ~qualifier:_ = true in
-        let find ~qualifier = Reference.Table.find eager qualifier in
-        let set ~qualifier value = Reference.Table.set eager ~key:qualifier ~data:value in
-        let remove ~qualifier = Reference.Table.remove eager qualifier in
+        let process_update _ = true in
+        let find qualifier = Reference.Table.find eager qualifier in
+        let set qualifier value = Reference.Table.set eager ~key:qualifier ~data:value in
+        let remove qualifier = Reference.Table.remove eager qualifier in
         let data () = Hashtbl.data eager in
         Api.{ process_update; find; set; remove; data }
     end
@@ -545,9 +545,9 @@ module ImplicitModules = struct
   module Table = struct
     module Api = struct
       type t = {
-        process_update: qualifier:Reference.t -> bool;
-        find: qualifier:Reference.t -> Value.t option;
-        set: qualifier:Reference.t -> Value.t -> unit;
+        process_update: Reference.t -> bool;
+        find: Reference.t -> Value.t option;
+        set: Reference.t -> Value.t -> unit;
       }
 
       module Existence = struct
@@ -571,11 +571,11 @@ module ImplicitModules = struct
           match parent_qualifier_and_raw module_path with
           | None -> previous_existence
           | Some (qualifier, raw_child) ->
-              if not (process_update ~qualifier) then
+              if not (process_update qualifier) then
                 previous_existence
               else (* Get the previous state and new state *)
                 let previous_explicit_children =
-                  find ~qualifier |> Option.value ~default:ModulePath.Raw.Set.empty
+                  find qualifier |> Option.value ~default:ModulePath.Raw.Set.empty
                 in
                 let next_explicit_children =
                   match module_path_update with
@@ -585,7 +585,7 @@ module ImplicitModules = struct
                       ModulePath.Raw.Set.remove raw_child previous_explicit_children
                 in
                 (* update implicit_modules as a side effect *)
-                let () = set ~qualifier next_explicit_children in
+                let () = set qualifier next_explicit_children in
                 (* As we fold the updates, track existince before-and-after *)
                 let next_existence =
                   let open Existence in
@@ -627,9 +627,9 @@ module ImplicitModules = struct
 
 
       let to_api eager =
-        let process_update ~qualifier:_ = true in
-        let find ~qualifier = Reference.Table.find eager qualifier in
-        let set ~qualifier data = Reference.Table.set eager ~key:qualifier ~data in
+        let process_update _ = true in
+        let find qualifier = Reference.Table.find eager qualifier in
+        let set qualifier data = Reference.Table.set eager ~key:qualifier ~data in
         Api.{ process_update; find; set }
     end
 
@@ -729,7 +729,7 @@ module Layouts = struct
 
 
     let lookup_module_path { explicit_modules = { find; _ }; _ } ~qualifier =
-      find ~qualifier >>= ExplicitModules.Value.module_path
+      find qualifier >>= ExplicitModules.Value.module_path
 
 
     let is_explicit_module layouts ~qualifier =
@@ -737,7 +737,7 @@ module Layouts = struct
 
 
     let is_implicit_module { implicit_modules = { find; _ }; _ } ~qualifier =
-      find ~qualifier
+      find qualifier
       >>| ImplicitModules.Value.should_treat_as_importable
       |> Option.value ~default:false
 
