@@ -6,7 +6,6 @@
 import unittest
 from typing import List
 
-# pyre-fixme[21]: Could not find module `testing.types`.
 from testing.types import File
 
 from ..inspect_parser import extract_parameters, extract_qualified_name
