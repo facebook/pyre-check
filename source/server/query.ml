@@ -950,7 +950,7 @@ let rec process_request ~environment ~build_system request =
           match taint_configuration_result with
           | Error (error :: _) -> Error (Taint.TaintConfiguration.Error.show error)
           | Error _ -> failwith "Taint.TaintConfiguration.create returned empty errors list"
-          | Ok taint_configuration ->
+          | Ok taint_configuration -> (
               let static_analysis_configuration =
                 Configuration.StaticAnalysis.create
                   (Configuration.Analysis.create ~source_paths:[SearchPath.Root path] ())
@@ -969,10 +969,13 @@ let rec process_request ~environment ~build_system request =
                   ~callables:None
                   ~stubs:(Interprocedural.Target.HashSet.create ())
                   ()
-                |> fun { Taint.ModelParser.queries; _ } ->
-                queries
-                |> List.filter ~f:(fun rule ->
-                       String.equal rule.Taint.ModelParser.Internal.ModelQuery.name query_name)
+                |> fun { Taint.ModelParser.queries; errors; _ } ->
+                if List.is_empty errors then
+                  Ok
+                    (List.filter queries ~f:(fun rule ->
+                         String.equal rule.Taint.ModelParser.Internal.ModelQuery.name query_name))
+                else
+                  Error errors
               in
               let rules =
                 let sources = Taint.ModelParser.get_model_sources ~paths:[path] in
@@ -982,80 +985,93 @@ let rec process_request ~environment ~build_system request =
                        "ModelParser.get_model_sources ~paths:[%s] was empty"
                        (PyrePath.show path))
                 else
-                  List.concat (List.map sources ~f:get_model_queries)
+                  let open Result in
+                  sources |> List.map ~f:get_model_queries |> Result.combine_errors >>| List.concat
               in
-              if List.is_empty rules then
-                Error
-                  (Format.sprintf
-                     "No model query with name `%s` was found in path `%s`"
-                     query_name
-                     (PyrePath.show path))
-              else
-                let get_models_for_query scheduler =
-                  let cache = Taint.Cache.load ~scheduler ~configuration ~enabled:false in
-                  let initial_callables =
-                    Taint.Cache.initial_callables cache (fun () ->
-                        let timer = Timer.start () in
-                        let qualifiers =
-                          ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
-                        in
-                        let initial_callables =
-                          Interprocedural.FetchCallables.from_qualifiers
-                            ~scheduler
-                            ~configuration
-                            ~environment
-                            ~include_unit_tests:false
-                            ~qualifiers
-                        in
-                        Statistics.performance
-                          ~name:"Fetched initial callables to analyze"
-                          ~phase_name:"Fetching initial callables to analyze"
-                          ~timer
-                          ();
-                        initial_callables)
-                  in
-                  TaintModelQuery.ModelQuery.generate_models_from_queries
-                    ~static_analysis_configuration
-                    ~scheduler
-                    ~environment
-                    ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
-                    ~stubs:
-                      (Interprocedural.Target.HashSet.of_list
-                         (Interprocedural.FetchCallables.get_stubs initial_callables))
-                    ~taint_configuration
-                    rules
-                in
-                let models_and_names, _ =
-                  Scheduler.with_scheduler ~configuration ~f:get_models_for_query
-                in
-                let to_json (callable, model) =
-                  `Assoc
-                    [
-                      "callable", `String (Interprocedural.Target.external_name callable);
-                      ( "model",
-                        Taint.Model.to_json
-                          ~expand_overrides:None
-                          ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
-                          ~filename_lookup:None
-                          callable
-                          model );
-                    ]
-                in
-                let models =
-                  models_and_names
-                  |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry
-                       ~model_join:Taint.Model.join_user_models
-                  |> Taint.Registry.to_alist
-                in
-                if List.length models == 0 then
+              match rules with
+              | Error errors ->
                   Error
-                    (Format.sprintf
-                       "No models found for model query `%s` in path `%s`"
-                       query_name
-                       (PyrePath.show path))
-                else
-                  let models_string = `List (List.map models ~f:to_json) |> Yojson.Safe.to_string in
-                  Single (Base.FoundModels models_string))
+                    (List.fold (List.concat errors) ~init:"" ~f:(fun accum error ->
+                         accum ^ Taint.ModelVerificationError.display error))
+              | Ok rules ->
+                  if List.is_empty rules then
+                    Error
+                      (Format.sprintf
+                         "No model query with name `%s` was found in path `%s`"
+                         query_name
+                         (PyrePath.show path))
+                  else
+                    let get_models_for_query scheduler =
+                      let cache = Taint.Cache.load ~scheduler ~configuration ~enabled:false in
+                      let initial_callables =
+                        Taint.Cache.initial_callables cache (fun () ->
+                            let timer = Timer.start () in
+                            let qualifiers =
+                              ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
+                            in
+                            let initial_callables =
+                              Interprocedural.FetchCallables.from_qualifiers
+                                ~scheduler
+                                ~configuration
+                                ~environment
+                                ~include_unit_tests:false
+                                ~qualifiers
+                            in
+                            Statistics.performance
+                              ~name:"Fetched initial callables to analyze"
+                              ~phase_name:"Fetching initial callables to analyze"
+                              ~timer
+                              ();
+                            initial_callables)
+                      in
+                      TaintModelQuery.ModelQuery.generate_models_from_queries
+                        ~static_analysis_configuration
+                        ~scheduler
+                        ~environment
+                        ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
+                        ~stubs:
+                          (Interprocedural.Target.HashSet.of_list
+                             (Interprocedural.FetchCallables.get_stubs initial_callables))
+                        ~taint_configuration
+                        rules
+                    in
+                    let models_and_names, errors =
+                      Scheduler.with_scheduler ~configuration ~f:get_models_for_query
+                    in
+                    let to_json (callable, model) =
+                      `Assoc
+                        [
+                          "callable", `String (Interprocedural.Target.external_name callable);
+                          ( "model",
+                            Taint.Model.to_json
+                              ~expand_overrides:None
+                              ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+                              ~filename_lookup:None
+                              callable
+                              model );
+                        ]
+                    in
+                    let models =
+                      models_and_names
+                      |> TaintModelQuery.ModelQuery.ModelQueryRegistryMap.get_registry
+                           ~model_join:Taint.Model.join_user_models
+                      |> Taint.Registry.to_alist
+                    in
+                    if List.is_empty models then
+                      Error
+                        (Format.sprintf
+                           "No models found for model query `%s` in path `%s`"
+                           query_name
+                           (PyrePath.show path))
+                    else if not (List.is_empty errors) then
+                      Error
+                        (List.fold errors ~init:"" ~f:(fun accum error ->
+                             accum ^ Taint.ModelVerificationError.display error))
+                    else
+                      let models_string =
+                        `List (List.map models ~f:to_json) |> Yojson.Safe.to_string
+                      in
+                      Single (Base.FoundModels models_string)))
     | ModulesOfPath path -> Single (Base.FoundModules (SourcePath.create path |> modules_of_path))
     | LessOrEqual (left, right) ->
         let left = parse_and_validate left in
