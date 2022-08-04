@@ -1,0 +1,6 @@
+@generated
+Call dependencies
+kwargs_and_args.async_render_to_response (fun) -> [_test_sink (fun)]
+kwargs_and_args.$toplevel (fun) -> []
+kwargs_and_args.args_sink (fun) -> [_test_sink (fun) tuple::__getitem__ (method)]
+kwargs_and_args.async_distillery_render (fun) -> [_test_source (fun) dict::__setitem__ (method) kwargs_and_args.async_render_to_response (fun) typing.MutableMapping::pop (method)]
