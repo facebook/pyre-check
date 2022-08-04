@@ -155,7 +155,15 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       ~stubs:(Target.HashSet.create ())
       ()
     |> fun { ModelParser.errors; _ } ->
-    List.hd errors >>| ModelVerificationError.display |> Option.value ~default:"no failure"
+    if List.is_empty errors then
+      "no failure"
+    else if List.length errors = 1 then
+      List.hd_exn errors |> ModelVerificationError.display
+    else
+      let error_strings = List.map errors ~f:ModelVerificationError.display in
+      List.fold error_strings ~init:"Multiple errors:\n[" ~f:(fun accum string ->
+          accum ^ "\n" ^ string)
+      ^ "\n]"
   in
   assert_equal ~printer:ident expect error_message
 
@@ -3231,6 +3239,8 @@ let test_invalid_models context =
       {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
   value = Returns(TaintSource[Test]) }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
     ();
+
+  (* Test expected_models and unexpected_models clauses *)
   assert_invalid_model
     ~model_source:
       {|
@@ -3240,18 +3250,110 @@ let test_invalid_models context =
         where = name.matches("foo"),
         model = Returns(TaintSource[Test]),
         expected_models = [
-          "def test.food() -> Returns(TaintSource[Test]): ..."
+          "def test.food() -> TaintSource[Test]: ..."
         ],
         expected_models = [
-          "def test.food() -> Returns(TaintSource[Test]): ..."
+          "def test.food() -> TaintSource[Test]: ..."
         ]
       )
     |}
     ~expect:
       {|The model query arguments at `{ Expression.Call.Argument.name = (Some name); value = "invalid_model" }, { Expression.Call.Argument.name = (Some find); value = "functions" }, { Expression.Call.Argument.name = (Some where); value = name.matches("foo") }, { Expression.Call.Argument.name = (Some model);
   value = Returns(TaintSource[Test]) }, { Expression.Call.Argument.name = (Some expected_models);
-  value = ["def test.food() -> Returns(TaintSource[Test]): ..."] }, { Expression.Call.Argument.name = (Some expected_models);
-  value = ["def test.food() -> Returns(TaintSource[Test]): ..."] }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+  value = ["def test.food() -> TaintSource[Test]: ..."] }, { Expression.Call.Argument.name = (Some expected_models);
+  value = ["def test.food() -> TaintSource[Test]: ..."] }` are invalid: expected a name, find, where and model clause, with optional `expected_models` and `unexpected_models` clauses.|}
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo(x):
+        ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = name.matches("foo"),
+        model = Parameters(TaintSource[A]),
+        expected_models = [
+          """ModelQuery(
+                name = "nested_model_query",
+                find = "functions",
+                where = [
+                    name.matches("foo")
+                ],
+                model = [
+                    Parameters(TaintSource[A])
+                ]
+            )"""
+        ]
+      )
+    |}
+    ~expect:
+      {|In ModelQuery `invalid_model`: Model string `ModelQuery(
+          name = "nested_model_query",
+          find = "functions",
+          where = [
+              name.matches("foo")
+          ],
+          model = [
+              Parameters(TaintSource[A])
+          ]
+      )` is a ModelQuery, not a model.
+    Please make sure that the model string is a syntactically correct model.|}
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo(x):
+        ...
+      def food(y):
+        ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = name.matches("foo"),
+        model = Parameters(TaintSource[A]),
+        expected_models = [
+          "foo(x)",
+          "food(y)"
+        ]
+      )
+    |}
+    ~expect:{|Multiple errors:
+[
+Unexpected statement: `foo(x)`
+Unexpected statement: `food(y)`
+]|}
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo(x):
+        ...
+      def bar(z):
+        ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = name.matches("foo"),
+        model = Parameters(TaintSource[A]),
+        unexpected_models = [
+          "def bar(z)"
+        ]
+      )
+    |}
+    ~expect:
+      {|Multiple errors:
+[
+In ModelQuery `invalid_model`: Clause `["def bar(z)"]` is not a valid expected_models or unexpected_models clause.
+   The clause should be a list of syntactically correct model strings.
+Syntax error.
+]|}
     ();
 
   (* Test Decorator clause in model queries *)
@@ -4877,7 +4979,19 @@ let test_query_parsing context =
     ();
 
   (* Expected models *)
+  let create_expected_model ?source ?rules ~model_source function_name =
+    let { Taint.ModelParser.models; _ }, _, _ =
+      set_up_environment ?source ?rules ~context ~model_source ()
+    in
+    let model = Option.value_exn (Registry.get models (List.hd_exn (Registry.targets models))) in
+    {
+      Taint.ModelParser.ExpectedModel.model;
+      target = Target.create_function (Ast.Reference.create function_name);
+      model_source;
+    }
+  in
   assert_queries
+    ~source:"def food(): ..."
     ~context
     ~model_source:
       {|
@@ -4887,15 +5001,14 @@ let test_query_parsing context =
      where = name.matches("foo"),
      model = Returns(TaintSource[Test]),
      expected_models = [
-       "def test.food() -> Returns(TaintSource[Test]): ...",
-       "def test.foo() -> Returns(TaintSource[Test]): ..."
+       "def test.food() -> TaintSource[Test]: ..."
      ]
     )
   |}
     ~expect:
       [
         {
-          location = { start = { line = 2; column = 0 }; stop = { line = 11; column = 1 } };
+          location = { start = { line = 2; column = 0 }; stop = { line = 10; column = 1 } };
           name = "get_foo";
           query = [NameConstraint (Matches (Re2.create_exn "foo"))];
           rule_kind = FunctionModel;
@@ -4918,8 +5031,10 @@ let test_query_parsing context =
             ];
           expected_models =
             [
-              "def test.food() -> Returns(TaintSource[Test]): ...";
-              "def test.foo() -> Returns(TaintSource[Test]): ...";
+              create_expected_model
+                ~source:"def food(): ..."
+                ~model_source:"def test.food() -> TaintSource[Test]: ..."
+                "test.food";
             ];
           unexpected_models = [];
         };
@@ -4927,6 +5042,7 @@ let test_query_parsing context =
     ();
 
   assert_queries
+    ~source:"def bar(): ..."
     ~context
     ~model_source:
       {|
@@ -4936,7 +5052,7 @@ let test_query_parsing context =
      where = name.matches("foo"),
      model = Returns(TaintSource[Test]),
      unexpected_models = [
-       "def test.bar() -> Returns(TaintSource[Test]): ..."
+       "def test.bar() -> TaintSource[Test]: ..."
      ]
     )
   |}
@@ -4965,7 +5081,78 @@ let test_query_parsing context =
                 ];
             ];
           expected_models = [];
-          unexpected_models = ["def test.bar() -> Returns(TaintSource[Test]): ..."];
+          unexpected_models =
+            [
+              create_expected_model
+                ~source:"def bar(): ..."
+                ~model_source:"def test.bar() -> TaintSource[Test]: ..."
+                "test.bar";
+            ];
+        };
+      ]
+    ();
+
+  assert_queries
+    ~source:"def food(): ...\n def foo(): ...\n def bar(): ..."
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "functions",
+     where = name.matches("foo"),
+     model = Returns(TaintSource[Test]),
+     expected_models = [
+       "def test.food() -> TaintSource[Test]: ...",
+       "def test.foo() -> TaintSource[Test]: ..."
+     ],
+     unexpected_models = [
+       "def test.bar() -> TaintSource[Test]: ..."
+     ]
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 14; column = 1 } };
+          name = "get_foo";
+          query = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          rule_kind = FunctionModel;
+          productions =
+            [
+              ReturnTaint
+                [
+                  TaintAnnotation
+                    (Source
+                       {
+                         source = Sources.NamedSource "Test";
+                         breadcrumbs = [];
+                         via_features = [];
+                         path = [];
+                         leaf_names = [];
+                         leaf_name_provided = false;
+                         trace_length = None;
+                       });
+                ];
+            ];
+          expected_models =
+            [
+              create_expected_model
+                ~source:"def food(): ...\n def foo(): ...\n def bar(): ..."
+                ~model_source:"def test.food() -> TaintSource[Test]: ..."
+                "test.food";
+              create_expected_model
+                ~source:"def food(): ...\n def foo(): ...\n def bar(): ..."
+                ~model_source:"def test.foo() -> TaintSource[Test]: ..."
+                "test.foo";
+            ];
+          unexpected_models =
+            [
+              create_expected_model
+                ~source:"def food(): ...\n def foo(): ...\n def bar(): ..."
+                ~model_source:"def test.bar() -> TaintSource[Test]: ..."
+                "test.bar";
+            ];
         };
       ]
     ();

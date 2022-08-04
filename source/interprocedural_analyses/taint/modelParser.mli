@@ -9,6 +9,22 @@ module ClassDefinitionsCache : sig
   val invalidate : unit -> unit
 end
 
+module ExpectedModel : sig
+  type t = {
+    model: Model.t;
+    target: Interprocedural.Target.t;
+    model_source: string;
+  }
+
+  val pp : Format.formatter -> t -> unit
+
+  val show : t -> string
+
+  val less_or_equal : t -> t -> bool
+
+  val compare : t -> t -> int
+end
+
 (* Exposed for model queries. *)
 module Internal : sig
   type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, compare]
@@ -179,8 +195,8 @@ module Internal : sig
       productions: production list;
       rule_kind: kind;
       name: string;
-      expected_models: string list;
-      unexpected_models: string list;
+      expected_models: ExpectedModel.t list;
+      unexpected_models: ExpectedModel.t list;
     }
     [@@deriving show, compare]
   end
