@@ -55,7 +55,75 @@ module ModelQueryRegistryMap = struct
     merge_all_registries ~model_join (get_models model_query_map)
 
 
-  let check_errors ~models_and_names ~model_query_names =
+  let check_expected_and_unexpected_model_errors ~models_and_names ~rules =
+    let find_expected_and_unexpected_model_errors ~expect ~actual_models ~name ~location ~models =
+      let registry_contains_model registry ~target ~model =
+        (* TODO T127682824: Deal with the case of joined models *)
+        match Registry.get registry target with
+        | Some actual_model -> Model.less_or_equal ~left:model ~right:actual_model
+        | None -> false
+      in
+      let expected_and_unexpected_models =
+        List.filter_map models ~f:(fun { ModelParser.ExpectedModel.model; target; model_source } ->
+            let unexpected =
+              if expect then
+                not (registry_contains_model actual_models ~target ~model)
+              else
+                registry_contains_model actual_models ~target ~model
+            in
+            if unexpected then Some model_source else None)
+      in
+      match expected_and_unexpected_models with
+      | [] -> []
+      | models ->
+          let kind =
+            if expect then
+              ModelVerificationError.ExpectedModelsAreMissing { model_query_name = name; models }
+            else
+              ModelVerificationError.UnexpectedModelsArePresent { model_query_name = name; models }
+          in
+          [{ ModelVerificationError.kind; location; path = None }]
+    in
+    let find_expected_model_errors ~actual_models ~name ~location ~expected_models =
+      find_expected_and_unexpected_model_errors
+        ~expect:true
+        ~actual_models
+        ~name
+        ~location
+        ~models:expected_models
+    in
+    let find_unexpected_model_errors ~actual_models ~name ~location ~unexpected_models =
+      find_expected_and_unexpected_model_errors
+        ~expect:false
+        ~actual_models
+        ~name
+        ~location
+        ~models:unexpected_models
+    in
+    let expected_and_unexpected_model_errors =
+      rules
+      |> List.map ~f:(fun { ModelQuery.name; location; expected_models; unexpected_models; _ } ->
+             let actual_models = Option.value (get models_and_names name) ~default:Registry.empty in
+             let expected_model_errors =
+               match expected_models with
+               | [] -> []
+               | _ -> find_expected_model_errors ~actual_models ~name ~location ~expected_models
+             in
+             let unexpected_model_errors =
+               match unexpected_models with
+               | [] -> []
+               | _ -> find_unexpected_model_errors ~actual_models ~name ~location ~unexpected_models
+             in
+             List.append expected_model_errors unexpected_model_errors)
+      |> List.concat
+    in
+    expected_and_unexpected_model_errors
+
+
+  let check_errors ~models_and_names ~rules =
+    let model_query_names =
+      List.map rules ~f:(fun rule -> rule.Taint.ModelParser.Internal.ModelQuery.name)
+    in
     let errors =
       List.filter_map model_query_names ~f:(fun model_query_name ->
           let models = get models_and_names model_query_name in
@@ -888,14 +956,15 @@ let apply_all_rules
       else
         ModelQueryRegistryMap.empty
     in
-    let model_query_names = List.map rules ~f:(fun rule -> rule.name) in
     let models_and_names =
       ModelQueryRegistryMap.merge
         ~model_join:Model.join_user_models
         callable_models
         attribute_models
     in
-    models_and_names, ModelQueryRegistryMap.check_errors ~models_and_names ~model_query_names
+    ( models_and_names,
+      ModelQueryRegistryMap.check_expected_and_unexpected_model_errors ~models_and_names ~rules
+      @ ModelQueryRegistryMap.check_errors ~models_and_names ~rules )
   else
     ModelQueryRegistryMap.empty, []
 
