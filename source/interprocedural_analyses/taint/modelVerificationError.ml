@@ -128,6 +128,14 @@ type kind =
       model_query_name: string;
       models: string list;
     }
+  | ModelQueryInExpectedModelsClause of {
+      model_query_name: string;
+      model_source: string;
+    }
+  | InvalidExpectedModelsClause of {
+      model_query_name: string;
+      models_clause: Expression.t;
+    }
 [@@deriving sexp, compare, show]
 
 type t = {
@@ -140,7 +148,8 @@ type t = {
 let description error =
   match error with
   | ParseError -> "Syntax error."
-  | UnexpectedStatement _ -> "Unexpected statement."
+  | UnexpectedStatement statement ->
+      Format.sprintf "Unexpected statement: `%s`" (Statement.show statement)
   | InvalidDefaultValue { callable_name; name; expression } ->
       Format.sprintf
         "Default values of `%s`'s parameters must be `...`. Did you mean to write `%s: %s`?"
@@ -347,6 +356,18 @@ let description error =
       in
       let strings = List.map models ~f:(fun model -> Format.sprintf "\"%s\"; " model) in
       List.fold strings ~init:starting_string ~f:( ^ ) ^ "]"
+  | ModelQueryInExpectedModelsClause { model_query_name; model_source } ->
+      Format.sprintf
+        "In ModelQuery `%s`: Model string `%s` is a ModelQuery, not a model.\n\
+        \    Please make sure that the model string is a syntactically correct model."
+        model_query_name
+        model_source
+  | InvalidExpectedModelsClause { model_query_name; models_clause } ->
+      Format.asprintf
+        "In ModelQuery `%s`: Clause `%s` is not a valid expected_models or unexpected_models clause.\n\
+        \   The clause should be a list of syntactically correct model strings."
+        model_query_name
+        (Expression.show models_clause)
 
 
 let code { kind; _ } =
@@ -394,6 +415,8 @@ let code { kind; _ } =
   | NoOutputFromModelQuery _ -> 41
   | ExpectedModelsAreMissing _ -> 42
   | UnexpectedModelsArePresent _ -> 43
+  | ModelQueryInExpectedModelsClause _ -> 44
+  | InvalidExpectedModelsClause _ -> 45
 
 
 let display { kind = error; path; location } =

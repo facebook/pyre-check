@@ -2094,7 +2094,7 @@ let test_invalid_models context =
     assert_invalid_model ?path ?source ?sources ~model_source ~expect:"no failure" ()
   in
   assert_invalid_model ~model_source:"1 + import" ~expect:"Syntax error." ();
-  assert_invalid_model ~model_source:"import foo" ~expect:"Unexpected statement." ();
+  assert_invalid_model ~model_source:"import foo" ~expect:"Unexpected statement: `import foo`" ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[X, Unsupported]) -> TaintSource[A]: ..."
     ~expect:

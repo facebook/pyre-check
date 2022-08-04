@@ -127,6 +127,14 @@ type kind =
       model_query_name: string;
       models: string list;
     }
+  | ModelQueryInExpectedModelsClause of {
+      model_query_name: string;
+      model_source: string;
+    }
+  | InvalidExpectedModelsClause of {
+      model_query_name: string;
+      models_clause: Expression.t;
+    }
 [@@deriving sexp, compare]
 
 type t = {

@@ -121,6 +121,94 @@ let test_to_json _ =
           stop = { Ast.Location.line = 3; column = 4 };
         };
       path = Some (PyrePath.create_absolute "/a/b.pysa");
+    };
+  assert_json
+    ~expected:
+      {|
+        {
+          "description": "In ModelQuery `get_foo`: Model string `ModelQuery(
+    name = 'nested_model_query',
+    find = 'functions',
+    where = [
+        name.matches('test')
+    ],
+    model = [
+        Returns(TaintSource[Test]),
+    ]
+)` is a ModelQuery, not a model.
+    Please make sure that the model string is a syntactically correct model.",
+          "line": 1,
+          "column": 2,
+          "stop_line": 3,
+          "stop_column": 4,
+          "path": "/a/b.pysa",
+          "code": 44
+        }
+        |}
+    {
+      ModelVerificationError.kind =
+        ModelVerificationError.ModelQueryInExpectedModelsClause
+          {
+            model_query_name = "get_foo";
+            model_source =
+              {|ModelQuery(
+    name = 'nested_model_query',
+    find = 'functions',
+    where = [
+        name.matches('test')
+    ],
+    model = [
+        Returns(TaintSource[Test]),
+    ]
+)|};
+          };
+      location =
+        {
+          Ast.Location.start = { Ast.Location.line = 1; column = 2 };
+          stop = { Ast.Location.line = 3; column = 4 };
+        };
+      path = Some (PyrePath.create_absolute "/a/b.pysa");
+    };
+  assert_json
+    ~expected:
+      {|
+        {
+          "description": "In ModelQuery `get_foo`: Clause `[\"foo(): ...\"]` is not a valid expected_models or unexpected_models clause.
+   The clause should be a list of syntactically correct model strings.",
+          "line": 1,
+          "column": 2,
+          "stop_line": 3,
+          "stop_column": 4,
+          "path": "/a/b.pysa",
+          "code": 45
+        }
+        |}
+    {
+      ModelVerificationError.kind =
+        ModelVerificationError.InvalidExpectedModelsClause
+          {
+            model_query_name = "get_foo";
+            models_clause =
+              {
+                Ast.Node.value =
+                  List
+                    [
+                      {
+                        value =
+                          Constant
+                            (Ast.Expression.Constant.String { value = "foo(): ..."; kind = String });
+                        location = Ast.Location.any;
+                      };
+                    ];
+                location = Ast.Location.any;
+              };
+          };
+      location =
+        {
+          Ast.Location.start = { Ast.Location.line = 1; column = 2 };
+          stop = { Ast.Location.line = 3; column = 4 };
+        };
+      path = Some (PyrePath.create_absolute "/a/b.pysa");
     }
 
 
