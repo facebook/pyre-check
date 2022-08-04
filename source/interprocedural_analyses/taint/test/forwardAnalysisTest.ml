@@ -74,6 +74,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ~call_graph_of_define
         ~get_callee_model:(Registry.get models)
         ~existing_model:Model.empty_model
+        ()
     in
     let model = { Model.empty_model with forward } in
     Registry.set models ~target:call_target ~model

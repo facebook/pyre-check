@@ -20,4 +20,5 @@ val run
   get_callee_model:(Interprocedural.Target.t -> Model.t option) ->
   existing_model:Model.t ->
   triggered_sinks:ForwardAnalysis.triggered_sinks ->
+  unit ->
   Model.Backward.t

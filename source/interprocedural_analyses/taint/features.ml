@@ -323,7 +323,7 @@ module ViaFeature = struct
 
   let show = Format.asprintf "%a" pp
 
-  let via_value_of_breadcrumb ?tag ~arguments =
+  let via_value_of_breadcrumb ?tag ~arguments () =
     let open Ast.Expression.Call.Argument in
     let extract_constant_value arguments =
       List.find_map
@@ -352,7 +352,7 @@ module ViaFeature = struct
     Breadcrumb.ViaValue { value = feature; tag } |> BreadcrumbInterned.intern
 
 
-  let via_type_of_breadcrumb ?tag ~resolution ~argument =
+  let via_type_of_breadcrumb ?tag ~resolution ~argument () =
     let feature =
       argument
       >>| Interprocedural.CallResolution.resolve_ignoring_untracked ~resolution
@@ -363,7 +363,7 @@ module ViaFeature = struct
     Breadcrumb.ViaType { value = feature; tag } |> BreadcrumbInterned.intern
 
 
-  let via_type_of_breadcrumb_for_object ?tag ~resolution ~object_target =
+  let via_type_of_breadcrumb_for_object ?tag ~resolution ~object_target () =
     let feature =
       object_target
       |> Reference.create
@@ -525,17 +525,18 @@ let expand_via_features ~resolution ~callees ~arguments via_features =
     match via_feature with
     | ViaFeature.ViaValueOf { parameter; tag } ->
         let arguments = match_all_arguments_to_parameter parameter in
-        BreadcrumbSet.add (ViaFeature.via_value_of_breadcrumb ?tag ~arguments) breadcrumbs
+        BreadcrumbSet.add (ViaFeature.via_value_of_breadcrumb ?tag ~arguments ()) breadcrumbs
     | ViaFeature.ViaTypeOf { parameter; tag } ->
         let breadcrumb =
           match callees with
           | [Interprocedural.Target.Object object_target] ->
-              ViaFeature.via_type_of_breadcrumb_for_object ?tag ~resolution ~object_target
+              ViaFeature.via_type_of_breadcrumb_for_object ?tag ~resolution ~object_target ()
           | _ ->
               ViaFeature.via_type_of_breadcrumb
                 ?tag
                 ~resolution
                 ~argument:(match_argument_to_parameter parameter)
+                ()
         in
         BreadcrumbSet.add breadcrumb breadcrumbs
   in

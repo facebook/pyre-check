@@ -422,8 +422,6 @@ module UnitPredicate = struct
 end
 
 module ExpressionCollector (Predicate : ExpressionPredicate) = struct
-  let visit_children = Predicate.visit_children
-
   let collect source =
     let module Collector = Collector (Predicate) (UnitPredicate) (UnitPredicate) in
     let { Collector.expressions; _ } = Collector.collect source in

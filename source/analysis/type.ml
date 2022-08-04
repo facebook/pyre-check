@@ -227,14 +227,14 @@ module Record = struct
                })
 
 
-      let create_from_concrete_against_concrete ?prefix ?suffix ~compare_t ~left ~right =
+      let create_from_concrete_against_concrete ?prefix ?suffix ~compare_t ~left ~right () =
         create_from_unpackable
           ?prefix
           ?suffix
           (create_unpackable_from_concrete_against_concrete ~compare_t ~left ~right)
 
 
-      let create_from_concrete_against_concatenation ?prefix ?suffix ~concrete ~concatenation =
+      let create_from_concrete_against_concatenation ?prefix ?suffix ~concrete ~concatenation () =
         create_from_unpackable
           ?prefix
           ?suffix
@@ -3515,7 +3515,8 @@ module OrderedTypes = struct
                       ~suffix:[]
                       ~compare_t:compare_type_t
                       ~left:left_dimensions
-                      ~right:right_dimensions))
+                      ~right:right_dimensions
+                      ()))
           | _ -> broadcast_error ())
       | Unequal_lengths -> broadcast_error ()
     in
@@ -3560,7 +3561,8 @@ module OrderedTypes = struct
                 ~prefix:[]
                 ~suffix:[]
                 ~concrete
-                ~concatenation))
+                ~concatenation
+                ()))
     | Tuple (Concatenation left_concatenation), Tuple (Concatenation right_concatenation)
       when [%eq: type_t Concatenation.t] left_concatenation right_concatenation ->
         Tuple (Concatenation left_concatenation)

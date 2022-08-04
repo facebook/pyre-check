@@ -2040,7 +2040,7 @@ let test_type_of_generator_send_and_return context =
 
 
 let test_define context =
-  let assert_define ?expected_define_source ~define_name ~source =
+  let assert_define ?expected_define_source ~define_name ~source () =
     let expected_source =
       expected_define_source >>| parse ~handle:"test.py" >>| Preprocessing.preprocess
     in
@@ -2109,8 +2109,9 @@ let test_define context =
     def simple_function(x: int) -> str:
       print(x)
       return "hello"
-    |};
-  assert_no_define_found ~define_name:!&"test.non_existent" ~source;
+    |}
+    ();
+  assert_no_define_found ~define_name:!&"test.non_existent" ~source ();
   (* Functions containing nested functions. *)
   assert_define
     ~define_name:!&"test.with_logging"
@@ -2126,7 +2127,8 @@ let test_define context =
         callable(y)
 
       return inner
-    |};
+    |}
+    ();
   assert_define
     ~define_name:!&"test.two_inner_functions"
     ~source
@@ -2144,7 +2146,8 @@ let test_define context =
         callable(y)
 
       return inner2
-    |};
+    |}
+    ();
   assert_define
     ~define_name:!&"test.decorator_factory"
     ~source
@@ -2162,7 +2165,8 @@ let test_define context =
         return inner
 
       return wrapper
-    |};
+    |}
+    ();
   ()
 
 

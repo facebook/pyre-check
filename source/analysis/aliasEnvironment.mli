@@ -35,6 +35,7 @@ module AliasReadOnly : sig
     ?dependency:DependencyKey.registered ->
     variable_parameter_annotation:Expression.t ->
     keywords_parameter_annotation:Expression.t ->
+    unit ->
     Type.Variable.Variadic.Parameters.t option
 end
 

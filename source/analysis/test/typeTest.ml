@@ -1236,7 +1236,8 @@ let test_create_variadic_tuple _ =
              ~prefix:[]
              ~suffix:[]
              ~concrete:(literal_tuple [1; 2])
-             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))));
+             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+             ())));
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
@@ -1286,7 +1287,8 @@ let test_create_variadic_tuple _ =
              ~suffix:[]
              ~compare_t:Type.compare
              ~left:[Type.Variable variable_t1; Type.literal_integer 5]
-             ~right:[Type.Variable variable_t2; Type.literal_integer 5])));
+             ~right:[Type.Variable variable_t2; Type.literal_integer 5]
+             ())));
   assert_create
     ~aliases
     {|
@@ -1302,7 +1304,8 @@ let test_create_variadic_tuple _ =
              ~suffix:[]
              ~compare_t:Type.compare
              ~left:[Type.Variable variable_t1; Type.Variable variable_t2]
-             ~right:[Type.Variable variable_t2; Type.Variable variable_t1])));
+             ~right:[Type.Variable variable_t2; Type.Variable variable_t1]
+             ())));
   assert_create
     ~aliases
     {|
@@ -1606,7 +1609,8 @@ let test_expression _ =
              ~prefix:[]
              ~suffix:[]
              ~concrete:[Type.literal_integer 5]
-             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))))
+             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+             ())))
     {|
       typing.Tuple[
         pyre_extensions.Unpack[
@@ -1644,7 +1648,8 @@ let test_expression _ =
              ~suffix:[]
              ~compare_t:Type.compare
              ~left:[Type.variable "T1"]
-             ~right:[Type.variable "T2"])))
+             ~right:[Type.variable "T2"]
+             ())))
     {|
       typing.Tuple[
         pyre_extensions.Unpack[
@@ -2493,6 +2498,7 @@ let test_visit _ =
       ~compare_t:Type.compare
       ~left:[Type.variable "T1"]
       ~right:[Type.variable "T2"]
+      ()
   in
   let end_state, _ =
     CountTransform.visit 0 (Tuple (Type.OrderedTypes.Concatenation broadcast_unaries))
@@ -3225,13 +3231,15 @@ let test_replace_all _ =
                              ~prefix:[]
                              ~suffix:[]
                              ~concrete:[Type.literal_integer 2; Type.Variable y]
-                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                             ())
                           (Type.OrderedTypes.Concatenation
                            .create_from_concrete_against_concatenation
                              ~prefix:[]
                              ~suffix:[]
                              ~concrete:[Type.literal_integer 2; Type.Variable x]
-                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                             ())),
                      1 );
                  ] );
              ])))
@@ -3249,12 +3257,14 @@ let test_replace_all _ =
                           ~prefix:[]
                           ~suffix:[]
                           ~concrete:[Type.literal_integer 2; Type.literal_integer 7]
-                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                          ())
                        (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
                           ~prefix:[]
                           ~suffix:[]
                           ~concrete:[Type.literal_integer 2; Type.literal_integer 7]
-                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                          ())),
                   1 );
               ] );
           ]));
@@ -3278,13 +3288,15 @@ let test_replace_all _ =
                              ~prefix:[Type.Variable x]
                              ~suffix:[Type.Variable y]
                              ~concrete:[Type.literal_integer 2; Type.Variable y]
-                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                             ())
                           (Type.OrderedTypes.Concatenation
                            .create_from_concrete_against_concatenation
                              ~prefix:[Type.Variable y]
                              ~suffix:[Type.Variable x]
                              ~concrete:[Type.literal_integer 2; Type.Variable x]
-                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                             ())),
                      1 );
                  ] );
              ])))
@@ -3302,12 +3314,14 @@ let test_replace_all _ =
                           ~prefix:[Type.literal_integer 1]
                           ~suffix:[Type.literal_integer 2]
                           ~concrete:[Type.literal_integer 2; Type.literal_integer 2]
-                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                          ())
                        (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
                           ~prefix:[Type.literal_integer 2]
                           ~suffix:[Type.literal_integer 1]
                           ~concrete:[Type.literal_integer 2; Type.literal_integer 1]
-                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                          ())),
                   1 );
               ] );
           ]));
@@ -3359,13 +3373,15 @@ let test_replace_all _ =
                              ~prefix:[Type.Variable x]
                              ~suffix:[Type.Variable y]
                              ~concrete:[Type.literal_integer 2; Type.Variable y]
-                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                             ())
                           (Type.OrderedTypes.Concatenation
                            .create_from_concrete_against_concatenation
                              ~prefix:[Type.Variable y]
                              ~suffix:[Type.Variable x]
                              ~concrete:[Type.literal_integer 2; Type.Variable x]
-                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                             ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                             ())),
                      1 );
                  ] );
              ])
@@ -3394,12 +3410,14 @@ let test_replace_all _ =
                           ~prefix:[Type.literal_integer 1]
                           ~suffix:[Type.literal_integer 2]
                           ~concrete:[Type.literal_integer 2; Type.literal_integer 2]
-                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                          ())
                        (Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
                           ~prefix:[Type.literal_integer 2]
                           ~suffix:[Type.literal_integer 1]
                           ~concrete:[Type.literal_integer 2; Type.literal_integer 1]
-                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic))),
+                          ~concatenation:(Type.OrderedTypes.Concatenation.create variadic)
+                          ())),
                   1 );
               ] );
           ])
@@ -4933,6 +4951,7 @@ let test_broadcast _ =
       ~suffix:[]
       ~concrete:[y]
       ~concatenation:variadic_t
+      ()
   in
   let second_concrete_against_concatenation =
     Type.OrderedTypes.Concatenation.create_from_concrete_against_concatenation
@@ -4940,6 +4959,7 @@ let test_broadcast _ =
       ~suffix:[]
       ~concrete:[y]
       ~concatenation:variadic_t
+      ()
   in
   (* Broadcast[ Tuple[x, *Broadcast[Tuple[y], Tuple[*Ts]], Tuple[x, *Broadcast[Tuple[y],
      Tuple[*Ts]]] ] *)
@@ -4999,7 +5019,8 @@ let test_broadcast _ =
              ~suffix:[]
              ~compare_t:Type.compare
              ~left:[y; x]
-             ~right:[x; y])));
+             ~right:[x; y]
+             ())));
   assert_broadcast
     (Type.tuple [x])
     (Type.tuple [Type.literal_integer 5])
@@ -5010,7 +5031,8 @@ let test_broadcast _ =
              ~suffix:[]
              ~compare_t:Type.compare
              ~left:[x]
-             ~right:[Type.literal_integer 5])));
+             ~right:[Type.literal_integer 5]
+             ())));
   assert_broadcast
     (Type.tuple [not_bound_to_int])
     (Type.tuple [not_bound_to_int])
@@ -6385,7 +6407,8 @@ let test_show _ =
                 ~prefix:[]
                 ~suffix:[]
                 ~concrete:[callable1]
-                ~concatenation:(Type.OrderedTypes.Concatenation.create ~prefix:[callable2] ts)))))
+                ~concatenation:(Type.OrderedTypes.Concatenation.create ~prefix:[callable2] ts)
+                ()))))
     ~expected_full:
       "pyre_extensions.Compose[*Broadcast[typing.Tuple[typing.Callable[[int], str]], \
        typing.Tuple[typing.Callable[[str], bool], *Ts]]]"

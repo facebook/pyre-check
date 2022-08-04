@@ -545,6 +545,7 @@ let parse_as_parameter_specification_instance_annotation ({ dependency; _ } as r
   AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
     (alias_environment resolution)
     ?dependency
+    ()
 
 
 let annotation_parser ?(allow_invalid_type_parameters = false) resolution =

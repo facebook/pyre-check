@@ -2230,6 +2230,7 @@ let run
     ~get_callee_model
     ~existing_model
     ~triggered_sinks
+    ()
   =
   let timer = Timer.start () in
   let define =

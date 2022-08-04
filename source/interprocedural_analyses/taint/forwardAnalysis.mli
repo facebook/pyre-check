@@ -21,4 +21,5 @@ val run
   call_graph_of_define:Interprocedural.CallGraph.DefineCallGraph.t ->
   get_callee_model:(Interprocedural.Target.t -> Model.t option) ->
   existing_model:Model.t ->
+  unit ->
   Model.Forward.t * Issue.t list * triggered_sinks

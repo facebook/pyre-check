@@ -94,6 +94,7 @@ let errors_from_not_found
     ?original_target
     ?callee_expression
     ~arguments
+    ()
   =
   let callee =
     match kind with
@@ -1523,6 +1524,7 @@ module State (Context : Context) = struct
                   ?original_target:target
                   ~callee_expression:(Callee.expression callee)
                   ~arguments:(Some arguments)
+                  ()
               in
               let emit errors (more_specific_error_location, kind) =
                 let location = Option.value more_specific_error_location ~default:location in
@@ -6787,6 +6789,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                     ?original_target:None
                     ?callee_expression:None
                     ~arguments:None
+                    ()
                 in
                 reason >>| convert >>= List.hd >>| fun (_, kind) -> kind
               in

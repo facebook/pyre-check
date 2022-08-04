@@ -124,6 +124,7 @@ module Record : sig
         compare_t:('annotation -> 'annotation -> int) ->
         left:'annotation list ->
         right:'annotation list ->
+        unit ->
         'annotation t
 
       val create_from_concrete_against_concatenation
@@ -131,6 +132,7 @@ module Record : sig
         ?suffix:'annotation list ->
         concrete:'annotation list ->
         concatenation:'annotation t ->
+        unit ->
         'annotation t
 
       val create_from_concatenation_against_concatenation

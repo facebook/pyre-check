@@ -119,7 +119,8 @@ module Analysis = struct
             ~define
             ~call_graph_of_define
             ~get_callee_model
-            ~existing_model:previous_model)
+            ~existing_model:previous_model
+            ())
     in
     let backward =
       TaintProfiler.track_duration ~profiler ~name:"Backward analysis" ~f:(fun () ->
@@ -133,7 +134,8 @@ module Analysis = struct
             ~call_graph_of_define
             ~get_callee_model
             ~existing_model:previous_model
-            ~triggered_sinks)
+            ~triggered_sinks
+            ())
     in
     let forward, backward =
       if Model.ModeSet.contains Model.Mode.SkipAnalysis modes then

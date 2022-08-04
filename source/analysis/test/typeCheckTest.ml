@@ -2141,7 +2141,7 @@ let test_unpack_callable_and_self_argument context =
     in
     assert_unpack_type ~source given expected
   in
-  let signature_select ?(pairs = []) ~arguments:_ ~callable ~self_argument:_ =
+  let signature_select ?(pairs = []) ~arguments:_ ~callable ~self_argument:_ () =
     match pairs with
     | [(Type.Any, right)] -> SignatureSelectionTypes.Found { selected_return_annotation = right }
     | _ ->
@@ -2301,7 +2301,8 @@ let test_unpack_callable_and_self_argument context =
                  ~annotation:Type.string
                  (),
                Type.string );
-           ])
+           ]
+         ())
     {|
       pyre_extensions.Compose[
         pyre_extensions.Compose[

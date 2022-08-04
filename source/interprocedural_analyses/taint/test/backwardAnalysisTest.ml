@@ -54,6 +54,7 @@ let assert_taint ~context source expected =
         ~get_callee_model:(Registry.get models)
         ~existing_model:Model.empty_model
         ~triggered_sinks:(Ast.Location.Table.create ())
+        ()
     in
     let model = { Model.empty_model with backward } in
     Registry.set models ~target:call_target ~model

@@ -4208,7 +4208,8 @@ class base class_metadata_environment dependency =
             parse_as_parameter_specification_instance_annotation =
               AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
                 (alias_environment class_metadata_environment)
-                ?dependency;
+                ?dependency
+                ();
           }
         in
         let variables =
