@@ -315,6 +315,14 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIsInstance(result, InitializationExit)
 
+    async def test_try_initialize_exit__without_anything(self) -> None:
+        result = await try_initialize(
+            create_memory_text_reader(""),
+            create_memory_text_writer(),
+            _fake_option_reader(),
+        )
+        self.assertIsInstance(result, InitializationExit)
+
     async def test_server_exit(self) -> None:
         server_state = ServerState()
         noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())

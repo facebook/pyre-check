@@ -297,7 +297,7 @@ async def try_initialize(
         result = process_initialize_request(
             initialize_parameters, server_start_options.ide_features
         )
-        await lsp.write_json_rpc(
+        await lsp.write_json_rpc_ignore_connection_error(
             output_channel,
             json_rpc.SuccessResponse(
                 id=request_id,
@@ -342,6 +342,8 @@ async def try_initialize(
             ),
         )
         return InitializationFailure(exception=json_rpc_error)
+    except lsp.ReadChannelClosedError:
+        return InitializationExit()
 
 
 @connection.asynccontextmanager
