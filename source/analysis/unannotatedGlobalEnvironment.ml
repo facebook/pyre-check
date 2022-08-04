@@ -754,7 +754,7 @@ module FromReadOnlyUpstream = struct
 
     let load_all_possible_modules loader ~is_qualifier reference =
       let load_module_if_tracked = load_module_if_tracked loader in
-      let ancestors_descending = Reference.possible_qualifiers reference in
+      let ancestors_descending = Reference.possible_qualifiers_after_delocalize reference in
       List.iter ancestors_descending ~f:load_module_if_tracked;
       if is_qualifier then load_module_if_tracked reference;
       ()

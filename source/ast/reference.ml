@@ -168,7 +168,7 @@ let map_last ~f reference =
   | head :: tail -> f head :: tail |> List.rev
 
 
-let possible_qualifiers reference =
+let prefixes reference =
   let rec recurse reversed sofar =
     match reversed with
     | [] -> sofar
@@ -176,3 +176,6 @@ let possible_qualifiers reference =
     | _ :: tail -> recurse tail (reverse tail :: sofar)
   in
   recurse (reverse reference) []
+
+
+let possible_qualifiers_after_delocalize reference = delocalize reference |> prefixes
