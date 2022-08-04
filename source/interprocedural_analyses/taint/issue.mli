@@ -90,7 +90,7 @@ val to_json
     bool) ->
   filename_lookup:(Reference.t -> string option) ->
   t ->
-  Yojson.Safe.json
+  Yojson.Safe.t
 
 val to_error : t -> Error.t
 
@@ -125,7 +125,7 @@ module Candidates : sig
   val generate_issues : t -> define:Define.t Node.t -> issue list
 end
 
-val code_metadata : unit -> Yojson.Safe.json
+val code_metadata : unit -> Yojson.Safe.t
 
 val source_can_match_rule : Sources.t -> bool
 

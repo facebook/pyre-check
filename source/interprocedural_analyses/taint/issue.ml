@@ -680,7 +680,7 @@ let to_json ~expand_overrides ~is_valid_callee ~filename_lookup issue =
         json_features;
       ]
   in
-  let traces : Yojson.Safe.json =
+  let traces : Yojson.Safe.t =
     `List
       [
         `Assoc ["name", `String "forward"; "roots", source_traces];

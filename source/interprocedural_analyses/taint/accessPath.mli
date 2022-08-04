@@ -44,7 +44,7 @@ val of_expression : Expression.t -> t option
 
 val get_index : Expression.t -> Abstract.TreeDomain.Label.t
 
-val to_json : t -> Yojson.Safe.json
+val to_json : t -> Yojson.Safe.t
 
 type argument_match = {
   root: Root.t;

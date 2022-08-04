@@ -15,14 +15,14 @@ val externalize
   Target.t ->
   Issue.t list ->
   Model.t ->
-  Yojson.Safe.json list
+  Yojson.Safe.t list
 
 val fetch_and_externalize
   :  fixpoint_state:Fixpoint.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   override_graph:Interprocedural.OverrideGraph.SharedMemory.t ->
   Target.t ->
-  Yojson.Safe.json list
+  Yojson.Safe.t list
 
 val report
   :  scheduler:Scheduler.t ->
@@ -33,4 +33,4 @@ val report
   skipped_overrides:Target.t list ->
   fixpoint_timer:Timer.t ->
   fixpoint_state:Fixpoint.t ->
-  Yojson.Safe.json list
+  Yojson.Safe.t list

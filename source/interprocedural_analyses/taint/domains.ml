@@ -13,7 +13,7 @@ let location_to_json
       Location.start = { line = start_line; column = start_column };
       stop = { line = end_line; column = end_column };
     }
-    : Yojson.Safe.json
+    : Yojson.Safe.t
   =
   (* If the location spans multiple lines, we only return the position of the first character. *)
   `Assoc
@@ -24,7 +24,7 @@ let location_to_json
     ]
 
 
-let location_with_module_to_json ~filename_lookup location_with_module : Yojson.Safe.json =
+let location_with_module_to_json ~filename_lookup location_with_module : Yojson.Safe.t =
   let optionally_add_filename fields =
     match filename_lookup with
     | Some lookup ->
@@ -89,7 +89,7 @@ module CallInfo = struct
 
 
   (* Returns the (dictionary key * json) to emit *)
-  let to_json ~filename_lookup trace : string * Yojson.Safe.json =
+  let to_json ~filename_lookup trace : string * Yojson.Safe.t =
     match trace with
     | Declaration _ -> "decl", `Null
     | Origin location ->
@@ -451,7 +451,7 @@ module type TAINT_DOMAIN = sig
       bool) ->
     filename_lookup:(Reference.t -> string option) option ->
     t ->
-    Yojson.Safe.json
+    Yojson.Safe.t
 
   (* For every frame, convert the may breadcrumbs into must breadcrumbs. *)
   val may_breadcrumbs_to_must : t -> t

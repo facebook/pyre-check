@@ -1111,7 +1111,7 @@ val infer_transform : t -> t
 
 val contains_prohibited_any : t -> bool
 
-val to_yojson : t -> Yojson.Safe.json
+val to_yojson : t -> Yojson.Safe.t
 
 val resolve_class : t -> class_data list option
 
