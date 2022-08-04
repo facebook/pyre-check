@@ -205,6 +205,8 @@ let test_possible_qualifiers _ =
   assert_prefixes "a" [];
   assert_prefixes "a.b" ["a"];
   assert_prefixes "a.b.c" ["a"; "a.b"];
+  assert_prefixes "$local_a$b" [];
+  assert_prefixes "$local_a?b$c" [];
   ()
 
 
