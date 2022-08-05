@@ -22,14 +22,14 @@ module ExpectedModel : sig
 
   val less_or_equal : t -> t -> bool
 
-  val compare : t -> t -> int
+  val equal : t -> t -> bool
 end
 
 (* Exposed for model queries. *)
 module Internal : sig
-  type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, compare]
+  type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, equal]
 
-  type via_features = Features.ViaFeature.t list [@@deriving show, compare]
+  type via_features = Features.ViaFeature.t list [@@deriving show, equal]
 
   type leaf_kind =
     | Leaf of {
@@ -38,7 +38,7 @@ module Internal : sig
       }
     | Breadcrumbs of breadcrumbs
     | ViaFeatures of via_features
-  [@@deriving show, compare]
+  [@@deriving show, equal]
 
   type sanitize_annotation =
     | AllSources
@@ -50,7 +50,7 @@ module Internal : sig
         sources: Sources.t list;
         sinks: Sinks.t list;
       }
-  [@@deriving show, compare]
+  [@@deriving show, equal]
 
   type taint_annotation =
     | Sink of {
@@ -83,23 +83,23 @@ module Internal : sig
         path: Abstract.TreeDomain.Label.path;
       }
     | Sanitize of sanitize_annotation list
-  [@@deriving show, compare]
+  [@@deriving show, equal]
 
   type annotation_kind =
     | ParameterAnnotation of AccessPath.Root.t
     | ReturnAnnotation
-  [@@deriving show, compare]
+  [@@deriving show, equal]
 
   module ModelQuery : sig
     type name_constraint =
       | Equals of string
       | Matches of Re2.t
-    [@@deriving compare, show]
+    [@@deriving equal, show]
 
     type annotation_constraint =
       | IsAnnotatedTypeConstraint
       | AnnotationNameConstraint of name_constraint
-    [@@deriving compare, show]
+    [@@deriving equal, show]
 
     module ParameterConstraint : sig
       type t =
@@ -109,14 +109,14 @@ module Internal : sig
         | AnyOf of t list
         | AllOf of t list
         | Not of t
-      [@@deriving compare, show]
+      [@@deriving equal, show]
     end
 
     module ArgumentsConstraint : sig
       type t =
         | Equals of Ast.Expression.Call.Argument.t list
         | Contains of Ast.Expression.Call.Argument.t list
-      [@@deriving compare, show]
+      [@@deriving equal, show]
     end
 
     module DecoratorConstraint : sig
@@ -124,7 +124,7 @@ module Internal : sig
         name_constraint: name_constraint;
         arguments_constraint: ArgumentsConstraint.t option;
       }
-      [@@deriving compare, show]
+      [@@deriving equal, show]
     end
 
     module ClassConstraint : sig
@@ -135,7 +135,7 @@ module Internal : sig
             is_transitive: bool;
           }
         | DecoratorSatisfies of DecoratorConstraint.t
-      [@@deriving compare, show]
+      [@@deriving equal, show]
     end
 
     type model_constraint =
@@ -148,13 +148,13 @@ module Internal : sig
       | ParentConstraint of ClassConstraint.t
       | AnyDecoratorConstraint of DecoratorConstraint.t
       | Not of model_constraint
-    [@@deriving compare, show]
+    [@@deriving equal, show]
 
     type kind =
       | FunctionModel
       | MethodModel
       | AttributeModel
-    [@@deriving show, compare]
+    [@@deriving show, equal]
 
     type produced_taint =
       | TaintAnnotation of taint_annotation
@@ -166,7 +166,7 @@ module Internal : sig
           sink_pattern: string;
           kind: string;
         }
-    [@@deriving show, compare]
+    [@@deriving show, equal]
 
     type production =
       | AllParametersTaint of {
@@ -187,7 +187,7 @@ module Internal : sig
         }
       | ReturnTaint of produced_taint list
       | AttributeTaint of produced_taint list
-    [@@deriving show, compare]
+    [@@deriving show, equal]
 
     type rule = {
       location: Ast.Location.t;
@@ -198,7 +198,7 @@ module Internal : sig
       expected_models: ExpectedModel.t list;
       unexpected_models: ExpectedModel.t list;
     }
-    [@@deriving show, compare]
+    [@@deriving show, equal]
   end
 end
 

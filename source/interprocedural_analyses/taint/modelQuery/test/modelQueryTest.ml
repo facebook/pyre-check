@@ -20,7 +20,7 @@ end
 open Taint.ModelParser.Internal.ModelQuery
 
 type query_rule_element = ModelParser.annotation_kind * ModelParser.taint_annotation
-[@@deriving show, compare]
+[@@deriving show, equal]
 
 let test_apply_rule context =
   let source ?subkind name =
@@ -68,7 +68,7 @@ let test_apply_rule context =
       |> List.concat
     in
     assert_equal
-      ~cmp:(List.equal (fun left right -> compare_query_rule_element left right = 0))
+      ~cmp:(List.equal equal_query_rule_element)
       ~printer:(List.to_string ~f:show_query_rule_element)
       expected
       actual
@@ -100,7 +100,7 @@ let test_apply_rule context =
       |> List.concat
     in
     assert_equal
-      ~cmp:(List.equal (fun left right -> ModelParser.compare_taint_annotation left right = 0))
+      ~cmp:(List.equal ModelParser.equal_taint_annotation)
       ~printer:(List.to_string ~f:ModelParser.show_taint_annotation)
       expected
       actual

@@ -177,7 +177,7 @@ module LeafName = struct
     leaf: string;
     port: string option;
   }
-  [@@deriving compare]
+  [@@deriving equal]
 
   let pp formatter { leaf; port } =
     match port with
@@ -225,7 +225,7 @@ module Breadcrumb = struct
     | TitoBroadening (* Taint tree was collapsed when applying tito *)
     | IssueBroadening (* Taint tree was collapsed when matching sources and sinks *)
     | Crtex (* Taint comes from the Cross Repository Taint EXchange *)
-  [@@deriving compare]
+  [@@deriving equal]
 
   let pp formatter breadcrumb =
     let pp_via_value_or_type header tag value =
@@ -307,7 +307,7 @@ module ViaFeature = struct
         parameter: AccessPath.Root.t;
         tag: string option;
       }
-  [@@deriving compare]
+  [@@deriving compare, equal]
 
   let pp formatter simple =
     let pp_via_value_or_type header parameter tag =

@@ -9,7 +9,7 @@ type 'node_type t = {
   location: Location.t;
   value: 'node_type;
 }
-[@@deriving compare, sexp, show, hash, to_yojson]
+[@@deriving equal, compare, sexp, show, hash, to_yojson]
 
 val create : location:Location.t -> 'node_value -> 'node_value t
 

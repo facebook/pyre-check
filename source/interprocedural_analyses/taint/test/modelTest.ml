@@ -173,8 +173,7 @@ let assert_queries ?source ?rules ~context ~model_source ~expect () =
     set_up_environment ?source ?rules ~context ~model_source ()
   in
   assert_equal
-    ~cmp:
-      (List.equal (fun left right -> ModelParser.Internal.ModelQuery.compare_rule left right = 0))
+    ~cmp:(List.equal ModelParser.Internal.ModelQuery.equal_rule)
     ~printer:(List.to_string ~f:ModelParser.Internal.ModelQuery.show_rule)
     queries
     expect

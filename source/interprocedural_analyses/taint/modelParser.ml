@@ -39,24 +39,13 @@ module ExpectedModel = struct
     && String.equal left.model_source right.model_source
 
 
-  let compare left right =
-    if Target.equal left.target right.target then
-      if String.equal left.model_source right.model_source then
-        0
-      else
-        match less_or_equal left right, less_or_equal right left with
-        | true, true -> 0
-        | true, false -> -1
-        | false, true -> 1
-        | false, false -> 0
-    else
-      -1
+  let equal left right = less_or_equal left right && less_or_equal right left
 end
 
 module Internal = struct
-  type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, compare]
+  type breadcrumbs = Features.Breadcrumb.t list [@@deriving show, equal]
 
-  type via_features = Features.ViaFeature.t list [@@deriving show, compare]
+  type via_features = Features.ViaFeature.t list [@@deriving show, equal]
 
   type leaf_kind =
     | Leaf of {
@@ -65,7 +54,7 @@ module Internal = struct
       }
     | Breadcrumbs of breadcrumbs
     | ViaFeatures of via_features
-  [@@deriving show, compare]
+  [@@deriving show, equal]
 
   type sanitize_annotation =
     | AllSources
@@ -77,7 +66,7 @@ module Internal = struct
         sources: Sources.t list;
         sinks: Sinks.t list;
       }
-  [@@deriving show, compare]
+  [@@deriving show, equal]
 
   type taint_annotation =
     | Sink of {
@@ -110,18 +99,24 @@ module Internal = struct
         path: Abstract.TreeDomain.Label.path;
       }
     | Sanitize of sanitize_annotation list
-  [@@deriving show, compare]
+  [@@deriving show, equal]
 
   type annotation_kind =
     | ParameterAnnotation of AccessPath.Root.t
     | ReturnAnnotation
-  [@@deriving show, compare]
+  [@@deriving show, equal]
 
   module ModelQuery = struct
     type name_constraint =
       | Equals of string
       | Matches of Re2.t
-    [@@deriving compare]
+
+    let equal_name_constraint left right =
+      match left, right with
+      | Equals left, Equals right -> String.equal left right
+      | Matches left, Matches right -> Re2.compare left right = 0
+      | _, _ -> false
+
 
     let pp_name_constraint formatter name_constraint =
       match name_constraint with
@@ -135,13 +130,13 @@ module Internal = struct
     type annotation_constraint =
       | IsAnnotatedTypeConstraint
       | AnnotationNameConstraint of name_constraint
-    [@@deriving compare, show]
+    [@@deriving equal, show]
 
     module ArgumentsConstraint = struct
       type t =
         | Equals of Ast.Expression.Call.Argument.t list
         | Contains of Ast.Expression.Call.Argument.t list
-      [@@deriving compare, show]
+      [@@deriving equal, show]
     end
 
     module ParameterConstraint = struct
@@ -152,7 +147,7 @@ module Internal = struct
         | AnyOf of t list
         | AllOf of t list
         | Not of t
-      [@@deriving compare, show]
+      [@@deriving equal, show]
     end
 
     module DecoratorConstraint = struct
@@ -160,7 +155,7 @@ module Internal = struct
         name_constraint: name_constraint;
         arguments_constraint: ArgumentsConstraint.t option;
       }
-      [@@deriving compare, show]
+      [@@deriving equal, show]
     end
 
     module ClassConstraint = struct
@@ -171,7 +166,7 @@ module Internal = struct
             is_transitive: bool;
           }
         | DecoratorSatisfies of DecoratorConstraint.t
-      [@@deriving compare, show]
+      [@@deriving equal, show]
     end
 
     type model_constraint =
@@ -184,13 +179,13 @@ module Internal = struct
       | ParentConstraint of ClassConstraint.t
       | AnyDecoratorConstraint of DecoratorConstraint.t
       | Not of model_constraint
-    [@@deriving compare, show]
+    [@@deriving equal, show]
 
     type kind =
       | FunctionModel
       | MethodModel
       | AttributeModel
-    [@@deriving show, compare]
+    [@@deriving show, equal]
 
     type produced_taint =
       | TaintAnnotation of taint_annotation
@@ -202,7 +197,7 @@ module Internal = struct
           sink_pattern: string;
           kind: string;
         }
-    [@@deriving show, compare]
+    [@@deriving show, equal]
 
     type production =
       | AllParametersTaint of {
@@ -223,7 +218,7 @@ module Internal = struct
         }
       | ReturnTaint of produced_taint list
       | AttributeTaint of produced_taint list
-    [@@deriving show, compare]
+    [@@deriving show, equal]
 
     type rule = {
       location: Location.t;
@@ -234,7 +229,7 @@ module Internal = struct
       expected_models: ExpectedModel.t list;
       unexpected_models: ExpectedModel.t list;
     }
-    [@@deriving show, compare]
+    [@@deriving show, equal]
   end
 
   type parse_result = {

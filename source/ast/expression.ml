@@ -13,13 +13,13 @@ module StringLiteral = struct
   type kind =
     | String
     | Bytes
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
     value: string;
     kind: kind;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let create ?(bytes = false) value =
     let kind =
@@ -57,7 +57,7 @@ module Constant = struct
     | Float of float
     | Complex of float
     | String of StringLiteral.t
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match left, right with
@@ -105,14 +105,14 @@ module rec BooleanOperator : sig
   type operator =
     | And
     | Or
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
     left: Expression.t;
     operator: operator;
     right: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val pp_boolean_operator : Format.formatter -> operator -> unit
 
@@ -123,14 +123,14 @@ end = struct
   type operator =
     | And
     | Or
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
     left: Expression.t;
     operator: operator;
     right: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let pp_boolean_operator formatter operator =
     Format.fprintf
@@ -163,14 +163,14 @@ and Call : sig
       name: Identifier.t Node.t option;
       value: Expression.t;
     }
-    [@@deriving compare, sexp, show, hash, to_yojson]
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
     type kind =
       | SingleStar
       | DoubleStar
       | Named of string Node.t
       | Positional
-    [@@deriving compare, show]
+    [@@deriving equal, compare, show]
 
     val location_insensitive_compare : t -> t -> int
 
@@ -181,7 +181,7 @@ and Call : sig
     callee: Expression.t;
     arguments: Argument.t list;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -190,14 +190,14 @@ end = struct
       name: Identifier.t Node.t option;
       value: Expression.t;
     }
-    [@@deriving compare, sexp, show, hash, to_yojson]
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
     type kind =
       | SingleStar
       | DoubleStar
       | Named of string Node.t
       | Positional
-    [@@deriving compare, show]
+    [@@deriving equal, compare, show]
 
     let location_insensitive_compare left right =
       match
@@ -223,7 +223,7 @@ end = struct
     callee: Expression.t;
     arguments: Argument.t list;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.callee right.callee with
@@ -243,14 +243,14 @@ and ComparisonOperator : sig
     | LessThanOrEquals
     | NotEquals
     | NotIn
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
     left: Expression.t;
     operator: operator;
     right: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val inverse : operator -> operator
 
@@ -271,14 +271,14 @@ end = struct
     | LessThanOrEquals
     | NotEquals
     | NotIn
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
     left: Expression.t;
     operator: operator;
     right: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let inverse = function
     | Equals -> NotEquals
@@ -362,7 +362,7 @@ and Comprehension : sig
       conditions: Expression.t list;
       async: bool;
     }
-    [@@deriving compare, sexp, show, hash, to_yojson]
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
   end
@@ -371,7 +371,7 @@ and Comprehension : sig
     element: 'element;
     generators: Generator.t list;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare
     :  ('element -> 'element -> int) ->
@@ -386,7 +386,7 @@ end = struct
       conditions: Expression.t list;
       async: bool;
     }
-    [@@deriving compare, sexp, show, hash, to_yojson]
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right =
       match Expression.location_insensitive_compare left.target right.target with
@@ -409,7 +409,7 @@ end = struct
     element: 'element;
     generators: Generator.t list;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare compare_element left right =
     match compare_element left.element right.element with
@@ -423,7 +423,7 @@ and Dictionary : sig
       key: Expression.t;
       value: Expression.t;
     }
-    [@@deriving compare, sexp, show, hash, to_yojson]
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
   end
@@ -432,7 +432,7 @@ and Dictionary : sig
     entries: Entry.t list;
     keywords: Expression.t list;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
@@ -443,7 +443,7 @@ end = struct
       key: Expression.t;
       value: Expression.t;
     }
-    [@@deriving compare, sexp, show, hash, to_yojson]
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right =
       match Expression.location_insensitive_compare left.key right.key with
@@ -455,7 +455,7 @@ end = struct
     entries: Entry.t list;
     keywords: Expression.t list;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match List.compare Entry.location_insensitive_compare left.entries right.entries with
@@ -487,7 +487,7 @@ and Lambda : sig
     parameters: Parameter.t list;
     body: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -495,7 +495,7 @@ end = struct
     parameters: Parameter.t list;
     body: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match List.compare Parameter.location_insensitive_compare left.parameters right.parameters with
@@ -510,7 +510,7 @@ and Name : sig
       attribute: Identifier.t;
       special: bool;
     }
-    [@@deriving compare, sexp, show, hash, to_yojson]
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
   end
@@ -518,7 +518,7 @@ and Name : sig
   type t =
     | Attribute of Attribute.t
     | Identifier of Identifier.t
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
@@ -530,7 +530,7 @@ end = struct
       attribute: Identifier.t;
       special: bool;
     }
-    [@@deriving compare, sexp, show, hash, to_yojson]
+    [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
     let location_insensitive_compare left right =
       match Expression.location_insensitive_compare left.base right.base with
@@ -544,7 +544,7 @@ end = struct
   type t =
     | Attribute of Attribute.t
     | Identifier of Identifier.t
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match left, right with
@@ -565,9 +565,9 @@ and Parameter : sig
     value: Expression.t option;
     annotation: Expression.t option;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  type t = parameter Node.t [@@deriving compare, sexp, show, hash, to_yojson]
+  type t = parameter Node.t [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val create
     :  location:Location.t ->
@@ -586,9 +586,9 @@ end = struct
     value: Expression.t option;
     annotation: Expression.t option;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
-  type t = parameter Node.t [@@deriving compare, sexp, show, hash, to_yojson]
+  type t = parameter Node.t [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let create ~location ?value ?annotation ~name () =
     { Node.location; value = { name; value; annotation } }
@@ -614,14 +614,14 @@ and Starred : sig
   type t =
     | Once of Expression.t
     | Twice of Expression.t
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
   type t =
     | Once of Expression.t
     | Twice of Expression.t
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match left, right with
@@ -636,14 +636,14 @@ and Substring : sig
   type t =
     | Literal of string Node.t
     | Format of Expression.t
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
   type t =
     | Literal of string Node.t
     | Format of Expression.t
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match left, right with
@@ -659,7 +659,7 @@ and Ternary : sig
     test: Expression.t;
     alternative: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -668,7 +668,7 @@ end = struct
     test: Expression.t;
     alternative: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.target right.target with
@@ -685,13 +685,13 @@ and UnaryOperator : sig
     | Negative
     | Not
     | Positive
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
     operator: operator;
     operand: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val pp_unary_operator : Format.formatter -> operator -> unit
 
@@ -704,13 +704,13 @@ end = struct
     | Negative
     | Not
     | Positive
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   type t = {
     operator: operator;
     operand: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let pp_unary_operator formatter operator =
     Format.fprintf
@@ -753,7 +753,7 @@ and WalrusOperator : sig
     target: Expression.t;
     value: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
@@ -761,7 +761,7 @@ end = struct
     target: Expression.t;
     value: Expression.t;
   }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+  [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match Expression.location_insensitive_compare left.target right.target with
@@ -794,7 +794,7 @@ and Expression : sig
     | Yield of t option
     | YieldFrom of t
 
-  and t = expression Node.t [@@deriving compare, sexp, show, hash, to_yojson]
+  and t = expression Node.t [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
@@ -828,7 +828,7 @@ end = struct
     | Yield of t option
     | YieldFrom of t
 
-  and t = expression Node.t [@@deriving compare, sexp, show, hash, to_yojson]
+  and t = expression Node.t [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let _ = show (* shadowed below *)
 

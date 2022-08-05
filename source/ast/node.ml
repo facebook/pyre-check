@@ -11,7 +11,7 @@ type 'node_type t = {
   location: Location.t;
   value: 'node_type;
 }
-[@@deriving sexp, show, hash, to_yojson, compare]
+[@@deriving equal, sexp, show, hash, to_yojson, compare]
 
 let create ~location value = { location; value }
 
