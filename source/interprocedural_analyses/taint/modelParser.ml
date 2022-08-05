@@ -3252,97 +3252,65 @@ let rec parse_statement ~resolution ~path ~rule_filter ~configuration ~callables
       in
       let clauses =
         match arguments with
-        | [
-         {
-           Call.Argument.name = Some { Node.value = "name"; _ };
-           value =
-             {
-               Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ });
-               _;
-             };
-         };
-         { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
-         { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
-         { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
-        ] ->
-            parse_model_query ~name ~find_clause ~where_clause ~model_clause None None
-        | [
-         {
-           Call.Argument.name = Some { Node.value = "name"; _ };
-           value =
-             {
-               Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ });
-               _;
-             };
-         };
-         { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
-         { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
-         { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
-         {
-           Call.Argument.name = Some { Node.value = "expected_models"; _ };
-           value = expected_models_clause;
-         };
-        ] ->
-            parse_model_query
-              ~name
-              ~find_clause
-              ~where_clause
-              ~model_clause
-              (Some expected_models_clause)
-              None
-        | [
-         {
-           Call.Argument.name = Some { Node.value = "name"; _ };
-           value =
-             {
-               Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ });
-               _;
-             };
-         };
-         { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
-         { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
-         { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
-         {
-           Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
-           value = unexpected_models_clause;
-         };
-        ] ->
-            parse_model_query
-              ~name
-              ~find_clause
-              ~where_clause
-              ~model_clause
-              None
-              (Some unexpected_models_clause)
-        | [
-         {
-           Call.Argument.name = Some { Node.value = "name"; _ };
-           value =
-             {
-               Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ });
-               _;
-             };
-         };
-         { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause };
-         { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
-         { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause };
-         {
-           Call.Argument.name = Some { Node.value = "expected_models"; _ };
-           value = expected_models_clause;
-         };
-         {
-           Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
-           value = unexpected_models_clause;
-         };
-        ] ->
-            parse_model_query
-              ~name
-              ~find_clause
-              ~where_clause
-              ~model_clause
-              (Some expected_models_clause)
-              (Some unexpected_models_clause)
+        | {
+            Call.Argument.name = Some { Node.value = "name"; _ };
+            value =
+              {
+                Node.value = Expression.Constant (Constant.String { StringLiteral.value = name; _ });
+                _;
+              };
+          }
+          :: { Call.Argument.name = Some { Node.value = "find"; _ }; value = find_clause }
+             :: { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause }
+                :: { Call.Argument.name = Some { Node.value = "model"; _ }; value = model_clause }
+                   :: remaining_arguments ->
+            Ok (name, find_clause, where_clause, model_clause, remaining_arguments)
         | _ -> Error [model_verification_error ~path ~location (InvalidModelQueryClauses arguments)]
+      in
+      let clauses =
+        clauses
+        >>= fun (name, find_clause, where_clause, model_clause, remaining_arguments) ->
+        let expected_and_unexpected_models_clauses =
+          match remaining_arguments with
+          | [
+           {
+             Call.Argument.name = Some { Node.value = "expected_models"; _ };
+             value = expected_models_clause;
+           };
+          ] ->
+              Ok (Some expected_models_clause, None)
+          | [
+           {
+             Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
+             value = unexpected_models_clause;
+           };
+          ] ->
+              Ok (None, Some unexpected_models_clause)
+          | [
+           {
+             Call.Argument.name = Some { Node.value = "expected_models"; _ };
+             value = expected_models_clause;
+           };
+           {
+             Call.Argument.name = Some { Node.value = "unexpected_models"; _ };
+             value = unexpected_models_clause;
+           };
+          ] ->
+              Ok (Some expected_models_clause, Some unexpected_models_clause)
+          | [] -> Ok (None, None)
+          | _ ->
+              Error (model_verification_error ~path ~location (InvalidModelQueryClauses arguments))
+        in
+        match expected_and_unexpected_models_clauses with
+        | Ok (expected_models_clause, unexpected_models_clause) ->
+            parse_model_query
+              ~name
+              ~find_clause
+              ~where_clause
+              ~model_clause
+              expected_models_clause
+              unexpected_models_clause
+        | Error error -> Error [error]
       in
 
       clauses
