@@ -34,6 +34,20 @@ let assert_root_errors ~context ~overlaid_environment expected =
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 
 
+let assert_root_errors_for_qualifier ~context ~overlaid_environment ~qualifier expected =
+  let actual =
+    OverlaidEnvironment.root overlaid_environment
+    |> (fun errors_environment ->
+         ErrorsEnvironment.ReadOnly.get_errors_for_qualifier errors_environment qualifier)
+    |> instantiate_and_stringify
+         ~lookup:
+           (OverlaidEnvironment.root overlaid_environment
+           |> ErrorsEnvironment.ReadOnly.ast_environment
+           |> AstEnvironment.ReadOnly.get_real_path_relative)
+  in
+  assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
+
+
 let assert_overlay_errors ~context ~overlaid_environment ~overlay_identifier expected =
   let actual =
     OverlaidEnvironment.overlay_errors overlaid_environment overlay_identifier
@@ -82,6 +96,47 @@ let test_update_root context =
   assert_root_errors
     ~context
     ~overlaid_environment
+    ["a.py 3: Incompatible return type [7]: Expected `int` but got `float`."];
+  ()
+
+
+let test_update_lazy_root context =
+  let project =
+    ScratchProject.setup
+      ~context
+      ~in_memory:false
+      ~use_lazy_module_tracking:true
+      ["a.py", {|
+          def foo(x: int) -> int:
+              return "x"
+        |}]
+  in
+  let { Configuration.Analysis.local_root; _ } = ScratchProject.configuration_of project in
+  let errors_environment = ScratchProject.ReadWrite.errors_environment project in
+  let overlaid_environment = OverlaidEnvironment.create errors_environment in
+  assert_root_errors_for_qualifier
+    ~context
+    ~overlaid_environment
+    ~qualifier:(Reference.create "a")
+    ["a.py 3: Incompatible return type [7]: Expected `int` but got `str`."];
+  let update_code relative new_code =
+    ScratchProject.delete_file project ~relative;
+    ScratchProject.add_file project ~relative new_code;
+    ()
+  in
+  update_code "a.py" {|
+    def foo(x: int) -> int:
+        return 1.0 * x
+  |};
+  OverlaidEnvironment.update_root
+    overlaid_environment
+    ~scheduler:(Test.mock_scheduler ())
+    [Test.relative_artifact_path ~root:local_root ~relative:"a.py"]
+  |> ignore;
+  assert_root_errors_for_qualifier
+    ~context
+    ~overlaid_environment
+    ~qualifier:(Reference.create "a")
     ["a.py 3: Incompatible return type [7]: Expected `int` but got `float`."];
   ()
 
@@ -238,6 +293,7 @@ let () =
   "environment"
   >::: [
          "update_root" >:: test_update_root;
+         "update_lazy_root" >:: test_update_lazy_root;
          "update_overlays" >:: test_update_overlays;
          "overlay_propagation" >:: test_overlay_propagation;
        ]

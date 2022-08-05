@@ -23,11 +23,9 @@ let overlay { overlays; _ } identifier =
   String.Table.find overlays identifier >>| ErrorsEnvironment.Overlay.read_only
 
 
-let configuration { root; _ } =
-  ErrorsEnvironment.read_only root
-  |> ErrorsEnvironment.ReadOnly.controls
-  |> EnvironmentControls.configuration
+let controls { root; _ } = ErrorsEnvironment.read_only root |> ErrorsEnvironment.ReadOnly.controls
 
+let configuration environment = controls environment |> EnvironmentControls.configuration
 
 let root_errors { root; _ } =
   ErrorsEnvironment.read_only root |> ErrorsEnvironment.ReadOnly.get_all_errors
@@ -70,23 +68,17 @@ module UpdateType = struct
     | Root
     | Overlay
 
-  let name = function
-    | Root -> "root"
-    | Overlay -> "overlay"
-
-
   let event_name = function
     | Root -> "incremental check"
     | Overlay -> "overlay recheck"
 end
 
-let log_update_stats update_type ~timer ~updated_paths_count ~update_result ~new_errors =
+let log_update_stats update_type ~timer ~updated_paths_count ~update_result =
   Statistics.event
     ~section:`Memory
     ~name:"shared memory size"
     ~integers:["size", Memory.heap_size ()]
     ();
-  Log.info "Number of new %s errors = %d" (UpdateType.name update_type) (List.length new_errors);
   let {
     ErrorsEnvironment.UpdateStatistics.module_updates_count;
     invalidated_modules_count;
@@ -118,11 +110,10 @@ let run_update_root ({ overlays; _ } as overlaid_environment) ~scheduler artifac
   Log.info "Repopulating the environment...";
   let updated_paths_count = List.length artifact_paths in
   let update_result = update_root overlaid_environment ~scheduler artifact_paths in
-  let new_errors = root_errors overlaid_environment in
   String.Table.iter overlays ~f:(fun overlay ->
       ErrorsEnvironment.Overlay.propagate_parent_update overlay update_result |> ignore);
   (* Log updates *)
-  log_update_stats UpdateType.Root ~timer ~update_result ~new_errors ~updated_paths_count
+  log_update_stats UpdateType.Root ~timer ~update_result ~updated_paths_count
 
 
 let run_update_overlay_with_code overlaid_environment ~code_updates identifier =
@@ -132,6 +123,5 @@ let run_update_overlay_with_code overlaid_environment ~code_updates identifier =
   Log.info "Repopulating overlay environment...";
   let updated_paths_count = List.length code_updates in
   let update_result = update_overlay_with_code overlaid_environment identifier ~code_updates in
-  let new_errors = overlay_errors overlaid_environment identifier in
   (* Log updates *)
-  log_update_stats UpdateType.Overlay ~timer ~update_result ~new_errors ~updated_paths_count
+  log_update_stats UpdateType.Overlay ~timer ~update_result ~updated_paths_count
