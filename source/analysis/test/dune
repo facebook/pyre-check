@@ -4,11 +4,11 @@
    annotatedGlobalEnvironmentTest annotatedSignatureTest annotationTest
    astEnvironmentTest attributeResolutionTest attrsTest
    unawaitedAwaitableCheckTest callgraphTest cfgTest classHierarchyTest
-   classHierarchyEnvironmentTest classMetadataEnvironmentTest constraintsSetTest
-   dataClassTest errorsEnvironmentTest environmentTest fixpointTest
-   globalResolutionTest inlineDecoratorTest matchTranslateTest
-   locationBasedLookupTest moduleTrackerTest overlaidEnvironmentTest newTypeTest
-   namedTupleTest preprocessingTest refinementTest resolutionTest
+   classHierarchyEnvironmentTest classMetadataEnvironmentTest
+   constraintsSetTest dataClassTest errorsEnvironmentTest environmentTest
+   fixpointTest globalResolutionTest inlineDecoratorTest matchTranslateTest
+   locationBasedLookupTest moduleTrackerTest overlaidEnvironmentTest
+   newTypeTest namedTupleTest preprocessingTest refinementTest resolutionTest
    resolvedCallableTest scopeTest sqlAlchemyTest typeCheckTest
    typeConstraintsTest typedDictionaryAttributeTest typeOperationTest
    typeOrderTest typeTest unannotatedGlobalEnvironmentTest
