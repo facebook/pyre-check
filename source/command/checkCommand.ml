@@ -223,8 +223,9 @@ let on_exception = function
         pid
         message;
       ExitStatus.PyreError
-  | _ as exn ->
-      Log.error "Pyre encountered an internal exception: %s" (Exn.to_string exn);
+  | _ ->
+      Log.error "Pyre encountered an internal exception.";
+      Log.error "%s" (Printexc.get_backtrace ());
       ExitStatus.PyreError
 
 
@@ -269,6 +270,7 @@ let run_check configuration_file =
 
 
 let command =
+  Printexc.record_backtrace true;
   let filename_argument = Command.Param.(anon ("filename" %: Filename.arg_type)) in
   Command.basic
     ~summary:"Runs a full check without a server"

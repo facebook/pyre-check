@@ -715,7 +715,7 @@ let start_server_and_wait ?event_channel ~configuration start_options =
             ( ServerEvent.ErrorKind.Pyre,
               "A Pyre server is already running for the current project. Use `pyre stop` to stop \
                it before starting another one." )
-        | _ -> ServerEvent.ErrorKind.Unknown, Exn.to_string exn
+        | _ -> ServerEvent.ErrorKind.Unknown, Printexc.get_backtrace ()
       in
       Log.info "%s" message;
       write_event (ServerEvent.Exception (message, kind)) >>= fun () -> return ExitStatus.Error)
