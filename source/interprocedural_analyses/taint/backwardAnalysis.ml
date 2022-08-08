@@ -1384,11 +1384,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | { callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ }; _ }
       when CallResolution.resolve_ignoring_untracked ~resolution base
            |> Type.is_dictionary_or_mapping ->
-        let taint =
-          taint
-          |> BackwardState.Tree.read [AccessPath.dictionary_keys]
-          |> BackwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
-        in
+        let taint = taint |> BackwardState.Tree.prepend [AccessPath.dictionary_keys] in
         analyze_expression ~resolution ~taint ~state ~expression:base
     | {
      callee =

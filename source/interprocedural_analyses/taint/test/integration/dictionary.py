@@ -377,20 +377,11 @@ def taint_dict_keys(request):
         "2": service_type.value,
         "3": oncall,
     }
-    _test_sink(
-        f"""
-            SELECT
-            {", ".join(kvs.keys())}
-            FROM
-            WHERE service_id = %s
-        """
-    )
-    return kvs
+    _test_sink(kvs.keys())
 
 
-def taint_dict_keys_false_positive():
+def taint_dict_keys_no_issue():
     request = _test_source()
-    # TODO(T116671305): Should not have an issue here
     taint_dict_keys(request)
 
 
@@ -447,3 +438,10 @@ def analyze_getitem_index_issue():
 def analyze_getitem_index_backward(x):
     d = {}
     y = d[_test_sink(x)]
+
+
+def issue_in_keys():
+    d = {}
+    d[_test_source()] = "bar"
+    backward_weak_update(d)  # Issue here
+    _test_sink(d.keys())  # Issue here

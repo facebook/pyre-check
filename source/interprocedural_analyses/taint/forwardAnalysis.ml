@@ -1403,7 +1403,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              |> Type.is_dictionary_or_mapping ->
           analyze_expression ~resolution ~state ~expression:base
           |>> ForwardState.Tree.read [AccessPath.dictionary_keys]
-          |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
       | {
        callee =
          {
