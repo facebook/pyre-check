@@ -167,6 +167,7 @@ and invalid_override_kind =
   | StaticOverride
   | NothingOverridden
   | IllegalOverrideDecorator
+  | MissingOverrideDecorator
 
 and invalid_assignment_kind =
   | FinalAttribute of Reference.t

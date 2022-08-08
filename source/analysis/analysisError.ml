@@ -176,6 +176,7 @@ and invalid_override_kind =
   | StaticOverride
   | NothingOverridden
   | IllegalOverrideDecorator
+  | MissingOverrideDecorator
 
 and invalid_assignment_kind =
   | FinalAttribute of Reference.t
@@ -1588,6 +1589,8 @@ let rec messages ~concise ~signature location kind =
             ( "",
               "is illegally decorated with @override: @override may only be applied to methods, \
                but this element is not a method" )
+        | MissingOverrideDecorator ->
+            "", "is overriding a parent but is not decorated with @override. Please decorate"
       in
       match decorator with
       | Final
@@ -1604,7 +1607,8 @@ let rec messages ~concise ~signature location kind =
               pp_identifier
               parent;
           ]
-      | IllegalOverrideDecorator ->
+      | IllegalOverrideDecorator
+      | MissingOverrideDecorator ->
           [Format.asprintf "%s`%a` %s." preamble pp_reference define_name message])
   | InvalidAssignment kind -> (
       match kind with
@@ -2820,7 +2824,8 @@ let less_or_equal ~resolution left right =
       | StaticSuper, StaticSuper
       | StaticOverride, StaticOverride
       | NothingOverridden, NothingOverridden
-      | IllegalOverrideDecorator, IllegalOverrideDecorator ->
+      | IllegalOverrideDecorator, IllegalOverrideDecorator
+      | MissingOverrideDecorator, MissingOverrideDecorator ->
           Identifier.equal_sanitized left_parent right_parent
       | _, _ -> false)
   | InvalidAssignment left, InvalidAssignment right -> (

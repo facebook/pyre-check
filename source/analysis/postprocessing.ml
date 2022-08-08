@@ -213,6 +213,7 @@ let run_on_qualifier environment ~dependency qualifier =
 
 let run ~scheduler ~environment sources =
   let timer = Timer.start () in
+  let () = Log.log ~section:`Progress "Beginning of post process" in
   let number_of_sources = List.length sources in
   Log.log ~section:`Progress "Postprocessing %d sources..." number_of_sources;
   let map _ modules =
@@ -239,4 +240,7 @@ let run ~scheduler ~environment sources =
       ()
   in
   Statistics.performance ~name:"check_Postprocessing" ~phase_name:"Postprocessing" ~timer ();
+  let () =
+    Log.log ~section:`Progress "Printing the number of errors printed: %d" (List.length errors)
+  in
   errors
