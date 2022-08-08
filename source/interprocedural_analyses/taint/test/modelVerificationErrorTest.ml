@@ -209,6 +209,30 @@ let test_to_json _ =
           stop = { Ast.Location.line = 3; column = 4 };
         };
       path = Some (PyrePath.create_absolute "/a/b.pysa");
+    };
+  assert_json
+    ~expected:
+      {|
+        {
+          "description": "`[]` is not a valid any_child clause. Constraints within any_child should only be parent constraints.",
+          "line": 1,
+          "column": 2,
+          "stop_line": 3,
+          "stop_column": 4,
+          "path": "/a/b.pysa",
+          "code": 46
+        }
+        |}
+    {
+      ModelVerificationError.kind =
+        ModelVerificationError.InvalidAnyChildClause
+          { Ast.Node.value = List []; location = Ast.Location.any };
+      location =
+        {
+          Ast.Location.start = { Ast.Location.line = 1; column = 2 };
+          stop = { Ast.Location.line = 3; column = 4 };
+        };
+      path = Some (PyrePath.create_absolute "/a/b.pysa");
     }
 
 

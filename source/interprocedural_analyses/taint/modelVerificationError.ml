@@ -136,6 +136,7 @@ type kind =
       model_query_name: string;
       models_clause: Expression.t;
     }
+  | InvalidAnyChildClause of Expression.t
 [@@deriving sexp, compare, show]
 
 type t = {
@@ -368,6 +369,11 @@ let description error =
         \   The clause should be a list of syntactically correct model strings."
         model_query_name
         (Expression.show models_clause)
+  | InvalidAnyChildClause expression ->
+      Format.asprintf
+        "`%s` is not a valid any_child clause. Constraints within any_child should only be parent \
+         constraints."
+        (Expression.show expression)
 
 
 let code { kind; _ } =
@@ -417,6 +423,7 @@ let code { kind; _ } =
   | UnexpectedModelsArePresent _ -> 43
   | ModelQueryInExpectedModelsClause _ -> 44
   | InvalidExpectedModelsClause _ -> 45
+  | InvalidAnyChildClause _ -> 46
 
 
 let display { kind = error; path; location } =

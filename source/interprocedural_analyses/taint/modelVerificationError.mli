@@ -135,6 +135,7 @@ type kind =
       model_query_name: string;
       models_clause: Expression.t;
     }
+  | InvalidAnyChildClause of Expression.t
 [@@deriving sexp, compare]
 
 type t = {
