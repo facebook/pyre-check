@@ -23,7 +23,7 @@ class LoggerCategory(Enum):
     ANNOTATION_ISSUES = "perfpipe_pyre_annotation_issues"
     BUCK_EVENTS = "perfpipe_pyre_buck_events"
     ERROR_STATISTICS = "perfpipe_pyre_error_statistics"
-    EXPRESSION_LEVEL_COVERAGE = "perfpipe_alice4_expression_level_coverage"  # TODO (T126552363) update with official name when set up
+    EXPRESSION_LEVEL_COVERAGE = "perfpipe_pyre_expression_level_coverage"
     FBCODE_COVERAGE = "perfpipe_pyre_fbcode_coverage"
     SUPPRESSION_COUNTS = "perfpipe_pyre_fixme_counts"
     SUPPRESSION_ISSUES = "perfpipe_pyre_fixme_issues"
@@ -32,7 +32,7 @@ class LoggerCategory(Enum):
     QUALITY_ANALYZER = "perfpipe_pyre_quality_analyzer"
     QUALITY_ANALYZER_ISSUES = "perfpipe_pyre_quality_analyser_issues"
     STRICT_ADOPTION = "perfpipe_pyre_strict_adoption"
-    UNANNOTATED_FUNCTIONS = "perfpipe_alice0_unannotated_functions"  # TODO (T126552363) update with official name when set up
+    UNANNOTATED_FUNCTIONS = "perfpipe_pyre_incompletely_annotated_functions"
     USAGE = "perfpipe_pyre_usage"
 
 
