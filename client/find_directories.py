@@ -4,6 +4,9 @@
 # LICENSE file in the root directory of this source tree.
 
 
+from __future__ import annotations
+
+import enum
 import itertools
 import logging
 import sys
@@ -200,18 +203,88 @@ def find_typeshed() -> Optional[Path]:
     return None
 
 
-def find_typeshed_search_paths(typeshed_root: Path) -> List[Path]:
+class TypeshedLayout(enum.Enum):
     """
-    Given the root of typeshed, find all subdirectories in it that can be used
-    as search paths for Pyre.
+    We support three different ways of handling third-party stubs,
+    which are traditionally found in subdirectories of `typeshed/stubs`:
+
+    - They can be omitted entirely, so that typeshed only has stdlib stubs
+    - They can live in subdirectories of `typeshed/stubs`
+    - Or they can be flattened into a `typeshed/combined_stubs` directory
+
+    These approaches are described by TypeshedLayout.
+
+    The reason for this is that some of the operations for finding modules
+    are O(number_of_search_roots). We know apriori that the `stubs` directories
+    define mutually exclusive modules, so by combining them when we download
+    typeshed we make Pyre more performant
+
     """
+
+    STDLIB_ONLY = "STDLIB_ONLY"
+    STANDARD_THIRD_PARTY = "STANDARD_THIRD_PARTY"
+    COMBINED_THIRD_PARTY = "COMBINED_THIRD_PARTY"
+
+    @staticmethod
+    def combined_stubs_root(
+        typeshed_root: Path,
+    ) -> Path:
+        return typeshed_root / "combined_stubs"
+
+    @staticmethod
+    def standard_stubs_directory(
+        typeshed_root: Path,
+    ) -> Path:
+        return typeshed_root / "stubs"
+
+    @staticmethod
+    def infer_layout(
+        typeshed_root: Path,
+    ) -> TypeshedLayout:
+        if TypeshedLayout.combined_stubs_root(typeshed_root).is_dir():
+            return TypeshedLayout.COMBINED_THIRD_PARTY
+        if TypeshedLayout.standard_stubs_directory(typeshed_root).is_dir():
+            return TypeshedLayout.STANDARD_THIRD_PARTY
+        else:
+            return TypeshedLayout.STDLIB_ONLY
+
+    @staticmethod
+    def find_third_party_roots(
+        typeshed_root: Path,
+        layout: Optional[TypeshedLayout] = None,
+    ) -> List[Path]:
+        """
+        Given the root of typeshed, find all subdirectories in it that can be used
+        as search paths for Pyre.
+
+
+        If `layout` is None, we will infer the layout (preferring
+        combined_stubs if available).
+        """
+        layout = layout or TypeshedLayout.infer_layout(typeshed_root)
+        if layout == TypeshedLayout.STDLIB_ONLY:
+            return []
+        elif layout == TypeshedLayout.COMBINED_THIRD_PARTY:
+            return [TypeshedLayout.combined_stubs_root(typeshed_root)]
+        elif layout == TypeshedLayout.STANDARD_THIRD_PARTY:
+            return sorted(
+                TypeshedLayout.standard_stubs_directory(typeshed_root).iterdir()
+            )
+        else:
+            raise RuntimeError(f"Unknown layout {layout}")
+
+
+def find_typeshed_search_paths(
+    typeshed_root: Path,
+    layout: Optional[TypeshedLayout] = None,
+) -> List[Path]:
     search_path = []
-    third_party_root = typeshed_root / "stubs"
-    third_party_subdirectories = (
-        sorted(third_party_root.iterdir()) if third_party_root.is_dir() else []
+    third_party_roots = TypeshedLayout.find_third_party_roots(
+        typeshed_root=typeshed_root,
+        layout=layout,
     )
     for typeshed_subdirectory in itertools.chain(
-        [typeshed_root / "stdlib"], third_party_subdirectories
+        [typeshed_root / "stdlib"], third_party_roots
     ):
         if typeshed_subdirectory.is_dir():
             search_path.append(typeshed_subdirectory)

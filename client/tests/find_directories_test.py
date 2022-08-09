@@ -498,16 +498,46 @@ class FindTypeshedTest(testslide.TestCase):
 
     def test_find_typeshed_search_paths__no_third_party(self) -> None:
         self.run_test_case(
+            relative_directories=["stdlib"],
+            expected_roots=["stdlib"],
+        )
+
+    def test_find_typeshed_search_paths__empty_third_party(self) -> None:
+        self.run_test_case(
             relative_directories=["stdlib", "stubs"],
             expected_roots=["stdlib"],
         )
 
-    def test_find_typeshed_search_paths__with_third_party(self) -> None:
+    def test_find_typeshed_search_paths__with_standard_stubs(self) -> None:
         self.run_test_case(
             relative_directories=["stdlib", "stubs/foo/foo", "stubs/bar/bar"],
             expected_roots=[
                 "stdlib",
                 "stubs/bar",
                 "stubs/foo",
+            ],
+        )
+
+    def test_find_typeshed_search_paths__with_combined_stubs(self) -> None:
+        self.run_test_case(
+            relative_directories=["stdlib", "combined_stubs/foo", "combined_stubs/bar"],
+            expected_roots=[
+                "stdlib",
+                "combined_stubs",
+            ],
+        )
+
+    def test_find_typeshed_search_paths__with_both_stubs(self) -> None:
+        self.run_test_case(
+            relative_directories=[
+                "stdlib",
+                "stubs/foo/foo",
+                "stubs/bar/bar",
+                "combined_stubs/foo",
+                "combined_stubs/bar",
+            ],
+            expected_roots=[
+                "stdlib",
+                "combined_stubs",
             ],
         )
