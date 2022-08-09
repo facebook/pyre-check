@@ -399,7 +399,7 @@ module ExplicitModules = struct
   module Table = struct
     module Api = struct
       type t = {
-        process_update: Reference.t -> bool;
+        should_skip_update: Reference.t -> bool;
         find: Reference.t -> Value.t option;
         set: Reference.t -> Value.t -> unit;
         remove: Reference.t -> unit;
@@ -409,14 +409,14 @@ module ExplicitModules = struct
       let update_module_paths
           ~configuration
           ~module_path_updates
-          { find; set; remove; process_update; _ }
+          { find; set; remove; should_skip_update; _ }
         =
         (* Process a single module_path update *)
         let process_module_path_update ~configuration module_path_update =
           let ({ ModulePath.qualifier; _ } as module_path) =
             ModulePaths.Update.module_path module_path_update
           in
-          if not (process_update qualifier) then
+          if should_skip_update qualifier then
             None
           else
             match module_path_update with
@@ -484,12 +484,12 @@ module ExplicitModules = struct
 
 
       let to_api eager =
-        let process_update _ = true in
+        let should_skip_update _ = false in
         let find qualifier = Reference.Table.find eager qualifier in
         let set qualifier value = Reference.Table.set eager ~key:qualifier ~data:value in
         let remove qualifier = Reference.Table.remove eager qualifier in
         let data () = Hashtbl.data eager in
-        Api.{ process_update; find; set; remove; data }
+        Api.{ should_skip_update; find; set; remove; data }
     end
 
     module Lazy = struct
@@ -500,9 +500,10 @@ module ExplicitModules = struct
       end)
 
       let to_api table =
+        let should_skip_update qualifier = not (key_exists table qualifier) in
         Api.
           {
-            process_update = key_exists table;
+            should_skip_update;
             find = find table;
             set = set table;
             remove = remove table;
@@ -545,7 +546,7 @@ module ImplicitModules = struct
   module Table = struct
     module Api = struct
       type t = {
-        process_update: Reference.t -> bool;
+        should_skip_update: Reference.t -> bool;
         find: Reference.t -> Value.t option;
         set: Reference.t -> Value.t -> unit;
       }
@@ -565,13 +566,13 @@ module ImplicitModules = struct
               None
       end
 
-      let update_module_paths ~module_path_updates { find; set; process_update } =
+      let update_module_paths ~module_path_updates { find; set; should_skip_update } =
         let process_module_path_update previous_existence module_path_update =
           let module_path = ModulePaths.Update.module_path module_path_update in
           match parent_qualifier_and_raw module_path with
           | None -> previous_existence
           | Some (qualifier, raw_child) ->
-              if not (process_update qualifier) then
+              if should_skip_update qualifier then
                 previous_existence
               else (* Get the previous state and new state *)
                 let previous_explicit_children =
@@ -627,10 +628,10 @@ module ImplicitModules = struct
 
 
       let to_api eager =
-        let process_update _ = true in
+        let should_skip_update _ = false in
         let find qualifier = Reference.Table.find eager qualifier in
         let set qualifier data = Reference.Table.set eager ~key:qualifier ~data in
-        Api.{ process_update; find; set }
+        Api.{ should_skip_update; find; set }
     end
 
     module Lazy = struct
@@ -644,7 +645,8 @@ module ImplicitModules = struct
       end)
 
       let to_api table =
-        Api.{ process_update = key_exists table; find = find table; set = set table }
+        let should_skip_update qualifier = not (key_exists table qualifier) in
+        Api.{ should_skip_update; find = find table; set = set table }
     end
   end
 end
