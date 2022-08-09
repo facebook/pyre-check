@@ -3133,9 +3133,9 @@ let rec parse_statement ~resolution ~path ~rule_filter ~configuration ~callables
   } ->
       let parse_model_sources ~name ~path expression =
         match expression with
-        | Some ({ Node.value; location } as expression) -> (
-            let open Core.Result in
-            let parse_constraint ({ Node.value; _ } as constraint_expression) =
+        | Some ({ Node.value; location } as expression) ->
+            (let open Core.Result in
+            let parse_constraint ({ Node.value; location } as constraint_expression) =
               match value with
               | Expression.Constant (Constant.String { StringLiteral.value; _ }) -> Ok value
               | _ ->
@@ -3149,13 +3149,13 @@ let rec parse_statement ~resolution ~path ~rule_filter ~configuration ~callables
             match value with
             | Expression.List items -> List.map items ~f:parse_constraint |> all
             | _ -> parse_constraint expression >>| List.return)
-        | None -> Ok []
+            >>| fun model_sources -> model_sources, location
+        | None -> Ok ([], location)
       in
       let parse_output_models_clause ~name ~path expression =
-        let open Core.Result in
         match parse_model_sources ~name ~path expression with
         | Error error -> Error [error]
-        | Ok model_strings -> (
+        | Ok (model_strings, location) -> (
             model_strings
             |> Parser.parse
             >>| Source.create
@@ -3204,16 +3204,16 @@ let rec parse_statement ~resolution ~path ~rule_filter ~configuration ~callables
                   else
                     Error errors)
             |> function
-            | Error { Parser.Error.location; _ } ->
-                Error
-                  [
-                    model_verification_error
-                      ~path
-                      ~location
-                      (InvalidExpectedModelsClause
-                         { model_query_name = name; models_clause = Option.value_exn expression });
-                    model_verification_error ~path ~location ParseError;
-                  ]
+            | Error { Parser.Error.location = parse_location; _ } ->
+                let { Location.line; column } = Location.start parse_location in
+                let start, stop = Location.start location, Location.stop location in
+                let location =
+                  {
+                    Location.start = { line = line + start.line - 1; column };
+                    stop = { line = line + stop.line - 1; column };
+                  }
+                in
+                Error [model_verification_error ~path ~location ParseError]
             | Ok results -> (
                 results
                 |> function

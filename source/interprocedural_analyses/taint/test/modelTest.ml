@@ -3346,13 +3346,27 @@ Unexpected statement: `food(y)`
         ]
       )
     |}
+    ~expect:"Syntax error."
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo(x):
+        ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = name.matches("foo"),
+        model = Parameters(TaintSource[A]),
+        expected_models = foo(x)
+      )
+    |}
     ~expect:
-      {|Multiple errors:
-[
-In ModelQuery `invalid_model`: Clause `["def bar(z)"]` is not a valid expected_models or unexpected_models clause.
-   The clause should be a list of syntactically correct model strings.
-Syntax error.
-]|}
+      "In ModelQuery `invalid_model`: Clause `foo(x)` is not a valid expected_models or \
+       unexpected_models clause.\n\
+      \   The clause should be a list of syntactically correct model strings."
     ();
 
   (* Test parent.any_child clause in model queries *)
