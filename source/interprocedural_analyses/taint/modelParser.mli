@@ -135,6 +135,7 @@ module Internal : sig
             is_transitive: bool;
           }
         | DecoratorSatisfies of DecoratorConstraint.t
+        | AnyChildSatisfies of t
       [@@deriving equal, show]
     end
 

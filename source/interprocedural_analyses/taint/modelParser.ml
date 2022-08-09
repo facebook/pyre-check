@@ -166,6 +166,7 @@ module Internal = struct
             is_transitive: bool;
           }
         | DecoratorSatisfies of DecoratorConstraint.t
+        | AnyChildSatisfies of t
       [@@deriving equal, show]
     end
 
@@ -1363,6 +1364,79 @@ let parse_arguments_constraint ~path ~location ({ Node.value; _ } as constraint_
         (model_verification_error ~path ~location (InvalidArgumentsClause constraint_expression))
 
 
+let parse_parent_equals_matches_clause ~path ~location ~callee ~attribute ~arguments =
+  match arguments with
+  | [
+   {
+     Call.Argument.value =
+       {
+         Node.value = Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
+         _;
+       };
+     _;
+   };
+  ] ->
+      let name_constraint =
+        match attribute with
+        | "equals" -> ModelQuery.Equals class_name
+        | "matches" -> ModelQuery.Matches (Re2.create_exn class_name)
+        | _ -> failwith "impossible case"
+      in
+      Ok (ModelQuery.ClassConstraint.NameSatisfies name_constraint)
+  | _ ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (InvalidModelQueryClauseArguments { callee; arguments }))
+
+
+let parse_parent_extends_clause ~path ~location ~callee ~arguments =
+  match arguments with
+  | [
+   {
+     Call.Argument.value =
+       {
+         Node.value = Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
+         _;
+       };
+     _;
+   };
+  ] ->
+      Ok (ModelQuery.ClassConstraint.Extends { class_name; is_transitive = false })
+  | [
+   {
+     Call.Argument.value =
+       {
+         Node.value = Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
+         _;
+       };
+     _;
+   };
+   {
+     Call.Argument.name = Some { Node.value = "is_transitive"; _ };
+     value = { Node.value = is_transitive_value; _ } as is_transitive_expression;
+   };
+  ] ->
+      let open Core.Result in
+      (match is_transitive_value with
+      | Expression.Constant Constant.True -> Ok true
+      | Expression.Constant Constant.False -> Ok false
+      | _ ->
+          Error
+            (model_verification_error
+               ~path
+               ~location
+               (InvalidExtendsIsTransitive is_transitive_expression)))
+      >>= fun is_transitive -> Ok (ModelQuery.ClassConstraint.Extends { class_name; is_transitive })
+  | _ ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (InvalidModelQueryClauseArguments { callee; arguments }))
+
+
 let parse_decorator_constraint ~path ~location ({ Node.value; _ } as constraint_expression) =
   let open Core.Result in
   match value with
@@ -1406,6 +1480,50 @@ let parse_decorator_constraint ~path ~location ({ Node.value; _ } as constraint_
   | _ ->
       Error
         (model_verification_error ~path ~location (InvalidDecoratorClause constraint_expression))
+
+
+let parse_any_child_constraint ~path ~location ~callee ~arguments =
+  let open Core.Result in
+  match arguments with
+  | [{ Call.Argument.value = { Node.value; _ } as constraint_expression; _ }] -> (
+      match value with
+      | Expression.Call
+          {
+            Call.callee =
+              {
+                Node.value =
+                  Expression.Name
+                    (Name.Attribute
+                      { base = { Node.value = Name (Name.Identifier "parent"); _ }; attribute; _ });
+                _;
+              } as callee;
+            arguments;
+          } -> (
+          match attribute with
+          | "equals"
+          | "matches" ->
+              parse_parent_equals_matches_clause ~path ~location ~callee ~attribute ~arguments
+          | "extends" -> parse_parent_extends_clause ~path ~location ~callee ~arguments
+          | "decorator" ->
+              parse_decorator_constraint ~path ~location constraint_expression
+              >>= fun decorator_constraint ->
+              Ok (ModelQuery.ClassConstraint.DecoratorSatisfies decorator_constraint)
+          | _ ->
+              Error
+                (model_verification_error
+                   ~path
+                   ~location
+                   (InvalidAnyChildClause constraint_expression)))
+      | _ ->
+          Error
+            (model_verification_error ~path ~location (InvalidAnyChildClause constraint_expression))
+      )
+  | _ ->
+      Error
+        (model_verification_error
+           ~path
+           ~location
+           (InvalidModelQueryClauseArguments { callee; arguments }))
 
 
 let parse_where_clause ~path ~find_clause ({ Node.value; location } as expression) =
@@ -1541,11 +1659,7 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
               Node.value =
                 Expression.Name
                   (Name.Attribute
-                    {
-                      base = { Node.value = Name (Name.Identifier "parent"); _ };
-                      attribute = ("equals" | "matches") as attribute;
-                      _;
-                    });
+                    { base = { Node.value = Name (Name.Identifier "parent"); _ }; attribute; _ });
               _;
             } as callee;
           arguments;
@@ -1553,119 +1667,23 @@ let parse_where_clause ~path ~find_clause ({ Node.value; location } as expressio
         if not (is_class_member_clause_kind find_clause) then
           Error (invalid_model_query_where_clause ~path ~location callee)
         else
-          match arguments with
-          | [
-           {
-             Call.Argument.value =
-               {
-                 Node.value =
-                   Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
-                 _;
-               };
-             _;
-           };
-          ] ->
-              let name_constraint =
-                match attribute with
-                | "equals" -> ModelQuery.Equals class_name
-                | "matches" -> ModelQuery.Matches (Re2.create_exn class_name)
-                | _ -> failwith "impossible case"
-              in
-              Ok
-                (ModelQuery.ParentConstraint
-                   (ModelQuery.ClassConstraint.NameSatisfies name_constraint))
-          | _ ->
-              Error
-                (model_verification_error
-                   ~path
-                   ~location
-                   (InvalidModelQueryClauseArguments { callee; arguments })))
-    | Expression.Call
-        {
-          Call.callee =
-            {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute
-                    {
-                      base = { Node.value = Name (Name.Identifier "parent"); _ };
-                      attribute = "extends";
-                      _;
-                    });
-              _;
-            } as callee;
-          arguments;
-        } -> (
-        if not (is_class_member_clause_kind find_clause) then
-          Error (invalid_model_query_where_clause ~path ~location callee)
-        else
-          match arguments with
-          | [
-           {
-             Call.Argument.value =
-               {
-                 Node.value =
-                   Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
-                 _;
-               };
-             _;
-           };
-          ] ->
-              Ok (ModelQuery.ParentConstraint (Extends { class_name; is_transitive = false }))
-          | [
-           {
-             Call.Argument.value =
-               {
-                 Node.value =
-                   Expression.Constant (Constant.String { StringLiteral.value = class_name; _ });
-                 _;
-               };
-             _;
-           };
-           {
-             Call.Argument.name = Some { Node.value = "is_transitive"; _ };
-             value = { Node.value = is_transitive_value; _ } as is_transitive_expression;
-           };
-          ] ->
-              (match is_transitive_value with
-              | Expression.Constant Constant.True -> Ok true
-              | Expression.Constant Constant.False -> Ok false
-              | _ ->
-                  Error
-                    (model_verification_error
-                       ~path
-                       ~location
-                       (InvalidExtendsIsTransitive is_transitive_expression)))
-              >>= fun is_transitive ->
-              Ok (ModelQuery.ParentConstraint (Extends { class_name; is_transitive }))
-          | _ ->
-              Error
-                (model_verification_error
-                   ~path
-                   ~location
-                   (InvalidModelQueryClauseArguments { callee; arguments })))
-    | Expression.Call
-        {
-          Call.callee =
-            {
-              Node.value =
-                Expression.Name
-                  (Name.Attribute
-                    {
-                      base = { Node.value = Name (Name.Identifier "parent"); _ };
-                      attribute = "decorator";
-                      _;
-                    });
-              _;
-            } as callee;
-          _;
-        } ->
-        if not (is_class_member_clause_kind find_clause) then
-          Error (invalid_model_query_where_clause ~path ~location callee)
-        else
-          parse_decorator_constraint ~path ~location constraint_expression
-          >>= fun decorator_constraint ->
-          Ok (ModelQuery.ParentConstraint (DecoratorSatisfies decorator_constraint))
+          match attribute with
+          | "equals"
+          | "matches" ->
+              parse_parent_equals_matches_clause ~path ~location ~callee ~attribute ~arguments
+              >>| fun class_constraint -> ModelQuery.ParentConstraint class_constraint
+          | "extends" ->
+              parse_parent_extends_clause ~path ~location ~callee ~arguments
+              >>| fun class_constraint -> ModelQuery.ParentConstraint class_constraint
+          | "decorator" ->
+              parse_decorator_constraint ~path ~location constraint_expression
+              >>= fun decorator_constraint ->
+              Ok (ModelQuery.ParentConstraint (DecoratorSatisfies decorator_constraint))
+          | "any_child" ->
+              parse_any_child_constraint ~path ~location ~callee ~arguments
+              >>= fun any_child_constraint ->
+              Ok (ModelQuery.ParentConstraint (AnyChildSatisfies any_child_constraint))
+          | _ -> Error (model_verification_error ~path ~location (UnsupportedCallee callee)))
     | Expression.Call { Call.callee; arguments = _ } ->
         Error (model_verification_error ~path ~location (UnsupportedCallee callee))
     | _ ->

@@ -3355,6 +3355,48 @@ Syntax error.
 ]|}
     ();
 
+  (* Test parent.any_child clause in model queries *)
+  assert_valid_model
+    ~source:{|
+      @d("1")
+      class A:
+        def foo(x):
+          ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "valid_model",
+        find = "methods",
+        where = [
+            parent.any_child(parent.decorator(arguments.contains("1"), name.matches("d")))
+        ],
+        model = Returns(TaintSource[A])
+      )
+    |}
+    ();
+  assert_invalid_model
+    ~source:{|
+      def foo(x):
+        ...
+      def bar(z):
+        ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "methods",
+        where = [
+            parent.any_child(Decorator(arguments.contains("1"), name.matches("d")))
+        ],
+        model = Parameters(TaintSource[A])
+      )
+    |}
+    ~expect:
+      {|`Decorator(arguments.contains("1"), name.matches("d"))` is not a valid any_child clause. Constraints within any_child should only be parent constraints.|}
+    ();
+
   (* Test Decorator clause in model queries *)
   assert_valid_model
     ~source:{|
