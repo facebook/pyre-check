@@ -484,7 +484,7 @@ class FindGlobalAndLocalRootTest(testslide.TestCase):
 
 
 class FindTypeshedTest(testslide.TestCase):
-    def run_test_case(
+    def assert_typeshed_roots(
         self, relative_directories: Iterable[str], expected_roots: Iterable[str]
     ):
         self.maxDiff = None
@@ -497,19 +497,19 @@ class FindTypeshedTest(testslide.TestCase):
             )
 
     def test_find_typeshed_search_paths__no_third_party(self) -> None:
-        self.run_test_case(
+        self.assert_typeshed_roots(
             relative_directories=["stdlib"],
             expected_roots=["stdlib"],
         )
 
     def test_find_typeshed_search_paths__empty_third_party(self) -> None:
-        self.run_test_case(
+        self.assert_typeshed_roots(
             relative_directories=["stdlib", "stubs"],
             expected_roots=["stdlib"],
         )
 
     def test_find_typeshed_search_paths__with_standard_stubs(self) -> None:
-        self.run_test_case(
+        self.assert_typeshed_roots(
             relative_directories=["stdlib", "stubs/foo/foo", "stubs/bar/bar"],
             expected_roots=[
                 "stdlib",
@@ -519,7 +519,7 @@ class FindTypeshedTest(testslide.TestCase):
         )
 
     def test_find_typeshed_search_paths__with_combined_stubs(self) -> None:
-        self.run_test_case(
+        self.assert_typeshed_roots(
             relative_directories=["stdlib", "combined_stubs/foo", "combined_stubs/bar"],
             expected_roots=[
                 "stdlib",
@@ -528,7 +528,7 @@ class FindTypeshedTest(testslide.TestCase):
         )
 
     def test_find_typeshed_search_paths__with_both_stubs(self) -> None:
-        self.run_test_case(
+        self.assert_typeshed_roots(
             relative_directories=[
                 "stdlib",
                 "stubs/foo/foo",
