@@ -114,7 +114,7 @@ async def write_json_rpc_ignore_connection_error(
     any `ConnectionError` that occurred.
     """
     try:
-        write_json_rpc(output_channel, response)
+        await write_json_rpc(output_channel, response)
     except ConnectionError as error:
         LOG.info(f"Ignoring connection error while writing JSON RPC. Error: {error}")
 

@@ -193,11 +193,12 @@ class PersistentTest(testslide.TestCase):
                 ),
             ]
         )
-        output_channel = create_memory_text_writer()
+        bytes_writer = MemoryBytesWriter()
         result = await try_initialize(
-            input_channel, output_channel, _fake_option_reader()
+            input_channel, TextWriter(bytes_writer), _fake_option_reader()
         )
         self.assertIsInstance(result, InitializationSuccess)
+        self.assertEqual(len(bytes_writer.items()), 1)
 
     async def test_try_initialize_failure__not_a_request(self) -> None:
         input_channel = await _create_input_channel_with_requests(
