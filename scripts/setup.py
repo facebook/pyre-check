@@ -68,9 +68,11 @@ class Setup(NamedTuple):
 
     release: bool = False
 
-    @property
-    def compiler(self) -> str:
+    def switch_name(self) -> str:
         return f"{COMPILER_VERSION}+flambda" if self.release else COMPILER_VERSION
+
+    def compiler(self) -> str:
+        return f"ocaml-variants.{self.switch_name()}"
 
     @property
     def environment_variables(self) -> Mapping[str, str]:
@@ -126,7 +128,7 @@ class Setup(NamedTuple):
                 "env",
                 "--yes",
                 "--switch",
-                self.compiler,
+                self.switch_name(),
                 "--root",
                 self.opam_root.as_posix(),
                 "--set-root",
@@ -155,6 +157,7 @@ class Setup(NamedTuple):
                 "init",
                 "--bare",
                 "--yes",
+                "--disable-sandboxing",
                 "--root",
                 self.opam_root.as_posix(),
                 "default",
@@ -166,8 +169,8 @@ class Setup(NamedTuple):
                 "opam",
                 "switch",
                 "create",
-                self.compiler,
-                "--packages=ocaml-option-flambda",
+                self.switch_name(),
+                self.compiler(),
                 "--yes",
                 "--root",
                 self.opam_root.as_posix(),
@@ -196,7 +199,7 @@ class Setup(NamedTuple):
                 "opam",
                 "switch",
                 "set",
-                self.compiler,
+                self.switch_name(),
                 "--root",
                 self.opam_root.as_posix(),
             ]
