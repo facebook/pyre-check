@@ -209,7 +209,17 @@ def _patch_entry(
     LOG.info(f"Applying patch {patch_path}")
     result = subprocess.run(["patch", "-u", new_filepath, "-i", patch_path])
     if result.returncode != 0:
-        return PatchResult(entry, True)
+        # This is an output location used by the `patch` tool. Try to print
+        # the failed patch before raising (because it gets removed during
+        # tempfile cleanup, which makes debugging more time-consuming).
+        try:
+            reject_file = temporary_path / "tempfile.rej"
+            rejected_patch = reject_file.read_text()
+            LOG.error(f"Failed to apply patch. Rejected patch: {rejected_patch}")
+        except FileNotFoundError:
+            pass
+        finally:
+            raise RuntimeError(f"Failed to apply patch at {patch_path}")
 
     new_data = new_filepath.read_bytes()
 
