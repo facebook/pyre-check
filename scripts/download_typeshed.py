@@ -172,9 +172,9 @@ def log_trim_statistics(statistics: Statistics) -> None:
     )
 
 
-def write_output(trim_result: TypeshedPatchingResult, output: str) -> None:
+def write_output(patched_typeshed: TypeshedPatchingResult, output: str) -> None:
     with zipfile.ZipFile(output, mode="w") as output_file:
-        for patch_result in trim_result.results:
+        for patch_result in patched_typeshed.results:
             data = patch_result.entry.data
             if data is not None:
                 output_file.writestr(patch_result.entry.path, data)
