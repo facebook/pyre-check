@@ -7,7 +7,6 @@
 
 import argparse
 import logging
-import multiprocessing
 import os
 import shutil
 import subprocess
@@ -83,13 +82,6 @@ class Setup(NamedTuple):
     @property
     def compiler(self) -> str:
         return self.compiler_override or DEVELOPMENT_COMPILER
-
-    @property
-    def make_arguments(self) -> str:
-        if self.release:
-            return "release"
-        else:
-            return "dev"
 
     @property
     def environment_variables(self) -> Mapping[str, str]:
@@ -238,28 +230,19 @@ class Setup(NamedTuple):
     ) -> None:
         self.produce_dune_file(pyre_directory, build_type_override)
 
-        opam_environment_variables = self.set_opam_switch_and_install_dependencies()
+        opam_environment_variables: Mapping[str, str] = self.set_opam_switch_and_install_dependencies()
+        def run_make(target: str) -> None:
+            self.run(
+                ["make", target],
+                current_working_directory=pyre_directory / "source",
+                add_environment_variables=opam_environment_variables,
+            )
 
         if run_clean:
-            self.run(
-                ["dune", "clean"],
-                pyre_directory / "source",
-                add_environment_variables=opam_environment_variables,
-            )
-
-        jobs = str(multiprocessing.cpu_count())
-
-        self.run(
-            ["make", self.make_arguments, "--jobs", jobs, "--directory", "source"],
-            pyre_directory,
-            add_environment_variables=opam_environment_variables,
-        )
+            run_make("clean")
+        run_make("release" if self.release else "dev")
         if run_tests:
-            self.run(
-                ["make", "--jobs", jobs, "test", "--directory", "source"],
-                pyre_directory,
-                add_environment_variables=opam_environment_variables,
-            )
+            run_make("release_test" if self.release else "test")
 
     def run(
         self,
