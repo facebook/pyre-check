@@ -21,8 +21,6 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 COMPILER_VERSION = "4.10.2"
-DEVELOPMENT_COMPILER: str = COMPILER_VERSION
-RELEASE_COMPILER = f"{COMPILER_VERSION}+flambda"
 DEPENDENCIES = [
     "base64.3.5.0",
     "core.v0.14.1",
@@ -68,20 +66,11 @@ def _custom_linker_option(pyre_directory: Path, build_type: BuildType) -> str:
 class Setup(NamedTuple):
     opam_root: Path
 
-    development: bool = False
     release: bool = False
 
     @property
-    def compiler_override(self) -> Optional[str]:
-        if self.development:
-            return DEVELOPMENT_COMPILER
-        if self.release:
-            return RELEASE_COMPILER
-        return None
-
-    @property
     def compiler(self) -> str:
-        return self.compiler_override or DEVELOPMENT_COMPILER
+        return f"{COMPILER_VERSION}+flambda" if self.release else COMPILER_VERSION
 
     @property
     def environment_variables(self) -> Mapping[str, str]:
@@ -298,7 +287,6 @@ def setup(runner_type: Type[Setup]) -> None:
     parser.add_argument("--opam-root", type=Path)
     parser.add_argument("--configure", action="store_true")
     parser.add_argument("--environment-only", action="store_true")
-    parser.add_argument("--development", action="store_true")
     parser.add_argument("--release", action="store_true")
     parser.add_argument("--build-type", type=BuildType)
     parser.add_argument("--no-tests", action="store_true")
@@ -312,22 +300,10 @@ def setup(runner_type: Type[Setup]) -> None:
     opam_root = _make_opam_root(parsed.local, parsed.temporary_root, parsed.opam_root)
 
     runner = runner_type(
-        opam_root=opam_root, development=parsed.development, release=parsed.release
+        opam_root=opam_root, release=parsed.release
     )
     if parsed.configure:
         runner.produce_dune_file(pyre_directory, parsed.build_type)
-        compiler_override = runner.compiler_override
-        if compiler_override:
-            runner.run(
-                [
-                    "opam",
-                    "switch",
-                    "set",
-                    compiler_override,
-                    "--root",
-                    runner.opam_root.as_posix(),
-                ]
-            )
     elif parsed.environment_only:
         runner.produce_dune_file(pyre_directory, parsed.build_type)
         runner.initialize_opam_switch()
