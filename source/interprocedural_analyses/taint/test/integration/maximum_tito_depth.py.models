@@ -53,8 +53,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "maximum_tito_depth.issue:1000:0:Call|_test_sink|0|formal(arg):0721fb3ffb38a4bf7b197f2be4855e62"
+    "master_handle": "maximum_tito_depth.issue:1000:0:Call|_test_sink|0|formal(arg):0721fb3ffb38a4bf7b197f2be4855e62"
   }
 }
 {
@@ -171,8 +170,7 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 59, "start": 18, "end": 19 } ],
             "decl": null

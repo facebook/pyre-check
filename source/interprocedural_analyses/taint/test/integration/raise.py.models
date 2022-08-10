@@ -53,8 +53,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -62,8 +61,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "raise.forward:5002:0:Call|_test_sink|0|formal(arg):41af6043e7db8171f4e766102a4a03f3"
+    "master_handle": "raise.forward:5002:0:Call|_test_sink|0|formal(arg):41af6043e7db8171f4e766102a4a03f3"
   }
 }
 {
@@ -120,8 +118,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -129,8 +126,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "raise.unreachable_code_do_to_always_exception:5002:0:Call|_test_sink|0|formal(arg):779172a71ddbefab2ee208cc7d3e7a26"
+    "master_handle": "raise.unreachable_code_do_to_always_exception:5002:0:Call|_test_sink|0|formal(arg):779172a71ddbefab2ee208cc7d3e7a26"
   }
 }
 {

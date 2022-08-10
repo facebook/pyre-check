@@ -25,15 +25,16 @@ DEPENDENCIES = [
     "base64.3.5.0",
     "core.v0.14.1",
     "re2.v0.14.0",
-    "dune.2.9.1",
-    "yojson.1.7.0",
+    "dune.3.4.1",
+    "yojson.2.0.1",
     "ppx_deriving_yojson.3.6.1",
-    "ounit.2.2.4",
-    "menhir.20211230",
-    "lwt.5.5.0",
-    "ounit2-lwt.2.2.4",
+    "ounit.2.2.6",
+    "menhir.20220210",
+    "lwt.5.6.1",
+    "lwt_ppx.2.1.0",
+    "ounit2-lwt.2.2.6",
     "pyre-ast.0.1.8",
-    "mtime.1.3.0",
+    "mtime.1.4.0",
 ]
 
 

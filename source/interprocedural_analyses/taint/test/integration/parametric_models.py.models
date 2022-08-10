@@ -71,8 +71,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "parametric_models.f_and_g_to_test:7001:0:Call|parametric_models.sink|0|formal(x):990aa6fcb5124df94578025a4ac071d4"
+    "master_handle": "parametric_models.f_and_g_to_test:7001:0:Call|parametric_models.sink|0|formal(x):990aa6fcb5124df94578025a4ac071d4"
   }
 }
 {
@@ -85,8 +84,7 @@
     "start": 18,
     "end": 19,
     "filename": "parametric_models.py",
-    "message":
-      "[Test] flow into [SinkWithSubkind[SinkA], SinkWithSubkind[SinkB]].",
+    "message": "[Test] flow into [SinkWithSubkind[SinkA], SinkWithSubkind[SinkB]].",
     "traces": [
       {
         "name": "forward",
@@ -141,8 +139,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "parametric_models.test_to_subkind_sink:7002:0:Call|parametric_models.inferred_sink|0|formal(x):dab13191364556881466b8c4df42a47b"
+    "master_handle": "parametric_models.test_to_subkind_sink:7002:0:Call|parametric_models.inferred_sink|0|formal(x):dab13191364556881466b8c4df42a47b"
   }
 }
 {

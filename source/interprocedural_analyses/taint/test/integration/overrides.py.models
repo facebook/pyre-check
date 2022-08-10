@@ -65,8 +65,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -74,8 +73,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "overrides.testB:5002:0:Call|overrides.B.classMethod|0|formal(arg):42ef7d7a7344b2f9d5f1045e588277d3"
+    "master_handle": "overrides.testB:5002:0:Call|overrides.B.classMethod|0|formal(arg):42ef7d7a7344b2f9d5f1045e588277d3"
   }
 }
 {
@@ -146,8 +144,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -155,8 +152,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "overrides.testB:5002:0:Call|overrides.C.methodA|0|formal(arg):11ff9fd3d2c724202b6ea0cd0be5f2fb"
+    "master_handle": "overrides.testB:5002:0:Call|overrides.C.methodA|0|formal(arg):11ff9fd3d2c724202b6ea0cd0be5f2fb"
   }
 }
 {
@@ -227,8 +223,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -236,8 +231,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "overrides.testBase:5002:0:Call|overrides.Base.methodA|0|formal(arg):d582808863ca13f526636f4be61b3798"
+    "master_handle": "overrides.testBase:5002:0:Call|overrides.Base.methodA|0|formal(arg):d582808863ca13f526636f4be61b3798"
   }
 }
 {
@@ -306,8 +300,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -315,8 +308,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "overrides.testBase:5002:0:Call|overrides.Base.classMethod|0|formal(arg):6304845a214712032ec8b09f3d1a2f41"
+    "master_handle": "overrides.testBase:5002:0:Call|overrides.Base.classMethod|0|formal(arg):6304845a214712032ec8b09f3d1a2f41"
   }
 }
 {
@@ -409,8 +401,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -418,8 +409,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "overrides.testC:5002:0:Call|overrides.C.methodA|0|formal(arg):00a5a4693306bd5bdaf6271b2eb334c9"
+    "master_handle": "overrides.testC:5002:0:Call|overrides.C.methodA|0|formal(arg):00a5a4693306bd5bdaf6271b2eb334c9"
   }
 }
 {
@@ -490,8 +480,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -499,8 +488,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "overrides.testD:5002:0:Call|overrides.D.methodA|0|formal(arg):8b6e6664ece15ea2f6a4cfa900d281ea"
+    "master_handle": "overrides.testD:5002:0:Call|overrides.D.methodA|0|formal(arg):8b6e6664ece15ea2f6a4cfa900d281ea"
   }
 }
 {
@@ -569,8 +557,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -578,8 +565,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "overrides.testStaticB:5002:0:Call|overrides.B.classMethod|0|formal(arg):f2a01ecb9eb94ec06558f106bda300c4"
+    "master_handle": "overrides.testStaticB:5002:0:Call|overrides.B.classMethod|0|formal(arg):f2a01ecb9eb94ec06558f106bda300c4"
   }
 }
 {
@@ -712,8 +698,7 @@
         "taint": [
           {
             "caller_interval": [
-              { "lower": 3, "upper": 4 },
-              { "lower": 7, "upper": 10 }
+              { "lower": 3, "upper": 4 }, { "lower": 7, "upper": 10 }
             ],
             "is_self_call": false,
             "kinds": [

@@ -296,8 +296,7 @@
               { "return_paths": [ "[id]" ], "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -351,8 +350,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [
               { "line": 24, "start": 19, "end": 25 },

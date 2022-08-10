@@ -24,8 +24,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "a" }
+              { "has": "first-index" }, { "first-index": "a" }
             ],
             "root": {
               "filename": "applies_to_index.py",
@@ -68,8 +67,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "applies_to_index.issue_only_with_a_key:5002:0:Call|_test_sink|0|formal(arg):76c5bfa4202be200a69fe5dce0318d74"
+    "master_handle": "applies_to_index.issue_only_with_a_key:5002:0:Call|_test_sink|0|formal(arg):76c5bfa4202be200a69fe5dce0318d74"
   }
 }
 {
@@ -133,8 +131,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "applies_to_index.issue_only_with_first:5002:0:Call|_test_sink|0|formal(arg):1b20364f53d3dcf69a13dac6b9528240"
+    "master_handle": "applies_to_index.issue_only_with_first:5002:0:Call|_test_sink|0|formal(arg):1b20364f53d3dcf69a13dac6b9528240"
   }
 }
 {
@@ -198,8 +195,7 @@
       "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "applies_to_index.issue_only_with_second:5002:0:Call|_test_sink|1|formal(arg):c5de4b94ea7f50b90ee29115d6498c79"
+    "master_handle": "applies_to_index.issue_only_with_second:5002:0:Call|_test_sink|1|formal(arg):c5de4b94ea7f50b90ee29115d6498c79"
   }
 }
 {
@@ -227,8 +223,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-field" },
-              { "first-field": "a" }
+              { "has": "first-field" }, { "first-field": "a" }
             ],
             "root": {
               "filename": "applies_to_index.py",
@@ -271,8 +266,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "applies_to_index.issue_with_member:5002:0:Call|_test_sink|0|formal(arg):4e6c314b245358eeea77b64cace8721b"
+    "master_handle": "applies_to_index.issue_with_member:5002:0:Call|_test_sink|0|formal(arg):4e6c314b245358eeea77b64cace8721b"
   }
 }
 {
@@ -411,8 +405,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "applies_to_index.issue_only_with_nested_first:5002:0:Call|_test_sink|0|formal(arg):12cbde4c9bc98dd60c8e3b1c36ce01b2"
+    "master_handle": "applies_to_index.issue_only_with_nested_first:5002:0:Call|_test_sink|0|formal(arg):12cbde4c9bc98dd60c8e3b1c36ce01b2"
   }
 }
 {

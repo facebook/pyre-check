@@ -70,55 +70,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "add_feature_to_argument.test_add_feature_in_comprehension:5002:0:Call|_test_sink|0|formal(arg):e660dc46ee53a95cdb86c321f40be0a3"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "add_feature_to_argument.test_add_feature_to_sink_in_comprehension",
-    "sinks": [
-      {
-        "port": "formal(parameter)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "string_concat_lhs" } ],
-                "leaves": [
-                  { "name": "add_feature_to_argument.add_feature_to_first" }
-                ],
-                "kind": "AddFeatureToArgument"
-              }
-            ],
-            "root": {
-              "filename": "add_feature_to_argument.py",
-              "line": 51,
-              "start": 54,
-              "end": 63
-            }
-          },
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [ { "always-via": "string_concat_lhs" } ],
-            "root": {
-              "filename": "add_feature_to_argument.py",
-              "line": 52,
-              "start": 15,
-              "end": 24
-            }
-          }
-        ]
-      }
-    ]
+    "master_handle": "add_feature_to_argument.test_add_feature_in_comprehension:5002:0:Call|_test_sink|0|formal(arg):e660dc46ee53a95cdb86c321f40be0a3"
   }
 }
 {
@@ -203,8 +155,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 1; name = second; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = second; positional_only = false}"
                   }
                 ],
                 "kind": "AddFeatureToArgument"
@@ -342,6 +293,52 @@
             "root": {
               "filename": "add_feature_to_argument.py",
               "line": 41,
+              "start": 15,
+              "end": 24
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_feature_to_argument.test_add_feature_to_sink_in_comprehension",
+    "sinks": [
+      {
+        "port": "formal(parameter)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  { "name": "add_feature_to_argument.add_feature_to_first" }
+                ],
+                "kind": "AddFeatureToArgument"
+              }
+            ],
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 51,
+              "start": 54,
+              "end": 63
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "string_concat_lhs" } ],
+            "root": {
+              "filename": "add_feature_to_argument.py",
+              "line": 52,
               "start": 15,
               "end": 24
             }

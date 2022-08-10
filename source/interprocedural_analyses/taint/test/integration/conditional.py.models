@@ -48,8 +48,7 @@
     ],
     "features": [ { "always-via-value": "my-data" } ],
     "sink_handle": { "kind": "ConditionalTestSink", "sink": "InTest" },
-    "master_handle":
-      "conditional.issue1:123:0:ConditionalTestSink|InTest:45e375676071b503631c5b5a4da3286b"
+    "master_handle": "conditional.issue1:123:0:ConditionalTestSink|InTest:45e375676071b503631c5b5a4da3286b"
   }
 }
 {
@@ -101,8 +100,7 @@
     ],
     "features": [ { "always-via-value": "other" } ],
     "sink_handle": { "kind": "ConditionalTestSink", "sink": "InTest" },
-    "master_handle":
-      "conditional.issue2:123:0:ConditionalTestSink|InTest:bac100ce2eb7ca255a4834112ed5f755"
+    "master_handle": "conditional.issue2:123:0:ConditionalTestSink|InTest:bac100ce2eb7ca255a4834112ed5f755"
   }
 }
 {
@@ -119,8 +117,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 0; name = name; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = name; positional_only = false}"
                   }
                 ],
                 "kind": "MySource"

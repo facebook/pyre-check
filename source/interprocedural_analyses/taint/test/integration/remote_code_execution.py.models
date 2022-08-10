@@ -9,8 +9,7 @@
     "start": 9,
     "end": 10,
     "filename": "remote_code_execution.py",
-    "message":
-      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -58,8 +57,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "remote_code_execution.rce_problem:5001:0:Call|eval|0|formal(arg):ed84aec82b00e80f14a8f4828907cb17"
+    "master_handle": "remote_code_execution.rce_problem:5001:0:Call|eval|0|formal(arg):ed84aec82b00e80f14a8f4828907cb17"
   }
 }
 {

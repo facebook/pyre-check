@@ -73,8 +73,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "features.async_issue_bools:5002:0:Call|_test_sink|0|formal(arg):3bdb42078e2c8bb931dffef24589a057"
+    "master_handle": "features.async_issue_bools:5002:0:Call|_test_sink|0|formal(arg):3bdb42078e2c8bb931dffef24589a057"
   }
 }
 {
@@ -151,8 +150,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "features.issue_from_tuple:5002:0:Call|_test_sink|0|formal(arg):d1f4d3eec61ad0279e2e2819a69a171a"
+    "master_handle": "features.issue_from_tuple:5002:0:Call|_test_sink|0|formal(arg):d1f4d3eec61ad0279e2e2819a69a171a"
   }
 }
 {
@@ -229,8 +227,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "features.issue_via_bool:5002:0:Call|_test_sink|0|formal(arg):57f857d039efde9df93f0a53da9abc79"
+    "master_handle": "features.issue_via_bool:5002:0:Call|_test_sink|0|formal(arg):57f857d039efde9df93f0a53da9abc79"
   }
 }
 {
@@ -312,8 +309,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "features.issue_via_equality:5002:0:Call|_test_sink|0|formal(arg):a8a79cf353af7aca6875842989231e92"
+    "master_handle": "features.issue_via_equality:5002:0:Call|_test_sink|0|formal(arg):a8a79cf353af7aca6875842989231e92"
   }
 }
 {
@@ -340,8 +336,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
+              { "always-type": "bool" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "features.py",
@@ -385,8 +380,7 @@
       "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "features.issue_via_in:5002:0:Call|_test_sink|1|formal(arg):8b8fbc207f24e7cd4e765e7157929554"
+    "master_handle": "features.issue_via_in:5002:0:Call|_test_sink|1|formal(arg):8b8fbc207f24e7cd4e765e7157929554"
   }
 }
 {
@@ -413,8 +407,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
+              { "always-type": "bool" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "features.py",
@@ -458,8 +451,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "features.issue_via_in:5002:0:Call|_test_sink|0|formal(arg):bfe94ee38d89fbed953f784a39443d8c"
+    "master_handle": "features.issue_via_in:5002:0:Call|_test_sink|0|formal(arg):bfe94ee38d89fbed953f784a39443d8c"
   }
 }
 {
@@ -583,8 +575,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
+              { "always-type": "bool" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "features.py",
@@ -607,8 +598,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
+              { "always-type": "bool" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "features.py",
@@ -657,8 +647,7 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
+                  { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
@@ -692,8 +681,7 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
+                  { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
@@ -718,8 +706,7 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
+                  { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
                 "return_paths": [ "" ],
                 "kind": "LocalReturn"
@@ -749,8 +736,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "copy" },
-              { "always-via": "tito" }
+              { "always-via": "copy" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 121, "start": 20, "end": 21 } ],
             "root": {
@@ -782,8 +768,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
+              { "always-type": "bool" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "features.py",
@@ -806,8 +791,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
+              { "always-type": "bool" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "features.py",
@@ -936,9 +920,7 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
-              { "type": "integer" },
-              { "type": "scalar" },
-              { "via": "tito" }
+              { "type": "integer" }, { "type": "scalar" }, { "via": "tito" }
             ],
             "tito": [ { "line": 40, "start": 19, "end": 20 } ],
             "decl": null
@@ -1007,9 +989,7 @@
               { "return_paths": [ "[0]", "[1]" ], "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "type": "integer" },
-              { "type": "scalar" },
-              { "via": "tito" }
+              { "type": "integer" }, { "type": "scalar" }, { "via": "tito" }
             ],
             "tito": [
               { "line": 84, "start": 19, "end": 20 },

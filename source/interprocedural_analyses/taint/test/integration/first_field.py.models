@@ -208,8 +208,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "a" }
+              { "has": "first-index" }, { "first-index": "a" }
             ],
             "root": {
               "filename": "first_field.py",
@@ -227,8 +226,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "b" }
+              { "has": "first-index" }, { "first-index": "b" }
             ],
             "root": {
               "filename": "first_field.py",
@@ -266,8 +264,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "a" }
+              { "has": "first-index" }, { "first-index": "a" }
             ],
             "root": {
               "filename": "first_field.py",
@@ -285,8 +282,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "b" }
+              { "has": "first-index" }, { "first-index": "b" }
             ],
             "root": {
               "filename": "first_field.py",
@@ -331,8 +327,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "first_field.alternate_fields:5002:0:Call|_test_sink|0|formal(arg):e344eba1a11b018a14afd4a5796566b9"
+    "master_handle": "first_field.alternate_fields:5002:0:Call|_test_sink|0|formal(arg):e344eba1a11b018a14afd4a5796566b9"
   }
 }
 {

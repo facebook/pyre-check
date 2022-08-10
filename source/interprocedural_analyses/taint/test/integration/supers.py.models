@@ -69,8 +69,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -78,8 +77,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "supers.B.g4:5002:0:Call|supers.B.f5|0|formal(x):2d4b1bc6d721a1e484a34d0e7dafabcb"
+    "master_handle": "supers.B.g4:5002:0:Call|supers.B.f5|0|formal(x):2d4b1bc6d721a1e484a34d0e7dafabcb"
   }
 }
 {
@@ -148,8 +146,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -157,8 +154,7 @@
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle":
-      "supers.attribute_B_not_overwritten:5002:0:Call|supers.B.g1|0|formal(self):cf3e1071fa977700dde4c49bfb876739"
+    "master_handle": "supers.attribute_B_not_overwritten:5002:0:Call|supers.B.g1|0|formal(self):cf3e1071fa977700dde4c49bfb876739"
   }
 }
 {
@@ -227,8 +223,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -236,8 +231,7 @@
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle":
-      "supers.attribute_C_not_overwritten:5002:0:Call|supers.C.g1|0|formal(self):4b655967d23f2129530996ae2a1b68dd"
+    "master_handle": "supers.attribute_C_not_overwritten:5002:0:Call|supers.C.g1|0|formal(self):4b655967d23f2129530996ae2a1b68dd"
   }
 }
 {
@@ -306,8 +300,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -315,8 +308,7 @@
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle":
-      "supers.attribute_D_not_overwritten:5002:0:Call|supers.D.g1|0|formal(self):4efab0cd3bce52ce9554d5d4b7dd38a8"
+    "master_handle": "supers.attribute_D_not_overwritten:5002:0:Call|supers.D.g1|0|formal(self):4efab0cd3bce52ce9554d5d4b7dd38a8"
   }
 }
 {
@@ -861,8 +853,7 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 37, "start": 26, "end": 27 } ],
             "decl": null
@@ -1001,8 +992,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -1010,8 +1000,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "supers.B.g1:5002:0:Call|supers.A.f2|0|formal(x):bca647bf5e2ed5af745949c32f12e179"
+    "master_handle": "supers.B.g1:5002:0:Call|supers.A.f2|0|formal(x):bca647bf5e2ed5af745949c32f12e179"
   }
 }
 {

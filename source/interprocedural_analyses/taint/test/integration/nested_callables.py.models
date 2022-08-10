@@ -73,8 +73,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "nested_callables.call_outer:5002:0:Call|nested_callables.outer|0|formal(x):f11ac69d012c226b17ae3bfe0e513454"
+    "master_handle": "nested_callables.call_outer:5002:0:Call|nested_callables.outer|0|formal(x):f11ac69d012c226b17ae3bfe0e513454"
   }
 }
 {
@@ -131,8 +130,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -140,50 +138,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "nested_callables.foo.inner:5002:0:Call|_test_sink|0|formal(arg):f7ce9d0bca257e1b331966a0adc7a221"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "nested_callables.outer_calling_other_function.inner_calling_other_function",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-via": "special_sink" },
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
-            ],
-            "call": {
-              "position": {
-                "filename": "nested_callables.py",
-                "line": 37,
-                "start": 18,
-                "end": 19
-              },
-              "resolves_to": [ "nested_callables.some_sink" ],
-              "port": "formal(x)"
-            }
-          }
-        ]
-      }
-    ]
+    "master_handle": "nested_callables.foo.inner:5002:0:Call|_test_sink|0|formal(arg):f7ce9d0bca257e1b331966a0adc7a221"
   }
 }
 {
@@ -463,8 +418,7 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 69, "start": 19, "end": 20 } ],
             "decl": null
@@ -479,8 +433,7 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 69, "start": 15, "end": 16 } ],
             "decl": null
@@ -503,8 +456,7 @@
               { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 71, "start": 26, "end": 27 } ],
             "decl": null
@@ -536,8 +488,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": {
@@ -572,8 +523,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "nested_callables.py",
@@ -609,8 +559,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": {
@@ -622,6 +571,46 @@
               "resolves_to": [
                 "nested_callables.outer_calling_other_function.inner_calling_other_function"
               ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.outer_calling_other_function.inner_calling_other_function",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "always-type": "integer" },
+                  { "always-type": "scalar" }
+                ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "call": {
+              "position": {
+                "filename": "nested_callables.py",
+                "line": 37,
+                "start": 18,
+                "end": 19
+              },
+              "resolves_to": [ "nested_callables.some_sink" ],
               "port": "formal(x)"
             }
           }
@@ -676,8 +665,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "nested_callables.py",

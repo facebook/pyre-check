@@ -58,8 +58,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -67,8 +66,7 @@
       "index": 0,
       "parameter": "formal(a)"
     },
-    "master_handle":
-      "partial.multiprocessing_tainted:5002:0:Call|partial.a_flows_to_sink|0|formal(a):869b7105b8715dde7f3556295c7b0a37"
+    "master_handle": "partial.multiprocessing_tainted:5002:0:Call|partial.a_flows_to_sink|0|formal(a):869b7105b8715dde7f3556295c7b0a37"
   }
 }
 {
@@ -130,8 +128,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -139,8 +136,7 @@
       "index": 0,
       "parameter": "formal(a)"
     },
-    "master_handle":
-      "partial.partial_application_with_named_a:5002:0:Call|partial.a_flows_to_sink|0|formal(a):34f14ddc9c6c4fdbf4096df1ebd4bac1"
+    "master_handle": "partial.partial_application_with_named_a:5002:0:Call|partial.a_flows_to_sink|0|formal(a):34f14ddc9c6c4fdbf4096df1ebd4bac1"
   }
 }
 {
@@ -202,8 +198,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -211,8 +206,7 @@
       "index": 0,
       "parameter": "formal(a)"
     },
-    "master_handle":
-      "partial.partial_application_with_tainted:5002:0:Call|partial.a_flows_to_sink|0|formal(a):8a950369a943dc22b133a84f5fecfcfc"
+    "master_handle": "partial.partial_application_with_tainted:5002:0:Call|partial.a_flows_to_sink|0|formal(a):8a950369a943dc22b133a84f5fecfcfc"
   }
 }
 {
@@ -830,8 +824,7 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 66, "start": 33, "end": 34 } ],
             "decl": null
@@ -846,8 +839,7 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 66, "start": 30, "end": 31 } ],
             "decl": null

@@ -73,8 +73,7 @@
       "index": 0,
       "parameter": "formal(json)"
     },
-    "master_handle":
-      "starred.test:5002:0:Call|starred.sink|0|formal(json):8538465db4f4e25b5ece27d2df9242f2"
+    "master_handle": "starred.test:5002:0:Call|starred.sink|0|formal(json):8538465db4f4e25b5ece27d2df9242f2"
   }
 }
 {

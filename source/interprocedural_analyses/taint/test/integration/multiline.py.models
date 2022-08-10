@@ -68,8 +68,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "multiline.test:5002:0:Call|_test_sink|0|formal(arg):a72e59962d22f1b031fbba207867ea4e"
+    "master_handle": "multiline.test:5002:0:Call|_test_sink|0|formal(arg):a72e59962d22f1b031fbba207867ea4e"
   }
 }
 {

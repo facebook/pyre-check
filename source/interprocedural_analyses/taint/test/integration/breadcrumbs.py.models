@@ -169,8 +169,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
+              { "always-type": "bool" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "breadcrumbs.py",
@@ -201,8 +200,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "bool" },
-              { "always-type": "scalar" }
+              { "always-type": "bool" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "breadcrumbs.py",
@@ -291,8 +289,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "breadcrumbs.py",
@@ -323,8 +320,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "breadcrumbs.py",

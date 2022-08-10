@@ -64,8 +64,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -73,8 +72,7 @@
       "index": 0,
       "parameter": "formal(value)"
     },
-    "master_handle":
-      "properties.TaintedGetterAndSetter.writes_to_property:5002:0:Call|properties.TaintedGetterAndSetter.my_property@setter|0|formal(value):d0a28f3539617cc44c0c255f10f0325d"
+    "master_handle": "properties.TaintedGetterAndSetter.writes_to_property:5002:0:Call|properties.TaintedGetterAndSetter.my_property@setter|0|formal(value):d0a28f3539617cc44c0c255f10f0325d"
   }
 }
 {
@@ -149,8 +147,7 @@
       "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "properties.property_setter_in_constructor:5002:0:Call|_test_sink|1|formal(arg):defd41b52fc690af796fbfb7598f009e"
+    "master_handle": "properties.property_setter_in_constructor:5002:0:Call|_test_sink|1|formal(arg):defd41b52fc690af796fbfb7598f009e"
   }
 }
 {
@@ -222,8 +219,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "properties.property_setter_in_constructor:5002:0:Call|_test_sink|0|formal(arg):845e2aa22281119cb404609f236231fd"
+    "master_handle": "properties.property_setter_in_constructor:5002:0:Call|_test_sink|0|formal(arg):845e2aa22281119cb404609f236231fd"
   }
 }
 {
@@ -287,8 +283,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -296,8 +291,7 @@
       "index": 0,
       "parameter": "formal(value)"
     },
-    "master_handle":
-      "properties.sets_tainted_value:5002:0:Call|properties.TaintedGetterAndSetter.my_property@setter|0|formal(value):b6857b52edc66265753dfbd9c850cc5d"
+    "master_handle": "properties.sets_tainted_value:5002:0:Call|properties.TaintedGetterAndSetter.my_property@setter|0|formal(value):b6857b52edc66265753dfbd9c850cc5d"
   }
 }
 {
@@ -369,8 +363,7 @@
       "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "properties.setters_are_simulated:5002:0:Call|_test_sink|1|formal(arg):e4e70b1b6432ccfbd85c1fb3abda4447"
+    "master_handle": "properties.setters_are_simulated:5002:0:Call|_test_sink|1|formal(arg):e4e70b1b6432ccfbd85c1fb3abda4447"
   }
 }
 {
@@ -429,8 +422,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_sink" },
-      { "always-via": "string_concat_lhs" }
+      { "always-via": "special_sink" }, { "always-via": "string_concat_lhs" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -438,8 +430,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "properties.test_issue_in_class_property:5002:0:Call|_test_sink|0|formal(arg):1a2e137cd8ae4f99010605f61714a8fa"
+    "master_handle": "properties.test_issue_in_class_property:5002:0:Call|_test_sink|0|formal(arg):1a2e137cd8ae4f99010605f61714a8fa"
   }
 }
 {
@@ -513,8 +504,7 @@
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle":
-      "properties.test_property_callable:5002:0:Call|properties.PropertyCallable.attribute|0|formal(self):22359ed2d4ad35d3c5f1cebbdbd55bac"
+    "master_handle": "properties.test_property_callable:5002:0:Call|properties.PropertyCallable.attribute|0|formal(self):22359ed2d4ad35d3c5f1cebbdbd55bac"
   }
 }
 {
@@ -578,8 +568,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -587,8 +576,7 @@
       "index": 0,
       "parameter": "formal(y)"
     },
-    "master_handle":
-      "properties.test_property_callable:5002:0:Call|properties.PropertyCallableReturn.__call__|0|formal(y):f96f011397bf0667e304185f48e37aee"
+    "master_handle": "properties.test_property_callable:5002:0:Call|properties.PropertyCallableReturn.__call__|0|formal(y):f96f011397bf0667e304185f48e37aee"
   }
 }
 {
@@ -670,112 +658,7 @@
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle":
-      "properties.test_property_callable:5002:0:Call|properties.PropertyCallableReturn.__call__|0|formal(self):4eec40b251db6623ac7b4f3ccb768535"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "properties.CollidePropertySetterName.collided_property@setter",
-    "tito": [
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "properties.function_with_nested_properties.my_property@setter",
-    "tito": [
-      {
-        "port": "formal(self)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable":
-      "properties.function_with_nested_properties.my_property@setter",
-    "callable_line": 233,
-    "code": 5002,
-    "line": 234,
-    "start": 19,
-    "end": 33,
-    "filename": "properties.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "properties.py",
-              "line": 234,
-              "start": 19,
-              "end": 33
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "properties.py",
-              "line": 234,
-              "start": 19,
-              "end": 33
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle":
-      "properties.function_with_nested_properties.my_property@setter:5002:0:Call|_test_sink|0|formal(arg):db24ba5edcb59071cfd6efedcae58767"
+    "master_handle": "properties.test_property_callable:5002:0:Call|properties.PropertyCallableReturn.__call__|0|formal(self):4eec40b251db6623ac7b4f3ccb768535"
   }
 }
 {
@@ -926,8 +809,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "properties.TaintedGetterAndSetter.my_property@setter"
+                    "name": "properties.TaintedGetterAndSetter.my_property@setter"
                   }
                 ],
                 "kind": "Test"
@@ -1279,6 +1161,23 @@
                 "kind": "Test"
               }
             ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.CollidePropertySetterName.collided_property@setter",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "decl": null
           }
         ]
@@ -1848,8 +1747,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "properties.TaintedGetterAndSetter.my_property@setter"
+                    "name": "properties.TaintedGetterAndSetter.my_property@setter"
                   }
                 ],
                 "kind": "Test"
@@ -1907,8 +1805,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "Ovr{properties.TaintedGetterAndSetter::my_property}"
+                    "name": "Ovr{properties.TaintedGetterAndSetter::my_property}"
                   }
                 ],
                 "kind": "Test"
@@ -1955,6 +1852,88 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "properties.function_with_nested_properties.my_property@setter",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "properties.function_with_nested_properties.my_property@setter",
+    "callable_line": 233,
+    "code": 5002,
+    "line": 234,
+    "start": 19,
+    "end": 33,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 234,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "properties.py",
+              "line": 234,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "properties.function_with_nested_properties.my_property@setter:5002:0:Call|_test_sink|0|formal(arg):db24ba5edcb59071cfd6efedcae58767"
   }
 }
 {
@@ -2012,8 +1991,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "Ovr{properties.TaintedGetterAndSetter::my_property}"
+                    "name": "Ovr{properties.TaintedGetterAndSetter::my_property}"
                   }
                 ],
                 "kind": "Test"
@@ -2056,8 +2034,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "properties.test_getattr_on_property:5002:0:Call|_test_sink|0|formal(arg):60a27373df088c4c8387ccc58a288e6e"
+    "master_handle": "properties.test_getattr_on_property:5002:0:Call|_test_sink|0|formal(arg):60a27373df088c4c8387ccc58a288e6e"
   }
 }
 {
@@ -2196,8 +2173,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "properties.test_union_property_attribute_sink:5002:0:Call|_test_sink|0|formal(arg):c04eeb503daa467fcf4c551c94c4c965"
+    "master_handle": "properties.test_union_property_attribute_sink:5002:0:Call|_test_sink|0|formal(arg):c04eeb503daa467fcf4c551c94c4c965"
   }
 }
 {
@@ -2329,7 +2305,6 @@
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle":
-      "properties.test_union_property_attribute_source:5002:0:Call|properties.TaintedGetterAndSetter.my_property|0|formal(self):4f3c9a7a74d36807f13db93da639a40f"
+    "master_handle": "properties.test_union_property_attribute_source:5002:0:Call|properties.TaintedGetterAndSetter.my_property|0|formal(self):4f3c9a7a74d36807f13db93da639a40f"
   }
 }

@@ -150,8 +150,7 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
+                  { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
                 "kind": "Test"
               }
@@ -175,8 +174,7 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
+                  { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
                 "kind": "Test"
               }

@@ -72,8 +72,7 @@
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle":
-      "callables.async_execute_event_processor:5002:0:Call|callables.AbstractEventProcessor.async_call_tainted|0|formal(self):7a96ef90e2bb1543556804c72ef5a35c"
+    "master_handle": "callables.async_execute_event_processor:5002:0:Call|callables.AbstractEventProcessor.async_call_tainted|0|formal(self):7a96ef90e2bb1543556804c72ef5a35c"
   }
 }
 {

@@ -91,8 +91,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito": [
               { "line": 21, "start": 17, "end": 36 },
@@ -132,8 +131,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "always_in_none.ComplicatedService.serve_tainted_request"
+                    "name": "always_in_none.ComplicatedService.serve_tainted_request"
                   }
                 ],
                 "kind": "Test"
@@ -153,8 +151,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "always_in_none.ComplicatedService.serve_tainted_request"
+                    "name": "always_in_none.ComplicatedService.serve_tainted_request"
                   }
                 ],
                 "kind": "Test"
@@ -197,7 +194,6 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "always_in_none.test:5002:0:Call|_test_sink|0|formal(arg):1168c6477767d16ce96c21f36d6fcbba"
+    "master_handle": "always_in_none.test:5002:0:Call|_test_sink|0|formal(arg):1168c6477767d16ce96c21f36d6fcbba"
   }
 }

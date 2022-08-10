@@ -23,8 +23,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 18, "start": 24, "end": 38 } ],
             "root": {
@@ -69,8 +68,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "strings.bad_1:5002:0:Call|_test_sink|0|formal(arg):9374fc8a8cb1be75930cf176292d491b"
+    "master_handle": "strings.bad_1:5002:0:Call|_test_sink|0|formal(arg):9374fc8a8cb1be75930cf176292d491b"
   }
 }
 {
@@ -97,8 +95,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 23, "start": 24, "end": 38 } ],
             "root": {
@@ -143,8 +140,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "strings.bad_2:5002:0:Call|_test_sink|0|formal(arg):8a88866aec2c37a9b55000f2781ba890"
+    "master_handle": "strings.bad_2:5002:0:Call|_test_sink|0|formal(arg):8a88866aec2c37a9b55000f2781ba890"
   }
 }
 {
@@ -171,8 +167,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 29, "start": 28, "end": 42 } ],
             "root": {
@@ -191,8 +186,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 31, "start": 28, "end": 42 } ],
             "root": {
@@ -238,8 +232,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "strings.either:5002:0:Call|_test_sink|0|formal(arg):66d28ba04f85ddfe00f2392ff53ff9a5"
+    "master_handle": "strings.either:5002:0:Call|_test_sink|0|formal(arg):66d28ba04f85ddfe00f2392ff53ff9a5"
   }
 }
 {
@@ -266,8 +259,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 37, "start": 28, "end": 42 } ],
             "root": {
@@ -327,8 +319,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "strings.maybe_lhs:5002:0:Call|_test_sink|0|formal(arg):3407bb568c3164f7884d70dd2c73f63d"
+    "master_handle": "strings.maybe_lhs:5002:0:Call|_test_sink|0|formal(arg):3407bb568c3164f7884d70dd2c73f63d"
   }
 }
 {
@@ -370,8 +361,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 47, "start": 28, "end": 42 } ],
             "root": {
@@ -416,8 +406,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "strings.maybe_rhs:5002:0:Call|_test_sink|0|formal(arg):a49a7406fb24e2fd499b036831901f9d"
+    "master_handle": "strings.maybe_rhs:5002:0:Call|_test_sink|0|formal(arg):a49a7406fb24e2fd499b036831901f9d"
   }
 }
 {
@@ -444,8 +433,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 54, "start": 9, "end": 10 } ],
             "root": {
@@ -490,8 +478,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "strings.through_iadd:5002:0:Call|_test_sink|0|formal(arg):2e73aa579eafd32fe25063c5c69e1bb6"
+    "master_handle": "strings.through_iadd:5002:0:Call|_test_sink|0|formal(arg):2e73aa579eafd32fe25063c5c69e1bb6"
   }
 }
 {
@@ -589,8 +576,7 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 10, "start": 11, "end": 17 } ],
             "decl": null
@@ -611,8 +597,7 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 14, "start": 17, "end": 23 } ],
             "decl": null
@@ -639,8 +624,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 68, "start": 22, "end": 23 } ],
             "root": {
@@ -672,8 +656,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 64, "start": 25, "end": 26 } ],
             "root": {
@@ -699,8 +682,7 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 59, "start": 25, "end": 26 } ],
             "decl": null

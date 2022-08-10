@@ -2,142 +2,6 @@
 {
   "kind": "issue",
   "data": {
-    "callable":
-      "class_flows.tainted_class_attribute_through_double_underscore_class_issue",
-    "callable_line": 45,
-    "code": 5002,
-    "line": 46,
-    "start": 4,
-    "end": 39,
-    "filename": "class_flows.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "class_flows.py",
-              "line": 46,
-              "start": 42,
-              "end": 56
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name":
-                      "Obj{class_flows.C.__class__.tainted_class_attribute}"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "class_flows.py",
-              "line": 46,
-              "start": 4,
-              "end": 39
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": {
-      "kind": "Global",
-      "callee": "Obj{class_flows.C.__class__.tainted_class_attribute}",
-      "index": 0
-    },
-    "master_handle":
-      "class_flows.tainted_class_attribute_through_double_underscore_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:b7f61664326b657c5227d14cc38865b0"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable":
-      "class_flows.tainted_class_attribute_through_optional_class_issue",
-    "callable_line": 49,
-    "code": 5002,
-    "line": 53,
-    "start": 8,
-    "end": 44,
-    "filename": "class_flows.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "class_flows.py",
-              "line": 53,
-              "start": 47,
-              "end": 61
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name":
-                      "Obj{class_flows.C.__class__.tainted_class_attribute}"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "class_flows.py",
-              "line": 53,
-              "start": 8,
-              "end": 44
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": {
-      "kind": "Global",
-      "callee": "Obj{class_flows.C.__class__.tainted_class_attribute}",
-      "index": 0
-    },
-    "master_handle":
-      "class_flows.tainted_class_attribute_through_optional_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:a139d3961b8e8b18bed9ef93c398cca6"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
     "callable": "class_flows.global_class_attribute_issue",
     "callable_line": 56,
     "code": 5002,
@@ -175,8 +39,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "Obj{class_flows.C.__class__.tainted_class_attribute}"
+                    "name": "Obj{class_flows.C.__class__.tainted_class_attribute}"
                   }
                 ],
                 "kind": "Test"
@@ -198,8 +61,7 @@
       "callee": "Obj{class_flows.C.__class__.tainted_class_attribute}",
       "index": 0
     },
-    "master_handle":
-      "class_flows.global_class_attribute_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:3018a70369c9c80371f3853076f8a844"
+    "master_handle": "class_flows.global_class_attribute_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:3018a70369c9c80371f3853076f8a844"
   }
 }
 {
@@ -262,8 +124,7 @@
       "callee": "Obj{class_flows.C.tainted_attribute}",
       "index": 0
     },
-    "master_handle":
-      "class_flows.tainted_attribute_flow_issue:5002:0:Global|Obj{class_flows.C.tainted_attribute}|0:cba0e6980917c39855cb75c4ce3a3ebf"
+    "master_handle": "class_flows.tainted_attribute_flow_issue:5002:0:Global|Obj{class_flows.C.tainted_attribute}|0:cba0e6980917c39855cb75c4ce3a3ebf"
   }
 }
 {
@@ -326,8 +187,7 @@
       "callee": "Obj{class_flows.C.tainted_attribute}",
       "index": 0
     },
-    "master_handle":
-      "class_flows.tainted_attribute_through_inheritance_issue:5002:0:Global|Obj{class_flows.C.tainted_attribute}|0:79778c5e234d08fb4b022de03cd0edd4"
+    "master_handle": "class_flows.tainted_attribute_through_inheritance_issue:5002:0:Global|Obj{class_flows.C.tainted_attribute}|0:79778c5e234d08fb4b022de03cd0edd4"
   }
 }
 {
@@ -370,8 +230,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "Obj{class_flows.C.__class__.tainted_class_attribute}"
+                    "name": "Obj{class_flows.C.__class__.tainted_class_attribute}"
                   }
                 ],
                 "kind": "Test"
@@ -393,8 +252,137 @@
       "callee": "Obj{class_flows.C.__class__.tainted_class_attribute}",
       "index": 0
     },
-    "master_handle":
-      "class_flows.tainted_class_attribute_through_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:2542e9e60455731d983e298f2875bfbf"
+    "master_handle": "class_flows.tainted_class_attribute_through_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:2542e9e60455731d983e298f2875bfbf"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.tainted_class_attribute_through_double_underscore_class_issue",
+    "callable_line": 45,
+    "code": 5002,
+    "line": 46,
+    "start": 4,
+    "end": 39,
+    "filename": "class_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "class_flows.py",
+              "line": 46,
+              "start": 42,
+              "end": 56
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{class_flows.C.__class__.tainted_class_attribute}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "class_flows.py",
+              "line": 46,
+              "start": 4,
+              "end": 39
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{class_flows.C.__class__.tainted_class_attribute}",
+      "index": 0
+    },
+    "master_handle": "class_flows.tainted_class_attribute_through_double_underscore_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:b7f61664326b657c5227d14cc38865b0"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_flows.tainted_class_attribute_through_optional_class_issue",
+    "callable_line": 49,
+    "code": 5002,
+    "line": 53,
+    "start": 8,
+    "end": 44,
+    "filename": "class_flows.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "class_flows.py",
+              "line": 53,
+              "start": 47,
+              "end": 61
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{class_flows.C.__class__.tainted_class_attribute}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "class_flows.py",
+              "line": 53,
+              "start": 8,
+              "end": 44
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{class_flows.C.__class__.tainted_class_attribute}",
+      "index": 0
+    },
+    "master_handle": "class_flows.tainted_class_attribute_through_optional_class_issue:5002:0:Global|Obj{class_flows.C.__class__.tainted_class_attribute}|0:a139d3961b8e8b18bed9ef93c398cca6"
   }
 }
 {
@@ -458,18 +446,15 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
-      "callee":
-        "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db",
+      "callee": "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db",
       "index": 0,
       "parameter": "formal(locale)"
     },
-    "master_handle":
-      "class_flows.test:5002:0:Call|class_flows.HasClassmethods._async_results_for_non_empty_query_from_db|0|formal(locale):a529aa7033e6a0d9c907672d49c19426"
+    "master_handle": "class_flows.test:5002:0:Call|class_flows.HasClassmethods._async_results_for_non_empty_query_from_db|0|formal(locale):a529aa7033e6a0d9c907672d49c19426"
   }
 }
 {
@@ -533,8 +518,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -542,46 +526,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "class_flows.test_decorated_classmethod:5002:0:Call|class_flows.HasDecoratedClassmethod.to_sink|0|formal(x):70aad8c4ef81c0c7ddff090277f2bbc8"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db",
-    "sinks": [
-      {
-        "port": "formal(locale)",
-        "taint": [
-          {
-            "caller_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "class_flows.py",
-                "line": 66,
-                "start": 49,
-                "end": 55
-              },
-              "resolves_to": [
-                "class_flows.HasClassmethods._get_multi_word_results"
-              ],
-              "port": "formal(locale)"
-            }
-          }
-        ]
-      }
-    ]
+    "master_handle": "class_flows.test_decorated_classmethod:5002:0:Call|class_flows.HasDecoratedClassmethod.to_sink|0|formal(x):70aad8c4ef81c0c7ddff090277f2bbc8"
   }
 }
 {
@@ -652,6 +597,43 @@
       }
     ],
     "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db",
+    "sinks": [
+      {
+        "port": "formal(locale)",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "class_flows.py",
+                "line": 66,
+                "start": 49,
+                "end": 55
+              },
+              "resolves_to": [
+                "class_flows.HasClassmethods._get_multi_word_results"
+              ],
+              "port": "formal(locale)"
+            }
+          }
+        ]
+      }
+    ]
   }
 }
 {

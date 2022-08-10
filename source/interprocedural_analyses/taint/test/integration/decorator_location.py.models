@@ -75,8 +75,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "decorator_location.call_return_foo:5002:0:Call|_test_sink|0|formal(arg):2a0af123bc578f26c9b93f5a6b02bbc0"
+    "master_handle": "decorator_location.call_return_foo:5002:0:Call|_test_sink|0|formal(arg):2a0af123bc578f26c9b93f5a6b02bbc0"
   }
 }
 {
@@ -138,8 +137,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -147,8 +145,7 @@
       "index": 1,
       "parameter": "formal(request)"
     },
-    "master_handle":
-      "decorator_location.main:5002:0:Call|decorator_location.handle_request|1|formal(request):3091b7eeaeb9168762c2959242487aac"
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.handle_request|1|formal(request):3091b7eeaeb9168762c2959242487aac"
   }
 }
 {
@@ -225,8 +222,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "decorator_location.main:5002:0:Call|decorator_location.baz|0|formal(x):e305d13e20261144972c6aebbaa0efa9"
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.baz|0|formal(x):e305d13e20261144972c6aebbaa0efa9"
   }
 }
 {
@@ -303,37 +299,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "decorator_location.main:5002:0:Call|decorator_location.foo|0|formal(x):f6ed7fba11687138661e229d5d1ba9ce"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "decorator_location.handle_request._inlined_pass_local_variable_to_x",
-    "sinks": [
-      {
-        "port": "formal(request)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "decorator_location.py",
-              "line": 62,
-              "start": 19,
-              "end": 26
-            }
-          }
-        ]
-      }
-    ]
+    "master_handle": "decorator_location.main:5002:0:Call|decorator_location.foo|0|formal(x):f6ed7fba11687138661e229d5d1ba9ce"
   }
 }
 {
@@ -401,8 +367,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "decorator_location.py",
@@ -438,8 +403,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": {
@@ -476,8 +440,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "decorator_location.py",
@@ -513,8 +476,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": {
@@ -551,8 +513,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "decorator_location.py",
@@ -575,8 +536,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": {
@@ -605,8 +565,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": {
@@ -643,8 +602,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "decorator_location.py",
@@ -675,8 +633,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "decorator_location.py",
@@ -699,8 +656,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": {
@@ -735,8 +691,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "decorator_location.py",
@@ -788,6 +743,34 @@
 {
   "kind": "model",
   "data": {
+    "callable": "decorator_location.handle_request._inlined_pass_local_variable_to_x",
+    "sinks": [
+      {
+        "port": "formal(request)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "decorator_location.py",
+              "line": 62,
+              "start": 19,
+              "end": 26
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "decorator_location.handle_request._original_function",
     "sinks": [
       {
@@ -802,8 +785,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "decorator_location.py",
@@ -892,8 +874,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "decorator_location.py",
@@ -924,8 +905,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "decorator_location.py",
@@ -948,8 +928,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": {
@@ -986,8 +965,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "decorator_location.py",
@@ -1018,8 +996,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "decorator_location.py",

@@ -37,8 +37,7 @@
             "kinds": [
               {
                 "features": [
-                  { "has": "first-index" },
-                  { "first-index": "b" }
+                  { "has": "first-index" }, { "first-index": "b" }
                 ],
                 "leaves": [ { "name": "issue_grouping.sink_b" } ],
                 "length": 1,
@@ -66,8 +65,7 @@
       "index": 0,
       "parameter": "formal(d)"
     },
-    "master_handle":
-      "issue_grouping.issue:1003:0:Call|issue_grouping.multi_sink|0|formal(d):3a59e7397660c7d8070a92a8a244a960"
+    "master_handle": "issue_grouping.issue:1003:0:Call|issue_grouping.multi_sink|0|formal(d):3a59e7397660c7d8070a92a8a244a960"
   }
 }
 {
@@ -108,8 +106,7 @@
             "kinds": [
               {
                 "features": [
-                  { "has": "first-index" },
-                  { "first-index": "a" }
+                  { "has": "first-index" }, { "first-index": "a" }
                 ],
                 "leaves": [ { "name": "issue_grouping.sink_a" } ],
                 "length": 1,
@@ -137,8 +134,7 @@
       "index": 0,
       "parameter": "formal(d)"
     },
-    "master_handle":
-      "issue_grouping.issue:1000:0:Call|issue_grouping.multi_sink|0|formal(d):8de0af2b47354365a27f7eb6d4686d3f"
+    "master_handle": "issue_grouping.issue:1000:0:Call|issue_grouping.multi_sink|0|formal(d):8de0af2b47354365a27f7eb6d4686d3f"
   }
 }
 {
@@ -157,8 +153,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "a" }
+              { "has": "first-index" }, { "first-index": "a" }
             ],
             "root": {
               "filename": "issue_grouping.py",
@@ -180,8 +175,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "b" }
+              { "has": "first-index" }, { "first-index": "b" }
             ],
             "root": {
               "filename": "issue_grouping.py",

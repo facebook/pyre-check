@@ -108,8 +108,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "access_token" }
+              { "has": "first-index" }, { "first-index": "access_token" }
             ],
             "root": {
               "filename": "select.py",
@@ -140,8 +139,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" }
+              { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
             "root": {
               "filename": "select.py",
@@ -172,8 +170,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" }
+              { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
             "root": {
               "filename": "select.py",
@@ -257,8 +254,7 @@
     "start": 4,
     "end": 48,
     "filename": "select.py",
-    "message":
-      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -306,8 +302,7 @@
       { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "Return" },
-    "master_handle":
-      "select.return_is_RCE:5001:0:Return:75714e82b1119786167df4c408a8f7c4"
+    "master_handle": "select.return_is_RCE:5001:0:Return:75714e82b1119786167df4c408a8f7c4"
   }
 }
 {
@@ -355,8 +350,7 @@
     "start": 9,
     "end": 24,
     "filename": "select.py",
-    "message":
-      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -369,8 +363,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-field" },
-              { "first-field": "payload" }
+              { "has": "first-field" }, { "first-field": "payload" }
             ],
             "root": {
               "filename": "select.py",
@@ -408,8 +401,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "select.view_entry_field:5001:0:Call|eval|0|formal(arg):164dcdb169663c76cefeb4fd4eb5fb86"
+    "master_handle": "select.view_entry_field:5001:0:Call|eval|0|formal(arg):164dcdb169663c76cefeb4fd4eb5fb86"
   }
 }
 {
@@ -455,8 +447,7 @@
     "start": 9,
     "end": 46,
     "filename": "select.py",
-    "message":
-      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -514,8 +505,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "select.view_entry_get:5001:0:Call|eval|0|formal(arg):7b1a3d8fd4bd2ae19d8c755f3b339d00"
+    "master_handle": "select.view_entry_get:5001:0:Call|eval|0|formal(arg):7b1a3d8fd4bd2ae19d8c755f3b339d00"
   }
 }
 {
@@ -542,8 +532,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "payload" }
+              { "has": "first-index" }, { "first-index": "payload" }
             ],
             "root": {
               "filename": "select.py",
@@ -567,8 +556,7 @@
     "start": 9,
     "end": 31,
     "filename": "select.py",
-    "message":
-      "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
     "traces": [
       {
         "name": "forward",
@@ -627,7 +615,6 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "select.view_entry_index:5001:0:Call|eval|0|formal(arg):d2317d02e768fc9f4945b5d8852e4363"
+    "master_handle": "select.view_entry_index:5001:0:Call|eval|0|formal(arg):d2317d02e768fc9f4945b5d8852e4363"
   }
 }

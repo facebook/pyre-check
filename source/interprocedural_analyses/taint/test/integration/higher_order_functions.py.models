@@ -71,8 +71,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "higher_order_functions.callable_class:5002:0:Call|_test_sink|0|formal(arg):bcd395b0205c3e72c1a3305f7acfd77f"
+    "master_handle": "higher_order_functions.callable_class:5002:0:Call|_test_sink|0|formal(arg):bcd395b0205c3e72c1a3305f7acfd77f"
   }
 }
 {
@@ -134,8 +133,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -143,8 +141,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "higher_order_functions.test_higher_order_function:5002:0:Call|higher_order_functions.goes_to_sink|0|formal(arg):9481df2a3a4aecc8f6cc4a86c8fa37a9"
+    "master_handle": "higher_order_functions.test_higher_order_function:5002:0:Call|higher_order_functions.goes_to_sink|0|formal(arg):9481df2a3a4aecc8f6cc4a86c8fa37a9"
   }
 }
 {
@@ -208,8 +205,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -217,8 +213,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "higher_order_functions.test_higher_order_function_and_sink:5002:0:Call|higher_order_functions.higher_order_function_and_sink|0|formal(arg):d3ea6391f3b3696fd17aaaef375a6ba4"
+    "master_handle": "higher_order_functions.test_higher_order_function_and_sink:5002:0:Call|higher_order_functions.higher_order_function_and_sink|0|formal(arg):d3ea6391f3b3696fd17aaaef375a6ba4"
   }
 }
 {
@@ -280,8 +275,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -289,8 +283,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "higher_order_functions.test_higher_order_function_and_sink:5002:0:Call|higher_order_functions.goes_to_sink|0|formal(arg):da1d8cce3614c6d7c93d269ed97651d0"
+    "master_handle": "higher_order_functions.test_higher_order_function_and_sink:5002:0:Call|higher_order_functions.goes_to_sink|0|formal(arg):da1d8cce3614c6d7c93d269ed97651d0"
   }
 }
 {
@@ -365,8 +358,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "higher_order_functions.test_higher_order_method:5002:0:Call|higher_order_functions.higher_order_method|0|formal(arg):bb12423a5f50e40b60294e8804787996"
+    "master_handle": "higher_order_functions.test_higher_order_method:5002:0:Call|higher_order_functions.higher_order_method|0|formal(arg):bb12423a5f50e40b60294e8804787996"
   }
 }
 {
@@ -430,8 +422,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -439,8 +430,7 @@
       "index": 0,
       "parameter": "formal(self)"
     },
-    "master_handle":
-      "higher_order_functions.test_higher_order_method_self:5002:0:Call|higher_order_functions.C.self_to_sink|0|formal(self):62f145bcd8b30e191c2191bd8dc59b2e"
+    "master_handle": "higher_order_functions.test_higher_order_method_self:5002:0:Call|higher_order_functions.C.self_to_sink|0|formal(self):62f145bcd8b30e191c2191bd8dc59b2e"
   }
 }
 {
@@ -1016,8 +1006,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": {
@@ -1070,8 +1059,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "call": {
               "position": {

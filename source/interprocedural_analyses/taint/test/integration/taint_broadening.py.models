@@ -68,8 +68,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_broadening.issue_collapse:5002:0:Call|_test_sink|0|formal(arg):a8cad47527b963e7a61f7090ad8cea85"
+    "master_handle": "taint_broadening.issue_collapse:5002:0:Call|_test_sink|0|formal(arg):a8cad47527b963e7a61f7090ad8cea85"
   }
 }
 {
@@ -148,8 +147,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_broadening.tito_collapse_issue:5002:0:Call|_test_sink|0|formal(arg):138379028e02f0ac33c56db31dd10394"
+    "master_handle": "taint_broadening.tito_collapse_issue:5002:0:Call|_test_sink|0|formal(arg):138379028e02f0ac33c56db31dd10394"
   }
 }
 {
@@ -232,8 +230,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_broadening.untainted_keys:5002:0:Call|_test_sink|0|formal(arg):e795031ef90f21d0bf0b024428c8cc78"
+    "master_handle": "taint_broadening.untainted_keys:5002:0:Call|_test_sink|0|formal(arg):e795031ef90f21d0bf0b024428c8cc78"
   }
 }
 {
@@ -1146,8 +1143,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "a" }
+              { "has": "first-index" }, { "first-index": "a" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -1265,8 +1261,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" }
+              { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
             "root": {
               "filename": "taint_broadening.py",
@@ -1289,8 +1284,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" }
+              { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
             "root": {
               "filename": "taint_broadening.py",

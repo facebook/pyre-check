@@ -2,8 +2,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable":
-      "sanitize.issue_propagation_of_sanitize_all_parameters_no_user_controlled",
+    "callable": "sanitize.issue_propagation_of_sanitize_all_parameters_no_user_controlled",
     "callable_line": 793,
     "code": 1000,
     "line": 795,
@@ -58,20 +57,17 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee":
-        "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled",
+      "callee": "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled",
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "sanitize.issue_propagation_of_sanitize_all_parameters_no_user_controlled:1000:0:Call|sanitize.propagation_of_sanitize_all_parameters_no_user_controlled|0|formal(x):b75f37e6531a692f62a8eaa584c2ec08"
+    "master_handle": "sanitize.issue_propagation_of_sanitize_all_parameters_no_user_controlled:1000:0:Call|sanitize.propagation_of_sanitize_all_parameters_no_user_controlled|0|formal(x):b75f37e6531a692f62a8eaa584c2ec08"
   }
 }
 {
   "kind": "issue",
   "data": {
-    "callable":
-      "sanitize.issue_propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
+    "callable": "sanitize.issue_propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
     "callable_line": 682,
     "code": 1000,
     "line": 684,
@@ -134,15 +130,13 @@
       "index": 0,
       "parameter": "formal(argument)"
     },
-    "master_handle":
-      "sanitize.issue_propagation_of_sanitize_parameter_no_sql_tito_in_source_trace:1000:0:Call|_rce|0|formal(argument):687b5173c87b17e0acfc721d005ea6a8"
+    "master_handle": "sanitize.issue_propagation_of_sanitize_parameter_no_sql_tito_in_source_trace:1000:0:Call|_rce|0|formal(argument):687b5173c87b17e0acfc721d005ea6a8"
   }
 }
 {
   "kind": "issue",
   "data": {
-    "callable":
-      "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled",
+    "callable": "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled",
     "callable_line": 590,
     "code": 1000,
     "line": 592,
@@ -197,20 +191,17 @@
     "features": [],
     "sink_handle": {
       "kind": "Call",
-      "callee":
-        "sanitize.propagation_of_sanitize_parameter_no_user_controlled",
+      "callee": "sanitize.propagation_of_sanitize_parameter_no_user_controlled",
       "index": 0,
       "parameter": "formal(b)"
     },
-    "master_handle":
-      "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled:1000:0:Call|sanitize.propagation_of_sanitize_parameter_no_user_controlled|0|formal(b):8dce41020019b004abc550be0c8e65e2"
+    "master_handle": "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled:1000:0:Call|sanitize.propagation_of_sanitize_parameter_no_user_controlled|0|formal(b):8dce41020019b004abc550be0c8e65e2"
   }
 }
 {
   "kind": "issue",
   "data": {
-    "callable":
-      "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
+    "callable": "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
     "callable_line": 646,
     "code": 1000,
     "line": 648,
@@ -266,155 +257,11 @@
     "features": [ { "always-via": "tito" } ],
     "sink_handle": {
       "kind": "Call",
-      "callee":
-        "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
+      "callee": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace:1000:0:Call|sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace|0|formal(x):72c9cb9df7e6450f9380ee8c7cd20a37"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable":
-      "sanitize.issue_propagation_of_sanitize_return_no_sql_in_source_trace",
-    "callable_line": 724,
-    "code": 1000,
-    "line": 726,
-    "start": 9,
-    "end": 10,
-    "filename": "sanitize.py",
-    "message": "[UserControlled] to [RemoteCodeExecution]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "tito" } ],
-                "leaves": [ { "name": "_user_controlled" } ],
-                "length": 1,
-                "kind": "NotSink[SQL]:UserControlled"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "sanitize.py",
-                "line": 725,
-                "start": 8,
-                "end": 63
-              },
-              "resolves_to": [
-                "sanitize.propagation_of_sanitize_return_no_sql_in_source_trace"
-              ],
-              "port": "result"
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_rce" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 726,
-              "start": 9,
-              "end": 10
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "tito" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_rce",
-      "index": 0,
-      "parameter": "formal(argument)"
-    },
-    "master_handle":
-      "sanitize.issue_propagation_of_sanitize_return_no_sql_in_source_trace:1000:0:Call|_rce|0|formal(argument):c36524d4a7d40d87a009cbbf2d35f649"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable":
-      "sanitize.issue_sanitize_test_a_source_attribute_in_sink_trace",
-    "callable_line": 369,
-    "code": 1000,
-    "line": 371,
-    "start": 51,
-    "end": 52,
-    "filename": "sanitize.py",
-    "message": "[TestB] to [Test]",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "sanitize.b_source" } ],
-                "kind": "TestB"
-              }
-            ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 370,
-              "start": 8,
-              "end": 18
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "tito" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "NotSource[TestA]:Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "sanitize.py",
-                "line": 371,
-                "start": 51,
-                "end": 52
-              },
-              "resolves_to": [
-                "sanitize.sanitize_test_a_source_attribute_in_sink_trace"
-              ],
-              "port": "formal(x)"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "tito" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "sanitize.sanitize_test_a_source_attribute_in_sink_trace",
-      "index": 0,
-      "parameter": "formal(x)"
-    },
-    "master_handle":
-      "sanitize.issue_sanitize_test_a_source_attribute_in_sink_trace:1000:0:Call|sanitize.sanitize_test_a_source_attribute_in_sink_trace|0|formal(x):807f91dcca4f60c817ce767e8862c493"
+    "master_handle": "sanitize.issue_propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace:1000:0:Call|sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace|0|formal(x):72c9cb9df7e6450f9380ee8c7cd20a37"
   }
 }
 {
@@ -477,8 +324,76 @@
       "index": 0,
       "parameter": "formal(argument)"
     },
-    "master_handle":
-      "sanitize.issue_propagation_of_sanitize_return_no_rce:1000:0:Call|_sql|0|formal(argument):9ec0e6a1cdda39553423a67f8749b562"
+    "master_handle": "sanitize.issue_propagation_of_sanitize_return_no_rce:1000:0:Call|_sql|0|formal(argument):9ec0e6a1cdda39553423a67f8749b562"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize.issue_propagation_of_sanitize_return_no_sql_in_source_trace",
+    "callable_line": 724,
+    "code": 1000,
+    "line": 726,
+    "start": 9,
+    "end": 10,
+    "filename": "sanitize.py",
+    "message": "[UserControlled] to [RemoteCodeExecution]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "leaves": [ { "name": "_user_controlled" } ],
+                "length": 1,
+                "kind": "NotSink[SQL]:UserControlled"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "sanitize.py",
+                "line": 725,
+                "start": 8,
+                "end": 63
+              },
+              "resolves_to": [
+                "sanitize.propagation_of_sanitize_return_no_sql_in_source_trace"
+              ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_rce" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 726,
+              "start": 9,
+              "end": 10
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "tito" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_rce",
+      "index": 0,
+      "parameter": "formal(argument)"
+    },
+    "master_handle": "sanitize.issue_propagation_of_sanitize_return_no_sql_in_source_trace:1000:0:Call|_rce|0|formal(argument):c36524d4a7d40d87a009cbbf2d35f649"
   }
 }
 {
@@ -555,8 +470,76 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "sanitize.issue_sanitize_a_sink_attribute_in_source_trace:1000:0:Call|sanitize.b_sink|0|formal(x):7686a72c71228c29d0906b9abcaafd0d"
+    "master_handle": "sanitize.issue_sanitize_a_sink_attribute_in_source_trace:1000:0:Call|sanitize.b_sink|0|formal(x):7686a72c71228c29d0906b9abcaafd0d"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "sanitize.issue_sanitize_test_a_source_attribute_in_sink_trace",
+    "callable_line": 369,
+    "code": 1000,
+    "line": 371,
+    "start": 51,
+    "end": 52,
+    "filename": "sanitize.py",
+    "message": "[TestB] to [Test]",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "sanitize.b_source" } ],
+                "kind": "TestB"
+              }
+            ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 370,
+              "start": 8,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "tito" } ],
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "NotSource[TestA]:Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "sanitize.py",
+                "line": 371,
+                "start": 51,
+                "end": 52
+              },
+              "resolves_to": [
+                "sanitize.sanitize_test_a_source_attribute_in_sink_trace"
+              ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "tito" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "sanitize.sanitize_test_a_source_attribute_in_sink_trace",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "sanitize.issue_sanitize_test_a_source_attribute_in_sink_trace:1000:0:Call|sanitize.sanitize_test_a_source_attribute_in_sink_trace|0|formal(x):807f91dcca4f60c817ce767e8862c493"
   }
 }
 {
@@ -627,8 +610,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "sanitize.partial_issue_sanitize:1000:0:Call|sanitize.partial_issue_sinks|0|formal(x):87384738d695996853bc5bd6a15edb2d"
+    "master_handle": "sanitize.partial_issue_sanitize:1000:0:Call|sanitize.partial_issue_sinks|0|formal(x):87384738d695996853bc5bd6a15edb2d"
   }
 }
 {
@@ -691,8 +673,7 @@
       "index": 0,
       "parameter": "formal(c)"
     },
-    "master_handle":
-      "sanitize.sanitize_test_a_sink_attribute:1000:0:Call|sanitize.sanitize_a_sink_attribute|0|formal(c):f5e38016e7e68c070cd86aa484e6d0ce"
+    "master_handle": "sanitize.sanitize_test_a_sink_attribute:1000:0:Call|sanitize.sanitize_a_sink_attribute|0|formal(c):f5e38016e7e68c070cd86aa484e6d0ce"
   }
 }
 {
@@ -755,8 +736,7 @@
       "index": 0,
       "parameter": "formal(c)"
     },
-    "master_handle":
-      "sanitize.sanitize_test_a_sink_instance:1000:0:Call|sanitize.sanitize_a_sink_instance|0|formal(c):bc700707d83559854382e8bf695a11dc"
+    "master_handle": "sanitize.sanitize_test_a_sink_instance:1000:0:Call|sanitize.sanitize_a_sink_instance|0|formal(c):bc700707d83559854382e8bf695a11dc"
   }
 }
 {
@@ -824,8 +804,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "sanitize.sanitize_test_a_source_attribute:1000:0:Call|_test_sink|0|formal(arg):7cf279501d48a6922a15112fda44e69a"
+    "master_handle": "sanitize.sanitize_test_a_source_attribute:1000:0:Call|_test_sink|0|formal(arg):7cf279501d48a6922a15112fda44e69a"
   }
 }
 {
@@ -893,8 +872,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "sanitize.sanitize_test_a_source_instance:1000:0:Call|_test_sink|0|formal(arg):4d775a95a91ae016f99f4813bdd80989"
+    "master_handle": "sanitize.sanitize_test_a_source_instance:1000:0:Call|_test_sink|0|formal(arg):4d775a95a91ae016f99f4813bdd80989"
   }
 }
 {
@@ -956,8 +934,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "sanitize.sanitize_test_ab_sources_attribute:1000:0:Call|_test_sink|0|formal(arg):38452faed7dd8a226475656fd4db7a59"
+    "master_handle": "sanitize.sanitize_test_ab_sources_attribute:1000:0:Call|_test_sink|0|formal(arg):38452faed7dd8a226475656fd4db7a59"
   }
 }
 {
@@ -1017,8 +994,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "sanitize.sanitize_test_ab_sources_instance:1000:0:Call|_test_sink|0|formal(arg):4edd9983bb03615959969b8fc84cd29f"
+    "master_handle": "sanitize.sanitize_test_ab_sources_instance:1000:0:Call|_test_sink|0|formal(arg):4edd9983bb03615959969b8fc84cd29f"
   }
 }
 {
@@ -1077,8 +1053,7 @@
       "callee": "Obj{sanitize.C_sanitized_all_sinks.attribute}",
       "index": 0
     },
-    "master_handle":
-      "sanitize.sanitize_test_all_sinks_attribute:1000:0:Global|Obj{sanitize.C_sanitized_all_sinks.attribute}|0:0289f565d4809cd72569ae4d0e5ac86b"
+    "master_handle": "sanitize.sanitize_test_all_sinks_attribute:1000:0:Global|Obj{sanitize.C_sanitized_all_sinks.attribute}|0:0289f565d4809cd72569ae4d0e5ac86b"
   }
 }
 {
@@ -1137,8 +1112,7 @@
       "callee": "Obj{sanitize.C_sanitized_all_sinks.instance}",
       "index": 0
     },
-    "master_handle":
-      "sanitize.sanitize_test_all_sinks_instance:1000:0:Global|Obj{sanitize.C_sanitized_all_sinks.instance}|0:5b9ff058a828c7ef795feedb702523f9"
+    "master_handle": "sanitize.sanitize_test_all_sinks_instance:1000:0:Global|Obj{sanitize.C_sanitized_all_sinks.instance}|0:5b9ff058a828c7ef795feedb702523f9"
   }
 }
 {
@@ -1201,8 +1175,7 @@
       "index": 0,
       "parameter": "formal(c)"
     },
-    "master_handle":
-      "sanitize.sanitize_test_b_sink_attribute:1000:0:Call|sanitize.sanitize_b_sink_attribute|0|formal(c):f22f651b9c14ec23512c5b0b363404bc"
+    "master_handle": "sanitize.sanitize_test_b_sink_attribute:1000:0:Call|sanitize.sanitize_b_sink_attribute|0|formal(c):f22f651b9c14ec23512c5b0b363404bc"
   }
 }
 {
@@ -1265,8 +1238,7 @@
       "index": 0,
       "parameter": "formal(c)"
     },
-    "master_handle":
-      "sanitize.sanitize_test_b_sink_instance:1000:0:Call|sanitize.sanitize_b_sink_instance|0|formal(c):cce981ebc6d16e96b7bfa28e230598dd"
+    "master_handle": "sanitize.sanitize_test_b_sink_instance:1000:0:Call|sanitize.sanitize_b_sink_instance|0|formal(c):cce981ebc6d16e96b7bfa28e230598dd"
   }
 }
 {
@@ -1334,8 +1306,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "sanitize.sanitize_test_b_source_attribute:1000:0:Call|_test_sink|0|formal(arg):c9287a2192ebb69f44c803599227303b"
+    "master_handle": "sanitize.sanitize_test_b_source_attribute:1000:0:Call|_test_sink|0|formal(arg):c9287a2192ebb69f44c803599227303b"
   }
 }
 {
@@ -1403,8 +1374,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "sanitize.sanitize_test_b_source_instance:1000:0:Call|_test_sink|0|formal(arg):693b78211926f9ba8005843bc962d801"
+    "master_handle": "sanitize.sanitize_test_b_source_instance:1000:0:Call|_test_sink|0|formal(arg):693b78211926f9ba8005843bc962d801"
   }
 }
 {
@@ -1470,437 +1440,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "sanitize.test4:1000:0:Call|sanitize.sanitize_a_source_tito_with_sink|0|formal(x):dec4d336c24b1bea188695e93ef685f3"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_cookies_with_sanitize_all_parameters_no_user_controlled_tito",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              { "leaves": [ { "name": "_cookies" } ], "kind": "Cookies" }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 828, "start": 59, "end": 60 } ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 827,
-              "start": 8,
-              "end": 18
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_cookies_with_sanitize_parameter_no_user_controlled_tito",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              { "leaves": [ { "name": "_cookies" } ], "kind": "Cookies" }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 628, "start": 54, "end": 55 } ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 627,
-              "start": 8,
-              "end": 18
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_rce_with_sanitize_all_parameters_no_cookies_sql_tito",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_rce" } ],
-                "kind": "NotSource[Cookies]@RemoteCodeExecution"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 884, "start": 52, "end": 53 } ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 885,
-              "start": 9,
-              "end": 10
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_rce_with_sanitize_all_parameters_no_sql_tito",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_rce" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 847, "start": 44, "end": 45 } ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 848,
-              "start": 9,
-              "end": 10
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_rce_with_sanitize_parameter_no_sql_tito",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_rce" } ],
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 664, "start": 39, "end": 40 } ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 665,
-              "start": 9,
-              "end": 10
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "NotSource[UserControlled]:Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "sanitize.py",
-                "line": 785,
-                "start": 47,
-                "end": 48
-              },
-              "resolves_to": [
-                "sanitize.sanitize_all_parameters_no_user_controlled"
-              ],
-              "port": "formal(x)"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_user_controlled" } ],
-                "kind": "NotSink[SQL]@UserControlled"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 674, "start": 60, "end": 61 } ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 673,
-              "start": 8,
-              "end": 26
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_sanitize_parameter_no_user_controlled",
-    "sinks": [
-      {
-        "port": "formal(b)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_sql" } ],
-                "length": 1,
-                "kind": "NotSource[UserControlled]:SQL"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "sanitize.py",
-                "line": 582,
-                "start": 42,
-                "end": 43
-              },
-              "resolves_to": [
-                "sanitize.sanitize_parameter_no_user_controlled"
-              ],
-              "port": "formal(x)"
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(a)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_rce" } ],
-                "length": 1,
-                "kind": "RemoteCodeExecution"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "sanitize.py",
-                "line": 582,
-                "start": 45,
-                "end": 46
-              },
-              "resolves_to": [
-                "sanitize.sanitize_parameter_no_user_controlled"
-              ],
-              "port": "formal(y)"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito",
-    "tito": [
-      {
-        "port": "formal(b)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": [ "" ],
-                "length": 1,
-                "kind": "NotSource[UserControlled]@LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 633, "start": 54, "end": 55 } ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(a)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 633, "start": 57, "end": 58 } ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_sql" } ],
-                "kind": "NotSource[UserControlled]@SQL"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 637, "start": 69, "end": 70 } ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 638,
-              "start": 9,
-              "end": 10
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_sanitize_return_no_sql_in_source_trace",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_user_controlled" } ],
-                "kind": "NotSink[SQL]@UserControlled"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 715, "start": 46, "end": 47 } ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 714,
-              "start": 8,
-              "end": 26
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_sanitize_user_controlled_tito_in_sink_trace",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_sql" } ],
-                "kind": "NotSource[UserControlled]@SQL"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 833, "start": 56, "end": 57 } ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 834,
-              "start": 9,
-              "end": 10
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "sanitize.propagation_of_user_controlled_with_sanitize_all_parameters_no_cookies_sql_tito",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_user_controlled" } ],
-                "kind": "NotSink[SQL]@UserControlled"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [ { "line": 874, "start": 55, "end": 56 } ],
-            "root": {
-              "filename": "sanitize.py",
-              "line": 873,
-              "start": 8,
-              "end": 26
-            }
-          }
-        ]
-      }
-    ]
+    "master_handle": "sanitize.test4:1000:0:Call|sanitize.sanitize_a_source_tito_with_sink|0|formal(x):dec4d336c24b1bea188695e93ef685f3"
   }
 }
 {
@@ -2804,6 +2344,145 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.propagation_of_cookies_with_sanitize_all_parameters_no_user_controlled_tito",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              { "leaves": [ { "name": "_cookies" } ], "kind": "Cookies" }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 828, "start": 59, "end": 60 } ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 827,
+              "start": 8,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.propagation_of_cookies_with_sanitize_parameter_no_user_controlled_tito",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              { "leaves": [ { "name": "_cookies" } ], "kind": "Cookies" }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 628, "start": 54, "end": 55 } ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 627,
+              "start": 8,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.propagation_of_rce_with_sanitize_all_parameters_no_cookies_sql_tito",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_rce" } ],
+                "kind": "NotSource[Cookies]@RemoteCodeExecution"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 884, "start": 52, "end": 53 } ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 885,
+              "start": 9,
+              "end": 10
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.propagation_of_rce_with_sanitize_all_parameters_no_sql_tito",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_rce" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 847, "start": 44, "end": 45 } ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 848,
+              "start": 9,
+              "end": 10
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.propagation_of_rce_with_sanitize_parameter_no_sql_tito",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_rce" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 664, "start": 39, "end": 40 } ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 665,
+              "start": 9,
+              "end": 10
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.propagation_of_sanitize_a_sink_in_source_trace",
     "sources": [
       {
@@ -2887,6 +2566,40 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "NotSource[UserControlled]:Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "sanitize.py",
+                "line": 785,
+                "start": 47,
+                "end": 48
+              },
+              "resolves_to": [
+                "sanitize.sanitize_all_parameters_no_user_controlled"
+              ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.propagation_of_sanitize_parameter_no_sql_tito",
     "tito": [
       {
@@ -2916,6 +2629,162 @@
             "local_features": [ { "always-via": "tito" } ],
             "tito": [ { "line": 669, "start": 45, "end": 46 } ],
             "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.propagation_of_sanitize_parameter_no_sql_tito_in_source_trace",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_user_controlled" } ],
+                "kind": "NotSink[SQL]@UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 674, "start": 60, "end": 61 } ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 673,
+              "start": 8,
+              "end": 26
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled",
+    "sinks": [
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_sql" } ],
+                "length": 1,
+                "kind": "NotSource[UserControlled]:SQL"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "sanitize.py",
+                "line": 582,
+                "start": 42,
+                "end": 43
+              },
+              "resolves_to": [
+                "sanitize.sanitize_parameter_no_user_controlled"
+              ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_rce" } ],
+                "length": 1,
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "sanitize.py",
+                "line": 582,
+                "start": 45,
+                "end": 46
+              },
+              "resolves_to": [
+                "sanitize.sanitize_parameter_no_user_controlled"
+              ],
+              "port": "formal(y)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito",
+    "tito": [
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": [ "" ],
+                "length": 1,
+                "kind": "NotSource[UserControlled]@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 633, "start": 54, "end": 55 } ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 633, "start": 57, "end": 58 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_sql" } ],
+                "kind": "NotSource[UserControlled]@SQL"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 637, "start": 69, "end": 70 } ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 638,
+              "start": 9,
+              "end": 10
+            }
           }
         ]
       }
@@ -2982,6 +2851,35 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.propagation_of_sanitize_return_no_sql_in_source_trace",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_user_controlled" } ],
+                "kind": "NotSink[SQL]@UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 715, "start": 46, "end": 47 } ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 714,
+              "start": 8,
+              "end": 26
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.propagation_of_sanitize_sql_tito_in_source_trace",
     "sources": [
       {
@@ -2999,6 +2897,64 @@
             "root": {
               "filename": "sanitize.py",
               "line": 852,
+              "start": 8,
+              "end": 26
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.propagation_of_sanitize_user_controlled_tito_in_sink_trace",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_sql" } ],
+                "kind": "NotSource[UserControlled]@SQL"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 833, "start": 56, "end": 57 } ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 834,
+              "start": 9,
+              "end": 10
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.propagation_of_user_controlled_with_sanitize_all_parameters_no_cookies_sql_tito",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_user_controlled" } ],
+                "kind": "NotSink[SQL]@UserControlled"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [ { "line": 874, "start": 55, "end": 56 } ],
+            "root": {
+              "filename": "sanitize.py",
+              "line": 873,
               "start": 8,
               "end": 26
             }
@@ -4675,8 +4631,7 @@
                 "features": [ { "always-via": "tito" } ],
                 "leaves": [ { "name": "_rce" } ],
                 "length": 1,
-                "kind":
-                  "NotSource[TestB]@NotSource[TestA]:RemoteCodeExecution"
+                "kind": "NotSource[TestB]@NotSource[TestA]:RemoteCodeExecution"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -4711,8 +4666,7 @@
                 "features": [ { "always-via": "tito" } ],
                 "leaves": [ { "name": "_rce" } ],
                 "length": 2,
-                "kind":
-                  "NotSource[Test]@NotSource[TestB]:NotSource[TestA]:RemoteCodeExecution"
+                "kind": "NotSource[Test]@NotSource[TestB]:NotSource[TestA]:RemoteCodeExecution"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -4776,8 +4730,7 @@
                 "features": [ { "always-via": "tito" } ],
                 "leaves": [ { "name": "_rce" } ],
                 "length": 1,
-                "kind":
-                  "NotSource[TestA]@NotSource[TestB]:RemoteCodeExecution"
+                "kind": "NotSource[TestA]@NotSource[TestB]:RemoteCodeExecution"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -4812,8 +4765,7 @@
                 "features": [ { "always-via": "tito" } ],
                 "leaves": [ { "name": "_rce" } ],
                 "length": 2,
-                "kind":
-                  "NotSource[Test]@NotSource[TestA]:NotSource[TestB]:RemoteCodeExecution"
+                "kind": "NotSource[Test]@NotSource[TestA]:NotSource[TestB]:RemoteCodeExecution"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],

@@ -57,8 +57,7 @@
       "callee": "Obj{attributes.Sink.token}",
       "index": 1
     },
-    "master_handle":
-      "attributes.test_attribute_union_sink:5002:0:Global|Obj{attributes.Sink.token}|1:cb5576984115ab71838ed9c0be98c643"
+    "master_handle": "attributes.test_attribute_union_sink:5002:0:Global|Obj{attributes.Sink.token}|1:cb5576984115ab71838ed9c0be98c643"
   }
 }
 {
@@ -119,8 +118,7 @@
       "callee": "Obj{attributes.Sink.token}",
       "index": 0
     },
-    "master_handle":
-      "attributes.test_attribute_union_sink:5002:0:Global|Obj{attributes.Sink.token}|0:14935f90c85d01ed835cdc0a92c85dbf"
+    "master_handle": "attributes.test_attribute_union_sink:5002:0:Global|Obj{attributes.Sink.token}|0:14935f90c85d01ed835cdc0a92c85dbf"
   }
 }
 {
@@ -195,8 +193,7 @@
       "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "attributes.test_attribute_via_dunder_dict:5002:0:Call|_test_sink|1|formal(arg):da5fc540abbf310d75dd68aa49edc906"
+    "master_handle": "attributes.test_attribute_via_dunder_dict:5002:0:Call|_test_sink|1|formal(arg):da5fc540abbf310d75dd68aa49edc906"
   }
 }
 {
@@ -271,8 +268,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "attributes.test_attribute_via_dunder_dict:5002:0:Call|_test_sink|0|formal(arg):62e7b46583720a9a3834cad383fbad3f"
+    "master_handle": "attributes.test_attribute_via_dunder_dict:5002:0:Call|_test_sink|0|formal(arg):62e7b46583720a9a3834cad383fbad3f"
   }
 }
 {
@@ -330,16 +326,14 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "tito" }
+      { "always-via": "special_source" }, { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Global",
       "callee": "Obj{attributes.D.buffer}",
       "index": 0
     },
-    "master_handle":
-      "attributes.test_issue_with_update_to_self_attribute:5002:0:Global|Obj{attributes.D.buffer}|0:a87babfa59527e2779c9625bae05d282"
+    "master_handle": "attributes.test_issue_with_update_to_self_attribute:5002:0:Global|Obj{attributes.D.buffer}|0:a87babfa59527e2779c9625bae05d282"
   }
 }
 {
@@ -626,8 +620,7 @@
       "index": 2,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "attributes.test_attribute_union_source:5002:0:Call|_test_sink|2|formal(arg):1086396563d2f0569c6c25258e58d2b0"
+    "master_handle": "attributes.test_attribute_union_source:5002:0:Call|_test_sink|2|formal(arg):1086396563d2f0569c6c25258e58d2b0"
   }
 }
 {
@@ -689,8 +682,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "attributes.test_attribute_union_source:5002:0:Call|_test_sink|0|formal(arg):3e7e5ecb5638879f3585847c1274f5e1"
+    "master_handle": "attributes.test_attribute_union_source:5002:0:Call|_test_sink|0|formal(arg):3e7e5ecb5638879f3585847c1274f5e1"
   }
 }
 {
@@ -843,8 +835,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "text" }
+              { "has": "first-index" }, { "first-index": "text" }
             ],
             "root": {
               "filename": "attributes.py",
@@ -881,8 +872,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "text" }
+              { "has": "first-index" }, { "first-index": "text" }
             ],
             "root": {
               "filename": "attributes.py",
@@ -925,8 +915,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "attributes.test_issue_with_text_key_of_dictionary:5002:0:Call|_test_sink|0|formal(arg):07aaa6860d20d5f97b7ef18d4f0ad4f6"
+    "master_handle": "attributes.test_issue_with_text_key_of_dictionary:5002:0:Call|_test_sink|0|formal(arg):07aaa6860d20d5f97b7ef18d4f0ad4f6"
   }
 }
 {
@@ -946,8 +935,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "other" }
+              { "has": "first-index" }, { "first-index": "other" }
             ],
             "root": {
               "filename": "attributes.py",

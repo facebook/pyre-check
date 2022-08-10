@@ -67,8 +67,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "maximum_trace_length.issue_source_one_sink_one:1000:0:Call|maximum_trace_length.sink_distance_one|0|formal(x):a08e4c0767d31879aad563d6ccd32a7b"
+    "master_handle": "maximum_trace_length.issue_source_one_sink_one:1000:0:Call|maximum_trace_length.sink_distance_one|0|formal(x):a08e4c0767d31879aad563d6ccd32a7b"
   }
 }
 {
@@ -139,8 +138,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "maximum_trace_length.issue_source_one_sink_zero:1000:0:Call|maximum_trace_length.sink_distance_zero|0|formal(x):f1e39236af32c42d591fc6b91d1f3e01"
+    "master_handle": "maximum_trace_length.issue_source_one_sink_zero:1000:0:Call|maximum_trace_length.sink_distance_zero|0|formal(x):f1e39236af32c42d591fc6b91d1f3e01"
   }
 }
 {
@@ -211,8 +209,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "maximum_trace_length.issue_source_zero_sink_zero:1000:0:Call|maximum_trace_length.sink_distance_zero|0|formal(x):25f77eba01683531b416229d0cd28e54"
+    "master_handle": "maximum_trace_length.issue_source_zero_sink_zero:1000:0:Call|maximum_trace_length.sink_distance_zero|0|formal(x):25f77eba01683531b416229d0cd28e54"
   }
 }
 {

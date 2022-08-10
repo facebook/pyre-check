@@ -2,84 +2,6 @@
 {
   "kind": "issue",
   "data": {
-    "callable":
-      "dataclass_taint.test_class_attr_model_tainted_in_constructor",
-    "callable_line": 108,
-    "code": 5002,
-    "line": 112,
-    "start": 56,
-    "end": 70,
-    "filename": "dataclass_taint.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "dataclass_taint.py",
-              "line": 112,
-              "start": 56,
-              "end": 70
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "leaves": [
-                  {
-                    "name":
-                      "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "dataclass_taint.py",
-              "line": 112,
-              "start": 56,
-              "end": 70
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-type": "integer" },
-      { "always-type": "scalar" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee":
-        "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
-      "index": 1,
-      "parameter": "formal(bad)"
-    },
-    "master_handle":
-      "dataclass_taint.test_class_attr_model_tainted_in_constructor:5002:0:Call|dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__|1|formal(bad):4a7785b5b0dc31c99f8d25cf5234a82f"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
     "callable": "dataclass_taint.issue_in_dataclass_constructor",
     "callable_line": 38,
     "code": 5002,
@@ -151,8 +73,7 @@
       "index": 0,
       "parameter": "formal(bad)"
     },
-    "master_handle":
-      "dataclass_taint.issue_in_dataclass_constructor:5002:0:Call|dataclass_taint.DataClassWIthInit.__init__|0|formal(bad):95af429aa6b3669c034f8f4ade606c6b"
+    "master_handle": "dataclass_taint.issue_in_dataclass_constructor:5002:0:Call|dataclass_taint.DataClassWIthInit.__init__|0|formal(bad):95af429aa6b3669c034f8f4ade606c6b"
   }
 }
 {
@@ -195,8 +116,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__"
+                    "name": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__"
                   }
                 ],
                 "kind": "Test"
@@ -215,13 +135,11 @@
     "features": [ { "always-via": "special_source" } ],
     "sink_handle": {
       "kind": "Call",
-      "callee":
-        "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
+      "callee": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
       "index": 1,
       "parameter": "formal(bad)"
     },
-    "master_handle":
-      "dataclass_taint.test_class_attr_model_tainted_directly:5002:0:Call|dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__|1|formal(bad):2f7989bea29b0339ab8a203e62db91c0"
+    "master_handle": "dataclass_taint.test_class_attr_model_tainted_directly:5002:0:Call|dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__|1|formal(bad):2f7989bea29b0339ab8a203e62db91c0"
   }
 }
 {
@@ -264,8 +182,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}"
+                    "name": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}"
                   }
                 ],
                 "kind": "Test"
@@ -284,113 +201,95 @@
     "features": [ { "always-via": "special_source" } ],
     "sink_handle": {
       "kind": "Global",
-      "callee":
-        "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
+      "callee": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
       "index": 0
     },
-    "master_handle":
-      "dataclass_taint.test_class_attr_model_tainted_directly:5002:0:Global|Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}|0:b81b9304aded9021a85d4fbe1e787a51"
+    "master_handle": "dataclass_taint.test_class_attr_model_tainted_directly:5002:0:Global|Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}|0:b81b9304aded9021a85d4fbe1e787a51"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dataclass_taint.test_class_attr_model_tainted_in_constructor",
+    "callable_line": 108,
+    "code": 5002,
+    "line": 112,
+    "start": 56,
+    "end": 70,
+    "filename": "dataclass_taint.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 112,
+              "start": 56,
+              "end": 70
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "leaves": [
+                  {
+                    "name": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "dataclass_taint.py",
+              "line": 112,
+              "start": 56,
+              "end": 70
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
+      "index": 1,
+      "parameter": "formal(bad)"
+    },
+    "master_handle": "dataclass_taint.test_class_attr_model_tainted_in_constructor:5002:0:Call|dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__|1|formal(bad):4a7785b5b0dc31c99f8d25cf5234a82f"
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable":
-      "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
+    "callable": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
     "sinks": [
       {
         "port": "formal($global)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
       }
     ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
-    "sinks": [
-      {
-        "port": "formal(bad)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(benign)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(bad)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
-    "sinks": [
-      {
-        "port": "formal(bad)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "decl": null
-          }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(benign)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      },
-      {
-        "port": "formal(bad)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
-            ],
-            "decl": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
   }
 }
 {
@@ -524,8 +423,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "dataclass_taint.py",
@@ -546,8 +444,7 @@
               { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -574,6 +471,91 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
+    "sinks": [
+      {
+        "port": "formal(bad)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "decl": null } ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(benign)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
+    "sinks": [
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(benign)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      },
+      {
+        "port": "formal(bad)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -648,8 +630,7 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
+                  { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
                 "kind": "UserControlled"
               }
@@ -667,8 +648,7 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
+                  { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
                 "leaves": [
                   { "name": "dataclass_taint.WeirdDataClass.__init__" }
@@ -702,8 +682,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "dataclass_taint.py",
@@ -728,8 +707,7 @@
               { "return_paths": [ "[bad_sink]" ], "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -754,8 +732,7 @@
               { "return_paths": [ "[bad]" ], "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -886,8 +863,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "dataclass_taint.bad_is_tainted:5002:0:Call|_test_sink|0|formal(arg):a576244e9a2a485090237d4b1205ee6d"
+    "master_handle": "dataclass_taint.bad_is_tainted:5002:0:Call|_test_sink|0|formal(arg):a576244e9a2a485090237d4b1205ee6d"
   }
 }
 {
@@ -988,8 +964,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "Obj{dataclass_taint.DataClassWithOtherSource.tainted}"
+                    "name": "Obj{dataclass_taint.DataClassWithOtherSource.tainted}"
                   }
                 ],
                 "kind": "Test"
@@ -1032,8 +1007,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "dataclass_taint.test_dataclass_with_other_source:5002:0:Call|_test_sink|0|formal(arg):8dc1aba82fdce0b57ee34191013425bb"
+    "master_handle": "dataclass_taint.test_dataclass_with_other_source:5002:0:Call|_test_sink|0|formal(arg):8dc1aba82fdce0b57ee34191013425bb"
   }
 }
 {
@@ -1104,8 +1078,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "Obj{dataclass_taint.DataClassWithSource.tainted}"
+                    "name": "Obj{dataclass_taint.DataClassWithSource.tainted}"
                   }
                 ],
                 "kind": "Test"
@@ -1148,8 +1121,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "dataclass_taint.test_dataclass_with_source:5002:0:Call|_test_sink|0|formal(arg):7562e5836e6feb38f926ee37c2912468"
+    "master_handle": "dataclass_taint.test_dataclass_with_source:5002:0:Call|_test_sink|0|formal(arg):7562e5836e6feb38f926ee37c2912468"
   }
 }
 {
@@ -1164,8 +1136,7 @@
             "kinds": [
               {
                 "features": [
-                  { "always-type": "integer" },
-                  { "always-type": "scalar" }
+                  { "always-type": "integer" }, { "always-type": "scalar" }
                 ],
                 "leaves": [
                   { "name": "dataclass_taint.WeirdDataClass.__init__" }

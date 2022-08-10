@@ -120,7 +120,6 @@
       "index": 0,
       "parameter": "formal(argument)"
     },
-    "master_handle":
-      "class_level_taint.test:5002:0:Call|class_level_taint.ClassSink.sink|0|formal(argument):aff1e23735efdd1f0f4a23851bda22e0"
+    "master_handle": "class_level_taint.test:5002:0:Call|class_level_taint.ClassSink.sink|0|formal(argument):aff1e23735efdd1f0f4a23851bda22e0"
   }
 }

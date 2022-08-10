@@ -68,8 +68,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "model_query_annotated.test1_alarm1:5002:0:Call|_test_sink|0|formal(arg):d18d16b3ac087c81541bb98ad54eaa39"
+    "master_handle": "model_query_annotated.test1_alarm1:5002:0:Call|_test_sink|0|formal(arg):d18d16b3ac087c81541bb98ad54eaa39"
   }
 }
 {
@@ -141,8 +140,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "model_query_annotated.test1_alarm2:5002:0:Call|_test_sink|0|formal(arg):c6ed0280dd85d05f1393f0cb0972c470"
+    "master_handle": "model_query_annotated.test1_alarm2:5002:0:Call|_test_sink|0|formal(arg):c6ed0280dd85d05f1393f0cb0972c470"
   }
 }
 {
@@ -214,8 +212,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "model_query_annotated.test1_alarm3:5002:0:Call|_test_sink|0|formal(arg):c759ed3c804e9d78a0f981103e0e21dc"
+    "master_handle": "model_query_annotated.test1_alarm3:5002:0:Call|_test_sink|0|formal(arg):c759ed3c804e9d78a0f981103e0e21dc"
   }
 }
 {
@@ -287,8 +284,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "model_query_annotated.test1_alarm4:5002:0:Call|_test_sink|0|formal(arg):3c2f0013f846fd8b28d85ca246eae6dd"
+    "master_handle": "model_query_annotated.test1_alarm4:5002:0:Call|_test_sink|0|formal(arg):3c2f0013f846fd8b28d85ca246eae6dd"
   }
 }
 {
@@ -360,8 +356,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "model_query_annotated.test2_alarm1:5002:0:Call|_test_sink|0|formal(arg):b8e24537537f3d32304c259208734d83"
+    "master_handle": "model_query_annotated.test2_alarm1:5002:0:Call|_test_sink|0|formal(arg):b8e24537537f3d32304c259208734d83"
   }
 }
 {
@@ -433,8 +428,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "model_query_annotated.test2_alarm2:5002:0:Call|_test_sink|0|formal(arg):8997edd700a2f9344b93da74dec2ee25"
+    "master_handle": "model_query_annotated.test2_alarm2:5002:0:Call|_test_sink|0|formal(arg):8997edd700a2f9344b93da74dec2ee25"
   }
 }
 {
@@ -451,8 +445,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter":
-                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -479,8 +472,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter":
-                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -507,8 +499,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter":
-                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -535,8 +526,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter":
-                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -563,8 +553,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter":
-                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -591,8 +580,7 @@
                 "via_features": [
                   {
                     "kind": "ViaTypeOf",
-                    "parameter":
-                      "PositionalParameter {position = 0; name = $global; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = $global; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -750,8 +738,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "model_query_annotated.test3_alarm1:5002:0:Call|_test_sink|0|formal(arg):dbfab590f77ae77afa60c7051afcaecf"
+    "master_handle": "model_query_annotated.test3_alarm1:5002:0:Call|_test_sink|0|formal(arg):dbfab590f77ae77afa60c7051afcaecf"
   }
 }
 {
@@ -853,8 +840,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "model_query_annotated.test3_alarm2:5002:0:Call|_test_sink|0|formal(arg):7ad3a5dd0d1814ffb9adc16f74cd5597"
+    "master_handle": "model_query_annotated.test3_alarm2:5002:0:Call|_test_sink|0|formal(arg):7ad3a5dd0d1814ffb9adc16f74cd5597"
   }
 }
 {
@@ -902,8 +888,7 @@
               }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "root": {
               "filename": "model_query_annotated.py",

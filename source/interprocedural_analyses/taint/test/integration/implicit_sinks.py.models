@@ -19,8 +19,7 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 27, "start": 18, "end": 19 } ],
             "root": {
@@ -48,12 +47,10 @@
       }
     ],
     "features": [
-      { "always-via": "format-string" },
-      { "always-via": "tito" }
+      { "always-via": "format-string" }, { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
-    "master_handle":
-      "implicit_sinks.inline_issue_dot_format:1337:0:LiteralStringSink|Test:12e6985f0ee1e45370ff2a0b6e46b05f"
+    "master_handle": "implicit_sinks.inline_issue_dot_format:1337:0:LiteralStringSink|Test:12e6985f0ee1e45370ff2a0b6e46b05f"
   }
 }
 {
@@ -76,8 +73,7 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 17, "start": 8, "end": 9 } ],
             "root": {
@@ -105,12 +101,10 @@
       }
     ],
     "features": [
-      { "always-via": "format-string" },
-      { "always-via": "tito" }
+      { "always-via": "format-string" }, { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
-    "master_handle":
-      "implicit_sinks.inline_issue_format_string:1337:0:LiteralStringSink|Test:e8f93741bdea2fc8de1e3a34c54afe6f"
+    "master_handle": "implicit_sinks.inline_issue_format_string:1337:0:LiteralStringSink|Test:e8f93741bdea2fc8de1e3a34c54afe6f"
   }
 }
 {
@@ -133,8 +127,7 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 61, "start": 8, "end": 9 } ],
             "root": {
@@ -149,8 +142,7 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 61, "start": 14, "end": 15 } ],
             "root": {
@@ -178,12 +170,10 @@
       }
     ],
     "features": [
-      { "always-via": "format-string" },
-      { "always-via": "tito" }
+      { "always-via": "format-string" }, { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
-    "master_handle":
-      "implicit_sinks.inline_issue_format_string_proper_tito:1337:0:LiteralStringSink|Test:2d2f13f927e373f2d409957884ab2173"
+    "master_handle": "implicit_sinks.inline_issue_format_string_proper_tito:1337:0:LiteralStringSink|Test:2d2f13f927e373f2d409957884ab2173"
   }
 }
 {
@@ -206,8 +196,7 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 56, "start": 14, "end": 15 } ],
             "root": {
@@ -235,12 +224,10 @@
       }
     ],
     "features": [
-      { "always-via": "string_concat_lhs" },
-      { "always-via": "tito" }
+      { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
-    "master_handle":
-      "implicit_sinks.inline_issue_lhs_add_literal:1337:0:LiteralStringSink|Test:e9c51c2a5cfd075f3b02e2b308c79e83"
+    "master_handle": "implicit_sinks.inline_issue_lhs_add_literal:1337:0:LiteralStringSink|Test:e9c51c2a5cfd075f3b02e2b308c79e83"
   }
 }
 {
@@ -300,8 +287,7 @@
       { "always-via": "issue-broadening" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
-    "master_handle":
-      "implicit_sinks.inline_issue_percent_format:1337:0:LiteralStringSink|Test:a3816965f707388cfddef3263d5a9c83"
+    "master_handle": "implicit_sinks.inline_issue_percent_format:1337:0:LiteralStringSink|Test:a3816965f707388cfddef3263d5a9c83"
   }
 }
 {
@@ -324,8 +310,7 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 45, "start": 17, "end": 18 } ],
             "root": {
@@ -353,12 +338,10 @@
       }
     ],
     "features": [
-      { "always-via": "string_concat_rhs" },
-      { "always-via": "tito" }
+      { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
     ],
     "sink_handle": { "kind": "LiteralStringSink", "sink": "Test" },
-    "master_handle":
-      "implicit_sinks.inline_issue_rhs_add_literal:1337:0:LiteralStringSink|Test:915afc9811e1387b5a7d62eacdefd5e7"
+    "master_handle": "implicit_sinks.inline_issue_rhs_add_literal:1337:0:LiteralStringSink|Test:915afc9811e1387b5a7d62eacdefd5e7"
   }
 }
 {
@@ -398,8 +381,7 @@
           {
             "kinds": [ { "kind": "Test" } ],
             "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 22, "start": 18, "end": 19 } ],
             "root": {
@@ -425,8 +407,7 @@
           {
             "kinds": [ { "kind": "Test" } ],
             "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 12, "start": 8, "end": 9 } ],
             "root": {
@@ -452,8 +433,7 @@
           {
             "kinds": [ { "kind": "Test" } ],
             "local_features": [
-              { "always-via": "string_concat_lhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 50, "start": 14, "end": 15 } ],
             "root": {
@@ -479,8 +459,7 @@
           {
             "kinds": [ { "kind": "Test" } ],
             "local_features": [
-              { "always-via": "format-string" },
-              { "always-via": "tito" }
+              { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 31, "start": 13, "end": 17 } ],
             "root": {
@@ -506,8 +485,7 @@
           {
             "kinds": [ { "kind": "Test" } ],
             "local_features": [
-              { "always-via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 40, "start": 17, "end": 18 } ],
             "root": {

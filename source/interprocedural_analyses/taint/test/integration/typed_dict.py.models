@@ -19,8 +19,7 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "other" }
+              { "has": "first-index" }, { "first-index": "other" }
             ],
             "root": {
               "filename": "typed_dict.py",
@@ -55,8 +54,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "typed_dict.test1:5002:0:Call|_test_sink|0|formal(arg):c875ea622fe903e7a600da63e42dfe95"
+    "master_handle": "typed_dict.test1:5002:0:Call|_test_sink|0|formal(arg):c875ea622fe903e7a600da63e42dfe95"
   }
 }
 {
@@ -79,8 +77,7 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "foo" }
+              { "has": "first-index" }, { "first-index": "foo" }
             ],
             "root": {
               "filename": "typed_dict.py",
@@ -115,8 +112,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "typed_dict.test2:5002:0:Call|_test_sink|0|formal(arg):fda65c046f1bb37701b522b30322979c"
+    "master_handle": "typed_dict.test2:5002:0:Call|_test_sink|0|formal(arg):fda65c046f1bb37701b522b30322979c"
   }
 }
 {
@@ -139,8 +135,7 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "foo" }
+              { "has": "first-index" }, { "first-index": "foo" }
             ],
             "root": {
               "filename": "typed_dict.py",
@@ -175,8 +170,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "typed_dict.test3:5002:0:Call|_test_sink|0|formal(arg):17f48812cb8cde7605fe95ac1ce94a5b"
+    "master_handle": "typed_dict.test3:5002:0:Call|_test_sink|0|formal(arg):17f48812cb8cde7605fe95ac1ce94a5b"
   }
 }
 {

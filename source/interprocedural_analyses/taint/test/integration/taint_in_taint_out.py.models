@@ -73,8 +73,7 @@
       "index": 0,
       "parameter": "formal(src)"
     },
-    "master_handle":
-      "taint_in_taint_out.issue_with_indirect_sink_tito:5002:0:Call|taint_in_taint_out.adds_tito_with_indirect_sink|0|formal(src):2fbce496fb3c6d2b1ac7eb34c04a80c1"
+    "master_handle": "taint_in_taint_out.issue_with_indirect_sink_tito:5002:0:Call|taint_in_taint_out.adds_tito_with_indirect_sink|0|formal(src):2fbce496fb3c6d2b1ac7eb34c04a80c1"
   }
 }
 {
@@ -101,8 +100,7 @@
               }
             ],
             "local_features": [
-              { "via": "string_concat_rhs" },
-              { "always-via": "tito" }
+              { "via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 178, "start": 33, "end": 47 } ],
             "root": {
@@ -147,8 +145,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_in_taint_out.test_always_via_feature:5002:0:Call|_test_sink|0|formal(arg):5f5be39770a875ee131d712a9575c6ec"
+    "master_handle": "taint_in_taint_out.test_always_via_feature:5002:0:Call|_test_sink|0|formal(arg):5f5be39770a875ee131d712a9575c6ec"
   }
 }
 {
@@ -225,8 +222,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_in_taint_out.test_complex_evaluator:5002:0:Call|_test_sink|0|formal(arg):ab8fd57412bae9ae7f76b9d9e5b62315"
+    "master_handle": "taint_in_taint_out.test_complex_evaluator:5002:0:Call|_test_sink|0|formal(arg):ab8fd57412bae9ae7f76b9d9e5b62315"
   }
 }
 {
@@ -301,8 +297,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_in_taint_out.test_explicit_call_to_superclass:5002:0:Call|_test_sink|0|formal(arg):542fa2512fcbd87d221e85e3ff59321e"
+    "master_handle": "taint_in_taint_out.test_explicit_call_to_superclass:5002:0:Call|_test_sink|0|formal(arg):542fa2512fcbd87d221e85e3ff59321e"
   }
 }
 {
@@ -371,82 +366,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_in_taint_out.test_simplified_evaluator:5002:0:Call|_test_sink|0|formal(arg):4ea1dfcb4011b7d278405c93836ee5d8"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
-    "tito": [
-      {
-        "port": "formal(field)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
-            ],
-            "local_features": [
-              { "via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "via": "broadening" },
-              { "via": "obscure:unknown-callee" }
-            ],
-            "tito": [
-              { "line": 217, "start": 50, "end": 55 },
-              { "line": 218, "start": 44, "end": 49 }
-            ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "taint_in_taint_out.approximate_return_access_paths_common_prefix_input",
-    "tito": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
-            "local_features": [
-              { "always-via": "broadening" },
-              { "always-via": "widen-broadening" }
-            ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "taint_in_taint_out.approximate_return_access_paths_common_prefix_output",
-    "tito": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": [ "[a]" ], "kind": "LocalReturn" } ],
-            "local_features": [
-              { "always-via": "broadening" },
-              { "always-via": "widen-broadening" }
-            ],
-            "decl": null
-          }
-        ]
-      }
-    ]
+    "master_handle": "taint_in_taint_out.test_simplified_evaluator:5002:0:Call|_test_sink|0|formal(arg):4ea1dfcb4011b7d278405c93836ee5d8"
   }
 }
 {
@@ -559,6 +479,35 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito": [ { "line": 220, "start": 31, "end": 36 } ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
+    "tito": [
+      {
+        "port": "formal(field)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "obscure:unknown-callee" }
+            ],
+            "tito": [
+              { "line": 217, "start": 50, "end": 55 },
+              { "line": 218, "start": 44, "end": 49 }
+            ],
             "decl": null
           }
         ]
@@ -894,6 +843,48 @@
 {
   "kind": "model",
   "data": {
+    "callable": "taint_in_taint_out.approximate_return_access_paths_common_prefix_input",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_in_taint_out.approximate_return_access_paths_common_prefix_output",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": [ "[a]" ], "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "taint_in_taint_out.evaluate_lazy",
     "tito": [
       {
@@ -1013,8 +1004,7 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "always-via": "tito" }
+              { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [
               { "line": 33, "start": 20, "end": 21 },
@@ -1045,8 +1035,7 @@
               { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "always-via": "tito" }
+              { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 51, "start": 24, "end": 25 } ],
             "decl": null
@@ -1143,8 +1132,7 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "always-via": "tito" }
+              { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 55, "start": 32, "end": 46 } ],
             "root": {
@@ -1176,8 +1164,7 @@
               { "return_paths": [ "" ], "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "via": "string_concat_rhs" },
-              { "via": "tito" }
+              { "via": "string_concat_rhs" }, { "via": "tito" }
             ],
             "tito": [ { "line": 174, "start": 27, "end": 30 } ],
             "decl": null

@@ -65,8 +65,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_sanitize_b_to_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):f1326d8ff34139e18f12f85c7298f1aa"
+    "master_handle": "taint_transform.a_sanitize_b_to_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):f1326d8ff34139e18f12f85c7298f1aa"
   }
 }
 {
@@ -141,8 +140,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_sanitize_b_to_xb_issue:123:0:Call|taint_transform.sink_taint_with_transform_x|0|formal(arg):b74b971b301bdeaf366da61891cd71d3"
+    "master_handle": "taint_transform.a_sanitize_b_to_xb_issue:123:0:Call|taint_transform.sink_taint_with_transform_x|0|formal(arg):b74b971b301bdeaf366da61891cd71d3"
   }
 }
 {
@@ -211,8 +209,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_sanitize_b_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):9f7c481316392da2a1be117b3f58ac76"
+    "master_handle": "taint_transform.a_sanitize_b_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):9f7c481316392da2a1be117b3f58ac76"
   }
 }
 {
@@ -278,8 +275,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_to_sanitize_b_to_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):5961aff108b131d0ad378ce5b29c7c51"
+    "master_handle": "taint_transform.a_to_sanitize_b_to_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):5961aff108b131d0ad378ce5b29c7c51"
   }
 }
 {
@@ -342,8 +338,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_to_sanitize_b_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):7afb6a508b3ef50715130870598178fd"
+    "master_handle": "taint_transform.a_to_sanitize_b_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):7afb6a508b3ef50715130870598178fd"
   }
 }
 {
@@ -412,8 +407,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_to_x_sanitize_a_b_issue:123:0:Call|taint_transform.transform_x_sanitize_a_sink_b_taint|0|formal(arg):c031be824389fa8b270be6e505eeb1a2"
+    "master_handle": "taint_transform.a_to_x_sanitize_a_b_issue:123:0:Call|taint_transform.transform_x_sanitize_a_sink_b_taint|0|formal(arg):c031be824389fa8b270be6e505eeb1a2"
   }
 }
 {
@@ -476,8 +470,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_to_x_sanitize_a_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):5f0d5548c0600e4b51758ee7eb7602a3"
+    "master_handle": "taint_transform.a_to_x_sanitize_a_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):5f0d5548c0600e4b51758ee7eb7602a3"
   }
 }
 {
@@ -540,8 +533,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_to_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):8797d4879165d1d1386f471ab1fb93e2"
+    "master_handle": "taint_transform.a_to_x_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):8797d4879165d1d1386f471ab1fb93e2"
   }
 }
 {
@@ -610,8 +602,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_to_x_to_sanitize_a_b_issue:123:0:Call|taint_transform.sanitize_a_sink_b_taint|0|formal(arg):9cb5c950a18cdfbfd03916683e9ada2b"
+    "master_handle": "taint_transform.a_to_x_to_sanitize_a_b_issue:123:0:Call|taint_transform.sanitize_a_sink_b_taint|0|formal(arg):9cb5c950a18cdfbfd03916683e9ada2b"
   }
 }
 {
@@ -677,8 +668,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_to_x_to_sanitize_a_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):59872ca64970eb5a4b6f5f2e02d3813a"
+    "master_handle": "taint_transform.a_to_x_to_sanitize_a_to_b_issue:123:0:Call|taint_transform.sink_b|0|formal(arg):59872ca64970eb5a4b6f5f2e02d3813a"
   }
 }
 {
@@ -744,8 +734,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_to_y_to_z_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):e5a8da0b9b8037467466ff05b61f4c6f"
+    "master_handle": "taint_transform.a_to_y_to_z_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):e5a8da0b9b8037467466ff05b61f4c6f"
   }
 }
 {
@@ -816,8 +805,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_to_y_zb_issue:124:0:Call|taint_transform.sink_taint_with_transform_z|0|formal(arg):6792ab0f443e1f2c4ceab6ffa4ef7407"
+    "master_handle": "taint_transform.a_to_y_zb_issue:124:0:Call|taint_transform.sink_taint_with_transform_z|0|formal(arg):6792ab0f443e1f2c4ceab6ffa4ef7407"
   }
 }
 {
@@ -880,8 +868,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_to_yz_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):f6b77574eb4a959346ca7df965f9f134"
+    "master_handle": "taint_transform.a_to_yz_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):f6b77574eb4a959346ca7df965f9f134"
   }
 }
 {
@@ -950,8 +937,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.a_to_yzb_issue:124:0:Call|taint_transform.sink_taint_with_transform_yz|0|formal(arg):f7dfdf3a481bbe93ab697768ef5b39cb"
+    "master_handle": "taint_transform.a_to_yzb_issue:124:0:Call|taint_transform.sink_taint_with_transform_yz|0|formal(arg):f7dfdf3a481bbe93ab697768ef5b39cb"
   }
 }
 {
@@ -1024,8 +1010,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.ax_to_sanitize_a_b_issue:123:0:Call|taint_transform.sanitize_a_sink_b_taint|0|formal(arg):77d608f0e9d052dbed5a4792cf98d143"
+    "master_handle": "taint_transform.ax_to_sanitize_a_b_issue:123:0:Call|taint_transform.sanitize_a_sink_b_taint|0|formal(arg):77d608f0e9d052dbed5a4792cf98d143"
   }
 }
 {
@@ -1038,8 +1023,7 @@
     "start": 36,
     "end": 41,
     "filename": "taint_transform.py",
-    "message":
-      "[SourceA] transformed by [TransformX, TransformY, TransformY, TransformZ] to [SinkB]",
+    "message": "[SourceA] transformed by [TransformX, TransformY, TransformY, TransformZ] to [SinkB]",
     "traces": [
       {
         "name": "forward",
@@ -1101,8 +1085,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.axy_to_sanitize_a_yzb_issue:126:0:Call|taint_transform.sanitize_a_to_y_to_z_to_b_taint|0|formal(arg):26e9259d5b60f7a17114c7ad372542c3"
+    "master_handle": "taint_transform.axy_to_sanitize_a_yzb_issue:126:0:Call|taint_transform.sanitize_a_to_y_to_z_to_b_taint|0|formal(arg):26e9259d5b60f7a17114c7ad372542c3"
   }
 }
 {
@@ -1173,8 +1156,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.ay_to_z_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):7ecd155fecd72808d2ceb2f36b920f12"
+    "master_handle": "taint_transform.ay_to_z_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):7ecd155fecd72808d2ceb2f36b920f12"
   }
 }
 {
@@ -1251,8 +1233,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.ay_to_zb_issue:124:0:Call|taint_transform.sink_taint_with_transform_z|0|formal(arg):8acfee7aebe884bc7fec1490aec2089b"
+    "master_handle": "taint_transform.ay_to_zb_issue:124:0:Call|taint_transform.sink_taint_with_transform_z|0|formal(arg):8acfee7aebe884bc7fec1490aec2089b"
   }
 }
 {
@@ -1321,8 +1302,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.ayz_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):097c513f469d442b0be4bf969be7171d"
+    "master_handle": "taint_transform.ayz_to_b_issue:124:0:Call|taint_transform.sink_b|0|formal(arg):097c513f469d442b0be4bf969be7171d"
   }
 }
 {
@@ -1383,8 +1363,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.c_to_d_issue:125:0:Call|taint_transform.sink_d|0|formal(arg):33bfd9c68180155a8b647eb8d87a7893"
+    "master_handle": "taint_transform.c_to_d_issue:125:0:Call|taint_transform.sink_d|0|formal(arg):33bfd9c68180155a8b647eb8d87a7893"
   }
 }
 {
@@ -1397,8 +1376,7 @@
     "start": 33,
     "end": 38,
     "filename": "taint_transform.py",
-    "message":
-      "[SourceA] transformed by [TransformX, TransformY, TransformY, TransformZ] to [SinkB]",
+    "message": "[SourceA] transformed by [TransformX, TransformY, TransformY, TransformZ] to [SinkB]",
     "traces": [
       {
         "name": "forward",
@@ -1460,71 +1438,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "taint_transform.issue_with_repeated_transforms:126:0:Call|taint_transform.sink_taint_with_transform_yz|0|formal(arg):ed27312783c4eff03e0f5e79307cd678"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "taint_transform.sanitize_a_transform_x_sanitize_c_transform_y",
-    "tito": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": [ "" ],
-                "length": 2,
-                "kind":
-                  "NotSource[SourceA]:TransformX:NotSource[SourceC]:TransformY@LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [
-              { "line": 268, "start": 35, "end": 38 },
-              { "line": 269, "start": 34, "end": 39 },
-              { "line": 270, "start": 24, "end": 28 }
-            ],
-            "decl": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable":
-      "taint_transform.tito_propagation_source_sink_sanitizers_mixed_1",
-    "tito": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": [ "" ],
-                "length": 2,
-                "kind":
-                  "NotSource[SourceA]:TransformX:NotSource[SourceC]:NotSink[SinkD]:TransformY:NotSink[SinkB]@LocalReturn"
-              }
-            ],
-            "local_features": [ { "always-via": "tito" } ],
-            "tito": [
-              { "line": 537, "start": 40, "end": 43 },
-              { "line": 538, "start": 34, "end": 39 },
-              { "line": 539, "start": 33, "end": 37 },
-              { "line": 540, "start": 40, "end": 45 }
-            ],
-            "decl": null
-          }
-        ]
-      }
-    ]
+    "master_handle": "taint_transform.issue_with_repeated_transforms:126:0:Call|taint_transform.sink_taint_with_transform_yz|0|formal(arg):ed27312783c4eff03e0f5e79307cd678"
   }
 }
 {
@@ -1634,6 +1548,35 @@
             "tito": [
               { "line": 262, "start": 35, "end": 38 },
               { "line": 263, "start": 23, "end": 28 }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.sanitize_a_transform_x_sanitize_c_transform_y",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": [ "" ],
+                "length": 2,
+                "kind": "NotSource[SourceA]:TransformX:NotSource[SourceC]:TransformY@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [
+              { "line": 268, "start": 35, "end": 38 },
+              { "line": 269, "start": 34, "end": 39 },
+              { "line": 270, "start": 24, "end": 28 }
             ],
             "decl": null
           }
@@ -2161,8 +2104,7 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "always-via": "tito" }
+              { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 47, "start": 31, "end": 36 } ],
             "root": {
@@ -2280,8 +2222,7 @@
               {
                 "return_paths": [ "" ],
                 "length": 2,
-                "kind":
-                  "NotSink[SinkB]:TransformX:NotSink[SinkD]@LocalReturn"
+                "kind": "NotSink[SinkB]:TransformX:NotSink[SinkD]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2309,8 +2250,7 @@
               {
                 "return_paths": [ "" ],
                 "length": 2,
-                "kind":
-                  "NotSink[SinkB]:NotSink[SinkD]:TransformX@LocalReturn"
+                "kind": "NotSink[SinkB]:NotSink[SinkD]:TransformX@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2338,8 +2278,7 @@
               {
                 "return_paths": [ "" ],
                 "length": 2,
-                "kind":
-                  "TransformX:NotSink[SinkB]:NotSink[SinkD]@LocalReturn"
+                "kind": "TransformX:NotSink[SinkB]:NotSink[SinkD]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2367,8 +2306,7 @@
               {
                 "return_paths": [ "" ],
                 "length": 2,
-                "kind":
-                  "NotSink[SinkD]:TransformX:NotSink[SinkB]@LocalReturn"
+                "kind": "NotSink[SinkD]:TransformX:NotSink[SinkB]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2396,8 +2334,7 @@
               {
                 "return_paths": [ "" ],
                 "length": 2,
-                "kind":
-                  "NotSource[SourceA]:TransformX:NotSource[SourceC]@LocalReturn"
+                "kind": "NotSource[SourceA]:TransformX:NotSource[SourceC]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2425,8 +2362,7 @@
               {
                 "return_paths": [ "" ],
                 "length": 2,
-                "kind":
-                  "NotSource[SourceA]:NotSource[SourceC]:TransformX@LocalReturn"
+                "kind": "NotSource[SourceA]:NotSource[SourceC]:TransformX@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2454,8 +2390,7 @@
               {
                 "return_paths": [ "" ],
                 "length": 2,
-                "kind":
-                  "TransformX:NotSource[SourceA]:NotSource[SourceC]@LocalReturn"
+                "kind": "TransformX:NotSource[SourceA]:NotSource[SourceC]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -2483,14 +2418,43 @@
               {
                 "return_paths": [ "" ],
                 "length": 2,
-                "kind":
-                  "NotSource[SourceC]:TransformX:NotSource[SourceA]@LocalReturn"
+                "kind": "NotSource[SourceC]:TransformX:NotSource[SourceA]@LocalReturn"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito": [
               { "line": 501, "start": 35, "end": 38 },
               { "line": 502, "start": 39, "end": 44 }
+            ],
+            "decl": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_transform.tito_propagation_source_sink_sanitizers_mixed_1",
+    "tito": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": [ "" ],
+                "length": 2,
+                "kind": "NotSource[SourceA]:TransformX:NotSource[SourceC]:NotSink[SinkD]:TransformY:NotSink[SinkB]@LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito": [
+              { "line": 537, "start": 40, "end": 43 },
+              { "line": 538, "start": 34, "end": 39 },
+              { "line": 539, "start": 33, "end": 37 },
+              { "line": 540, "start": 40, "end": 45 }
             ],
             "decl": null
           }

@@ -252,8 +252,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<numeric>" }
+              { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
             "root": {
               "filename": "kwargs_and_args.py",

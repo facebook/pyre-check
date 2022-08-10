@@ -2,37 +2,6 @@
 {
   "kind": "model",
   "data": {
-    "callable":
-      "colliding_class_names.C.also_tainted_but_missing_from_analysis",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "colliding_class_names.py",
-              "line": 16,
-              "start": 15,
-              "end": 29
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
     "sinks": [
       {
@@ -181,6 +150,36 @@
       }
     ],
     "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "colliding_class_names.C.also_tainted_but_missing_from_analysis",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [ { "name": "_test_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "root": {
+              "filename": "colliding_class_names.py",
+              "line": 16,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ]
   }
 }
 {

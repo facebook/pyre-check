@@ -81,8 +81,7 @@
       "index": 1,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "named_tuples.aliased_indicies_forward:5002:0:Call|_test_sink|1|formal(arg):8cfa9be2fc2685be603fcfa60f07a4b4"
+    "master_handle": "named_tuples.aliased_indicies_forward:5002:0:Call|_test_sink|1|formal(arg):8cfa9be2fc2685be603fcfa60f07a4b4"
   }
 }
 {
@@ -113,8 +112,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-field" },
-              { "first-field": "bad" }
+              { "has": "first-field" }, { "first-field": "bad" }
             ],
             "call": {
               "position": {
@@ -163,8 +161,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "named_tuples.issue_with_bad:5002:0:Call|_test_sink|0|formal(arg):e89e0d97d39ad4c9aeffa0299b935629"
+    "master_handle": "named_tuples.issue_with_bad:5002:0:Call|_test_sink|0|formal(arg):e89e0d97d39ad4c9aeffa0299b935629"
   }
 }
 {
@@ -195,8 +192,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-field" },
-              { "first-field": "bad" }
+              { "has": "first-field" }, { "first-field": "bad" }
             ],
             "call": {
               "position": {
@@ -245,8 +241,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "named_tuples.issue_with_inherited_named_tuple:5002:0:Call|_test_sink|0|formal(arg):7cc3bcce733ca7e014d258073ca4480f"
+    "master_handle": "named_tuples.issue_with_inherited_named_tuple:5002:0:Call|_test_sink|0|formal(arg):7cc3bcce733ca7e014d258073ca4480f"
   }
 }
 {
@@ -289,8 +284,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}"
+                    "name": "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}"
                   }
                 ],
                 "length": 1,
@@ -320,8 +314,7 @@
       "index": 0,
       "parameter": "formal(bad)"
     },
-    "master_handle":
-      "named_tuples.issue_with_named_tuple_with_tainted_attribute:5002:0:Call|named_tuples.NamedTupleWithTaintedAttribute.__init__|0|formal(bad):977049b125c3b118003728cf9b7cfb27"
+    "master_handle": "named_tuples.issue_with_named_tuple_with_tainted_attribute:5002:0:Call|named_tuples.NamedTupleWithTaintedAttribute.__init__|0|formal(bad):977049b125c3b118003728cf9b7cfb27"
   }
 }
 {
@@ -352,8 +345,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-field" },
-              { "first-field": "bad" }
+              { "has": "first-field" }, { "first-field": "bad" }
             ],
             "call": {
               "position": {
@@ -402,8 +394,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle":
-      "named_tuples.issue_with_old_school_named_tuples:5002:0:Call|_test_sink|0|formal(arg):7c43f1a34913fb7584197322a7b4c82d"
+    "master_handle": "named_tuples.issue_with_old_school_named_tuples:5002:0:Call|_test_sink|0|formal(arg):7c43f1a34913fb7584197322a7b4c82d"
   }
 }
 {
@@ -488,8 +479,7 @@
               { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -522,8 +512,7 @@
               {
                 "leaves": [
                   {
-                    "name":
-                      "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}"
+                    "name": "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}"
                   }
                 ],
                 "kind": "Test"
@@ -559,8 +548,7 @@
               { "return_paths": [ "[benign]" ], "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "always-type": "integer" },
-              { "always-type": "scalar" }
+              { "always-type": "integer" }, { "always-type": "scalar" }
             ],
             "decl": null
           }
@@ -682,8 +670,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" }
+              { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
             "root": {
               "filename": "named_tuples.py",
@@ -718,8 +705,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" }
+              { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
             "call": {
               "position": {

@@ -60,8 +60,7 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -69,8 +68,7 @@
       "index": 0,
       "parameter": "formal(x)"
     },
-    "master_handle":
-      "overloads.g:5002:0:Call|overloads.A.call_me|0|formal(x):6da1ae844af9a4d7bba8b27d3391213c"
+    "master_handle": "overloads.g:5002:0:Call|overloads.A.call_me|0|formal(x):6da1ae844af9a4d7bba8b27d3391213c"
   }
 }
 {

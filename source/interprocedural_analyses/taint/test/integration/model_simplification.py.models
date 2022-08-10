@@ -278,8 +278,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "object" },
-              { "always-via": "tito" }
+              { "always-via": "object" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 42, "start": 42, "end": 45 } ],
             "call": {
@@ -408,8 +407,7 @@
           {
             "kinds": [ { "return_paths": [ "" ], "kind": "LocalReturn" } ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "via": "tito" }
+              { "via": "obscure:model" }, { "via": "tito" }
             ],
             "tito": [
               { "line": 49, "start": 25, "end": 87 },
@@ -487,8 +485,7 @@
               { "return_paths": [ "" ], "length": 1, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "always-via": "tito" }
+              { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 34, "start": 25, "end": 28 } ],
             "decl": null
@@ -545,8 +542,7 @@
               { "return_paths": [ "" ], "length": 2, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "via": "obscure:model" },
-              { "always-via": "tito" }
+              { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 75, "start": 18, "end": 21 } ],
             "decl": null

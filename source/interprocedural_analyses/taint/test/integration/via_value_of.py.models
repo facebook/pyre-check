@@ -39,8 +39,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 1; name = feature; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = feature; positional_only = false}"
                   }
                 ],
                 "kind": "Attach"
@@ -54,8 +53,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 1; name = feature; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = feature; positional_only = false}"
                   }
                 ],
                 "leaves": [ { "name": "_test_sink" } ],
@@ -88,8 +86,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 0; name = parameter; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = parameter; positional_only = false}"
                   }
                 ],
                 "kind": "Attach"
@@ -103,8 +100,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 0; name = parameter; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = parameter; positional_only = false}"
                   }
                 ],
                 "leaves": [ { "name": "_test_source" } ],
@@ -286,8 +282,7 @@
                   {
                     "tag": "parameter",
                     "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 0; name = parameter; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = parameter; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -314,8 +309,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 0; name = parameter; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 0; name = parameter; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -342,8 +336,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 1; name = second; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = second; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -370,8 +363,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 1; name = y; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = y; positional_only = false}"
                   }
                 ],
                 "kind": "Test"
@@ -946,8 +938,7 @@
               { "leaves": [ { "name": "_test_source" } ], "kind": "Test" }
             ],
             "local_features": [
-              { "always-via-value": "second" },
-              { "always-via": "tito" }
+              { "always-via-value": "second" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 55, "start": 13, "end": 27 } ],
             "root": {
@@ -1329,8 +1320,7 @@
                 "via_features": [
                   {
                     "kind": "ViaValueOf",
-                    "parameter":
-                      "PositionalParameter {position = 1; name = other; positional_only = false}"
+                    "parameter": "PositionalParameter {position = 1; name = other; positional_only = false}"
                   }
                 ],
                 "return_paths": [ "" ],

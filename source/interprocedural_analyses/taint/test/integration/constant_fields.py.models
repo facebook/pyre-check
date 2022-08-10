@@ -169,8 +169,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" }
+              { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
             "root": {
               "filename": "constant_fields.py",
@@ -201,8 +200,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "CONSTANT_A" }
+              { "has": "first-index" }, { "first-index": "CONSTANT_A" }
             ],
             "root": {
               "filename": "constant_fields.py",
@@ -233,8 +231,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "CONSTANT_B" }
+              { "has": "first-index" }, { "first-index": "CONSTANT_B" }
             ],
             "root": {
               "filename": "constant_fields.py",
@@ -265,8 +262,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "TRACKED_FIELD" }
+              { "has": "first-index" }, { "first-index": "TRACKED_FIELD" }
             ],
             "root": {
               "filename": "constant_fields.py",
@@ -297,8 +293,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" }
+              { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
             "root": {
               "filename": "constant_fields.py",
@@ -329,8 +324,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" }
+              { "has": "first-index" }, { "first-index": "<unknown>" }
             ],
             "root": {
               "filename": "constant_fields.py",
