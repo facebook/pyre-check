@@ -1,2 +1,7 @@
 Flask
 lxml
+jsonpickle
+wsgiref
+requests
+mypy-boto3-acm
+Werkzeug

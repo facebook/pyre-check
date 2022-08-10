@@ -7,8 +7,8 @@
 # Source this file to run it:
 # . ./setup.sh
 
-pip install -r requirements.txt
-rm ../../.pyre_configuration
+#pip install -r requirements.txt
+#rm ../../.pyre_configuration
 echo '{
     "source_directories": ["."],
     "search_path": "../../stubs",
