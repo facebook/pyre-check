@@ -575,6 +575,33 @@ let test_check_local_refinement context =
       "Missing return annotation [3]: Return type is not specified.";
       "Missing parameter annotation [2]: Parameter `y` has no type specified.";
     ];
+  assert_type_errors
+    {|
+          from typing import Tuple
+          def foo(x: Tuple[int, ...], y) -> None:
+              reveal_type(x)
+              if not isinstance(x, type(y)):
+                  reveal_type(x)
+                  return
+              reveal_type(x)
+        |}
+    [
+      "Missing parameter annotation [2]: Parameter `y` has no type specified.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[int, ...]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[int, ...]`.";
+      "Revealed type [-1]: Revealed type for `x` is `typing.Tuple[int, ...]`.";
+    ];
+  (* TODO: T128657902 type refinement reachability incorrect for type(Any)) *)
+  assert_type_errors
+    {|
+          from typing import Any, Tuple
+          def foo(x: int) -> None:
+              reveal_type(x)
+              if isinstance(x, type(Any)):
+                  return
+              reveal_type(x)
+        |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
   ()
 
 

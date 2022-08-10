@@ -1406,6 +1406,13 @@ let test_forward_statement context =
         "x", Type.integer;
       ]
     ();
+  assert_refinement_by_type_comparison
+    ~precondition:["x", Type.string; "y", Type.Any]
+    ~negated:true
+    ~variable:"x"
+    ~type_expression:"y"
+    ~postcondition:["x", Type.string; "y", Type.Any]
+    ();
 
   (* Works for general expressions. *)
   assert_forward

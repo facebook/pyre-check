@@ -3237,34 +3237,38 @@ module State (Context : Context) = struct
             ];
         }
       when is_simple_name name ->
-        let type_ = parse_refinement_annotation annotation_expression in
+        let parsed_annotation = parse_refinement_annotation annotation_expression in
         let resolution =
           let refinement_unnecessary existing_annotation =
             annotation_less_or_equal
               ~left:existing_annotation
-              ~right:(Annotation.create_mutable type_)
+              ~right:(Annotation.create_mutable parsed_annotation)
             && (not (Type.equal (Annotation.annotation existing_annotation) Type.Bottom))
             && not (Type.equal (Annotation.annotation existing_annotation) Type.Any)
           in
           match existing_annotation name with
-          (* Allow Anys [especially from placeholder stubs] to clobber *)
-          | Some _ when Type.is_any type_ ->
-              Value (Annotation.create_mutable type_ |> refine_local ~name)
+          | Some _ when Type.is_any parsed_annotation -> Value resolution
+          | None -> Value resolution
           | Some existing_annotation when refinement_unnecessary existing_annotation ->
-              Value (refine_local ~name existing_annotation)
+              Value resolution
           (* Clarify Anys if possible *)
           | Some existing_annotation
             when Type.equal (Annotation.annotation existing_annotation) Type.Any ->
-              Value (Annotation.create_mutable type_ |> refine_local ~name)
-          | None -> Value resolution
+              Value (Annotation.create_mutable parsed_annotation |> refine_local ~name)
           | Some existing_annotation ->
               let existing_type = Annotation.annotation existing_annotation in
-              let { consistent_with_boundary; _ } = partition existing_type ~boundary:type_ in
+              let { consistent_with_boundary; _ } =
+                partition existing_type ~boundary:parsed_annotation
+              in
               if not (Type.is_unbound consistent_with_boundary) then
                 Value (Annotation.create_mutable consistent_with_boundary |> refine_local ~name)
-              else if GlobalResolution.types_are_orderable global_resolution existing_type type_
+              else if
+                GlobalResolution.types_are_orderable
+                  global_resolution
+                  existing_type
+                  parsed_annotation
               then
-                Value (Annotation.create_mutable type_ |> refine_local ~name)
+                Value (Annotation.create_mutable parsed_annotation |> refine_local ~name)
               else
                 Unreachable
         in
