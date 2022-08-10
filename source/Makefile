@@ -3,28 +3,25 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-.PHONY: all
-all: configure dev
-
 .PHONY: dev
-dev:
+dev: configure
 	@../scripts/generate-version-number.sh development
 	dune build @install -j auto --profile dev
 
 .PHONY: test
-test: all
+test: dev
 	@OUNIT_SHARDS="1" dune runtest -j auto --profile dev
 
 .PHONY: stubs_integration_test
-stubs_integration_test: all
+stubs_integration_test: dev
 	make -C ../stubs/integration_test
 
 .PHONY: pysa_cache_test
-pysa_cache_test: all
+pysa_cache_test: dev
 	PYRE_BINARY="$(shell pwd)/_build/default/main.exe" ../stubs/integration_test/run_cache_test.py
 
 .PHONY: fbtest
-fbtest: all
+fbtest: dev
 	if [ -d "$(shell pwd)/facebook" ]; then make -C ../facebook; fi
 
 .PHONY: release
