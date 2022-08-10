@@ -249,18 +249,17 @@ class Setup(NamedTuple):
 
         jobs = str(multiprocessing.cpu_count())
 
+        self.run(
+            ["make", self.make_arguments, "--jobs", jobs, "--directory", "source"],
+            pyre_directory,
+            add_environment_variables=opam_environment_variables,
+        )
         if run_tests:
             self.run(
                 ["make", "--jobs", jobs, "test", "--directory", "source"],
                 pyre_directory,
                 add_environment_variables=opam_environment_variables,
             )
-
-        self.run(
-            ["make", self.make_arguments, "--jobs", jobs, "--directory", "source"],
-            pyre_directory,
-            add_environment_variables=opam_environment_variables,
-        )
 
     def run(
         self,
