@@ -7,12 +7,12 @@ import unittest
 from pathlib import Path
 from typing import List
 
-from ..download_typeshed import _entry_path_to_patch_path, _find_entry, FileEntry
+from ..download_typeshed import PatchedTypeshed, FileEntry, _find_entry
 
 
 class EntryPathToPatchPathTest(unittest.TestCase):
     def assert_path_is(self, path: str, expected: Path) -> None:
-        self.assertEqual(_entry_path_to_patch_path(path), expected)
+        self.assertEqual(PatchedTypeshed._entry_path_to_patch_path(path), expected)
 
     def test_path_is(self) -> None:
         self.assert_path_is("typeshed-master/stubs/foo.pyi", Path("stubs/foo.patch"))

@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+from __future__ import annotations
+
 import argparse
 import dataclasses
 import io
@@ -48,14 +50,156 @@ class Statistics:
 
 
 @dataclasses.dataclass(frozen=True)
-class TypeshedPatchingResult:
-    results: List[PatchResult]
+class TrimmedTypeshed:
+    entries: List[FileEntry]
+    statistics: Statistics
+
+    @classmethod
+    def _from_zip_file(
+        cls,
+        zip_file: zipfile.ZipFile,
+    ) -> TrimmedTypeshed:
+        result_info = []
+
+        stdlib_kept_count = 0
+        stdlib_dropped_count = 0
+        third_party_kept_count = 0
+        third_party_dropped_count = 0
+        third_party_package_count = 0
+        for info in zip_file.infolist():
+            parts = pathlib.Path(info.filename).parts
+
+            if len(parts) <= 1:
+                # Entry for the top-level directory
+                result_info.append(info)
+            elif parts[1] == "stdlib":
+                # Python standard library
+                if "@python2" in parts:
+                    if not info.is_dir():
+                        stdlib_dropped_count += 1
+                else:
+                    if not info.is_dir():
+                        stdlib_kept_count += 1
+                    result_info.append(info)
+
+            elif parts[1] == "stubs":
+                # Third-party libraries
+                if "@python2" in parts:
+                    if not info.is_dir():
+                        third_party_dropped_count += 1
+                else:
+                    if not info.is_dir():
+                        third_party_kept_count += 1
+                    elif len(parts) == 3:
+                        # Top-level directory of a third-party stub
+                        third_party_package_count += 1
+                    result_info.append(info)
+
+        return cls(
+            entries=[
+                FileEntry(
+                    # Other scripts expect the toplevel directory name to be
+                    # `typeshed-master`
+                    path=str(
+                        pathlib.Path("typeshed-master").joinpath(
+                            *pathlib.Path(info.filename).parts[1:]
+                        )
+                    ),
+                    data=None if info.is_dir() else zip_file.read(info),
+                )
+                for info in result_info
+            ],
+            statistics=Statistics(
+                stdlib=FileCount(kept=stdlib_kept_count, dropped=stdlib_dropped_count),
+                third_party=FileCount(
+                    kept=third_party_kept_count, dropped=third_party_dropped_count
+                ),
+                third_party_package_count=third_party_package_count,
+            ),
+        )
+
+    @classmethod
+    def from_raw_zip(cls, downloaded: io.BytesIO) -> TrimmedTypeshed:
+        with zipfile.ZipFile(downloaded) as zip_file:
+            return cls._from_zip_file(zip_file)
+
+    def log_statistics(self) -> None:
+        statistics = self.statistics
+        LOG.info(
+            f"Kept {statistics.stdlib.kept} files and dropped "
+            + f"{statistics.stdlib.dropped} files from stdlib."
+        )
+        LOG.info(
+            f"Kept {statistics.third_party.kept} files and dropped "
+            + f"{statistics.third_party.dropped} files from third-party libraries."
+        )
+        LOG.info(
+            "Total number of third-party packages is "
+            + f"{statistics.third_party_package_count}."
+        )
+
 
 
 @dataclasses.dataclass(frozen=True)
-class TypeshedTrimmingResult:
-    entries: List[FileEntry]
-    statistics: Statistics
+class PatchedTypeshed:
+    results: List[PatchResult]
+
+    @staticmethod
+    def _patch_entry(
+        entry: FileEntry, temporary_path: Path, patch_path: Path
+    ) -> PatchResult:
+        if entry.data is None or not patch_path.is_file():
+            return PatchResult(entry, False)
+
+        new_filepath = temporary_path / "tempfile"
+        new_filepath.write_bytes(entry.data)
+
+        LOG.info(f"Applying patch {patch_path}")
+        result = subprocess.run(["patch", "-u", new_filepath, "-i", patch_path])
+        if result.returncode != 0:
+            # This is an output location used by the `patch` tool. Try to print
+            # the failed patch before raising (because it gets removed during
+            # tempfile cleanup, which makes debugging more time-consuming).
+            try:
+                reject_file = temporary_path / "tempfile.rej"
+                rejected_patch = reject_file.read_text()
+                LOG.error(f"Failed to apply patch. Rejected patch: {rejected_patch}")
+            except FileNotFoundError:
+                pass
+            finally:
+                raise RuntimeError(f"Failed to apply patch at {patch_path}")
+
+        new_data = new_filepath.read_bytes()
+
+        new_filepath.unlink()
+
+        return PatchResult(FileEntry(entry.path, new_data), False)
+
+
+    @staticmethod
+    def _entry_path_to_patch_path(input: str) -> Path:
+        """Removes the first component of the path, and changes the suffix to `.patch`."""
+        parts = Path(input).with_suffix(".patch").parts
+        return Path("/".join(parts[1:]))
+
+
+    @classmethod
+    def from_trimmed_typeshed(
+        cls, patch_directory: Path, trimmed_typeshed: TrimmedTypeshed
+    ) -> PatchedTypeshed:
+        with tempfile.TemporaryDirectory() as temporary_root:
+            temporary_root_path = Path(temporary_root)
+
+            return cls(
+                [
+                    cls._patch_entry(
+                        entry,
+                        temporary_root_path,
+                        patch_directory / cls._entry_path_to_patch_path(entry.path),
+                    )
+                    for entry in trimmed_typeshed.entries
+                ]
+            )
 
 
 def get_default_typeshed_url() -> str:
@@ -84,67 +228,6 @@ def get_typeshed_url(specified_url: Optional[str] = None) -> str:
     return default_url
 
 
-def trim_typeshed_zip(zip_file: zipfile.ZipFile) -> TypeshedTrimmingResult:
-    result_info = []
-
-    stdlib_kept_count = 0
-    stdlib_dropped_count = 0
-    third_party_kept_count = 0
-    third_party_dropped_count = 0
-    third_party_package_count = 0
-    for info in zip_file.infolist():
-        parts = pathlib.Path(info.filename).parts
-
-        if len(parts) <= 1:
-            # Entry for the top-level directory
-            result_info.append(info)
-        elif parts[1] == "stdlib":
-            # Python standard library
-            if "@python2" in parts:
-                if not info.is_dir():
-                    stdlib_dropped_count += 1
-            else:
-                if not info.is_dir():
-                    stdlib_kept_count += 1
-                result_info.append(info)
-
-        elif parts[1] == "stubs":
-            # Third-party libraries
-            if "@python2" in parts:
-                if not info.is_dir():
-                    third_party_dropped_count += 1
-            else:
-                if not info.is_dir():
-                    third_party_kept_count += 1
-                elif len(parts) == 3:
-                    # Top-level directory of a third-party stub
-                    third_party_package_count += 1
-                result_info.append(info)
-
-    return TypeshedTrimmingResult(
-        entries=[
-            FileEntry(
-                # Other scripts expect the toplevel directory name to be
-                # `typeshed-master`
-                path=str(
-                    pathlib.Path("typeshed-master").joinpath(
-                        *pathlib.Path(info.filename).parts[1:]
-                    )
-                ),
-                data=None if info.is_dir() else zip_file.read(info),
-            )
-            for info in result_info
-        ],
-        statistics=Statistics(
-            stdlib=FileCount(kept=stdlib_kept_count, dropped=stdlib_dropped_count),
-            third_party=FileCount(
-                kept=third_party_kept_count, dropped=third_party_dropped_count
-            ),
-            third_party_package_count=third_party_package_count,
-        ),
-    )
-
-
 def download_typeshed(url: str) -> io.BytesIO:
     downloaded = io.BytesIO()
     with urllib.request.urlopen(url) as response:
@@ -152,27 +235,9 @@ def download_typeshed(url: str) -> io.BytesIO:
     return downloaded
 
 
-def trim_typeshed(downloaded: io.BytesIO) -> TypeshedTrimmingResult:
-    with zipfile.ZipFile(downloaded) as zip_file:
-        return trim_typeshed_zip(zip_file)
 
 
-def log_trim_statistics(statistics: Statistics) -> None:
-    LOG.info(
-        f"Kept {statistics.stdlib.kept} files and dropped "
-        + f"{statistics.stdlib.dropped} files from stdlib."
-    )
-    LOG.info(
-        f"Kept {statistics.third_party.kept} files and dropped "
-        + f"{statistics.third_party.dropped} files from third-party libraries."
-    )
-    LOG.info(
-        "Total number of third-party packages is "
-        + f"{statistics.third_party_package_count}."
-    )
-
-
-def write_output(patched_typeshed: TypeshedPatchingResult, output: str) -> None:
+def write_output(patched_typeshed: PatchedTypeshed, output: str) -> None:
     with zipfile.ZipFile(output, mode="w") as output_file:
         for patch_result in patched_typeshed.results:
             data = patch_result.entry.data
@@ -197,59 +262,6 @@ def _find_entry(typeshed_path: Path, entries: List[FileEntry]) -> Optional[FileE
     return None
 
 
-def _patch_entry(
-    entry: FileEntry, temporary_path: Path, patch_path: Path
-) -> PatchResult:
-    if entry.data is None or not patch_path.is_file():
-        return PatchResult(entry, False)
-
-    new_filepath = temporary_path / "tempfile"
-    new_filepath.write_bytes(entry.data)
-
-    LOG.info(f"Applying patch {patch_path}")
-    result = subprocess.run(["patch", "-u", new_filepath, "-i", patch_path])
-    if result.returncode != 0:
-        # This is an output location used by the `patch` tool. Try to print
-        # the failed patch before raising (because it gets removed during
-        # tempfile cleanup, which makes debugging more time-consuming).
-        try:
-            reject_file = temporary_path / "tempfile.rej"
-            rejected_patch = reject_file.read_text()
-            LOG.error(f"Failed to apply patch. Rejected patch: {rejected_patch}")
-        except FileNotFoundError:
-            pass
-        finally:
-            raise RuntimeError(f"Failed to apply patch at {patch_path}")
-
-    new_data = new_filepath.read_bytes()
-
-    new_filepath.unlink()
-
-    return PatchResult(FileEntry(entry.path, new_data), False)
-
-
-def _entry_path_to_patch_path(input: str) -> Path:
-    """Removes the first component of the path, and changes the suffix to `.patch`."""
-    parts = Path(input).with_suffix(".patch").parts
-    return Path("/".join(parts[1:]))
-
-
-def _apply_patches(
-    patch_directory: Path, trimmed_typeshed: TypeshedTrimmingResult
-) -> TypeshedPatchingResult:
-    with tempfile.TemporaryDirectory() as temporary_root:
-        temporary_root_path = Path(temporary_root)
-
-        return TypeshedPatchingResult(
-            [
-                _patch_entry(
-                    entry,
-                    temporary_root_path,
-                    patch_directory / _entry_path_to_patch_path(entry.path),
-                )
-                for entry in trimmed_typeshed.entries
-            ]
-        )
 
 
 def main() -> None:
@@ -288,9 +300,9 @@ def main() -> None:
     url = get_typeshed_url(arguments.url)
     downloaded = download_typeshed(url)
     LOG.info(f"{downloaded.getbuffer().nbytes} bytes downloaded from {url}")
-    trimmed_typeshed = trim_typeshed(downloaded)
-    log_trim_statistics(trimmed_typeshed.statistics)
-    patched_typeshed = _apply_patches(patch_directory, trimmed_typeshed)
+    trimmed_typeshed = TrimmedTypeshed.from_raw_zip(downloaded)
+    trimmed_typeshed.log_statistics()
+    patched_typeshed = PatchedTypeshed.from_trimmed_typeshed(patch_directory, trimmed_typeshed)
     write_output(patched_typeshed, arguments.output)
     LOG.info(f"Zip file written to {arguments.output}")
 
