@@ -1,0 +1,18 @@
+--- /tmp/tmpkl413od9/tempfile	2022-08-10 13:43:31.853809973 -0700
++++ /tmp/tmpkl413od9/tempfile2	2022-08-10 13:44:56.836126621 -0700
+@@ -23,14 +23,11 @@
+ from typing import IO, Any, AnyStr, BinaryIO, Generic, NoReturn, Protocol, TypeVar, overload, runtime_checkable
+ from typing_extensions import Final, Literal, TypeAlias, final
+ 
+-from . import path as _path
++from . import path
+ 
+ if sys.version_info >= (3, 9):
+     from types import GenericAlias
+ 
+-# This unnecessary alias is to work around various errors
+-path = _path
+-
+ _T = TypeVar("_T")
+ _T1 = TypeVar("_T1")
+ _T2 = TypeVar("_T2")
