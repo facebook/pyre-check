@@ -924,7 +924,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
+              { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 296, "start": 38, "end": 52 } ],
             "root": {
@@ -960,7 +960,7 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
+      { "via": "obscure:model" },
       { "always-via": "tito" }
     ],
     "sink_handle": {
@@ -996,7 +996,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
+              { "via": "obscure:model" }, { "always-via": "tito" }
             ],
             "tito": [ { "line": 301, "start": 41, "end": 55 } ],
             "root": {
@@ -1032,7 +1032,7 @@
     "features": [
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
+      { "via": "obscure:model" },
       { "always-via": "tito" }
     ],
     "sink_handle": {
@@ -1382,8 +1382,7 @@
           }
         ]
       }
-    ],
-    "modes": [ "Obscure" ]
+    ]
   }
 }
 {
@@ -1443,13 +1442,12 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
-              { "always-via": "obscure:model" },
+              { "via": "obscure:model" },
               { "always-via": "tito" }
             ],
             "tito": [
               { "line": 288, "start": 16, "end": 58 },
-              { "line": 288, "start": 52, "end": 57 },
-              { "line": 288, "start": 64, "end": 67 }
+              { "line": 288, "start": 52, "end": 57 }
             ],
             "decl": null
           }
@@ -1494,7 +1492,7 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
-              { "always-via": "obscure:model" },
+              { "via": "obscure:model" },
               { "always-via": "tito" }
             ],
             "tito": [
@@ -2492,7 +2490,6 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
-              { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
             "tito": [ { "line": 356, "start": 15, "end": 16 } ],
@@ -2506,83 +2503,6 @@
         ]
       }
     ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "dictionary.test_dict_sanitize_get",
-    "callable_line": 355,
-    "code": 5002,
-    "line": 356,
-    "start": 15,
-    "end": 36,
-    "filename": "dictionary.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [ { "name": "_test_source" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" },
-              { "first-index": "<unknown>" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
-            ],
-            "tito": [ { "line": 356, "start": 21, "end": 35 } ],
-            "root": {
-              "filename": "dictionary.py",
-              "line": 356,
-              "start": 21,
-              "end": 35
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "root": {
-              "filename": "dictionary.py",
-              "line": 356,
-              "start": 15,
-              "end": 36
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "<unknown>" },
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
-      { "always-via": "tito" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "dictionary.test_dict_sanitize_get:5002:0:Call|_test_sink|0|formal(arg):6554fd883c579ae7857da847186612e0"
   }
 }
 {
@@ -2691,7 +2611,6 @@
             "local_features": [
               { "has": "first-index" },
               { "first-index": "<unknown>" },
-              { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
             "tito": [ { "line": 364, "start": 15, "end": 16 } ],
@@ -2962,7 +2881,6 @@
         ]
       }
     ],
-    "sanitizers": [ { "port": "formal(__key)", "tito": "All" } ],
-    "modes": [ "Obscure" ]
+    "sanitizers": [ { "port": "formal(__key)", "tito": "All" } ]
   }
 }

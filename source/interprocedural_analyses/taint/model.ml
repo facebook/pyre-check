@@ -631,8 +631,17 @@ let join_every_frame_with_attach
   { forward = { source_taint }; backward = { taint_in_taint_out; sink_taint }; sanitizers; modes }
 
 
-let join_user_models left right =
-  join left right |> join_every_frame_with_attach |> may_breadcrumbs_to_must
+let join_user_models ({ modes = left_modes; _ } as left) ({ modes = right_modes; _ } as right) =
+  let update_obscure_mode ({ modes; _ } as model) =
+    (* If one model has @SkipObscure and the other does not, we expect the joined model to also have
+       @SkipObscure *)
+    if (not (ModeSet.contains Obscure left_modes)) || not (ModeSet.contains Obscure right_modes)
+    then
+      { model with modes = ModeSet.subtract (ModeSet.singleton Obscure) ~from:modes }
+    else
+      model
+  in
+  join left right |> update_obscure_mode |> join_every_frame_with_attach |> may_breadcrumbs_to_must
 
 
 let to_json
