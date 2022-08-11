@@ -773,6 +773,32 @@ def persistent(context: click.Context) -> int:
 
 
 @pyre.command()
+@click.option(
+    "--profile-output",
+    type=click.Choice([str(x) for x in command_arguments.ProfileOutput]),
+    default=str(command_arguments.ProfileOutput.COLD_START_PHASES),
+    help="Specify what to output.",
+)
+@click.pass_context
+def profile(context: click.Context, profile_output: str) -> int:
+    """
+    Display profiling output.
+    """
+
+    def get_profile_output(profile_output: str) -> command_arguments.ProfileOutput:
+        for item in command_arguments.ProfileOutput:
+            if str(item) == profile_output:
+                return item
+        raise ValueError(f"Unrecognized value for --profile-output: {profile_output}")
+
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
+    return commands.profile.run(configuration, get_profile_output(profile_output))
+
+
+@pyre.command()
 @click.option("--no-watchman", is_flag=True, default=False, hidden=True)
 @click.pass_context
 def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
@@ -810,32 +836,6 @@ def pysa_language_server(context: click.Context, no_watchman: bool) -> int:
             wait_on_initialization=True,
         ),
     )
-
-
-@pyre.command()
-@click.option(
-    "--profile-output",
-    type=click.Choice([str(x) for x in command_arguments.ProfileOutput]),
-    default=str(command_arguments.ProfileOutput.COLD_START_PHASES),
-    help="Specify what to output.",
-)
-@click.pass_context
-def profile(context: click.Context, profile_output: str) -> int:
-    """
-    Display profiling output.
-    """
-
-    def get_profile_output(profile_output: str) -> command_arguments.ProfileOutput:
-        for item in command_arguments.ProfileOutput:
-            if str(item) == profile_output:
-                return item
-        raise ValueError(f"Unrecognized value for --profile-output: {profile_output}")
-
-    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    configuration = configuration_module.create_configuration(
-        command_argument, Path(".")
-    )
-    return commands.profile.run(configuration, get_profile_output(profile_output))
 
 
 @pyre.command()
