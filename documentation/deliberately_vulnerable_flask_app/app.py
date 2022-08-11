@@ -5,14 +5,18 @@
 
 import sqlite3
 import subprocess
+import smtplib
+from pathlib import Path
 
 import flask
+import jsonpickle
 import requests
+
 from flask import Flask, render_template
 from lxml import etree
+from werkzeug.utils import redirect
 
 app = Flask(__name__)
-
 
 @app.route("/rce/<string:payload>")
 def definite_rce(payload: str) -> None:
@@ -35,7 +39,6 @@ def definite_pt(payload: str) -> str:
     text = f.read()
     return text
 
-
 @app.route("/xss/<string:payload>")
 def definite_xss(payload: str) -> None:
     content = flask.Markup(payload)
@@ -57,3 +60,45 @@ def definite_ssrf(payload: str) -> None:
 @app.route("/xxe/<string:payload>")
 def definite_xxe(payload: str) -> None:
     etree.fromstring(payload)
+
+@app.route("/getattr_tp/<string:payload>")
+def user_data_to_getattr_tp(payload: str) -> None:
+    jsonpickle.unpickler.loadclass(payload)
+
+@app.route("/getattr_tn/<string:payload>")
+def user_data_to_getattr_tn(payload: str) -> None:
+    payload = "payload"
+    jsonpickle.unpickler.loadclass(payload)
+
+@app.route("/user_data_to_filesystem_read_write_tp/<path:payload>")
+def user_data_to_filesystem_read_write_tp(payload: Path) -> None:
+    with open(payload) as f:
+        data = f.read()
+    return data
+
+@app.route("/open_redirect_tp/<string:payload>")
+def open_redirect_tp(payload: str) -> None:
+    redirect(payload)
+
+@app.route("/open_redirect_tn/<int:payload>")
+def open_redirect_tn(payload: int) -> None:
+    redirect("test", payload)
+
+@app.route("/user_controlled_data_to_email_send_to_users_tp/<string:payload>")
+def user_controlled_data_to_email_send_to_users_tp(payload: str) -> None:
+    smtp_obj = smtplib.SMTP("test", 123, "test", 3000)
+    smtp_obj.sendmail("test", "test", payload)
+
+@app.route("/user_controlled_data_to_email_send_to_users_tn/<string:payload>")
+def user_controlled_data_to_email_send_to_users_tn(payload: str) -> None:
+    payload = "test"
+    smtp_obj = smtplib.SMTP("test", 123, "test", 3000)
+    smtp_obj.sendmail("test", "test", payload)
+
+@app.route("/user_controlled_data_flows_into_url_like_string_tp/<string:payload>")
+def user_controlled_data_flows_into_url_like_string_tp(payload: str) -> None:
+    url = "https://test/" + payload # noqa
+
+@app.route("/user_controlled_data_flows_into_url_like_string_tn/<string:payload>")
+def user_controlled_data_flows_into_url_like_string_tn(payload: str) -> None:
+    url = "test/" + payload # noqa
