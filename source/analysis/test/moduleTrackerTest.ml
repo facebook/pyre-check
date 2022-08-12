@@ -1729,6 +1729,55 @@ let test_update_lazy_tracker context =
   ()
 
 
+let test_invalidate_lazy_tracker_cache context =
+  let open Test in
+  let open Pyre in
+  let ({ Configuration.Analysis.local_root; _ } as configuration), _ =
+    create_test_configuration
+      ~context
+      ~local_tree:[TestFiles.File "package/a.py"; TestFiles.File "package/b.py"]
+      ~external_tree:[]
+  in
+  let tracker =
+    EnvironmentControls.create configuration ~use_lazy_module_tracking:true |> ModuleTracker.create
+  in
+  let read_only = ModuleTracker.read_only tracker in
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: Reference.t option]
+    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.a" >>| ModulePath.qualifier)
+    (Some !&"package.a");
+  (* Remove the entire directory *)
+  PyrePath.create_relative ~root:local_root ~relative:"package"
+  |> PyrePath.remove_contents_of_directory
+  |> ignore;
+  let artifact_paths =
+    ["package/a.py"]
+    |> List.map ~f:(fun relative -> PyrePath.create_relative ~root:local_root ~relative)
+    |> List.map ~f:ArtifactPath.create
+  in
+  (* Verify that the lazy tracker only updates the qualifier we actually looked up *)
+  let updates = ModuleTracker.update tracker ~artifact_paths in
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: ModuleTracker.IncrementalUpdate.t list]
+    [ModuleTracker.IncrementalUpdate.Delete !&"package.a"]
+    updates;
+  (* Verify that both the previously-read and non-previously-read modules no longer exist if we
+     remove the entire directory. *)
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: Reference.t option]
+    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.a" >>| ModulePath.qualifier)
+    None;
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: Reference.t option]
+    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.b" >>| ModulePath.qualifier)
+    None;
+  ()
+
+
 let make_overlay_testing_functions ~context ~configuration ~local_root ~parent_tracker =
   let tracker = ModuleTracker.read_only parent_tracker |> ModuleTracker.Overlay.create in
   let read_only = ModuleTracker.Overlay.read_only tracker in
@@ -1897,6 +1946,7 @@ let () =
          "update_changed_files" >:: test_update_changed_files;
          "update_implicits" >:: test_update_implicits;
          "update_lazy_tracker" >:: test_update_lazy_tracker;
+         "invalidate_lazy_tracker_cache" >:: test_invalidate_lazy_tracker_cache;
          "overlay_basic" >:: test_overlay_basic;
          "overlay_code_hiding" >:: test_overlay_code_hiding;
        ]
