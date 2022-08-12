@@ -154,7 +154,25 @@ module ModulePaths = struct
       Configuration.Analysis.search_paths configuration |> List.filter_map ~f:find_in_root
 
 
-    let find_module_paths_inside_directories_all_search_paths ~configuration qualifier =
+    module Cache =
+      SharedMemory.FirstClass.WithCache.Make
+        (SharedMemoryKeys.ReferenceKey)
+        (struct
+          type t = ModulePath.t list [@@deriving compare]
+
+          let prefix = Prefix.make ()
+
+          let description = "CachedDirectoryRead"
+        end)
+
+    type t = {
+      cache: Cache.t;
+      configuration: Configuration.Analysis.t;
+    }
+
+    let create configuration = { cache = Cache.create (); configuration }
+
+    let find_module_paths_inside_directories_all_search_paths_no_cache ~configuration qualifier =
       let finder = Finder.create configuration in
       let list_directory path =
         (* Technically this operation is subject to race conditions, so be careful here *)
@@ -170,20 +188,37 @@ module ModulePaths = struct
       |> List.filter_map ~f:(ModulePath.create ~configuration)
 
 
+    (* Given a qualifier, find all ModulePath.t values corresponding to directories whose relative
+       path match that qualfiier (across all search roots). *)
+    let find_module_paths_inside_directories_all_search_paths { cache; configuration } qualifier =
+      match Cache.get cache qualifier with
+      | Some value -> value
+      | None ->
+          let value =
+            find_module_paths_inside_directories_all_search_paths_no_cache ~configuration qualifier
+          in
+          let () = Cache.add cache qualifier value in
+          value
+
+
+    let invalidate { cache; _ } qualifier =
+      qualifier :: Reference.prefixes qualifier |> Cache.KeySet.of_list |> Cache.remove_batch cache
+
+
     (* Given a qualifier, find all ModulePath.t values for that qualifier (across all search roots) *)
-    let find_module_paths ~configuration qualifier =
+    let find_module_paths ~lazy_finder:({ configuration; _ } as lazy_finder) qualifier =
       let non_init_files =
         (* Using Reference.empty as the "parent" of Reference.empty - which actually comes from
            builtins.pyi - leads to correct behavior here. *)
         let parent_qualifier =
           Reference.prefix qualifier |> Option.value ~default:Reference.empty
         in
-        find_module_paths_inside_directories_all_search_paths ~configuration parent_qualifier
+        find_module_paths_inside_directories_all_search_paths lazy_finder parent_qualifier
         |> List.filter ~f:(fun module_path ->
                ModulePath.qualifier module_path |> Reference.equal qualifier)
       in
       let init_files =
-        find_module_paths_inside_directories_all_search_paths ~configuration qualifier
+        find_module_paths_inside_directories_all_search_paths lazy_finder qualifier
         |> List.filter ~f:ModulePath.is_init
       in
       List.sort
@@ -191,8 +226,8 @@ module ModulePaths = struct
         ~compare:(ModulePath.same_module_compare ~configuration)
 
 
-    let find_submodule_paths ~configuration qualifier =
-      find_module_paths_inside_directories_all_search_paths ~configuration qualifier
+    let find_submodule_paths ~lazy_finder qualifier =
+      find_module_paths_inside_directories_all_search_paths lazy_finder qualifier
       |> List.map ~f:ModulePath.raw
       |> ModulePath.Raw.Set.of_list
   end
@@ -238,7 +273,7 @@ module LazyTracking = struct
 
       val description : string
 
-      val produce : configuration:Configuration.Analysis.t -> Reference.t -> t
+      val produce : lazy_finder:ModulePaths.LazyFinder.t -> Reference.t -> t
     end
 
     module Make (Value : LazyValue) = struct
@@ -255,10 +290,10 @@ module LazyTracking = struct
 
       type t = {
         shared_memory: SharedMemory.t;
-        configuration: Configuration.Analysis.t;
+        lazy_finder: ModulePaths.LazyFinder.t;
       }
 
-      let create ~configuration = { shared_memory = SharedMemory.create (); configuration }
+      let create ~lazy_finder = { shared_memory = SharedMemory.create (); lazy_finder }
 
       let set { shared_memory; _ } qualifier value =
         SharedMemory.remove_batch shared_memory (SharedMemory.KeySet.of_list [qualifier]);
@@ -270,11 +305,11 @@ module LazyTracking = struct
 
       let key_exists { shared_memory; _ } qualifier = SharedMemory.mem shared_memory qualifier
 
-      let find ({ shared_memory; configuration } as table) qualifier =
+      let find ({ shared_memory; lazy_finder } as table) qualifier =
         match SharedMemory.get shared_memory qualifier with
         | Some value -> Some value
         | None ->
-            let value = Value.produce ~configuration qualifier in
+            let value = Value.produce ~lazy_finder qualifier in
             let () = set table qualifier value in
             Some value
     end
@@ -704,13 +739,19 @@ module Layouts = struct
     type t = {
       explicit_modules: ExplicitModules.Table.Api.t;
       implicit_modules: ImplicitModules.Table.Api.t;
+      process_module_path_updates: ModulePaths.Update.t list -> unit;
       store: unit -> unit;
     }
 
-    let update ~configuration ~artifact_paths { explicit_modules; implicit_modules; _ } =
+    let update
+        ~configuration
+        ~artifact_paths
+        { explicit_modules; implicit_modules; process_module_path_updates; _ }
+      =
       let module_path_updates =
         ModulePaths.Update.from_artifact_paths ~configuration artifact_paths
       in
+      let () = process_module_path_updates module_path_updates in
       let explicit_updates =
         ExplicitModules.Table.Api.update_module_paths
           ~configuration
@@ -808,28 +849,42 @@ module Layouts = struct
         {
           explicit_modules = ExplicitModules.Table.Eager.to_api explicit_modules;
           implicit_modules = ImplicitModules.Table.Eager.to_api implicit_modules;
+          process_module_path_updates = ignore;
           store = (fun () -> Serializer.store layouts);
         }
   end
 
   module Lazy = struct
     type t = {
+      lazy_finder: ModulePaths.LazyFinder.t;
       explicit_modules: ExplicitModules.Table.Lazy.t;
       implicit_modules: ImplicitModules.Table.Lazy.t;
     }
 
     let create ~controls =
-      let configuration = EnvironmentControls.configuration controls in
-      let explicit_modules = ExplicitModules.Table.Lazy.create ~configuration in
-      let implicit_modules = ImplicitModules.Table.Lazy.create ~configuration in
-      { explicit_modules; implicit_modules }
+      let lazy_finder =
+        EnvironmentControls.configuration controls |> ModulePaths.LazyFinder.create
+      in
+      let explicit_modules = ExplicitModules.Table.Lazy.create ~lazy_finder in
+      let implicit_modules = ImplicitModules.Table.Lazy.create ~lazy_finder in
+      { lazy_finder; explicit_modules; implicit_modules }
 
 
-    let to_api { explicit_modules; implicit_modules } =
+    let process_module_path_updates ~lazy_finder module_path_updates =
+      let invalidate_cache module_path_update =
+        ModulePaths.Update.module_path module_path_update
+        |> ModulePath.qualifier
+        |> ModulePaths.LazyFinder.invalidate lazy_finder
+      in
+      List.iter module_path_updates ~f:invalidate_cache
+
+
+    let to_api { lazy_finder; explicit_modules; implicit_modules } =
       Api.
         {
           explicit_modules = ExplicitModules.Table.Lazy.to_api explicit_modules;
           implicit_modules = ImplicitModules.Table.Lazy.to_api implicit_modules;
+          process_module_path_updates = process_module_path_updates ~lazy_finder;
           store = (fun () -> failwith "Lazy ModuleTrackers cannot be stored");
         }
   end
