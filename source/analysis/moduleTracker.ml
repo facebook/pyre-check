@@ -158,7 +158,7 @@ module ModulePaths = struct
       SharedMemory.FirstClass.WithCache.Make
         (SharedMemoryKeys.ReferenceKey)
         (struct
-          type t = ModulePath.t list Reference.Map.Tree.t
+          type t = ModulePath.t list Identifier.Map.Tree.t
 
           let prefix = Prefix.make ()
 
@@ -189,11 +189,14 @@ module ModulePaths = struct
         |> List.filter_map ~f:(ModulePath.create ~configuration)
       in
       let sort_by_qualifier so_far module_path =
-        Reference.Map.Tree.update so_far (ModulePath.qualifier module_path) ~f:(function
+        Identifier.Map.Tree.update
+          so_far
+          (ModulePath.qualifier module_path |> Reference.last)
+          ~f:(function
             | None -> [module_path]
             | Some module_paths -> module_path :: module_paths)
       in
-      List.fold module_paths ~init:Reference.Map.Tree.empty ~f:sort_by_qualifier
+      List.fold module_paths ~init:Identifier.Map.Tree.empty ~f:sort_by_qualifier
 
 
     (* Given a qualifier, find all ModulePath.t values corresponding to directories whose relative
@@ -222,12 +225,13 @@ module ModulePaths = struct
           Reference.prefix qualifier |> Option.value ~default:Reference.empty
         in
         find_module_paths_inside_directories_all_search_paths lazy_finder parent_qualifier
-        |> (fun map -> Reference.Map.Tree.find map qualifier)
+        |> (fun map -> Identifier.Map.Tree.find map (Reference.last qualifier))
         |> Option.value ~default:[]
       in
       let init_files =
         find_module_paths_inside_directories_all_search_paths lazy_finder qualifier
-        |> fun map -> Reference.Map.Tree.find map qualifier |> Option.value ~default:[]
+        |> fun map ->
+        Identifier.Map.Tree.find map (Reference.last qualifier) |> Option.value ~default:[]
       in
       List.sort
         (List.append init_files non_init_files)
@@ -236,7 +240,7 @@ module ModulePaths = struct
 
     let find_submodule_paths ~lazy_finder qualifier =
       find_module_paths_inside_directories_all_search_paths lazy_finder qualifier
-      |> Reference.Map.Tree.data
+      |> Identifier.Map.Tree.data
       |> List.concat
       |> List.map ~f:ModulePath.raw
       |> ModulePath.Raw.Set.of_list
