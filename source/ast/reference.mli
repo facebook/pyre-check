@@ -73,6 +73,8 @@ val last : t -> Identifier.t
 
 val map_last : f:(Identifier.t -> Identifier.t) -> t -> t
 
+val prefixes : t -> t list
+
 (* Given a reference (which is assumed to not be a qualifier), what are all possible qualifiers
    containing it? We cannot simply use the prefix because of nested classes. Because Reference.t
    values might be localized, we always delocalize first. *)
