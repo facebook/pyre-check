@@ -186,6 +186,12 @@ module ModulePaths = struct
       List.sort
         (List.append init_files non_init_files)
         ~compare:(ModulePath.same_module_compare ~configuration)
+
+
+    let find_submodule_paths ~configuration qualifier =
+      directory_children ~configuration qualifier
+      |> List.filter_map ~f:(ModulePath.Raw.create ~configuration)
+      |> ModulePath.Raw.Set.of_list
   end
 
   module Update = struct
@@ -638,10 +644,7 @@ module ImplicitModules = struct
       include LazyTracking.Table.Make (struct
         include Value
 
-        let produce ~configuration qualifier =
-          ModulePaths.LazyFinder.directory_children ~configuration qualifier
-          |> List.filter_map ~f:(ModulePath.Raw.create ~configuration)
-          |> ModulePath.Raw.Set.of_list
+        let produce = ModulePaths.LazyFinder.find_submodule_paths
       end)
 
       let to_api table =
