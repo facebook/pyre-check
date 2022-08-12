@@ -11,17 +11,23 @@ from pathlib import Path
 
 from .. import log
 from ..find_directories import find_taint_models_directory
+
 from . import commands
+from .initialize import (
+    get_configuration_and_path,
+    InitializationException,
+    write_configuration,
+)
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class PysaInitializationError(Exception):
-    pass
-
-
 def run() -> int:
     try:
+        configuration, configuration_path = get_configuration_and_path(
+            taint_models_directory_required=True
+        )
+        write_configuration(configuration, configuration_path)
         working_directory = Path(os.getcwd()).resolve()
         # Check if venv is in working_directory
         venv_path = (
@@ -33,7 +39,7 @@ def run() -> int:
         if venv_path is not None and str(working_directory) in str(
             venv_path.parent.absolute()
         ):
-            raise PysaInitializationError(
+            raise InitializationException(
                 "Can't use a virtual environment in the project directory."
                 " Please use one outside the project directory."
             )
