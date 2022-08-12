@@ -46,7 +46,50 @@ module CodeNavigationConfiguration = struct
     | other_exception -> Result.Error (Exn.to_string other_exception)
 end
 
-let run_server _configuration_file = failwith "not implemented yet"
+let run_server configuration_file =
+  match
+    CommandStartup.read_and_parse_json configuration_file ~f:CodeNavigationConfiguration.of_yojson
+  with
+  | Result.Error message ->
+      Log.error "%s" message;
+      exit 1
+  | Result.Ok
+      {
+        CodeNavigationConfiguration.base =
+          {
+            CommandStartup.BaseConfiguration.log_path;
+            global_root;
+            local_root;
+            debug;
+            remote_logging;
+            profiling_output;
+            memory_profiling_output;
+            _;
+          };
+        additional_logging_sections;
+        _;
+      } ->
+      CommandStartup.setup_global_states
+        ~global_root
+        ~local_root
+        ~debug
+        ~additional_logging_sections
+        ~remote_logging
+        ~profiling_output
+        ~memory_profiling_output
+        ();
+
+      (* Show start up notification. *)
+      Server.StartupNotification.consume ~log_path ()
+      |> Option.iter ~f:(fun message -> Log.warning "%s" message);
+
+      (* Ignore SIGPIPE since >99% of the time they are non-fatal but the default Unix behavior is
+         for it to terminate the server, which is not ideal. Besides, individual callsites can
+         mostly detect the same class of issue by handling the EPIPE unix errno. *)
+      Signal.Expert.(set Signal.pipe `Ignore);
+
+      failwith "not implemented yet"
+
 
 let command =
   let filename_argument = Command.Param.(anon ("filename" %: Filename.arg_type)) in
