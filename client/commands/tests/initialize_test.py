@@ -18,15 +18,15 @@ from ...tests.setup import (
     ensure_files_exist,
     switch_working_directory,
 )
+
 from .. import initialize
-from ..initialize import _create_source_directory_element, log
 
 
 class InitializeTest(unittest.TestCase):
     @patch.object(os, "getcwd", return_value="/original/directory")
-    @patch.object(log, "get_yes_no_input", return_value=True)
-    @patch.object(log, "get_optional_input", return_value="")
-    @patch.object(log, "get_input", return_value="")
+    @patch.object(initialize.log, "get_yes_no_input", return_value=True)
+    @patch.object(initialize.log, "get_optional_input", return_value="")
+    @patch.object(initialize.log, "get_input", return_value="")
     @patch("shutil.which")
     @patch("os.path.isfile")
     @patch("subprocess.run")
@@ -102,7 +102,7 @@ class InitializeTest(unittest.TestCase):
                 ensure_directories_exists(root_path, "a")
                 ensure_files_exist(root_path, ["a/__init__.py"])
                 self.assertEqual(
-                    _create_source_directory_element("a"),
+                    initialize._create_source_directory_element("a"),
                     {"import_root": ".", "source": "a"},
                 )
 
@@ -111,13 +111,15 @@ class InitializeTest(unittest.TestCase):
             with switch_working_directory(root_path):
                 ensure_directories_exists(root_path, "a")
                 self.assertEqual(
-                    _create_source_directory_element("a"),
+                    initialize._create_source_directory_element("a"),
                     "a",
                 )
 
     def test_get_local_configuration(self) -> None:
-        with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
-            log, "get_input", return_value="//target/..."
+        with patch.object(
+            initialize.log, "get_yes_no_input"
+        ) as yes_no_input, patch.object(
+            initialize.log, "get_input", return_value="//target/..."
         ):
             yes_no_input.side_effect = [True]
             self.assertEqual(
@@ -125,17 +127,19 @@ class InitializeTest(unittest.TestCase):
                 {"targets": ["//target/..."]},
             )
 
-        with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
-            log, "get_input", return_value=""
-        ):
+        with patch.object(
+            initialize.log, "get_yes_no_input"
+        ) as yes_no_input, patch.object(initialize.log, "get_input", return_value=""):
             yes_no_input.side_effect = [True]
             self.assertEqual(
                 initialize._get_local_configuration(Path("/project"), Path("/")),
                 {"targets": ["//project/..."]},
             )
 
-        with patch.object(log, "get_yes_no_input") as yes_no_input, patch.object(
-            log, "get_input", return_value="project/a, project/b"
+        with patch.object(
+            initialize.log, "get_yes_no_input"
+        ) as yes_no_input, patch.object(
+            initialize.log, "get_input", return_value="project/a, project/b"
         ):
             yes_no_input.side_effect = [False]
             self.assertEqual(

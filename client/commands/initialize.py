@@ -11,9 +11,10 @@ import subprocess
 import sys
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 from .. import log
+
 from ..find_directories import (
     BINARY_NAME,
     CONFIGURATION_FILE,
@@ -26,6 +27,10 @@ from ..find_directories import (
 from . import commands
 
 LOG: Logger = logging.getLogger(__name__)
+
+
+class InitializationException(Exception):
+    pass
 
 
 def _create_source_directory_element(source: str) -> Union[str, Dict[str, str]]:
@@ -44,8 +49,59 @@ def _create_source_directory_element(source: str) -> Union[str, Dict[str, str]]:
         return source
 
 
-class InitializationException(Exception):
-    pass
+def _check_configuration_file_location(
+    configuration_path: Path, current_directory: Path, global_root: Optional[Path]
+) -> None:
+    if os.path.isfile(configuration_path):
+        if global_root:
+            error = (
+                "Local configurations must be created in subdirectories of "
+                + f"`{str(current_directory)}` as it already contains a "
+                + "`.pyre_configuration`."
+            )
+        else:
+            error = (
+                "A pyre configuration already exists at "
+                + f"`{str(configuration_path)}`."
+            )
+        raise InitializationException(error)
+    local_configuration_path = current_directory / LOCAL_CONFIGURATION_FILE
+    if local_configuration_path.is_file():
+        raise InitializationException(
+            "A local pyre configuration already exists at "
+            + f"`{str(local_configuration_path)}`."
+        )
+
+
+def _get_local_configuration(
+    current_directory: Path, buck_root: Optional[Path]
+) -> Dict[str, Any]:
+    configuration: Dict[str, Any] = {}
+    using_targets = log.get_yes_no_input("Is your project built with Buck?")
+    if using_targets:
+        targets = log.get_input(
+            "Which buck target(s) should pyre analyze?\n"
+            + "  Default: Analyze all targets under the configuration.\n"
+            + "  (Ex. `//target:a, //target/b/...`)\n"
+        ).strip()
+        if len(targets) == 0:
+            if buck_root:
+                root = current_directory.relative_to(buck_root)
+                configuration["targets"] = [f"//{str(root)}/..."]
+            else:
+                raise InitializationException(
+                    "No `.buckconfig` found with which to create a default target."
+                )
+        else:
+            configuration["targets"] = [target.strip() for target in targets.split(",")]
+    else:
+        source_directories = log.get_input(
+            "Which directory(ies) should pyre analyze?\n"
+        )
+        configuration["source_directories"] = [
+            directory.strip() for directory in source_directories.split(",")
+        ]
+    return configuration
 
 
 def _create_watchman_configuration() -> None:
@@ -133,73 +189,37 @@ def _get_configuration() -> Dict[str, Any]:
     return configuration
 
 
-def _get_local_configuration(
-    current_directory: Path, buck_root: Optional[Path]
-) -> Dict[str, Any]:
-    configuration: Dict[str, Any] = {}
-    using_targets = log.get_yes_no_input("Is your project built with Buck?")
-    if using_targets:
-        targets = log.get_input(
-            "Which buck target(s) should pyre analyze?\n"
-            + "  Default: Analyze all targets under the configuration.\n"
-            + "  (Ex. `//target:a, //target/b/...`)\n"
-        ).strip()
-        if len(targets) == 0:
-            if buck_root:
-                root = current_directory.relative_to(buck_root)
-                configuration["targets"] = [f"//{str(root)}/..."]
-            else:
-                raise InitializationException(
-                    "No `.buckconfig` found with which to create a default target."
-                )
-        else:
-            configuration["targets"] = [target.strip() for target in targets.split(",")]
+def get_configuration_and_path() -> Tuple[Dict[str, Any], Path]:
+    global_root: Optional[Path] = find_global_root(Path("."))
+    buck_root: Optional[Path] = find_parent_directory_containing_file(
+        Path("."), ".buckconfig"
+    )
+    current_directory: Path = Path(os.getcwd())
+    configuration_path = current_directory / CONFIGURATION_FILE
+    _check_configuration_file_location(
+        configuration_path, current_directory, global_root
+    )
+    local_configuration_path = current_directory / LOCAL_CONFIGURATION_FILE
+    if global_root:
+        configuration_path = local_configuration_path
+        configuration = _get_local_configuration(current_directory, buck_root)
     else:
-        source_directories = log.get_input(
-            "Which directory(ies) should pyre analyze?\n"
-        )
-        configuration["source_directories"] = [
-            directory.strip() for directory in source_directories.split(",")
-        ]
-    return configuration
+        configuration = _get_configuration()
+    return configuration, configuration_path
+
+
+def write_configuration(
+    configuration: Dict[str, Any], configuration_path: Path
+) -> None:
+    with open(configuration_path, "w+") as configuration_file:
+        json.dump(configuration, configuration_file, sort_keys=True, indent=2)
+        configuration_file.write("\n")
 
 
 def run() -> commands.ExitCode:
     try:
-        global_root: Optional[Path] = find_global_root(Path("."))
-        buck_root: Optional[Path] = find_parent_directory_containing_file(
-            Path("."), ".buckconfig"
-        )
-        current_directory: Path = Path(os.getcwd())
-        configuration_path = current_directory / CONFIGURATION_FILE
-        if os.path.isfile(configuration_path):
-            if global_root:
-                error = (
-                    "Local configurations must be created in subdirectories of "
-                    + f"`{str(current_directory)}` as it already contains a "
-                    + "`.pyre_configuration`."
-                )
-            else:
-                error = (
-                    "A pyre configuration already exists at "
-                    + f"`{str(configuration_path)}`."
-                )
-            raise InitializationException(error)
-        local_configuration_path = current_directory / LOCAL_CONFIGURATION_FILE
-        if local_configuration_path.is_file():
-            raise InitializationException(
-                "A local pyre configuration already exists at "
-                + f"`{str(local_configuration_path)}`."
-            )
-        if global_root:
-            configuration_path = local_configuration_path
-            configuration = _get_local_configuration(current_directory, buck_root)
-        else:
-            configuration = _get_configuration()
-
-        with open(configuration_path, "w+") as configuration_file:
-            json.dump(configuration, configuration_file, sort_keys=True, indent=2)
-            configuration_file.write("\n")
+        configuration, configuration_path = get_configuration_and_path()
+        write_configuration(configuration, configuration_path)
         LOG.log(
             log.SUCCESS,
             "Successfully initialized pyre!\n"
