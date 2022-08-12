@@ -154,7 +154,7 @@ module ModulePaths = struct
       Configuration.Analysis.search_paths configuration |> List.filter_map ~f:find_in_root
 
 
-    let directory_children ~configuration qualifier =
+    let find_module_paths_inside_directories_all_search_paths ~configuration qualifier =
       let finder = Finder.create configuration in
       let list_directory path =
         (* Technically this operation is subject to race conditions, so be careful here *)
@@ -165,22 +165,25 @@ module ModulePaths = struct
         with
         | Sys_error _ -> []
       in
-      directory_paths ~configuration qualifier |> List.concat_map ~f:list_directory
+      directory_paths ~configuration qualifier
+      |> List.concat_map ~f:list_directory
+      |> List.filter_map ~f:(ModulePath.create ~configuration)
 
 
+    (* Given a qualifier, find all ModulePath.t values for that qualifier (across all search roots) *)
     let find_module_paths ~configuration qualifier =
-      (* Using Reference.empty as the "parent" of Reference.empty - which actually comes from
-         builtins.pyi - leads to correct behavior here. *)
-      let parent_qualifier = Reference.prefix qualifier |> Option.value ~default:Reference.empty in
       let non_init_files =
-        directory_children ~configuration parent_qualifier
-        |> List.filter_map ~f:(ModulePath.create ~configuration)
+        (* Using Reference.empty as the "parent" of Reference.empty - which actually comes from
+           builtins.pyi - leads to correct behavior here. *)
+        let parent_qualifier =
+          Reference.prefix qualifier |> Option.value ~default:Reference.empty
+        in
+        find_module_paths_inside_directories_all_search_paths ~configuration parent_qualifier
         |> List.filter ~f:(fun module_path ->
                ModulePath.qualifier module_path |> Reference.equal qualifier)
       in
       let init_files =
-        directory_children ~configuration qualifier
-        |> List.filter_map ~f:(ModulePath.create ~configuration)
+        find_module_paths_inside_directories_all_search_paths ~configuration qualifier
         |> List.filter ~f:ModulePath.is_init
       in
       List.sort
@@ -189,8 +192,8 @@ module ModulePaths = struct
 
 
     let find_submodule_paths ~configuration qualifier =
-      directory_children ~configuration qualifier
-      |> List.filter_map ~f:(ModulePath.Raw.create ~configuration)
+      find_module_paths_inside_directories_all_search_paths ~configuration qualifier
+      |> List.map ~f:ModulePath.raw
       |> ModulePath.Raw.Set.of_list
   end
 
