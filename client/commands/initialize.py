@@ -132,7 +132,9 @@ def _create_watchman_configuration() -> None:
             LOG.warning("Failed to run `watchman watch-project .`.")
 
 
-def _get_configuration() -> Dict[str, Any]:
+def _get_configuration(
+    taint_models_directory_required: Optional[bool] = False,
+) -> Dict[str, Any]:
     configuration: Dict[str, Any] = {}
 
     _create_watchman_configuration()
@@ -167,6 +169,12 @@ def _get_configuration() -> Dict[str, Any]:
         LOG.info(f"Typeshed found at `{typeshed}``")
 
     taint_models_path = find_taint_models_directory()
+    if (taint_models_path is None) and taint_models_directory_required:
+        taint_models_path = Path(
+            log.get_input(
+                "Unable to find taint models directory, please enter its root: "
+            )
+        ).resolve()
     if taint_models_path is not None:
         configuration["taint_models_path"] = str(taint_models_path)
 
@@ -189,7 +197,9 @@ def _get_configuration() -> Dict[str, Any]:
     return configuration
 
 
-def get_configuration_and_path() -> Tuple[Dict[str, Any], Path]:
+def get_configuration_and_path(
+    taint_models_directory_required: Optional[bool] = False,
+) -> Tuple[Dict[str, Any], Path]:
     global_root: Optional[Path] = find_global_root(Path("."))
     buck_root: Optional[Path] = find_parent_directory_containing_file(
         Path("."), ".buckconfig"
@@ -204,7 +214,7 @@ def get_configuration_and_path() -> Tuple[Dict[str, Any], Path]:
         configuration_path = local_configuration_path
         configuration = _get_local_configuration(current_directory, buck_root)
     else:
-        configuration = _get_configuration()
+        configuration = _get_configuration(taint_models_directory_required)
     return configuration, configuration_path
 
 
