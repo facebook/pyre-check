@@ -5,15 +5,11 @@
 
 import abc
 import asyncio
+import contextlib
 import logging
 import sys
 from pathlib import Path
 from typing import AsyncIterator, List, Optional, Tuple
-
-if sys.version_info >= (3, 7):
-    from contextlib import asynccontextmanager
-else:
-    from async_generator import asynccontextmanager
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -267,7 +263,7 @@ class StreamBytesWriter(BytesWriter):
                 await asyncio.sleep(0)
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def connect(
     socket_path: Path, buffer_size: Optional[int] = None
 ) -> AsyncIterator[Tuple[BytesReader, BytesWriter]]:
@@ -306,7 +302,7 @@ async def connect(
             await writer.close()
 
 
-@asynccontextmanager
+@contextlib.asynccontextmanager
 async def connect_in_text_mode(
     socket_path: Path, buffer_size: Optional[int] = None
 ) -> AsyncIterator[Tuple[TextReader, TextWriter]]:
