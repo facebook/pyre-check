@@ -43,6 +43,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ~resolution:(TypeCheck.resolution global_resolution (module TypeCheck.DummyContext))
         ~source:models
         ~configuration:TaintConfiguration.default
+        ~source_sink_filter:ModelParser.SourceSinkFilter.none
         ~callables:None
         ~stubs:(Target.HashSet.create ())
         ()

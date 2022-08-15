@@ -405,6 +405,7 @@ let get_initial_models ~context =
            (module TypeCheck.DummyContext))
       ~source:initial_models_source
       ~configuration:TaintConfiguration.default
+      ~source_sink_filter:ModelParser.SourceSinkFilter.none
       ~callables:None
       ~stubs:(Interprocedural.Target.HashSet.create ())
       ()
@@ -516,11 +517,15 @@ let initialize
     match models_source with
     | None -> Registry.empty, Ast.Reference.Set.empty
     | Some source ->
+        let source_sink_filter =
+          ModelParser.SourceSinkFilter.from_configuration taint_configuration
+        in
         let { ModelParser.models; errors; skip_overrides; queries = rules } =
           ModelParser.parse
             ~resolution
             ~source:(Test.trim_extra_indentation source)
             ~configuration:taint_configuration
+            ~source_sink_filter
             ~callables:(Some (Target.HashSet.of_list callables))
             ~stubs:(Target.HashSet.of_list stubs)
             ()
@@ -537,11 +542,11 @@ let initialize
             ~resolution
             ~configuration:taint_configuration
             ~scheduler:(Test.mock_scheduler ())
-            ~rule_filter:None
-            ~rules
+            ~environment
+            ~source_sink_filter
             ~callables:(List.rev_append stubs callables)
             ~stubs:(Target.HashSet.of_list stubs)
-            ~environment
+            ~rules
         in
         let models_and_names, errors = fst models_result, snd models_result in
         (match taint_configuration.dump_model_query_results_path, expected_dump_string with

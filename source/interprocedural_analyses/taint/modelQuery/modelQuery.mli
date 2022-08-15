@@ -61,7 +61,7 @@ val apply_all_rules
   :  resolution:Analysis.Resolution.t ->
   scheduler:Scheduler.t ->
   configuration:Taint.TaintConfiguration.t ->
-  rule_filter:int list option ->
+  source_sink_filter:Taint.ModelParser.SourceSinkFilter.t ->
   rules:Taint.ModelParser.Internal.ModelQuery.rule list ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.HashSet.t ->
@@ -69,11 +69,11 @@ val apply_all_rules
   ModelQueryRegistryMap.t * Taint.ModelVerificationError.t list
 
 val generate_models_from_queries
-  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  :  configuration:Taint.TaintConfiguration.t ->
   scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  source_sink_filter:Taint.ModelParser.SourceSinkFilter.t ->
   callables:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.t Base.Hash_set.t ->
-  taint_configuration:Taint.TaintConfiguration.t ->
   Taint.ModelParser.Internal.ModelQuery.rule list ->
   ModelQueryRegistryMap.t * Taint.ModelVerificationError.t list

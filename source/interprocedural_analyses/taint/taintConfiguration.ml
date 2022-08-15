@@ -86,6 +86,7 @@ type t = {
   transforms: TaintTransform.t list;
   features: string list;
   rules: Rule.t list;
+  filtered_rule_codes: Int.Set.t option;
   implicit_sinks: implicit_sinks;
   implicit_sources: implicit_sources;
   partial_sink_converter: partial_sink_converter;
@@ -106,6 +107,7 @@ let empty =
     transforms = [];
     features = [];
     rules = [];
+    filtered_rule_codes = None;
     partial_sink_converter = String.Map.Tree.empty;
     implicit_sinks = empty_implicit_sinks;
     implicit_sources = empty_implicit_sources;
@@ -830,6 +832,7 @@ let parse source_jsons =
     transforms;
     features;
     rules;
+    filtered_rule_codes = None;
     partial_sink_converter;
     implicit_sinks;
     implicit_sources;
@@ -1042,6 +1045,7 @@ let default =
         "string_concat_rhs";
       ];
     rules;
+    filtered_rule_codes = None;
     partial_sink_converter = String.Map.Tree.empty;
     partial_sink_labels = String.Map.Tree.empty;
     implicit_sinks = empty_implicit_sinks;
@@ -1168,7 +1172,7 @@ let create
           let codes_to_keep = Int.Set.of_list rule_filter in
           let { rules; _ } = configuration in
           let rules = List.filter rules ~f:(fun { code; _ } -> Set.mem codes_to_keep code) in
-          { configuration with rules })
+          { configuration with rules; filtered_rule_codes = Some codes_to_keep })
 
 
 let conditional_test_sinks () =

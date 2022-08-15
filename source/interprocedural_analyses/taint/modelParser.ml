@@ -243,6 +243,65 @@ end
 
 include Internal
 
+module SourceSinkFilter = struct
+  type t = {
+    sources: Sources.Set.t option;
+    sinks: Sinks.Set.t option;
+  }
+
+  (* No filter, keep everything. *)
+  let none = { sources = None; sinks = None }
+
+  let from_configuration { TaintConfiguration.rules; filtered_rule_codes; _ } =
+    match filtered_rule_codes with
+    | None -> none
+    | Some filtered_rule_codes ->
+        let sources_to_keep, sinks_to_keep =
+          let rules =
+            (* The user annotations for partial sinks will be the untriggered ones, even though the
+               rule expects triggered sinks. *)
+            let untrigger_partial_sinks sink =
+              match sink with
+              | Sinks.TriggeredPartialSink { kind; label } -> Sinks.PartialSink { kind; label }
+              | _ -> sink
+            in
+            List.filter_map rules ~f:(fun { TaintConfiguration.Rule.code; sources; sinks; _ } ->
+                if Core.Set.mem filtered_rule_codes code then
+                  Some (sources, List.map sinks ~f:untrigger_partial_sinks)
+                else
+                  None)
+          in
+          List.fold
+            rules
+            ~init:(Sources.Set.empty, Sinks.Set.empty)
+            ~f:(fun (sources, sinks) (rule_sources, rule_sinks) ->
+              ( Sources.Set.union sources (Sources.Set.of_list rule_sources),
+                Sinks.Set.union sinks (Sinks.Set.of_list rule_sinks) ))
+        in
+        { sources = Some sources_to_keep; sinks = Some sinks_to_keep }
+
+
+  let should_keep_source { sources; _ } source =
+    match sources, source with
+    | None, _
+    | _, Sources.Attach
+    | _, Sources.Transform _ ->
+        true
+    | Some sources_to_keep, _ -> Sources.Set.mem (Sources.discard_subkind source) sources_to_keep
+
+
+  let should_keep_sink { sinks; _ } sink =
+    match sinks, sink with
+    | None, _
+    | _, Sinks.Attach
+    | _, Sinks.LocalReturn
+    | _, Sinks.ParameterUpdate _
+    | _, Sinks.AddFeatureToArgument
+    | _, Sinks.Transform _ ->
+        true
+    | Some sinks_to_keep, _ -> Sinks.Set.mem (Sinks.discard_subkind sink) sinks_to_keep
+end
+
 let model_verification_error ~path ~location kind = { ModelVerificationError.kind; path; location }
 
 module ClassDefinitionsCache = ModelVerifier.ClassDefinitionsCache
@@ -981,7 +1040,7 @@ let rec parse_annotations
 
 let introduce_sink_taint
     ~root
-    ~sinks_to_keep
+    ~source_sink_filter
     ~path
     ~leaf_names
     ~leaf_name_provided
@@ -992,12 +1051,7 @@ let introduce_sink_taint
     breadcrumbs
   =
   let open Core.Result in
-  let should_keep_taint =
-    match sinks_to_keep with
-    | None -> true
-    | Some sinks_to_keep -> Sinks.Set.mem taint_sink_kind sinks_to_keep
-  in
-  if should_keep_taint then
+  if SourceSinkFilter.should_keep_sink source_sink_filter taint_sink_kind then
     let backward =
       let assign_backward_taint environment taint =
         BackwardState.assign ~weak:true ~root ~path taint environment
@@ -1101,7 +1155,7 @@ let introduce_taint_in_taint_out
 
 let introduce_source_taint
     ~root
-    ~sources_to_keep
+    ~source_sink_filter
     ~path
     ~leaf_names
     ~leaf_name_provided
@@ -1112,18 +1166,13 @@ let introduce_source_taint
     breadcrumbs
   =
   let open Core.Result in
-  let should_keep_taint =
-    match sources_to_keep with
-    | None -> true
-    | Some sources_to_keep -> Sources.Set.mem taint_source_kind sources_to_keep
-  in
   if
     Sources.equal taint_source_kind Sources.Attach
     && List.is_empty breadcrumbs
     && List.is_empty via_features
   then
     Error "`Attach` must be accompanied by a list of features to attach."
-  else if should_keep_taint then
+  else if SourceSinkFilter.should_keep_source source_sink_filter taint_source_kind then
     let breadcrumbs = Features.BreadcrumbSet.of_approximation breadcrumbs in
     let via_features = Features.ViaFeatureSet.of_list via_features in
     let source_taint =
@@ -2078,8 +2127,7 @@ let add_taint_annotation_to_model
     ~model_name
     ~annotation_kind
     ~callable_annotation
-    ~sources_to_keep
-    ~sinks_to_keep
+    ~source_sink_filter
     model
     annotation
   =
@@ -2106,7 +2154,7 @@ let add_taint_annotation_to_model
                ~leaf_names
                ~leaf_name_provided
                ~trace_length
-               ~sinks_to_keep
+               ~source_sink_filter
                model
                sink
                via_features
@@ -2124,7 +2172,7 @@ let add_taint_annotation_to_model
                ~leaf_names
                ~leaf_name_provided
                ~trace_length
-               ~sources_to_keep
+               ~source_sink_filter
                model
                source
                via_features
@@ -2156,7 +2204,7 @@ let add_taint_annotation_to_model
                ~leaf_names
                ~leaf_name_provided
                ~trace_length
-               ~sinks_to_keep
+               ~source_sink_filter
                model
                sink
                via_features
@@ -2174,7 +2222,7 @@ let add_taint_annotation_to_model
                ~leaf_names
                ~leaf_name_provided
                ~trace_length
-               ~sources_to_keep
+               ~source_sink_filter
                model
                source
                via_features
@@ -2202,7 +2250,7 @@ let add_taint_annotation_to_model
                ~leaf_names:[]
                ~leaf_name_provided:false
                ~trace_length:None
-               ~sinks_to_keep
+               ~source_sink_filter
                model
                Sinks.AddFeatureToArgument
                via_features
@@ -2483,45 +2531,11 @@ let adjust_sanitize_and_modes_and_skipped_override
   { model with sanitizers; modes }, skipped_override
 
 
-let compute_sources_and_sinks_to_keep ~configuration ~rule_filter =
-  match rule_filter with
-  | None -> None, None
-  | Some rule_filter ->
-      let rule_filter = Int.Set.of_list rule_filter in
-      let sources_to_keep, sinks_to_keep =
-        let { TaintConfiguration.rules; _ } = configuration in
-        let rules =
-          (* The user annotations for partial sinks will be the untriggered ones, even though the
-             rule expects triggered sinks. *)
-          let untrigger_partial_sinks sink =
-            match sink with
-            | Sinks.TriggeredPartialSink { kind; label } -> Sinks.PartialSink { kind; label }
-            | _ -> sink
-          in
-          List.filter_map rules ~f:(fun { TaintConfiguration.Rule.code; sources; sinks; _ } ->
-              if Core.Set.mem rule_filter code then
-                Some (sources, List.map sinks ~f:untrigger_partial_sinks)
-              else
-                None)
-        in
-        List.fold
-          rules
-          ~init:
-            ( Sources.Set.singleton Sources.Attach,
-              Sinks.Set.of_list [Sinks.AddFeatureToArgument; Sinks.Attach] )
-          ~f:(fun (sources, sinks) (rule_sources, rule_sinks) ->
-            ( Sources.Set.union sources (Sources.Set.of_list rule_sources),
-              Sinks.Set.union sinks (Sinks.Set.of_list rule_sinks) ))
-      in
-      Some sources_to_keep, Some sinks_to_keep
-
-
 let create_model_from_signature
     ~resolution
     ~path
     ~configuration
-    ~sources_to_keep
-    ~sinks_to_keep
+    ~source_sink_filter
     ~is_obscure
     {
       signature =
@@ -2719,8 +2733,7 @@ let create_model_from_signature
           ~resolution:(Resolution.global_resolution resolution)
           ~annotation_kind
           ~callable_annotation
-          ~sources_to_keep
-          ~sinks_to_keep
+          ~source_sink_filter
           accumulator
           annotation)
   in
@@ -2739,8 +2752,7 @@ let create_model_from_attribute
     ~resolution
     ~path
     ~configuration
-    ~sources_to_keep
-    ~sinks_to_keep
+    ~source_sink_filter
     { name; source_annotation; sink_annotation; decorators; location; call_target }
   =
   let open Core.Result in
@@ -2795,8 +2807,7 @@ let create_model_from_attribute
         ~resolution:(Resolution.global_resolution resolution)
         ~annotation_kind
         ~callable_annotation:None
-        ~sources_to_keep
-        ~sinks_to_keep
+        ~source_sink_filter
         accumulator
         annotation)
   >>= adjust_sanitize_and_modes_and_skipped_override
@@ -2816,10 +2827,7 @@ let is_obscure ~callables ~stubs call_target =
   || callables >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
 
 
-let parse_models ~resolution ~rule_filter ~configuration ~callables ~stubs models =
-  let sources_to_keep, sinks_to_keep =
-    compute_sources_and_sinks_to_keep ~configuration ~rule_filter
-  in
+let parse_models ~resolution ~configuration ~source_sink_filter ~callables ~stubs models =
   let open Core.Result in
   List.map
     models
@@ -2828,8 +2836,7 @@ let parse_models ~resolution ~rule_filter ~configuration ~callables ~stubs model
         ~resolution
         ~path:None
         ~configuration
-        ~sources_to_keep
-        ~sinks_to_keep
+        ~source_sink_filter
         ~is_obscure:(is_obscure ~callables ~stubs call_target)
         parsed_signature
       >>| fun model_or_query ->
@@ -2846,7 +2853,15 @@ let parse_models ~resolution ~rule_filter ~configuration ~callables ~stubs model
   >>| List.filter_map ~f:(fun x -> x)
 
 
-let rec parse_statement ~resolution ~path ~rule_filter ~configuration ~callables ~stubs statement =
+let rec parse_statement
+    ~resolution
+    ~path
+    ~configuration
+    ~source_sink_filter
+    ~callables
+    ~stubs
+    statement
+  =
   let open Core.Result in
   let global_resolution = Resolution.global_resolution resolution in
   match statement with
@@ -3165,8 +3180,8 @@ let rec parse_statement ~resolution ~path ~rule_filter ~configuration ~callables
                     (parse_statement
                        ~resolution
                        ~path
-                       ~rule_filter
                        ~configuration
+                       ~source_sink_filter
                        ~callables
                        ~stubs)
             >>| List.partition_result
@@ -3221,8 +3236,8 @@ let rec parse_statement ~resolution ~path ~rule_filter ~configuration ~callables
                 | Ok parsed_signatures ->
                     parse_models
                       ~resolution
-                      ~rule_filter
                       ~configuration
+                      ~source_sink_filter
                       ~callables
                       ~stubs
                       parsed_signatures))
@@ -3374,10 +3389,7 @@ let verify_no_duplicate_model_query_names ~path (results, errors) =
   | None -> results, errors
 
 
-let create ~resolution ~path ~configuration ~rule_filter ~callables ~stubs source =
-  let sources_to_keep, sinks_to_keep =
-    compute_sources_and_sinks_to_keep ~configuration ~rule_filter
-  in
+let create ~resolution ~path ~configuration ~source_sink_filter ~callables ~stubs source =
   let signatures_and_queries, errors =
     let open Core.Result in
     String.split ~on:'\n' source
@@ -3385,7 +3397,8 @@ let create ~resolution ~path ~configuration ~rule_filter ~callables ~stubs sourc
     >>| Source.create
     >>| Source.statements
     >>| List.map
-          ~f:(parse_statement ~resolution ~path ~rule_filter ~configuration ~callables ~stubs)
+          ~f:
+            (parse_statement ~resolution ~path ~configuration ~source_sink_filter ~callables ~stubs)
     >>| List.partition_result
     >>| (fun (results, errors) -> List.concat results, errors)
     >>| verify_no_duplicate_model_query_names ~path
@@ -3400,8 +3413,7 @@ let create ~resolution ~path ~configuration ~rule_filter ~callables ~stubs sourc
           ~resolution
           ~path
           ~configuration
-          ~sources_to_keep
-          ~sinks_to_keep
+          ~source_sink_filter
           ~is_obscure:(is_obscure ~callables ~stubs call_target)
           parsed_signature
     | ParsedAttribute parsed_attribute ->
@@ -3409,8 +3421,7 @@ let create ~resolution ~path ~configuration ~rule_filter ~callables ~stubs sourc
           ~resolution
           ~path
           ~configuration
-          ~sources_to_keep
-          ~sinks_to_keep
+          ~source_sink_filter
           parsed_attribute
     | ParsedQuery query -> Core.Result.return (Query query)
   in
@@ -3436,9 +3447,9 @@ let get_model_sources ~paths =
   model_files |> List.map ~f:File.create |> List.filter_map ~f:path_and_content
 
 
-let parse ~resolution ?path ?rule_filter ~source ~configuration ~callables ~stubs () =
+let parse ~resolution ?path ~source ~configuration ~source_sink_filter ~callables ~stubs () =
   let new_models_and_queries, errors =
-    create ~resolution ~path ~rule_filter ~configuration ~callables ~stubs source
+    create ~resolution ~path ~configuration ~source_sink_filter ~callables ~stubs source
     |> List.partition_result
   in
   let new_models, new_queries =
@@ -3469,8 +3480,7 @@ let invalid_model_query_error error =
 let create_callable_model_from_annotations
     ~resolution
     ~callable
-    ~sources_to_keep
-    ~sinks_to_keep
+    ~source_sink_filter
     ~is_obscure
     annotations
   =
@@ -3513,19 +3523,12 @@ let create_callable_model_from_annotations
             ~resolution:global_resolution
             ~annotation_kind
             ~callable_annotation
-            ~sources_to_keep
-            ~sinks_to_keep
+            ~source_sink_filter
             accumulator
             annotation)
 
 
-let create_attribute_model_from_annotations
-    ~resolution
-    ~name
-    ~sources_to_keep
-    ~sinks_to_keep
-    annotations
-  =
+let create_attribute_model_from_annotations ~resolution ~name ~source_sink_filter annotations =
   let open Core.Result in
   let global_resolution = Resolution.global_resolution resolution in
   List.fold annotations ~init:(Ok Model.empty_model) ~f:(fun accumulator annotation ->
@@ -3555,8 +3558,7 @@ let create_attribute_model_from_annotations
         ~resolution:global_resolution
         ~annotation_kind
         ~callable_annotation:None
-        ~sources_to_keep
-        ~sinks_to_keep
+        ~source_sink_filter
         accumulator
         annotation)
 

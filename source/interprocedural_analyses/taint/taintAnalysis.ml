@@ -101,12 +101,12 @@ let join_parse_result
 
 
 let parse_models_and_queries_from_sources
-    ~static_analysis_configuration:{ Configuration.StaticAnalysis.rule_filter; _ }
+    ~configuration
     ~scheduler
     ~resolution
+    ~source_sink_filter
     ~callables
     ~stubs
-    ~taint_configuration
     sources
   =
   (* TODO(T117715045): Do not pass all callables and stubs explicitly to map_reduce,
@@ -117,10 +117,10 @@ let parse_models_and_queries_from_sources
           ~resolution
           ~path
           ~source
-          ~configuration:taint_configuration
+          ~configuration
+          ~source_sink_filter
           ~callables
           ~stubs
-          ?rule_filter
           ()
         |> join_parse_result state)
   in
@@ -140,29 +140,18 @@ let parse_models_and_queries_from_sources
     ()
 
 
-let parse_models_and_queries_from_configuration
-    ~scheduler
+let parse_taint_configuration
     ~static_analysis_configuration:
-      ({
-         Configuration.StaticAnalysis.verify_models;
-         configuration = { taint_model_paths; _ };
-         rule_filter;
-         find_missing_flows;
-         dump_model_query_results;
-         maximum_trace_length;
-         maximum_tito_depth;
-         _;
-       } as static_analysis_configuration)
-    ~environment
-    ~callables
-    ~stubs
+      {
+        Configuration.StaticAnalysis.configuration = { taint_model_paths; _ };
+        rule_filter;
+        find_missing_flows;
+        dump_model_query_results;
+        maximum_trace_length;
+        maximum_tito_depth;
+        _;
+      }
   =
-  let resolution =
-    Analysis.TypeCheck.resolution
-      (Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
-      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-      (module Analysis.TypeCheck.DummyContext)
-  in
   let find_missing_flows =
     find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
   in
@@ -177,15 +166,34 @@ let parse_models_and_queries_from_configuration
     |> TaintConfiguration.exception_on_error
   in
   let () = TaintConfiguration.register taint_configuration in
+  taint_configuration
+
+
+let parse_models_and_queries_from_configuration
+    ~scheduler
+    ~static_analysis_configuration:
+      { Configuration.StaticAnalysis.verify_models; configuration = { taint_model_paths; _ }; _ }
+    ~taint_configuration
+    ~environment
+    ~source_sink_filter
+    ~callables
+    ~stubs
+  =
+  let resolution =
+    Analysis.TypeCheck.resolution
+      (Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
+      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+      (module Analysis.TypeCheck.DummyContext)
+  in
   let { ModelParser.models = user_models; errors; skip_overrides; queries } =
     ModelParser.get_model_sources ~paths:taint_model_paths
     |> parse_models_and_queries_from_sources
-         ~static_analysis_configuration
+         ~configuration:taint_configuration
          ~scheduler
          ~resolution
+         ~source_sink_filter
          ~callables
          ~stubs
-         ~taint_configuration
   in
   ModelVerificationError.verify_models_and_dsl errors verify_models;
   let class_models = ClassModels.infer ~environment ~user_models in
@@ -202,11 +210,15 @@ let initialize_models ~scheduler ~static_analysis_configuration ~environment ~ca
 
   Log.info "Parsing taint models...";
   let timer = Timer.start () in
+  let taint_configuration = parse_taint_configuration ~static_analysis_configuration in
+  let source_sink_filter = ModelParser.SourceSinkFilter.from_configuration taint_configuration in
   let { ModelParser.models; queries; skip_overrides; errors } =
     parse_models_and_queries_from_configuration
       ~scheduler
       ~static_analysis_configuration
+      ~taint_configuration
       ~environment
+      ~source_sink_filter
       ~callables:(Some (Target.HashSet.of_list callables))
       ~stubs
   in
@@ -218,15 +230,14 @@ let initialize_models ~scheduler ~static_analysis_configuration ~environment ~ca
     | _ ->
         Log.info "Generating models from model queries...";
         let timer = Timer.start () in
-        let taint_configuration = TaintConfiguration.get () in
         let models_and_names, errors =
           TaintModelQuery.ModelQuery.generate_models_from_queries
-            ~static_analysis_configuration
+            ~configuration:taint_configuration
             ~scheduler
             ~environment
+            ~source_sink_filter
             ~callables
             ~stubs
-            ~taint_configuration
             queries
         in
         let () =

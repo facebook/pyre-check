@@ -21,6 +21,15 @@ let set_up_environment ?source ?rules ~context ~model_source () =
   in
   let project = ScratchProject.setup ~context ["test.py", source] in
   let configuration =
+    let filtered_rule_codes =
+      match rules with
+      | Some rules ->
+          rules
+          |> List.map ~f:(fun { Taint.TaintConfiguration.Rule.code; _ } -> code)
+          |> Int.Set.of_list
+          |> Option.some
+      | None -> None
+    in
     let rules =
       match rules with
       | Some rules -> rules
@@ -51,25 +60,22 @@ let set_up_environment ?source ?rules ~context ~model_source () =
         features = ["special"];
         partial_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
         rules;
+        filtered_rule_codes;
       }
   in
+  let source_sink_filter = ModelParser.SourceSinkFilter.from_configuration configuration in
   let source = Test.trim_extra_indentation model_source in
   let resolution =
     let global_resolution = ScratchProject.build_global_resolution project in
     TypeCheck.resolution global_resolution (module TypeCheck.DummyContext)
   in
 
-  let rule_filter =
-    match rules with
-    | Some rules -> Some (List.map rules ~f:(fun { Taint.TaintConfiguration.Rule.code; _ } -> code))
-    | None -> None
-  in
   let ({ ModelParser.errors; skip_overrides; _ } as parse_result) =
     ModelParser.parse
       ~resolution
-      ?rule_filter
       ~source
       ~configuration
+      ~source_sink_filter
       ~callables:None
       ~stubs:(Target.HashSet.create ())
       ()
@@ -149,6 +155,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
     ModelParser.parse
       ~resolution
       ~configuration
+      ~source_sink_filter:ModelParser.SourceSinkFilter.none
       ?path
       ~source:(Test.trim_extra_indentation model_source)
       ~callables:None
@@ -3945,7 +3952,56 @@ let test_filter_by_rules context =
             ]
           "test.partial_sink";
       ]
-    ()
+    ();
+  assert_model
+    ~rules:
+      [
+        {
+          Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "WithSubkind"];
+          sinks = [Sinks.NamedSink "Test"];
+          transforms = [];
+          code = 5022;
+          message_format = "";
+          name = "test rule";
+        };
+      ]
+    ~model_source:"def test.taint() -> TaintSource[WithSubkind[A]]: ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.ParametricSource { source_name = "WithSubkind"; subkind = "A" }]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~rules:
+      [
+        {
+          Taint.TaintConfiguration.Rule.sources = [Sources.NamedSource "TestTest"];
+          sinks = [Sinks.NamedSink "TestSinkWithSubkind"];
+          transforms = [];
+          code = 5023;
+          message_format = "";
+          name = "test rule";
+        };
+      ]
+    ~model_source:"def test.taint(x: TaintSink[TestSinkWithSubkind[A]]): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:
+            [
+              {
+                name = "x";
+                sinks = [Sinks.ParametricSink { sink_name = "TestSinkWithSubkind"; subkind = "A" }];
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  ()
 
 
 let test_query_parsing context =

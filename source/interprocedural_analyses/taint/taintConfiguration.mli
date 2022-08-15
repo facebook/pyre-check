@@ -61,6 +61,7 @@ type t = {
   transforms: TaintTransform.t list;
   features: string list;
   rules: Rule.t list;
+  filtered_rule_codes: Int.Set.t option;
   implicit_sinks: implicit_sinks;
   implicit_sources: implicit_sources;
   partial_sink_converter: partial_sink_converter;

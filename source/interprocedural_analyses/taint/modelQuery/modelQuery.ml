@@ -811,7 +811,7 @@ let apply_all_rules
     ~resolution
     ~scheduler
     ~configuration
-    ~rule_filter
+    ~source_sink_filter
     ~rules
     ~callables
     ~stubs
@@ -819,9 +819,6 @@ let apply_all_rules
   =
   let global_resolution = Resolution.global_resolution resolution in
   if List.length rules > 0 then
-    let sources_to_keep, sinks_to_keep =
-      ModelParser.compute_sources_and_sinks_to_keep ~configuration ~rule_filter
-    in
     let attribute_rules, callable_rules =
       List.partition_tf
         ~f:(fun { ModelQuery.rule_kind; _ } ->
@@ -837,7 +834,8 @@ let apply_all_rules
         callable_rules
         |> List.map ~f:(fun rule ->
                apply_callable_query_rule
-                 ~verbose:(Option.is_some configuration.dump_model_query_results_path)
+                 ~verbose:
+                   (Option.is_some configuration.TaintConfiguration.dump_model_query_results_path)
                  ~resolution:global_resolution
                  ~rule
                  ~callable)
@@ -855,8 +853,7 @@ let apply_all_rules
             ModelParser.create_callable_model_from_annotations
               ~resolution
               ~callable
-              ~sources_to_keep
-              ~sinks_to_keep
+              ~source_sink_filter
               ~is_obscure:(Hash_set.mem stubs callable)
               taint_to_model
           with
@@ -916,8 +913,7 @@ let apply_all_rules
             ModelParser.create_attribute_model_from_annotations
               ~resolution
               ~name
-              ~sources_to_keep
-              ~sinks_to_keep
+              ~source_sink_filter
               taint_to_model
           with
           | Ok model ->
@@ -970,12 +966,12 @@ let apply_all_rules
 
 
 let generate_models_from_queries
-    ~static_analysis_configuration:{ Configuration.StaticAnalysis.rule_filter; _ }
+    ~configuration
     ~scheduler
     ~environment
+    ~source_sink_filter
     ~callables
     ~stubs
-    ~taint_configuration
     queries
   =
   let resolution =
@@ -994,8 +990,8 @@ let generate_models_from_queries
   apply_all_rules
     ~resolution
     ~scheduler
-    ~configuration:taint_configuration
-    ~rule_filter
+    ~configuration
+    ~source_sink_filter
     ~rules:queries
     ~callables
     ~stubs

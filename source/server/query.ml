@@ -951,11 +951,6 @@ let rec process_request ~environment ~build_system request =
           | Error (error :: _) -> Error (Taint.TaintConfiguration.Error.show error)
           | Error _ -> failwith "Taint.TaintConfiguration.create returned empty errors list"
           | Ok taint_configuration -> (
-              let static_analysis_configuration =
-                Configuration.StaticAnalysis.create
-                  (Configuration.Analysis.create ~source_paths:[SearchPath.Root path] ())
-                  ()
-              in
               let get_model_queries (path, source) =
                 Taint.ModelParser.parse
                   ~resolution:
@@ -966,6 +961,7 @@ let rec process_request ~environment ~build_system request =
                   ~path
                   ~source
                   ~configuration:taint_configuration
+                  ~source_sink_filter:Taint.ModelParser.SourceSinkFilter.none
                   ~callables:None
                   ~stubs:(Interprocedural.Target.HashSet.create ())
                   ()
@@ -1025,14 +1021,14 @@ let rec process_request ~environment ~build_system request =
                             initial_callables)
                       in
                       TaintModelQuery.ModelQuery.generate_models_from_queries
-                        ~static_analysis_configuration
+                        ~configuration:taint_configuration
                         ~scheduler
                         ~environment
+                        ~source_sink_filter:Taint.ModelParser.SourceSinkFilter.none
                         ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
                         ~stubs:
                           (Interprocedural.Target.HashSet.of_list
                              (Interprocedural.FetchCallables.get_stubs initial_callables))
-                        ~taint_configuration
                         rules
                     in
                     let models_and_names, errors =
@@ -1284,6 +1280,7 @@ let rec process_request ~environment ~build_system request =
                 ~path
                 ~source
                 ~configuration
+                ~source_sink_filter:Taint.ModelParser.SourceSinkFilter.none
                 ~callables:None
                 ~stubs:(Interprocedural.Target.HashSet.create ())
                 ()
