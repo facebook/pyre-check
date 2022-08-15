@@ -18,6 +18,8 @@ module ErrorsEnvironmentReadOnly : sig
 
   val get_errors_for_qualifier : t -> Ast.Reference.t -> AnalysisError.t list
 
+  val get_errors_for_qualifiers : t -> Ast.Reference.t list -> AnalysisError.t list
+
   (* Get all errors for in-project modules; use this to grab errors that are already computed *)
   val get_all_errors : t -> AnalysisError.t list
 end

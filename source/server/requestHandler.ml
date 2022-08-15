@@ -59,8 +59,8 @@ let process_display_type_error_request
         List.filter_map paths ~f:get_module_for_source_path
   in
   let errors =
-    let get_type_error = ErrorsEnvironment.ReadOnly.get_errors_for_qualifier errors_environment in
-    List.concat_map modules ~f:get_type_error |> List.sort ~compare:AnalysisError.compare
+    ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers errors_environment modules
+    |> List.sort ~compare:AnalysisError.compare
   in
   Response.TypeErrors
     (instantiate_errors

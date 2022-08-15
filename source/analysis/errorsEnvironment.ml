@@ -76,12 +76,16 @@ module ReadOnly = struct
 
   let get_errors_for_qualifier environment qualifier = get environment qualifier
 
+  let get_errors_for_qualifiers environment qualifiers =
+    List.concat_map qualifiers ~f:(get_errors_for_qualifier environment)
+
+
   let project_qualifiers environment =
     ModuleTracker.ReadOnly.project_qualifiers (module_tracker environment)
 
 
   let get_all_errors environment =
-    project_qualifiers environment |> List.concat_map ~f:(get_errors_for_qualifier environment)
+    project_qualifiers environment |> get_errors_for_qualifiers environment
 end
 
 let type_environment = Unsafe.upstream
