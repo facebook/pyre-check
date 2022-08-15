@@ -1,4 +1,3 @@
-dataclasses; python_version < "3.7"
 click>=8.0
 dataclasses-json
 intervaltree
