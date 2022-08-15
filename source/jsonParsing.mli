@@ -74,6 +74,14 @@ val list_member : ?default:'a list -> f:(Yojson.Safe.t -> 'a) -> string -> Yojso
       specified.
     - In all other cases, raise {!Yojson.Safe.Util.Type_error}. *)
 
+val optional_list_member : f:(Yojson.Safe.t -> 'a) -> string -> Yojson.Safe.t -> 'a list option
+(** [optional_list_member ~f name json] tries to look up key [name] in [json] as a dictionary.
+
+    - If [json] is indeed a dictionary, [name] is presented, and the corresponding value is a list,
+      then convert each element of the list using `f` and return the result list.
+    - If [json] is indeed a directory but [name] is not presented, then return [None].
+    - In all other cases, raise {!Yojson.Safe.Util.Type_error}. *)
+
 val string_list_member : ?default:string list -> string -> Yojson.Safe.t -> string list
 (** [string_list_member ?default ~f name json] tries to look up key [name] in [json] as a
     dictionary.

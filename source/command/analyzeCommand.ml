@@ -34,6 +34,8 @@ module AnalyzeConfiguration = struct
     verify_dsl: bool;
     repository_root: PyrePath.t option;
     rule_filter: int list option;
+    source_filter: string list option;
+    sink_filter: string list option;
     save_results_to: PyrePath.t option;
     strict: bool;
     taint_model_paths: PyrePath.t list;
@@ -58,12 +60,9 @@ module AnalyzeConfiguration = struct
           let no_verify = bool_member "no_verify" ~default:false json in
           let verify_dsl = bool_member "verify_dsl" ~default:false json in
           let repository_root = optional_path_member "repository_root" json in
-          let rule_filter =
-            member "rule_filter" json
-            |> function
-            | `Null -> None
-            | _ as json -> Some (convert_each to_int json)
-          in
+          let rule_filter = optional_list_member ~f:to_int "rule_filter" json in
+          let source_filter = optional_list_member ~f:to_string "source_filter" json in
+          let sink_filter = optional_list_member ~f:to_string "sink_filter" json in
           let save_results_to = optional_path_member "save_results_to" json in
           let strict = bool_member "strict" ~default:false json in
           let taint_model_paths = json |> path_list_member "taint_model_paths" ~default:[] in
@@ -82,6 +81,8 @@ module AnalyzeConfiguration = struct
               verify_dsl;
               repository_root;
               rule_filter;
+              source_filter;
+              sink_filter;
               save_results_to;
               strict;
               taint_model_paths;
@@ -126,6 +127,8 @@ module AnalyzeConfiguration = struct
         no_verify;
         verify_dsl;
         rule_filter;
+        source_filter;
+        sink_filter;
         save_results_to;
         strict;
         taint_model_paths;
@@ -171,6 +174,8 @@ module AnalyzeConfiguration = struct
       verify_models = not no_verify;
       verify_dsl;
       rule_filter;
+      source_filter;
+      sink_filter;
       find_missing_flows;
       dump_model_query_results;
       use_cache;

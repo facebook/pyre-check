@@ -52,6 +52,13 @@ let list_member ?default ~f name json =
   | _, _ -> convert_each f element
 
 
+let optional_list_member ~f name json =
+  member name json
+  |> function
+  | `Null -> None
+  | element -> Some (convert_each f element)
+
+
 let string_list_member = list_member ~f:to_string
 
 let path_list_member = list_member ~f:to_path

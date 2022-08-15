@@ -202,6 +202,8 @@ module StaticAnalysis : sig
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
+    source_filter: string list option;
+    sink_filter: string list option;
     find_missing_flows: string option;
     dump_model_query_results: PyrePath.t option;
     use_cache: bool;
@@ -218,6 +220,8 @@ module StaticAnalysis : sig
     ?verify_models:bool ->
     ?verify_dsl:bool ->
     ?rule_filter:int list ->
+    ?source_filter:string list ->
+    ?sink_filter:string list ->
     ?find_missing_flows:string ->
     ?dump_model_query_results:PyrePath.t ->
     ?use_cache:bool ->
