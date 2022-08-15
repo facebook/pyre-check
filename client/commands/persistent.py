@@ -13,18 +13,7 @@ import subprocess
 import tempfile
 import traceback
 from pathlib import Path
-from typing import (
-    AsyncIterator,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Callable, Dict, List, Optional, Sequence, Set, Type, TypeVar, Union
 
 import dataclasses_json
 from libcst.metadata import CodeRange
@@ -405,15 +394,10 @@ async def _publish_diagnostics(
     )
 
 
-@connection.asynccontextmanager
 async def _read_server_response(
     server_input_channel: connection.TextReader,
-) -> AsyncIterator[str]:
-    try:
-        raw_response = await server_input_channel.read_until(separator="\n")
-        yield raw_response
-    except incremental.InvalidServerResponse as error:
-        LOG.error(f"Pyre server returns invalid response: {error}")
+) -> str:
+    return await server_input_channel.read_until(separator="\n")
 
 
 TypeInfo = str
@@ -554,23 +538,19 @@ async def _send_request(output_channel: connection.TextWriter, request: str) -> 
 async def _receive_response(
     input_channel: connection.TextReader,
 ) -> Optional[query.Response]:
-    async with _read_server_response(input_channel) as raw_response:
-        LOG.info(f"Received `{log.truncate(raw_response, 400)}`")
-        try:
-            return query.parse_query_response(raw_response)
-        except query.InvalidQueryResponse as exception:
-            LOG.info(
-                f"Failed to parse json {raw_response} due to exception: {exception}"
-            )
-            return None
+    raw_response = await _read_server_response(input_channel)
+    LOG.info(f"Received `{log.truncate(raw_response, 400)}`")
+    try:
+        return query.parse_query_response(raw_response)
+    except query.InvalidQueryResponse as exception:
+        LOG.info(f"Failed to parse json {raw_response} due to exception: {exception}")
+        return None
 
 
 async def _consume_and_drop_response(input_channel: connection.TextReader) -> None:
-    async with _read_server_response(input_channel) as raw_response:
-        LOG.info(
-            f"Received and will drop response: `{log.truncate(raw_response, 400)}`"
-        )
-        return None
+    raw_response = await _read_server_response(input_channel)
+    LOG.info(f"Received and will drop response: `{log.truncate(raw_response, 400)}`")
+    return None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -1848,20 +1828,20 @@ class PyreServerHandler(connection.BackgroundTask):
             f'["SubscribeToTypeErrors", "{subscription_name}"]\n'
         )
 
-        async with _read_server_response(server_input_channel) as first_response:
-            initial_type_errors = incremental.parse_type_error_response(first_response)
-            self.update_type_errors(initial_type_errors)
-            await self.show_type_errors_to_client()
+        first_response = await _read_server_response(server_input_channel)
+        initial_type_errors = incremental.parse_type_error_response(first_response)
+        self.update_type_errors(initial_type_errors)
+        await self.show_type_errors_to_client()
 
         while True:
-            async with _read_server_response(
+            raw_subscription_response = await _read_server_response(
                 server_input_channel
-            ) as raw_subscription_response:
-                subscription_response = subscription.Response.parse(
-                    raw_subscription_response
-                )
-                if subscription_name == subscription_response.name:
-                    await self._handle_subscription_body(subscription_response.body)
+            )
+            subscription_response = subscription.Response.parse(
+                raw_subscription_response
+            )
+            if subscription_name == subscription_response.name:
+                await self._handle_subscription_body(subscription_response.body)
 
     async def subscribe_to_type_error(
         self,
