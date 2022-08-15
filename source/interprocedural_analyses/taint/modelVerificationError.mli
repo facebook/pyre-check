@@ -60,7 +60,7 @@ type kind =
       find_clause_kind: string;
     }
   | InvalidParameterExclude of Expression.t
-  | InvalidExtendsIsTransitive of Expression.t
+  | InvalidIsTransitive of Expression.t
   | InvalidModelQueryClauseArguments of {
       callee: Expression.t;
       arguments: Expression.Call.Argument.t list;

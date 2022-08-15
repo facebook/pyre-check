@@ -61,7 +61,7 @@ type kind =
       find_clause_kind: string;
     }
   | InvalidParameterExclude of Expression.t
-  | InvalidExtendsIsTransitive of Expression.t
+  | InvalidIsTransitive of Expression.t
   | InvalidModelQueryClauseArguments of {
       callee: Expression.t;
       arguments: Expression.Call.Argument.t list;
@@ -243,9 +243,10 @@ let description error =
       Format.asprintf
         "The AllParameters exclude must be either a string or a list of strings, got: `%s`."
         (Expression.show expression)
-  | InvalidExtendsIsTransitive expression ->
+  | InvalidIsTransitive expression ->
       Format.asprintf
-        "The Extends is_transitive must be either True or False, got: `%s`."
+        "The Extends and AnyChild `is_transitive` attribute must be either True or False, got: \
+         `%s`."
         (Expression.show expression)
   | InvalidModelQueryClauseArguments { callee; arguments } ->
       Format.asprintf
@@ -371,8 +372,8 @@ let description error =
         (Expression.show models_clause)
   | InvalidAnyChildClause expression ->
       Format.asprintf
-        "`%s` is not a valid any_child clause. Constraints within any_child should only be parent \
-         constraints."
+        "`%s` is not a valid any_child clause. Constraints within any_child should be either \
+         parent constraints or any of `AnyOf`, `AllOf`, and `Not`."
         (Expression.show expression)
 
 
@@ -390,7 +391,7 @@ let code { kind; _ } =
   | ModelingClassAsDefine _ -> 10
   | InvalidModelQueryWhereClause _ -> 11
   | InvalidModelQueryModelClause _ -> 12
-  | InvalidExtendsIsTransitive _ -> 13
+  | InvalidIsTransitive _ -> 13
   | InvalidModelQueryClauseArguments _ -> 14
   | InvalidIdentifier _ -> 15
   | UnexpectedStatement _ -> 16

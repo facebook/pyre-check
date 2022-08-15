@@ -1483,7 +1483,7 @@ let parse_parent_extends_clause ~path ~location ~callee ~arguments =
             (model_verification_error
                ~path
                ~location
-               (InvalidExtendsIsTransitive is_transitive_expression)))
+               (InvalidIsTransitive is_transitive_expression)))
       >>= fun is_transitive -> Ok (ModelQuery.ClassConstraint.Extends { class_name; is_transitive })
   | _ ->
       Error

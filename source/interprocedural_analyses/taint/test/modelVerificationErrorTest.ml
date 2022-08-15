@@ -214,7 +214,7 @@ let test_to_json _ =
     ~expected:
       {|
         {
-          "description": "`[]` is not a valid any_child clause. Constraints within any_child should only be parent constraints.",
+          "description": "`[]` is not a valid any_child clause. Constraints within any_child should be either parent constraints or any of `AnyOf`, `AllOf`, and `Not`.",
           "line": 1,
           "column": 2,
           "stop_line": 3,

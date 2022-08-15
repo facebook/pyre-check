@@ -2592,7 +2592,9 @@ let test_invalid_models context =
         model = ReturnModel(TaintSource[Test])
       )
     |}
-    ~expect:"The Extends is_transitive must be either True or False, got: `foobar`."
+    ~expect:
+      "The Extends and AnyChild `is_transitive` attribute must be either True or False, got: \
+       `foobar`."
     ();
   assert_invalid_model
     ~model_source:
@@ -3427,7 +3429,7 @@ Unexpected statement: `food(y)`
       )
     |}
     ~expect:
-      {|`Decorator(arguments.contains("1"), name.matches("d"))` is not a valid any_child clause. Constraints within any_child should only be parent constraints.|}
+      {|`Decorator(arguments.contains("1"), name.matches("d"))` is not a valid any_child clause. Constraints within any_child should be either parent constraints or any of `AnyOf`, `AllOf`, and `Not`.|}
     ();
 
   (* Test Decorator clause in model queries *)
