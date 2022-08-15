@@ -23,6 +23,7 @@ from .server_connection_test import EchoServerRequestHandler
 
 
 class MemoryIOTest(testslide.TestCase):
+    @setup.async_test
     async def test_memory_read(self) -> None:
         reader = MemoryBytesReader(b"abcdefghijk")
         result = await reader.read_until(b"de")
@@ -50,6 +51,7 @@ class MemoryIOTest(testslide.TestCase):
         except asyncio.IncompleteReadError as error:
             self.assertEqual(error.partial, b"abc")
 
+    @setup.async_test
     async def test_memory_write(self) -> None:
         writer = MemoryBytesWriter()
         await writer.write(b"foo")
@@ -85,12 +87,14 @@ class AsyncConnectionTest(testslide.TestCase):
             result = await input_channel.read_exactly(2)
             self.assertEqual("uv", result)
 
+    @setup.async_test
     async def test_connect(self) -> None:
         with setup.spawn_unix_stream_server(EchoServerRequestHandler) as socket_path:
             # Connect to test server from the main thread
             await self._test_binary_connect(socket_path)
             await self._test_text_connect(socket_path)
 
+    @setup.async_test
     async def test_read_until(self) -> None:
         with setup.spawn_unix_stream_server(EchoServerRequestHandler) as socket_path:
             # Intentionally use a small buffer size, to test over-sized reads
@@ -129,6 +133,7 @@ class WaitForEventTask(BackgroundTask):
 
 
 class BackgroundTaskTest(testslide.TestCase):
+    @setup.async_test
     async def test_background_task_manager(self) -> None:
         task = WaitForEventTask()
         manager = BackgroundTaskManager(task)
@@ -155,6 +160,7 @@ class BackgroundTaskTest(testslide.TestCase):
         await manager.ensure_task_stop()
         self.assertFalse(manager.is_task_running())
 
+    @setup.async_test
     async def test_background_task_manager_shutdown_before_start(self) -> None:
         manager = BackgroundTaskManager(WaitForeverTask())
         self.assertFalse(manager.is_task_running())
