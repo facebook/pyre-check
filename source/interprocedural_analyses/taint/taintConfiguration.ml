@@ -83,6 +83,8 @@ let missing_flows_kind_to_string = function
 type t = {
   sources: AnnotationParser.source_or_sink list;
   sinks: AnnotationParser.source_or_sink list;
+  filtered_sources: Sources.Set.t option;
+  filtered_sinks: Sinks.Set.t option;
   transforms: TaintTransform.t list;
   features: string list;
   rules: Rule.t list;
@@ -104,6 +106,8 @@ let empty =
   {
     sources = [];
     sinks = [];
+    filtered_sources = None;
+    filtered_sinks = None;
     transforms = [];
     features = [];
     rules = [];
@@ -829,6 +833,8 @@ let parse source_jsons =
   {
     sources;
     sinks;
+    filtered_sources = None;
+    filtered_sinks = None;
     transforms;
     features;
     rules;
@@ -1033,6 +1039,8 @@ let default =
   {
     sources;
     sinks;
+    filtered_sources = None;
+    filtered_sinks = None;
     transforms;
     features =
       [
@@ -1109,6 +1117,8 @@ let get () =
 
 let create
     ~rule_filter
+    ~source_filter
+    ~sink_filter
     ~find_missing_flows
     ~dump_model_query_results_path
     ~maximum_trace_length
@@ -1140,6 +1150,38 @@ let create
   | Ok configurations -> (
       parse configurations
       >>= validate
+      >>= fun configuration ->
+      (match source_filter with
+      | None -> Ok configuration
+      | Some source_filter ->
+          let parse_source_reference source =
+            AnnotationParser.parse_source ~allowed:configuration.sources source
+            |> Result.map_error ~f:(fun _ ->
+                   { Error.path = None; kind = Error.UnsupportedSource source })
+          in
+          source_filter
+          |> List.map ~f:parse_source_reference
+          |> Result.all
+          |> Result.map_error ~f:(fun error -> [error])
+          >>| Sources.Set.of_list
+          >>| Option.some
+          >>| fun filtered_sources -> { configuration with filtered_sources })
+      >>= fun configuration ->
+      (match sink_filter with
+      | None -> Ok configuration
+      | Some sink_filter ->
+          let parse_sink_reference sink =
+            AnnotationParser.parse_sink ~allowed:configuration.sinks sink
+            |> Result.map_error ~f:(fun _ ->
+                   { Error.path = None; kind = Error.UnsupportedSink sink })
+          in
+          sink_filter
+          |> List.map ~f:parse_sink_reference
+          |> Result.all
+          |> Result.map_error ~f:(fun error -> [error])
+          >>| Sinks.Set.of_list
+          >>| Option.some
+          >>| fun filtered_sinks -> { configuration with filtered_sinks })
       >>| fun configuration ->
       let configuration =
         match find_missing_flows with

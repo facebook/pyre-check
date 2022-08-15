@@ -12,7 +12,13 @@ module Target = Interprocedural.Target
 
 let initialize_configuration
     ~static_analysis_configuration:
-      { Configuration.StaticAnalysis.configuration = { taint_model_paths; _ }; _ }
+      {
+        Configuration.StaticAnalysis.configuration = { taint_model_paths; _ };
+        rule_filter;
+        source_filter;
+        sink_filter;
+        _;
+      }
   =
   (* In order to save time, sanity check models before starting the analysis. *)
   Log.info "Verifying model syntax and configuration.";
@@ -21,7 +27,9 @@ let initialize_configuration
   |> List.iter ~f:(fun (path, source) -> ModelParser.verify_model_syntax ~path ~source);
   let (_ : TaintConfiguration.t) =
     TaintConfiguration.create
-      ~rule_filter:None
+      ~rule_filter
+      ~source_filter
+      ~sink_filter
       ~find_missing_flows:None
       ~dump_model_query_results_path:None
       ~maximum_trace_length:None
@@ -145,6 +153,8 @@ let parse_taint_configuration
       {
         Configuration.StaticAnalysis.configuration = { taint_model_paths; _ };
         rule_filter;
+        source_filter;
+        sink_filter;
         find_missing_flows;
         dump_model_query_results;
         maximum_trace_length;
@@ -158,6 +168,8 @@ let parse_taint_configuration
   let taint_configuration =
     TaintConfiguration.create
       ~rule_filter
+      ~source_filter
+      ~sink_filter
       ~find_missing_flows
       ~dump_model_query_results_path:dump_model_query_results
       ~maximum_trace_length

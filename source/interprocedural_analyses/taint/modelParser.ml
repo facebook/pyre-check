@@ -252,33 +252,40 @@ module SourceSinkFilter = struct
   (* No filter, keep everything. *)
   let none = { sources = None; sinks = None }
 
-  let from_configuration { TaintConfiguration.rules; filtered_rule_codes; _ } =
-    match filtered_rule_codes with
-    | None -> none
-    | Some filtered_rule_codes ->
-        let sources_to_keep, sinks_to_keep =
-          let rules =
-            (* The user annotations for partial sinks will be the untriggered ones, even though the
-               rule expects triggered sinks. *)
-            let untrigger_partial_sinks sink =
-              match sink with
-              | Sinks.TriggeredPartialSink { kind; label } -> Sinks.PartialSink { kind; label }
-              | _ -> sink
+  let from_configuration
+      { TaintConfiguration.rules; filtered_rule_codes; filtered_sources; filtered_sinks; _ }
+    =
+    let { sources; sinks } =
+      match filtered_rule_codes with
+      | None -> none
+      | Some filtered_rule_codes ->
+          let sources_to_keep, sinks_to_keep =
+            let rules =
+              (* The user annotations for partial sinks will be the untriggered ones, even though
+                 the rule expects triggered sinks. *)
+              let untrigger_partial_sinks sink =
+                match sink with
+                | Sinks.TriggeredPartialSink { kind; label } -> Sinks.PartialSink { kind; label }
+                | _ -> sink
+              in
+              List.filter_map rules ~f:(fun { TaintConfiguration.Rule.code; sources; sinks; _ } ->
+                  if Core.Set.mem filtered_rule_codes code then
+                    Some (sources, List.map sinks ~f:untrigger_partial_sinks)
+                  else
+                    None)
             in
-            List.filter_map rules ~f:(fun { TaintConfiguration.Rule.code; sources; sinks; _ } ->
-                if Core.Set.mem filtered_rule_codes code then
-                  Some (sources, List.map sinks ~f:untrigger_partial_sinks)
-                else
-                  None)
+            List.fold
+              rules
+              ~init:(Sources.Set.empty, Sinks.Set.empty)
+              ~f:(fun (sources, sinks) (rule_sources, rule_sinks) ->
+                ( Sources.Set.union sources (Sources.Set.of_list rule_sources),
+                  Sinks.Set.union sinks (Sinks.Set.of_list rule_sinks) ))
           in
-          List.fold
-            rules
-            ~init:(Sources.Set.empty, Sinks.Set.empty)
-            ~f:(fun (sources, sinks) (rule_sources, rule_sinks) ->
-              ( Sources.Set.union sources (Sources.Set.of_list rule_sources),
-                Sinks.Set.union sinks (Sinks.Set.of_list rule_sinks) ))
-        in
-        { sources = Some sources_to_keep; sinks = Some sinks_to_keep }
+          { sources = Some sources_to_keep; sinks = Some sinks_to_keep }
+    in
+    let sources = Option.merge sources filtered_sources ~f:Sources.Set.union in
+    let sinks = Option.merge sinks filtered_sinks ~f:Sinks.Set.union in
+    { sources; sinks }
 
 
   let should_keep_source { sources; _ } source =
