@@ -2717,10 +2717,16 @@ module State (Context : Context) = struct
           forward_comprehension ~resolution ~errors:[] ~element ~generators
         in
         let has_async_generator = List.exists ~f:(fun generator -> generator.async) generators in
+        let has_await =
+          match Node.value element with
+          | Expression.Await _ -> true
+          | _ -> false
+        in
         let generator =
-          match has_async_generator with
-          | true -> Type.async_generator ~yield_type:resolved ()
-          | false -> Type.generator_expression resolved
+          if has_async_generator || has_await then
+            Type.async_generator ~yield_type:resolved ()
+          else
+            Type.generator_expression resolved
         in
         { resolution; errors; resolved = generator; resolved_annotation = None; base = None }
     | Lambda { Lambda.body; parameters } ->

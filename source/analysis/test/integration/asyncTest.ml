@@ -288,7 +288,37 @@ let test_check_async context =
       async def foo() -> AsyncIterator[str]:
         yield ""
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+      from typing import AsyncIterator
+      async def foo(x: int) -> int:
+        return x + 1
+
+      def main() -> None:
+        xs = (await foo(x) for x in range(5))
+        any(xs)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `any`, for 1st positional only parameter expected \
+       `Iterable[object]` but got `AsyncGenerator[int, typing.Any]`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import AsyncIterator
+      async def foo(x: int) -> int:
+        return x + 1
+
+      def main() -> None:
+        xs = (await foo(x) for x in range(5))
+        ys = ((await foo(x) for x in range(5)) for y in range(5))
+        reveal_locals()
+    |}
+    [
+      "Revealed locals [-2]: Revealed local types are:\n\
+      \    xs: `typing.AsyncGenerator[int, typing.Any]`\n\
+      \    ys: `typing.Generator[typing.AsyncGenerator[int, typing.Any], None, None]`";
+    ]
 
 
 let () = "async" >::: ["check_async" >:: test_check_async] |> Test.run
