@@ -346,28 +346,23 @@ async def try_initialize(
         return InitializationExit()
 
 
-@connection.asynccontextmanager
 async def read_lsp_request(
     input_channel: connection.TextReader, output_channel: connection.TextWriter
-) -> AsyncIterator[Optional[json_rpc.Request]]:
-    message = None
-    try:
-        message = await lsp.read_json_rpc(input_channel)
-        yield message
-    except json_rpc.JSONRPCException as json_rpc_error:
-        LOG.debug(f"Exception occurred while reading JSON RPC: {json_rpc_error}")
-        await lsp.write_json_rpc_ignore_connection_error(
-            output_channel,
-            json_rpc.ErrorResponse(
-                # pyre-ignore[16] - refinement doesn't work here for some reason
-                id=message.id if message is not None else None,
-                # pyre-ignore[16]
-                activity_key=message.activity_key if message is not None else None,
-                code=json_rpc_error.error_code(),
-                message=str(json_rpc_error),
-            ),
-        )
-        yield None
+) -> json_rpc.Request:
+    while True:
+        try:
+            message = await lsp.read_json_rpc(input_channel)
+            return message
+        except json_rpc.JSONRPCException as json_rpc_error:
+            LOG.debug(f"Exception occurred while reading JSON RPC: {json_rpc_error}")
+            await lsp.write_json_rpc_ignore_connection_error(
+                output_channel,
+                json_rpc.ErrorResponse(
+                    id=None,
+                    code=json_rpc_error.error_code(),
+                    message=str(json_rpc_error),
+                ),
+            )
 
 
 async def _wait_for_exit(
@@ -382,15 +377,12 @@ async def _wait_for_exit(
     "exit" request.
     """
     while True:
-        async with read_lsp_request(input_channel, output_channel) as request:
-            if request is None:
-                LOG.debug("Request read error after shutdown")
-                continue
-            if request.method != "exit":
-                LOG.debug(f"Non-exit request received after shutdown: {request}")
-                continue
-            # Got an exit request. Stop the wait.
-            return
+        request = await read_lsp_request(input_channel, output_channel)
+        if request.method != "exit":
+            LOG.debug(f"Non-exit request received after shutdown: {request}")
+            continue
+        # Got an exit request. Stop the wait.
+        return
 
 
 async def _publish_diagnostics(
@@ -924,14 +916,10 @@ class PyreServer:
 
     async def _run(self) -> int:
         while True:
-            async with read_lsp_request(
-                self.input_channel, self.output_channel
-            ) as request:
-                if request is None:
-                    LOG.debug("LSP request reading failed. Trying again...")
-                    continue
-                LOG.debug(f"Received LSP request: {log.truncate(str(request), 400)}")
+            request = await read_lsp_request(self.input_channel, self.output_channel)
+            LOG.debug(f"Received LSP request: {log.truncate(str(request), 400)}")
 
+            try:
                 if request.method == "exit":
                     return commands.ExitCode.FAILURE
                 elif request.method == "shutdown":
@@ -1049,6 +1037,19 @@ class PyreServer:
                     )
                 elif request.id is not None:
                     raise lsp.RequestCancelledError("Request not supported yet")
+            except json_rpc.JSONRPCException as json_rpc_error:
+                LOG.debug(
+                    f"Exception occurred while processing request: {json_rpc_error}"
+                )
+                await lsp.write_json_rpc_ignore_connection_error(
+                    self.output_channel,
+                    json_rpc.ErrorResponse(
+                        id=request.id,
+                        activity_key=request.activity_key,
+                        code=json_rpc_error.error_code(),
+                        message=str(json_rpc_error),
+                    ),
+                )
 
     async def run(self) -> int:
         try:

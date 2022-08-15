@@ -123,18 +123,15 @@ def _fake_option_reader() -> PyreServerStartOptionsReader:
 class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_read_lsp_request_success(self) -> None:
-        input_channel = await _create_input_channel_with_requests(
-            [
-                json_rpc.Request(
-                    id=0,
-                    method="derp",
-                ),
-            ]
+        expected_request = json_rpc.Request(
+            id=0,
+            method="derp",
         )
+        input_channel = await _create_input_channel_with_requests([expected_request])
         bytes_writer = MemoryBytesWriter()
         output_channel = TextWriter(bytes_writer)
-        async with read_lsp_request(input_channel, output_channel) as request:
-            self.assertIsNotNone(request)
+        actual_request = await read_lsp_request(input_channel, output_channel)
+        self.assertEquals(actual_request, expected_request)
         self.assertEqual(len(bytes_writer.items()), 0)
 
     @setup.async_test
@@ -143,8 +140,7 @@ class PersistentTest(testslide.TestCase):
         bytes_writer = MemoryBytesWriter()
         output_channel = TextWriter(bytes_writer)
         with self.assertRaises(lsp.ReadChannelClosedError):
-            async with read_lsp_request(input_channel, output_channel) as request:
-                self.assertIsNone(request)
+            await read_lsp_request(input_channel, output_channel)
         self.assertEqual(len(bytes_writer.items()), 0)
 
     @setup.async_test
@@ -152,8 +148,9 @@ class PersistentTest(testslide.TestCase):
         input_channel = create_memory_text_reader("derp\n")
         bytes_writer = MemoryBytesWriter()
         output_channel = TextWriter(bytes_writer)
-        async with read_lsp_request(input_channel, output_channel) as request:
-            self.assertIsNone(request)
+        with self.assertRaises(lsp.ReadChannelClosedError):
+            await read_lsp_request(input_channel, output_channel)
+        # One message for one failed read
         self.assertEqual(len(bytes_writer.items()), 1)
 
     @setup.async_test

@@ -164,15 +164,13 @@ class PysaServer:
 
     async def wait_for_exit(self) -> int:
         while True:
-            async with read_lsp_request(
-                self.input_channel, self.output_channel
-            ) as request:
-                LOG.debug(f"Received post-shutdown request: {request}")
+            request = await read_lsp_request(self.input_channel, self.output_channel)
+            LOG.debug(f"Received post-shutdown request: {request}")
 
-                if request is not None and request.method == "exit":
-                    return 0
-                else:
-                    raise json_rpc.InvalidRequestError("LSP server has been shut down")
+            if request.method == "exit":
+                return 0
+            else:
+                raise json_rpc.InvalidRequestError("LSP server has been shut down")
 
     async def process_open_request(
         self, parameters: lsp.DidOpenTextDocumentParameters
@@ -208,12 +206,9 @@ class PysaServer:
 
     async def run(self) -> int:
         while True:
-            async with read_lsp_request(
-                self.input_channel, self.output_channel
-            ) as request:
-                if request is None:
-                    continue
+            request = await read_lsp_request(self.input_channel, self.output_channel)
 
+            try:
                 if request.method == "exit":
                     return commands.ExitCode.FAILURE
                 elif request.method == "shutdown":
@@ -257,6 +252,19 @@ class PysaServer:
                     )
                 elif request.id is not None:
                     raise lsp.RequestCancelledError("Request not supported yet")
+            except json_rpc.JSONRPCException as json_rpc_error:
+                LOG.debug(
+                    f"Exception occurred while processing request: {json_rpc_error}"
+                )
+                await lsp.write_json_rpc_ignore_connection_error(
+                    self.output_channel,
+                    json_rpc.ErrorResponse(
+                        id=request.id,
+                        activity_key=request.activity_key,
+                        code=json_rpc_error.error_code(),
+                        message=str(json_rpc_error),
+                    ),
+                )
 
 
 async def run_persistent(
