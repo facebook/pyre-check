@@ -124,9 +124,3 @@ module Candidates : sig
 
   val generate_issues : t -> define:Define.t Node.t -> issue list
 end
-
-val code_metadata : unit -> Yojson.Safe.t
-
-val source_can_match_rule : Sources.t -> bool
-
-val sink_can_match_rule : Sinks.t -> bool

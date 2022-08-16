@@ -157,6 +157,12 @@ val exception_on_error : (t, Error.t list) Result.t -> t
 
 val apply_missing_flows : t -> missing_flows_kind -> t
 
+val source_can_match_rule : t -> Sources.t -> bool
+
+val sink_can_match_rule : t -> Sinks.t -> bool
+
+val code_metadata : unit -> Yojson.Safe.t
+
 val conditional_test_sinks : unit -> Sinks.t list
 
 val literal_string_sinks : unit -> literal_string_sink list

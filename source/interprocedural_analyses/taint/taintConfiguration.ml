@@ -1237,6 +1237,77 @@ let create
           { configuration with rules; filtered_rule_codes = Some codes_to_keep })
 
 
+let source_can_match_rule configuration = function
+  | Sources.Transform { local; global; base = NamedSource name }
+  | Sources.Transform { local; global; base = ParametricSource { source_name = name; _ } } -> (
+      let { matching_sinks; _ } = configuration in
+      let transforms = TaintTransforms.merge ~local ~global in
+      let source =
+        match TaintTransforms.get_named_transforms transforms with
+        | [] -> Sources.NamedSource name
+        | named_transforms ->
+            Sources.Transform
+              {
+                local = TaintTransforms.empty;
+                global = TaintTransforms.of_named_transforms named_transforms;
+                base = Sources.NamedSource name;
+              }
+      in
+      match Sources.Map.find_opt source matching_sinks with
+      | None ->
+          (* TODO(T104600511): Filter out sources that are never used in any rule. *)
+          false
+      | Some sinks ->
+          TaintTransforms.get_sanitize_transforms transforms
+          |> (fun { sinks; _ } -> sinks)
+          |> Sinks.extract_sanitized_sinks_from_transforms
+          |> Sinks.Set.diff sinks
+          |> Sinks.Set.is_empty
+          |> not)
+  | _ -> true
+
+
+let sink_can_match_rule configuration = function
+  | Sinks.Transform { local; global; base = NamedSink name }
+  | Sinks.Transform { local; global; base = ParametricSink { sink_name = name; _ } } -> (
+      let { matching_sources; _ } = configuration in
+      let transforms = TaintTransforms.merge ~local ~global in
+      let sink =
+        match TaintTransforms.get_named_transforms transforms with
+        | [] -> Sinks.NamedSink name
+        | named_transforms ->
+            Sinks.Transform
+              {
+                local = TaintTransforms.empty;
+                global = TaintTransforms.of_named_transforms named_transforms;
+                base = Sinks.NamedSink name;
+              }
+      in
+      match Sinks.Map.find_opt sink matching_sources with
+      | None ->
+          (* TODO(T104600511): Filter out sinks that are never used in any rule. *)
+          false
+      | Some sources ->
+          TaintTransforms.get_sanitize_transforms transforms
+          |> (fun { sources; _ } -> sources)
+          |> Sources.extract_sanitized_sources_from_transforms
+          |> Sources.Set.diff sources
+          |> Sources.Set.is_empty
+          |> not)
+  | Sinks.Transform { local; global; base = LocalReturn } ->
+      let { possible_tito_transforms; _ } = configuration in
+      let transforms =
+        TaintTransforms.merge ~local ~global |> TaintTransforms.discard_sanitize_transforms
+      in
+      TaintTransforms.Set.mem transforms possible_tito_transforms
+  | _ -> true
+
+
+let code_metadata () =
+  let { rules; _ } = get () in
+  `Assoc (List.map rules ~f:(fun rule -> Format.sprintf "%d" rule.code, `String rule.name))
+
+
 let conditional_test_sinks () =
   match get () with
   | { implicit_sinks = { conditional_test; _ }; _ } -> conditional_test

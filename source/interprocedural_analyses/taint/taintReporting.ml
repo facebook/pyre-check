@@ -53,7 +53,7 @@ let issues_to_json ~fixpoint_state ~filename_lookup ~override_graph issues =
 
 
 let metadata () =
-  let codes = Issue.code_metadata () in
+  let codes = TaintConfiguration.code_metadata () in
   `Assoc ["codes", codes]
 
 

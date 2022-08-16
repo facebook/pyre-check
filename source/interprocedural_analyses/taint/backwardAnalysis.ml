@@ -359,7 +359,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             (* Apply tito transforms and source- and sink-specific sanitizers. *)
             taint_to_propagate
             |> BackwardState.Tree.apply_transforms transforms TaintTransforms.Order.Backward
-            |> BackwardState.Tree.transform BackwardTaint.kind Filter ~f:Issue.sink_can_match_rule
+            |> BackwardState.Tree.transform
+                 BackwardTaint.kind
+                 Filter
+                 ~f:(TaintConfiguration.sink_can_match_rule (TaintConfiguration.get ()))
         | Sinks.Transform _ -> failwith "unexpected non-empty `global` transforms in tito"
         | _ -> taint_to_propagate
       in
@@ -860,7 +863,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   |> BackwardState.Tree.transform
                        BackwardTaint.kind
                        Filter
-                       ~f:Issue.sink_can_match_rule
+                       ~f:(TaintConfiguration.sink_can_match_rule (TaintConfiguration.get ()))
               | _ -> taint
             in
             taint
