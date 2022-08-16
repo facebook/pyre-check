@@ -306,20 +306,6 @@ let matches_decorator_constraint ~name_constraint ~arguments_constraint decorato
   | Some decorator -> decorator_name_matches decorator && decorator_arguments_matches decorator
 
 
-let parent_matches_decorator_constraint
-    ~resolution
-    ~name_constraint
-    ~arguments_constraint
-    class_name
-  =
-  GlobalResolution.class_summary resolution (Type.Primitive class_name)
-  >>| Node.value
-  >>| (fun { decorators; _ } ->
-        List.exists decorators ~f:(fun decorator ->
-            matches_decorator_constraint ~name_constraint ~arguments_constraint decorator))
-  |> Option.value ~default:false
-
-
 let matches_annotation_constraint ~annotation_constraint ~annotation =
   let open Expression in
   match annotation_constraint, annotation with
@@ -374,7 +360,64 @@ let rec normalized_parameter_matches_constraint
       List.for_all constraints ~f:(normalized_parameter_matches_constraint ~resolution ~parameter)
 
 
-let rec callable_matches_constraint query_constraint ~resolution ~callable =
+let parent_matches_decorator_constraint
+    ~resolution
+    ~name_constraint
+    ~arguments_constraint
+    class_name
+  =
+  GlobalResolution.class_summary resolution (Type.Primitive class_name)
+  >>| Node.value
+  >>| (fun { decorators; _ } ->
+        List.exists decorators ~f:(fun decorator ->
+            matches_decorator_constraint ~name_constraint ~arguments_constraint decorator))
+  |> Option.value ~default:false
+
+
+let rec find_children ~class_hierarchy_graph ~is_transitive parent_name =
+  let child_name_set = ClassHierarchyGraph.children class_hierarchy_graph parent_name in
+  ClassHierarchyGraph.ClassNameSet.fold
+    (fun class_name set ->
+      set
+      |> ClassHierarchyGraph.ClassNameSet.union
+           (find_children ~class_hierarchy_graph ~is_transitive class_name))
+    child_name_set
+    ClassHierarchyGraph.ClassNameSet.empty
+  |> ClassHierarchyGraph.ClassNameSet.add parent_name
+
+
+let rec class_matches_constraint ~resolution ~name class_constraint =
+  match class_constraint with
+  | ModelQuery.ClassConstraint.NameSatisfies name_constraint ->
+      matches_name_constraint ~name_constraint name
+  | ModelQuery.ClassConstraint.Extends { class_name; is_transitive } ->
+      is_ancestor ~resolution ~is_transitive class_name name
+  | ModelQuery.ClassConstraint.DecoratorSatisfies { name_constraint; arguments_constraint } ->
+      parent_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint name
+  | ModelQuery.ClassConstraint.AnyOf constraints ->
+      List.exists constraints ~f:(class_matches_constraint ~resolution ~name)
+  | ModelQuery.ClassConstraint.AllOf constraints ->
+      List.for_all constraints ~f:(class_matches_constraint ~resolution ~name)
+  | ModelQuery.ClassConstraint.Not class_constraint ->
+      not (class_matches_constraint ~resolution ~name class_constraint)
+  | _ -> failwith "impossible case"
+
+
+let parent_matches_any_child_constraint
+    ~resolution
+    ~class_hierarchy_graph
+    ~class_constraint
+    ~is_transitive
+    parent_name
+  =
+  ClassHierarchyGraph.ClassNameSet.add
+    parent_name
+    (find_children ~class_hierarchy_graph ~is_transitive parent_name)
+  |> ClassHierarchyGraph.ClassNameSet.exists (fun name ->
+         class_matches_constraint ~resolution ~name class_constraint)
+
+
+let rec callable_matches_constraint query_constraint ~resolution ~class_hierarchy_graph ~callable =
   let get_callable_type =
     Memo.unit (fun () ->
         let callable_type = Target.get_module_and_definition ~resolution callable >>| snd in
@@ -430,11 +473,16 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
                  normalized_parameter_matches_constraint ~resolution ~parameter parameter_constraint)
       | _ -> false)
   | ModelQuery.AnyOf constraints ->
-      List.exists constraints ~f:(callable_matches_constraint ~resolution ~callable)
+      List.exists
+        constraints
+        ~f:(callable_matches_constraint ~resolution ~class_hierarchy_graph ~callable)
   | ModelQuery.AllOf constraints ->
-      List.for_all constraints ~f:(callable_matches_constraint ~resolution ~callable)
+      List.for_all
+        constraints
+        ~f:(callable_matches_constraint ~resolution ~class_hierarchy_graph ~callable)
   | ModelQuery.Not query_constraint ->
-      not (callable_matches_constraint ~resolution ~callable query_constraint)
+      not
+        (callable_matches_constraint ~resolution ~class_hierarchy_graph ~callable query_constraint)
   | ModelQuery.ParentConstraint (NameSatisfies name_constraint) ->
       Target.class_name callable
       >>| matches_name_constraint ~name_constraint
@@ -446,6 +494,14 @@ let rec callable_matches_constraint query_constraint ~resolution ~callable =
   | ModelQuery.ParentConstraint (DecoratorSatisfies { name_constraint; arguments_constraint }) ->
       Target.class_name callable
       >>| parent_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint
+      |> Option.value ~default:false
+  | ModelQuery.ParentConstraint (AnyChildSatisfies { class_constraint; is_transitive }) ->
+      Target.class_name callable
+      >>| parent_matches_any_child_constraint
+            ~resolution
+            ~class_hierarchy_graph
+            ~class_constraint
+            ~is_transitive
       |> Option.value ~default:false
   | _ -> failwith "impossible case"
 
@@ -678,6 +734,7 @@ let apply_callable_productions ~resolution ~productions ~callable =
 let apply_callable_query_rule
     ~verbose
     ~resolution
+    ~class_hierarchy_graph
     ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name; _ }
     ~callable
   =
@@ -689,7 +746,12 @@ let apply_callable_query_rule
     | _ -> false
   in
 
-  if kind_matches && List.for_all ~f:(callable_matches_constraint ~resolution ~callable) query then begin
+  if
+    kind_matches
+    && List.for_all
+         ~f:(callable_matches_constraint ~resolution ~class_hierarchy_graph ~callable)
+         query
+  then begin
     if verbose then
       Log.info
         "Target `%a` matches all constraints for the model query rule %s."
@@ -705,7 +767,13 @@ let apply_callable_query_rule
     String.Map.empty
 
 
-let rec attribute_matches_constraint query_constraint ~resolution ~name ~annotation =
+let rec attribute_matches_constraint
+    query_constraint
+    ~resolution
+    ~class_hierarchy_graph
+    ~name
+    ~annotation
+  =
   let attribute_class_name = Reference.prefix name >>| Reference.show in
   match query_constraint with
   | ModelQuery.NameConstraint name_constraint ->
@@ -715,11 +783,21 @@ let rec attribute_matches_constraint query_constraint ~resolution ~name ~annotat
       >>| (fun annotation -> matches_annotation_constraint ~annotation_constraint ~annotation)
       |> Option.value ~default:false
   | ModelQuery.AnyOf constraints ->
-      List.exists constraints ~f:(attribute_matches_constraint ~resolution ~name ~annotation)
+      List.exists
+        constraints
+        ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~name ~annotation)
   | ModelQuery.AllOf constraints ->
-      List.for_all constraints ~f:(attribute_matches_constraint ~resolution ~name ~annotation)
+      List.for_all
+        constraints
+        ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~name ~annotation)
   | ModelQuery.Not query_constraint ->
-      not (attribute_matches_constraint ~resolution ~name ~annotation query_constraint)
+      not
+        (attribute_matches_constraint
+           ~resolution
+           ~class_hierarchy_graph
+           ~name
+           ~annotation
+           query_constraint)
   | ModelQuery.ParentConstraint (NameSatisfies name_constraint) ->
       attribute_class_name
       >>| matches_name_constraint ~name_constraint
@@ -731,6 +809,14 @@ let rec attribute_matches_constraint query_constraint ~resolution ~name ~annotat
   | ModelQuery.ParentConstraint (DecoratorSatisfies { name_constraint; arguments_constraint }) ->
       attribute_class_name
       >>| parent_matches_decorator_constraint ~resolution ~name_constraint ~arguments_constraint
+      |> Option.value ~default:false
+  | ModelQuery.ParentConstraint (AnyChildSatisfies { class_constraint; is_transitive }) ->
+      attribute_class_name
+      >>| parent_matches_any_child_constraint
+            ~resolution
+            ~class_hierarchy_graph
+            ~class_constraint
+            ~is_transitive
       |> Option.value ~default:false
   | _ -> failwith "impossible case"
 
@@ -750,6 +836,7 @@ let apply_attribute_productions ~productions =
 let apply_attribute_query_rule
     ~verbose
     ~resolution
+    ~class_hierarchy_graph
     ~rule:{ ModelQuery.rule_kind; query; productions; name = rule_name; _ }
     ~name
     ~annotation
@@ -762,7 +849,9 @@ let apply_attribute_query_rule
 
   if
     kind_matches
-    && List.for_all ~f:(attribute_matches_constraint ~resolution ~name ~annotation) query
+    && List.for_all
+         ~f:(attribute_matches_constraint ~resolution ~class_hierarchy_graph ~name ~annotation)
+         query
   then begin
     if verbose then
       Log.info
@@ -811,6 +900,7 @@ let apply_all_rules
     ~resolution
     ~scheduler
     ~configuration
+    ~class_hierarchy_graph
     ~source_sink_filter
     ~rules
     ~callables
@@ -837,6 +927,7 @@ let apply_all_rules
                  ~verbose:
                    (Option.is_some configuration.TaintConfiguration.dump_model_query_results_path)
                  ~resolution:global_resolution
+                 ~class_hierarchy_graph
                  ~rule
                  ~callable)
         |> List.reduce ~f:(fun left right ->
@@ -895,6 +986,7 @@ let apply_all_rules
                apply_attribute_query_rule
                  ~verbose:(Option.is_some configuration.dump_model_query_results_path)
                  ~resolution:global_resolution
+                 ~class_hierarchy_graph
                  ~rule
                  ~name
                  ~annotation)
@@ -967,6 +1059,7 @@ let apply_all_rules
 
 let generate_models_from_queries
     ~configuration
+    ~class_hierarchy_graph
     ~scheduler
     ~environment
     ~source_sink_filter
@@ -991,6 +1084,7 @@ let generate_models_from_queries
     ~resolution
     ~scheduler
     ~configuration
+    ~class_hierarchy_graph
     ~source_sink_filter
     ~rules:queries
     ~callables

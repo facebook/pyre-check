@@ -221,7 +221,14 @@ let parse_models_and_queries_from_configuration
   }
 
 
-let initialize_models ~scheduler ~static_analysis_configuration ~environment ~callables ~stubs =
+let initialize_models
+    ~scheduler
+    ~static_analysis_configuration
+    ~class_hierarchy_graph
+    ~environment
+    ~callables
+    ~stubs
+  =
   let stubs = Target.HashSet.of_list stubs in
 
   Log.info "Parsing taint models...";
@@ -249,6 +256,7 @@ let initialize_models ~scheduler ~static_analysis_configuration ~environment ~ca
         let models_and_names, errors =
           TaintModelQuery.ModelQuery.generate_models_from_queries
             ~configuration:taint_configuration
+            ~class_hierarchy_graph
             ~scheduler
             ~environment
             ~source_sink_filter
@@ -382,6 +390,7 @@ let run_taint_analysis
       initialize_models
         ~scheduler
         ~static_analysis_configuration
+        ~class_hierarchy_graph
         ~environment:(Analysis.TypeEnvironment.read_only environment)
         ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
         ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)

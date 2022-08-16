@@ -506,6 +506,7 @@ let initialize
   in
   let stubs = Interprocedural.FetchCallables.get_stubs initial_callables in
   let callables = Interprocedural.FetchCallables.get_callables initial_callables in
+  let class_hierarchy_graph = ClassHierarchyGraph.from_source ~environment ~source in
   let user_models, skip_overrides =
     let models_source =
       match models_source, add_initial_models with
@@ -541,6 +542,7 @@ let initialize
           TaintModelQuery.ModelQuery.apply_all_rules
             ~resolution
             ~configuration:taint_configuration
+            ~class_hierarchy_graph
             ~scheduler:(Test.mock_scheduler ())
             ~environment
             ~source_sink_filter
@@ -607,7 +609,6 @@ let initialize
       ~call_graph:whole_program_call_graph
       ~initial_models
   in
-  let class_hierarchy_graph = ClassHierarchyGraph.from_source ~environment ~source in
   let class_interval_graph =
     Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
     |> Interprocedural.ClassIntervalSetGraph.SharedMemory.from_heap

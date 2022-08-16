@@ -1023,8 +1023,19 @@ let rec process_request ~environment ~build_system request =
                               ();
                             initial_callables)
                       in
+                      let qualifiers =
+                        Analysis.TypeEnvironment.ReadOnly.module_tracker environment
+                        |> Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules
+                      in
+                      let class_hierarchy_graph =
+                        Interprocedural.ClassHierarchyGraph.from_qualifiers
+                          ~scheduler
+                          ~environment
+                          ~qualifiers
+                      in
                       TaintModelQuery.ModelQuery.generate_models_from_queries
                         ~configuration:taint_configuration
+                        ~class_hierarchy_graph
                         ~scheduler
                         ~environment
                         ~source_sink_filter:Taint.ModelParser.SourceSinkFilter.none

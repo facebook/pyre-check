@@ -311,6 +311,95 @@ let test_dump_model_query_results context =
 ]|}
   in
   (* TODO(T123305678) Add test for attributes *)
+  (* Test correct ModelQuery<->sources for same callable *)
+  let _ =
+    initialize
+      ~models_source:
+        {|
+        ModelQuery(
+          name = "get_parent_of_d1_decorator_sources",
+          find = "methods",
+          where = [
+            parent.any_child(
+              AnyOf(
+                parent.decorator(
+                  name.matches("anything")
+                ),
+                AllOf(
+                  Not(parent.matches("Foo")),
+                  Not(parent.matches("Baz")),
+                )
+              ),
+              is_transitive=True
+            ),
+            name.matches("init")
+          ],
+          model = [
+            Parameters(TaintSource[Test], where=[
+                Not(name.equals("self")),
+                Not(name.equals("a"))
+            ])
+          ]
+        )
+        |}
+      ~context
+      ~taint_configuration:configuration
+      {|
+      class Foo:
+        def __init__(self, a, b):
+          ...
+      class Bar(Foo):
+        def __init__(self, a, b):
+          ...
+      class Baz(Bar):
+        def __init__(self, a, b):
+          ...
+      |}
+      ~expected_dump_string:
+        {|[
+  {
+    "get_parent_of_d1_decorator_sources": [
+      {
+        "callable": "test.Bar.__init__",
+        "model": {
+          "kind": "model",
+          "data": {
+            "callable": "test.Bar.__init__",
+            "sources": [
+              {
+                "port": "formal(b)",
+                "taint": [
+                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                ]
+              }
+            ],
+            "modes": [ "Obscure" ]
+          }
+        }
+      },
+      {
+        "callable": "test.Foo.__init__",
+        "model": {
+          "kind": "model",
+          "data": {
+            "callable": "test.Foo.__init__",
+            "sources": [
+              {
+                "port": "formal(b)",
+                "taint": [
+                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                ]
+              }
+            ],
+            "modes": [ "Obscure" ]
+          }
+        }
+      }
+    ]
+  }
+]|}
+  in
+
   ()
 
 
