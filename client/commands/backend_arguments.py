@@ -137,8 +137,13 @@ class BaseArguments:
     global_root: str
     source_paths: SourcePath
 
+    # A path will be checked if it is covered by the allows list *and*
+    # it is not not covered by the denylist.
+    #
+    # These paths can be regular files, not just directories.
     checked_directory_allowlist: Sequence[str] = dataclasses.field(default_factory=list)
     checked_directory_blocklist: Sequence[str] = dataclasses.field(default_factory=list)
+
     debug: bool = False
     excludes: Sequence[str] = dataclasses.field(default_factory=list)
     extensions: Sequence[str] = dataclasses.field(default_factory=list)
