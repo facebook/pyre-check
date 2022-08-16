@@ -302,7 +302,7 @@ class StartTest(testslide.TestCase):
             setup.write_configuration_file(
                 root_path,
                 {
-                    "do_not_ignore_errors_in": ["allows", "nonexistent"],
+                    "only_check_paths": ["allows", "nonexistent"],
                     "ignore_all_errors": ["blocks", "nonexistent"],
                     "critical_files": ["critical"],
                     "exclude": ["exclude"],

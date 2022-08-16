@@ -337,7 +337,7 @@ def get_checked_directory_allowlist(
     configuration: frontend_configuration.Base, source_path: SourcePath
 ) -> List[str]:
     source_path_allowlist = list(source_path.get_checked_directory_allowlist())
-    explicit_allowlist = list(configuration.get_do_not_ignore_errors_in())
+    explicit_allowlist = list(configuration.get_only_check_paths())
     # If allowlist paths were specifically provided, do not include inferred paths.
     return explicit_allowlist or source_path_allowlist
 

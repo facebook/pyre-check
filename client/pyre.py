@@ -224,6 +224,16 @@ def _check_open_source_version(
     ),
 )
 @click.option(
+    "--only-check-paths",
+    type=str,
+    multiple=True,
+    help=(
+        "Report type errors for the given locations, rather than the default "
+        "directories."
+    ),
+    hidden=True,
+)
+@click.option(
     "--search-path",
     type=str,
     multiple=True,
@@ -273,7 +283,6 @@ def _check_open_source_version(
     help="Power of the hash table in shared memory.",
     hidden=True,
 )
-@click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
 @click.option(
     "--enable-hover/--no-enable-hover",
     is_flag=True,
@@ -309,6 +318,7 @@ def _check_open_source_version(
     default=None,
     hidden=True,
 )
+@click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
 def pyre(
     context: click.Context,
     version: bool,
@@ -323,6 +333,7 @@ def pyre(
     logging_sections: Optional[str],
     dot_pyre_directory: Optional[str],
     source_directory: Iterable[str],
+    only_check_paths: Iterable[str],
     search_path: Iterable[str],
     binary: Optional[str],
     exclude: Iterable[str],
@@ -357,7 +368,7 @@ def pyre(
         logger=None,
         targets=[],
         source_directories=list(source_directory),
-        do_not_ignore_errors_in=[],
+        only_check_paths=list(only_check_paths),
         buck_mode=None,
         no_saved_state=True,
         search_path=list(search_path),

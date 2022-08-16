@@ -574,7 +574,7 @@ class ArgumentsTest(testslide.TestCase):
                 configuration.Configuration(
                     project_root=str(root_path),
                     dot_pyre_directory=Path(".pyre"),
-                    do_not_ignore_errors_in=[
+                    only_check_paths=[
                         str(root_path / "a"),
                         str(root_path / "b" / "c"),
                     ],
@@ -595,7 +595,7 @@ class ArgumentsTest(testslide.TestCase):
                 configuration.Configuration(
                     project_root=str(root_path),
                     dot_pyre_directory=Path(".pyre"),
-                    do_not_ignore_errors_in=[
+                    only_check_paths=[
                         str(root_path / "a"),
                         str(root_path / "b" / "c"),
                     ],
@@ -616,7 +616,7 @@ class ArgumentsTest(testslide.TestCase):
                 configuration.Configuration(
                     project_root=str(root_path),
                     dot_pyre_directory=Path(".pyre"),
-                    do_not_ignore_errors_in=[],
+                    only_check_paths=[],
                 )
             )
             self.assertCountEqual(

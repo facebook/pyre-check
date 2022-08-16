@@ -93,7 +93,7 @@ class PartialConfiguration:
         default=None,
         metadata={"merge_policy": platform_aware.PlatformAware.merge_optional},
     )
-    do_not_ignore_errors_in: Sequence[str] = field(
+    only_check_paths: Sequence[str] = field(
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
     )
@@ -196,7 +196,7 @@ class PartialConfiguration:
             buck_mode=platform_aware.PlatformAware.from_json(
                 arguments.buck_mode, "buck_mode"
             ),
-            do_not_ignore_errors_in=arguments.do_not_ignore_errors_in,
+            only_check_paths=arguments.only_check_paths,
             dot_pyre_directory=arguments.dot_pyre_directory,
             excludes=arguments.exclude,
             extensions=[],
@@ -411,8 +411,8 @@ class PartialConfiguration:
                     ),
                     "buck_mode",
                 ),
-                do_not_ignore_errors_in=ensure_string_list(
-                    configuration_json, "do_not_ignore_errors_in"
+                only_check_paths=ensure_string_list(
+                    configuration_json, "only_check_paths"
                 ),
                 dot_pyre_directory=Path(dot_pyre_directory)
                 if dot_pyre_directory is not None
@@ -507,9 +507,8 @@ class PartialConfiguration:
         return PartialConfiguration(
             binary=binary,
             buck_mode=self.buck_mode,
-            do_not_ignore_errors_in=[
-                expand_relative_path(root, path)
-                for path in self.do_not_ignore_errors_in
+            only_check_paths=[
+                expand_relative_path(root, path) for path in self.only_check_paths
             ],
             dot_pyre_directory=self.dot_pyre_directory,
             excludes=self.excludes,
@@ -561,7 +560,7 @@ class Configuration:
 
     binary: Optional[str] = None
     buck_mode: Optional[platform_aware.PlatformAware[str]] = None
-    do_not_ignore_errors_in: Sequence[str] = field(default_factory=list)
+    only_check_paths: Sequence[str] = field(default_factory=list)
     excludes: Sequence[str] = field(default_factory=list)
     extensions: Sequence[extension.Element] = field(default_factory=list)
     ide_features: Optional[ide_features_module.IdeFeatures] = None
@@ -599,7 +598,7 @@ class Configuration:
     ) -> "Configuration":
         search_path = partial_configuration.search_path
         ignore_all_errors = partial_configuration.ignore_all_errors
-        do_not_ignore_errors_in = partial_configuration.do_not_ignore_errors_in
+        only_check_paths = partial_configuration.only_check_paths
 
         return Configuration(
             project_root=str(project_root),
@@ -608,9 +607,9 @@ class Configuration:
             ),
             binary=partial_configuration.binary,
             buck_mode=partial_configuration.buck_mode,
-            do_not_ignore_errors_in=[
+            only_check_paths=[
                 expand_global_root(path, global_root=str(project_root))
-                for path in do_not_ignore_errors_in
+                for path in only_check_paths
             ],
             excludes=partial_configuration.excludes,
             extensions=partial_configuration.extensions,
@@ -684,7 +683,7 @@ class Configuration:
             "dot_pyre_directory": str(self.dot_pyre_directory),
             **({"binary": binary} if binary is not None else {}),
             **({"buck_mode": buck_mode.to_json()} if buck_mode is not None else {}),
-            "do_not_ignore_errors_in": list(self.do_not_ignore_errors_in),
+            "only_check_paths": list(self.only_check_paths),
             "excludes": list(self.excludes),
             "extensions": list(self.extensions),
             "ignore_all_errors": list(self.ignore_all_errors),

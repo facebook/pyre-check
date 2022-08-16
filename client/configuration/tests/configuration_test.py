@@ -166,8 +166,8 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertListEqual(
             list(
                 PartialConfiguration.from_string(
-                    json.dumps({"do_not_ignore_errors_in": ["foo", "bar"]})
-                ).do_not_ignore_errors_in
+                    json.dumps({"only_check_paths": ["foo", "bar"]})
+                ).only_check_paths
             ),
             ["foo", "bar"],
         )
@@ -472,7 +472,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 }
             )
         )
-        assert_raises(json.dumps({"do_not_ignore_errors_in": "abc"}))
+        assert_raises(json.dumps({"only_check_paths": "abc"}))
         assert_raises(json.dumps({"dot_pyre_directory": {}}))
         assert_raises(json.dumps({"exclude": 42}))
         assert_raises(json.dumps({"extensions": 42}))
@@ -508,9 +508,9 @@ class PartialConfigurationTest(unittest.TestCase):
             str(Path.home() / "foo"),
         )
         self.assertEqual(
-            PartialConfiguration(do_not_ignore_errors_in=["foo", "bar"])
+            PartialConfiguration(only_check_paths=["foo", "bar"])
             .expand_relative_paths("baz")
-            .do_not_ignore_errors_in,
+            .only_check_paths,
             ["baz/foo", "baz/bar"],
         )
         self.assertEqual(
@@ -601,7 +601,7 @@ class ConfigurationTest(testslide.TestCase):
             partial_configuration=PartialConfiguration(
                 binary="binary",
                 buck_mode=PlatformAware.from_json("opt", "buck_mode"),
-                do_not_ignore_errors_in=["//foo"],
+                only_check_paths=["//foo"],
                 dot_pyre_directory=None,
                 excludes=["exclude"],
                 extensions=[ExtensionElement(".ext", False)],
@@ -638,7 +638,7 @@ class ConfigurationTest(testslide.TestCase):
         self.assertEqual(configuration.binary, "binary")
         self.assertIsNotNone(configuration.buck_mode)
         self.assertEqual(configuration.buck_mode.get(), "opt")
-        self.assertListEqual(list(configuration.do_not_ignore_errors_in), ["root/foo"])
+        self.assertListEqual(list(configuration.only_check_paths), ["root/foo"])
         self.assertEqual(configuration.dot_pyre_directory, Path("root/.pyre"))
         self.assertListEqual(list(configuration.excludes), ["exclude"])
         self.assertEqual(configuration.extensions, [ExtensionElement(".ext", False)])

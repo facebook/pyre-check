@@ -74,7 +74,7 @@ class Base(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def get_do_not_ignore_errors_in(self) -> List[str]:
+    def get_only_check_paths(self) -> List[str]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -192,8 +192,8 @@ class OpenSource(Base):
     def get_ignore_all_errors(self) -> List[str]:
         return list(self.configuration.ignore_all_errors)
 
-    def get_do_not_ignore_errors_in(self) -> List[str]:
-        return list(self.configuration.do_not_ignore_errors_in)
+    def get_only_check_paths(self) -> List[str]:
+        return list(self.configuration.only_check_paths)
 
     def get_existent_search_paths(
         self,
