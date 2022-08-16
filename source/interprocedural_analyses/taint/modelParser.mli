@@ -135,7 +135,13 @@ module Internal : sig
             is_transitive: bool;
           }
         | DecoratorSatisfies of DecoratorConstraint.t
-        | AnyChildSatisfies of t
+        | AnyOf of t list
+        | AllOf of t list
+        | Not of t
+        | AnyChildSatisfies of {
+            class_constraint: t;
+            is_transitive: bool;
+          }
       [@@deriving equal, show]
     end
 

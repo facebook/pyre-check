@@ -3431,6 +3431,30 @@ Unexpected statement: `food(y)`
     ~expect:
       {|`Decorator(arguments.contains("1"), name.matches("d"))` is not a valid any_child clause. Constraints within any_child should be either parent constraints or any of `AnyOf`, `AllOf`, and `Not`.|}
     ();
+  assert_valid_model
+    ~source:{|
+      @d("1")
+      class A:
+        def foo(x):
+          ...
+    |}
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "valid_model",
+        find = "methods",
+        where = [
+            parent.any_child(
+              AnyOf(
+                parent.decorator(arguments.contains("1"), name.matches("d")),
+                parent.matches("A")
+              )
+            )
+        ],
+        model = Returns(TaintSource[A])
+      )
+    |}
+    ();
 
   (* Test Decorator clause in model queries *)
   assert_valid_model
@@ -5442,6 +5466,111 @@ let test_query_parsing context =
                 ~model_source:"def test.bar() -> TaintSource[Test]: ..."
                 "test.bar";
             ];
+        };
+      ]
+    ();
+
+  (* AnyChild *)
+  assert_queries
+    ~source:
+      {|@d1
+      class Foo:
+        def __init__(self, a, b):
+          ...
+      @d1
+      class Bar(Foo):
+        def __init__(self, a, b):
+          ...
+      @d1
+      class Baz:
+        def __init__(self, a, b):
+          ...|}
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+      name = "get_parent_of_d1_decorator_sources",
+      find = "methods",
+      where = [
+        parent.any_child(
+          AllOf(
+            parent.decorator(
+              name.matches("d1")
+            ),
+            AnyOf(
+              Not(parent.matches("Foo")),
+              parent.matches("Baz")
+            )
+          ),
+          is_transitive=True
+        ),
+        name.matches("\.__init__$")
+      ],
+      model = [
+        Parameters(TaintSource[Test], where=[
+            Not(name.equals("self")),
+            Not(name.equals("a"))
+        ])
+      ]
+    )
+    |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 26; column = 1 } };
+          name = "get_parent_of_d1_decorator_sources";
+          query =
+            [
+              ParentConstraint
+                (ClassConstraint.AnyChildSatisfies
+                   {
+                     class_constraint =
+                       ClassConstraint.AllOf
+                         [
+                           ClassConstraint.DecoratorSatisfies
+                             {
+                               name_constraint = Matches (Re2.create_exn "d1");
+                               arguments_constraint = None;
+                             };
+                           ClassConstraint.AnyOf
+                             [
+                               ClassConstraint.Not
+                                 (ClassConstraint.NameSatisfies (Matches (Re2.create_exn "Foo")));
+                               ClassConstraint.NameSatisfies (Matches (Re2.create_exn "Baz"));
+                             ];
+                         ];
+                     is_transitive = true;
+                   });
+              NameConstraint (Matches (Re2.create_exn "\\.__init__$"));
+            ];
+          rule_kind = MethodModel;
+          productions =
+            [
+              ParameterTaint
+                {
+                  where =
+                    [
+                      ParameterConstraint.Not (ParameterConstraint.NameConstraint (Equals "self"));
+                      ParameterConstraint.Not (ParameterConstraint.NameConstraint (Equals "a"));
+                    ];
+                  taint =
+                    [
+                      TaintAnnotation
+                        (ModelParser.Source
+                           {
+                             source = Sources.NamedSource "Test";
+                             breadcrumbs = [];
+                             via_features = [];
+                             path = [];
+                             leaf_names = [];
+                             leaf_name_provided = false;
+                             trace_length = None;
+                           });
+                    ];
+                };
+            ];
+          expected_models = [];
+          unexpected_models = [];
         };
       ]
     ();
