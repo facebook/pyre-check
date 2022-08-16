@@ -28,6 +28,8 @@ module type FUNCTION_CONTEXT = sig
 
   val environment : TypeEnvironment.ReadOnly.t
 
+  val taint_configuration : TaintConfiguration.t
+
   val class_interval_graph : Interprocedural.ClassIntervalSetGraph.SharedMemory.t
 
   val call_graph_of_define : CallGraph.DefineCallGraph.t
@@ -343,7 +345,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             |> ForwardState.Tree.transform
                  ForwardTaint.kind
                  Filter
-                 ~f:(TaintConfiguration.source_can_match_rule (TaintConfiguration.get ()))
+                 ~f:(TaintConfiguration.source_can_match_rule FunctionContext.taint_configuration)
         | Sinks.Transform _ -> failwith "unexpected non-empty `global` transforms in tito"
         | _ -> taint_to_propagate
       in
@@ -1672,8 +1674,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             callees
     in
     let taint, state = assign_super_constructor_taint_to_self_if_necessary taint state in
-    let configuration = TaintConfiguration.get () in
-    if not configuration.lineage_analysis then
+    if not FunctionContext.taint_configuration.lineage_analysis then
       taint, state
     else
       let analyze_expression_unwrap ~resolution ~state ~expression =
@@ -1774,7 +1775,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   |> ForwardState.Tree.transform
                        ForwardTaint.kind
                        Filter
-                       ~f:(TaintConfiguration.source_can_match_rule (TaintConfiguration.get ()))
+                       ~f:
+                         (TaintConfiguration.source_can_match_rule
+                            FunctionContext.taint_configuration)
               | _ -> taint
             in
             taint
@@ -1804,7 +1807,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   and analyze_string_literal ~resolution ~state ~location ~nested_expressions ~breadcrumbs value =
     let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
     let value_taint =
-      let literal_string_regular_expressions = TaintConfiguration.literal_string_sources () in
+      let literal_string_regular_expressions =
+        FunctionContext.taint_configuration.implicit_sources.literal_strings
+      in
       let add_matching_source_kind tree { TaintConfiguration.pattern; source_kind = kind } =
         if Re2.matches pattern value then
           ForwardTaint.singleton ~location kind Frame.initial
@@ -1898,7 +1903,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         (* Compute flows of user-controlled data -> literal string sinks if applicable. *)
         let () =
-          let literal_string_sinks = TaintConfiguration.literal_string_sinks () in
+          let literal_string_sinks =
+            FunctionContext.taint_configuration.implicit_sinks.literal_string_sinks
+          in
           (* We try to be a bit clever about bailing out early and not computing the matches. *)
           if (not (List.is_empty literal_string_sinks)) && not (ForwardState.Tree.is_bottom taint)
           then
@@ -2105,7 +2112,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let taint, state = analyze_expression ~resolution ~state ~expression in
     (* There maybe configured sinks for conditionals, so test them here. *)
     let () =
-      TaintConfiguration.conditional_test_sinks ()
+      FunctionContext.taint_configuration.implicit_sinks.conditional_test
       |> List.iter ~f:(fun sink_kind ->
              let sink_tree =
                BackwardTaint.singleton ~location sink_kind Frame.initial
@@ -2309,6 +2316,12 @@ end
 let extract_source_model
     ~define
     ~resolution
+    ~taint_configuration:
+      {
+        TaintConfiguration.analysis_model_constraints =
+          { maximum_model_width; maximum_return_access_path_length; maximum_trace_length; _ };
+        _;
+      }
     ~breadcrumbs_to_attach
     ~via_features_to_attach
     exit_taint
@@ -2320,14 +2333,6 @@ let extract_source_model
     >>| CallGraph.ReturnType.from_annotation ~resolution
     |> Option.value ~default:CallGraph.ReturnType.none
     |> Features.type_breadcrumbs
-  in
-  let {
-    TaintConfiguration.analysis_model_constraints =
-      { maximum_model_width; maximum_return_access_path_length; maximum_trace_length; _ };
-    _;
-  }
-    =
-    TaintConfiguration.get ()
   in
 
   let simplify tree =
@@ -2399,6 +2404,8 @@ let run
 
     let environment = environment
 
+    let taint_configuration = TaintConfiguration.get ()
+
     let class_interval_graph = class_interval_graph
 
     let call_graph_of_define = call_graph_of_define
@@ -2452,6 +2459,7 @@ let run
       extract_source_model
         ~define:define.value
         ~resolution
+        ~taint_configuration:FunctionContext.taint_configuration
         ~breadcrumbs_to_attach
         ~via_features_to_attach
         taint

@@ -25,6 +25,8 @@ module type FUNCTION_CONTEXT = sig
 
   val environment : TypeEnvironment.ReadOnly.t
 
+  val taint_configuration : TaintConfiguration.t
+
   val class_interval_graph : Interprocedural.ClassIntervalSetGraph.SharedMemory.t
 
   val call_graph_of_define : CallGraph.DefineCallGraph.t
@@ -362,7 +364,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             |> BackwardState.Tree.transform
                  BackwardTaint.kind
                  Filter
-                 ~f:(TaintConfiguration.sink_can_match_rule (TaintConfiguration.get ()))
+                 ~f:(TaintConfiguration.sink_can_match_rule FunctionContext.taint_configuration)
         | Sinks.Transform _ -> failwith "unexpected non-empty `global` transforms in tito"
         | _ -> taint_to_propagate
       in
@@ -863,7 +865,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                   |> BackwardState.Tree.transform
                        BackwardTaint.kind
                        Filter
-                       ~f:(TaintConfiguration.sink_can_match_rule (TaintConfiguration.get ()))
+                       ~f:
+                         (TaintConfiguration.sink_can_match_rule
+                            FunctionContext.taint_configuration)
               | _ -> taint
             in
             taint
@@ -1676,7 +1680,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   and analyze_joined_string ~resolution ~taint ~state ~location ~breadcrumbs substrings =
     let taint =
-      let literal_string_sinks = TaintConfiguration.literal_string_sinks () in
+      let literal_string_sinks =
+        FunctionContext.taint_configuration.implicit_sinks.literal_string_sinks
+      in
       if List.is_empty literal_string_sinks then
         taint
       else
@@ -2090,22 +2096,26 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 end
 
 (* Split the inferred entry state into externally visible taint_in_taint_out parts and sink_taint. *)
-let extract_tito_and_sink_models define ~is_constructor ~resolution ~existing_backward entry_taint =
-  let { Statement.Define.signature = { parameters; _ }; _ } = define in
-  let {
-    TaintConfiguration.analysis_model_constraints =
+let extract_tito_and_sink_models
+    define
+    ~is_constructor
+    ~resolution
+    ~taint_configuration:
       {
-        maximum_model_width;
-        maximum_return_access_path_length;
-        maximum_trace_length;
-        maximum_tito_depth;
+        TaintConfiguration.analysis_model_constraints =
+          {
+            maximum_model_width;
+            maximum_return_access_path_length;
+            maximum_trace_length;
+            maximum_tito_depth;
+            _;
+          };
         _;
-      };
-    _;
-  }
-    =
-    TaintConfiguration.get ()
-  in
+      }
+    ~existing_backward
+    entry_taint
+  =
+  let { Statement.Define.signature = { parameters; _ }; _ } = define in
   let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
   let simplify annotation tree =
@@ -2250,6 +2260,8 @@ let run
 
     let environment = environment
 
+    let taint_configuration = TaintConfiguration.get ()
+
     let class_interval_graph = class_interval_graph
 
     let call_graph_of_define = call_graph_of_define
@@ -2286,6 +2298,7 @@ let run
         ~is_constructor:(State.is_constructor ())
         define.value
         ~resolution
+        ~taint_configuration:FunctionContext.taint_configuration
         ~existing_backward:existing_model.Model.backward
         taint
     in
