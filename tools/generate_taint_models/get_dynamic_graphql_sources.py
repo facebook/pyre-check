@@ -54,6 +54,7 @@ class DynamicGraphQLSourceGenerator(ModelGenerator[CallableModel]):
                 continue
 
             try:
+                # pyre-fixme[16]: `GraphQLNamedType` has no attribute `fields`.
                 fields = element.fields
             except AssertionError:
                 # GraphQL throws an exception when a GraphQL object is created
