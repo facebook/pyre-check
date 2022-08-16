@@ -943,6 +943,7 @@ let rec process_request ~environment ~build_system request =
               ~rule_filter:None
               ~source_filter:None
               ~sink_filter:None
+              ~transform_filter:None
               ~find_missing_flows:None
               ~dump_model_query_results_path:None
               ~maximum_trace_length:None
@@ -1266,6 +1267,7 @@ let rec process_request ~environment ~build_system request =
               ~rule_filter:None
               ~source_filter:None
               ~sink_filter:None
+              ~transform_filter:None
               ~find_missing_flows:None
               ~dump_model_query_results_path:None
               ~maximum_trace_length:None

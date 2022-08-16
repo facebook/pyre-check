@@ -183,6 +183,7 @@ class AnalyzeArguments:
     rule: List[int] = field(default_factory=list)
     source: List[str] = field(default_factory=list)
     sink: List[str] = field(default_factory=list)
+    transform: List[str] = field(default_factory=list)
     save_results_to: Optional[str] = None
     sequential: bool = False
     taint_models_path: List[str] = field(default_factory=list)

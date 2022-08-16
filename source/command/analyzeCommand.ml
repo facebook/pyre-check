@@ -36,6 +36,7 @@ module AnalyzeConfiguration = struct
     rule_filter: int list option;
     source_filter: string list option;
     sink_filter: string list option;
+    transform_filter: string list option;
     save_results_to: PyrePath.t option;
     strict: bool;
     taint_model_paths: PyrePath.t list;
@@ -63,6 +64,7 @@ module AnalyzeConfiguration = struct
           let rule_filter = optional_list_member ~f:to_int "rule_filter" json in
           let source_filter = optional_list_member ~f:to_string "source_filter" json in
           let sink_filter = optional_list_member ~f:to_string "sink_filter" json in
+          let transform_filter = optional_list_member ~f:to_string "transform_filter" json in
           let save_results_to = optional_path_member "save_results_to" json in
           let strict = bool_member "strict" ~default:false json in
           let taint_model_paths = json |> path_list_member "taint_model_paths" ~default:[] in
@@ -83,6 +85,7 @@ module AnalyzeConfiguration = struct
               rule_filter;
               source_filter;
               sink_filter;
+              transform_filter;
               save_results_to;
               strict;
               taint_model_paths;
@@ -129,6 +132,7 @@ module AnalyzeConfiguration = struct
         rule_filter;
         source_filter;
         sink_filter;
+        transform_filter;
         save_results_to;
         strict;
         taint_model_paths;
@@ -176,6 +180,7 @@ module AnalyzeConfiguration = struct
       rule_filter;
       source_filter;
       sink_filter;
+      transform_filter;
       find_missing_flows;
       dump_model_query_results;
       use_cache;

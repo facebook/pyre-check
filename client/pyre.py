@@ -446,6 +446,12 @@ def pyre(
     help="Only track taint flows for the given sink(s).",
 )
 @click.option(
+    "--transform",
+    type=str,
+    multiple=True,
+    help="Only track taint flows for the given transform(s).",
+)
+@click.option(
     "--find-missing-flows",
     type=click.Choice([kind.value for kind in command_arguments.MissingFlowsKind]),
     help="Perform a taint analysis to find flows through obscure models.",
@@ -491,6 +497,7 @@ def analyze(
     rule: Iterable[int],
     source: Iterable[str],
     sink: Iterable[str],
+    transform: Iterable[str],
     find_missing_flows: Optional[str],
     dump_model_query_results: Optional[str],
     use_cache: bool,
@@ -533,6 +540,7 @@ def analyze(
             rule=list(rule),
             source=list(source),
             sink=list(sink),
+            transform=list(transform),
             save_results_to=save_results_to,
             sequential=command_argument.sequential,
             taint_models_path=list(taint_models_path),

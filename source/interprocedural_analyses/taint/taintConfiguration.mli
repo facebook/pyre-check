@@ -58,9 +58,10 @@ val missing_flows_kind_to_string : missing_flows_kind -> string
 type t = {
   sources: AnnotationParser.source_or_sink list;
   sinks: AnnotationParser.source_or_sink list;
+  transforms: TaintTransform.t list;
   filtered_sources: Sources.Set.t option;
   filtered_sinks: Sinks.Set.t option;
-  transforms: TaintTransform.t list;
+  filtered_transforms: TaintTransform.t list option;
   features: string list;
   rules: Rule.t list;
   filtered_rule_codes: Int.Set.t option;
@@ -140,6 +141,7 @@ val create
   :  rule_filter:int list option ->
   source_filter:string list option ->
   sink_filter:string list option ->
+  transform_filter:string list option ->
   find_missing_flows:missing_flows_kind option ->
   dump_model_query_results_path:PyrePath.t option ->
   maximum_trace_length:int option ->

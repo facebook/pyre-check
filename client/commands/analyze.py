@@ -49,6 +49,7 @@ class Arguments:
     rule_filter: Optional[Sequence[int]] = None
     source_filter: Optional[Sequence[str]] = None
     sink_filter: Optional[Sequence[str]] = None
+    transform_filter: Optional[Sequence[str]] = None
     save_results_to: Optional[str] = None
     strict: bool = False
     taint_model_paths: Sequence[str] = dataclasses.field(default_factory=list)
@@ -64,6 +65,7 @@ class Arguments:
         rule_filter = self.rule_filter
         source_filter = self.source_filter
         sink_filter = self.sink_filter
+        transform_filter = self.transform_filter
         save_results_to = self.save_results_to
         return {
             **self.base_arguments.serialize(),
@@ -95,6 +97,11 @@ class Arguments:
             **({} if rule_filter is None else {"rule_filter": rule_filter}),
             **({} if source_filter is None else {"source_filter": source_filter}),
             **({} if sink_filter is None else {"sink_filter": sink_filter}),
+            **(
+                {}
+                if transform_filter is None
+                else {"transform_filter": transform_filter}
+            ),
             **({} if save_results_to is None else {"save_results_to": save_results_to}),
             "strict": self.strict,
             "taint_model_paths": self.taint_model_paths,
@@ -140,6 +147,7 @@ def create_analyze_arguments(
     rule = analyze_arguments.rule
     source = analyze_arguments.source
     sink = analyze_arguments.sink
+    transform = analyze_arguments.transform
     taint_models_path = analyze_arguments.taint_models_path
     if len(taint_models_path) == 0:
         taint_models_path = configuration.get_taint_models_path()
@@ -182,6 +190,7 @@ def create_analyze_arguments(
         rule_filter=None if len(rule) == 0 else rule,
         source_filter=None if len(source) == 0 else source,
         sink_filter=None if len(sink) == 0 else sink,
+        transform_filter=None if len(transform) == 0 else transform,
         save_results_to=analyze_arguments.save_results_to,
         strict=configuration.is_strict(),
         taint_model_paths=taint_models_path,

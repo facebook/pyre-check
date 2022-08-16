@@ -17,6 +17,7 @@ let initialize_configuration
         rule_filter;
         source_filter;
         sink_filter;
+        transform_filter;
         _;
       }
   =
@@ -30,6 +31,7 @@ let initialize_configuration
       ~rule_filter
       ~source_filter
       ~sink_filter
+      ~transform_filter
       ~find_missing_flows:None
       ~dump_model_query_results_path:None
       ~maximum_trace_length:None
@@ -155,6 +157,7 @@ let parse_taint_configuration
         rule_filter;
         source_filter;
         sink_filter;
+        transform_filter;
         find_missing_flows;
         dump_model_query_results;
         maximum_trace_length;
@@ -170,6 +173,7 @@ let parse_taint_configuration
       ~rule_filter
       ~source_filter
       ~sink_filter
+      ~transform_filter
       ~find_missing_flows
       ~dump_model_query_results_path:dump_model_query_results
       ~maximum_trace_length

@@ -471,6 +471,7 @@ module StaticAnalysis = struct
     rule_filter: int list option;
     source_filter: string list option;
     sink_filter: string list option;
+    transform_filter: string list option;
     find_missing_flows: string option;
     dump_model_query_results: PyrePath.t option;
     use_cache: bool;
@@ -489,6 +490,7 @@ module StaticAnalysis = struct
       ?rule_filter
       ?source_filter
       ?sink_filter
+      ?transform_filter
       ?find_missing_flows
       ?dump_model_query_results
       ?(use_cache = false)
@@ -507,6 +509,7 @@ module StaticAnalysis = struct
       rule_filter;
       source_filter;
       sink_filter;
+      transform_filter;
       find_missing_flows;
       dump_model_query_results;
       use_cache;

@@ -204,6 +204,7 @@ module StaticAnalysis : sig
     rule_filter: int list option;
     source_filter: string list option;
     sink_filter: string list option;
+    transform_filter: string list option;
     find_missing_flows: string option;
     dump_model_query_results: PyrePath.t option;
     use_cache: bool;
@@ -222,6 +223,7 @@ module StaticAnalysis : sig
     ?rule_filter:int list ->
     ?source_filter:string list ->
     ?sink_filter:string list ->
+    ?transform_filter:string list ->
     ?find_missing_flows:string ->
     ?dump_model_query_results:PyrePath.t ->
     ?use_cache:bool ->

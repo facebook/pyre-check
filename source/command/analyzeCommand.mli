@@ -31,6 +31,7 @@ module AnalyzeConfiguration : sig
     rule_filter: int list option;
     source_filter: string list option;
     sink_filter: string list option;
+    transform_filter: string list option;
     save_results_to: PyrePath.t option;
     strict: bool;
     taint_model_paths: PyrePath.t list;

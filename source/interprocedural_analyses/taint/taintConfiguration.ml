@@ -83,9 +83,10 @@ let missing_flows_kind_to_string = function
 type t = {
   sources: AnnotationParser.source_or_sink list;
   sinks: AnnotationParser.source_or_sink list;
+  transforms: TaintTransform.t list;
   filtered_sources: Sources.Set.t option;
   filtered_sinks: Sinks.Set.t option;
-  transforms: TaintTransform.t list;
+  filtered_transforms: TaintTransform.t list option;
   features: string list;
   rules: Rule.t list;
   filtered_rule_codes: Int.Set.t option;
@@ -106,9 +107,10 @@ let empty =
   {
     sources = [];
     sinks = [];
+    transforms = [];
     filtered_sources = None;
     filtered_sinks = None;
-    transforms = [];
+    filtered_transforms = None;
     features = [];
     rules = [];
     filtered_rule_codes = None;
@@ -833,9 +835,10 @@ let parse source_jsons =
   {
     sources;
     sinks;
+    transforms;
     filtered_sources = None;
     filtered_sinks = None;
-    transforms;
+    filtered_transforms = None;
     features;
     rules;
     filtered_rule_codes = None;
@@ -1039,9 +1042,10 @@ let default =
   {
     sources;
     sinks;
+    transforms;
     filtered_sources = None;
     filtered_sinks = None;
-    transforms;
+    filtered_transforms = None;
     features =
       [
         "copy";
@@ -1119,6 +1123,7 @@ let create
     ~rule_filter
     ~source_filter
     ~sink_filter
+    ~transform_filter
     ~find_missing_flows
     ~dump_model_query_results_path
     ~maximum_trace_length
@@ -1182,6 +1187,21 @@ let create
           >>| Sinks.Set.of_list
           >>| Option.some
           >>| fun filtered_sinks -> { configuration with filtered_sinks })
+      >>= fun configuration ->
+      (match transform_filter with
+      | None -> Ok configuration
+      | Some transform_filter ->
+          let parse_transform_reference transform =
+            AnnotationParser.parse_transform ~allowed:configuration.transforms transform
+            |> Result.map_error ~f:(fun _ ->
+                   { Error.path = None; kind = Error.UnsupportedTransform transform })
+          in
+          transform_filter
+          |> List.map ~f:parse_transform_reference
+          |> Result.all
+          |> Result.map_error ~f:(fun error -> [error])
+          >>| Option.some
+          >>| fun filtered_transforms -> { configuration with filtered_transforms })
       >>| fun configuration ->
       let configuration =
         match find_missing_flows with
