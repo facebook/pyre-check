@@ -23,7 +23,20 @@ let return_annotation_without_applying_decorators
     ~parser:{ parse_annotation; _ }
   =
   let annotation = Option.value_map return_annotation ~f:parse_annotation ~default:Type.Any in
-  if async && not generator then
+  let needs_coroutine_return_type =
+    async
+    && (not generator)
+    (* If the function is a stub, its signature will have `generator=false` (since there is no
+       `yield`, etc. in the body). However, in the case of an `AsyncIterator`, we need to keep the
+       return type as `AsyncIterator` instead of wrapping it in a `Coroutine`.
+
+       TODO(T128109170): The long-term fix here is to replace the misleading use of `async && (not
+       generator)` above with a proper `is_generator` check that accounts for the return type,
+       instead of just going by whether the body has a `yield`. That way, we won't need to
+       special-case `AsyncIterator` here. *)
+    && not (Type.is_async_iterator annotation)
+  in
+  if needs_coroutine_return_type then
     Type.coroutine [Single Type.Any; Single Type.Any; Single annotation]
   else if Define.Signature.is_coroutine signature then
     match annotation with

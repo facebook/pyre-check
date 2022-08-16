@@ -312,13 +312,82 @@ let test_check_async context =
       def main() -> None:
         xs = (await foo(x) for x in range(5))
         ys = ((await foo(x) for x in range(5)) for y in range(5))
-        reveal_locals()
+        reveal_type(xs)
+        reveal_type(ys)
     |}
     [
-      "Revealed locals [-2]: Revealed local types are:\n\
-      \    xs: `typing.AsyncGenerator[int, typing.Any]`\n\
-      \    ys: `typing.Generator[typing.AsyncGenerator[int, typing.Any], None, None]`";
+      "Revealed type [-1]: Revealed type for `xs` is `typing.AsyncGenerator[int, typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `ys` is `typing.Generator[typing.AsyncGenerator[int, \
+       typing.Any], None, None]`.";
     ]
 
 
-let () = "async" >::: ["check_async" >:: test_check_async] |> Test.run
+let test_async_iterator context =
+  let assert_type_errors = assert_type_errors ~context in
+  (* We should preserve the return type even if the function is a stub and thus doesn't have any
+     `yield` in its body. *)
+  assert_type_errors
+    {|
+      from typing import AsyncIterator
+
+      class Base:
+        async def no_yield(self) -> AsyncIterator[int]: ...
+
+        async def has_yield(self) -> AsyncIterator[int]:
+          yield 42
+
+      def main() -> None:
+        f1 = Base.no_yield
+        f2 = Base.has_yield
+
+        reveal_type(f1)
+        reveal_type(f2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `f1` is `typing.Callable(Base.no_yield)[[Named(self, \
+       Base)], AsyncIterator[int]]`.";
+      "Revealed type [-1]: Revealed type for `f2` is `typing.Callable(Base.has_yield)[[Named(self, \
+       Base)], AsyncIterator[int]]`.";
+    ];
+  (* Even if the overridden method is a stub, its return type should return an AsyncIterator. We
+     should not get a spurious override error. *)
+  assert_type_errors
+    {|
+      from typing import AsyncIterator
+
+      class Base:
+        async def foo(self) -> AsyncIterator[int]: ...
+
+      class Child(Base):
+        async def foo(self) -> AsyncIterator[int]:
+          yield 42
+
+      def main() -> None:
+        f1 = Base.foo
+        f2 = Child.foo
+
+        reveal_type(f1)
+        reveal_type(f2)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `f1` is `typing.Callable(Base.foo)[[Named(self, \
+       Base)], AsyncIterator[int]]`.";
+      "Revealed type [-1]: Revealed type for `f2` is `typing.Callable(Child.foo)[[Named(self, \
+       Child)], AsyncIterator[int]]`.";
+    ];
+  (* TODO(T128109170): This should emit a type error about the missing yield. *)
+  assert_type_errors
+    {|
+      from typing import AsyncIterator
+
+      async def foo() -> AsyncIterator[int]:
+        print("no yield")
+    |}
+    [];
+  ()
+
+
+let () =
+  "async"
+  >::: ["check_async" >:: test_check_async; "async_iterator" >:: test_async_iterator]
+  |> Test.run

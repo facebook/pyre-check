@@ -63,6 +63,19 @@ let test_return_annotation context =
     ~async:true
     ~generator:true
     (Type.async_generator ~yield_type:Type.integer ());
+  (* Callables returning `AsyncIterator` should keep that return type. *)
+  assert_return_annotation
+    ~return_annotation:(Some (Type.expression (Type.async_iterator Type.integer)))
+    ~async:true
+    ~generator:true
+    (Type.async_iterator Type.integer);
+  (* A stub will be marked as `generator=false`, since it contains no `yield`. However, if it
+     returns an `AsyncIterator[Foo]`, we should not wrap the return type in `Coroutine`. *)
+  assert_return_annotation
+    ~return_annotation:(Some (Type.expression (Type.async_iterator Type.integer)))
+    ~async:true
+    ~generator:false
+    (Type.async_iterator Type.integer);
   ()
 
 
