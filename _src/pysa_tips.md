@@ -197,9 +197,11 @@ to iterate more quickly with Pysa are:
 1. **Skip analysis entirely if you only need to validate taint models**. `pyre
    validate-models` can be used to validate taint models without having to run
    the entire analysis.
-1. **Filter runs with `--rule ####`.** This option will cause Pysa to ignore
-   sources and sinks that are not involved in the given rule, saving on analysis
-   time. Eg. `pyre analyze --rule 5000`
+1. **Filter runs with `--rule ###`, `--source ###` or `--sink ###`.** These
+   options will cause Pysa to ignore sources and sinks that are not mentioned,
+   or sources and sinks that are not involved in the given rule. This will save
+   analysis time. E.g, `pyre analyze --rule 5000` or `pyre analyze --source
+   UserControlled --sink RCE`.
 1. **Parallelize across machines.** If working in a could hosted environment,
    reserving a second machine and working on two projects in parallel can be
    effective. As Pysa is running on one machine, you can switch to the other,
