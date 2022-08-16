@@ -1730,7 +1730,13 @@ module State (Context : Context) = struct
         in
         match resolved with
         | Type.Any ->
-            { resolution; resolved = Type.Any; errors; resolved_annotation = None; base = None }
+            {
+              Resolved.resolution;
+              resolved = Type.Any;
+              errors;
+              resolved_annotation = None;
+              base = None;
+            }
         | _ -> (
             match
               GlobalResolution.extract_type_parameters
