@@ -154,6 +154,22 @@ class PersistentTest(testslide.TestCase):
         self.assertEqual(len(bytes_writer.items()), 1)
 
     @setup.async_test
+    async def test_read_lsp_request_success_after_failed_reads(self) -> None:
+        expected_request = json_rpc.Request(
+            id=0,
+            method="derp",
+        )
+        input_channel = create_memory_text_reader(
+            f"foo\r\n\r\nbar\r\n\r\n{lsp.json_rpc_payload(expected_request)}"
+        )
+        bytes_writer = MemoryBytesWriter()
+        output_channel = TextWriter(bytes_writer)
+        actual_request = await read_lsp_request(input_channel, output_channel)
+        self.assertEquals(actual_request, expected_request)
+        # Two messages for two failed reads
+        self.assertEqual(len(bytes_writer.items()), 2)
+
+    @setup.async_test
     async def test_try_initialize_success(self) -> None:
         input_channel = await _create_input_channel_with_requests(
             [
