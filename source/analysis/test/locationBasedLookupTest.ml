@@ -1576,6 +1576,14 @@ let test_resolve_definition_for_symbol context =
           def my_method(self, x: "Foo") -> None: ...   # stop line
             #                      ^- cursor
     |};
+  assert_resolved_definition
+    {|
+        def main() -> None:
+          while (x := True):
+            #    ^^
+              print(x)
+                #   ^- cursor
+    |};
   ()
 
 
