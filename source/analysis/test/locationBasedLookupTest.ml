@@ -1439,6 +1439,28 @@ let test_resolve_definition_for_symbol context =
           x.base_attribute
           #    ^- cursor
     |};
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
+        MY_GLOBAL = "hello"
+
+        def main() -> int:
+          MY_GLOBAL.capitalize()
+          #    ^- cursor
+    |}
+    (Some "test:2:0-2:9");
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
+        from typing import Callable
+
+        Foo = list[int]
+
+        def main(x: Foo) -> None:
+          #          ^- cursor
+          pass
+    |}
+    (Some "test:4:0-4:3");
   ()
 
 

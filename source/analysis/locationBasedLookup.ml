@@ -699,6 +699,10 @@ let find_definition ~resolution ~module_reference ~define_name ~statement_key re
     match local_definition with
     | Some definition -> Some definition
     | None -> (
+        (* A global variable will be qualified as a local. So, delocalize it. *)
+        let reference =
+          if Reference.is_local reference then Reference.delocalize reference else reference
+        in
         let global_resolution = Resolution.global_resolution resolution in
         match GlobalResolution.global_location global_resolution reference with
         | Some definition -> Some definition
