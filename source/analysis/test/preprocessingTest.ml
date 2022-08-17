@@ -13,6 +13,13 @@ open Expression
 open Statement
 open Test
 
+let location (start_line, start_column) (stop_line, stop_column) =
+  {
+    Location.start = { Location.line = start_line; Location.column = start_column };
+    stop = { Location.line = stop_line; Location.column = stop_column };
+  }
+
+
 (* This function is here for backward compatibility reason only. Please avoid using it and prefer
    `Test.parse` instead. *)
 let legacy_parse ~handle source =
@@ -356,6 +363,31 @@ let test_expand_type_alias_body _ =
     {|
       typing.TypeVar("T", bound=Union[Any, Any])
     |};
+  ()
+
+
+let test_expand_string_annotation_preserves_locations _ =
+  assert_equal
+    ~printer:(fun expression -> [%sexp_of: Expression.t] expression |> Sexp.to_string_hum)
+    ~cmp:[%compare.equal: Expression.t]
+    {
+      Node.location = location (1, 5) (1, 10);
+      value =
+        Name
+          (Attribute
+             {
+               base = { Node.location = location (1, 6) (1, 10); value = Name (Identifier "test") };
+               attribute = "Foo";
+               special = false;
+             });
+    }
+    (Preprocessing.expand_strings_in_annotation_expression
+       {
+         Node.location = location (1, 5) (1, 10);
+         value =
+           Constant
+             (Constant.String { StringLiteral.value = "test.Foo"; kind = StringLiteral.String });
+       });
   ()
 
 
@@ -4785,13 +4817,6 @@ let test_populate_nesting_define _ =
   ()
 
 
-let location (start_line, start_column) (stop_line, stop_column) =
-  {
-    Location.start = { Location.line = start_line; Location.column = start_column };
-    stop = { Location.line = stop_line; Location.column = stop_column };
-  }
-
-
 let test_populate_captures _ =
   let assert_captures ~expected source_text =
     let source = Test.parse ~handle:"test.py" source_text |> Preprocessing.populate_captures in
@@ -6579,6 +6604,8 @@ let () =
          "expand_relative_imports" >:: test_expand_relative_imports;
          "expand_string_annotations" >:: test_expand_string_annotations;
          "expand_type_alias_body" >:: test_expand_type_alias_body;
+         "expand_string_annotation_preserves_locations"
+         >:: test_expand_string_annotation_preserves_locations;
          "qualify_source" >:: test_qualify_source;
          "qualify_ast" >:: test_qualify_ast;
          "qualify_ast_class_with_same_name_as_local"
