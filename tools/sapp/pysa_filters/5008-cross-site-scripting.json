@@ -1,0 +1,27 @@
+{
+    "name": "Cross Site Scripting (XSS)",
+    "description": "High signal filter for 5008 Cross Site Scripting",
+    "features": [
+        {
+            "mode": "none of",
+            "features": [
+                "always-via:furl_query_params",
+                "always-type:scalar",
+                "always-via:boolean",
+                "always-via:escape_html",
+                "always-via:external_query"
+            ]
+        }
+    ],
+    "codes": [
+        5008
+    ],
+    "traceLengthFromSources": [
+        0,
+        6
+    ],
+    "traceLengthToSinks": [
+        0,
+        6
+    ]
+}
