@@ -840,6 +840,57 @@ let test_sanitize_statement _ =
   ()
 
 
+let test_map_location _ =
+  let assert_mapped expression expected =
+    assert_equal
+      ~cmp:[%compare.equal: Expression.t]
+      ~printer:(fun expression -> [%sexp_of: Expression.t] expression |> Sexp.to_string_hum)
+      expected
+      (Transform.map_location
+         expression
+         ~transform_location:(fun
+                               {
+                                 Location.start = { line = start_line; column = start_column };
+                                 stop = { line = stop_line; column = stop_column };
+                               }
+                             ->
+           {
+             Location.start = { line = start_line + 1; column = start_column + 1 };
+             stop = { line = stop_line + 1; column = stop_column + 1 };
+           }))
+  in
+  assert_mapped
+    {
+      Node.value =
+        Expression.Call
+          {
+            Call.callee =
+              {
+                Node.value =
+                  Expression.Name (create_name ~location:(parse_location "1:2-3:4") "foo");
+                location = parse_location "1:2-5:6";
+              };
+            arguments = [];
+          };
+      location = parse_location "1:2-7:8";
+    }
+    {
+      Node.value =
+        Expression.Call
+          {
+            Call.callee =
+              {
+                Node.value =
+                  Expression.Name (create_name ~location:(parse_location "2:3-4:5") "foo");
+                location = parse_location "2:3-6:7";
+              };
+            arguments = [];
+          };
+      location = parse_location "2:3-8:9";
+    };
+  ()
+
+
 let () =
   "transform"
   >::: [
@@ -852,5 +903,6 @@ let () =
          "transform_in_statement" >:: test_transform_in_statement;
          "transform_in_expression" >:: test_transform_in_expression;
          "sanitize_statement" >:: test_sanitize_statement;
+         "map_location" >:: test_map_location;
        ]
   |> Test.run

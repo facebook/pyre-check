@@ -68,3 +68,5 @@ val transform_in_expression
 val sanitize_expression : Expression.t -> Expression.t
 
 val sanitize_statement : Statement.statement -> Statement.statement
+
+val map_location : transform_location:(Location.t -> Location.t) -> Expression.t -> Expression.t

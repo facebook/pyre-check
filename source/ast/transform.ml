@@ -571,3 +571,28 @@ let sanitize_statement statement =
   match sanitized_statement with
   | [{ Node.value = statement; _ }] -> statement
   | _ -> statement
+
+
+let map_location ~transform_location expression =
+  let module TransformExpressions = Make (struct
+    type t = unit
+
+    let transform_expression_children _ _ = true
+
+    let expression _ ({ Node.location; _ } as expression) =
+      { expression with Node.location = transform_location location }
+
+
+    let transform_children state _ = state, true
+
+    let statement state statement = state, [statement]
+  end)
+  in
+  TransformExpressions.transform
+    ()
+    (Source.create [Node.create_with_default_location (Statement.Expression expression)])
+  |> (fun { TransformExpressions.source; _ } -> source)
+  |> Source.statements
+  |> function
+  | [{ Node.value = Statement.Expression expression; _ }] -> expression
+  | _ -> failwith "expected single expression statement"
