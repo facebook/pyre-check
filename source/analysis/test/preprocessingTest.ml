@@ -376,7 +376,7 @@ let test_expand_string_annotation_preserves_locations _ =
         Name
           (Attribute
              {
-               base = { Node.location = location (1, 6) (1, 10); value = Name (Identifier "test") };
+               base = { Node.location = location (1, 5) (1, 10); value = Name (Identifier "test") };
                attribute = "Foo";
                special = false;
              });

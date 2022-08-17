@@ -42,11 +42,11 @@ let is_type_variable_definition callee =
 
 let transform_string_annotation_expression ~relative =
   let rec transform_expression
-      ({
-         Node.location =
-           { Location.start = { Location.line = start_line; column = start_column }; _ };
-         value;
-       } as expression)
+      {
+        Node.location =
+          { Location.start = { Location.line = start_line; column = start_column }; _ } as location;
+        value;
+      }
     =
     let transform_argument ({ Call.Argument.value; _ } as argument) =
       { argument with Call.Argument.value = transform_expression value }
@@ -100,9 +100,10 @@ let transform_string_annotation_expression ~relative =
               [string_value ^ "\n"]
               ~relative
           with
-          | Ok [{ Node.value = Expression { Node.value = Name _ as expression; _ }; _ }]
-          | Ok [{ Node.value = Expression { Node.value = Call _ as expression; _ }; _ }] ->
-              expression
+          | Ok [{ Node.value = Expression ({ Node.value = Name _; _ } as expression); _ }]
+          | Ok [{ Node.value = Expression ({ Node.value = Call _; _ } as expression); _ }] ->
+              Transform.map_location expression ~transform_location:(fun _ -> location)
+              |> Node.value
           | Ok _
           | Error _ ->
               (* TODO(T76231928): replace this silent ignore with something typeCheck.ml can use *)
@@ -110,7 +111,7 @@ let transform_string_annotation_expression ~relative =
       | Tuple elements -> Tuple (List.map elements ~f:transform_expression)
       | _ -> value
     in
-    { expression with Node.value }
+    { Node.value; location }
   in
   transform_expression
 
