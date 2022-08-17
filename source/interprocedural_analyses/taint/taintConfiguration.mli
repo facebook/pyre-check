@@ -55,6 +55,23 @@ val missing_flows_kind_from_string : string -> missing_flows_kind option
 
 val missing_flows_kind_to_string : missing_flows_kind -> string
 
+module SourceSinkFilter : sig
+  type t
+
+  val should_keep_source : t -> Sources.t -> bool
+
+  val should_keep_sink : t -> Sinks.t -> bool
+
+  (* Exposed for testing purpose *)
+  val matching_sources : t -> Sources.Set.t Sinks.Map.t
+
+  (* Exposed for testing purpose *)
+  val matching_sinks : t -> Sinks.Set.t Sources.Map.t
+
+  (* Exposed for testing purpose *)
+  val possible_tito_transforms : t -> TaintTransforms.Set.t
+end
+
 type t = {
   sources: AnnotationParser.source_or_sink list;
   sinks: AnnotationParser.source_or_sink list;
@@ -69,13 +86,11 @@ type t = {
   implicit_sources: implicit_sources;
   partial_sink_converter: partial_sink_converter;
   partial_sink_labels: string list Core.String.Map.Tree.t;
-  matching_sources: Sources.Set.t Sinks.Map.t;
-  matching_sinks: Sinks.Set.t Sources.Map.t;
-  possible_tito_transforms: TaintTransforms.Set.t;
   find_missing_flows: missing_flows_kind option;
   dump_model_query_results_path: PyrePath.t option;
   analysis_model_constraints: analysis_model_constraints;
   lineage_analysis: bool;
+  source_sink_filter: SourceSinkFilter.t option;
 }
 
 val empty : t

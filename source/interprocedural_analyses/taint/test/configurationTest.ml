@@ -82,7 +82,8 @@ let test_simple _ =
     (Some 50);
   assert_equal
     (Sources.Map.of_alist_exn [Sources.NamedSource "A", Sinks.Set.of_list [Sinks.NamedSink "D"]])
-    configuration.matching_sinks
+    (TaintConfiguration.SourceSinkFilter.matching_sinks
+       (Option.value_exn configuration.source_sink_filter))
 
 
 let test_transform _ =
@@ -923,11 +924,12 @@ let test_matching_kinds _ =
       |> String.concat ~sep:", "
       |> Format.asprintf "{%s}"
     in
+    let source_sink_filter = Option.value_exn configuration.source_sink_filter in
     assert_equal
       ~printer:matching_sources_printer
       ~cmp:(Sources.Map.equal Sinks.Set.equal)
       (Sources.Map.of_alist_exn matching_sinks)
-      configuration.matching_sinks;
+      (TaintConfiguration.SourceSinkFilter.matching_sinks source_sink_filter);
     let matching_sinks_printer matching =
       matching
       |> Sinks.Map.to_alist
@@ -940,7 +942,7 @@ let test_matching_kinds _ =
       ~printer:matching_sinks_printer
       ~cmp:(Sinks.Map.equal Sources.Set.equal)
       (Sinks.Map.of_alist_exn matching_sources)
-      configuration.matching_sources;
+      (TaintConfiguration.SourceSinkFilter.matching_sources source_sink_filter);
     let possible_tito_transforms_printer possible =
       possible
       |> TaintTransforms.Set.elements
@@ -952,7 +954,7 @@ let test_matching_kinds _ =
       ~printer:possible_tito_transforms_printer
       ~cmp:TaintTransforms.Set.equal
       (TaintTransforms.Set.of_list possible_tito_transforms)
-      configuration.possible_tito_transforms
+      (TaintConfiguration.SourceSinkFilter.possible_tito_transforms source_sink_filter)
   in
   assert_matching
     ~configuration:
