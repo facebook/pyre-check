@@ -500,6 +500,15 @@ let test_find_narrowest_spanning_symbol context =
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
+  (* This is a judgment call. We could either show `list` or `list[str]`.
+
+     Doing the latter - always returning the entire annotation - would mean that go-to-def would
+     break for cases where we want to get the precise element type, e.g., `dict[int, Foo]` would
+     jump to `dict` instead of `Foo`. So, we will go with the closest symbol within the annotation
+     that spans the cursor position.
+
+     Given that `hover` on a type annotation isn't as valuable as go-to-def, this should be a
+     reasonable tradeoff. *)
   assert_narrowest_expression
     ~source:
       {|
@@ -509,7 +518,7 @@ let test_find_narrowest_spanning_symbol context =
     |}
     (Some
        {
-         symbol_with_definition = TypeAnnotation (parse_single_expression "list[str]");
+         symbol_with_definition = TypeAnnotation (parse_single_expression "list");
          cfg_data = { define_name = !&"test.foo"; node_id = 4; statement_index = 0 };
          use_postcondition_info = false;
        });
@@ -1134,14 +1143,17 @@ let test_resolve_definition_for_symbol context =
     |}
     (* This points to builtins.pyi. *)
     (Some ":120:0-181:32");
-  assert_resolved_definition
-    {|
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
         def foo() -> None:
           xs: list[str] = ["a", "b"]
           #    ^- cursor
 
           # No definition found.
-    |};
+    |}
+    (* This points to builtins.pyi. *)
+    (Some ":263:0-279:31");
   assert_resolved_definition
     {|
       class Foo:
@@ -1488,6 +1500,49 @@ let test_resolve_definition_for_symbol context =
             #           ^- cursor
 
         # No definition found.
+    |};
+  assert_resolved_definition
+    {|
+        from typing import Optional
+
+        class Foo:              # start line
+          some_attribute: int   # stop line
+
+        def main(foo: Optional[Foo]) -> None:
+          #                     ^- cursor
+          pass
+    |};
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
+        from typing import Optional
+
+        foo: Optional[int]
+        #      ^- cursor
+    |}
+    (* `Optional` is a special form, so it points to the start of the file. *)
+    (Some "typing:1:0-1:0");
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
+        from typing import Union
+
+        foo: Union[int, str, bool]
+        #      ^- cursor
+    |}
+    (* `Union` is a special form, so it points to the start of the file. *)
+    (Some "typing:1:0-1:0");
+  assert_resolved_definition
+    {|
+        from typing import Generic, TypeVar
+
+        T = TypeVar("T")
+
+        class MyContainer(Generic[T]):  # start line
+          pass                          # stop line
+
+        foo: MyContainer[int]
+        #      ^- cursor
     |};
   ()
 
@@ -2826,7 +2881,7 @@ let test_resolve_type_for_symbol context =
           xs: list[str] = ["a", "b"]
           #    ^- cursor
     |}
-    (Some "typing.Type[typing.List[str]]");
+    (Some "typing.Type[list]");
   assert_resolved_type
     {|
       class Foo:

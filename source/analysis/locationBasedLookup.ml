@@ -468,6 +468,21 @@ end
 module FindNarrowestSpanningExpressionOrTypeAnnotation (PositionData : PositionData) = struct
   include Visit.MakeNodeVisitor (FindNarrowestSpanningExpression (PositionData))
 
+  let collect_type_annotation_symbols annotation_expression =
+    let expression_symbol_to_type_annotation_symbol = function
+      | { symbol_with_definition = Expression expression; _ } ->
+          {
+            symbol_with_definition = TypeAnnotation expression;
+            cfg_data = PositionData.cfg_data;
+            use_postcondition_info = false;
+          }
+      | type_annotation_symbol -> type_annotation_symbol
+    in
+    let symbols = ref [] in
+    visit_expression ~state:symbols annotation_expression;
+    List.map !symbols ~f:expression_symbol_to_type_annotation_symbol
+
+
   let visit state source =
     let visit_statement_for_type_annotations_and_parameters
         ~state
@@ -478,15 +493,9 @@ module FindNarrowestSpanningExpressionOrTypeAnnotation (PositionData : PositionD
       let visit_using_postcondition_info =
         visit_expression ~state ~visitor_override:Visitor.node_using_postcondition
       in
-      let store_type_annotation ({ Node.location; _ } as annotation) =
+      let store_type_annotation ({ Node.location; _ } as annotation_expression) =
         if Location.contains ~location PositionData.position then
-          state :=
-            {
-              symbol_with_definition = TypeAnnotation annotation;
-              cfg_data = PositionData.cfg_data;
-              use_postcondition_info = false;
-            }
-            :: !state
+          state := collect_type_annotation_symbols annotation_expression @ !state
       in
       if Location.contains ~location PositionData.position then
         match Node.value statement with
