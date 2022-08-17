@@ -1584,6 +1584,17 @@ let test_resolve_definition_for_symbol context =
               print(x)
                 #   ^- cursor
     |};
+  assert_resolved_definition
+    {|
+        from typing import Callable
+
+        def my_decorator(f: Callable[[], int]) -> Callable[[], int]:  # start line
+          pass                                                        # stop line
+
+        @my_decorator
+        #   ^- cursor
+        def foo() -> int: ...
+    |};
   ()
 
 
