@@ -741,12 +741,21 @@ let resolve_definition_for_name ~resolution ~module_reference ~define_name ~stat
                 Some (Type.single_parameter annotation)
             | annotation -> annotation
           in
-          let base_class_summary =
+          let parent_class_summary =
             base_type
-            >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
+            >>= (fun parent ->
+                  GlobalResolution.attribute_from_annotation
+                    (Resolution.global_resolution resolution)
+                    ~parent
+                    ~name:attribute)
+            >>| AnnotatedAttribute.parent
+            >>= (fun parent ->
+                  GlobalResolution.class_summary
+                    (Resolution.global_resolution resolution)
+                    (Type.Primitive parent))
             >>| Node.value
           in
-          match base_class_summary with
+          match parent_class_summary with
           | Some ({ ClassSummary.qualifier; _ } as base_class_summary) ->
               base_class_summary
               |> ClassSummary.attributes

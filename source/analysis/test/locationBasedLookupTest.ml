@@ -1415,6 +1415,30 @@ let test_resolve_definition_for_symbol context =
               #  ^- cursor
     |}
     (Some "my_placeholder_stub:1:0-1:0");
+  assert_resolved_definition
+    {|
+        class Base:
+          def base_method(self) -> None: ...
+        # ^                                 ^
+
+        class Child(Base): ...
+
+        def foo(x: Child) -> None:
+          x.base_method()
+          #    ^- cursor
+    |};
+  assert_resolved_definition
+    {|
+        class Base:
+          base_attribute: int
+        # ^                  ^
+
+        class Child(Base): ...
+
+        def foo(x: Child) -> None:
+          x.base_attribute
+          #    ^- cursor
+    |};
   ()
 
 
