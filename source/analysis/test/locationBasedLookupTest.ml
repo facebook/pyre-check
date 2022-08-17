@@ -1461,6 +1461,34 @@ let test_resolve_definition_for_symbol context =
           pass
     |}
     (Some "test:4:0-4:3");
+  assert_resolved_definition
+    {|
+        from typing import Optional
+
+        class Foo:
+          some_attribute: int
+        # ^                  ^
+
+        def main(foo: Optional[Foo]) -> None:
+
+          if foo is not None:
+            print(foo.some_attribute)
+            #           ^- cursor
+    |};
+  (* TODO(T129228930): Handle refinement within a statement. *)
+  assert_resolved_definition
+    {|
+        from typing import Optional
+
+        class Foo:
+          some_attribute: int
+
+        def main(foo: Optional[Foo]) -> None:
+          d = foo.some_attribute if foo is not None else None
+            #           ^- cursor
+
+        # No definition found.
+    |};
   ()
 
 
@@ -2992,7 +3020,7 @@ let test_resolve_type_for_symbol context =
           #    ^- cursor
     |}
     (Type.parametric
-       "typing.ClassMethod"
+       "BoundMethod"
        [
          Single
            (Type.Callable
@@ -3014,6 +3042,7 @@ let test_resolve_type_for_symbol context =
                   };
                 overloads = [];
               });
+         Single (Type.meta (Type.Primitive "test.Foo"));
        ]
     |> Option.some);
   assert_resolved_explicit_type
@@ -3042,17 +3071,12 @@ let test_resolve_type_for_symbol context =
           Foo.my_static_method()
           #     ^- cursor
     |}
-    (Type.parametric
-       "typing.StaticMethod"
-       [
-         Single
-           (Type.Callable
-              {
-                kind = Type.Callable.Named (Reference.create "test.Foo.my_static_method");
-                implementation = { annotation = Type.none; parameters = Type.Callable.Defined [] };
-                overloads = [];
-              });
-       ]
+    (Type.Callable
+       {
+         kind = Type.Callable.Named (Reference.create "test.Foo.my_static_method");
+         implementation = { annotation = Type.none; parameters = Type.Callable.Defined [] };
+         overloads = [];
+       }
     |> Option.some);
   assert_resolved_type
     {|

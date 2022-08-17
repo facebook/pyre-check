@@ -643,16 +643,8 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
 
 let resolve ~resolution expression =
   try
-    let annotation = Resolution.resolve_expression_to_annotation resolution expression in
-    let original = Annotation.original annotation in
-    if Type.is_top original || Type.is_unbound original then
-      let annotation = Annotation.annotation annotation in
-      if Type.is_top annotation || Type.is_unbound annotation then
-        None
-      else
-        Some annotation
-    else
-      Some original
+    let resolved = Resolution.resolve_expression_to_type resolution expression in
+    Option.some_if ((not (Type.is_top resolved)) && not (Type.is_unbound resolved)) resolved
   with
   | ClassHierarchy.Untracked _ -> None
 
