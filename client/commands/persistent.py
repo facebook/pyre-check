@@ -1438,6 +1438,10 @@ class PyreQueryHandler(connection.BackgroundTask):
             if definition_response is not None
             else []
         )
+        result = lsp.LspDefinitionResponse.cached_schema().dump(
+            definitions,
+            many=True,
+        )
 
         await _write_telemetry(
             enabled_telemetry_event,
@@ -1447,10 +1451,7 @@ class PyreQueryHandler(connection.BackgroundTask):
                 "operation": "definition",
                 "filePath": str(query.path),
                 "count": len(definitions),
-                "definitions": lsp.LspDefinitionResponse.cached_schema().dump(
-                    definitions,
-                    many=True,
-                ),
+                "definitions": result,
             },
             query.activity_key,
         )
@@ -1460,10 +1461,7 @@ class PyreQueryHandler(connection.BackgroundTask):
             json_rpc.SuccessResponse(
                 id=query.id,
                 activity_key=query.activity_key,
-                result=lsp.LspDefinitionResponse.cached_schema().dump(
-                    definitions,
-                    many=True,
-                ),
+                result=result,
             ),
         )
 
