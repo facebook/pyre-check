@@ -175,7 +175,53 @@ module SourceSinkFilter = struct
     |> TaintTransforms.Set.of_list
 
 
-  let create ~rules =
+  let create ~rules ~filtered_rule_codes ~filtered_sources ~filtered_sinks ~filtered_transforms =
+    let rules =
+      match filtered_rule_codes with
+      | Some rule_codes -> List.filter rules ~f:(fun { Rule.code; _ } -> Set.mem rule_codes code)
+      | None -> rules
+    in
+    let rules =
+      match filtered_sources with
+      | Some filtered_sources ->
+          let should_keep_source = function
+            | Sources.NamedSource name
+            | Sources.ParametricSource { source_name = name; _ } ->
+                Sources.Set.mem (Sources.NamedSource name) filtered_sources
+            | _ -> true
+          in
+          List.filter_map rules ~f:(fun rule ->
+              let rule_sources = List.filter ~f:should_keep_source rule.sources in
+              if not (List.is_empty rule_sources) then
+                Some { rule with sources = rule_sources }
+              else
+                None)
+      | None -> rules
+    in
+    let rules =
+      match filtered_sinks with
+      | Some filtered_sinks ->
+          let should_keep_sink = function
+            | Sinks.NamedSink name
+            | Sinks.ParametricSink { sink_name = name; _ } ->
+                Sinks.Set.mem (Sinks.NamedSink name) filtered_sinks
+            | _ -> true
+          in
+          List.filter_map rules ~f:(fun rule ->
+              let rule_sinks = List.filter ~f:should_keep_sink rule.sinks in
+              if not (List.is_empty rule_sinks) then
+                Some { rule with sinks = rule_sinks }
+              else
+                None)
+      | None -> rules
+    in
+    let rules =
+      match filtered_transforms with
+      | Some filtered_transforms ->
+          let should_keep_transform = List.mem filtered_transforms ~equal:TaintTransform.equal in
+          List.filter rules ~f:(fun rule -> List.for_all rule.transforms ~f:should_keep_transform)
+      | None -> rules
+    in
     let matching_sources, matching_sinks = matching_kinds_from_rules ~rules in
     let possible_tito_transforms = possible_tito_transforms_from_rules ~rules in
     { matching_sources; matching_sinks; possible_tito_transforms }
@@ -197,9 +243,7 @@ module SourceSinkFilter = struct
                 }
         in
         match Sources.Map.find_opt source matching_sinks with
-        | None ->
-            (* TODO(T104600511): Filter out sources that are never used in any rule. *)
-            false
+        | None -> false
         | Some sinks ->
             TaintTransforms.get_sanitize_transforms transforms
             |> (fun { sinks; _ } -> sinks)
@@ -207,6 +251,9 @@ module SourceSinkFilter = struct
             |> Sinks.Set.diff sinks
             |> Sinks.Set.is_empty
             |> not)
+    | Sources.NamedSource name
+    | Sources.ParametricSource { source_name = name; _ } ->
+        Sources.Map.mem (Sources.NamedSource name) matching_sinks
     | _ -> true
 
 
@@ -226,9 +273,7 @@ module SourceSinkFilter = struct
                 }
         in
         match Sinks.Map.find_opt sink matching_sources with
-        | None ->
-            (* TODO(T104600511): Filter out sinks that are never used in any rule. *)
-            false
+        | None -> false
         | Some sources ->
             TaintTransforms.get_sanitize_transforms transforms
             |> (fun { sources; _ } -> sources)
@@ -236,11 +281,15 @@ module SourceSinkFilter = struct
             |> Sources.Set.diff sources
             |> Sources.Set.is_empty
             |> not)
-    | Sinks.Transform { local; global; base = LocalReturn } ->
+    | Sinks.Transform { local; global; base = LocalReturn }
+    | Sinks.Transform { local; global; base = ParameterUpdate _ } ->
         let transforms =
           TaintTransforms.merge ~local ~global |> TaintTransforms.discard_sanitize_transforms
         in
         TaintTransforms.Set.mem transforms possible_tito_transforms
+    | Sinks.NamedSink name
+    | Sinks.ParametricSink { sink_name = name; _ } ->
+        Sinks.Map.mem (Sinks.NamedSink name) matching_sources
     | _ -> true
 
 
@@ -933,7 +982,14 @@ let from_json_list source_json_list =
         maximum_tito_depth;
       };
     lineage_analysis;
-    source_sink_filter = Some (SourceSinkFilter.create ~rules);
+    source_sink_filter =
+      Some
+        (SourceSinkFilter.create
+           ~rules
+           ~filtered_rule_codes:None
+           ~filtered_sources:None
+           ~filtered_sinks:None
+           ~filtered_transforms:None);
   }
 
 
@@ -1139,7 +1195,14 @@ let default =
     dump_model_query_results_path = None;
     analysis_model_constraints = default_analysis_model_constraints;
     lineage_analysis = false;
-    source_sink_filter = Some (SourceSinkFilter.create ~rules);
+    source_sink_filter =
+      Some
+        (SourceSinkFilter.create
+           ~rules
+           ~filtered_rule_codes:None
+           ~filtered_sources:None
+           ~filtered_sinks:None
+           ~filtered_transforms:None);
   }
 
 
@@ -1161,7 +1224,14 @@ let obscure_flows_configuration configuration =
     configuration with
     rules;
     find_missing_flows = Some Obscure;
-    source_sink_filter = Some (SourceSinkFilter.create ~rules);
+    source_sink_filter =
+      Some
+        (SourceSinkFilter.create
+           ~rules
+           ~filtered_rule_codes:None
+           ~filtered_sources:configuration.filtered_sources
+           ~filtered_sinks:None
+           ~filtered_transforms:None);
   }
 
 
@@ -1183,7 +1253,14 @@ let missing_type_flows_configuration configuration =
     configuration with
     rules;
     find_missing_flows = Some Type;
-    source_sink_filter = Some (SourceSinkFilter.create ~rules);
+    source_sink_filter =
+      Some
+        (SourceSinkFilter.create
+           ~rules
+           ~filtered_rule_codes:None
+           ~filtered_sources:configuration.filtered_sources
+           ~filtered_sinks:None
+           ~filtered_transforms:None);
   }
 
 
@@ -1318,7 +1395,14 @@ let with_command_line_options
   in
   {
     configuration with
-    source_sink_filter = Some (SourceSinkFilter.create ~rules:configuration.rules);
+    source_sink_filter =
+      Some
+        (SourceSinkFilter.create
+           ~rules:configuration.rules
+           ~filtered_rule_codes:configuration.filtered_rule_codes
+           ~filtered_sources:configuration.filtered_sources
+           ~filtered_sinks:configuration.filtered_sinks
+           ~filtered_transforms:configuration.filtered_transforms);
   }
 
 
