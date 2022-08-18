@@ -347,7 +347,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=input_channel,
             output_channel=create_memory_text_writer(),
-            state=server_state,
+            server_state=server_state,
             pyre_manager=noop_task_manager,
             pyre_query_manager=noop_task_manager,
         )
@@ -369,7 +369,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=input_channel,
             output_channel=create_memory_text_writer(),
-            state=server_state,
+            server_state=server_state,
             pyre_manager=noop_task_manager,
             pyre_query_manager=noop_task_manager,
         )
@@ -393,7 +393,7 @@ class PersistentTest(testslide.TestCase):
             output_channel=TextWriter(
                 ExceptionRaisingBytesWriter(ConnectionResetError())
             ),
-            state=server_state,
+            server_state=server_state,
             pyre_manager=noop_task_manager,
             pyre_query_manager=noop_task_manager,
         )
@@ -412,7 +412,7 @@ class PersistentTest(testslide.TestCase):
             output_channel=TextWriter(
                 ExceptionRaisingBytesWriter(ConnectionResetError())
             ),
-            state=server_state,
+            server_state=server_state,
             pyre_manager=noop_task_manager,
             pyre_query_manager=noop_task_manager,
         )
@@ -427,7 +427,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            state=server_state,
+            server_state=server_state,
             pyre_manager=BackgroundTaskManager(NoOpBackgroundTask()),
             pyre_query_manager=fake_task_manager,
         )
@@ -446,11 +446,11 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIn(test_path0, server_state.opened_documents)
         self.assertEqual(
-            server.state.query_state.queries.qsize(),
+            server.server_state.query_state.queries.qsize(),
             1,
         )
         self.assertEqual(
-            server.state.query_state.queries.get_nowait(),
+            server.server_state.query_state.queries.get_nowait(),
             TypesQuery(test_path0),
         )
 
@@ -466,11 +466,11 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertIn(test_path1, server_state.opened_documents)
         self.assertEqual(
-            server.state.query_state.queries.qsize(),
+            server.server_state.query_state.queries.qsize(),
             1,
         )
         self.assertEqual(
-            server.state.query_state.queries.get_nowait(),
+            server.server_state.query_state.queries.get_nowait(),
             TypesQuery(test_path1),
         )
 
@@ -483,7 +483,7 @@ class PersistentTest(testslide.TestCase):
         )
         self.assertNotIn(test_path0, server_state.opened_documents)
         self.assertEqual(
-            server.state.query_state.queries.qsize(),
+            server.server_state.query_state.queries.qsize(),
             0,
         )
 
@@ -592,7 +592,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            state=ServerState(),
+            server_state=ServerState(),
             pyre_manager=fake_task_manager,
             pyre_query_manager=fake_task_manager2,
         )
@@ -619,7 +619,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            state=ServerState(
+            server_state=ServerState(
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD
             ),
             pyre_manager=fake_task_manager,
@@ -649,7 +649,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            state=ServerState(opened_documents={test_path}),
+            server_state=ServerState(opened_documents={test_path}),
             pyre_manager=fake_task_manager,
             pyre_query_manager=fake_task_manager2,
         )
@@ -673,7 +673,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            state=ServerState(
+            server_state=ServerState(
                 opened_documents={test_path},
                 consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
             ),
@@ -700,7 +700,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            state=ServerState(opened_documents={test_path}),
+            server_state=ServerState(opened_documents={test_path}),
             pyre_manager=fake_task_manager,
             pyre_query_manager=fake_task_manager2,
         )
@@ -716,9 +716,9 @@ class PersistentTest(testslide.TestCase):
             )
         )
         await asyncio.sleep(0)
-        self.assertEqual(server.state.query_state.queries.qsize(), 1)
+        self.assertEqual(server.server_state.query_state.queries.qsize(), 1)
         self.assertEqual(
-            server.state.query_state.queries.get_nowait(), TypesQuery(test_path)
+            server.server_state.query_state.queries.get_nowait(), TypesQuery(test_path)
         )
 
     @setup.async_test
@@ -729,7 +729,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
-            state=ServerState(
+            server_state=ServerState(
                 opened_documents={test_path},
                 query_state=PyreQueryState(
                     path_to_location_type_lookup={
@@ -753,7 +753,9 @@ class PersistentTest(testslide.TestCase):
             )
         )
         await asyncio.sleep(0)
-        self.assertEqual(server.state.query_state.path_to_location_type_lookup, {})
+        self.assertEqual(
+            server.server_state.query_state.path_to_location_type_lookup, {}
+        )
 
     @setup.async_test
     async def test_hover_always_responds(self) -> None:
@@ -777,7 +779,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=TextWriter(memory_bytes_writer),
-            state=ServerState(
+            server_state=ServerState(
                 opened_documents={test_path},
                 query_state=PyreQueryState(
                     path_to_location_type_lookup={
@@ -808,9 +810,9 @@ class PersistentTest(testslide.TestCase):
 
         assert_hover_response("```str```")
         self.assertTrue(fake_task_manager.is_task_running())
-        self.assertEqual(server.state.query_state.queries.qsize(), 1)
+        self.assertEqual(server.server_state.query_state.queries.qsize(), 1)
         self.assertEqual(
-            server.state.query_state.queries.get_nowait(), TypesQuery(test_path)
+            server.server_state.query_state.queries.get_nowait(), TypesQuery(test_path)
         )
 
         await server.process_hover_request(
@@ -826,7 +828,7 @@ class PersistentTest(testslide.TestCase):
 
         self.assertTrue(fake_task_manager.is_task_running())
         assert_hover_response("")
-        self.assertEqual(server.state.query_state.queries.qsize(), 0)
+        self.assertEqual(server.server_state.query_state.queries.qsize(), 0)
 
     def test_type_diagnostics(self) -> None:
         self.assertEqual(
@@ -1061,7 +1063,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=TextWriter(bytes_writer),
-            state=ServerState(),
+            server_state=ServerState(),
             pyre_manager=fake_pyre_manager,
             pyre_query_manager=fake_pyre_query_manager,
         )
@@ -1076,7 +1078,7 @@ class PersistentTest(testslide.TestCase):
         )
 
         self.assertEqual(
-            server.state.query_state.queries.get_nowait(),
+            server.server_state.query_state.queries.get_nowait(),
             TypeCoverageQuery(1, test_path),
         )
 
@@ -1106,7 +1108,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=TextWriter(memory_bytes_writer),
-            state=ServerState(
+            server_state=ServerState(
                 opened_documents={test_path},
             ),
             pyre_manager=fake_task_manager,
@@ -1128,9 +1130,9 @@ class PersistentTest(testslide.TestCase):
 
         self.assertTrue(fake_task_manager.is_task_running())
         self.assertEqual(len(memory_bytes_writer.items()), 0)
-        self.assertEqual(server.state.query_state.queries.qsize(), 1)
+        self.assertEqual(server.server_state.query_state.queries.qsize(), 1)
         self.assertEqual(
-            server.state.query_state.queries.get_nowait(),
+            server.server_state.query_state.queries.get_nowait(),
             DefinitionLocationQuery(
                 id=42,
                 path=test_path,
@@ -1165,7 +1167,7 @@ class PersistentTest(testslide.TestCase):
             server = PyreServer(
                 input_channel=create_memory_text_reader(""),
                 output_channel=TextWriter(memory_bytes_writer),
-                state=ServerState(
+                server_state=ServerState(
                     opened_documents={test_path},
                 ),
                 pyre_manager=fake_task_manager,
@@ -1239,7 +1241,7 @@ class PersistentTest(testslide.TestCase):
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=TextWriter(memory_bytes_writer),
-            state=ServerState(
+            server_state=ServerState(
                 opened_documents={test_path},
             ),
             pyre_manager=fake_task_manager,
@@ -1261,9 +1263,9 @@ class PersistentTest(testslide.TestCase):
 
         self.assertTrue(fake_task_manager.is_task_running())
         self.assertEqual(len(memory_bytes_writer.items()), 0)
-        self.assertEqual(server.state.query_state.queries.qsize(), 1)
+        self.assertEqual(server.server_state.query_state.queries.qsize(), 1)
         self.assertEqual(
-            server.state.query_state.queries.get_nowait(),
+            server.server_state.query_state.queries.get_nowait(),
             ReferencesQuery(
                 id=42,
                 path=test_path,

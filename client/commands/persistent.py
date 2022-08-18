@@ -611,20 +611,20 @@ class PyreServer:
     # Pyre server.
     pyre_manager: connection.BackgroundTaskManager
     pyre_query_manager: connection.BackgroundTaskManager
-    # NOTE: `state` is mutable and can be changed on `pyre_manager` side.
-    state: ServerState
+    # NOTE: `server_state` is mutable and can be changed on `pyre_manager` side.
+    server_state: ServerState
 
     def __init__(
         self,
         input_channel: connection.TextReader,
         output_channel: connection.TextWriter,
-        state: ServerState,
+        server_state: ServerState,
         pyre_manager: connection.BackgroundTaskManager,
         pyre_query_manager: connection.BackgroundTaskManager,
     ) -> None:
         self.input_channel = input_channel
         self.output_channel = output_channel
-        self.state = state
+        self.server_state = server_state
         self.pyre_manager = pyre_manager
         self.pyre_query_manager = pyre_query_manager
 
@@ -633,7 +633,10 @@ class PyreServer:
         return 0
 
     async def _try_restart_pyre_server(self) -> None:
-        if self.state.consecutive_start_failure < CONSECUTIVE_START_ATTEMPT_THRESHOLD:
+        if (
+            self.server_state.consecutive_start_failure
+            < CONSECUTIVE_START_ATTEMPT_THRESHOLD
+        ):
             await self.pyre_manager.ensure_task_running()
         else:
             LOG.info(
@@ -651,8 +654,8 @@ class PyreServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        self.state.opened_documents.add(document_path)
-        self.state.query_state.queries.put_nowait(
+        self.server_state.opened_documents.add(document_path)
+        self.server_state.query_state.queries.put_nowait(
             TypesQuery(document_path, activity_key)
         )
         LOG.info(f"File opened: {document_path}")
@@ -670,8 +673,10 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         try:
-            self.state.opened_documents.remove(document_path)
-            self.state.query_state.path_to_location_type_lookup.pop(document_path, None)
+            self.server_state.opened_documents.remove(document_path)
+            self.server_state.query_state.path_to_location_type_lookup.pop(
+                document_path, None
+            )
             LOG.info(f"File closed: {document_path}")
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
@@ -687,7 +692,7 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
 
-        if document_path not in self.state.opened_documents:
+        if document_path not in self.server_state.opened_documents:
             return
 
         overlay_update = OverlayUpdate(
@@ -703,7 +708,7 @@ class PyreServer:
             ),
         )
 
-        self.state.query_state.queries.put_nowait(overlay_update)
+        self.server_state.query_state.queries.put_nowait(overlay_update)
 
         # Attempt to trigger a background Pyre server start on each file change
         if not self.pyre_manager.is_task_running():
@@ -720,10 +725,10 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
 
-        if document_path not in self.state.opened_documents:
+        if document_path not in self.server_state.opened_documents:
             return
 
-        self.state.query_state.queries.put_nowait(
+        self.server_state.query_state.queries.put_nowait(
             TypesQuery(document_path, activity_key)
         )
 
@@ -748,13 +753,13 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
 
-        if document_path not in self.state.opened_documents:
+        if document_path not in self.server_state.opened_documents:
             response = lsp.HoverResponse.empty()
         else:
-            self.state.query_state.queries.put_nowait(
+            self.server_state.query_state.queries.put_nowait(
                 TypesQuery(document_path, activity_key)
             )
-            response = self.state.query_state.hover_response_for_position(
+            response = self.server_state.query_state.hover_response_for_position(
                 Path(document_path), parameters.position
             )
 
@@ -778,7 +783,7 @@ class PyreServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        await self.state.query_state.queries.put(
+        await self.server_state.query_state.queries.put(
             TypeCoverageQuery(
                 id=request_id, activity_key=activity_key, path=document_path
             )
@@ -796,7 +801,7 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
 
-        if document_path not in self.state.opened_documents:
+        if document_path not in self.server_state.opened_documents:
             await lsp.write_json_rpc(
                 self.output_channel,
                 json_rpc.SuccessResponse(
@@ -809,7 +814,7 @@ class PyreServer:
             )
             return
 
-        self.state.query_state.queries.put_nowait(
+        self.server_state.query_state.queries.put_nowait(
             DefinitionLocationQuery(
                 id=request_id,
                 activity_key=activity_key,
@@ -829,7 +834,7 @@ class PyreServer:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        if document_path not in self.state.opened_documents:
+        if document_path not in self.server_state.opened_documents:
             raise json_rpc.InvalidRequestError(
                 f"Document URI has not been opened: {parameters.text_document.uri}"
             )
@@ -865,7 +870,7 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
 
-        if document_path not in self.state.opened_documents:
+        if document_path not in self.server_state.opened_documents:
             await lsp.write_json_rpc(
                 self.output_channel,
                 json_rpc.SuccessResponse(
@@ -878,7 +883,7 @@ class PyreServer:
             )
             return
 
-        self.state.query_state.queries.put_nowait(
+        self.server_state.query_state.queries.put_nowait(
             ReferencesQuery(
                 id=request_id,
                 activity_key=activity_key,
@@ -2100,7 +2105,7 @@ async def run_persistent(
             server = PyreServer(
                 input_channel=stdin,
                 output_channel=stdout,
-                state=initial_server_state,
+                server_state=initial_server_state,
                 pyre_manager=connection.BackgroundTaskManager(
                     PyreServerHandler(
                         server_start_options_reader=server_start_options_reader,
