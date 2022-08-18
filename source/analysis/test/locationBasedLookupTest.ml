@@ -1595,6 +1595,27 @@ let test_resolve_definition_for_symbol context =
         #   ^- cursor
         def foo() -> int: ...
     |};
+  (* TODO(T129228930): We don't handle files that are shadowed by stubs. *)
+  assert_resolved_definition_with_location_string
+    ~external_sources:["test.pyi", {|
+        FOO: int = ...
+      |}]
+    ~source:{|
+        FOO = 1
+        # ^- cursor
+    |}
+    None;
+  assert_resolved_definition_with_location_string
+    ~external_sources:["test.pyi", {|
+        FOO: int = ...
+      |}]
+    ~source:{|
+        FOO = 1
+
+        print(FOO)
+          #    ^- cursor
+    |}
+    None;
   ()
 
 
