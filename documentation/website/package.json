@@ -22,6 +22,7 @@
     "react": "^17.0.2",
     "react-codemirror2": "^7.2.1",
     "react-dom": "^16.10.2",
+    "react-toastify": "^9.0.8",
     "react-trend": "^1.2.5",
     "react-youtube": "^7.14.0",
     "socket.io-client": "^4.3.2"

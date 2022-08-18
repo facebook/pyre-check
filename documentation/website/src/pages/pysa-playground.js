@@ -13,7 +13,10 @@ import classnames from 'classnames';
 import Link from '@docusaurus/Link';
 import ExecutionEnvironment from '@docusaurus/ExecutionEnvironment';
 import {Controlled as CodeMirror} from 'react-codemirror2';
+import { ToastContainer, toast } from 'react-toastify';
+
 import 'codemirror/lib/codemirror.css';
+import 'react-toastify/dist/ReactToastify.css';
 import styles from './styles.module.css';
 
 let socketIOClient = () => {};
@@ -22,6 +25,14 @@ if (ExecutionEnvironment.canUseDOM) {
   require('codemirror/mode/python/python.js');
   socketIOClient = require('socket.io-client')
 }
+
+let query_params = {get: () => {}};
+if (typeof window !== 'undefined') {
+  query_params = new URLSearchParams(window.location.search);
+}
+const code_in_uri = decodeURI(query_params.get("code"));
+const models_in_uri = decodeURI(query_params.get("models"));
+const use_os_models_in_uri = decodeURI(query_params.get("use_os_models"));
 
 const default_code = `import subprocess
 from flask import Flask
@@ -54,11 +65,12 @@ function Code(props) {
 }
 
 function getStorageValue(key, defaultValue) {
-    let saved = null;
-    if (typeof window !== 'undefined') {
-      saved = localStorage.getItem(key);
-    }
-    return saved || defaultValue;
+  let saved = null;
+  if (typeof window !== 'undefined') {
+    saved = localStorage.getItem(key);
+  }
+  let result = (saved === null || saved === '')? defaultValue : saved;
+  return result;
 }
 
 function CheckButton(props) {
@@ -76,6 +88,22 @@ function CheckButton(props) {
         onClick={props.check}>
         {props.busy ? <div className={styles.spinner} /> : null}
         Run Pysa
+      </div>
+    </div>
+  );
+}
+
+function CopyButton(props) {
+  return (
+    <div style={{textAlign: 'right'}}>
+      <div
+        className={classnames(
+          'button button--outline button--secondary',
+          styles.getStarted,
+          styles.runPysa,
+        )}
+        onClick={props.click}>
+        Copy Shareable Link
       </div>
     </div>
   );
@@ -102,6 +130,22 @@ function Results(props) {
   );
 }
 
+function Menu(props) {
+  const copy = () => {
+    if(typeof window !== 'undefined') {
+      const uri = window.location.href + "?code=" + encodeURI(props.code) + "&models=" + encodeURI(props.models) + "&use_os_models=" + encodeURI(props.useOSModels);
+      navigator.clipboard.writeText(uri).then(() => {
+        toast("Link copied to clipboard");
+      }, () => {
+        toast("Failed to copy to clipboard");
+      });
+    }
+  };
+  return (
+    <CopyButton click={copy}/>
+  );
+}
+
 function Models(props) {
   return (
     <div className={styles.card}>
@@ -120,7 +164,7 @@ function Models(props) {
       <input
         type="checkbox"
         defaultChecked={props.useOSModels}
-        onChange={props.setUseOSModels}
+        onChange={(e) => {props.setUseOSModels(e.target.checked)}}
       />
       <label>Use open source models</label>
     </div>
@@ -129,19 +173,21 @@ function Models(props) {
 
 function Sandbox() {
   const [results, setResults] = useState(null);
-  const [code, setCode] = useState(getStorageValue("code", default_code));
+  const [code, setCode] = useState(
+    (code_in_uri === "null")? getStorageValue("code", default_code) : code_in_uri
+  );
   const [busy, setBusy] = useState(false);
-  const [model, setModel] = useState(getStorageValue("model", default_model));
-  const [useOSModels, setUseOSModels] = useState(true);
+  const [model, setModel] = useState(
+    (models_in_uri === "null")? getStorageValue("model", default_model) : models_in_uri
+  );
+  const [useOSModels, setUseOSModels] = useState(
+    ((use_os_models_in_uri === "null")? getStorageValue("use_os_models", "true") : use_os_models_in_uri) === "true"
+  );
 
-  const socket = socketIOClient("ws://127.0.0.1:5000/analyze");
+  const socket = socketIOClient("ws://127.0.0.1:5000/analyze", {transports: ["websocket"], reconnection: false});
   let synchronous_results = [];
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem("code", code);
-      localStorage.setItem("model", model);
-    }
     socket.on("pysa_results_channel", data => {
       if (data["type"] === undefined) {
         setResults({errors: ["Invalid data received from the server."]});
@@ -164,6 +210,14 @@ function Sandbox() {
     });
   }, [results]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("code", code);
+      localStorage.setItem("model", model);
+      localStorage.setItem("use_os_models", useOSModels);
+    }
+  });
+
   const check = () => {
     setBusy(true);
     synchronous_results = [];
@@ -182,12 +236,24 @@ function Sandbox() {
           setModel={setModel}
           useOSModels={useOSModels}
           setUseOSModels={setUseOSModels}/>
+        <Menu code={code} models={model} useOSModels={useOSModels}/>
         <Results results={results} />
         <Code
           code={code}
           setCode={setCode}
           busy={busy}
           check={check}
+        />
+        <ToastContainer
+          position="bottom-center"
+          autoClose={5000}
+          hideProgressBar
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss={false}
+          draggable={false}
+          pauseOnHover={false}
         />
       </main>
     </Layout>
