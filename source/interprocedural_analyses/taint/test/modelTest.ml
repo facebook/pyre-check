@@ -4093,12 +4093,13 @@ let test_filter_by_sources context =
     ~model_source:"def test.taint() -> TaintSource[WithSubkind[A]]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[] "test.taint"]
     ();
-  (* Does not affect AttachTo or Sanitizers *)
+  (* Does not affect AttachTo *)
   assert_model
     ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
     ~model_source:"def test.source() -> AttachToSource[Via[special]]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.Attach] "test.source"]
     ();
+  (* Filters sanitizers *)
   assert_model
     ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
     ~model_source:{|
@@ -4129,25 +4130,37 @@ let test_filter_by_sources context =
     ~model_source:{|
       def test.taint(x: Sanitize[TaintSource[TestTest]]): ...
     |}
+    ~expect:[outcome ~kind:`Function ~parameter_sanitizers:[] "test.taint"]
+    ();
+  assert_model
+    ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
+    ~model_source:{|
+      @SanitizeSingleTrace(TaintSource)
+      def test.taint(x): ...
+    |}
     ~expect:
       [
         outcome
           ~kind:`Function
-          ~parameter_sanitizers:
-            [
-              {
-                name = "x";
-                sanitize =
-                  {
-                    Taint.Domains.Sanitize.sources =
-                      Some (Specific (Sources.Set.singleton (Sources.NamedSource "TestTest")));
-                    sinks = None;
-                    tito = None;
-                  };
-              };
-            ]
+          ~global_sanitizer:{ Taint.Domains.Sanitize.sources = Some All; sinks = None; tito = None }
           "test.taint";
       ]
+    ();
+  assert_model
+    ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
+    ~model_source:
+      {|
+      @SanitizeSingleTrace(TaintSource[TestTest])
+      def test.taint(x): ...
+    |}
+    ~expect:[outcome ~kind:`Function "test.taint"]
+    ();
+  assert_model
+    ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
+    ~model_source:{|
+      def test.taint(x) -> Sanitize[TaintSource[TestTest]]: ...
+    |}
+    ~expect:[outcome ~kind:`Function "test.taint"]
     ();
   ()
 
@@ -4225,6 +4238,54 @@ let test_filter_by_sinks context =
           ~tito_parameters:[{ name = "self"; sinks = [Sinks.LocalReturn; Sinks.ParameterUpdate 1] }]
           "test.update";
       ]
+    ();
+  (* Filters sanitizers *)
+  assert_model
+    ~filtered_sinks:(Sinks.Set.of_list [Sinks.NamedSink "TestSink"])
+    ~model_source:{|
+      def test.taint(x: Sanitize[TaintSink[TestSink]]): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:
+            [
+              {
+                name = "x";
+                sanitize =
+                  {
+                    Taint.Domains.Sanitize.sources = None;
+                    sinks = Some (Specific (Sinks.Set.singleton (Sinks.NamedSink "TestSink")));
+                    tito = None;
+                  };
+              };
+            ]
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~filtered_sinks:(Sinks.Set.of_list [Sinks.NamedSink "TestSink"])
+    ~model_source:{|
+      def test.taint(x: Sanitize[TaintSink[OtherSink]]): ...
+    |}
+    ~expect:[outcome ~kind:`Function "test.taint"]
+    ();
+  assert_model
+    ~filtered_sinks:(Sinks.Set.of_list [Sinks.NamedSink "TestSink"])
+    ~model_source:{|
+      def test.taint(x) -> Sanitize[TaintSink[OtherSink]]: ...
+    |}
+    ~expect:[outcome ~kind:`Function "test.taint"]
+    ();
+  assert_model
+    ~filtered_sinks:(Sinks.Set.of_list [Sinks.NamedSink "TestSink"])
+    ~model_source:
+      {|
+      @SanitizeSingleTrace(TaintSink[OtherSink])
+      def test.taint(x): ...
+    |}
+    ~expect:[outcome ~kind:`Function "test.taint"]
     ();
   ()
 

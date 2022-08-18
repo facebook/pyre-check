@@ -334,18 +334,18 @@ let check_expectation
   assert_equal
     ~cmp:Domains.Sanitize.equal
     ~printer:Domains.Sanitize.show
-    sanitizers.global
-    global_sanitizer;
+    global_sanitizer
+    sanitizers.global;
   assert_equal
     ~cmp:Domains.Sanitize.equal
     ~printer:Domains.Sanitize.show
-    sanitizers.parameters
-    parameters_sanitizer;
+    parameters_sanitizer
+    sanitizers.parameters;
   assert_equal
     ~cmp:Domains.Sanitize.equal
     ~printer:Domains.Sanitize.show
-    (Domains.SanitizeRootMap.get AccessPath.Root.LocalResult sanitizers.roots)
-    return_sanitizer;
+    return_sanitizer
+    (Domains.SanitizeRootMap.get AccessPath.Root.LocalResult sanitizers.roots);
 
   assert_equal
     (Map.length expected_parameter_sanitizers)

@@ -1173,34 +1173,54 @@ let introduce_source_taint
     Ok taint
 
 
-let sanitize_from_annotations annotations =
+let sanitize_from_annotations ~source_sink_filter annotations =
+  let should_keep_source source =
+    match source_sink_filter with
+    | None -> true
+    | Some source_sink_filter ->
+        TaintConfiguration.SourceSinkFilter.should_keep_source source_sink_filter source
+  in
+  let should_keep_sink sink =
+    match source_sink_filter with
+    | None -> true
+    | Some source_sink_filter ->
+        TaintConfiguration.SourceSinkFilter.should_keep_sink source_sink_filter sink
+  in
   let open Domains in
   let to_sanitize = function
     | AllSources -> { Sanitize.empty with sources = Some All }
-    | SpecificSource source ->
+    | SpecificSource source when should_keep_source source ->
         { Sanitize.empty with sources = Some (Specific (Sources.Set.singleton source)) }
+    | SpecificSource _ -> Sanitize.empty
     | AllSinks -> { Sanitize.empty with sinks = Some All }
-    | SpecificSink sink ->
+    | SpecificSink sink when should_keep_sink sink ->
         { Sanitize.empty with sinks = Some (Specific (Sinks.Set.singleton sink)) }
+    | SpecificSink _ -> Sanitize.empty
     | AllTito -> { Sanitize.empty with tito = Some All }
     | SpecificTito { sources; sinks } ->
-        {
-          Sanitize.empty with
-          tito =
-            Some
-              (Specific
-                 {
-                   sanitized_tito_sources = Sources.Set.of_list sources;
-                   sanitized_tito_sinks = Sinks.Set.of_list sinks;
-                 });
-        }
+        let sources = List.filter sources ~f:should_keep_source in
+        let sinks = List.filter sinks ~f:should_keep_sink in
+        if (not (List.is_empty sources)) || not (List.is_empty sinks) then
+          {
+            Sanitize.empty with
+            tito =
+              Some
+                (Specific
+                   {
+                     sanitized_tito_sources = Sources.Set.of_list sources;
+                     sanitized_tito_sinks = Sinks.Set.of_list sinks;
+                   });
+          }
+        else
+          Sanitize.empty
   in
   annotations |> List.map ~f:to_sanitize |> List.fold ~init:Sanitize.empty ~f:Sanitize.join
 
 
-let introduce_sanitize ~root model annotations =
+let introduce_sanitize ~source_sink_filter ~root model annotations =
   let roots =
-    Domains.SanitizeRootMap.of_list [root, sanitize_from_annotations annotations]
+    Domains.SanitizeRootMap.of_list
+      [root, sanitize_from_annotations ~source_sink_filter annotations]
     |> Domains.SanitizeRootMap.join model.Model.sanitizers.roots
   in
   let sanitizers = { model.sanitizers with roots } in
@@ -2186,7 +2206,7 @@ let add_taint_annotation_to_model
                ~path
                ~location
                (InvalidReturnAnnotation { model_name; annotation = "AddFeatureToArgument" }))
-      | Sanitize annotations -> Ok (introduce_sanitize ~root model annotations))
+      | Sanitize annotations -> Ok (introduce_sanitize ~source_sink_filter ~root model annotations))
   | ParameterAnnotation root -> (
       match annotation with
       | Sink { sink; breadcrumbs; via_features; path; leaf_names; leaf_name_provided; trace_length }
@@ -2252,7 +2272,7 @@ let add_taint_annotation_to_model
                Sinks.AddFeatureToArgument
                via_features
           |> map_error ~f:invalid_model_for_taint
-      | Sanitize annotations -> Ok (introduce_sanitize ~root model annotations))
+      | Sanitize annotations -> Ok (introduce_sanitize ~source_sink_filter ~root model annotations))
 
 
 let parse_return_taint
@@ -2340,6 +2360,7 @@ let adjust_sanitize_and_modes_and_skipped_override
     ~path
     ~define_name
     ~configuration
+    ~source_sink_filter
     ~top_level_decorators
     ~is_object_target
     model
@@ -2368,7 +2389,8 @@ let adjust_sanitize_and_modes_and_skipped_override
       ~is_object_target
       expression
     |> function
-    | Ok [Sanitize sanitize_annotations] -> Ok (sanitize_from_annotations sanitize_annotations)
+    | Ok [Sanitize sanitize_annotations] ->
+        Ok (sanitize_from_annotations ~source_sink_filter sanitize_annotations)
     | Ok _ -> failwith "impossible case"
     | Error ({ ModelVerificationError.kind = InvalidTaintAnnotation { reason; _ }; _ } as error) ->
         Error
@@ -2738,6 +2760,7 @@ let create_model_from_signature
   >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
         ~configuration
+        ~source_sink_filter
         ~top_level_decorators
         ~define_name:callable_name
         ~is_object_target
@@ -2810,6 +2833,7 @@ let create_model_from_attribute
   >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
         ~configuration
+        ~source_sink_filter
         ~top_level_decorators:decorators
         ~define_name:name
         ~is_object_target
