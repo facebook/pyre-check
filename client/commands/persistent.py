@@ -1427,6 +1427,51 @@ class PyreQueryHandler(connection.BackgroundTask):
                 ),
             )
 
+    async def _query_and_send_hover_contents(
+        self,
+        query: HoverQuery,
+        socket_path: Path,
+        enabled_telemetry_event: bool,
+        consume_unsaved_changes_enabled: bool,
+    ) -> None:
+        path_string = f"'{query.path}'"
+        query_text = (
+            f"hover_info_for_position(path={path_string},"
+            f" line={query.position.line}, column={query.position.character})"
+        )
+        overlay_id = str(query.path) if consume_unsaved_changes_enabled else None
+        server_response = await self._send_query_and_interpret_response(
+            query_text, socket_path, HoverResponse, overlay_id
+        )
+        response = (
+            server_response.response if server_response else lsp.HoverResponse.empty()
+        )
+        result = lsp.HoverResponse.cached_schema().dump(
+            response,
+        )
+
+        await _write_telemetry(
+            enabled_telemetry_event,
+            self.client_output_channel,
+            {
+                "type": "LSP",
+                "operation": "hover",
+                "filePath": str(query.path),
+                "nonEmpty": len(response.contents) > 0,
+                "result": result,
+            },
+            query.activity_key,
+        )
+
+        await lsp.write_json_rpc(
+            self.client_output_channel,
+            json_rpc.SuccessResponse(
+                id=query.id,
+                activity_key=query.activity_key,
+                result=result,
+            ),
+        )
+
     async def _query_and_send_definition_location(
         self,
         query: DefinitionLocationQuery,

@@ -15,6 +15,7 @@ from unittest.mock import CallableMixin, patch
 
 import testslide
 from libcst.metadata import CodePosition, CodeRange
+from tools.pyre.client.commands.persistent import HoverQuery
 
 from ... import configuration as configuration_module, error, json_rpc
 from ...commands.language_server_protocol import SymbolKind
@@ -1757,6 +1758,97 @@ class PyreQueryHandlerTest(testslide.TestCase):
         self.assertTrue(result is not None)
         self.assertEqual(result.covered_percent, 100.0)
         self.assertEqual(len(result.uncovered_ranges), 0)
+
+    @setup.async_test
+    async def test_query_hover(self) -> None:
+        json_output = """{ "response": {"contents": "```foo.bar.Bar```"} }"""
+        client_output_writer = MemoryBytesWriter()
+        pyre_query_manager = PyreQueryHandler(
+            query_state=PyreQueryState(path_to_location_type_lookup={}),
+            server_start_options_reader=_create_server_start_options_reader(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root="/global/root",
+                    )
+                ),
+                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
+            ),
+            client_output_channel=TextWriter(client_output_writer),
+        )
+        memory_bytes_writer = MemoryBytesWriter()
+        flat_json = "".join(json_output.splitlines())
+        input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
+        output_channel = TextWriter(memory_bytes_writer)
+
+        with patch_connect_in_text_mode(input_channel, output_channel):
+            await pyre_query_manager._query_and_send_hover_contents(
+                query=HoverQuery(
+                    id=99,
+                    path=Path("bar.py"),
+                    position=lsp.Position(line=42, character=10),
+                ),
+                socket_path=Path("fake_socket_path"),
+                enabled_telemetry_event=False,
+                consume_unsaved_changes_enabled=False,
+            )
+
+        self.assertEqual(
+            memory_bytes_writer.items(),
+            [
+                b'["QueryWithOverlay", {"query_text": "hover_info_for_position(path=\'bar.py\','
+                b' line=42, column=10)", "overlay_id": null}]\n'
+            ],
+        )
+        self.assertEqual(len(client_output_writer.items()), 1)
+        response = client_output_writer.items()[0].splitlines()[2]
+        result = json.loads(response)["result"]
+        self.assertEqual(
+            lsp.HoverResponse.cached_schema().load(result),
+            lsp.HoverResponse(contents="```foo.bar.Bar```"),
+        )
+
+    @setup.async_test
+    async def test_query_hover__bad_json(self) -> None:
+        client_output_writer = MemoryBytesWriter()
+        pyre_query_manager = PyreQueryHandler(
+            query_state=PyreQueryState(),
+            server_start_options_reader=_create_server_start_options_reader(
+                binary="/bin/pyre",
+                server_identifier="foo",
+                start_arguments=start.Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root="/global/root",
+                    )
+                ),
+                ide_features=configuration_module.IdeFeatures(hover_enabled=True),
+            ),
+            client_output_channel=TextWriter(client_output_writer),
+        )
+
+        input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
+        memory_bytes_writer = MemoryBytesWriter()
+        output_channel = TextWriter(memory_bytes_writer)
+        with patch_connect_in_text_mode(input_channel, output_channel):
+            await pyre_query_manager._query_and_send_hover_contents(
+                query=HoverQuery(
+                    id=99,
+                    path=Path("bar.py"),
+                    position=lsp.Position(line=42, character=10),
+                ),
+                socket_path=Path("fake_socket_path"),
+                enabled_telemetry_event=False,
+                consume_unsaved_changes_enabled=False,
+            )
+
+        self.assertEqual(len(client_output_writer.items()), 1)
+        response = client_output_writer.items()[0].splitlines()[2]
+        self.assertEqual(json.loads(response)["result"], {"contents": ""})
 
     @setup.async_test
     async def test_query_definition_location(self) -> None:
