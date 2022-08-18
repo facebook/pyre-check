@@ -952,11 +952,11 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_hover(self) -> None:
         def assert_hover_response(
-            response: lsp.HoverResponse,
+            response: lsp.LspHoverResponse,
         ) -> None:
             client_messages = memory_bytes_writer.items()
             expected_response = json_rpc.SuccessResponse(
-                id=42, result=lsp.HoverResponse.cached_schema().dump(response)
+                id=42, result=lsp.LspHoverResponse.cached_schema().dump(response)
             )
             response_string = json.dumps(expected_response.json())
             self.assertEqual(
@@ -1016,7 +1016,7 @@ class PersistentTest(testslide.TestCase):
         await asyncio.sleep(0)
 
         self.assertTrue(fake_task_manager.is_task_running())
-        assert_hover_response(lsp.HoverResponse.empty())
+        assert_hover_response(lsp.LspHoverResponse.empty())
 
     @setup.async_test
     async def test_definition(self) -> None:
@@ -1703,8 +1703,8 @@ class PyreQueryHandlerTest(testslide.TestCase):
         response = client_output_writer.items()[0].splitlines()[2]
         result = json.loads(response)["result"]
         self.assertEqual(
-            lsp.HoverResponse.cached_schema().load(result),
-            lsp.HoverResponse(contents="```foo.bar.Bar```"),
+            lsp.LspHoverResponse.cached_schema().load(result),
+            lsp.LspHoverResponse(contents="```foo.bar.Bar```"),
         )
 
     @setup.async_test

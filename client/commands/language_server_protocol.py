@@ -479,14 +479,14 @@ class HoverTextDocumentParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+class LspHoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains the Markdown response to be shown in the hover card."""
 
     contents: str
 
     @staticmethod
-    def empty() -> "HoverResponse":
-        return HoverResponse(contents="")
+    def empty() -> "LspHoverResponse":
+        return LspHoverResponse(contents="")
 
 
 @dataclasses.dataclass(frozen=True)

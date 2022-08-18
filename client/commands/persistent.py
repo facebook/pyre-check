@@ -430,7 +430,7 @@ class HoverQuery:
 
 @dataclasses.dataclass(frozen=True)
 class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    response: lsp.HoverResponse
+    response: lsp.LspHoverResponse
 
 
 @dataclasses.dataclass(frozen=True)
@@ -738,7 +738,7 @@ class PyreServer:
                 json_rpc.SuccessResponse(
                     id=request_id,
                     activity_key=activity_key,
-                    result=lsp.HoverResponse.empty().to_dict(),
+                    result=lsp.LspHoverResponse.empty().to_dict(),
                 ),
             )
         else:
@@ -1395,9 +1395,11 @@ class PyreQueryHandler(connection.BackgroundTask):
             query_text, socket_path, HoverResponse, overlay_id
         )
         response = (
-            server_response.response if server_response else lsp.HoverResponse.empty()
+            server_response.response
+            if server_response
+            else lsp.LspHoverResponse.empty()
         )
-        result = lsp.HoverResponse.cached_schema().dump(
+        result = lsp.LspHoverResponse.cached_schema().dump(
             response,
         )
 
