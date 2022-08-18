@@ -695,7 +695,7 @@ let end_to_end_integration_test path context =
         File.create path
         |> File.content
         |> Option.map ~f:(fun content ->
-               Taint.TaintConfiguration.parse [path, Yojson.Safe.from_string content]
+               Taint.TaintConfiguration.from_json_list [path, Yojson.Safe.from_string content]
                |> Taint.TaintConfiguration.exception_on_error)
       with
       | Unix.Unix_error _ -> None

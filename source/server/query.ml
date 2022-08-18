@@ -938,18 +938,7 @@ let rec process_request ~environment ~build_system request =
         if not (PyrePath.file_exists path) then
           Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
         else
-          let taint_configuration_result =
-            Taint.TaintConfiguration.create
-              ~rule_filter:None
-              ~source_filter:None
-              ~sink_filter:None
-              ~transform_filter:None
-              ~find_missing_flows:None
-              ~dump_model_query_results_path:None
-              ~maximum_trace_length:None
-              ~maximum_tito_depth:None
-              ~taint_model_paths:[path]
-          in
+          let taint_configuration_result = Taint.TaintConfiguration.from_taint_model_paths [path] in
           match taint_configuration_result with
           | Error (error :: _) -> Error (Taint.TaintConfiguration.Error.show error)
           | Error _ -> failwith "Taint.TaintConfiguration.create returned empty errors list"
@@ -1274,16 +1263,7 @@ let rec process_request ~environment ~build_system request =
             | None -> configuration.Configuration.Analysis.taint_model_paths
           in
           let configuration =
-            Taint.TaintConfiguration.create
-              ~rule_filter:None
-              ~source_filter:None
-              ~sink_filter:None
-              ~transform_filter:None
-              ~find_missing_flows:None
-              ~dump_model_query_results_path:None
-              ~maximum_trace_length:None
-              ~maximum_tito_depth:None
-              ~taint_model_paths:paths
+            Taint.TaintConfiguration.from_taint_model_paths paths
             |> Taint.TaintConfiguration.exception_on_error
           in
           let get_model_errors sources =

@@ -486,7 +486,7 @@ module PartialSinkConverter = struct
     | _ -> None
 end
 
-let parse source_jsons =
+let from_json_list source_json_list =
   let open Result in
   let json_exception_to_error ~path ?section f =
     try f () with
@@ -811,34 +811,34 @@ let parse source_jsons =
         |> Result.map_error ~f:List.concat
         >>| fun literal_strings -> { literal_strings }
   in
-  List.map source_jsons ~f:parse_source_annotations
+  List.map source_json_list ~f:parse_source_annotations
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.concat
   >>= fun sources ->
-  List.map source_jsons ~f:parse_sink_annotations
+  List.map source_json_list ~f:parse_sink_annotations
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.concat
   >>= fun sinks ->
-  List.map source_jsons ~f:parse_transforms
+  List.map source_json_list ~f:parse_transforms
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.concat
   >>= fun transforms ->
-  List.map source_jsons ~f:parse_features
+  List.map source_json_list ~f:parse_features
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.concat
   >>= fun features ->
   List.map
-    source_jsons
+    source_json_list
     ~f:(parse_rules ~allowed_sources:sources ~allowed_sinks:sinks ~allowed_transforms:transforms)
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.concat
   >>= fun rules ->
-  List.map source_jsons ~f:(parse_combined_source_rules ~allowed_sources:sources)
+  List.map source_json_list ~f:(parse_combined_source_rules ~allowed_sources:sources)
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.unzip3
@@ -857,7 +857,7 @@ let parse source_jsons =
       literal_string_sinks = left.literal_string_sinks @ right.literal_string_sinks;
     }
   in
-  List.map source_jsons ~f:(parse_implicit_sinks ~allowed_sinks:sinks)
+  List.map source_json_list ~f:(parse_implicit_sinks ~allowed_sinks:sinks)
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.fold ~init:empty_implicit_sinks ~f:merge_implicit_sinks
@@ -878,7 +878,7 @@ let parse source_jsons =
                      (Error.UnexpectedJsonType
                         { json; message = "Expected integer, got"; section = Some "options" })))
     in
-    List.map source_jsons ~f:parse_single_json
+    List.map source_json_list ~f:parse_single_json
     |> Result.combine_errors
     >>| List.filter_map ~f:Fn.id
     >>= function
@@ -895,7 +895,7 @@ let parse source_jsons =
   let merge_implicit_sources left right =
     { literal_strings = left.literal_strings @ right.literal_strings }
   in
-  List.map source_jsons ~f:(parse_implicit_sources ~allowed_sources:sources)
+  List.map source_json_list ~f:(parse_implicit_sources ~allowed_sources:sources)
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.fold ~init:empty_implicit_sources ~f:merge_implicit_sources
@@ -903,7 +903,7 @@ let parse source_jsons =
   let parse_lineage_analysis (path, json) =
     json_bool_member ~path "lineage_analysis" json ~default:false
   in
-  List.map ~f:parse_lineage_analysis source_jsons
+  List.map ~f:parse_lineage_analysis source_json_list
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.exists ~f:Fn.id
@@ -1198,22 +1198,12 @@ let get () =
   | Some configuration -> configuration
 
 
-let create
-    ~rule_filter
-    ~source_filter
-    ~sink_filter
-    ~transform_filter
-    ~find_missing_flows
-    ~dump_model_query_results_path
-    ~maximum_trace_length
-    ~maximum_tito_depth
-    ~taint_model_paths
-  =
+let from_taint_model_paths taint_model_paths =
   let open Result in
   let file_paths =
     PyrePath.get_matching_files_recursively ~suffix:".config" ~paths:taint_model_paths
   in
-  let parse_configuration path =
+  let parse_json path =
     if not (PyrePath.file_exists path) then
       Error (Error.create ~path ~kind:Error.FileNotFound)
     else
@@ -1227,99 +1217,109 @@ let create
       | Yojson.Json_error parse_error ->
           Error (Error.create ~path ~kind:(Error.InvalidJson parse_error))
   in
-  let configurations = file_paths |> List.map ~f:parse_configuration |> Result.combine_errors in
+  let configurations = file_paths |> List.map ~f:parse_json |> Result.combine_errors in
   match configurations with
   | Error errors -> Error errors
   | Ok [] -> Error [{ Error.path = None; kind = NoConfigurationFound }]
-  | Ok configurations ->
-      parse configurations
-      >>= validate
-      >>= fun configuration ->
-      (match source_filter with
-      | None -> Ok configuration
-      | Some source_filter ->
-          let parse_source_reference source =
-            AnnotationParser.parse_source ~allowed:configuration.sources source
-            |> Result.map_error ~f:(fun _ ->
-                   { Error.path = None; kind = Error.UnsupportedSource source })
-          in
-          source_filter
-          |> List.map ~f:parse_source_reference
-          |> Result.all
-          |> Result.map_error ~f:(fun error -> [error])
-          >>| Sources.Set.of_list
-          >>| Option.some
-          >>| fun filtered_sources -> { configuration with filtered_sources })
-      >>= fun configuration ->
-      (match sink_filter with
-      | None -> Ok configuration
-      | Some sink_filter ->
-          let parse_sink_reference sink =
-            AnnotationParser.parse_sink ~allowed:configuration.sinks sink
-            |> Result.map_error ~f:(fun _ ->
-                   { Error.path = None; kind = Error.UnsupportedSink sink })
-          in
-          sink_filter
-          |> List.map ~f:parse_sink_reference
-          |> Result.all
-          |> Result.map_error ~f:(fun error -> [error])
-          >>| Sinks.Set.of_list
-          >>| Option.some
-          >>| fun filtered_sinks -> { configuration with filtered_sinks })
-      >>= fun configuration ->
-      (match transform_filter with
-      | None -> Ok configuration
-      | Some transform_filter ->
-          let parse_transform_reference transform =
-            AnnotationParser.parse_transform ~allowed:configuration.transforms transform
-            |> Result.map_error ~f:(fun _ ->
-                   { Error.path = None; kind = Error.UnsupportedTransform transform })
-          in
-          transform_filter
-          |> List.map ~f:parse_transform_reference
-          |> Result.all
-          |> Result.map_error ~f:(fun error -> [error])
-          >>| Option.some
-          >>| fun filtered_transforms -> { configuration with filtered_transforms })
-      >>| fun configuration ->
-      let configuration =
-        match find_missing_flows with
-        | Some Obscure -> obscure_flows_configuration configuration
-        | Some Type -> missing_type_flows_configuration configuration
-        | None -> configuration
+  | Ok configurations -> from_json_list configurations >>= validate
+
+
+let with_command_line_options
+    configuration
+    ~rule_filter
+    ~source_filter
+    ~sink_filter
+    ~transform_filter
+    ~find_missing_flows
+    ~dump_model_query_results_path
+    ~maximum_trace_length
+    ~maximum_tito_depth
+  =
+  let open Result in
+  (match source_filter with
+  | None -> Ok configuration
+  | Some source_filter ->
+      let parse_source_reference source =
+        AnnotationParser.parse_source ~allowed:configuration.sources source
+        |> Result.map_error ~f:(fun _ ->
+               { Error.path = None; kind = Error.UnsupportedSource source })
       in
-      let configuration = { configuration with dump_model_query_results_path } in
-      let configuration =
-        match maximum_trace_length with
-        | None -> configuration
-        | Some _ ->
-            let analysis_model_constraints =
-              { configuration.analysis_model_constraints with maximum_trace_length }
-            in
-            { configuration with analysis_model_constraints }
+      source_filter
+      |> List.map ~f:parse_source_reference
+      |> Result.all
+      |> Result.map_error ~f:(fun error -> [error])
+      >>| Sources.Set.of_list
+      >>| Option.some
+      >>| fun filtered_sources -> { configuration with filtered_sources })
+  >>= fun configuration ->
+  (match sink_filter with
+  | None -> Ok configuration
+  | Some sink_filter ->
+      let parse_sink_reference sink =
+        AnnotationParser.parse_sink ~allowed:configuration.sinks sink
+        |> Result.map_error ~f:(fun _ -> { Error.path = None; kind = Error.UnsupportedSink sink })
       in
-      let configuration =
-        match maximum_tito_depth with
-        | None -> configuration
-        | Some _ ->
-            let analysis_model_constraints =
-              { configuration.analysis_model_constraints with maximum_tito_depth }
-            in
-            { configuration with analysis_model_constraints }
+      sink_filter
+      |> List.map ~f:parse_sink_reference
+      |> Result.all
+      |> Result.map_error ~f:(fun error -> [error])
+      >>| Sinks.Set.of_list
+      >>| Option.some
+      >>| fun filtered_sinks -> { configuration with filtered_sinks })
+  >>= fun configuration ->
+  (match transform_filter with
+  | None -> Ok configuration
+  | Some transform_filter ->
+      let parse_transform_reference transform =
+        AnnotationParser.parse_transform ~allowed:configuration.transforms transform
+        |> Result.map_error ~f:(fun _ ->
+               { Error.path = None; kind = Error.UnsupportedTransform transform })
       in
-      let configuration =
-        match rule_filter with
-        | None -> configuration
-        | Some rule_filter ->
-            let codes_to_keep = Int.Set.of_list rule_filter in
-            let { rules; _ } = configuration in
-            let rules = List.filter rules ~f:(fun { code; _ } -> Set.mem codes_to_keep code) in
-            { configuration with rules; filtered_rule_codes = Some codes_to_keep }
-      in
-      {
-        configuration with
-        source_sink_filter = Some (SourceSinkFilter.create ~rules:configuration.rules);
-      }
+      transform_filter
+      |> List.map ~f:parse_transform_reference
+      |> Result.all
+      |> Result.map_error ~f:(fun error -> [error])
+      >>| Option.some
+      >>| fun filtered_transforms -> { configuration with filtered_transforms })
+  >>| fun configuration ->
+  let configuration =
+    match find_missing_flows with
+    | Some Obscure -> obscure_flows_configuration configuration
+    | Some Type -> missing_type_flows_configuration configuration
+    | None -> configuration
+  in
+  let configuration = { configuration with dump_model_query_results_path } in
+  let configuration =
+    match maximum_trace_length with
+    | None -> configuration
+    | Some _ ->
+        let analysis_model_constraints =
+          { configuration.analysis_model_constraints with maximum_trace_length }
+        in
+        { configuration with analysis_model_constraints }
+  in
+  let configuration =
+    match maximum_tito_depth with
+    | None -> configuration
+    | Some _ ->
+        let analysis_model_constraints =
+          { configuration.analysis_model_constraints with maximum_tito_depth }
+        in
+        { configuration with analysis_model_constraints }
+  in
+  let configuration =
+    match rule_filter with
+    | None -> configuration
+    | Some rule_filter ->
+        let codes_to_keep = Int.Set.of_list rule_filter in
+        let { rules; _ } = configuration in
+        let rules = List.filter rules ~f:(fun { code; _ } -> Set.mem codes_to_keep code) in
+        { configuration with rules; filtered_rule_codes = Some codes_to_keep }
+  in
+  {
+    configuration with
+    source_sink_filter = Some (SourceSinkFilter.create ~rules:configuration.rules);
+  }
 
 
 let source_can_match_rule { source_sink_filter; _ } source =

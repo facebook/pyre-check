@@ -27,16 +27,17 @@ let initialize_configuration
   ModelParser.get_model_sources ~paths:taint_model_paths
   |> List.iter ~f:(fun (path, source) -> ModelParser.verify_model_syntax ~path ~source);
   let (_ : TaintConfiguration.t) =
-    TaintConfiguration.create
-      ~rule_filter
-      ~source_filter
-      ~sink_filter
-      ~transform_filter
-      ~find_missing_flows:None
-      ~dump_model_query_results_path:None
-      ~maximum_trace_length:None
-      ~maximum_tito_depth:None
-      ~taint_model_paths
+    let open Core.Result in
+    TaintConfiguration.from_taint_model_paths taint_model_paths
+    >>= TaintConfiguration.with_command_line_options
+          ~rule_filter
+          ~source_filter
+          ~sink_filter
+          ~transform_filter
+          ~find_missing_flows:None
+          ~dump_model_query_results_path:None
+          ~maximum_trace_length:None
+          ~maximum_tito_depth:None
     |> TaintConfiguration.exception_on_error
   in
   Statistics.performance
@@ -169,16 +170,17 @@ let parse_taint_configuration
     find_missing_flows >>= TaintConfiguration.missing_flows_kind_from_string
   in
   let taint_configuration =
-    TaintConfiguration.create
-      ~rule_filter
-      ~source_filter
-      ~sink_filter
-      ~transform_filter
-      ~find_missing_flows
-      ~dump_model_query_results_path:dump_model_query_results
-      ~maximum_trace_length
-      ~maximum_tito_depth
-      ~taint_model_paths
+    let open Core.Result in
+    TaintConfiguration.from_taint_model_paths taint_model_paths
+    >>= TaintConfiguration.with_command_line_options
+          ~rule_filter
+          ~source_filter
+          ~sink_filter
+          ~transform_filter
+          ~find_missing_flows
+          ~dump_model_query_results_path:dump_model_query_results
+          ~maximum_trace_length
+          ~maximum_tito_depth
     |> TaintConfiguration.exception_on_error
   in
   let () = TaintConfiguration.register taint_configuration in

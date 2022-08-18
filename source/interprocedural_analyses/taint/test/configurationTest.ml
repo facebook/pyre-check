@@ -14,7 +14,7 @@ module Result = Core.Result
 
 let parse configuration =
   let open Result in
-  TaintConfiguration.parse
+  TaintConfiguration.from_json_list
     [PyrePath.create_absolute "/taint.config", Yojson.Safe.from_string configuration]
   >>= TaintConfiguration.validate
 
@@ -480,7 +480,7 @@ let test_partial_sink_converter _ =
 
 let test_multiple_configurations _ =
   let configuration =
-    TaintConfiguration.parse
+    TaintConfiguration.from_json_list
       [
         ( PyrePath.create_absolute "/a.config",
           Yojson.Safe.from_string
@@ -547,7 +547,7 @@ let test_validate _ =
       configurations
       |> List.map ~f:(fun (path, content) ->
              PyrePath.create_absolute path, Yojson.Safe.from_string content)
-      |> Taint.TaintConfiguration.parse
+      |> Taint.TaintConfiguration.from_json_list
       |> Core.Result.map_error
            ~f:(List.map ~f:(fun { Error.path; kind } -> path >>| PyrePath.absolute, kind))
     in
