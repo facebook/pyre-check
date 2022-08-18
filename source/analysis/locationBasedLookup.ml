@@ -599,8 +599,7 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let walk_define
       names_so_far
-      ({ Node.value = { Define.signature = { name; decorators; _ }; _ } as define; _ } as
-      define_node)
+      ({ Node.value = { Define.signature = { name; _ }; _ } as define; _ } as define_node)
     =
     let walk_statement ~node_id statement_index symbols_so_far statement =
       let module FindNarrowestSpanningExpressionOrTypeAnnotation =
@@ -617,21 +616,6 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
       let statements = Cfg.Node.statements cfg_node in
       List.foldi statements ~init:names_so_far ~f:(walk_statement ~node_id)
     in
-    let walk_decorators ~decorators names_so_far =
-      (* Decorators are included within defines, but their locations don't fall within the location
-         range of the define. If the position is on a decorator, we will inadvertently skip it
-         because that position does not fall within the define's location range.
-
-         So, visit decorators separately. *)
-      let walk_decorator so_far decorator =
-        walk_statement
-          ~node_id:Cfg.entry_index
-          0
-          so_far
-          { Node.location = Node.location decorator; value = Statement.Expression decorator }
-      in
-      List.fold decorators ~init:names_so_far ~f:walk_decorator
-    in
     let walk_define_signature ~define_signature names_so_far =
       (* Special-case define signature processing, since this is not included in the define's cfg. *)
       walk_statement ~node_id:Cfg.entry_index 0 names_so_far define_signature
@@ -640,9 +624,7 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
     let define_signature =
       { define_node with value = Statement.Define { define with Define.body = [] } }
     in
-    Hashtbl.fold cfg ~init:names_so_far ~f:walk_cfg_node
-    |> walk_decorators ~decorators
-    |> walk_define_signature ~define_signature
+    Hashtbl.fold cfg ~init:names_so_far ~f:walk_cfg_node |> walk_define_signature ~define_signature
   in
   let all_defines =
     let unannotated_global_environment =

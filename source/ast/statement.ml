@@ -1977,7 +1977,11 @@ let is_generator statements =
 
 
 let covers_position ~position = function
-  | { Node.value = Statement.Class { decorators; _ }; location } ->
+  | {
+      Node.value =
+        Statement.Class { decorators; _ } | Statement.Define { signature = { decorators; _ }; _ };
+      location;
+    } ->
       Location.contains ~location position
       || List.exists decorators ~f:(fun { Node.location = decorator_location; _ } ->
              Location.contains ~location:decorator_location position)

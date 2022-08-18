@@ -958,8 +958,8 @@ let test_covers_position _ =
       @my_decorator
       def foo() -> None: ...
     |} in
-  (* TODO(T129228930): Handle decorators check in `covers_position`. *)
-  assert_covers ~source ~position:{ Location.line = 2; column = 1 } false;
+  (* The decorator is covered. *)
+  assert_covers ~source ~position:{ Location.line = 2; column = 1 } true;
   assert_covers ~source ~position:{ Location.line = 3; column = 1 } true;
   let source = {|
       x = 1
