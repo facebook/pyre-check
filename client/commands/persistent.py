@@ -1250,11 +1250,11 @@ def path_to_expression_coverage_response(
 class PyreQueryHandler(connection.BackgroundTask):
     def __init__(
         self,
-        state: PyreQueryState,
+        query_state: PyreQueryState,
         server_start_options_reader: PyreServerStartOptionsReader,
         client_output_channel: connection.TextWriter,
     ) -> None:
-        self.state = state
+        self.query_state = query_state
         self.server_start_options_reader = server_start_options_reader
         self.client_output_channel = client_output_channel
 
@@ -1333,7 +1333,7 @@ class PyreQueryHandler(connection.BackgroundTask):
         if new_path_to_location_type_dict is None:
             return
         for path, location_type_lookup in new_path_to_location_type_dict.items():
-            self.state.path_to_location_type_lookup[path] = location_type_lookup
+            self.query_state.path_to_location_type_lookup[path] = location_type_lookup
 
     async def _query_modules_of_path(
         self,
@@ -1547,7 +1547,7 @@ class PyreQueryHandler(connection.BackgroundTask):
             and server_start_options.ide_features.is_consume_unsaved_changes_enabled()
         )
         while True:
-            query = await self.state.queries.get()
+            query = await self.query_state.queries.get()
             if isinstance(query, TypesQuery):
                 if type_queries_enabled:
                     await self._update_types_for_paths(
@@ -2093,7 +2093,7 @@ async def run_persistent(
             LOG.debug(f"Client capabilities: {client_capabilities}")
             initial_server_state = ServerState(client_capabilities=client_capabilities)
             pyre_query_handler = PyreQueryHandler(
-                state=initial_server_state.query_state,
+                query_state=initial_server_state.query_state,
                 server_start_options_reader=server_start_options_reader,
                 client_output_channel=stdout,
             )

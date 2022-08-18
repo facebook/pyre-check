@@ -1426,7 +1426,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         """
         bytes_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
-            state=PyreQueryState(path_to_location_type_lookup={}),
+            query_state=PyreQueryState(path_to_location_type_lookup={}),
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
@@ -1476,7 +1476,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_types__bad_json(self) -> None:
         bytes_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
-            state=PyreQueryState(),
+            query_state=PyreQueryState(),
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
@@ -1511,7 +1511,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             bytes_writer = MemoryBytesWriter()
             server_start_options_reader = _fake_option_reader()
             pyre_query_manager = PyreQueryHandler(
-                state=PyreQueryState(),
+                query_state=PyreQueryState(),
                 server_start_options_reader=server_start_options_reader,
                 client_output_channel=TextWriter(bytes_writer),
             )
@@ -1542,7 +1542,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_type_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
-            state=PyreQueryState(),
+            query_state=PyreQueryState(),
             server_start_options_reader=_fake_option_reader(),
             client_output_channel=TextWriter(MemoryBytesWriter()),
         )
@@ -1565,7 +1565,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             pyre_query_manager = PyreQueryHandler(
-                state=PyreQueryState(),
+                query_state=PyreQueryState(),
                 server_start_options_reader=_fake_option_reader(),
                 client_output_channel=TextWriter(MemoryBytesWriter()),
             )
@@ -1589,7 +1589,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_type_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
-            state=PyreQueryState(),
+            query_state=PyreQueryState(),
             server_start_options_reader=_fake_option_reader(),
             client_output_channel=TextWriter(MemoryBytesWriter()),
         )
@@ -1619,7 +1619,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             bytes_writer = MemoryBytesWriter()
             server_start_options_reader = _fake_option_reader()
             pyre_query_manager = PyreQueryHandler(
-                state=PyreQueryState(),
+                query_state=PyreQueryState(),
                 server_start_options_reader=server_start_options_reader,
                 client_output_channel=TextWriter(bytes_writer),
             )
@@ -1656,7 +1656,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             bytes_writer = MemoryBytesWriter()
             server_start_options_reader = _fake_option_reader()
             pyre_query_manager = PyreQueryHandler(
-                state=PyreQueryState(),
+                query_state=PyreQueryState(),
                 server_start_options_reader=server_start_options_reader,
                 client_output_channel=TextWriter(bytes_writer),
             )
@@ -1687,7 +1687,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_expression_coverage__bad_json(self) -> None:
         pyre_query_manager = PyreQueryHandler(
-            state=PyreQueryState(),
+            query_state=PyreQueryState(),
             server_start_options_reader=_fake_option_reader(),
             client_output_channel=TextWriter(MemoryBytesWriter()),
         )
@@ -1712,7 +1712,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             tmpfile.flush()
             test_path = Path(tmpfile.name)
             pyre_query_manager = PyreQueryHandler(
-                state=PyreQueryState(),
+                query_state=PyreQueryState(),
                 server_start_options_reader=_fake_option_reader(),
                 client_output_channel=TextWriter(MemoryBytesWriter()),
             )
@@ -1736,7 +1736,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     @setup.async_test
     async def test_query_expression_coverage__not_typechecked(self) -> None:
         pyre_query_manager = PyreQueryHandler(
-            state=PyreQueryState(),
+            query_state=PyreQueryState(),
             server_start_options_reader=_fake_option_reader(),
             client_output_channel=TextWriter(MemoryBytesWriter()),
         )
@@ -1779,7 +1779,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         """
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
-            state=PyreQueryState(path_to_location_type_lookup={}),
+            query_state=PyreQueryState(path_to_location_type_lookup={}),
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
@@ -1838,7 +1838,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_definition_location__bad_json(self) -> None:
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
-            state=PyreQueryState(),
+            query_state=PyreQueryState(),
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
@@ -1909,7 +1909,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         """
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
-            state=PyreQueryState(path_to_location_type_lookup={}),
+            query_state=PyreQueryState(path_to_location_type_lookup={}),
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
@@ -1976,7 +1976,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
     async def test_query_references__bad_json(self) -> None:
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
-            state=PyreQueryState(),
+            query_state=PyreQueryState(),
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
