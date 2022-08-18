@@ -468,6 +468,7 @@ class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 RequestTypes = Union[
     TypeCoverageQuery,
     TypesQuery,
+    HoverQuery,
     DefinitionLocationQuery,
     ReferencesQuery,
     OverlayUpdate,
@@ -771,23 +772,23 @@ class PyreServer:
             )
 
         if document_path not in self.server_state.opened_documents:
-            response = lsp.HoverResponse.empty()
+            await lsp.write_json_rpc(
+                self.output_channel,
+                json_rpc.SuccessResponse(
+                    id=request_id,
+                    activity_key=activity_key,
+                    result=lsp.HoverResponse.empty().to_dict(),
+                ),
+            )
         else:
             self.server_state.query_state.queries.put_nowait(
-                TypesQuery(document_path, activity_key)
+                HoverQuery(
+                    id=request_id,
+                    activity_key=activity_key,
+                    path=document_path,
+                    position=parameters.position.to_pyre_position(),
+                )
             )
-            response = self.server_state.query_state.hover_response_for_position(
-                Path(document_path), parameters.position
-            )
-
-        await lsp.write_json_rpc(
-            self.output_channel,
-            json_rpc.SuccessResponse(
-                id=request_id,
-                activity_key=activity_key,
-                result=response.to_dict(),
-            ),
-        )
 
     async def process_definition_request(
         self,
@@ -1608,6 +1609,13 @@ class PyreQueryHandler(connection.BackgroundTask):
                     strict_default,
                     socket_path,
                     expression_level_coverage_enabled,
+                    consume_unsaved_changes_enabled,
+                )
+            elif isinstance(query, HoverQuery):
+                await self._query_and_send_hover_contents(
+                    query,
+                    socket_path,
+                    enabled_telemetry_event,
                     consume_unsaved_changes_enabled,
                 )
             elif isinstance(query, DefinitionLocationQuery):

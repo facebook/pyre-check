@@ -758,79 +758,6 @@ class PersistentTest(testslide.TestCase):
             server.server_state.query_state.path_to_location_type_lookup, {}
         )
 
-    @setup.async_test
-    async def test_hover_always_responds(self) -> None:
-        def assert_hover_response(expected_hover_contents: str) -> None:
-            expected_response = json_rpc.SuccessResponse(
-                id=42,
-                result=lsp.HoverResponse(contents=expected_hover_contents).to_dict(),
-            )
-            response_string = json.dumps(expected_response.json())
-            client_messages = memory_bytes_writer.items()
-            self.assertEqual(
-                client_messages[-1].decode(),
-                f"Content-Length: {len(response_string)}\r\n\r\n" + response_string,
-            )
-
-        test_path = Path("/foo.py")
-        not_tracked_path = Path("/not_tracked.py")
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
-        memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
-        server = PyreServer(
-            input_channel=create_memory_text_reader(""),
-            output_channel=TextWriter(memory_bytes_writer),
-            server_state=ServerState(
-                opened_documents={test_path},
-                query_state=PyreQueryState(
-                    path_to_location_type_lookup={
-                        test_path: LocationTypeLookup(
-                            [
-                                (lsp.Position(4, 4), lsp.Position(4, 15), "str"),
-                            ]
-                        ),
-                    }
-                ),
-            ),
-            pyre_manager=fake_task_manager,
-            pyre_query_manager=fake_task_manager2,
-        )
-
-        await fake_task_manager.ensure_task_running()
-
-        await server.process_hover_request(
-            lsp.HoverTextDocumentParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
-                ),
-                position=lsp.LspPosition(line=3, character=4),
-            ),
-            request_id=42,
-        )
-        await asyncio.sleep(0)
-
-        assert_hover_response("```str```")
-        self.assertTrue(fake_task_manager.is_task_running())
-        self.assertEqual(server.server_state.query_state.queries.qsize(), 1)
-        self.assertEqual(
-            server.server_state.query_state.queries.get_nowait(), TypesQuery(test_path)
-        )
-
-        await server.process_hover_request(
-            lsp.HoverTextDocumentParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(not_tracked_path).unparse(),
-                ),
-                position=lsp.LspPosition(line=3, character=4),
-            ),
-            request_id=42,
-        )
-        await asyncio.sleep(0)
-
-        self.assertTrue(fake_task_manager.is_task_running())
-        assert_hover_response("")
-        self.assertEqual(server.server_state.query_state.queries.qsize(), 0)
-
     def test_type_diagnostics(self) -> None:
         self.assertEqual(
             type_error_to_diagnostic(
@@ -1082,6 +1009,75 @@ class PersistentTest(testslide.TestCase):
             server.server_state.query_state.queries.get_nowait(),
             TypeCoverageQuery(1, test_path),
         )
+
+    @setup.async_test
+    async def test_hover(self) -> None:
+        def assert_hover_response(
+            response: lsp.HoverResponse,
+        ) -> None:
+            client_messages = memory_bytes_writer.items()
+            expected_response = json_rpc.SuccessResponse(
+                id=42, result=lsp.HoverResponse.cached_schema().dump(response)
+            )
+            response_string = json.dumps(expected_response.json())
+            self.assertEqual(
+                client_messages[-1].decode(),
+                f"Content-Length: {len(response_string)}\r\n\r\n" + response_string,
+            )
+
+        test_path = Path("/foo.py")
+        not_tracked_path = Path("/not_tracked.py")
+        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+        memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
+        server = PyreServer(
+            input_channel=create_memory_text_reader(""),
+            output_channel=TextWriter(memory_bytes_writer),
+            server_state=ServerState(
+                opened_documents={test_path},
+            ),
+            pyre_manager=fake_task_manager,
+            pyre_query_manager=fake_task_manager2,
+        )
+
+        await fake_task_manager.ensure_task_running()
+
+        await server.process_hover_request(
+            lsp.HoverTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                ),
+                position=lsp.LspPosition(line=3, character=4),
+            ),
+            request_id=42,
+        )
+        await asyncio.sleep(0)
+
+        self.assertTrue(fake_task_manager.is_task_running())
+        self.assertEqual(len(memory_bytes_writer.items()), 0)
+        self.assertEqual(server.server_state.query_state.queries.qsize(), 1)
+        self.assertEqual(
+            server.server_state.query_state.queries.get_nowait(),
+            HoverQuery(
+                id=42,
+                path=test_path,
+                position=lsp.LspPosition(line=3, character=4).to_pyre_position(),
+            ),
+        )
+
+        await server.process_hover_request(
+            lsp.HoverTextDocumentParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(not_tracked_path).unparse(),
+                ),
+                position=lsp.LspPosition(line=3, character=4),
+            ),
+            request_id=42,
+        )
+        await asyncio.sleep(0)
+
+        self.assertTrue(fake_task_manager.is_task_running())
+        assert_hover_response(lsp.HoverResponse.empty())
 
     @setup.async_test
     async def test_definition(self) -> None:
