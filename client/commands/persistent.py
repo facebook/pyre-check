@@ -608,7 +608,9 @@ class PyreServer:
     input_channel: connection.TextReader
     output_channel: connection.TextWriter
 
+    # inside this task manager is a PyreServerHandler
     pyre_manager: connection.BackgroundTaskManager
+    # inside this task manager is a PyreQueryHandler
     pyre_query_manager: connection.BackgroundTaskManager
     # NOTE: The fields inside `server_state` are mutable and can be changed by `pyre_manager`
     server_state: ServerState
@@ -2082,11 +2084,6 @@ async def run_persistent(
             client_capabilities = initialize_result.client_capabilities
             LOG.debug(f"Client capabilities: {client_capabilities}")
             server_state = ServerState(client_capabilities=client_capabilities)
-            pyre_query_handler = PyreQueryHandler(
-                query_state=server_state.query_state,
-                server_start_options_reader=server_start_options_reader,
-                client_output_channel=stdout,
-            )
             server = PyreServer(
                 input_channel=stdin,
                 output_channel=stdout,
@@ -2099,7 +2096,13 @@ async def run_persistent(
                         server_state=server_state,
                     )
                 ),
-                pyre_query_manager=connection.BackgroundTaskManager(pyre_query_handler),
+                pyre_query_manager=connection.BackgroundTaskManager(
+                    PyreQueryHandler(
+                        query_state=server_state.query_state,
+                        server_start_options_reader=server_start_options_reader,
+                        client_output_channel=stdout,
+                    )
+                ),
             )
             return await server.run()
         elif isinstance(initialize_result, InitializationFailure):
