@@ -13,7 +13,16 @@ open TestHelper
 module Target = Interprocedural.Target
 open Taint
 
-let set_up_environment ?source ?rules ?filtered_sources ?filtered_sinks ~context ~model_source () =
+let set_up_environment
+    ?source
+    ?rules
+    ?filtered_sources
+    ?filtered_sinks
+    ?filtered_transforms
+    ~context
+    ~model_source
+    ()
+  =
   let source =
     match source with
     | None -> model_source
@@ -21,51 +30,65 @@ let set_up_environment ?source ?rules ?filtered_sources ?filtered_sinks ~context
   in
   let project = ScratchProject.setup ~context ["test.py", source] in
   let configuration =
-    let filtered_rule_codes =
-      match rules with
-      | Some rules ->
-          rules
-          |> List.map ~f:(fun { Taint.TaintConfiguration.Rule.code; _ } -> code)
-          |> Int.Set.of_list
-          |> Option.some
-      | None -> None
+    let named name = { AnnotationParser.name; kind = Named } in
+    let sources =
+      [
+        named "TestTest";
+        named "UserControlled";
+        named "Test";
+        named "Demo";
+        { AnnotationParser.name = "WithSubkind"; kind = Parametric };
+      ]
     in
+    let sinks =
+      [
+        named "TestSink";
+        named "OtherSink";
+        named "Test";
+        named "Demo";
+        named "XSS";
+        { AnnotationParser.name = "TestSinkWithSubkind"; kind = Parametric };
+      ]
+    in
+    let transforms = [TaintTransform.Named "TestTransform"; TaintTransform.Named "DemoTransform"] in
     let rules =
       match rules with
       | Some rules -> rules
-      | None -> []
+      | None ->
+          [
+            {
+              TaintConfiguration.Rule.sources =
+                List.map sources ~f:(fun { AnnotationParser.name; _ } -> Sources.NamedSource name);
+              sinks = List.map sinks ~f:(fun { AnnotationParser.name; _ } -> Sinks.NamedSink name);
+              transforms = [];
+              code = 1;
+              name = "rule 1";
+              message_format = "";
+            };
+          ]
     in
-    let named name = { AnnotationParser.name; kind = Named } in
-    Taint.TaintConfiguration.
+    TaintConfiguration.
       {
         empty with
-        sources =
-          [
-            named "TestTest";
-            named "UserControlled";
-            named "Test";
-            named "Demo";
-            { AnnotationParser.name = "WithSubkind"; kind = Parametric };
-          ];
-        sinks =
-          [
-            named "TestSink";
-            named "OtherSink";
-            named "Test";
-            named "Demo";
-            named "XSS";
-            { AnnotationParser.name = "TestSinkWithSubkind"; kind = Parametric };
-          ];
-        transforms = [TaintTransform.Named "TestTransform"; TaintTransform.Named "DemoTransform"];
+        sources;
+        sinks;
+        transforms;
         features = ["special"];
         partial_sink_labels = String.Map.Tree.of_alist_exn ["Test", ["a"; "b"]];
         rules;
-        filtered_rule_codes;
+        filtered_rule_codes = None;
         filtered_sources;
         filtered_sinks;
+        source_sink_filter =
+          Some
+            (TaintConfiguration.SourceSinkFilter.create
+               ~rules
+               ~filtered_rule_codes:None
+               ~filtered_sources
+               ~filtered_sinks
+               ~filtered_transforms);
       }
   in
-  let source_sink_filter = ModelParser.SourceSinkFilter.from_configuration configuration in
   let source = Test.trim_extra_indentation model_source in
   let resolution =
     let global_resolution = ScratchProject.build_global_resolution project in
@@ -77,7 +100,7 @@ let set_up_environment ?source ?rules ?filtered_sources ?filtered_sinks ~context
       ~resolution
       ~source
       ~configuration
-      ~source_sink_filter
+      ~source_sink_filter:configuration.source_sink_filter
       ~callables:None
       ~stubs:(Target.HashSet.create ())
       ()
@@ -167,7 +190,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
     ModelParser.parse
       ~resolution
       ~configuration
-      ~source_sink_filter:ModelParser.SourceSinkFilter.none
+      ~source_sink_filter:None
       ?path
       ~source:(Test.trim_extra_indentation model_source)
       ~callables:None

@@ -953,7 +953,7 @@ let rec process_request ~environment ~build_system request =
                   ~path
                   ~source
                   ~configuration:taint_configuration
-                  ~source_sink_filter:Taint.ModelParser.SourceSinkFilter.none
+                  ~source_sink_filter:None
                   ~callables:None
                   ~stubs:(Interprocedural.Target.HashSet.create ())
                   ()
@@ -1027,7 +1027,7 @@ let rec process_request ~environment ~build_system request =
                         ~class_hierarchy_graph
                         ~scheduler
                         ~environment
-                        ~source_sink_filter:Taint.ModelParser.SourceSinkFilter.none
+                        ~source_sink_filter:None
                         ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
                         ~stubs:
                           (Interprocedural.Target.HashSet.of_list
@@ -1277,7 +1277,7 @@ let rec process_request ~environment ~build_system request =
                 ~path
                 ~source
                 ~configuration
-                ~source_sink_filter:Taint.ModelParser.SourceSinkFilter.none
+                ~source_sink_filter:None
                 ~callables:None
                 ~stubs:(Interprocedural.Target.HashSet.create ())
                 ()

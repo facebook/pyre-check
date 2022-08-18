@@ -236,14 +236,13 @@ let initialize_models
   Log.info "Parsing taint models...";
   let timer = Timer.start () in
   let taint_configuration = parse_taint_configuration ~static_analysis_configuration in
-  let source_sink_filter = ModelParser.SourceSinkFilter.from_configuration taint_configuration in
   let { ModelParser.models; queries; skip_overrides; errors } =
     parse_models_and_queries_from_configuration
       ~scheduler
       ~static_analysis_configuration
       ~taint_configuration
       ~environment
-      ~source_sink_filter
+      ~source_sink_filter:taint_configuration.source_sink_filter
       ~callables:(Some (Target.HashSet.of_list callables))
       ~stubs
   in
@@ -261,7 +260,7 @@ let initialize_models
             ~class_hierarchy_graph
             ~scheduler
             ~environment
-            ~source_sink_filter
+            ~source_sink_filter:taint_configuration.source_sink_filter
             ~callables
             ~stubs
             queries

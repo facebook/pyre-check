@@ -58,6 +58,14 @@ val missing_flows_kind_to_string : missing_flows_kind -> string
 module SourceSinkFilter : sig
   type t
 
+  val create
+    :  rules:Rule.t list ->
+    filtered_rule_codes:Int.Set.t option ->
+    filtered_sources:Sources.Set.t option ->
+    filtered_sinks:Sinks.Set.t option ->
+    filtered_transforms:TaintTransform.t list option ->
+    t
+
   val should_keep_source : t -> Sources.t -> bool
 
   val should_keep_sink : t -> Sinks.t -> bool

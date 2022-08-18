@@ -249,72 +249,6 @@ end
 
 include Internal
 
-module SourceSinkFilter = struct
-  type t = {
-    sources: Sources.Set.t option;
-    sinks: Sinks.Set.t option;
-  }
-
-  (* No filter, keep everything. *)
-  let none = { sources = None; sinks = None }
-
-  let from_configuration
-      { TaintConfiguration.rules; filtered_rule_codes; filtered_sources; filtered_sinks; _ }
-    =
-    let { sources; sinks } =
-      match filtered_rule_codes with
-      | None -> none
-      | Some filtered_rule_codes ->
-          let sources_to_keep, sinks_to_keep =
-            let rules =
-              (* The user annotations for partial sinks will be the untriggered ones, even though
-                 the rule expects triggered sinks. *)
-              let untrigger_partial_sinks sink =
-                match sink with
-                | Sinks.TriggeredPartialSink { kind; label } -> Sinks.PartialSink { kind; label }
-                | _ -> sink
-              in
-              List.filter_map rules ~f:(fun { TaintConfiguration.Rule.code; sources; sinks; _ } ->
-                  if Core.Set.mem filtered_rule_codes code then
-                    Some (sources, List.map sinks ~f:untrigger_partial_sinks)
-                  else
-                    None)
-            in
-            List.fold
-              rules
-              ~init:(Sources.Set.empty, Sinks.Set.empty)
-              ~f:(fun (sources, sinks) (rule_sources, rule_sinks) ->
-                ( Sources.Set.union sources (Sources.Set.of_list rule_sources),
-                  Sinks.Set.union sinks (Sinks.Set.of_list rule_sinks) ))
-          in
-          { sources = Some sources_to_keep; sinks = Some sinks_to_keep }
-    in
-    let sources = Option.merge sources filtered_sources ~f:Sources.Set.union in
-    let sinks = Option.merge sinks filtered_sinks ~f:Sinks.Set.union in
-    { sources; sinks }
-
-
-  let should_keep_source { sources; _ } source =
-    match sources, source with
-    | None, _
-    | _, Sources.Attach
-    | _, Sources.Transform _ ->
-        true
-    | Some sources_to_keep, _ -> Sources.Set.mem (Sources.discard_subkind source) sources_to_keep
-
-
-  let should_keep_sink { sinks; _ } sink =
-    match sinks, sink with
-    | None, _
-    | _, Sinks.Attach
-    | _, Sinks.LocalReturn
-    | _, Sinks.ParameterUpdate _
-    | _, Sinks.AddFeatureToArgument
-    | _, Sinks.Transform _ ->
-        true
-    | Some sinks_to_keep, _ -> Sinks.Set.mem (Sinks.discard_subkind sink) sinks_to_keep
-end
-
 let model_verification_error ~path ~location kind = { ModelVerificationError.kind; path; location }
 
 module ClassDefinitionsCache = ModelVerifier.ClassDefinitionsCache
@@ -1064,7 +998,12 @@ let introduce_sink_taint
     breadcrumbs
   =
   let open Core.Result in
-  if SourceSinkFilter.should_keep_sink source_sink_filter taint_sink_kind then
+  if
+    source_sink_filter
+    |> Option.map ~f:(fun source_sink_filter ->
+           TaintConfiguration.SourceSinkFilter.should_keep_sink source_sink_filter taint_sink_kind)
+    |> Option.value ~default:true
+  then
     let backward =
       let assign_backward_taint environment taint =
         BackwardState.assign ~weak:true ~root ~path taint environment
@@ -1185,7 +1124,14 @@ let introduce_source_taint
     && List.is_empty via_features
   then
     Error "`Attach` must be accompanied by a list of features to attach."
-  else if SourceSinkFilter.should_keep_source source_sink_filter taint_source_kind then
+  else if
+    source_sink_filter
+    |> Option.map ~f:(fun source_sink_filter ->
+           TaintConfiguration.SourceSinkFilter.should_keep_source
+             source_sink_filter
+             taint_source_kind)
+    |> Option.value ~default:true
+  then
     let breadcrumbs = Features.BreadcrumbSet.of_approximation breadcrumbs in
     let via_features = Features.ViaFeatureSet.of_list via_features in
     let source_taint =

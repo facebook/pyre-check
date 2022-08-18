@@ -9,7 +9,7 @@
     "start": 12,
     "end": 13,
     "filename": "multi_sink_ports.py",
-    "message": "[Test] to [Test]",
+    "message": "[Test] to [Demo, GetAttr, Test]",
     "traces": [
       {
         "name": "forward",
@@ -38,6 +38,20 @@
             "kinds": [
               {
                 "features": [
+                  { "via": "a_feature" },
+                  { "via": "c_feature" },
+                  { "via": "split" },
+                  { "via": "tito" }
+                ],
+                "leaves": [
+                  { "name": "multi_sink_ports.sinkA" },
+                  { "name": "multi_sink_ports.sinkC" }
+                ],
+                "length": 1,
+                "kind": "Demo"
+              },
+              {
+                "features": [
                   { "via": "d_feature" },
                   { "via": "a_feature" },
                   { "via": "c_feature" },
@@ -64,6 +78,26 @@
               },
               "resolves_to": [ "multi_sink_ports.wrapper" ],
               "port": "formal(x)"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "length": 2,
+                "kind": "GetAttr"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multi_sink_ports.py",
+                "line": 42,
+                "start": 12,
+                "end": 13
+              },
+              "resolves_to": [ "multi_sink_ports.wrapper" ],
+              "port": "formal(x)[_params]"
             }
           }
         ]
@@ -96,7 +130,7 @@
     "start": 13,
     "end": 18,
     "filename": "multi_sink_ports.py",
-    "message": "[Test] to [Test]",
+    "message": "[Test] to [Demo, GetAttr, Test]",
     "traces": [
       {
         "name": "forward",
@@ -111,8 +145,8 @@
             ],
             "local_features": [
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "always-via": "issue-broadening" }
+              { "via": "broadening" },
+              { "via": "issue-broadening" }
             ],
             "tito": [ { "line": 82, "start": 27, "end": 32 } ],
             "root": {
@@ -129,6 +163,20 @@
         "roots": [
           {
             "kinds": [
+              {
+                "features": [
+                  { "via": "a_feature" },
+                  { "via": "c_feature" },
+                  { "via": "split" },
+                  { "via": "tito" }
+                ],
+                "leaves": [
+                  { "name": "multi_sink_ports.sinkA" },
+                  { "name": "multi_sink_ports.sinkC" }
+                ],
+                "length": 2,
+                "kind": "Demo"
+              },
               {
                 "features": [
                   { "via": "d_feature" },
@@ -158,6 +206,26 @@
               "resolves_to": [ "multi_sink_ports.wrapper2" ],
               "port": "formal(x)"
             }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "b_feature" } ],
+                "leaves": [ { "name": "multi_sink_ports.sinkB" } ],
+                "length": 4,
+                "kind": "GetAttr"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "multi_sink_ports.py",
+                "line": 83,
+                "start": 13,
+                "end": 18
+              },
+              "resolves_to": [ "multi_sink_ports.wrapper2" ],
+              "port": "formal(x)[_params]"
+            }
           }
         ]
       }
@@ -169,8 +237,8 @@
       { "via": "split" },
       { "via": "b_feature" },
       { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "always-via": "issue-broadening" }
+      { "via": "broadening" },
+      { "via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",

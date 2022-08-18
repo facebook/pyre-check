@@ -211,18 +211,6 @@ end
 
 val get_model_sources : paths:PyrePath.t list -> (PyrePath.t * string) list
 
-module SourceSinkFilter : sig
-  type t
-
-  val none : t
-
-  val from_configuration : TaintConfiguration.t -> t
-
-  val should_keep_source : t -> Sources.t -> bool
-
-  val should_keep_sink : t -> Sinks.t -> bool
-end
-
 type parse_result = {
   models: Registry.t;
   queries: Internal.ModelQuery.rule list;
@@ -235,7 +223,7 @@ val parse
   ?path:PyrePath.t ->
   source:string ->
   configuration:TaintConfiguration.t ->
-  source_sink_filter:SourceSinkFilter.t ->
+  source_sink_filter:TaintConfiguration.SourceSinkFilter.t option ->
   callables:Interprocedural.Target.HashSet.t option ->
   stubs:Interprocedural.Target.HashSet.t ->
   unit ->
@@ -247,7 +235,7 @@ val verify_model_syntax : path:PyrePath.t -> source:string -> unit
 val create_callable_model_from_annotations
   :  resolution:Analysis.Resolution.t ->
   callable:Interprocedural.Target.t ->
-  source_sink_filter:SourceSinkFilter.t ->
+  source_sink_filter:TaintConfiguration.SourceSinkFilter.t option ->
   is_obscure:bool ->
   (Internal.annotation_kind * Internal.taint_annotation) list ->
   (Model.t, ModelVerificationError.t) result
@@ -256,6 +244,6 @@ val create_callable_model_from_annotations
 val create_attribute_model_from_annotations
   :  resolution:Analysis.Resolution.t ->
   name:Ast.Reference.t ->
-  source_sink_filter:SourceSinkFilter.t ->
+  source_sink_filter:TaintConfiguration.SourceSinkFilter.t option ->
   Internal.taint_annotation list ->
   (Model.t, ModelVerificationError.t) result
