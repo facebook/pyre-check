@@ -168,14 +168,14 @@ def _get_configuration(
     else:
         LOG.info(f"Typeshed found at `{typeshed}``")
 
-    taint_models_path = find_taint_models_directory()
-    if (taint_models_path is None) and taint_models_directory_required:
-        taint_models_path = Path(
-            log.get_input(
-                "Unable to find taint models directory, please enter its root: "
-            )
-        ).resolve()
-    if taint_models_path is not None:
+    if taint_models_directory_required:
+        taint_models_path = find_taint_models_directory()
+        if taint_models_path is None:
+            taint_models_path = Path(
+                log.get_input(
+                    "Unable to find taint models directory, please enter its root: "
+                )
+            ).resolve()
         configuration["taint_models_path"] = str(taint_models_path)
 
     source_directory_input = log.get_optional_input(
