@@ -1616,6 +1616,19 @@ let test_resolve_definition_for_symbol context =
           #    ^- cursor
     |}
     None;
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
+        from typing import Optional
+        from dataclasses import dataclass
+
+        @dataclass
+        # ^- cursor
+        class Foo: ...
+
+        # No definition found.
+    |}
+    (Some "dataclasses:5:0-5:46");
   ()
 
 

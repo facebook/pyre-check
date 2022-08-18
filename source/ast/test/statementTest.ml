@@ -933,6 +933,41 @@ let test_decorator_from_expression context =
   ()
 
 
+let test_covers_position _ =
+  let assert_covers ~source ~position expected =
+    parse_single_statement source |> covers_position ~position |> assert_bool_equals ~expected
+  in
+  let source =
+    {|
+      @my_decorator
+      class Foo:
+        def __init__(self) -> None:
+          pass
+    |}
+  in
+  (* Positions before the class are not covered. *)
+  assert_covers ~source ~position:{ Location.line = 1; column = 0 } false;
+  assert_covers ~source ~position:{ Location.line = 2; column = 0 } false;
+  (* The decorator is covered. *)
+  assert_covers ~source ~position:{ Location.line = 2; column = 1 } true;
+  (* The class is covered. *)
+  assert_covers ~source ~position:{ Location.line = 3; column = 0 } true;
+  (* The position beyond the end of the class is not covered. *)
+  assert_covers ~source ~position:{ Location.line = 5; column = 8 } false;
+  let source = {|
+      @my_decorator
+      def foo() -> None: ...
+    |} in
+  (* TODO(T129228930): Handle decorators check in `covers_position`. *)
+  assert_covers ~source ~position:{ Location.line = 2; column = 1 } false;
+  assert_covers ~source ~position:{ Location.line = 3; column = 1 } true;
+  let source = {|
+      x = 1
+    |} in
+  assert_covers ~source ~position:{ Location.line = 2; column = 1 } true;
+  ()
+
+
 let () =
   "define"
   >::: [
@@ -955,5 +990,6 @@ let () =
          "pp" >:: test_pp;
          "is_generator" >:: test_is_generator;
          "decorator_from_expression" >:: test_decorator_from_expression;
+         "covers_position" >:: test_covers_position;
        ]
   |> Test.run

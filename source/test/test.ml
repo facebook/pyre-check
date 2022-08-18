@@ -404,6 +404,8 @@ let assert_true = assert_bool ""
 
 let assert_false test = assert_bool "" (not test)
 
+let assert_bool_equals ~expected = if expected then assert_true else assert_false
+
 let assert_is_some test = assert_true (Option.is_some test)
 
 let assert_is_none test = assert_true (Option.is_none test)
