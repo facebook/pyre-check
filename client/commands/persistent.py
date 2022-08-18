@@ -427,6 +427,19 @@ class OverlayUpdate:
 
 
 @dataclasses.dataclass(frozen=True)
+class HoverQuery:
+    id: Union[int, str, None]
+    path: Path
+    position: lsp.Position
+    activity_key: Optional[Dict[str, object]] = None
+
+
+@dataclasses.dataclass(frozen=True)
+class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    response: lsp.HoverResponse
+
+
+@dataclasses.dataclass(frozen=True)
 class DefinitionLocationQuery:
     id: Union[int, str, None]
     path: Path
