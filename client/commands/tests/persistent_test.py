@@ -61,7 +61,6 @@ from ..persistent import (
     type_error_to_diagnostic,
     type_errors_to_diagnostics,
     TypeCoverageQuery,
-    TypesQuery,
     uncovered_range_to_diagnostic,
 )
 from .language_server_protocol_test import ExceptionRaisingBytesWriter
@@ -446,14 +445,6 @@ class PersistentTest(testslide.TestCase):
             )
         )
         self.assertIn(test_path0, server_state.opened_documents)
-        self.assertEqual(
-            server.server_state.query_state.queries.qsize(),
-            1,
-        )
-        self.assertEqual(
-            server.server_state.query_state.queries.get_nowait(),
-            TypesQuery(test_path0),
-        )
 
         await server.process_open_request(
             lsp.DidOpenTextDocumentParameters(
@@ -466,14 +457,6 @@ class PersistentTest(testslide.TestCase):
             )
         )
         self.assertIn(test_path1, server_state.opened_documents)
-        self.assertEqual(
-            server.server_state.query_state.queries.qsize(),
-            1,
-        )
-        self.assertEqual(
-            server.server_state.query_state.queries.get_nowait(),
-            TypesQuery(test_path1),
-        )
 
         await server.process_close_request(
             lsp.DidCloseTextDocumentParameters(
@@ -483,10 +466,6 @@ class PersistentTest(testslide.TestCase):
             )
         )
         self.assertNotIn(test_path0, server_state.opened_documents)
-        self.assertEqual(
-            server.server_state.query_state.queries.qsize(),
-            0,
-        )
 
     @setup.async_test
     async def test_subscription_protocol(self) -> None:
@@ -717,46 +696,6 @@ class PersistentTest(testslide.TestCase):
             )
         )
         await asyncio.sleep(0)
-        self.assertEqual(server.server_state.query_state.queries.qsize(), 1)
-        self.assertEqual(
-            server.server_state.query_state.queries.get_nowait(), TypesQuery(test_path)
-        )
-
-    @setup.async_test
-    async def test_close_clears_hover_data(self) -> None:
-        test_path = Path("/root/test.py")
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
-        server = PyreServer(
-            input_channel=create_memory_text_reader(""),
-            output_channel=create_memory_text_writer(),
-            server_state=ServerState(
-                opened_documents={test_path},
-                query_state=PyreQueryState(
-                    path_to_location_type_lookup={
-                        test_path: LocationTypeLookup(
-                            [
-                                (lsp.Position(4, 4), lsp.Position(4, 15), "str"),
-                            ]
-                        ),
-                    }
-                ),
-            ),
-            pyre_manager=fake_task_manager,
-            pyre_query_manager=fake_task_manager2,
-        )
-
-        await server.process_close_request(
-            lsp.DidCloseTextDocumentParameters(
-                text_document=lsp.TextDocumentIdentifier(
-                    uri=lsp.DocumentUri.from_file_path(test_path).unparse()
-                )
-            )
-        )
-        await asyncio.sleep(0)
-        self.assertEqual(
-            server.server_state.query_state.path_to_location_type_lookup, {}
-        )
 
     def test_type_diagnostics(self) -> None:
         self.assertEqual(
@@ -1324,45 +1263,6 @@ class PersistentTest(testslide.TestCase):
             )
 
 
-class PyreQueryStateTest(testslide.TestCase):
-    def test_hover_response_for_position(self) -> None:
-        pyre_query_state = PyreQueryState(
-            {
-                Path("test.py"): LocationTypeLookup(
-                    [
-                        (lsp.Position(4, 4), lsp.Position(4, 15), "str"),
-                        (lsp.Position(8, 16), lsp.Position(8, 17), "int"),
-                    ]
-                ),
-            }
-        )
-
-        self.assertEqual(
-            pyre_query_state.hover_response_for_position(
-                Path("test.py"), lsp.LspPosition(3, 5)
-            ),
-            lsp.HoverResponse(contents="```str```"),
-        )
-        self.assertEqual(
-            pyre_query_state.hover_response_for_position(
-                Path("test.py"), lsp.LspPosition(7, 16)
-            ),
-            lsp.HoverResponse(contents="```int```"),
-        )
-        self.assertEqual(
-            pyre_query_state.hover_response_for_position(
-                Path("test.py"), lsp.LspPosition(99, 99)
-            ),
-            lsp.HoverResponse(contents=""),
-        )
-        self.assertEqual(
-            pyre_query_state.hover_response_for_position(
-                Path("non_existent.py"), lsp.LspPosition(3, 4)
-            ),
-            lsp.HoverResponse(contents=""),
-        )
-
-
 @contextmanager
 def patch_connect_in_text_mode(
     input_channel: TextReader, output_channel: TextWriter
@@ -1425,7 +1325,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         """
         bytes_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
-            query_state=PyreQueryState(path_to_location_type_lookup={}),
+            query_state=PyreQueryState(),
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
@@ -1760,7 +1660,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         json_output = """{ "response": {"contents": "```foo.bar.Bar```"} }"""
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
-            query_state=PyreQueryState(path_to_location_type_lookup={}),
+            query_state=PyreQueryState(),
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
@@ -1869,7 +1769,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         """
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
-            query_state=PyreQueryState(path_to_location_type_lookup={}),
+            query_state=PyreQueryState(),
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",
@@ -1999,7 +1899,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         """
         client_output_writer = MemoryBytesWriter()
         pyre_query_manager = PyreQueryHandler(
-            query_state=PyreQueryState(path_to_location_type_lookup={}),
+            query_state=PyreQueryState(),
             server_start_options_reader=_create_server_start_options_reader(
                 binary="/bin/pyre",
                 server_identifier="foo",

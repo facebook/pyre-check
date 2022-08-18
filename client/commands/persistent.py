@@ -413,12 +413,6 @@ class TypeCoverageQuery:
 
 
 @dataclasses.dataclass(frozen=True)
-class TypesQuery:
-    path: Path
-    activity_key: Optional[Dict[str, object]] = None
-
-
-@dataclasses.dataclass(frozen=True)
 class OverlayUpdate:
     # TODO: T126924773 Consider making the overlay id also contain a GUID or PID
     overlay_id: str
@@ -467,7 +461,6 @@ class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 RequestTypes = Union[
     TypeCoverageQuery,
-    TypesQuery,
     HoverQuery,
     DefinitionLocationQuery,
     ReferencesQuery,
@@ -477,32 +470,10 @@ RequestTypes = Union[
 
 @dataclasses.dataclass
 class PyreQueryState:
-    # Shared mutable state.
-    path_to_location_type_lookup: Dict[Path, LocationTypeLookup] = dataclasses.field(
-        default_factory=dict
-    )
     # Queue of queries.
     queries: "asyncio.Queue[RequestTypes]" = dataclasses.field(
         default_factory=asyncio.Queue
     )
-
-    def hover_response_for_position(
-        self, path: Path, lsp_position: lsp.LspPosition
-    ) -> lsp.HoverResponse:
-        pyre_position = lsp_position.to_pyre_position()
-        LOG.info(f"Looking up type for path {path} and position {pyre_position}...")
-
-        location_type_lookup = self.path_to_location_type_lookup.get(path)
-        if location_type_lookup is None:
-            LOG.info(f"Did not find any type info for path {path}.")
-            return lsp.HoverResponse.empty()
-
-        type_info = location_type_lookup[pyre_position]
-        if type_info is None:
-            LOG.info(f"Did not find a type for position {pyre_position}.")
-            return lsp.HoverResponse.empty()
-
-        return lsp.HoverResponse(contents=f"```{type_info}```")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -656,9 +627,6 @@ class PyreServer:
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         self.server_state.opened_documents.add(document_path)
-        self.server_state.query_state.queries.put_nowait(
-            TypesQuery(document_path, activity_key)
-        )
         LOG.info(f"File opened: {document_path}")
 
         # Attempt to trigger a background Pyre server start on each file open
@@ -675,9 +643,6 @@ class PyreServer:
             )
         try:
             self.server_state.opened_documents.remove(document_path)
-            self.server_state.query_state.path_to_location_type_lookup.pop(
-                document_path, None
-            )
             LOG.info(f"File closed: {document_path}")
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
@@ -728,10 +693,6 @@ class PyreServer:
 
         if document_path not in self.server_state.opened_documents:
             return
-
-        self.server_state.query_state.queries.put_nowait(
-            TypesQuery(document_path, activity_key)
-        )
 
         # Attempt to trigger a background Pyre server start on each file save
         if not self.pyre_manager.is_task_running():
@@ -1330,17 +1291,6 @@ class PyreQueryHandler(connection.BackgroundTask):
             for path_type_info in query_types_response.response
         }
 
-    async def _update_types_for_paths(
-        self,
-        paths: List[Path],
-        socket_path: Path,
-    ) -> None:
-        new_path_to_location_type_dict = await self._query_types(paths, socket_path)
-        if new_path_to_location_type_dict is None:
-            return
-        for path, location_type_lookup in new_path_to_location_type_dict.items():
-            self.query_state.path_to_location_type_lookup[path] = location_type_lookup
-
     async def _query_modules_of_path(
         self,
         path: Path,
@@ -1582,10 +1532,6 @@ class PyreQueryHandler(connection.BackgroundTask):
             relative_local_root=start_arguments.base_arguments.relative_local_root,
         )
         strict_default = server_start_options.strict_default
-        type_queries_enabled = (
-            server_start_options.ide_features is not None
-            and server_start_options.ide_features.is_hover_enabled()
-        )
         expression_level_coverage_enabled = (
             server_start_options.ide_features is not None
             and server_start_options.ide_features.is_expression_level_coverage_enabled()
@@ -1597,13 +1543,7 @@ class PyreQueryHandler(connection.BackgroundTask):
         )
         while True:
             query = await self.query_state.queries.get()
-            if isinstance(query, TypesQuery):
-                if type_queries_enabled:
-                    await self._update_types_for_paths(
-                        [query.path],
-                        socket_path,
-                    )
-            elif isinstance(query, TypeCoverageQuery):
+            if isinstance(query, TypeCoverageQuery):
                 await self._handle_type_coverage_query(
                     query,
                     strict_default,
