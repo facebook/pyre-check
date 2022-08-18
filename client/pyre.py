@@ -754,16 +754,18 @@ def init(context: click.Context) -> int:
 
 
 @pyre.command()
+@click.option(
+    "--skip-environment-setup",
+    is_flag=True,
+    default=False,
+    help="Skip setting up an environment to run Pysa",
+)
 @click.pass_context
-def init_pysa(context: click.Context) -> int:
+def init_pysa(context: click.Context, skip_environment_setup: bool) -> int:
     """
     Creates a suitable environment for running pyre analyze.
     """
-    create_configuration_return_code: int = commands.initialize.run()
-    if create_configuration_return_code == commands.ExitCode.SUCCESS:
-        return commands.initialize_pysa.run()
-    else:
-        return create_configuration_return_code
+    return commands.initialize_pysa.run(skip_environment_setup)
 
 
 @pyre.command()
