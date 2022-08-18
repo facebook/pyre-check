@@ -602,31 +602,16 @@ class ServerState:
     query_state: PyreQueryState = dataclasses.field(default_factory=PyreQueryState)
 
 
+@dataclasses.dataclass(frozen=True)
 class PyreServer:
     # I/O Channels
     input_channel: connection.TextReader
     output_channel: connection.TextWriter
 
-    # `pyre_manager` is responsible for handling all interactions with background
-    # Pyre server.
     pyre_manager: connection.BackgroundTaskManager
     pyre_query_manager: connection.BackgroundTaskManager
-    # NOTE: `server_state` is mutable and can be changed on `pyre_manager` side.
+    # NOTE: The fields inside `server_state` are mutable and can be changed by `pyre_manager`
     server_state: ServerState
-
-    def __init__(
-        self,
-        input_channel: connection.TextReader,
-        output_channel: connection.TextWriter,
-        server_state: ServerState,
-        pyre_manager: connection.BackgroundTaskManager,
-        pyre_query_manager: connection.BackgroundTaskManager,
-    ) -> None:
-        self.input_channel = input_channel
-        self.output_channel = output_channel
-        self.server_state = server_state
-        self.pyre_manager = pyre_manager
-        self.pyre_query_manager = pyre_query_manager
 
     async def wait_for_exit(self) -> int:
         await _wait_for_exit(self.input_channel, self.output_channel)
@@ -2096,22 +2081,22 @@ async def run_persistent(
 
             client_capabilities = initialize_result.client_capabilities
             LOG.debug(f"Client capabilities: {client_capabilities}")
-            initial_server_state = ServerState(client_capabilities=client_capabilities)
+            server_state = ServerState(client_capabilities=client_capabilities)
             pyre_query_handler = PyreQueryHandler(
-                query_state=initial_server_state.query_state,
+                query_state=server_state.query_state,
                 server_start_options_reader=server_start_options_reader,
                 client_output_channel=stdout,
             )
             server = PyreServer(
                 input_channel=stdin,
                 output_channel=stdout,
-                server_state=initial_server_state,
+                server_state=server_state,
                 pyre_manager=connection.BackgroundTaskManager(
                     PyreServerHandler(
                         server_start_options_reader=server_start_options_reader,
                         remote_logging=remote_logging,
                         client_output_channel=stdout,
-                        server_state=initial_server_state,
+                        server_state=server_state,
                     )
                 ),
                 pyre_query_manager=connection.BackgroundTaskManager(pyre_query_handler),
