@@ -15,121 +15,121 @@ from .. import configuration as configuration_module
 class Base(abc.ABC):
     @abc.abstractmethod
     def get_dot_pyre_directory(self) -> Path:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_log_directory(self) -> Path:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_binary_version(self) -> Optional[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_content_for_display(self) -> str:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_global_root(self) -> Path:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_relative_local_root(self) -> Optional[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_excludes(self) -> List[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def is_strict(self) -> bool:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_remote_logger(self) -> Optional[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_number_of_workers(self) -> int:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_python_version(self) -> configuration_module.PythonVersion:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_shared_memory(self) -> configuration_module.SharedMemory:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_valid_extension_suffixes(self) -> List[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_ignore_all_errors(self) -> List[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_only_check_paths(self) -> List[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_existent_search_paths(
         self,
     ) -> List[configuration_module.search_path.Element]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_existent_source_directories(
         self,
     ) -> List[configuration_module.search_path.Element]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_existent_unwatched_dependency(
         self,
     ) -> Optional[configuration_module.unwatched.UnwatchedDependency]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def is_source_directories_defined(
         self,
     ) -> bool:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_buck_targets(
         self,
     ) -> Optional[List[str]]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def uses_buck2(self) -> bool:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_buck_mode(self) -> Optional[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_buck_isolation_prefix(self) -> Optional[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_other_critical_files(self) -> List[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_taint_models_path(self) -> List[str]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_ide_features(self) -> Optional[configuration_module.IdeFeatures]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def get_local_root(self) -> Optional[Path]:
         relative_local_root = self.get_relative_local_root()

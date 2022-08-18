@@ -25,11 +25,11 @@ def _expand_relative_root(path: str, relative_root: str) -> str:
 class Element(abc.ABC):
     @abc.abstractmethod
     def path(self) -> str:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def command_line_argument(self) -> str:
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 @dataclasses.dataclass(frozen=True)
@@ -75,15 +75,15 @@ class SitePackageElement(Element):
 class RawElement(abc.ABC):
     @abc.abstractmethod
     def expand_global_root(self, global_root: str) -> "RawElement":
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def expand_relative_root(self, relative_root: str) -> "RawElement":
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def expand_glob(self) -> List["RawElement"]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 @dataclasses.dataclass(frozen=True)

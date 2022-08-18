@@ -41,15 +41,15 @@ class RunnerResult(ABC):
 
     @abstractmethod
     def get_status(self) -> str:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abstractmethod
     def to_json(self, dont_show_discrepancy: bool) -> Dict[str, Any]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abstractmethod
     def to_logger_sample(self) -> Sample:
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class ExceptionalRunnerResult(RunnerResult):

@@ -30,7 +30,7 @@ class JSONRPCException(Exception, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def error_code(self) -> int:
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class ParseError(JSONRPCException):
@@ -82,7 +82,7 @@ class InternalError(JSONRPCException):
 class JSONRPC(abc.ABC):
     @abc.abstractmethod
     def json(self) -> JSON:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def serialize(self) -> str:
         return json.dumps(self.json())

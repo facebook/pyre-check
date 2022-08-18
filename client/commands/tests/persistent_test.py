@@ -480,7 +480,7 @@ class PersistentTest(testslide.TestCase):
 
         def fake_server_start_options_reader() -> PyreServerStartOptions:
             # Server start option is not relevant to this test
-            raise NotImplementedError
+            raise NotImplementedError()
 
         server_handler = PyreServerHandler(
             server_start_options_reader=fake_server_start_options_reader,
@@ -525,7 +525,7 @@ class PersistentTest(testslide.TestCase):
     async def test_subscription_error(self) -> None:
         def fake_server_start_options_reader() -> PyreServerStartOptions:
             # Server start option is not relevant to this test
-            raise NotImplementedError
+            raise NotImplementedError()
 
         server_handler = PyreServerHandler(
             server_start_options_reader=fake_server_start_options_reader,
@@ -545,7 +545,7 @@ class PersistentTest(testslide.TestCase):
 
         def fake_server_start_options_reader() -> PyreServerStartOptions:
             # Server start option is not relevant to this test
-            raise NotImplementedError
+            raise NotImplementedError()
 
         server_handler = PyreServerHandler(
             server_start_options_reader=fake_server_start_options_reader,

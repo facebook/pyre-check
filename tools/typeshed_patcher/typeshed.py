@@ -26,7 +26,7 @@ class Typeshed(abc.ABC):
         This method is allowed to return `None` even for paths that come from the
         return value of `all_files()`. But such cases are expected to be rare.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractclassmethod
     def all_files(self) -> Iterable[pathlib.Path]:
@@ -36,7 +36,7 @@ class Typeshed(abc.ABC):
         Elements in the returned iterable is not guaranteed to follow any particular
         order.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 def _write_to_files(typeshed: Typeshed, root: pathlib.Path) -> None:

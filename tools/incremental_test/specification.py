@@ -24,11 +24,11 @@ class InvalidSpecificationException(Exception):
 class RepositoryState(ABC):
     @abstractmethod
     def activate_sandbox(self, environment: Environment) -> ContextManager[Path]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abstractmethod
     def to_json(self) -> Dict[str, Any]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @staticmethod
     def from_json(input_json: Dict[str, Any]) -> "RepositoryState":
@@ -74,11 +74,11 @@ class RepositoryState(ABC):
 class RepositoryUpdate(ABC):
     @abstractmethod
     def to_json(self) -> Dict[str, Any]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abstractmethod
     def update_steps(self) -> List["SingleUpdate"]:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @staticmethod
     def from_json(input_json: Dict[str, Any]) -> "RepositoryUpdate":
@@ -129,7 +129,7 @@ class RepositoryUpdate(ABC):
 class SingleUpdate(RepositoryUpdate):
     @abstractmethod
     def update(self, environment: Environment, working_directory: Path) -> None:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def update_steps(self) -> List["SingleUpdate"]:
         return [self]

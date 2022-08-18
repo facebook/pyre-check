@@ -30,7 +30,7 @@ class BytesReader(abc.ABC):
         If EOF is reached before the complete separator is found, raise
         `asyncio.IncompleteReadError`.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     async def read_exactly(self, count: int) -> bytes:
@@ -39,7 +39,7 @@ class BytesReader(abc.ABC):
         If EOF is reached before the complete separator is found, raise
         `asyncio.IncompleteReadError`.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     async def readline(self) -> bytes:
         """
@@ -64,7 +64,7 @@ class BytesWriter(abc.ABC):
         The method attempts to write the data to the underlying channel and
         flushes immediately.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     async def close(self) -> None:
@@ -72,7 +72,7 @@ class BytesWriter(abc.ABC):
         The method closes the underlying channel and wait until the channel is
         fully closed.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class TextReader:
@@ -352,7 +352,7 @@ async def create_async_stdin_stdout() -> Tuple[TextReader, TextWriter]:
 class BackgroundTask(abc.ABC):
     @abc.abstractmethod
     async def run(self) -> None:
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class BackgroundTaskManager:

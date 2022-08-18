@@ -38,7 +38,7 @@ class Event:
     metadata: EventMetadata
 
     def __init__(self, metadata: EventMetadata) -> None:
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 @dataclasses.dataclass(frozen=True)
