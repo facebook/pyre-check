@@ -736,6 +736,23 @@ class PyreServer:
         if not self.pyre_manager.is_task_running():
             await self._try_restart_pyre_server()
 
+    async def process_type_coverage_request(
+        self,
+        parameters: lsp.TypeCoverageTextDocumentParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        await self.server_state.query_state.queries.put(
+            TypeCoverageQuery(
+                id=request_id, activity_key=activity_key, path=document_path
+            )
+        )
+
     async def process_hover_request(
         self,
         parameters: lsp.HoverTextDocumentParameters,
@@ -770,23 +787,6 @@ class PyreServer:
                 activity_key=activity_key,
                 result=response.to_dict(),
             ),
-        )
-
-    async def process_type_coverage_request(
-        self,
-        parameters: lsp.TypeCoverageTextDocumentParameters,
-        request_id: Union[int, str, None],
-        activity_key: Optional[Dict[str, object]] = None,
-    ) -> None:
-        document_path = parameters.text_document.document_uri().to_file_path()
-        if document_path is None:
-            raise json_rpc.InvalidRequestError(
-                f"Document URI is not a file: {parameters.text_document.uri}"
-            )
-        await self.server_state.query_state.queries.put(
-            TypeCoverageQuery(
-                id=request_id, activity_key=activity_key, path=document_path
-            )
         )
 
     async def process_definition_request(
