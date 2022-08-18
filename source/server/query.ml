@@ -283,7 +283,7 @@ module Response = struct
                   (Statement.show
                      (Statement.Statement.Define define |> Node.create_with_default_location)) );
             ]
-      | HoverInfoForPosition message -> `Assoc ["message", `String message]
+      | HoverInfoForPosition contents -> `Assoc ["contents", `String contents]
       | Success message -> `Assoc ["message", `String message]
       | Superclasses class_to_superclasses_mapping ->
           let reference_to_yojson reference = `String (Reference.show reference) in

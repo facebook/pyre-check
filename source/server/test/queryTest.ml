@@ -2230,13 +2230,13 @@ let test_hover context =
       ( "hover_info_for_position(path='foo.py', line=2, column=0)",
         {|
       {
-      "response": { "message": "" }
+      "response": { "contents": "" }
       }
     |} );
       ( "hover_info_for_position(path='foo.py', line=3, column=9)",
         {|
       {
-      "response": { "message": "`int`" }
+      "response": { "contents": "`int`" }
       }
     |} );
     ]
