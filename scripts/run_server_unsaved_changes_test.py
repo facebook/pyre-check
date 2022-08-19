@@ -111,8 +111,19 @@ def run_unsaved_changes_test(
             raise uncaught_pyre_exception
 
 def _print_discrepancies(discrepancies: Dict[pathlib.Path, Tuple[List[Error], List[Error]]], commit: str) -> int:
-    '''NOT YET IMPLEMENTED: Function takes in a list of discrepancies & prints them'''
-    return 0
+    if len(discrepancies) == 0:
+        return 0
+    for file_name, (actual_error, expected_error) in discrepancies.items():
+        LOG.error(
+            "Difference found for revision: {}, file_name: {}\n".format(commit, file_name),
+        )
+        LOG.error(
+            "Actual errors (pyre overlayUpdate): {}\n".format(actual_error),
+        )
+        LOG.error(
+            "Expected errors (pyre incremental): {}\n".format(expected_error),
+        )
+    return 1
 
 def run(repository_location: str, typeshed_zip_path: str, debug: bool) -> int:
     typeshed_zip_path = typeshed_zip_path
