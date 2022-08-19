@@ -8,6 +8,17 @@
 open Core
 open Server
 
+module ExitStatus = struct
+  type t =
+    | Ok
+    | Error
+  [@@deriving sexp, compare, hash]
+
+  let exit_code = function
+    | Ok -> 0
+    | Error -> 1
+end
+
 module ServerConfiguration = struct
   type t = {
     base: CommandStartup.BaseConfiguration.t;
@@ -242,6 +253,9 @@ let error_kind_and_message_from_exception = function
           "Cannot build the project because Pyre encounters a fatal error while loading external \
            wheel: %s"
           message )
+  | Server.Start.ServerInterrupted signal ->
+      ( ErrorKind.Pyre,
+        Format.sprintf "Server process get interrputed with signal %s" (Signal.to_string signal) )
   | Watchman.ConnectionError message ->
       ErrorKind.Watchman, Format.sprintf "Watchman connection error: %s" message
   | Watchman.SubscriptionError message ->
@@ -279,11 +293,13 @@ let start_server_and_wait ~event_channel ~configuration start_options =
       >>= fun () ->
       let wait_forever, _ = Lwt.wait () in
       wait_forever)
-    ~on_exception:(fun exn ->
-      let kind, message = error_kind_and_message_from_exception exn in
-      Log.info "%s" message;
-      write_event (ServerEvent.Exception (message, kind))
-      >>= fun () -> Lwt.return Start.ExitStatus.Error)
+    ~on_exception:(function
+      | Server.Start.ServerStopped -> Lwt.return ExitStatus.Ok
+      | exn ->
+          let kind, message = error_kind_and_message_from_exception exn in
+          Log.info "%s" message;
+          write_event (ServerEvent.Exception (message, kind))
+          >>= fun () -> Lwt.return ExitStatus.Error)
 
 
 let run_server configuration_file =
@@ -332,7 +348,7 @@ let run_server configuration_file =
         Lwt_main.run
           (start_server_and_wait ~event_channel:Lwt_io.stdout ~configuration start_options)
       in
-      exit (Start.ExitStatus.exit_code exit_status)
+      exit (ExitStatus.exit_code exit_status)
 
 
 let command =

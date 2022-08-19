@@ -7,16 +7,9 @@
 
 open Core
 
-module ExitStatus = struct
-  type t =
-    | Ok
-    | Error
-  [@@deriving sexp, compare, hash]
+exception ServerStopped
 
-  let exit_code = function
-    | Ok -> 0
-    | Error -> 1
-end
+exception ServerInterrupted of Core.Signal.t
 
 let with_performance_logging ?(normals = []) ~name f =
   let open Lwt.Infix in
@@ -553,14 +546,14 @@ let with_server
       let signal_waiters =
         [
           (* We rely on SIGINT for normal server shutdown. *)
-          wait_for_signal [Signal.int] ~on_caught:(fun _ -> return ExitStatus.Ok);
+          wait_for_signal [Signal.int] ~on_caught:(fun _ -> Lwt.fail ServerStopped);
           (* Getting these signals usually indicates something serious went wrong. *)
           wait_for_signal
             [Signal.abrt; Signal.term; Signal.quit; Signal.segv]
             ~on_caught:(fun signal ->
               let { ServerProperties.start_time; _ } = server_properties in
               Stop.log_stopped_server ~reason:(Signal.to_string signal) ~start_time ();
-              return ExitStatus.Error);
+              Lwt.fail (ServerInterrupted signal));
         ]
       in
       let watchman_waiter =
@@ -569,8 +562,7 @@ let with_server
               ~f:(on_watchman_update ~server_properties ~server_state)
               subscriber
             >>= fun () ->
-            (* Lost watchman connection is considered an error. *)
-            return ExitStatus.Error)
+            Lwt.fail (Watchman.SubscriptionError "Lost subscription connection to watchman"))
       in
       List.concat_no_order [[server_waiter ()]; signal_waiters; Option.to_list watchman_waiter]
     in

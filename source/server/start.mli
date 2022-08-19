@@ -5,14 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module ExitStatus : sig
-  type t =
-    | Ok
-    | Error
-  [@@deriving sexp, compare, hash]
+exception ServerStopped
 
-  val exit_code : t -> int
-end
+exception ServerInterrupted of Core.Signal.t
 
 (* Start the server from a given configuration. Then invoke `on_started` if the server starts and
    its state fully initialized. *)
@@ -27,8 +22,8 @@ val start_server
   :  ?watchman:Watchman.Raw.t ->
   ?build_system_initializer:BuildSystem.Initializer.t ->
   ?on_server_socket_ready:(PyrePath.t -> unit Lwt.t) ->
-  on_started:(ServerProperties.t -> ServerState.t ExclusiveLock.Lazy.t -> ExitStatus.t Lwt.t) ->
-  on_exception:(exn -> ExitStatus.t Lwt.t) ->
+  on_started:(ServerProperties.t -> ServerState.t ExclusiveLock.Lazy.t -> 'a Lwt.t) ->
+  on_exception:(exn -> 'a Lwt.t) ->
   configuration:Configuration.Analysis.t ->
   StartOptions.t ->
-  ExitStatus.t Lwt.t
+  'a Lwt.t

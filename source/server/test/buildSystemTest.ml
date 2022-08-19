@@ -65,7 +65,7 @@ let test_cleanup context =
     ~on_exception:(fun exn -> raise exn)
     ~on_started:(fun _ _ ->
       (* Shutdown the server immediately after it is started. *)
-      Lwt.return Start.ExitStatus.Ok)
+      Lwt.return_unit)
   >>= fun _ ->
   (* Verify that the build system has indeed been cleaned up. *)
   assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id "cleaned" !internal_state;

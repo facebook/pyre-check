@@ -167,7 +167,7 @@ module ScratchProject = struct
   let start_options_of { start_options; _ } = start_options
 
   let test_server_with
-      ?(expected_exit_status = Start.ExitStatus.Ok)
+      ?(expect_server_error = false)
       ?on_server_socket_ready
       ~f
       { context; configuration; start_options; watchman; build_system_initializer }
@@ -184,9 +184,15 @@ module ScratchProject = struct
         | OUnitTest.OUnit_failure _ as exn ->
             (* We need to re-raise OUnit test failures since OUnit relies on it for error reporting. *)
             raise exn
+        | Start.ServerStopped ->
+            if expect_server_error then
+              assert_failure "Test server unexpectedly stopped without error";
+            Lwt.return_unit
         | exn ->
-            Log.error "Uncaught exception: %s" (Exn.to_string exn);
-            Lwt.return Start.ExitStatus.Error)
+            if not expect_server_error then
+              raise exn
+            else
+              Lwt.return_unit)
       ~on_started:(fun ({ ServerProperties.socket_path; _ } as server_properties) server_state ->
         (* Open a connection to the started server and send some test messages. *)
         ExclusiveLock.Lazy.read server_state ~f:Lwt.return
@@ -194,15 +200,8 @@ module ScratchProject = struct
         let socket_address = Lwt_unix.ADDR_UNIX (PyrePath.absolute socket_path) in
         let test_client (input_channel, output_channel) =
           f { Client.context; server_properties; server_state; input_channel; output_channel }
-          >>= fun () -> Lwt.return Start.ExitStatus.Ok
+          >>= fun () -> Lwt.return_unit
         in
         Lwt_io.with_connection socket_address test_client)
-    >>= fun actual_exit_status ->
-    assert_equal
-      ~ctxt:context
-      ~printer:(fun status -> Sexp.to_string (Start.ExitStatus.sexp_of_t status))
-      ~cmp:[%compare.equal: Start.ExitStatus.t]
-      expected_exit_status
-      actual_exit_status;
-    Lwt.return_unit
+    >>= fun () -> Lwt.return_unit
 end

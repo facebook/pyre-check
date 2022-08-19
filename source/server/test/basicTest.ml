@@ -334,8 +334,7 @@ let test_watchman_failure context =
     ~include_helper_builtins:false
     ~watchman:mock_watchman
     []
-  |> ScratchProject.test_server_with ~expected_exit_status:Start.ExitStatus.Error ~f:(fun _ ->
-         Lwt.return_unit)
+  |> ScratchProject.test_server_with ~expect_server_error:true ~f:(fun _ -> Lwt.return_unit)
 
 
 let test_on_server_socket_ready context =
