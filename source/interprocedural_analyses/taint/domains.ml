@@ -7,6 +7,7 @@
 
 open Core
 open Ast
+open Interprocedural
 
 let location_to_json
     {
@@ -56,7 +57,7 @@ module CallInfo = struct
         port: AccessPath.Root.t;
         path: Abstract.TreeDomain.Label.path;
         location: Location.WithModule.t;
-        callees: Interprocedural.Target.t list;
+        callees: Target.t list;
       }
   [@@deriving compare]
 
@@ -68,7 +69,7 @@ module CallInfo = struct
         Format.fprintf
           formatter
           "CallSite(callees=[%s], location=%a, port=%s)"
-          (String.concat ~sep:", " (List.map ~f:Interprocedural.Target.external_name callees))
+          (String.concat ~sep:", " (List.map ~f:Target.external_name callees))
           Location.WithModule.pp
           location
           port
@@ -81,7 +82,7 @@ module CallInfo = struct
     match trace with
     | CallSite { location; callees; port; path } ->
         let callees =
-          Interprocedural.OverrideGraph.SharedMemory.expand_override_targets override_graph callees
+          OverrideGraph.SharedMemory.expand_override_targets override_graph callees
           |> List.filter ~f:(fun callee -> is_valid_callee ~port ~path ~callee)
         in
         CallSite { location; callees; port; path }
@@ -97,8 +98,7 @@ module CallInfo = struct
         "root", location_json
     | CallSite { location; callees; port; path } ->
         let callee_json =
-          callees
-          |> List.map ~f:(fun callable -> `String (Interprocedural.Target.external_name callable))
+          callees |> List.map ~f:(fun callable -> `String (Target.external_name callable))
         in
         let location_json = location_with_module_to_json ~filename_lookup location in
         let port_json = AccessPath.create port path |> AccessPath.to_json in
@@ -121,7 +121,7 @@ module CallInfo = struct
           } ) ->
         [%compare.equal: AccessPath.Root.t] port_left port_right
         && Location.WithModule.compare location_left location_right = 0
-        && [%compare.equal: Interprocedural.Target.t list] callees_left callees_right
+        && [%compare.equal: Target.t list] callees_left callees_right
         && Abstract.TreeDomain.Label.compare_path path_right path_left = 0
     | _ -> [%compare.equal: t] left right
 
@@ -155,9 +155,9 @@ end)
 module CallInfoIntervals = struct
   type call_info_intervals = {
     (* The interval of the class that literally contains this call site *)
-    caller_interval: Interprocedural.ClassIntervalSet.t;
+    caller_interval: ClassIntervalSet.t;
     (* The interval of the receiver object for this call site *)
-    receiver_interval: Interprocedural.ClassIntervalSet.t;
+    receiver_interval: ClassIntervalSet.t;
     (* Whether this call site is a call on `self` *)
     is_self_call: bool;
   }
@@ -166,40 +166,37 @@ module CallInfoIntervals = struct
      such that SAPP will not intersect class intervals. *)
   let top =
     {
-      caller_interval = Interprocedural.ClassIntervalSet.top;
-      receiver_interval = Interprocedural.ClassIntervalSet.top;
+      caller_interval = ClassIntervalSet.top;
+      receiver_interval = ClassIntervalSet.top;
       is_self_call = false;
     }
 
 
   let is_top { caller_interval; receiver_interval; is_self_call } =
-    Interprocedural.ClassIntervalSet.is_top caller_interval
-    && Interprocedural.ClassIntervalSet.is_top receiver_interval
+    ClassIntervalSet.is_top caller_interval
+    && ClassIntervalSet.is_top receiver_interval
     && is_self_call == false
 
 
   let to_json { caller_interval; receiver_interval; is_self_call } =
     let list = ["is_self_call", `Bool is_self_call] in
     let intervals_to_list intervals =
-      let intervals = Interprocedural.ClassIntervalSet.to_list intervals in
+      let intervals = ClassIntervalSet.to_list intervals in
       List.map intervals ~f:(fun interval ->
           `Assoc
             [
-              "lower", `Int (Interprocedural.ClassInterval.lower_bound_exn interval);
-              "upper", `Int (Interprocedural.ClassInterval.upper_bound_exn interval);
+              "lower", `Int (ClassInterval.lower_bound_exn interval);
+              "upper", `Int (ClassInterval.upper_bound_exn interval);
             ])
     in
     let list =
-      if Interprocedural.ClassIntervalSet.is_top receiver_interval then
+      if ClassIntervalSet.is_top receiver_interval then
         list
       else (* Output for SAPP to use *)
         ("receiver_interval", `List (intervals_to_list receiver_interval)) :: list
     in
     let list =
-      if
-        Interprocedural.ClassIntervalSet.is_empty caller_interval
-        || Interprocedural.ClassIntervalSet.is_top caller_interval
-      then
+      if ClassIntervalSet.is_empty caller_interval || ClassIntervalSet.is_top caller_interval then
         list
       else (* Output for debug purposes *)
         ("caller_interval", `List (intervals_to_list caller_interval)) :: list
@@ -214,8 +211,8 @@ module CallInfoIntervals = struct
 
     let bottom =
       {
-        caller_interval = Interprocedural.ClassIntervalSet.bottom;
-        receiver_interval = Interprocedural.ClassIntervalSet.bottom;
+        caller_interval = ClassIntervalSet.bottom;
+        receiver_interval = ClassIntervalSet.bottom;
         is_self_call = true;
       }
 
@@ -224,9 +221,9 @@ module CallInfoIntervals = struct
       Format.fprintf
         formatter
         "@[caller_interval: [%a] receiver_interval: [%a] is_self_call: [%b]@]"
-        Interprocedural.ClassIntervalSet.pp
+        ClassIntervalSet.pp
         caller_interval
-        Interprocedural.ClassIntervalSet.pp
+        ClassIntervalSet.pp
         receiver_interval
         is_self_call
 
@@ -247,12 +244,8 @@ module CallInfoIntervals = struct
             is_self_call = is_self_call_right;
           }
       =
-      Interprocedural.ClassIntervalSet.less_or_equal
-        ~left:caller_interval_left
-        ~right:caller_interval_right
-      && Interprocedural.ClassIntervalSet.less_or_equal
-           ~left:receiver_interval_left
-           ~right:receiver_interval_right
+      ClassIntervalSet.less_or_equal ~left:caller_interval_left ~right:caller_interval_right
+      && ClassIntervalSet.less_or_equal ~left:receiver_interval_left ~right:receiver_interval_right
       && not ((not is_self_call_left) && is_self_call_right)
 
 
@@ -269,10 +262,8 @@ module CallInfoIntervals = struct
         }
       =
       {
-        caller_interval =
-          Interprocedural.ClassIntervalSet.join caller_interval_left caller_interval_right;
-        receiver_interval =
-          Interprocedural.ClassIntervalSet.join receiver_interval_left receiver_interval_right;
+        caller_interval = ClassIntervalSet.join caller_interval_left caller_interval_right;
+        receiver_interval = ClassIntervalSet.join receiver_interval_left receiver_interval_right;
         (* The result of joining two calls is a call on `self` iff. both calls are on `self`. *)
         is_self_call = is_self_call_left && is_self_call_right;
       }
@@ -291,10 +282,8 @@ module CallInfoIntervals = struct
         }
       =
       {
-        caller_interval =
-          Interprocedural.ClassIntervalSet.meet caller_interval_left caller_interval_right;
-        receiver_interval =
-          Interprocedural.ClassIntervalSet.meet receiver_interval_left receiver_interval_right;
+        caller_interval = ClassIntervalSet.meet caller_interval_left caller_interval_right;
+        receiver_interval = ClassIntervalSet.meet receiver_interval_left receiver_interval_right;
         (* The result of meeting two calls is a call on `self` iff. one of the calls is on `self`. *)
         is_self_call = is_self_call_left || is_self_call_right;
       }
@@ -426,14 +415,14 @@ module type TAINT_DOMAIN = sig
   val apply_call
     :  resolution:Analysis.Resolution.t ->
     location:Location.WithModule.t ->
-    callee:Interprocedural.Target.t option ->
+    callee:Target.t option ->
     arguments:Ast.Expression.Call.Argument.t list ->
     port:AccessPath.Root.t ->
     path:Abstract.TreeDomain.Label.path ->
     element:t ->
     is_self_call:bool ->
-    caller_class_interval:Interprocedural.ClassIntervalSet.t ->
-    receiver_class_interval:Interprocedural.ClassIntervalSet.t ->
+    caller_class_interval:ClassIntervalSet.t ->
+    receiver_class_interval:ClassIntervalSet.t ->
     t
 
   (* Return the taint with only essential elements. *)
@@ -443,12 +432,9 @@ module type TAINT_DOMAIN = sig
     t
 
   val to_json
-    :  expand_overrides:Interprocedural.OverrideGraph.SharedMemory.t option ->
+    :  expand_overrides:OverrideGraph.SharedMemory.t option ->
     is_valid_callee:
-      (port:AccessPath.Root.t ->
-      path:Abstract.TreeDomain.Label.path ->
-      callee:Interprocedural.Target.t ->
-      bool) ->
+      (port:AccessPath.Root.t -> path:Abstract.TreeDomain.Label.path -> callee:Target.t -> bool) ->
     filename_lookup:(Reference.t -> string option) option ->
     t ->
     Yojson.Safe.t
@@ -979,8 +965,8 @@ end = struct
       let local_taint =
         match callee with
         | None
-        | Some (Interprocedural.Target.Object _)
-        | Some (Interprocedural.Target.Function _) ->
+        | Some (Target.Object _)
+        | Some (Target.Function _) ->
             LocalTaintDomain.update
               LocalTaintDomain.Slots.CallInfoIntervals
               {
@@ -989,9 +975,8 @@ end = struct
                 is_self_call;
               }
               local_taint
-        | Some (Interprocedural.Target.Method _)
-        | Some (Interprocedural.Target.Override _) ->
-            let open Interprocedural in
+        | Some (Target.Method _)
+        | Some (Target.Override _) ->
             let { CallInfoIntervals.caller_interval = callee_class_interval; _ } =
               LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
             in
@@ -1052,7 +1037,7 @@ end = struct
             else
               let open Features in
               let make_leaf_name callee =
-                LeafName.{ leaf = Interprocedural.Target.external_name callee; port = None }
+                LeafName.{ leaf = Target.external_name callee; port = None }
                 |> LeafNameInterned.intern
               in
               List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list

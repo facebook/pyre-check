@@ -34,7 +34,7 @@ let assert_taint ~context source expected =
     let call_target = Target.create define in
     let () = Log.log ~section:`Taint "Analyzing %a" Target.pp call_target in
     let call_graph_of_define =
-      Interprocedural.CallGraph.call_graph_of_define
+      CallGraph.call_graph_of_define
         ~static_analysis_configuration
         ~environment
         ~override_graph:(OverrideGraph.SharedMemory.get_for_testing_only ())

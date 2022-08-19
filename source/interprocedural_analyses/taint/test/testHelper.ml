@@ -407,7 +407,7 @@ let get_initial_models ~context =
       ~configuration:TaintConfiguration.default
       ~source_sink_filter:None
       ~callables:None
-      ~stubs:(Interprocedural.Target.HashSet.create ())
+      ~stubs:(Target.HashSet.create ())
       ()
   in
   assert_bool
@@ -498,14 +498,14 @@ let initialize
       (module TypeCheck.DummyContext)
   in
   let initial_callables =
-    Interprocedural.FetchCallables.from_source
+    FetchCallables.from_source
       ~configuration
       ~resolution:global_resolution
       ~include_unit_tests:false
       ~source
   in
-  let stubs = Interprocedural.FetchCallables.get_stubs initial_callables in
-  let callables = Interprocedural.FetchCallables.get_callables initial_callables in
+  let stubs = FetchCallables.get_stubs initial_callables in
+  let callables = FetchCallables.get_callables initial_callables in
   let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~environment ~source in
   let user_models, skip_overrides =
     let models_source =
@@ -540,7 +540,7 @@ let initialize
             ~resolution
             ~configuration:taint_configuration
             ~class_hierarchy_graph:
-              (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
+              (ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
             ~scheduler:(Test.mock_scheduler ())
             ~environment
             ~source_sink_filter:taint_configuration.source_sink_filter
@@ -591,8 +591,8 @@ let initialize
   (* Initialize models *)
   let () = TaintConfiguration.register taint_configuration in
   (* The call graph building depends on initial models for global targets. *)
-  let { Interprocedural.CallGraph.whole_program_call_graph; define_call_graphs } =
-    Interprocedural.CallGraph.build_whole_program_call_graph
+  let { CallGraph.whole_program_call_graph; define_call_graphs } =
+    CallGraph.build_whole_program_call_graph
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~environment
@@ -608,8 +608,8 @@ let initialize
       ~initial_models
   in
   let class_interval_graph =
-    Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
-    |> Interprocedural.ClassIntervalSetGraph.SharedMemory.from_heap
+    ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
+    |> ClassIntervalSetGraph.SharedMemory.from_heap
   in
   {
     static_analysis_configuration;

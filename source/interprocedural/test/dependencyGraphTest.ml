@@ -486,8 +486,6 @@ let test_type_collection context =
 
 
 let test_prune_callables _ =
-  let open Ast in
-  let open Interprocedural in
   let assert_pruned
       ~callgraph
       ~overrides

@@ -3508,7 +3508,7 @@ let create_callable_model_from_annotations
   let open Core.Result in
   let open ModelVerifier in
   let global_resolution = Resolution.global_resolution resolution in
-  match Interprocedural.Target.get_module_and_definition ~resolution:global_resolution callable with
+  match Target.get_module_and_definition ~resolution:global_resolution callable with
   | None ->
       Error (invalid_model_query_error (NoCorrespondingCallable (Target.show_pretty callable)))
   | Some (_, { Node.value = { Define.signature = define; _ }; _ }) ->
