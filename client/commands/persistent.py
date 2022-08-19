@@ -1889,18 +1889,28 @@ class PyreServerHandler(connection.BackgroundTask):
         server_start_options: PyreServerStartOptions,
         socket_path: Path,
         connection_timer: timer.Timer,
+        is_preexisting: bool,
     ) -> None:
-        async with connection.connect_in_text_mode(socket_path) as (
-            input_channel,
-            output_channel,
-        ):
+        server_identifier = server_start_options.server_identifier
+        if not is_preexisting:
             await self.log_and_show_status_message_to_client(
-                "Established connection with existing Pyre server at "
-                f"`{server_start_options.server_identifier}`.",
+                f"Pyre server at `{server_identifier}` has been initialized.",
                 short_message="Pyre Ready",
                 level=lsp.MessageType.INFO,
                 fallback_to_notification=True,
             )
+        async with connection.connect_in_text_mode(socket_path) as (
+            input_channel,
+            output_channel,
+        ):
+            if is_preexisting:
+                await self.log_and_show_status_message_to_client(
+                    "Established connection with existing Pyre server at "
+                    f"`{server_identifier}`.",
+                    short_message="Pyre Ready",
+                    level=lsp.MessageType.INFO,
+                    fallback_to_notification=True,
+                )
             self.server_state.consecutive_start_failure = 0
             self.server_state.is_user_notified_on_buck_failure = False
             _log_lsp_event(
@@ -1908,7 +1918,11 @@ class PyreServerHandler(connection.BackgroundTask):
                 event=LSPEvent.CONNECTED,
                 integers={"duration": int(connection_timer.stop_in_millisecond())},
                 normals={
-                    "connected_to": "already_running_server",
+                    "connected_to": (
+                        "already_running_server"
+                        if is_preexisting
+                        else "newly_started_server"
+                    ),
                     **self._auxiliary_logging_info(server_start_options),
                 },
             )
@@ -1928,6 +1942,7 @@ class PyreServerHandler(connection.BackgroundTask):
                 server_start_options,
                 socket_path,
                 connection_timer,
+                is_preexisting=True,
             )
         except connection.ConnectionFailure:
             pass
@@ -1943,29 +1958,12 @@ class PyreServerHandler(connection.BackgroundTask):
             server_start_options.binary, start_arguments
         )
         if isinstance(start_status, StartSuccess):
-            await self.log_and_show_status_message_to_client(
-                f"Pyre server at `{server_identifier}` has been initialized.",
-                short_message="Pyre Ready",
-                level=lsp.MessageType.INFO,
-                fallback_to_notification=True,
+            await self._try_connect_and_subscribe(
+                server_start_options,
+                socket_path,
+                connection_timer,
+                is_preexisting=False,
             )
-
-            async with connection.connect_in_text_mode(socket_path) as (
-                input_channel,
-                output_channel,
-            ):
-                self.server_state.consecutive_start_failure = 0
-                self.server_state.is_user_notified_on_buck_failure = False
-                _log_lsp_event(
-                    remote_logging=self.remote_logging,
-                    event=LSPEvent.CONNECTED,
-                    integers={"duration": int(connection_timer.stop_in_millisecond())},
-                    normals={
-                        "connected_to": "newly_started_server",
-                        **self._auxiliary_logging_info(server_start_options),
-                    },
-                )
-                await self.subscribe_to_type_error(input_channel, output_channel)
         elif isinstance(start_status, BuckStartFailure):
             # Buck start failures are intentionally not counted towards
             # `consecutive_start_failure` -- they happen far too often in practice
