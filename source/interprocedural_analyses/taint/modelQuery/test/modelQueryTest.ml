@@ -62,7 +62,7 @@ let test_apply_rule context =
       TaintModelQuery.ModelQuery.apply_callable_query_rule
         ~verbose:false
         ~resolution
-        ~class_hierarchy_graph:ClassHierarchyGraph.empty
+        ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
         ~rule
         ~callable
       |> String.Map.data
@@ -94,7 +94,7 @@ let test_apply_rule context =
       TaintModelQuery.ModelQuery.apply_attribute_query_rule
         ~verbose:false
         ~resolution
-        ~class_hierarchy_graph:ClassHierarchyGraph.empty
+        ~class_hierarchy_graph:(ClassHierarchyGraph.SharedMemory.get_for_testing_only ())
         ~rule
         ~name:(Ast.Reference.create name)
         ~annotation:annotation_expression

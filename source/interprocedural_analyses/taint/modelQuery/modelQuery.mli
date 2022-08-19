@@ -44,7 +44,7 @@ end
 val apply_callable_query_rule
   :  verbose:bool ->
   resolution:Analysis.GlobalResolution.t ->
-  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.t ->
+  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   rule:Taint.ModelParser.Internal.ModelQuery.rule ->
   callable:Interprocedural.Target.t ->
   (Taint.ModelParser.Internal.annotation_kind * Taint.ModelParser.Internal.taint_annotation) list
@@ -53,7 +53,7 @@ val apply_callable_query_rule
 val apply_attribute_query_rule
   :  verbose:bool ->
   resolution:Analysis.GlobalResolution.t ->
-  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.t ->
+  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   rule:Taint.ModelParser.Internal.ModelQuery.rule ->
   name:Ast.Reference.t ->
   annotation:Ast.Expression.t option ->
@@ -63,7 +63,7 @@ val apply_all_rules
   :  resolution:Analysis.Resolution.t ->
   scheduler:Scheduler.t ->
   configuration:Taint.TaintConfiguration.t ->
-  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.t ->
+  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   source_sink_filter:Taint.TaintConfiguration.SourceSinkFilter.t option ->
   rules:Taint.ModelParser.Internal.ModelQuery.rule list ->
   callables:Interprocedural.Target.t list ->
@@ -73,7 +73,7 @@ val apply_all_rules
 
 val generate_models_from_queries
   :  configuration:Taint.TaintConfiguration.t ->
-  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.t ->
+  class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
   scheduler:Scheduler.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   source_sink_filter:Taint.TaintConfiguration.SourceSinkFilter.t option ->

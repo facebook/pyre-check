@@ -14,7 +14,7 @@ val load : scheduler:Scheduler.t -> configuration:Configuration.Analysis.t -> en
 
 val type_environment : t -> (unit -> TypeEnvironment.t) -> TypeEnvironment.t
 
-val class_hierarchy_graph : t -> (unit -> ClassHierarchyGraph.t) -> ClassHierarchyGraph.t
+val class_hierarchy_graph : t -> (unit -> ClassHierarchyGraph.Heap.t) -> ClassHierarchyGraph.Heap.t
 
 val initial_callables : t -> (unit -> FetchCallables.t) -> FetchCallables.t
 

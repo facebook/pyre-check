@@ -15,7 +15,7 @@ module Heap = struct
   type t = ClassIntervalSet.t ClassHierarchyGraph.ClassNameMap.t
 
   let from_class_hierarchy class_hierarchy =
-    let roots = ClassHierarchyGraph.roots class_hierarchy in
+    let roots = ClassHierarchyGraph.Heap.roots class_hierarchy in
     let add_direct_cross_edge ~from_ ~to_ cross_edges =
       let update = function
         | Some nodes -> Some (ClassNameSet.add to_ nodes)
@@ -66,7 +66,7 @@ module Heap = struct
         in
         ClassNameSet.fold
           visit_child
-          (children class_hierarchy node)
+          (Heap.children class_hierarchy node)
           (intervals, states, cross_edges, time)
       in
       let time = time + 1 in

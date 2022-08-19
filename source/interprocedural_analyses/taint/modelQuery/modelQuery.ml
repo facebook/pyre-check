@@ -375,7 +375,9 @@ let parent_matches_decorator_constraint
 
 
 let rec find_children ~class_hierarchy_graph ~is_transitive parent_name =
-  let child_name_set = ClassHierarchyGraph.children class_hierarchy_graph parent_name in
+  let child_name_set =
+    ClassHierarchyGraph.SharedMemory.get ~class_name:parent_name class_hierarchy_graph
+  in
   let child_name_set =
     if is_transitive then
       ClassHierarchyGraph.ClassNameSet.fold

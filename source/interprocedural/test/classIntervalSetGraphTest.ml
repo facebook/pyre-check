@@ -28,7 +28,7 @@ let test_class_intervals _ =
   in
   assert_class_intervals
     ~class_hierarchy_graph:
-      (ClassHierarchyGraph.create
+      (ClassHierarchyGraph.Heap.create
          ~roots:["object"]
          ~edges:
            [
@@ -49,7 +49,7 @@ let test_class_intervals _ =
          ]);
   assert_class_intervals
     ~class_hierarchy_graph:
-      (ClassHierarchyGraph.create
+      (ClassHierarchyGraph.Heap.create
          ~roots:["object"; "type"]
          ~edges:
            [
@@ -66,7 +66,7 @@ let test_class_intervals _ =
          ]);
   assert_class_intervals
     ~class_hierarchy_graph:
-      (ClassHierarchyGraph.create
+      (ClassHierarchyGraph.Heap.create
          ~roots:["object"]
          ~edges:
            [
@@ -91,7 +91,7 @@ let test_class_intervals _ =
          ]);
   assert_class_intervals
     ~class_hierarchy_graph:
-      (ClassHierarchyGraph.create
+      (ClassHierarchyGraph.Heap.create
          ~roots:["test.A"]
          ~edges:
            [
@@ -112,7 +112,7 @@ let test_class_intervals _ =
          ]);
   assert_class_intervals
     ~class_hierarchy_graph:
-      (ClassHierarchyGraph.create
+      (ClassHierarchyGraph.Heap.create
          ~roots:["test.A"; "test.E"; "test.G"]
          ~edges:
            [

@@ -66,10 +66,10 @@ module OverrideGraphSharedMemory = Memory.Serializer (struct
 end)
 
 module ClassHierarchyGraphSharedMemory = Memory.Serializer (struct
-  type t = ClassHierarchyGraph.t
+  type t = ClassHierarchyGraph.Heap.t
 
   module Serialized = struct
-    type t = ClassHierarchyGraph.t
+    type t = ClassHierarchyGraph.Heap.t
 
     let prefix = Prefix.make ()
 

@@ -10,7 +10,7 @@ open OUnit2
 open Test
 open Ast
 open Interprocedural
-open ClassHierarchyGraph
+open ClassHierarchyGraph.Heap
 
 let test_from_source context =
   let assert_class_hierarchy ~source ~expected =
@@ -31,8 +31,8 @@ let test_from_source context =
     assert_equal
       expected
       class_hierarchy
-      ~printer:ClassHierarchyGraph.show
-      ~cmp:ClassHierarchyGraph.equal
+      ~printer:ClassHierarchyGraph.Heap.show
+      ~cmp:ClassHierarchyGraph.Heap.equal
   in
   assert_class_hierarchy
     ~source:
@@ -98,8 +98,12 @@ let test_from_source context =
 
 let test_graph_join _ =
   let assert_graph_join ~left ~right ~expected =
-    let joined = ClassHierarchyGraph.join left right in
-    assert_equal expected joined ~printer:ClassHierarchyGraph.show ~cmp:ClassHierarchyGraph.equal
+    let joined = ClassHierarchyGraph.Heap.join left right in
+    assert_equal
+      expected
+      joined
+      ~printer:ClassHierarchyGraph.Heap.show
+      ~cmp:ClassHierarchyGraph.Heap.equal
   in
   let left_graph = create ~roots:["A"; "D"] ~edges:["A", ["B"; "C"]; "B", []; "C", []; "D", []] in
   assert_graph_join ~left:left_graph ~right:left_graph ~expected:left_graph;

@@ -9,7 +9,7 @@
 module Heap : sig
   type t = ClassIntervalSet.t ClassHierarchyGraph.ClassNameMap.t
 
-  val from_class_hierarchy : ClassHierarchyGraph.t -> t
+  val from_class_hierarchy : ClassHierarchyGraph.Heap.t -> t
 end
 
 (** Mapping from a class name to its class interval set, stored in shared memory. *)

@@ -341,7 +341,7 @@ let run_taint_analysis
       Cache.class_hierarchy_graph cache (fun () ->
           let timer = Timer.start () in
           let class_hierarchy_graph =
-            Interprocedural.ClassHierarchyGraph.from_qualifiers
+            Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
               ~scheduler
               ~environment:read_only_environment
               ~qualifiers
@@ -391,7 +391,8 @@ let run_taint_analysis
       initialize_models
         ~scheduler
         ~static_analysis_configuration
-        ~class_hierarchy_graph
+        ~class_hierarchy_graph:
+          (Interprocedural.ClassHierarchyGraph.SharedMemory.from_heap class_hierarchy_graph)
         ~environment:(Analysis.TypeEnvironment.read_only environment)
         ~callables:(Interprocedural.FetchCallables.get_callables initial_callables)
         ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
