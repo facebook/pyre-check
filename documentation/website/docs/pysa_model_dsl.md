@@ -462,7 +462,7 @@ class E(D):
 
 the above query will only model the attributes `C.z` and `D.y`, since `C` is considered to extend itself, and `D` is a direct subclass of `C`. However, it will not model `E.z`, since `E` is a sub-subclass of `C`.
 
-If you would like to model a class and all subclasses transitively, you can use the `is_transitive` flag to get this behavior.
+If you would like to model a class and all subclasses transitively, you can use the `is_transitive` flag.
 
 Example:
 
@@ -514,15 +514,88 @@ class Foo:
 
 @d1()
 class Bar:
-  def __init(self, a, b):
+  def __init__(self, a, b):
     ...
 
 @d2(2)
 class Baz:
-  def __init(self, a, b):
+  def __init__(self, a, b):
     ...
 ```
 will result in a model for `def Foo.__init__(b: TaintSource[Test])`.
+
+### `parent.any_child` clause
+
+The `parent.any_child` clause is used to model entities when any child of the current class meets the specified constraints.
+
+The arguments for this clause are any combination of valid class constraints (`parent.equals`, `parent.matches`, `parent.extends`, `parent.decorator`) and logical clauses (`AnyOf`, `AllOf`, `Not`), along with an optional `is_transitive` clause.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_parent_of_d1_decorator_sources",
+  find = "methods",
+  where = [
+    parent.any_child(
+      parent.decorator(
+        name.matches("d1"),
+        arguments.contains(2)
+      )
+    ),
+    name.matches("\.__init__$)
+  ],
+  model = [
+    Parameters(TaintSource[Test], where=[
+        Not(name.equals("self")),
+        Not(name.equals("a"))
+    ])
+  ]
+)
+```
+
+Similar to the `parent.extends` constraint, the default behavior is that it will only match if the current class is equal to or is a direct subclass of the specified class. For example, with classes:
+```python
+class Foo:
+  def __init__(self, a, b):
+     ...
+
+class Bar(Foo):
+  def __init__(self, a, b):
+    ...
+
+@d1(2)
+class Baz(Bar):
+  def __init__(self, a, b):
+    ...
+```
+
+The above query will only model the methods `Bar.__init__` and `Baz.__init__`, since `Bar` is an immediate parent of `Baz`, and `Baz` is considered to extend itself. However, it will not model `Foo.__init__`, since `Bar` is a sub-subclass of `Foo`.
+
+If you would like to model a class and all subclasses transitively, you can use the `is_transitive` flag.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_transitive_parent_of_d1_decorator_sources",
+  find = "attributes",
+  where = [
+    parent.any_child(
+      parent.decorator(
+        name.matches("d1"),
+        arguments.contains(2)
+      ),
+      is_transitive=True
+    ),
+    name.matches("\.__init__$)
+  ],
+  ...
+)
+```
+
+This query will model `Foo.__init__`, `Bar.__init__` and `Baz.__init__`.
+
 
 ### `Not` clauses
 
