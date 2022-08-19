@@ -18,7 +18,7 @@ type t = {
   source_paths: Configuration.SourcePaths.t;
   socket_path: PyrePath.t;
   watchman: Watchman.t option;
-  build_system_initializer: BuildSystem.Initializer.t option;
+  build_system_initializer: BuildSystem.Initializer.t;
   critical_files: CriticalFile.t list;
   saved_state_action: SavedStateAction.t option;
   skip_initial_type_check: bool;

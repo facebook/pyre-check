@@ -513,11 +513,6 @@ let with_server
      filesystem updates during server establishment. *)
   get_watchman_subscriber ~critical_files ~extensions ~source_paths watchman
   >>= fun watchman_subscriber ->
-  let build_system_initializer =
-    match build_system_initializer with
-    | Some build_system_initializer -> build_system_initializer
-    | None -> BuildSystem.get_initializer source_paths
-  in
   let server_properties = create_server_properties ~configuration start_options in
   let server_state =
     (* Use a lazy lock so we do not initialize the expensive server until we know server can be

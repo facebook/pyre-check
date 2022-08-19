@@ -123,7 +123,7 @@ module ServerConfiguration = struct
         StartOptions.source_paths;
         socket_path;
         watchman;
-        build_system_initializer = None;
+        build_system_initializer = BuildSystem.get_initializer source_paths;
         critical_files;
         saved_state_action;
         skip_initial_type_check;

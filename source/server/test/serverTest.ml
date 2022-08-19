@@ -148,9 +148,7 @@ module ScratchProject = struct
             ~relative:"pyre_server_hash.sock";
         watchman;
         build_system_initializer =
-          (match build_system_initializer with
-          | None -> Some BuildSystem.Initializer.null
-          | _ -> build_system_initializer);
+          Option.value build_system_initializer ~default:BuildSystem.Initializer.null;
         critical_files = [];
         saved_state_action = None;
         skip_initial_type_check = false;
