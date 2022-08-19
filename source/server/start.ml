@@ -202,10 +202,6 @@ let handle_connection
   ConnectionState.create () |> handle_line
 
 
-let create_server_properties ~configuration { StartOptions.socket_path; critical_files; _ } =
-  ServerProperties.create ~socket_path ~critical_files ~configuration ()
-
-
 let initialize_server_state
     ?watchman_subscriber
     ~build_system_initializer
@@ -497,23 +493,23 @@ let wait_for_signal ~on_caught signals =
 let with_server
     ~configuration:({ Configuration.Analysis.extensions; _ } as configuration)
     ~when_started
-    ({
-       StartOptions.socket_path;
-       source_paths;
-       watchman;
-       build_system_initializer;
-       critical_files;
-       saved_state_action;
-       skip_initial_type_check;
-       use_lazy_module_tracking;
-     } as start_options)
+    {
+      StartOptions.socket_path;
+      source_paths;
+      watchman;
+      build_system_initializer;
+      critical_files;
+      saved_state_action;
+      skip_initial_type_check;
+      use_lazy_module_tracking;
+    }
   =
   let open Lwt in
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
      filesystem updates during server establishment. *)
   get_watchman_subscriber ~critical_files ~extensions ~source_paths watchman
   >>= fun watchman_subscriber ->
-  let server_properties = create_server_properties ~configuration start_options in
+  let server_properties = ServerProperties.create ~socket_path ~critical_files ~configuration () in
   let server_state =
     (* Use a lazy lock so we do not initialize the expensive server until we know server can be
        established (without conflicting with a pre-existing server). *)
