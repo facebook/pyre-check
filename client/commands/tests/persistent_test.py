@@ -15,7 +15,6 @@ from unittest.mock import CallableMixin, patch
 
 import testslide
 from libcst.metadata import CodePosition, CodeRange
-from tools.pyre.client.commands.persistent import HoverQuery
 
 from ... import configuration as configuration_module, error, json_rpc
 from ...commands.language_server_protocol import SymbolKind
@@ -41,6 +40,7 @@ from ..async_server_connection import (
 from ..persistent import (
     CONSECUTIVE_START_ATTEMPT_THRESHOLD,
     DefinitionLocationQuery,
+    HoverQuery,
     InitializationExit,
     InitializationFailure,
     InitializationSuccess,
