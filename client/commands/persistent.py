@@ -1892,13 +1892,6 @@ class PyreServerHandler(connection.BackgroundTask):
         is_preexisting: bool,
     ) -> None:
         server_identifier = server_start_options.server_identifier
-        if not is_preexisting:
-            await self.log_and_show_status_message_to_client(
-                f"Pyre server at `{server_identifier}` has been initialized.",
-                short_message="Pyre Ready",
-                level=lsp.MessageType.INFO,
-                fallback_to_notification=True,
-            )
         async with connection.connect_in_text_mode(socket_path) as (
             input_channel,
             output_channel,
@@ -1907,6 +1900,13 @@ class PyreServerHandler(connection.BackgroundTask):
                 await self.log_and_show_status_message_to_client(
                     "Established connection with existing Pyre server at "
                     f"`{server_identifier}`.",
+                    short_message="Pyre Ready",
+                    level=lsp.MessageType.INFO,
+                    fallback_to_notification=True,
+                )
+            else:
+                await self.log_and_show_status_message_to_client(
+                    f"Pyre server at `{server_identifier}` has been initialized.",
                     short_message="Pyre Ready",
                     level=lsp.MessageType.INFO,
                     fallback_to_notification=True,
