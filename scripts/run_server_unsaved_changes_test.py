@@ -14,14 +14,13 @@ from dataclasses import dataclass
 from logging import Logger
 from typing import Dict, Iterable, List, Tuple
 
-from ..client.error import Error
-
 from .run_server_integration_test import extract_typeshed
 
 LOG: Logger = logging.getLogger(__name__)
 
 def _fetch_commit_paths(repository_path: str) -> Iterable[pathlib.Path]:
     return sorted(pathlib.Path(repository_path).iterdir())
+
 
 class Repository:
     def __init__(
@@ -57,23 +56,37 @@ class Repository:
     def get_commit_paths(self) -> Iterable[pathlib.Path]:
         return self._commit_paths
 
+    def overlay_update(self, file_path: pathlib.Path) -> str:
+        """The method will load the file from the original Pyre source directory and copy it to the temporary pyre directory"""
+        return '["TypeErrors", []]'
+
+    def incremental_update(self, file_path: pathlib.Path) -> str:
+        """ Performs a call to Pyre to perform an incremental update with only a single file_path (specified by file_path)"""
+        return '["TypeErrors", []]'
+
+
+    def modify_file(self, file_path: pathlib.Path) -> None:
+        """ For a given file_path, replace the contents of that file_path with the contents in the original pyre base directory"""
+        ...
+
     def initiate_empty_files(self, file_list: List[pathlib.Path]) -> None:
-        '''Initializes all files in file_list with empty contents'''
         ...
 
     def run_pyre(self, command: str, *arguments: str) -> str:
-        '''Runs Pyre Command and returns the output from stdout'''
         return ""
 
 @dataclass(frozen=True)
 class FileErrorsResult:
     file_name: pathlib.Path
-    overlay_errors: List[Error]
-    incremental_errors: List[Error]
+    overlay_errors: str
+    incremental_errors: str
 
 def _get_file_errors_result(repository: Repository, file_path: pathlib.Path) -> FileErrorsResult:
-    '''NOT YET IMPLEMENTED: Takes in a Repository + single file path and returns the overlay + incremental errors at the file path'''
-    return FileErrorsResult(pathlib.Path(""), [], [])
+    overlay_errors_response = repository.overlay_update(file_path)
+    repository.modify_file(file_path)
+    incremental_errors_response = repository.incremental_update(file_path)
+    commit_result = FileErrorsResult(file_path, overlay_errors_response, incremental_errors_response)
+    return commit_result
 
 
 def run_unsaved_changes_test(
@@ -92,7 +105,7 @@ def run_unsaved_changes_test(
             )
             result = 0
             for commit in repository.get_commit_paths():
-                discrepancies: Dict[pathlib.Path, Tuple[List[Error], List[Error]]] = {}
+                discrepancies: Dict[pathlib.Path, Tuple[str, str]] = {}
                 python_file_list = list(commit.glob("*.py"))
                 repository.initiate_empty_files(python_file_list)
                 for file_path in python_file_list:
@@ -110,7 +123,7 @@ def run_unsaved_changes_test(
             LOG.info("Pyre rage: %s", repository.run_pyre("rage"))
             raise uncaught_pyre_exception
 
-def _print_discrepancies(discrepancies: Dict[pathlib.Path, Tuple[List[Error], List[Error]]], commit: str) -> int:
+def _print_discrepancies(discrepancies: Dict[pathlib.Path, Tuple[str, str]], commit: str) -> int:
     if len(discrepancies) == 0:
         return 0
     for file_name, (actual_error, expected_error) in discrepancies.items():
