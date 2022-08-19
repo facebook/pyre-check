@@ -518,11 +518,25 @@ let on_watchman_update ~server_properties ~server_state paths =
       Lwt.return (new_state, ()))
 
 
+(* Invoke `on_caught` when given unix signals are received. *)
+let wait_for_signal ~on_caught signals =
+  let open Lwt in
+  let waiter, resolver = wait () in
+  List.iter signals ~f:(fun signal ->
+      let signal = Signal.to_system_int signal in
+      Lwt_unix.on_signal signal (wakeup resolver) |> ignore);
+  waiter
+  >>= fun signal ->
+  let signal = Signal.of_system_int signal in
+  Log.info "Server interrupted with signal `%s`" (Signal.to_string signal);
+  on_caught signal
+
+
 let with_server
     ?watchman
     ?build_system_initializer
     ~configuration:({ Configuration.Analysis.extensions; _ } as configuration)
-    ~f
+    ~when_started
     ({
        StartOptions.socket_path;
        source_paths;
@@ -556,49 +570,44 @@ let with_server
           ~use_lazy_module_tracking
           server_properties)
   in
+  let after_server_starts () =
+    Log.info "Server has started listening on socket `%a`" PyrePath.pp socket_path;
+    let waiters =
+      let server_waiter () = when_started (socket_path, server_properties, server_state) in
+      let signal_waiters =
+        [
+          (* We rely on SIGINT for normal server shutdown. *)
+          wait_for_signal [Signal.int] ~on_caught:(fun _ -> return ExitStatus.Ok);
+          (* Getting these signals usually indicates something serious went wrong. *)
+          wait_for_signal
+            [Signal.abrt; Signal.term; Signal.quit; Signal.segv]
+            ~on_caught:(fun signal ->
+              let { ServerProperties.start_time; _ } = server_properties in
+              Stop.log_stopped_server ~reason:(Signal.to_string signal) ~start_time ();
+              return ExitStatus.Error);
+        ]
+      in
+      let watchman_waiter =
+        Option.map watchman_subscriber ~f:(fun subscriber ->
+            Watchman.Subscriber.listen
+              ~f:(on_watchman_update ~server_properties ~server_state)
+              subscriber
+            >>= fun () ->
+            (* Lost watchman connection is considered an error. *)
+            return ExitStatus.Error)
+      in
+      List.concat_no_order [[server_waiter ()]; signal_waiters; Option.to_list watchman_waiter]
+    in
+    Lwt.choose waiters
+  in
+  let after_server_stops () =
+    Log.info "Server is going down. Cleaning up...";
+    BuildSystem.Initializer.cleanup build_system_initializer
+  in
   LwtSocketServer.SocketAddress.create_from_path socket_path
   |> LwtSocketServer.with_server
        ~handle_connection:(handle_connection ~server_properties ~server_state)
-       ~f:(fun () ->
-         let server_waiter () = f (socket_path, server_properties, server_state) in
-         let server_destructor () =
-           Log.info "Server is going down. Cleaning up...";
-           BuildSystem.Initializer.cleanup build_system_initializer
-         in
-         finalize
-           (fun () ->
-             Log.info "Server has started listening on socket `%a`" PyrePath.pp socket_path;
-             match watchman_subscriber with
-             | None ->
-                 (* Only wait for the server if we do not have a watchman subscriber. *)
-                 server_waiter ()
-             | Some subscriber ->
-                 let watchman_waiter =
-                   Watchman.Subscriber.listen
-                     ~f:(on_watchman_update ~server_properties ~server_state)
-                     subscriber
-                   >>= fun () ->
-                   (* Lost watchman connection is considered an error. *)
-                   return ExitStatus.Error
-                 in
-                 (* Make sure when the watchman subscriber crashes, the server would go down as
-                    well. *)
-                 Lwt.choose [server_waiter (); watchman_waiter])
-           server_destructor)
-
-
-(* Invoke `on_caught` when given unix signals are received. *)
-let wait_on_signals ~on_caught signals =
-  let open Lwt in
-  let waiter, resolver = wait () in
-  List.iter signals ~f:(fun signal ->
-      let signal = Signal.to_system_int signal in
-      Lwt_unix.on_signal signal (wakeup resolver) |> ignore);
-  waiter
-  >>= fun signal ->
-  let signal = Signal.of_system_int signal in
-  Log.info "Server interrupted with signal `%s`" (Signal.to_string signal);
-  on_caught signal
+       ~f:(fun () -> Lwt.finalize after_server_starts after_server_stops)
 
 
 let start_server
@@ -611,11 +620,12 @@ let start_server
     start_options
   =
   let open Lwt in
-  let f (socket_path, server_properties, server_state) =
+  let when_started (socket_path, server_properties, server_state) =
     on_server_socket_ready socket_path >>= fun _ -> on_started server_properties server_state
   in
   catch
-    (fun () -> with_server ?watchman ?build_system_initializer ~configuration start_options ~f)
+    (fun () ->
+      with_server ?watchman ?build_system_initializer ~configuration ~when_started start_options)
     on_exception
 
 
@@ -639,22 +649,13 @@ let start_server_and_wait ?event_channel ~configuration start_options =
     ~on_server_socket_ready:(fun socket_path ->
       (* An empty message signals that server socket has been created. *)
       write_event (ServerEvent.SocketCreated socket_path))
-    ~on_started:(fun { ServerProperties.start_time; _ } server_state ->
+    ~on_started:(fun _ server_state ->
       ExclusiveLock.Lazy.force server_state
       >>= fun _ ->
       write_event ServerEvent.ServerInitialized
       >>= fun () ->
-      choose
-        [
-          (* We rely on SIGINT for normal server shutdown. *)
-          wait_on_signals [Signal.int] ~on_caught:(fun _ -> return ExitStatus.Ok);
-          (* Getting these signals usually indicates something serious went wrong. *)
-          wait_on_signals
-            [Signal.abrt; Signal.term; Signal.quit; Signal.segv]
-            ~on_caught:(fun signal ->
-              Stop.log_stopped_server ~reason:(Signal.to_string signal) ~start_time ();
-              return ExitStatus.Error);
-        ])
+      let wait_forever, _ = Lwt.wait () in
+      wait_forever)
     ~on_exception:(fun exn ->
       let kind, message =
         match exn with
