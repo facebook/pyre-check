@@ -2018,17 +2018,21 @@ class PyreServerHandler(connection.BackgroundTask):
                     fallback_to_notification=True,
                 )
             else:
+                _log_lsp_event(
+                    remote_logging=self.remote_logging,
+                    event=LSPEvent.SUSPENDED,
+                    integers={"duration": int(connection_timer.stop_in_millisecond())},
+                    normals={
+                        **self._auxiliary_logging_info(server_start_options),
+                        "exception": str(start_status.detail),
+                    },
+                )
                 await self.show_status_message_to_client(
                     f"Pyre server restart at `{server_identifier}` has been "
                     "failing repeatedly. Disabling The Pyre plugin for now.",
                     short_message="Pyre Disabled",
                     level=lsp.MessageType.ERROR,
                     fallback_to_notification=True,
-                )
-                _log_lsp_event(
-                    remote_logging=self.remote_logging,
-                    event=LSPEvent.SUSPENDED,
-                    normals=self._auxiliary_logging_info(server_start_options),
                 )
         else:
             raise RuntimeError("Impossible type for `start_status`")
