@@ -95,6 +95,14 @@ module ServerConfiguration = struct
     | other_exception -> Result.Error (Exn.to_string other_exception)
 
 
+  let watchman_options_of = function
+    | None -> Lwt.return_none
+    | Some root ->
+        let open Lwt.Infix in
+        Watchman.Raw.create_exn ()
+        >>= fun raw -> Lwt.return_some { StartOptions.Watchman.root; raw }
+
+
   let start_options_of
       {
         base = { CommandStartup.BaseConfiguration.source_paths; _ };
@@ -107,17 +115,20 @@ module ServerConfiguration = struct
         _;
       }
     =
-    {
-      StartOptions.source_paths;
-      socket_path;
-      watchman_root;
-      watchman = None;
-      build_system_initializer = None;
-      critical_files;
-      saved_state_action;
-      skip_initial_type_check;
-      use_lazy_module_tracking;
-    }
+    let open Lwt.Infix in
+    watchman_options_of watchman_root
+    >>= fun watchman ->
+    Lwt.return
+      {
+        StartOptions.source_paths;
+        socket_path;
+        watchman;
+        build_system_initializer = None;
+        critical_files;
+        saved_state_action;
+        skip_initial_type_check;
+        use_lazy_module_tracking;
+      }
 
 
   let analysis_configuration_of
@@ -282,8 +293,9 @@ let start_server_and_wait ~event_channel server_configuration =
             Lwt.return_unit
         | exn -> Lwt.fail exn)
   in
-  let start_options = ServerConfiguration.start_options_of server_configuration in
   let configuration = ServerConfiguration.analysis_configuration_of server_configuration in
+  ServerConfiguration.start_options_of server_configuration
+  >>= fun start_options ->
   Start.start_server
     start_options
     ~configuration

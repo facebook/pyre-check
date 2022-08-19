@@ -7,11 +7,17 @@
 
 open Base
 
+module Watchman = struct
+  type t = {
+    root: PyrePath.t;
+    raw: Watchman.Raw.t;
+  }
+end
+
 type t = {
   source_paths: Configuration.SourcePaths.t;
   socket_path: PyrePath.t;
-  watchman_root: PyrePath.t option;
-  watchman: Watchman.Raw.t option;
+  watchman: Watchman.t option;
   build_system_initializer: BuildSystem.Initializer.t option;
   critical_files: CriticalFile.t list;
   saved_state_action: SavedStateAction.t option;

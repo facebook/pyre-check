@@ -455,17 +455,10 @@ let initialize_server_state
   Lwt.return state
 
 
-let get_watchman_subscriber ?watchman ~watchman_root ~critical_files ~extensions ~source_paths () =
-  let open Lwt.Infix in
-  match watchman_root with
+let get_watchman_subscriber ~critical_files ~extensions ~source_paths = function
   | None -> Lwt.return_none
-  | Some root ->
-      let get_raw_watchman = function
-        | Some watchman -> Lwt.return watchman
-        | None -> Watchman.Raw.create_exn ()
-      in
-      get_raw_watchman watchman
-      >>= fun raw ->
+  | Some { StartOptions.Watchman.root; raw } ->
+      let open Lwt.Infix in
       let subscriber_setting =
         {
           Watchman.Subscriber.Setting.raw;
@@ -507,7 +500,6 @@ let with_server
     ({
        StartOptions.socket_path;
        source_paths;
-       watchman_root;
        watchman;
        build_system_initializer;
        critical_files;
@@ -519,7 +511,7 @@ let with_server
   let open Lwt in
   (* Watchman connection needs to be up before server can start -- otherwise we risk missing
      filesystem updates during server establishment. *)
-  get_watchman_subscriber ?watchman ~watchman_root ~critical_files ~extensions ~source_paths ()
+  get_watchman_subscriber ~critical_files ~extensions ~source_paths watchman
   >>= fun watchman_subscriber ->
   let build_system_initializer =
     match build_system_initializer with

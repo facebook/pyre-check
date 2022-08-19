@@ -113,8 +113,6 @@ module ScratchProject = struct
     let log_root = bracket_tmpdir context in
     List.iter sources ~f:(add_source ~root:source_root);
     List.iter external_sources ~f:(add_source ~root:external_root);
-    (* We assume that watchman root is the same as global root. *)
-    let watchman_root = Option.map watchman ~f:(fun _ -> source_root) in
     let configuration =
       Configuration.Analysis.create
         ~parallel:false
@@ -137,13 +135,17 @@ module ScratchProject = struct
         ()
     in
     let start_options =
+      let watchman =
+        Option.map watchman ~f:(fun raw ->
+            (* We assume that watchman root is the same as global root. *)
+            { StartOptions.Watchman.root = source_root; raw })
+      in
       {
         StartOptions.source_paths = Configuration.SourcePaths.Simple [SearchPath.Root source_root];
         socket_path =
           PyrePath.create_relative
             ~root:(PyrePath.create_absolute (bracket_tmpdir context))
             ~relative:"pyre_server_hash.sock";
-        watchman_root;
         watchman;
         build_system_initializer =
           (match build_system_initializer with
