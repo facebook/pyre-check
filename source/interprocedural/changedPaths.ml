@@ -38,14 +38,14 @@ let hash_of_content analysis_path =
 
 
 let save_current_paths ~scheduler ~configuration ~module_tracker =
-  let save_paths _ source_paths =
+  let save_paths _ module_paths =
     let save_path module_path =
       let hash = ModulePath.full_path ~configuration module_path |> hash_of_content in
       let qualifier = ModulePath.qualifier module_path in
       SharedMemoryHashes.remove_batch (SharedMemoryHashes.KeySet.singleton qualifier);
       SharedMemoryHashes.add qualifier hash
     in
-    List.iter ~f:save_path source_paths
+    List.iter ~f:save_path module_paths
   in
   Scheduler.map_reduce
     scheduler
@@ -69,7 +69,7 @@ end
 
 let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker ~new_module_tracker =
   let timer = Timer.start () in
-  let changed_paths changed new_source_paths =
+  let changed_paths changed new_module_paths =
     let changed_path module_path =
       let old_hash = SharedMemoryHashes.get (ModulePath.qualifier module_path) in
       let path = ModulePath.full_path ~configuration module_path in
@@ -79,7 +79,7 @@ let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker 
       else
         Some path
     in
-    changed @ List.filter_map new_source_paths ~f:changed_path
+    changed @ List.filter_map new_module_paths ~f:changed_path
   in
   let changed_paths =
     Scheduler.map_reduce
