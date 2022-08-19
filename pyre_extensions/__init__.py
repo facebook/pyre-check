@@ -93,6 +93,7 @@ T = TypeVar("T", bound=Callable[..., object])
 
 
 def override(func: T) -> T:
+    func.__override__ = True
     return func
 
 

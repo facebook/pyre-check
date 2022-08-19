@@ -155,6 +155,61 @@ class BasicTestCase(unittest.TestCase):
         test_json({"test": "dict"})
         test_json(["test_list"])
 
+    def test_override(self) -> None:
+        try:
+            from .. import override
+        except Exception:
+            self.fail("override missing or broken")
+
+        class BaseClass:
+            def normal_method(self) -> None:
+                pass
+
+            @property
+            def prop(self) -> int:
+                return 42
+
+            @classmethod
+            def class_method(cls) -> None:
+                pass
+
+            @staticmethod
+            def static_method() -> None:
+                pass
+
+        class SubClass(BaseClass):
+            @override
+            def normal_method(self) -> None:
+                pass
+
+            @property
+            @override
+            def prop(self) -> int:
+                return 42
+
+            @classmethod
+            @override
+            def class_method(cls) -> None:
+                pass
+
+            @staticmethod
+            @override
+            def static_method() -> None:
+                pass
+
+        # For methods, including static and class methods, the __override__
+        # attribute should be easy to introspect.
+        self.assertTrue(hasattr(SubClass.normal_method, "__override__"))
+        self.assertTrue(hasattr(SubClass().normal_method, "__override__"))
+        self.assertTrue(hasattr(SubClass.class_method, "__override__"))
+        self.assertTrue(hasattr(SubClass.static_method, "__override__"))
+
+        # A property can implement getters and setters independently, so runtime
+        # introspection requires looking at fget and fset.
+        self.assertFalse(hasattr(SubClass.prop, "__override__"))
+        self.assertTrue(hasattr(SubClass.prop.fget, "__override__"))
+        self.assertFalse(hasattr(SubClass.prop.fset, "__override__"))
+
 
 if __name__ == "__main__":
     unittest.main()
