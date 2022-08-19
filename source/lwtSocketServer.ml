@@ -58,3 +58,8 @@ let shutdown = Lwt_io.shutdown_server
 
 let establish ~handle_connection address =
   Lwt_io.establish_server_with_client_address address handle_connection
+
+
+let with_server ~f ~handle_connection address =
+  let%lwt server = establish ~handle_connection address in
+  Lwt.finalize f (fun () -> shutdown server)

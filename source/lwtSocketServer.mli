@@ -33,3 +33,14 @@ val establish
 
 val shutdown : t -> unit Lwt.t
 (** A thin wrapper around {!Lwt_io.shutdown_server}. *)
+
+val with_server
+  :  f:(unit -> 'a Lwt.t) ->
+  handle_connection:
+    (Unix.sockaddr -> Lwt_io.input Lwt_io.channel * Lwt_io.output Lwt_io.channel -> unit Lwt.t) ->
+  SocketAddress.t ->
+  'a Lwt.t
+(** [with_server ~f ~handle_connection address] executes [establish ~handle_connection address] to
+    establish a server first, then invoke [f], and finally call {!shutdown} to shutdown the
+    established server before returning the output value of [f]. Shutdown is guaranteed to occur
+    regardless of whether [f] gets resolved or rejected. *)

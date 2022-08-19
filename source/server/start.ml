@@ -557,34 +557,34 @@ let with_server
           server_properties)
   in
   LwtSocketServer.SocketAddress.create_from_path socket_path
-  |> LwtSocketServer.establish
+  |> LwtSocketServer.with_server
        ~handle_connection:(handle_connection ~server_properties ~server_state)
-  >>= fun server ->
-  let server_waiter () = f (socket_path, server_properties, server_state) in
-  let server_destructor () =
-    Log.info "Server is going down. Cleaning up...";
-    BuildSystem.Initializer.cleanup build_system_initializer
-    >>= fun () -> LwtSocketServer.shutdown server
-  in
-  finalize
-    (fun () ->
-      Log.info "Server has started listening on socket `%a`" PyrePath.pp socket_path;
-      match watchman_subscriber with
-      | None ->
-          (* Only wait for the server if we do not have a watchman subscriber. *)
-          server_waiter ()
-      | Some subscriber ->
-          let watchman_waiter =
-            Watchman.Subscriber.listen
-              ~f:(on_watchman_update ~server_properties ~server_state)
-              subscriber
-            >>= fun () ->
-            (* Lost watchman connection is considered an error. *)
-            return ExitStatus.Error
-          in
-          (* Make sure when the watchman subscriber crashes, the server would go down as well. *)
-          Lwt.choose [server_waiter (); watchman_waiter])
-    server_destructor
+       ~f:(fun () ->
+         let server_waiter () = f (socket_path, server_properties, server_state) in
+         let server_destructor () =
+           Log.info "Server is going down. Cleaning up...";
+           BuildSystem.Initializer.cleanup build_system_initializer
+         in
+         finalize
+           (fun () ->
+             Log.info "Server has started listening on socket `%a`" PyrePath.pp socket_path;
+             match watchman_subscriber with
+             | None ->
+                 (* Only wait for the server if we do not have a watchman subscriber. *)
+                 server_waiter ()
+             | Some subscriber ->
+                 let watchman_waiter =
+                   Watchman.Subscriber.listen
+                     ~f:(on_watchman_update ~server_properties ~server_state)
+                     subscriber
+                   >>= fun () ->
+                   (* Lost watchman connection is considered an error. *)
+                   return ExitStatus.Error
+                 in
+                 (* Make sure when the watchman subscriber crashes, the server would go down as
+                    well. *)
+                 Lwt.choose [server_waiter (); watchman_waiter])
+           server_destructor)
 
 
 (* Invoke `on_caught` when given unix signals are received. *)

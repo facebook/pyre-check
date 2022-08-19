@@ -91,6 +91,8 @@
  (name lwtSocketServer)
  (modules lwtSocketServer)
  (public_name pyrelib.lwtsocketserver)
+ (preprocess
+  (pps lwt_ppx))
  (libraries core.lock_file_blocking lwt lwt.unix pyrelib.path))
 
 (library
