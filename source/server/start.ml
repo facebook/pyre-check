@@ -543,12 +543,10 @@ let with_server
     | Some build_system_initializer -> build_system_initializer
     | None -> BuildSystem.get_initializer source_paths
   in
-  LwtSocketServer.PreparedSocket.create_from_path socket_path
-  >>= fun prepared_socket ->
-  (* We do not want the expensive server initialization to happen before we start to accept client
-     requests. *)
   let server_properties = create_server_properties ~configuration start_options in
   let server_state =
+    (* Use a lazy lock so we do not initialize the expensive server until we know server can be
+       established (without conflicting with a pre-existing server). *)
     ExclusiveLock.Lazy.create (fun () ->
         initialize_server_state
           ?watchman_subscriber
@@ -558,7 +556,9 @@ let with_server
           ~use_lazy_module_tracking
           server_properties)
   in
-  LwtSocketServer.establish prepared_socket ~f:(handle_connection ~server_properties ~server_state)
+  LwtSocketServer.SocketAddress.create_from_path socket_path
+  |> LwtSocketServer.establish
+       ~handle_connection:(handle_connection ~server_properties ~server_state)
   >>= fun server ->
   let server_waiter () = f (socket_path, server_properties, server_state) in
   let server_destructor () =
