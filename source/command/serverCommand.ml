@@ -111,6 +111,8 @@ module ServerConfiguration = struct
       StartOptions.source_paths;
       socket_path;
       watchman_root;
+      watchman = None;
+      build_system_initializer = None;
       critical_files;
       saved_state_action;
       skip_initial_type_check;

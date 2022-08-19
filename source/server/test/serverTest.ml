@@ -71,8 +71,6 @@ module ScratchProject = struct
     context: test_ctxt;
     configuration: Configuration.Analysis.t;
     start_options: StartOptions.t;
-    watchman: Watchman.Raw.t option;
-    build_system_initializer: BuildSystem.Initializer.t;
   }
 
   let setup
@@ -146,20 +144,18 @@ module ScratchProject = struct
             ~root:(PyrePath.create_absolute (bracket_tmpdir context))
             ~relative:"pyre_server_hash.sock";
         watchman_root;
+        watchman;
+        build_system_initializer =
+          (match build_system_initializer with
+          | None -> Some BuildSystem.Initializer.null
+          | _ -> build_system_initializer);
         critical_files = [];
         saved_state_action = None;
         skip_initial_type_check = false;
         use_lazy_module_tracking = false;
       }
     in
-    {
-      context;
-      configuration;
-      start_options;
-      watchman;
-      build_system_initializer =
-        Option.value build_system_initializer ~default:BuildSystem.Initializer.null;
-    }
+    { context; configuration; start_options }
 
 
   let configuration_of { configuration; _ } = configuration
@@ -170,15 +166,13 @@ module ScratchProject = struct
       ?(expect_server_error = false)
       ?on_server_socket_ready
       ~f
-      { context; configuration; start_options; watchman; build_system_initializer }
+      { context; configuration; start_options }
     =
     let open Lwt.Infix in
     Memory.reset_shared_memory ();
     Start.start_server
       start_options
       ~configuration
-      ?watchman
-      ~build_system_initializer
       ?on_server_socket_ready
       ~on_exception:(function
         | OUnitTest.OUnit_failure _ as exn ->

@@ -502,14 +502,14 @@ let wait_for_signal ~on_caught signals =
 
 
 let with_server
-    ?watchman
-    ?build_system_initializer
     ~configuration:({ Configuration.Analysis.extensions; _ } as configuration)
     ~when_started
     ({
        StartOptions.socket_path;
        source_paths;
        watchman_root;
+       watchman;
+       build_system_initializer;
        critical_files;
        saved_state_action;
        skip_initial_type_check;
@@ -579,8 +579,6 @@ let with_server
 
 
 let start_server
-    ?watchman
-    ?build_system_initializer
     ?(on_server_socket_ready = fun _ -> Lwt.return_unit)
     ~on_started
     ~on_exception
@@ -591,7 +589,4 @@ let start_server
   let when_started (socket_path, server_properties, server_state) =
     on_server_socket_ready socket_path >>= fun _ -> on_started server_properties server_state
   in
-  catch
-    (fun () ->
-      with_server ?watchman ?build_system_initializer ~configuration ~when_started start_options)
-    on_exception
+  catch (fun () -> with_server ~configuration ~when_started start_options) on_exception
