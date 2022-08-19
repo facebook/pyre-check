@@ -317,7 +317,86 @@ let test_dump_model_query_results context =
       ~models_source:
         {|
         ModelQuery(
-          name = "get_parent_of_d1_decorator_sources",
+          name = "get_parent_of_baz_class_sources",
+          find = "methods",
+          where = [
+            parent.any_child(
+              parent.matches("Baz"),
+              is_transitive=False
+            ),
+            name.matches("init")
+          ],
+          model = [
+            Parameters(TaintSource[Test], where=[
+                Not(name.equals("self")),
+                Not(name.equals("a"))
+            ])
+          ]
+        )
+        |}
+      ~context
+      ~taint_configuration:configuration
+      {|
+      class Foo:
+        def __init__(self, a, b):
+          ...
+      class Bar(Foo):
+        def __init__(self, a, b):
+          ...
+      class Baz(Bar):
+        def __init__(self, a, b):
+          ...
+      |}
+      ~expected_dump_string:
+        {|[
+  {
+    "get_parent_of_baz_class_sources": [
+      {
+        "callable": "test.Bar.__init__",
+        "model": {
+          "kind": "model",
+          "data": {
+            "callable": "test.Bar.__init__",
+            "sources": [
+              {
+                "port": "formal(b)",
+                "taint": [
+                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                ]
+              }
+            ],
+            "modes": [ "Obscure" ]
+          }
+        }
+      },
+      {
+        "callable": "test.Baz.__init__",
+        "model": {
+          "kind": "model",
+          "data": {
+            "callable": "test.Baz.__init__",
+            "sources": [
+              {
+                "port": "formal(b)",
+                "taint": [
+                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                ]
+              }
+            ],
+            "modes": [ "Obscure" ]
+          }
+        }
+      }
+    ]
+  }
+]|}
+  in
+  let _ =
+    initialize
+      ~models_source:
+        {|
+        ModelQuery(
+          name = "get_parent_of_baz_class_transitive_sources",
           find = "methods",
           where = [
             parent.any_child(
@@ -327,7 +406,7 @@ let test_dump_model_query_results context =
                 ),
                 AllOf(
                   Not(parent.matches("Foo")),
-                  Not(parent.matches("Baz")),
+                  Not(parent.matches("Bar")),
                 )
               ),
               is_transitive=True
@@ -358,13 +437,31 @@ let test_dump_model_query_results context =
       ~expected_dump_string:
         {|[
   {
-    "get_parent_of_d1_decorator_sources": [
+    "get_parent_of_baz_class_transitive_sources": [
       {
         "callable": "test.Bar.__init__",
         "model": {
           "kind": "model",
           "data": {
             "callable": "test.Bar.__init__",
+            "sources": [
+              {
+                "port": "formal(b)",
+                "taint": [
+                  { "kinds": [ { "kind": "Test" } ], "decl": null }
+                ]
+              }
+            ],
+            "modes": [ "Obscure" ]
+          }
+        }
+      },
+      {
+        "callable": "test.Baz.__init__",
+        "model": {
+          "kind": "model",
+          "data": {
+            "callable": "test.Baz.__init__",
             "sources": [
               {
                 "port": "formal(b)",

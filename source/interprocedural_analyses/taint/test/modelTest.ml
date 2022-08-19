@@ -5586,7 +5586,7 @@ let test_query_parsing context =
               parent.matches("Baz")
             )
           ),
-          is_transitive=True
+          is_transitive=False
         ),
         name.matches("\.__init__$")
       ],
@@ -5603,6 +5603,109 @@ let test_query_parsing context =
         {
           location = { start = { line = 2; column = 0 }; stop = { line = 26; column = 1 } };
           name = "get_parent_of_d1_decorator_sources";
+          query =
+            [
+              ParentConstraint
+                (ClassConstraint.AnyChildSatisfies
+                   {
+                     class_constraint =
+                       ClassConstraint.AllOf
+                         [
+                           ClassConstraint.DecoratorSatisfies
+                             {
+                               name_constraint = Matches (Re2.create_exn "d1");
+                               arguments_constraint = None;
+                             };
+                           ClassConstraint.AnyOf
+                             [
+                               ClassConstraint.Not
+                                 (ClassConstraint.NameSatisfies (Matches (Re2.create_exn "Foo")));
+                               ClassConstraint.NameSatisfies (Matches (Re2.create_exn "Baz"));
+                             ];
+                         ];
+                     is_transitive = false;
+                   });
+              NameConstraint (Matches (Re2.create_exn "\\.__init__$"));
+            ];
+          rule_kind = MethodModel;
+          productions =
+            [
+              ParameterTaint
+                {
+                  where =
+                    [
+                      ParameterConstraint.Not (ParameterConstraint.NameConstraint (Equals "self"));
+                      ParameterConstraint.Not (ParameterConstraint.NameConstraint (Equals "a"));
+                    ];
+                  taint =
+                    [
+                      TaintAnnotation
+                        (ModelParser.Source
+                           {
+                             source = Sources.NamedSource "Test";
+                             breadcrumbs = [];
+                             via_features = [];
+                             path = [];
+                             leaf_names = [];
+                             leaf_name_provided = false;
+                             trace_length = None;
+                           });
+                    ];
+                };
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~source:
+      {|@d1
+      class Foo:
+        def __init__(self, a, b):
+          ...
+      @d1
+      class Bar(Foo):
+        def __init__(self, a, b):
+          ...
+      @d1
+      class Baz:
+        def __init__(self, a, b):
+          ...|}
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+      name = "get_parent_of_d1_decorator_transitive_sources",
+      find = "methods",
+      where = [
+        parent.any_child(
+          AllOf(
+            parent.decorator(
+              name.matches("d1")
+            ),
+            AnyOf(
+              Not(parent.matches("Foo")),
+              parent.matches("Baz")
+            )
+          ),
+          is_transitive=True
+        ),
+        name.matches("\.__init__$")
+      ],
+      model = [
+        Parameters(TaintSource[Test], where=[
+            Not(name.equals("self")),
+            Not(name.equals("a"))
+        ])
+      ]
+    )
+    |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 26; column = 1 } };
+          name = "get_parent_of_d1_decorator_transitive_sources";
           query =
             [
               ParentConstraint

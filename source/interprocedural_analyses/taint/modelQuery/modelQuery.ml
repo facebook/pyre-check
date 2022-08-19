@@ -376,14 +376,19 @@ let parent_matches_decorator_constraint
 
 let rec find_children ~class_hierarchy_graph ~is_transitive parent_name =
   let child_name_set = ClassHierarchyGraph.children class_hierarchy_graph parent_name in
-  ClassHierarchyGraph.ClassNameSet.fold
-    (fun class_name set ->
-      set
-      |> ClassHierarchyGraph.ClassNameSet.union
-           (find_children ~class_hierarchy_graph ~is_transitive class_name))
-    child_name_set
-    ClassHierarchyGraph.ClassNameSet.empty
-  |> ClassHierarchyGraph.ClassNameSet.add parent_name
+  let child_name_set =
+    if is_transitive then
+      ClassHierarchyGraph.ClassNameSet.fold
+        (fun class_name set ->
+          set
+          |> ClassHierarchyGraph.ClassNameSet.union
+               (find_children ~class_hierarchy_graph ~is_transitive class_name))
+        child_name_set
+        ClassHierarchyGraph.ClassNameSet.empty
+    else
+      child_name_set
+  in
+  ClassHierarchyGraph.ClassNameSet.add parent_name child_name_set
 
 
 let rec class_matches_constraint ~resolution ~name class_constraint =
@@ -410,9 +415,7 @@ let parent_matches_any_child_constraint
     ~is_transitive
     parent_name
   =
-  ClassHierarchyGraph.ClassNameSet.add
-    parent_name
-    (find_children ~class_hierarchy_graph ~is_transitive parent_name)
+  find_children ~class_hierarchy_graph ~is_transitive parent_name
   |> ClassHierarchyGraph.ClassNameSet.exists (fun name ->
          class_matches_constraint ~resolution ~name class_constraint)
 
