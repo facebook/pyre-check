@@ -1884,6 +1884,36 @@ class PyreServerHandler(connection.BackgroundTask):
             ),
         }
 
+    async def _try_connect_and_subscribe(
+        self,
+        server_start_options: PyreServerStartOptions,
+        socket_path: Path,
+        connection_timer: timer.Timer,
+    ) -> None:
+        async with connection.connect_in_text_mode(socket_path) as (
+            input_channel,
+            output_channel,
+        ):
+            await self.log_and_show_status_message_to_client(
+                "Established connection with existing Pyre server at "
+                f"`{server_start_options.server_identifier}`.",
+                short_message="Pyre Ready",
+                level=lsp.MessageType.INFO,
+                fallback_to_notification=True,
+            )
+            self.server_state.consecutive_start_failure = 0
+            self.server_state.is_user_notified_on_buck_failure = False
+            _log_lsp_event(
+                remote_logging=self.remote_logging,
+                event=LSPEvent.CONNECTED,
+                integers={"duration": int(connection_timer.stop_in_millisecond())},
+                normals={
+                    "connected_to": "already_running_server",
+                    **self._auxiliary_logging_info(server_start_options),
+                },
+            )
+            await self.subscribe_to_type_error(input_channel, output_channel)
+
     async def _run(self, server_start_options: PyreServerStartOptions) -> None:
         server_identifier = server_start_options.server_identifier
         start_arguments = server_start_options.start_arguments
@@ -1894,30 +1924,11 @@ class PyreServerHandler(connection.BackgroundTask):
 
         connection_timer = timer.Timer()
         try:
-            async with connection.connect_in_text_mode(socket_path) as (
-                input_channel,
-                output_channel,
-            ):
-                await self.log_and_show_status_message_to_client(
-                    "Established connection with existing Pyre server at "
-                    f"`{server_identifier}`.",
-                    short_message="Pyre Ready",
-                    level=lsp.MessageType.INFO,
-                    fallback_to_notification=True,
-                )
-                self.server_state.consecutive_start_failure = 0
-                self.server_state.is_user_notified_on_buck_failure = False
-                _log_lsp_event(
-                    remote_logging=self.remote_logging,
-                    event=LSPEvent.CONNECTED,
-                    integers={"duration": int(connection_timer.stop_in_millisecond())},
-                    normals={
-                        "connected_to": "already_running_server",
-                        **self._auxiliary_logging_info(server_start_options),
-                    },
-                )
-                await self.subscribe_to_type_error(input_channel, output_channel)
-                return
+            return await self._try_connect_and_subscribe(
+                server_start_options,
+                socket_path,
+                connection_timer,
+            )
         except connection.ConnectionFailure:
             pass
 
