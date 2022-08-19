@@ -173,6 +173,121 @@ module ServerConfiguration = struct
       ()
 end
 
+module ServerEvent = struct
+  module ErrorKind = struct
+    type t =
+      | Watchman
+      | BuckInternal
+      | BuckUser
+      | Pyre
+      | Unknown
+    [@@deriving sexp, compare, hash, to_yojson]
+  end
+
+  type t =
+    | SocketCreated of PyrePath.t
+    | ServerInitialized
+    | Exception of string * ErrorKind.t
+  [@@deriving sexp, compare, hash, to_yojson]
+
+  let serialize event = to_yojson event |> Yojson.Safe.to_string
+
+  let write ~output_channel event =
+    let open Lwt.Infix in
+    serialize event |> Lwt_io.fprintl output_channel >>= fun () -> Lwt_io.flush output_channel
+end
+
+let start_server_and_wait ~event_channel ~configuration start_options =
+  let open Lwt.Infix in
+  let write_event event =
+    Lwt.catch
+      (fun () -> ServerEvent.write ~output_channel:event_channel event)
+      (function
+        | Lwt_io.Channel_closed _
+        | Caml.Unix.Unix_error (Caml.Unix.EPIPE, _, _) ->
+            Lwt.return_unit
+        | exn -> Lwt.fail exn)
+  in
+  Start.start_server
+    start_options
+    ~configuration
+    ~on_server_socket_ready:(fun socket_path ->
+      (* An empty message signals that server socket has been created. *)
+      write_event (ServerEvent.SocketCreated socket_path))
+    ~on_started:(fun _ server_state ->
+      ExclusiveLock.Lazy.force server_state
+      >>= fun _ ->
+      write_event ServerEvent.ServerInitialized
+      >>= fun () ->
+      let wait_forever, _ = Lwt.wait () in
+      wait_forever)
+    ~on_exception:(fun exn ->
+      let kind, message =
+        match exn with
+        | Buck.Raw.BuckError { buck_command; arguments; description; exit_code; additional_logs } ->
+            (* Buck exit code >=10 are considered internal:
+               https://buck.build/command/exit_codes.html *)
+            let kind =
+              match exit_code with
+              | Some exit_code when exit_code < 10 -> ServerEvent.ErrorKind.BuckUser
+              | _ -> ServerEvent.ErrorKind.BuckInternal
+            in
+            let reproduce_message =
+              if Buck.Raw.ArgumentList.length arguments <= 20 then
+                [
+                  Format.sprintf
+                    "To reproduce this error, run `%s`."
+                    (Buck.Raw.ArgumentList.to_buck_command ~buck_command arguments);
+                ]
+              else
+                []
+            in
+            let additional_messages =
+              if List.is_empty additional_logs then
+                []
+              else
+                "Here are the last few lines of Buck log:"
+                :: "  ..." :: List.map additional_logs ~f:(String.( ^ ) " ")
+            in
+            ( kind,
+              Format.sprintf
+                "Cannot build the project: %s.\n%s"
+                description
+                (String.concat ~sep:"\n" (List.append reproduce_message additional_messages)) )
+        | Buck.Interface.JsonError message ->
+            ( ServerEvent.ErrorKind.Pyre,
+              Format.sprintf
+                "Cannot build the project because Buck returns malformed JSON: %s"
+                message )
+        | Buck.Builder.LinkTreeConstructionError message ->
+            ( ServerEvent.ErrorKind.Pyre,
+              Format.sprintf
+                "Cannot build the project because Pyre encounters a fatal error while constructing \
+                 a link tree: %s"
+                message )
+        | ChecksumMap.LoadError message ->
+            ( ServerEvent.ErrorKind.Pyre,
+              Format.sprintf
+                "Cannot build the project because Pyre encounters a fatal error while loading \
+                 external wheel: %s"
+                message )
+        | Watchman.ConnectionError message ->
+            ServerEvent.ErrorKind.Watchman, Format.sprintf "Watchman connection error: %s" message
+        | Watchman.SubscriptionError message ->
+            ServerEvent.ErrorKind.Watchman, Format.sprintf "Watchman subscription error: %s" message
+        | Watchman.QueryError message ->
+            ServerEvent.ErrorKind.Watchman, Format.sprintf "Watchman query error: %s" message
+        | Unix.Unix_error (Unix.EADDRINUSE, _, _) ->
+            ( ServerEvent.ErrorKind.Pyre,
+              "A Pyre server is already running for the current project. Use `pyre stop` to stop \
+               it before starting another one." )
+        | _ -> ServerEvent.ErrorKind.Unknown, Printexc.get_backtrace ()
+      in
+      Log.info "%s" message;
+      write_event (ServerEvent.Exception (message, kind))
+      >>= fun () -> Lwt.return Start.ExitStatus.Error)
+
+
 let run_server configuration_file =
   match CommandStartup.read_and_parse_json configuration_file ~f:ServerConfiguration.of_yojson with
   | Result.Error message ->
@@ -217,7 +332,7 @@ let run_server configuration_file =
         let start_options = ServerConfiguration.start_options_of server_configuration in
         let configuration = ServerConfiguration.analysis_configuration_of server_configuration in
         Lwt_main.run
-          (Start.start_server_and_wait ~event_channel:Lwt_io.stdout ~configuration start_options)
+          (start_server_and_wait ~event_channel:Lwt_io.stdout ~configuration start_options)
       in
       exit (Start.ExitStatus.exit_code exit_status)
 
