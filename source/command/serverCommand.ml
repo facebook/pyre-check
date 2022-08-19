@@ -271,7 +271,7 @@ let error_kind_and_message_from_exception = function
   | _ -> ErrorKind.Unknown, Printexc.get_backtrace ()
 
 
-let start_server_and_wait ~event_channel ~configuration start_options =
+let start_server_and_wait ~event_channel server_configuration =
   let open Lwt.Infix in
   let write_event event =
     Lwt.catch
@@ -282,6 +282,8 @@ let start_server_and_wait ~event_channel ~configuration start_options =
             Lwt.return_unit
         | exn -> Lwt.fail exn)
   in
+  let start_options = ServerConfiguration.start_options_of server_configuration in
+  let configuration = ServerConfiguration.analysis_configuration_of server_configuration in
   Start.start_server
     start_options
     ~configuration
@@ -345,10 +347,7 @@ let run_server configuration_file =
       Signal.Expert.(set Signal.pipe `Ignore);
 
       let exit_status =
-        let start_options = ServerConfiguration.start_options_of server_configuration in
-        let configuration = ServerConfiguration.analysis_configuration_of server_configuration in
-        Lwt_main.run
-          (start_server_and_wait ~event_channel:Lwt_io.stdout ~configuration start_options)
+        Lwt_main.run (start_server_and_wait ~event_channel:Lwt_io.stdout server_configuration)
       in
       exit (ExitStatus.exit_code exit_status)
 
