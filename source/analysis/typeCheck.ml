@@ -4677,10 +4677,6 @@ module State (Context : Context) = struct
     resolve_expression ~resolution:resolution_with_locals expression |> Annotation.annotation
 
 
-  and resolve_reference_type ~resolution reference =
-    from_reference ~location:Location.any reference |> resolve_expression_type ~resolution
-
-
   and emit_invalid_enumeration_literal_errors ~resolution ~location ~errors annotation =
     let invalid_enumeration_literals =
       let is_invalid_enumeration_member = function
@@ -5831,7 +5827,7 @@ module State (Context : Context) = struct
           init_subclass_errors @ errors
       | None -> errors
     in
-    let check_behavioral_subtyping resolution errors =
+    let check_behavioral_subtyping errors =
       let is_allowlisted_dunder_method define =
         let allowlist =
           String.Set.of_list
@@ -5857,227 +5853,24 @@ module State (Context : Context) = struct
         then
           errors
         else
-          let open Annotated in
           begin
             match define with
-            | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } -> (
+            | { Ast.Statement.Define.signature = { parent = Some parent; _ }; _ } ->
                 GlobalResolution.overrides
                   (Reference.show parent)
                   ~resolution:global_resolution
                   ~name:(StatementDefine.unqualified_name define)
                 >>| fun overridden_attribute ->
-                let errors =
-                  match AnnotatedAttribute.visibility overridden_attribute with
-                  | ReadOnly (Refinable { overridable = false }) ->
-                      let parent = overridden_attribute |> Attribute.parent in
-                      emit_error
-                        ~errors
-                        ~location
-                        ~kind:(Error.InvalidOverride { parent; decorator = Final })
-                  | _ -> errors
-                in
-                let errors =
-                  if
-                    not
-                      (Bool.equal
-                         (Attribute.static overridden_attribute)
-                         (StatementDefine.is_static_method define))
-                  then
-                    let parent = overridden_attribute |> Attribute.parent in
-                    let decorator =
-                      if Attribute.static overridden_attribute then
-                        Error.StaticSuper
-                      else
-                        Error.StaticOverride
-                    in
-                    emit_error ~errors ~location ~kind:(Error.InvalidOverride { parent; decorator })
-                  else
-                    errors
-                in
-                (* Check strengthening of postcondition. *)
-                let overridden_base_attribute_annotation =
-                  Annotation.annotation (Attribute.annotation overridden_attribute)
-                in
-                match overridden_base_attribute_annotation with
-                | Type.Parametric
-                    {
-                      name = "BoundMethod";
-                      parameters = [Single (Type.Callable { implementation; _ }); _];
-                    }
-                | Type.Callable { Type.Callable.implementation; _ } ->
-                    let original_implementation =
-                      resolve_reference_type ~resolution name
-                      |> function
-                      | Type.Callable { Type.Callable.implementation = original_implementation; _ }
-                      | Type.Parametric
-                          {
-                            parameters =
-                              [
-                                Single
-                                  (Type.Callable { implementation = original_implementation; _ });
-                                _;
-                              ];
-                            _;
-                          } ->
-                          original_implementation
-                      | annotation -> raise (ClassHierarchy.Untracked (Type.show annotation))
-                    in
-                    let errors =
-                      let expected = Type.Callable.Overload.return_annotation implementation in
-                      let actual =
-                        Type.Callable.Overload.return_annotation original_implementation
-                      in
-                      if
-                        Type.Variable.all_variables_are_resolved expected
-                        && not
-                             (GlobalResolution.less_or_equal
-                                global_resolution
-                                ~left:actual
-                                ~right:expected)
-                      then
-                        emit_error
-                          ~errors
-                          ~location
-                          ~kind:
-                            (Error.InconsistentOverride
-                               {
-                                 overridden_method = StatementDefine.unqualified_name define;
-                                 parent = Attribute.parent overridden_attribute |> Reference.create;
-                                 override_kind = Method;
-                                 override =
-                                   Error.WeakenedPostcondition
-                                     (Error.create_mismatch
-                                        ~resolution:global_resolution
-                                        ~actual
-                                        ~expected
-                                        ~covariant:false);
-                               })
-                      else
-                        errors
-                    in
-                    (* Check weakening of precondition. *)
-                    let overriding_parameters =
-                      let parameter_annotations
-                          { StatementDefine.signature = { parameters; _ }; _ }
-                          ~resolution
-                        =
-                        let element { Node.value = { Parameter.name; annotation; _ }; _ } =
-                          let annotation =
-                            annotation
-                            >>| (fun annotation ->
-                                  GlobalResolution.parse_annotation resolution annotation)
-                            |> Option.value ~default:Type.Top
-                          in
-                          name, annotation
-                        in
-                        List.map parameters ~f:element
-                      in
-                      parameter_annotations define ~resolution:global_resolution
-                      |> List.map ~f:(fun (name, annotation) ->
-                             { Type.Callable.Parameter.name; annotation; default = false })
-                      |> Type.Callable.Parameter.create
-                    in
-                    let validate_match ~errors ~index ~overridden_parameter ~expected = function
-                      | Some actual -> (
-                          let is_compatible =
-                            let expected = Type.Variable.mark_all_variables_as_bound expected in
-                            GlobalResolution.constraints_solution_exists
-                              global_resolution
-                              ~left:expected
-                              ~right:actual
-                          in
-                          let is_self_or_class_parameter =
-                            index = 0 && not (StatementDefine.is_static_method define)
-                          in
-                          try
-                            if
-                              (not (Type.is_top expected))
-                              && (not is_compatible)
-                              && not is_self_or_class_parameter
-                            then
-                              emit_error
-                                ~errors
-                                ~location
-                                ~kind:
-                                  (Error.InconsistentOverride
-                                     {
-                                       overridden_method = StatementDefine.unqualified_name define;
-                                       parent =
-                                         Attribute.parent overridden_attribute |> Reference.create;
-                                       override_kind = Method;
-                                       override =
-                                         Error.StrengthenedPrecondition
-                                           (Error.Found
-                                              (Error.create_mismatch
-                                                 ~resolution:global_resolution
-                                                 ~actual
-                                                 ~expected
-                                                 ~covariant:false));
-                                     })
-                            else
-                              errors
-                          with
-                          | ClassHierarchy.Untracked _ ->
-                              (* TODO(T27409168): Error here. *)
-                              errors)
-                      | None ->
-                          let has_keyword_and_anonymous_starred_parameters =
-                            List.exists overriding_parameters ~f:(function
-                                | Keywords _ -> true
-                                | _ -> false)
-                            && List.exists overriding_parameters ~f:(function
-                                   | Variable _ -> true
-                                   | _ -> false)
-                          in
-                          if has_keyword_and_anonymous_starred_parameters then
-                            errors
-                          else
-                            emit_error
-                              ~errors
-                              ~location
-                              ~kind:
-                                (Error.InconsistentOverride
-                                   {
-                                     overridden_method = StatementDefine.unqualified_name define;
-                                     override_kind = Method;
-                                     parent =
-                                       Attribute.parent overridden_attribute |> Reference.create;
-                                     override =
-                                       Error.StrengthenedPrecondition
-                                         (Error.NotFound overridden_parameter);
-                                   })
-                    in
-                    let check_parameter index errors = function
-                      | `Both (overridden_parameter, overriding_parameter) -> (
-                          match
-                            ( Type.Callable.RecordParameter.annotation overridden_parameter,
-                              Type.Callable.RecordParameter.annotation overriding_parameter )
-                          with
-                          | Some expected, Some actual ->
-                              validate_match
-                                ~errors
-                                ~index
-                                ~overridden_parameter
-                                ~expected
-                                (Some actual)
-                          | None, _
-                          | _, None ->
-                              (* TODO(T53997072): There is no reasonable way to compare Variable
-                                 (Concatenation _). For now, let's just ignore this. *)
-                              errors)
-                      | `Left overridden_parameter -> (
-                          match Type.Callable.RecordParameter.annotation overridden_parameter with
-                          | Some expected ->
-                              validate_match ~errors ~index ~overridden_parameter ~expected None
-                          | None -> errors)
-                      | `Right _ -> errors
-                    in
-                    let overridden_parameters =
-                      Type.Callable.Overload.parameters implementation |> Option.value ~default:[]
-                    in
-                    Type.Callable.Parameter.zip overridden_parameters overriding_parameters
-                    |> List.foldi ~init:errors ~f:check_parameter
-                | _ -> errors)
+                emit_error
+                  ~errors
+                  ~location
+                  ~kind:
+                    (Error.InvalidOverride
+                       {
+                         parent =
+                           "TestingNumberOfOverrides" ^ AnnotatedAttribute.name overridden_attribute;
+                         decorator = MissingOverrideDecorator;
+                       })
             | _ -> None
           end
           |> Option.value ~default:errors
@@ -6117,7 +5910,7 @@ module State (Context : Context) = struct
         |> check_decorators resolution
         |> check_base_annotations resolution
         |> check_init_subclass_call resolution
-        |> check_behavioral_subtyping resolution
+        |> check_behavioral_subtyping
         |> check_constructor_return
       in
       resolution, errors
