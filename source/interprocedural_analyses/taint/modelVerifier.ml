@@ -322,7 +322,7 @@ let verify_signature
       in
       let errors =
         if (not (List.is_empty errors)) && not (List.is_empty overloads) then
-          (* We might be refering to a parameter defined in an overload. *)
+          (* We might be referring to a parameter defined in an overload. *)
           let errors_in_overloads =
             List.map overloads ~f:(fun callable_overload ->
                 model_compatible_errors ~callable_overload ~normalized_model_parameters)

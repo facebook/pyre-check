@@ -55,7 +55,7 @@ module type LOGGER = sig
     callables_to_analyze:Target.t list ->
     number_of_callables:int ->
     unit
-  (** This is called at the begining of each iteration. *)
+  (** This is called at the beginning of each iteration. *)
 
   val iteration_end
     :  iteration:int ->

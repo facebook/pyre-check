@@ -65,7 +65,7 @@ let test_simple context =
         global y
         _ = x      # Refers to local `x`, hence error
         x = 1
-        _ = y      # Refers to global `y`, explictly specified
+        _ = y      # Refers to global `y`, explicitly specified
         y = 1
         _ = z      # Refers to global `z`, implicitly
     |}
@@ -692,7 +692,7 @@ let test_defined_locals_at_each_statement _ =
    type information and therefore cannot account for it.
 
    As a result, it merits a separate test suite because the implementation is separate from the
-   implementation of langauge features that can be represented in the CFG. *)
+   implementation of language features that can be represented in the CFG. *)
 let test_no_return context =
   let assert_uninitialized_errors = assert_uninitialized_errors ~context in
   assert_uninitialized_errors
