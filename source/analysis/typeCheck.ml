@@ -1075,18 +1075,12 @@ module State (Context : Context) = struct
               resolved_annotation = None;
               base = None;
             }
-        | Some (_ :: _ as attribute_info) ->
-            let name = attribute in
-            let class_datas, attributes, _ = List.unzip3 attribute_info in
-            let head_annotation, tail_annotations =
-              let annotations = attributes |> List.map ~f:Annotated.Attribute.annotation in
-              List.hd_exn annotations, List.tl_exn annotations
-            in
-            begin
+        | Some (head_attribute_info :: tail_attributes_info) ->
+            let add_attributes_to_context attribute_info =
+              let get_instantiated { Type.instantiated; _ } = instantiated in
               let attributes_with_instantiated =
-                List.zip_exn
-                  attributes
-                  (class_datas |> List.map ~f:(fun { Type.instantiated; _ } -> instantiated))
+                List.map attribute_info ~f:(fun (class_data, attribute, _) ->
+                    attribute, get_instantiated class_data)
               in
               Context.Builder.add_property_callees
                 ~global_resolution
@@ -1094,24 +1088,32 @@ module State (Context : Context) = struct
                 ~attributes:attributes_with_instantiated
                 ~location
                 ~qualifier:Context.qualifier
-                ~name
-            end;
+                ~name:attribute
+            in
+            add_attributes_to_context (head_attribute_info :: tail_attributes_info);
+
+            let _, head_attribute, _ = head_attribute_info in
+            let _, tail_attributes, _ = List.unzip3 tail_attributes_info in
+            let head_annotation = Annotated.Attribute.annotation head_attribute in
+            let tail_annotations = List.map ~f:Annotated.Attribute.annotation tail_attributes in
+
             let errors =
               let attribute_name, target =
                 match
-                  List.find attribute_info ~f:(fun (_, _, undefined_target) ->
-                      Option.is_some undefined_target)
+                  List.find
+                    (head_attribute_info :: tail_attributes_info)
+                    ~f:(fun (_, _, undefined_target) -> Option.is_some undefined_target)
                 with
                 | Some (_, attribute, Some target) ->
                     AnnotatedAttribute.public_name attribute, Some target
                 | Some (_, attribute, _) -> AnnotatedAttribute.public_name attribute, None
-                | _ -> name, None
+                | _ -> attribute, None
               in
               match target with
               | Some target ->
                   if has_default then
                     errors
-                  else if Option.is_some (inverse_operator name) then
+                  else if Option.is_some (inverse_operator attribute) then
                     (* Defer any missing attribute error until the inverse operator has been
                        typechecked. *)
                     errors
