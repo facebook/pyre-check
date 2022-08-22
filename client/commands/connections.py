@@ -21,7 +21,7 @@ class ConnectionFailure(Exception):
 
 
 @contextlib.contextmanager
-def _connect(
+def _connect_bytes(
     socket_path: Path,
 ) -> Iterator[Tuple[BinaryIO, BinaryIO]]:
     """
@@ -65,7 +65,7 @@ def connect(
     that the streams will automatically be flushed once the newline character
     is encountered.
     """
-    with _connect(socket_path) as (input_channel, output_channel):
+    with _connect_bytes(socket_path) as (input_channel, output_channel):
         yield (
             io.TextIOWrapper(
                 input_channel,
@@ -326,7 +326,7 @@ class StreamBytesWriter(AsyncBytesWriter):
 
 
 @contextlib.asynccontextmanager
-async def _connect_async(
+async def _connect_async_bytes(
     socket_path: Path, buffer_size: Optional[int] = None
 ) -> AsyncIterator[Tuple[AsyncBytesReader, AsyncBytesWriter]]:
     """
@@ -376,7 +376,10 @@ async def connect_async(
     operates in text mode. Read/write APIs of the streams uses UTF-8 encoded
     `str` instead of `bytes`.
     """
-    async with _connect_async(socket_path, buffer_size) as (bytes_reader, bytes_writer):
+    async with _connect_async_bytes(socket_path, buffer_size) as (
+        bytes_reader,
+        bytes_writer,
+    ):
         yield (
             AsyncTextReader(bytes_reader, encoding="utf-8"),
             AsyncTextWriter(bytes_writer, encoding="utf-8"),
