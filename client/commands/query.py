@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import TextIO
 
 from .. import configuration as configuration_module, log
-from . import commands, frontend_configuration, server_connection
+from . import commands, daemon, frontend_configuration, server_connection
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -131,7 +131,7 @@ def query_server(socket_path: Path, query_text: str) -> Response:
 def run_query(
     configuration: frontend_configuration.Base, query_text: str
 ) -> commands.ExitCode:
-    socket_path = server_connection.get_default_socket_path(
+    socket_path = daemon.get_default_socket_path(
         project_root=configuration.get_global_root(),
         relative_local_root=configuration.get_relative_local_root(),
     )

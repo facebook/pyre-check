@@ -34,6 +34,7 @@ from .. import (
 from . import (
     backend_arguments,
     commands,
+    daemon,
     frontend_configuration,
     server_connection,
     server_event,
@@ -145,7 +146,7 @@ class Arguments:
             **self.base_arguments.serialize(),
             "strict": self.strict,
             "socket_path": str(
-                server_connection.get_default_socket_path(
+                daemon.get_default_socket_path(
                     Path(self.base_arguments.global_root),
                     self.base_arguments.relative_local_root,
                 )
@@ -483,7 +484,7 @@ def run_start(
         if start_arguments.terminal:
             return _run_in_foreground(server_command, server_environment)
         else:
-            socket_path = server_connection.get_default_socket_path(
+            socket_path = daemon.get_default_socket_path(
                 configuration.get_global_root(), configuration.get_relative_local_root()
             )
             return _run_in_background(

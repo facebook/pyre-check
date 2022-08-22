@@ -16,6 +16,7 @@ from .. import configuration as configuration_module, log, statistics_logger
 from . import (
     commands,
     coverage,
+    daemon,
     frontend_configuration,
     language_server_protocol as lsp,
     query,
@@ -292,7 +293,7 @@ def run_query(
     query_text: str,
     print_summary: bool = False,
 ) -> commands.ExitCode:
-    socket_path = server_connection.get_default_socket_path(
+    socket_path = daemon.get_default_socket_path(
         project_root=configuration.get_global_root(),
         relative_local_root=configuration.get_relative_local_root(),
     )
