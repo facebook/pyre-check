@@ -33,6 +33,7 @@ from ..coverage_collector import coverage_collector_for_module, CoveredAndUncove
 from . import (
     async_server_connection as connection,
     backend_arguments,
+    background,
     commands,
     expression_level_coverage,
     find_symbols,
@@ -594,9 +595,9 @@ class PyreServer:
     output_channel: connection.TextWriter
 
     # inside this task manager is a PyreServerHandler
-    pyre_manager: connection.BackgroundTaskManager
+    pyre_manager: background.TaskManager
     # inside this task manager is a PyreQueryHandler
-    pyre_query_manager: connection.BackgroundTaskManager
+    pyre_query_manager: background.TaskManager
     # NOTE: The fields inside `server_state` are mutable and can be changed by `pyre_manager`
     server_state: ServerState
 
@@ -1214,7 +1215,7 @@ def path_to_expression_coverage_response(
     )
 
 
-class PyreQueryHandler(connection.BackgroundTask):
+class PyreQueryHandler(background.Task):
     def __init__(
         self,
         query_state: PyreQueryState,
@@ -1677,7 +1678,7 @@ class PyreServerShutdown(Exception):
     pass
 
 
-class PyreServerHandler(connection.BackgroundTask):
+class PyreServerHandler(background.Task):
     server_start_options_reader: PyreServerStartOptionsReader
     remote_logging: Optional[backend_arguments.RemoteLogging]
     client_output_channel: connection.TextWriter
@@ -2107,7 +2108,7 @@ async def run_persistent(
                 input_channel=stdin,
                 output_channel=stdout,
                 server_state=server_state,
-                pyre_manager=connection.BackgroundTaskManager(
+                pyre_manager=background.TaskManager(
                     PyreServerHandler(
                         server_start_options_reader=server_start_options_reader,
                         remote_logging=remote_logging,
@@ -2115,7 +2116,7 @@ async def run_persistent(
                         server_state=server_state,
                     )
                 ),
-                pyre_query_manager=connection.BackgroundTaskManager(
+                pyre_query_manager=background.TaskManager(
                     PyreQueryHandler(
                         query_state=server_state.query_state,
                         server_start_options_reader=server_start_options_reader,

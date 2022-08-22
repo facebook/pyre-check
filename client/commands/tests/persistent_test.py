@@ -23,13 +23,12 @@ from ...tests import setup
 from .. import (
     async_server_connection,
     backend_arguments,
+    background,
     language_server_protocol as lsp,
     start,
     subscription,
 )
 from ..async_server_connection import (
-    BackgroundTask,
-    BackgroundTaskManager,
     create_memory_text_reader,
     create_memory_text_writer,
     MemoryBytesReader,
@@ -96,12 +95,12 @@ async def _create_input_channel_with_requests(
     return TextReader(MemoryBytesReader(b"\n".join(bytes_writer.items())))
 
 
-class NoOpBackgroundTask(BackgroundTask):
+class NoOpBackgroundTask(background.Task):
     async def run(self) -> None:
         pass
 
 
-class WaitForeverBackgroundTask(BackgroundTask):
+class WaitForeverBackgroundTask(background.Task):
     async def run(self) -> None:
         await asyncio.Event().wait()
 
@@ -337,7 +336,7 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_server_exit(self) -> None:
         server_state = ServerState()
-        noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())
+        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
         input_channel = await _create_input_channel_with_requests(
             [
                 json_rpc.Request(method="shutdown", parameters=None),
@@ -358,7 +357,7 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_server_exit_unknown_request_after_shutdown(self) -> None:
         server_state = ServerState()
-        noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())
+        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
         input_channel = await _create_input_channel_with_requests(
             [
                 json_rpc.Request(method="shutdown", parameters=None),
@@ -380,7 +379,7 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_server_exit_gracefully_after_shutdown(self) -> None:
         server_state = ServerState()
-        noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())
+        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
         input_channel = await _create_input_channel_with_requests(
             [
                 json_rpc.Request(method="shutdown", parameters=None),
@@ -404,7 +403,7 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_server_exit_gracefully_on_channel_closure(self) -> None:
         server_state = ServerState()
-        noop_task_manager = BackgroundTaskManager(NoOpBackgroundTask())
+        noop_task_manager = background.TaskManager(NoOpBackgroundTask())
         server = PyreServer(
             # Feed nothing to input channel
             input_channel=create_memory_text_reader(""),
@@ -423,12 +422,12 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_open_close(self) -> None:
         server_state = ServerState()
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
             server_state=server_state,
-            pyre_manager=BackgroundTaskManager(NoOpBackgroundTask()),
+            pyre_manager=background.TaskManager(NoOpBackgroundTask()),
             pyre_query_manager=fake_task_manager,
         )
         test_path0 = Path("/foo/bar")
@@ -567,8 +566,8 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_open_triggers_pyre_restart(self) -> None:
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = background.TaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
@@ -594,8 +593,8 @@ class PersistentTest(testslide.TestCase):
 
     @setup.async_test
     async def test_open_triggers_pyre_restart__limit_reached(self) -> None:
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = background.TaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
@@ -624,8 +623,8 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_save_triggers_pyre_restart(self) -> None:
         test_path = Path("/foo.py")
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = background.TaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
@@ -648,8 +647,8 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_save_triggers_pyre_restart__limit_reached(self) -> None:
         test_path = Path("/foo.py")
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = background.TaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
@@ -675,8 +674,8 @@ class PersistentTest(testslide.TestCase):
     @setup.async_test
     async def test_save_adds_path_to_queue(self) -> None:
         test_path = Path("/root/test.py")
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = background.TaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=create_memory_text_writer(),
@@ -925,8 +924,8 @@ class PersistentTest(testslide.TestCase):
     async def test_type_coverage_request(self) -> None:
         test_path = Path("/foo")
         bytes_writer = MemoryBytesWriter()
-        fake_pyre_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_pyre_query_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_pyre_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_pyre_query_manager = background.TaskManager(WaitForeverBackgroundTask())
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
             output_channel=TextWriter(bytes_writer),
@@ -966,8 +965,8 @@ class PersistentTest(testslide.TestCase):
 
         test_path = Path("/foo.py")
         not_tracked_path = Path("/not_tracked.py")
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = background.TaskManager(WaitForeverBackgroundTask())
         memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
@@ -1038,8 +1037,8 @@ class PersistentTest(testslide.TestCase):
 
         test_path = Path("/foo.py")
         not_tracked_path = Path("/not_tracked.py")
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = background.TaskManager(WaitForeverBackgroundTask())
         memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
@@ -1097,8 +1096,8 @@ class PersistentTest(testslide.TestCase):
             temporary_file.write(b"def foo(x):\n  pass\n")
             temporary_file.flush()
             test_path = Path(temporary_file.name)
-            fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-            fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+            fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+            fake_task_manager2 = background.TaskManager(WaitForeverBackgroundTask())
             memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
             server = PyreServer(
                 input_channel=create_memory_text_reader(""),
@@ -1171,8 +1170,8 @@ class PersistentTest(testslide.TestCase):
 
         test_path = Path("/foo.py")
         not_tracked_path = Path("/not_tracked.py")
-        fake_task_manager = BackgroundTaskManager(WaitForeverBackgroundTask())
-        fake_task_manager2 = BackgroundTaskManager(WaitForeverBackgroundTask())
+        fake_task_manager = background.TaskManager(WaitForeverBackgroundTask())
+        fake_task_manager2 = background.TaskManager(WaitForeverBackgroundTask())
         memory_bytes_writer: MemoryBytesWriter = MemoryBytesWriter()
         server = PyreServer(
             input_channel=create_memory_text_reader(""),
