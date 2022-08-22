@@ -7,7 +7,7 @@ import contextlib
 import io
 import socket
 from pathlib import Path
-from typing import BinaryIO, Generator, TextIO, Tuple
+from typing import BinaryIO, Iterator, TextIO, Tuple
 
 
 class ConnectionFailure(Exception):
@@ -15,7 +15,9 @@ class ConnectionFailure(Exception):
 
 
 @contextlib.contextmanager
-def connect(socket_path: Path) -> Generator[Tuple[BinaryIO, BinaryIO], None, None]:
+def connect(
+    socket_path: Path,
+) -> Iterator[Tuple[BinaryIO, BinaryIO]]:
     """
     Connect to the socket at given path. Once connected, create an input and
     an output stream from the socket. Both the input stream and the output
@@ -46,7 +48,7 @@ def connect(socket_path: Path) -> Generator[Tuple[BinaryIO, BinaryIO], None, Non
 @contextlib.contextmanager
 def connect_in_text_mode(
     socket_path: Path,
-) -> Generator[Tuple[TextIO, TextIO], None, None]:
+) -> Iterator[Tuple[TextIO, TextIO]]:
     """
     This is a line-oriented higher-level API than `connect`. It can be used
     when the caller does not want to deal with the complexity of binary I/O.
