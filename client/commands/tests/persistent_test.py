@@ -1263,10 +1263,10 @@ class PersistentTest(testslide.TestCase):
 
 
 @contextmanager
-def patch_connect_in_text_mode(
+def patch_connect_async(
     input_channel: AsyncTextReader, output_channel: AsyncTextWriter
 ) -> Iterator[CallableMixin]:
-    with patch.object(async_server_connection, "connect_in_text_mode") as mock:
+    with patch.object(async_server_connection, "connect_async") as mock:
 
         class MockedConnection:
             async def __aenter__(self):
@@ -1344,7 +1344,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager._query_types(
                 [Path("test.py")], Path("fake_socket_path")
             )
@@ -1393,7 +1393,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager._query_types(
                 [Path("test.py")], Path("fake_socket_path")
             )
@@ -1419,7 +1419,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             )
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = AsyncTextWriter(memory_bytes_writer)
-            with patch_connect_in_text_mode(input_channel, output_channel):
+            with patch_connect_async(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
@@ -1446,7 +1446,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         )
         input_channel = create_memory_text_reader('{ "error": "Oops" }\n')
         output_channel = AsyncTextWriter(MemoryBytesWriter())
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
@@ -1472,7 +1472,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 '["Query", {"response": ["test"]}]\n'
             )
             output_channel = AsyncTextWriter(MemoryBytesWriter())
-            with patch_connect_in_text_mode(input_channel, output_channel):
+            with patch_connect_async(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
@@ -1493,7 +1493,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         )
         input_channel = create_memory_text_reader('["Query", {"response": []}]\n')
         output_channel = AsyncTextWriter(MemoryBytesWriter())
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
@@ -1527,7 +1527,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             )
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = AsyncTextWriter(memory_bytes_writer)
-            with patch_connect_in_text_mode(input_channel, output_channel):
+            with patch_connect_async(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
@@ -1564,7 +1564,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             )
             memory_bytes_writer = MemoryBytesWriter()
             output_channel = AsyncTextWriter(memory_bytes_writer)
-            with patch_connect_in_text_mode(input_channel, output_channel):
+            with patch_connect_async(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
@@ -1593,7 +1593,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             '{ "error": "Oops" }\n["Query", {"response": [["ErrorAtPath",{"path":"/fake/path.py","error":"oops"}]]}]\n'
         )
         output_channel = AsyncTextWriter(MemoryBytesWriter())
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
@@ -1619,7 +1619,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
                 '["Query", {"response": ["test"]}]\n["Query", {"response": [["CoverageAtPath",{"path":"/fake/path.py","total_expressions":0,"coverage_gaps":[]}]]}]\n'
             )
             output_channel = AsyncTextWriter(MemoryBytesWriter())
-            with patch_connect_in_text_mode(input_channel, output_channel):
+            with patch_connect_async(input_channel, output_channel):
                 result = await pyre_query_manager._query_type_coverage(
                     path=test_path,
                     strict_default=strict,
@@ -1642,7 +1642,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
             '["Query", {"response": []}]\n["Query", {"response": [["CoverageAtPath",{"path":"/fake/test.py","total_expressions":0,"coverage_gaps":[]}]]}]\n'
         )
         output_channel = AsyncTextWriter(MemoryBytesWriter())
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             result = await pyre_query_manager._query_type_coverage(
                 path=Path("test.py"),
                 strict_default=False,
@@ -1679,7 +1679,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             await pyre_query_manager._query_and_send_hover_contents(
                 query=HoverQuery(
                     id=99,
@@ -1729,7 +1729,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             await pyre_query_manager._query_and_send_hover_contents(
                 query=HoverQuery(
                     id=99,
@@ -1788,7 +1788,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             await pyre_query_manager._query_and_send_definition_location(
                 query=DefinitionLocationQuery(
                     id=99,
@@ -1846,7 +1846,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             await pyre_query_manager._query_and_send_definition_location(
                 query=DefinitionLocationQuery(
                     id=99,
@@ -1920,7 +1920,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader(f'["Query", {flat_json}]\n')
         output_channel = AsyncTextWriter(memory_bytes_writer)
 
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             await pyre_query_manager._handle_find_all_references_query(
                 query=ReferencesQuery(
                     id=99,
@@ -1986,7 +1986,7 @@ class PyreQueryHandlerTest(testslide.TestCase):
         input_channel = create_memory_text_reader("""{ "error": "Oops" }\n""")
         memory_bytes_writer = MemoryBytesWriter()
         output_channel = AsyncTextWriter(memory_bytes_writer)
-        with patch_connect_in_text_mode(input_channel, output_channel):
+        with patch_connect_async(input_channel, output_channel):
             await pyre_query_manager._handle_find_all_references_query(
                 query=ReferencesQuery(
                     id=99,

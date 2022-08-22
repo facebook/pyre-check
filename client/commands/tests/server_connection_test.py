@@ -9,7 +9,7 @@ from pathlib import Path
 import testslide
 
 from ...tests import setup
-from ..server_connection import connect_in_text_mode
+from ..server_connection import connect
 
 
 class EchoServerRequestHandler(socketserver.StreamRequestHandler):
@@ -24,8 +24,8 @@ class EchoServerRequestHandler(socketserver.StreamRequestHandler):
 
 
 class ConnectionTest(testslide.TestCase):
-    def _test_text_connect(self, socket_path: Path, message: str) -> None:
-        with connect_in_text_mode(socket_path) as (input_channel, output_channel):
+    def _test_connect(self, socket_path: Path, message: str) -> None:
+        with connect(socket_path) as (input_channel, output_channel):
             output_channel.write(f"{message}\n")
             result = input_channel.readline().strip()
             self.assertEqual(message, result)
@@ -37,4 +37,4 @@ class ConnectionTest(testslide.TestCase):
                 "My word! You've correctly identified the most recognizable man"
                 "in the colony. Remarkable."
             )
-            self._test_text_connect(socket_path, message)
+            self._test_connect(socket_path, message)

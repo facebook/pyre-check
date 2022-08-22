@@ -14,7 +14,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def stop_server(socket_path: Path) -> None:
-    with server_connection.connect_in_text_mode(socket_path) as (
+    with server_connection.connect(socket_path) as (
         input_channel,
         output_channel,
     ):

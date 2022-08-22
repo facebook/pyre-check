@@ -303,7 +303,7 @@ async def _connect(
 
 
 @contextlib.asynccontextmanager
-async def connect_in_text_mode(
+async def connect_async(
     socket_path: Path, buffer_size: Optional[int] = None
 ) -> AsyncIterator[Tuple[AsyncTextReader, AsyncTextWriter]]:
     """
@@ -326,7 +326,7 @@ async def create_async_stdin_stdout() -> Tuple[AsyncTextReader, AsyncTextWriter]
     By default, `sys.stdin` and `sys.stdout` are synchronous channels: reading
     from `sys.stdin` or writing to `sys.stdout` will block until the read/write
     succeed, which is very different from the async socket channels created via
-    `connect` or `connect_in_text_mode`.
+    `connect_async`.
 
     This function creates wrappers around `sys.stdin` and `sys.stdout` and makes
     them behave in the same way as other async socket channels. This makes it

@@ -116,7 +116,7 @@ class AllServerStatus:
 
 def _get_running_server_status(socket_path: Path) -> Optional[RunningServerStatus]:
     try:
-        with server_connection.connect_in_text_mode(socket_path) as (
+        with server_connection.connect(socket_path) as (
             input_channel,
             output_channel,
         ):

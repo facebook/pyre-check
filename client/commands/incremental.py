@@ -81,7 +81,7 @@ def parse_type_error_response(response: str) -> List[error.Error]:
 
 
 def _read_type_errors(socket_path: Path) -> List[error.Error]:
-    with server_connection.connect_in_text_mode(socket_path) as (
+    with server_connection.connect(socket_path) as (
         input_channel,
         output_channel,
     ):

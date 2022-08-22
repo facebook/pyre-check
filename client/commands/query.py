@@ -120,7 +120,7 @@ def _receive_query_response(input_channel: TextIO) -> Response:
 
 
 def query_server(socket_path: Path, query_text: str) -> Response:
-    with server_connection.connect_in_text_mode(socket_path) as (
+    with server_connection.connect(socket_path) as (
         input_channel,
         output_channel,
     ):

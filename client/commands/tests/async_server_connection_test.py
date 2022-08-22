@@ -11,7 +11,7 @@ import testslide
 from ...tests import setup
 from ..async_server_connection import (
     AsyncTextReader,
-    connect_in_text_mode,
+    connect_async,
     MemoryBytesReader,
     MemoryBytesWriter,
 )
@@ -58,8 +58,8 @@ class MemoryIOTest(testslide.TestCase):
 
 
 class AsyncConnectionTest(testslide.TestCase):
-    async def _test_text_connect(self, socket_path: Path) -> None:
-        async with connect_in_text_mode(socket_path) as (input_channel, output_channel):
+    async def _test_connect_async(self, socket_path: Path) -> None:
+        async with connect_async(socket_path) as (input_channel, output_channel):
             await output_channel.write("abc\n")
             result = (await input_channel.readline()).strip()
             self.assertEqual("abc", result)
@@ -75,13 +75,13 @@ class AsyncConnectionTest(testslide.TestCase):
     async def test_connect(self) -> None:
         with setup.spawn_unix_stream_server(EchoServerRequestHandler) as socket_path:
             # Connect to test server from the main thread
-            await self._test_text_connect(socket_path)
+            await self._test_connect_async(socket_path)
 
     @setup.async_test
     async def test_read_until(self) -> None:
         with setup.spawn_unix_stream_server(EchoServerRequestHandler) as socket_path:
             # Intentionally use a small buffer size, to test over-sized reads
-            async with connect_in_text_mode(socket_path, buffer_size=64) as (
+            async with connect_async(socket_path, buffer_size=64) as (
                 input_channel,
                 output_channel,
             ):

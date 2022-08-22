@@ -46,7 +46,7 @@ def _connect(
 
 
 @contextlib.contextmanager
-def connect_in_text_mode(
+def connect(
     socket_path: Path,
 ) -> Iterator[Tuple[TextIO, TextIO]]:
     """

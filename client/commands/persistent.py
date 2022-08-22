@@ -1238,7 +1238,7 @@ class PyreQueryHandler(background.Task):
     ) -> Optional[query.Response]:
         LOG.info(f"Querying for `{query_text}`")
         try:
-            async with connection.connect_in_text_mode(socket_path) as (
+            async with connection.connect_async(socket_path) as (
                 input_channel,
                 output_channel,
             ):
@@ -1900,7 +1900,7 @@ class PyreServerHandler(background.Task):
         is_preexisting: bool,
     ) -> None:
         server_identifier = server_start_options.server_identifier
-        async with connection.connect_in_text_mode(socket_path) as (
+        async with connection.connect_async(socket_path) as (
             input_channel,
             output_channel,
         ):
