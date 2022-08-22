@@ -13,9 +13,8 @@ import subprocess
 import tempfile
 import traceback
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence, Set, Type, TypeVar, Union
+from typing import Callable, Dict, List, Optional, Sequence, Set, Union
 
-import dataclasses_json
 from libcst.metadata import CodeRange
 
 from .. import (
@@ -35,6 +34,7 @@ from . import (
     background,
     commands,
     connections,
+    daemon_connection,
     daemon_query,
     daemon_socket,
     expression_level_coverage,
@@ -553,27 +553,6 @@ class QueryTypesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[str]
-
-
-_T = TypeVar("_T")
-
-
-def _interpret_response(
-    response: daemon_query.Response, response_type: Type[_T]
-) -> Optional[_T]:
-    try:
-        # pyre-ignore[16]: Pyre doesn't understand dataclasses_json
-        return response_type.from_dict(response.payload)
-    except (
-        KeyError,
-        ValueError,
-        dataclasses_json.mm.ValidationError,
-    ) as exception:
-        LOG.info(
-            f"When interpretting {response.payload} as {response_type.__name__} "
-            f"got: {type(exception).__name__}({exception})"
-        )
-        return None
 
 
 @dataclasses.dataclass
@@ -1234,62 +1213,15 @@ class PyreQueryHandler(background.Task):
         self.server_start_options_reader = server_start_options_reader
         self.client_output_channel = client_output_channel
 
-    async def _request(
-        self, query_text: str, socket_path: Path, drop_response: bool = False
-    ) -> Optional[daemon_query.Response]:
-        LOG.info(f"Querying for `{query_text}`")
-        try:
-            async with connections.connect_async(socket_path) as (
-                input_channel,
-                output_channel,
-            ):
-                await _send_request(output_channel, query_text)
-                if drop_response:
-                    await _consume_and_drop_response(input_channel)
-                else:
-                    return await _receive_response(input_channel)
-        except connections.ConnectionFailure:
-            LOG.error(
-                "Could not establish connection with an existing Pyre server "
-                f"at {socket_path}."
-            )
-            return None
-
-    # TODO:T126924773 Implement logic to not ALWAYS send overlay for certain requests - there are cases overlay is non-existent.
-    async def _send_query_and_interpret_response(
-        self,
-        query_text: str,
-        socket_path: Path,
-        response_type: Type[_T],
-        overlay_id: Optional[str] = None,
-    ) -> Optional[_T]:
-        json_query_with_overlay = (
-            {"query_text": query_text, "overlay_id": overlay_id}
-            if overlay_id
-            else {"query_text": query_text, "overlay_id": None}
-        )
-        json_query = json.dumps(["QueryWithOverlay", json_query_with_overlay])
-        query_response = await self._request(json_query, socket_path)
-        if query_response is None:
-            return None
-        else:
-            return _interpret_response(query_response, response_type)
-
-    async def _send_overlay_request_and_drop_response(
-        self,
-        query_text: str,
-        socket_path: Path,
-    ) -> None:
-        json_overlay_update = json.dumps(["OverlayUpdate", json.loads(query_text)])
-        await self._request(json_overlay_update, socket_path, True)
-
     async def _query_types(
         self, paths: List[Path], socket_path: Path
     ) -> Optional[Dict[Path, LocationTypeLookup]]:
         path_string = ", ".join(f"'{path}'" for path in paths)
         query_text = f"types({path_string})"
-        query_types_response = await self._send_query_and_interpret_response(
-            query_text, socket_path, QueryTypesResponse
+        query_types_response = await daemon_query.attempt_typed_async_query(
+            response_type=QueryTypesResponse,
+            socket_path=socket_path,
+            query_text=query_text,
         )
 
         if query_types_response is None:
@@ -1307,11 +1239,11 @@ class PyreQueryHandler(background.Task):
         consume_unsaved_changes_enabled: bool,
     ) -> Optional[QueryModulesOfPathResponse]:
         overlay_id = str(path) if consume_unsaved_changes_enabled else None
-        return await self._send_query_and_interpret_response(
-            f"modules_of_path('{path}')",
-            socket_path,
-            QueryModulesOfPathResponse,
-            overlay_id,
+        return await daemon_query.attempt_typed_async_query(
+            response_type=QueryModulesOfPathResponse,
+            socket_path=socket_path,
+            query_text=f"modules_of_path('{path}')",
+            overlay_id=overlay_id,
         )
 
     async def _query_is_typechecked(
@@ -1339,17 +1271,15 @@ class PyreQueryHandler(background.Task):
         if is_typechecked is None:
             return None
         elif expression_level_coverage_enabled:
-            query_text = {
-                "query_text": f"expression_level_coverage('{path}')",
-                "overlay_id": None,
-            }
-            json_query = json.dumps(["QueryWithOverlay", query_text])
-            query_response = await self._request(json_query, socket_path)
-            if query_response is None:
+            response = await daemon_query.attempt_async_query(
+                socket_path=socket_path,
+                query_text=f"expression_level_coverage('{path}')",
+            )
+            if response is None:
                 return None
             expression_coverage = (
                 expression_level_coverage._make_expression_level_coverage_response(
-                    query_response.payload
+                    response.payload
                 )
             )
             if expression_coverage is None:
@@ -1400,12 +1330,15 @@ class PyreQueryHandler(background.Task):
             f" line={query.position.line}, column={query.position.character})"
         )
         overlay_id = str(query.path) if consume_unsaved_changes_enabled else None
-        server_response = await self._send_query_and_interpret_response(
-            query_text, socket_path, HoverResponse, overlay_id
+        daemon_response = await daemon_query.attempt_typed_async_query(
+            response_type=HoverResponse,
+            socket_path=socket_path,
+            query_text=query_text,
+            overlay_id=overlay_id,
         )
         response = (
-            server_response.response
-            if server_response
+            daemon_response.response
+            if daemon_response
             else lsp.LspHoverResponse.empty()
         )
         result = lsp.LspHoverResponse.cached_schema().dump(
@@ -1447,15 +1380,18 @@ class PyreQueryHandler(background.Task):
             f" line={query.position.line}, column={query.position.character})"
         )
         overlay_id = str(query.path) if consume_unsaved_changes_enabled else None
-        definition_response = await self._send_query_and_interpret_response(
-            query_text, socket_path, DefinitionLocationResponse, overlay_id
+        daemon_response = await daemon_query.attempt_typed_async_query(
+            response_type=DefinitionLocationResponse,
+            socket_path=socket_path,
+            query_text=query_text,
+            overlay_id=overlay_id,
         )
         definitions = (
             [
                 response.to_lsp_definition_response()
-                for response in definition_response.response
+                for response in daemon_response.response
             ]
-            if definition_response is not None
+            if daemon_response is not None
             else []
         )
         result = lsp.LspDefinitionResponse.cached_schema().dump(
@@ -1497,15 +1433,18 @@ class PyreQueryHandler(background.Task):
             f" line={query.position.line}, column={query.position.character})"
         )
         overlay_id = str(query.path) if consume_unsaved_changes_enabled else None
-        find_all_references_response = await self._send_query_and_interpret_response(
-            query_text, socket_path, ReferencesResponse, overlay_id
+        daemon_response = await daemon_query.attempt_typed_async_query(
+            response_type=ReferencesResponse,
+            socket_path=socket_path,
+            query_text=query_text,
+            overlay_id=overlay_id,
         )
         reference_locations = (
             [
                 response.to_lsp_definition_response()
-                for response in find_all_references_response.response
+                for response in daemon_response.response
             ]
-            if find_all_references_response is not None
+            if daemon_response is not None
             else []
         )
         await lsp.write_json_rpc(
@@ -1523,17 +1462,16 @@ class PyreQueryHandler(background.Task):
     async def _handle_overlay_update_request(
         self, request: OverlayUpdate, socket_path: Path
     ) -> None:
-
         source_path = f"{request.source_path}"
         overlay_update_dict = {
             "overlay_id": request.overlay_id,
             "source_path": source_path,
             "code_update": ["NewCode", request.code_update],
         }
-
-        await self._send_overlay_request_and_drop_response(
-            json.dumps(overlay_update_dict),
-            socket_path,
+        # Drop the response (the daemon code will log it for us)
+        await daemon_connection.attempt_send_async_raw_request(
+            socket_path=socket_path,
+            request=json.dumps(overlay_update_dict),
         )
 
     async def _run(self, server_start_options: "PyreServerStartOptions") -> None:
