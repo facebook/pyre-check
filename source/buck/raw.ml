@@ -101,7 +101,7 @@ let consume_stderr ~log_buffer stderr_channel =
         (* We don't care what's returned here since we'll ignore `Completed.stderr` later. *)
         Lwt.return ""
     | Some line ->
-        Log.info "[Buck] %s" line;
+        Log.log ~section:`Progress "[Buck] %s" line;
         BoundedQueue.add log_buffer ~item:line;
         consume_line channel
   in
