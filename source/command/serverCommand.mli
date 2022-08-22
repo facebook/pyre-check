@@ -7,6 +7,15 @@
 
 open Core
 
+module ExitStatus : sig
+  type t =
+    | Ok
+    | Error
+  [@@deriving sexp, compare, hash]
+
+  val exit_code : t -> int
+end
+
 module ServerConfiguration : sig
   type t = {
     base: CommandStartup.BaseConfiguration.t;

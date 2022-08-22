@@ -44,7 +44,70 @@ module CodeNavigationConfiguration = struct
     | Undefined (message, _) ->
         Result.Error message
     | other_exception -> Result.Error (Exn.to_string other_exception)
+
+
+  let analysis_configuration_of
+      {
+        base =
+          {
+            CommandStartup.BaseConfiguration.source_paths;
+            search_paths;
+            excludes;
+            checked_directory_allowlist;
+            checked_directory_blocklist;
+            extensions;
+            log_path;
+            global_root;
+            local_root;
+            debug;
+            enable_type_comments;
+            python_version = { Configuration.PythonVersion.major; minor; micro };
+            parallel;
+            number_of_workers;
+            shared_memory =
+              { Configuration.SharedMemory.heap_size; dependency_table_power; hash_table_power };
+            remote_logging = _;
+            profiling_output = _;
+            memory_profiling_output = _;
+          };
+        socket_path = _;
+        watchman_root = _;
+        critical_files = _;
+        additional_logging_sections = _;
+      }
+    =
+    Configuration.Analysis.create
+      ~parallel
+      ~analyze_external_sources:false
+      ~filter_directories:checked_directory_allowlist
+      ~ignore_all_errors:checked_directory_blocklist
+      ~number_of_workers
+      ~local_root:(Option.value local_root ~default:global_root)
+      ~project_root:global_root
+      ~search_paths:(List.map search_paths ~f:SearchPath.normalize)
+      ~debug
+      ~excludes
+      ~extensions
+      ~store_type_check_resolution:true
+      ~incremental_style:Configuration.Analysis.FineGrained
+      ~log_directory:(PyrePath.absolute log_path)
+      ~python_major_version:major
+      ~python_minor_version:minor
+      ~python_micro_version:micro
+      ~shared_memory_heap_size:heap_size
+      ~shared_memory_dependency_table_power:dependency_table_power
+      ~shared_memory_hash_table_power:hash_table_power
+      ~enable_type_comments
+      ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)
+      ()
 end
+
+let start_server_and_wait code_navigation_configuration =
+  let _configuration =
+    CodeNavigationConfiguration.analysis_configuration_of code_navigation_configuration
+  in
+  failwith "not implemented yet"
+
 
 let run_server configuration_file =
   match
@@ -54,21 +117,21 @@ let run_server configuration_file =
       Log.error "%s" message;
       exit 1
   | Result.Ok
-      {
-        CodeNavigationConfiguration.base =
-          {
-            CommandStartup.BaseConfiguration.log_path;
-            global_root;
-            local_root;
-            debug;
-            remote_logging;
-            profiling_output;
-            memory_profiling_output;
-            _;
-          };
-        additional_logging_sections;
-        _;
-      } ->
+      ({
+         CodeNavigationConfiguration.base =
+           {
+             CommandStartup.BaseConfiguration.log_path;
+             global_root;
+             local_root;
+             debug;
+             remote_logging;
+             profiling_output;
+             memory_profiling_output;
+             _;
+           };
+         additional_logging_sections;
+         _;
+       } as code_navigation_configuration) ->
       CommandStartup.setup_global_states
         ~global_root
         ~local_root
@@ -88,7 +151,8 @@ let run_server configuration_file =
          mostly detect the same class of issue by handling the EPIPE unix errno. *)
       Signal.Expert.(set Signal.pipe `Ignore);
 
-      failwith "not implemented yet"
+      let exit_status = Lwt_main.run (start_server_and_wait code_navigation_configuration) in
+      exit (ServerCommand.ExitStatus.exit_code exit_status)
 
 
 let command =
